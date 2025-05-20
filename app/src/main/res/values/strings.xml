@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">sagAI</string>
+    <string name="saga">Sagas</string>
+    <string name="start_saga">Pronto para iniciar sua saga?</string>
+    <string name="start_saga_subtitle">Comece com o nome da sua história.</string>
+    <string name="saga_title_hint">Um nome épico que combine com você</string>
+    <string name="saga_genre">Qual o tema da sua Saga?</string>
+    <string name="saga_genre_subtitle">Qual universo vai se passar sua saga?</string>
+    <string name="saga_genre_hint">Escolha um tema para sua história</string>
+    <string name="saga_description">Por onde comecamos?</string>
+    <string name="saga_description_subtitle">Vamos definir o início dessa aventura, nao se preocupe com os detalhes, vamos melhorando juntos.</string>
+    <string name="saga_description_hint">Uma jornada em busca de honra e redencao</string>
+    <string name="saga_saving">Hora de construir esse mundo!</string>
+    <string name="saga_saving_subtitle">Deixa comigo, vou construir seu mundo em alguns instantes,</string>
+    <string name="saga_saving_hint" />
+</resources>
