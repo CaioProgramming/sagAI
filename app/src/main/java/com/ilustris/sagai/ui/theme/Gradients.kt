@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -24,7 +25,7 @@ import kotlin.time.DurationUnit
 fun gradientAnimation(
     colors: List<Color>,
     duration: Duration = 3.seconds,
-    targetValue: Float = 100f
+    targetValue: Float = 100f,
 ): Brush {
     val infiniteTransition = rememberInfiniteTransition()
     val offsetAnimation =
@@ -33,7 +34,10 @@ fun gradientAnimation(
             targetValue = targetValue,
             animationSpec =
                 infiniteRepeatable(
-                    tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearOutSlowInEasing),
+                    tween(
+                        duration.toInt(DurationUnit.MILLISECONDS),
+                        easing = EaseIn,
+                    ),
                     repeatMode = RepeatMode.Reverse,
                 ),
             label = "Gradient Offset Animation",
@@ -60,15 +64,37 @@ fun Modifier.gradientFill(brush: Brush) =
             }
         }
 
+fun Color.gradientFade() =
+    Brush.verticalGradient(
+        listOf(
+            this,
+            this.copy(alpha = 0.5f),
+            this.copy(alpha = 0.2f),
+            Color.Transparent,
+        ),
+    )
+
+
 val holographicGradient =
     listOf(
         Color(0xfffcc5e4),
         Color(0xfffda34b),
         Color(0xffff7882),
-        Color(0xc8699e),
-        Color(0x7046aa),
-        Color(0x7046aa),
-        Color(0xc1db8),
-        Color(0x020f75)
+        Color(0xffc8699e),
+        Color(0xff7046aa),
+        Color(0xff020f75),
     )
 
+fun genresGradient() : List<Color> {
+
+    val colors = Genre.entries.map {
+        listOf(
+            it.color,
+            it.color.lighter(0.3f),
+            it.color.lighter(0.5f)
+        )
+    }
+
+    return colors.flatten()
+
+}

@@ -1,5 +1,5 @@
 [versions]
-agp = "8.10.0"
+agp = "8.10.1"
 kotlin = "2.0.21"
 coreKtx = "1.16.0"
 junit = "4.13.2"
@@ -7,7 +7,7 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.9.0"
 activityCompose = "1.10.1"
-composeBom = "2025.05.00"
+composeBom = "2025.05.01"
 googleServices = "4.4.2"
 hilt = "2.56"
 [libraries]
@@ -27,24 +27,26 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-constraintlayout-compose = { group = "androidx.constraintlayout", name = "constraintlayout-compose", version = "1.1.1" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version = "2.9.0" }
+androidx-animations = { group = "androidx.compose.animation", name = "animation", version = "1.8.2" }
 androidx-shapes = { group = "androidx.graphics", name = "graphics-shapes", version = "1.0.1" }
 androidx-room-ktx =  { group = "androidx.room", name = "room-ktx", version = "2.7.1" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version = "2.7.1" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version = "2.7.1" }
 androidx-room-guava = { group = "androidx.room", name = "room-guava", version = "2.7.1" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version = "2.7.1" }
-androidx-hilt-android = { group = "com.google.dagger", name = "hilt-android", version = "2.51" }
+androidx-hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version = "1.2.0" }
-androidx-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version = "2.51" }
+androidx-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 accompanist-ui-controller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version = "0.30.1" }
 accompanist-navigation-animation = { group = "com.google.accompanist", name = "accompanist-navigation-animation", version = "0.30.1" }
 
-generative-ai = { group = "com.google.ai.client.generativeai", name = "generativeai", version = "0.9.0" }
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "33.14.0" }
+firebase-ai = { group = "com.google.firebase", name = "firebase-ai", version="" }
 
 material-colors = { group = "com.github.atick-faisal", name = "compose-material-color", version = "5.1.1" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version = "3.2.0" }
 gson = { group = "com.google.code.gson", name = "gson", version = "2.11.0" }
-lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version = "5.2.0" }
+lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version = "6.4.0" }
 
 
 [plugins]

@@ -2,10 +2,10 @@ package com.ilustris.sagai.core.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.ilustris.sagai.features.chat.data.ChatDao
-import com.ilustris.sagai.features.home.data.model.ChatData
+import com.ilustris.sagai.features.chat.data.SagaDao
+import com.ilustris.sagai.features.home.data.model.SagaData
 
-@Database(entities = [ChatData::class], version = 1)
+@Database(entities = [SagaData::class], version = 1, exportSchema = false)
 abstract class SagaDatabase : RoomDatabase() {
-    abstract fun chatDao(): ChatDao
+    abstract fun sagaDao(): SagaDao
 }

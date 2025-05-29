@@ -10,13 +10,7 @@ class DatabaseBuilder
     constructor(
         @ApplicationContext private val context: Context,
     ) {
-        lateinit var database: SagaDatabase
-
-        init {
-            database = buildDataBase()
-        }
-
-        private fun buildDataBase(): SagaDatabase =
+        fun buildDataBase(): SagaDatabase =
             Room
                 .databaseBuilder(
                     context = context,

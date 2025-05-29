@@ -6,18 +6,28 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -26,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -39,11 +50,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.home.data.model.ChatData
+import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.components.SagaLoader
+import com.ilustris.sagai.ui.theme.genresGradient
+import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFill
 import java.util.Calendar
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun HomeView(
@@ -52,26 +67,57 @@ fun HomeView(
 ) {
     val chats by viewModel.chats.collectAsStateWithLifecycle(emptyList())
 
-    ChatList(chats) {}
-}
-
-@Composable
-private fun ChatList(
-    chats: List<ChatData>,
-    onCreateNewChat: () -> Unit = {},
-) {
-    LazyColumn(modifier = Modifier.padding(16.dp).fillMaxSize()) {
-        item {
-            NewChatCard()
-        }
-        items(chats.size) { index ->
-            ChatCard(chats[index])
-        }
+    ChatList(chats) {
+        navController.navigate(Routes.NEW_SAGA.name)
     }
 }
 
 @Composable
-fun ChatCard(chatData: ChatData) {
+private fun ChatList(
+    chats: List<SagaData>,
+    onCreateNewChat: () -> Unit = {},
+) {
+    Box {
+        val styleGradient = gradientAnimation(genresGradient(), targetValue = 1000f, duration = 5.seconds)
+
+        LazyColumn(
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .fillMaxSize(),
+        ) {
+            if (chats.isEmpty()) {
+                item {
+                    NewChatCard(
+                        animatedBrush = styleGradient,
+                        onButtonClick = {
+                            onCreateNewChat()
+                        },
+                        modifier =
+                            Modifier.fillParentMaxSize()
+                    )
+                }
+            }
+
+            items(chats.size) { index ->
+                ChatCard(chats[index])
+            }
+        }
+        SagaLoader(
+            brush = styleGradient,
+            modifier =
+                Modifier
+                    .clip(CircleShape)
+                    .size(100.dp)
+                    .clickable {
+                        onCreateNewChat()
+                    }.align(Alignment.BottomCenter),
+        )
+    }
+}
+
+@Composable
+fun ChatCard(sagaData: SagaData) {
     Row(
         modifier =
             Modifier
@@ -80,7 +126,7 @@ fun ChatCard(chatData: ChatData) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
-        val color = Color(chatData.color.toColorInt())
+        val color = Color(sagaData.color.toColorInt())
         val colorBrush =
             Brush.linearGradient(
                 colors =
@@ -92,7 +138,7 @@ fun ChatCard(chatData: ChatData) {
             )
         val date =
             Calendar.getInstance().apply {
-                timeInMillis = chatData.createdAt
+                timeInMillis = sagaData.createdAt
             }
         val time = "${date.get(Calendar.HOUR_OF_DAY)}:${date.get(Calendar.MINUTE)}"
         Box(
@@ -108,7 +154,7 @@ fun ChatCard(chatData: ChatData) {
         ) {
             // Placeholder for avatar image
             Text(
-                text = chatData.name.first().toString(),
+                text = sagaData.title.first().toString(),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
                         brush = colorBrush,
@@ -122,7 +168,7 @@ fun ChatCard(chatData: ChatData) {
         // Name and Last Message
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = chatData.name, // Replace with actual contact name
+                text = sagaData.title, // Replace with actual contact name
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
             )
@@ -140,42 +186,64 @@ fun ChatCard(chatData: ChatData) {
 }
 
 @Composable
-private fun NewChatCard() {
-    val appBrush =
-        Brush.linearGradient(
-            colors = themeBrushColors(),
-        )
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier =
-            Modifier
-                .background(
-                    brush = appBrush,
-                    RoundedCornerShape(25.dp),
-                ).padding(16.dp)
-                .fillMaxSize(),
-    ) {
-        Text(
-            "A jornada começa aqui",
-            modifier = Modifier.padding(10.dp),
-            textAlign = TextAlign.Center,
-            style =
-                MaterialTheme.typography.headlineMedium.copy(
+private fun NewChatCard(modifier: Modifier = Modifier, animatedBrush : Brush, onButtonClick: () -> Unit = {}) {
+
+    Box(modifier.padding(16.dp)) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =Modifier.align(Alignment.Center),
+        ) {
+            Text(
+                "A jornada começa aqui",
+                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Start,
+                style =
+                    MaterialTheme.typography.displayMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        brush = animatedBrush,
+                    ),
+            )
+
+            Text(
+                "Crie sua nova aventura e descubra o que o futuro reserva para você.",
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.titleMedium,
+            )
+
+            Button(
+                onClick = {
+                    onButtonClick()
+                },
+                modifier =
+                    Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.elevatedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = Color.White,
+                ),
+                shape = RoundedCornerShape(15.dp),
+            ) {
+                Text(
+                    "Começar",
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary,
-                ),
-        )
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(0.85f).gradientFill(
+                        animatedBrush,
+                    ),
+                )
 
-        Text(
-            "Crie sua nova aventura e descubra o que o futuro reserva para você.",
-            modifier = Modifier.padding(16.dp),
-            textAlign = TextAlign.Center,
-            style =
-                MaterialTheme.typography.bodyLarge.copy(
-                    color = MaterialTheme.colorScheme.onPrimary,
-                ),
-        )
+                Icon(
+                    Icons.AutoMirrored.Default.ArrowForward,
+                    contentDescription = stringResource(R.string.new_saga_title),
+                    modifier = Modifier.padding(8.dp).size(24.dp).gradientFill(
+                        animatedBrush,
+                    ),
+                )
+            }
+        }
     }
+
 }
 
 @Preview(showBackground = true)
@@ -216,16 +284,18 @@ fun HomeViewPreview() {
             )
         }) { padding ->
             Box(modifier = Modifier.padding(padding)) {
-                ChatList(
+                val previewChats =
                     List(10) {
-                        ChatData(
-                            name = "Chat ${it + 1}",
+                        SagaData(
+                            title = "Chat ${it + 1}",
                             description = "The journey of our lifes",
                             color = "#5992cb",
                             icon = "",
                             createdAt = Calendar.getInstance().timeInMillis,
                         )
-                    },
+                    }
+                ChatList(
+                    emptyList(),
                 )
             }
         }

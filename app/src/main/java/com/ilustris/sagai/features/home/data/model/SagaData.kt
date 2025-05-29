@@ -4,12 +4,12 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity
-data class ChatData(
+data class SagaData(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val name: String,
+    val title: String,
     val description: String,
     val color: String,
-    val icon: String,
+    val icon: String?,
     val createdAt: Long,
 )

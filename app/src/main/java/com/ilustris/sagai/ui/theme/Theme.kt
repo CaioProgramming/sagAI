@@ -1,8 +1,6 @@
 package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
-import android.os.Build
-import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -22,22 +20,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TileMode
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,20 +36,17 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 
 private val DarkColorScheme =
     darkColorScheme(
-        primary = MaterialColor.Blue800,
+        primary = MaterialColor.BlueA400,
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
     )
 
 private val LightColorScheme =
     lightColorScheme(
-        primary = MaterialColor.BlueA200,
+        primary = MaterialColor.Blue500,
         secondary = MaterialColor.Blue800,
         tertiary = MaterialColor.Teal300,
         onPrimary = MaterialColor.White,
@@ -83,7 +68,6 @@ fun themeBrushColors() =
         MaterialColor.BlueA700,
     )
 
-
 @Composable
 fun SagAITheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -93,11 +77,6 @@ fun SagAITheme(
 ) {
     val colorScheme =
         when {
-            dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                val context = LocalContext.current
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-            }
-
             darkTheme -> DarkColorScheme
             else -> LightColorScheme
         }
@@ -160,48 +139,57 @@ fun SagAIScaffold(
 
 @Composable
 fun MorphShape(modifier: Modifier) {
-    val shapeA = remember {
-        RoundedPolygon(
-            12,
-            rounding = CornerRounding(0.2f)
-        )
-    }
-    val shapeB = remember {
-        RoundedPolygon.star(
-            12,
-            rounding = CornerRounding(0.2f)
-        )
-    }
-    val morph = remember {
-        Morph(shapeA, shapeB)
-    }
-    val infiniteTransition = rememberInfiniteTransition("infinite outline movement")
-    val animatedProgress = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "animatedMorphProgress"
-    )
-    val animatedRotation = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            tween(6000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "animatedMorphProgress"
-    )
-
-    Box(modifier
-        .background(MaterialColor.Red400)
-        .clip(
-            CustomRotatingMorphShape(
-                morph,
-                animatedProgress.value,
-                animatedRotation.value
+    val shapeA =
+        remember {
+            RoundedPolygon(
+                12,
+                rounding = CornerRounding(0.2f),
             )
-        ))
+        }
+    val shapeB =
+        remember {
+            RoundedPolygon.star(
+                12,
+                rounding = CornerRounding(0.2f),
+            )
+        }
+    val morph =
+        remember {
+            Morph(shapeA, shapeB)
+        }
+    val infiniteTransition = rememberInfiniteTransition("infinite outline movement")
+    val animatedProgress =
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(2000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "animatedMorphProgress",
+        )
+    val animatedRotation =
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(6000, easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "animatedMorphProgress",
+        )
+
+    Box(
+        modifier
+            .background(MaterialColor.Red400)
+            .clip(
+                CustomRotatingMorphShape(
+                    morph,
+                    animatedProgress.value,
+                    animatedRotation.value,
+                ),
+            ),
+    )
 }
