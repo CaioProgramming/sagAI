@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.newsaga.ui
+package com.ilustris.sagai.features.newsaga.ui.presentation
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -20,8 +20,7 @@ class CreateSagaViewModel
         private val newSagaUseCase: NewSagaUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaForm>(SagaForm())
-
-        val generatedChat = MutableStateFlow<SagaData?>(null)
+        val state = MutableStateFlow<CreateSagaState>(CreateSagaState.Idle)
 
         fun updateTitle(title: String) {
             saga.value = saga.value.copy(title = title)
@@ -35,20 +34,39 @@ class CreateSagaViewModel
             saga.value = saga.value.copy(genre = genre)
         }
 
-        private fun saveSaga() {
+        fun saveSaga(sagaData: SagaData) {
             viewModelScope.launch {
+                state.value = CreateSagaState.Loading
                 // AI Service will generate the saga based on the title, description and genre and return the ChatData to save on useCase
 
-                // newSagaUseCase.saveSaga(it)
+                newSagaUseCase.saveSaga(sagaData).also {
+                    when (it) {
+                        is RequestResult.Error<*> -> {
+                            Log.e(
+                                javaClass.simpleName,
+                                "saveSaga: Error saving saga ${it.error.value.message}",
+                            )
+                            state.value = CreateSagaState.Error(it.error.value)
+                        }
+                        is RequestResult.Success<*> -> {
+                            Log.d(
+                                javaClass.simpleName,
+                                "saveSaga: Saga saved successfully with id ${it.success.value}/n$sagaData",
+                            )
+                            state.value = CreateSagaState.Success(it.success.value)
+                            resetSaga()
+                        }
+                    }
+                }
             }
         }
 
-        fun setSagaTitle(title: String) {
-            saga.value = saga.value.copy(title = title)
+        fun resetSaga() {
+            saga.value = SagaForm()
         }
 
-        fun setSagaDescription(description: String) {
-            saga.value = saga.value.copy(description = description)
+        fun resetGeneratedSaga() {
+            state.value = CreateSagaState.Idle
         }
 
         fun generateSaga() {
@@ -62,10 +80,9 @@ class CreateSagaViewModel
                         )
                     }
                     is RequestResult.Success<*> -> {
-                        generatedChat.value = result.success.value
+                        state.value = CreateSagaState.GeneratedSaga(result.success.value)
                     }
                 }
             }
         }
-
     }

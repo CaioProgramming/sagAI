@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.ai
 
+import android.util.Log
+import com.google.firebase.BuildConfig
 import com.google.firebase.Firebase
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
@@ -30,6 +32,10 @@ class TextGenClient : AIClient() {
                 } else {
                     prompt
                 }
+            val content = model.generateContent(fullPrompt)
+            if (BuildConfig.DEBUG) {
+                Log.i(javaClass.simpleName, "generated: ${content.text}")
+            }
             return model.generateContent(fullPrompt)
         } catch (e: Exception) {
             e.printStackTrace()

@@ -9,7 +9,7 @@ data class SagaData(
     val id: Int = 0,
     val title: String,
     val description: String,
-    val color: String,
+    val hexColor: String,
     val icon: String?,
     val createdAt: Long,
 )

@@ -5,17 +5,9 @@ package com.ilustris.sagai.features.newsaga.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.animateColor
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInCubic
-import androidx.compose.animation.core.EaseInElastic
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,10 +20,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -43,7 +34,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Done
+import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +47,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,7 +58,6 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -76,26 +71,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaState
+import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaLoader
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.lighter
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -105,8 +97,8 @@ fun NewSagaView(
     createSagaViewModel: CreateSagaViewModel = hiltViewModel(),
 ) {
     val form by createSagaViewModel.saga.collectAsStateWithLifecycle()
-    val chatData by createSagaViewModel.generatedChat.collectAsStateWithLifecycle()
-    NewSagaForm(form, chatData, updateTitle = {
+    val state by createSagaViewModel.state.collectAsStateWithLifecycle()
+    NewSagaForm(form, state, updateTitle = {
         createSagaViewModel.updateTitle(it)
     }, updateDescription = {
         createSagaViewModel.updateDescription(it)
@@ -114,19 +106,38 @@ fun NewSagaView(
         createSagaViewModel.updateGenre(it)
     }, generateSaga = {
         createSagaViewModel.generateSaga()
+    }, resetSaga = {
+        createSagaViewModel.resetGeneratedSaga()
+    }, saveSaga = {
+        createSagaViewModel.saveSaga(it)
     })
+
+    LaunchedEffect(state) {
+        when (state) {
+            is CreateSagaState.Success -> {
+                navHostController.popBackStack()
+            }
+
+            is CreateSagaState.Error -> {
+                // Handle error state, e.g., show a snackbar or dialog
+            }
+
+            else -> {}
+        }
+    }
 }
 
 @Composable
 fun NewSagaForm(
     formData: SagaForm,
-    sagaData: SagaData?,
+    state: CreateSagaState = CreateSagaState.Idle,
     updateTitle: (String) -> Unit = {},
     updateDescription: (String) -> Unit = {},
     updateGenre: (Genre) -> Unit = {},
     generateSaga: () -> Unit = {},
+    resetSaga: () -> Unit = {},
+    saveSaga: (SagaData) -> Unit = {},
 ) {
-    val rotationState = remember { Animatable(0f) }
     val genreSelectorVisible =
         remember {
             mutableStateOf(true)
@@ -136,168 +147,70 @@ fun NewSagaForm(
         gradientAnimation(
             holographicGradient,
             duration = 7.seconds,
-            targetValue = 500f,
+            targetValue = 1000f,
         )
 
-    LaunchedEffect(Unit) {
-        rotationState.animateTo(
-            targetValue = 360f,
-            animationSpec =
-                infiniteRepeatable(
-                    animation = tween(durationMillis = 1000, easing = EaseInCubic),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-        )
-    }
+    ConstraintLayout(modifier = Modifier.fillMaxSize()) {
+        val (sagaContent, descriptionInput) = createRefs()
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier =
-            Modifier
-                .padding(16.dp)
-                .fillMaxSize()
-                .animateContentSize()
-                .verticalScroll(rememberScrollState()),
-    ) {
-        SagaGenerator(
-            gradient,
-            formData,
-            sagaData,
-            Modifier
-                .fillMaxWidth()
-                .height(300.dp),
-        )
-
-        val scaleAnimation by animateFloatAsState(
-            if (formData.title.isEmpty()) 0.8f else 1f,
-            animationSpec =
-                tween(
-                    easing = EaseInElastic,
-                    durationMillis = 6.seconds.toInt(DurationUnit.MILLISECONDS),
-                ),
-        )
-
-        Text(
-            stringResource(R.string.start_saga),
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Black,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
-        TextField(
-            formData.title,
-            { value ->
-                updateTitle(value)
-            },
-            colors =
-                TextFieldDefaults.colors(
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                ),
-            singleLine = true,
-            maxLines = 1,
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Done,
-                    capitalization = KeyboardCapitalization.Sentences,
-                    autoCorrect = true,
-                ),
-            leadingIcon = {
-                Image(
-                    painterResource(R.drawable.ic_spark),
-                    null,
-                    modifier =
-                        Modifier
-                            .size(32.dp)
-                            .scale(scaleAnimation),
-                )
-            },
-            trailingIcon = {
-                Image(
-                    painterResource(R.drawable.ic_spark),
-                    null,
-                    modifier =
-                        Modifier
-                            .size(32.dp)
-                            .scale(scaleAnimation),
-                )
-            },
-            placeholder = {
-                Text(
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    text = "De um nome para sua história",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .alpha(.5f),
-                )
-            },
-            textStyle =
-                MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Black,
-                    textAlign = TextAlign.Center,
-                ),
+        Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .gradientFill(gradient),
-        )
-
-        AnimatedVisibility(
-            genreSelectorVisible.value,
-            enter = scaleIn(),
-            exit =
-                scaleOut() + fadeOut(),
+                    .padding(16.dp)
+                    .constrainAs(descriptionInput) {
+                        bottom.linkTo(parent.bottom)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    },
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            GenreSelectionCard(formData.genre) {
-                updateGenre(it)
-            }
-        }
+            AnimatedVisibility(genreSelectorVisible.value) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Tema", style = MaterialTheme.typography.titleMedium)
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            AnimatedContent(
-                formData.genre,
-                transitionSpec = {
-                    scaleIn() + fadeIn() with scaleOut() + fadeOut()
-                },
-            ) {
-                GenreAvatar(
-                    it,
-                    isSelected = true,
-                    showText = false,
-                    modifier = Modifier.padding(8.dp),
-                ) {
-                    genreSelectorVisible.value = genreSelectorVisible.value.not()
+                    GenreSelectionCard(formData.genre) {
+                        updateGenre(it)
+                    }
                 }
             }
 
+            SagaInput(
+                formData,
+                gradient,
+                if (state is CreateSagaState.GeneratedSaga) 1 else 10,
+                genreSelectorVisible,
+                updateDescription,
+                generateSaga,
+            )
+        }
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .constrainAs(sagaContent) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(descriptionInput.top)
+                        height = Dimension.fillToConstraints
+                        width = Dimension.fillToConstraints
+                    }.padding(16.dp),
+        ) {
+            Text(
+                stringResource(R.string.start_saga),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             TextField(
-                formData.description,
-                {
-                    updateDescription(it)
+                formData.title,
+                { value ->
+                    updateTitle(value)
                 },
-                modifier =
-                    Modifier
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.onBackground,
-                            shape = RoundedCornerShape(40.dp),
-                        ),
                 colors =
                     TextFieldDefaults.colors(
                         cursorColor = MaterialTheme.colorScheme.primary,
@@ -308,31 +221,8 @@ fun NewSagaForm(
                         unfocusedContainerColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
                     ),
-                textStyle = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.W500),
-                placeholder = {
-                    Text(
-                        style = MaterialTheme.typography.bodySmall,
-                        text = stringResource(R.string.saga_description_hint),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.alpha(.5f),
-                    )
-                },
-                trailingIcon = {
-                    IconButton(
-                        onClick = {},
-                        modifier =
-                            Modifier
-                                .size(24.dp)
-                                .background(gradient, CircleShape)
-                                .padding(1.dp),
-                    ) {
-                        Icon(
-                            Icons.Rounded.Done,
-                            "Ok",
-                            tint = Color.White,
-                        )
-                    }
-                },
+                singleLine = true,
+                maxLines = 3,
                 keyboardOptions =
                     KeyboardOptions(
                         keyboardType = KeyboardType.Text,
@@ -340,8 +230,158 @@ fun NewSagaForm(
                         capitalization = KeyboardCapitalization.Sentences,
                         autoCorrect = true,
                     ),
+                placeholder = {
+                    Text(
+                        style =
+                            MaterialTheme.typography.displaySmall.copy(
+                                textAlign = TextAlign.Center,
+                                fontWeight = FontWeight.Medium,
+                                brush = MaterialTheme.colorScheme.onBackground.gradientFade(),
+                            ),
+                        text = stringResource(R.string.saga_title_hint),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .alpha(.5f),
+                    )
+                },
+                textStyle =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontWeight = FontWeight.Black,
+                        textAlign = TextAlign.Center,
+                        brush = gradient,
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth(),
+            )
+
+            SagaGenerator(
+                gradient,
+                formData,
+                (state as? CreateSagaState.GeneratedSaga)?.saga,
+                onSaveSaga = { saveSaga(it) },
+                onResetSaga = { resetSaga() },
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
             )
         }
+    }
+}
+
+@Composable
+private fun SagaInput(
+    formData: SagaForm,
+    gradient: Brush,
+    maxLines: Int? = null,
+    genreSelectorVisible: MutableState<Boolean>,
+    updateDescription: (String) -> Unit,
+    generateSaga: () -> Unit,
+) {
+    ConstraintLayout(modifier = Modifier.fillMaxWidth()) {
+        val (selectedGenre, okButton, inputField) = createRefs()
+
+        AnimatedContent(
+            formData.genre,
+            modifier =
+                Modifier
+                    .constrainAs(selectedGenre) {
+                        top.linkTo(parent.top)
+                        end.linkTo(okButton.start)
+                        bottom.linkTo(parent.bottom)
+                        width = Dimension.wrapContent
+                        height = Dimension.wrapContent
+                    }.animateContentSize(),
+            transitionSpec = {
+                scaleIn() + fadeIn() with scaleOut() + fadeOut()
+            },
+        ) {
+            GenreAvatar(
+                it,
+                isSelected = true,
+                showText = false,
+                modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .border(2.dp, gradient, CircleShape)
+                        .padding(4.dp),
+            ) {
+                genreSelectorVisible.value = !genreSelectorVisible.value
+            }
+        }
+
+        IconButton(
+            enabled = formData.description.isNotEmpty() && formData.title.isNotEmpty(),
+            onClick = {
+                generateSaga()
+            },
+            modifier =
+                Modifier
+                    .padding(horizontal = 4.dp)
+                    .constrainAs(okButton) {
+                        end.linkTo(parent.end)
+                        top.linkTo(parent.top)
+                        bottom.linkTo(parent.bottom)
+                    }.size(50.dp)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
+                    .padding(8.dp),
+        ) {
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                "Ok",
+                tint = Color.White,
+                modifier = Modifier.gradientFill(gradient),
+            )
+        }
+
+        TextField(
+            formData.description,
+            {
+                updateDescription(it)
+            },
+            maxLines = maxLines ?: 10,
+            modifier =
+                Modifier
+                    .padding(end = 10.dp)
+                    .constrainAs(inputField) {
+                        top.linkTo(parent.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(selectedGenre.start)
+                        bottom.linkTo(parent.bottom)
+                        width = Dimension.fillToConstraints
+                    }.background(
+                        MaterialTheme.colorScheme.surfaceContainer,
+                        RoundedCornerShape(25.dp),
+                    ),
+            colors =
+                TextFieldDefaults.colors(
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    disabledIndicatorColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                ),
+            textStyle = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.W500),
+            placeholder = {
+                Text(
+                    style = MaterialTheme.typography.bodySmall,
+                    text = stringResource(R.string.saga_description_hint),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.alpha(.5f),
+                )
+            },
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Done,
+                    capitalization = KeyboardCapitalization.Sentences,
+                    autoCorrect = true,
+                ),
+        )
     }
 }
 
@@ -382,26 +422,11 @@ fun GenreAvatar(
         tween(durationMillis = 2.seconds.toInt(DurationUnit.MILLISECONDS)),
     )
 
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier =
-            modifier
-                .grayScale(saturation)
-                .background(genre.color.lighter(0.3f), RoundedCornerShape(50.dp)),
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier.grayScale(saturation),
     ) {
-        val infiniteTransition = rememberInfiniteTransition()
-
-        val colorAnimation by infiniteTransition.animateColor(
-            initialValue = genre.color,
-            targetValue = genre.color.darker(.5f),
-            animationSpec =
-                infiniteRepeatable(
-                    animation = tween(durationMillis = 2000, easing = EaseIn),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-        )
-
         Image(
             painterResource(genre.icon),
             genre.name,
@@ -409,7 +434,7 @@ fun GenreAvatar(
                 Modifier
                     .size(50.dp)
                     .background(
-                        if (isSelected) colorAnimation else genre.color,
+                        genre.color,
                         CircleShape,
                     ).border(1.dp, genre.color.gradientFade(), CircleShape)
                     .padding(1.dp)
@@ -423,10 +448,7 @@ fun GenreAvatar(
             Text(
                 genre.title,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.W500,
-                color = genre.iconColor,
-                modifier = Modifier.padding(end = 12.dp),
+                style = MaterialTheme.typography.bodySmall,
             )
         }
     }
@@ -437,38 +459,15 @@ private fun SagaGenerator(
     gradient: Brush,
     form: SagaForm,
     sagaData: SagaData?,
+    onSaveSaga: (SagaData) -> Unit = {},
+    onResetSaga: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val composition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(R.raw.sphere),
-    )
-
-    val compositionProgress by animateLottieCompositionAsState(
-        composition,
-        iterations = LottieConstants.IterateForever,
-    )
     ConstraintLayout(modifier = modifier) {
         val (animation, overview) = createRefs()
         val blur by animateDpAsState(
             if (sagaData != null) 50.dp else 0.dp,
         )
-        /*LottieAnimation(
-            composition,
-            compositionProgress,
-            contentScale = ContentScale.Fit,
-            modifier =
-                Modifier
-                    .constrainAs(animation) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                    }.fillMaxWidth()
-                    .height(400.dp)
-                    .gradientFill(gradient)
-                    .blur(blur),
-        )*/
-
 
         SagaLoader(
             modifier =
@@ -478,18 +477,19 @@ private fun SagaGenerator(
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
                         bottom.linkTo(parent.bottom)
-                    }.size(250.dp)
-                    .padding(16.dp)
+                    }.size(200.dp)
                     .blur(blur, edgeTreatment = BlurredEdgeTreatment.Unbounded),
         )
 
         AnimatedVisibility(
             sagaData != null,
             Modifier.constrainAs(overview) {
-                top.linkTo(animation.top)
-                start.linkTo(animation.start)
-                end.linkTo(animation.end)
-                bottom.linkTo(animation.bottom)
+                top.linkTo(parent.top)
+                start.linkTo(parent.start)
+                end.linkTo(parent.end)
+                bottom.linkTo(parent.bottom)
+                height = Dimension.fillToConstraints
+                width = Dimension.fillToConstraints
             },
             enter = scaleIn(),
             exit = scaleOut() + fadeOut(),
@@ -499,13 +499,35 @@ private fun SagaGenerator(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier =
                     Modifier
-                        .border(1.dp, gradient, RoundedCornerShape(15.dp))
-                        .padding(16.dp),
+                        .fillMaxSize()
+                        .padding(16.dp)
+                        .border(2.dp, gradient, RoundedCornerShape(15.dp))
+                        .background(
+                            MaterialTheme.colorScheme.background.copy(alpha = .1f),
+                            RoundedCornerShape(15.dp),
+                        ).padding(16.dp)
+                        .verticalScroll(rememberScrollState()),
             ) {
+                IconButton(onClick = {
+                    onResetSaga()
+                }, modifier = Modifier.align(Alignment.End)) {
+                    Icon(
+                        Icons.Rounded.Refresh,
+                        "Gerar novamente",
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .gradientFill(gradient),
+                    )
+                }
+
                 Image(
                     painterResource(form.genre.icon),
                     null,
-                    modifier = Modifier.size(50.dp).clip(CircleShape),
+                    modifier =
+                        Modifier
+                            .size(50.dp)
+                            .clip(CircleShape),
                 )
 
                 Text(
@@ -525,6 +547,41 @@ private fun SagaGenerator(
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Justify,
                 )
+
+                Button(
+                    onClick = {
+                        sagaData?.let {
+                            onSaveSaga(it)
+                        }
+                    },
+                    modifier =
+                        Modifier.fillMaxWidth().background(gradient, RoundedCornerShape(15.dp)),
+                    colors =
+                        ButtonDefaults.elevatedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    shape = RoundedCornerShape(15.dp),
+                ) {
+                    Text(
+                        "Começar",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(0.85f),
+                    )
+
+                    Icon(
+                        painterResource(R.drawable.ic_spark),
+                        contentDescription = stringResource(R.string.new_saga_title),
+                        modifier =
+                            Modifier
+                                .size(50.dp),
+                    )
+                }
             }
         }
     }
@@ -545,29 +602,31 @@ fun NewSagaViewPreview() {
         }
 
         var saga by remember {
-            mutableStateOf<SagaData?>(
-                null,
+            mutableStateOf<CreateSagaState>(
+                CreateSagaState.Idle,
             )
         }
 
         NewSagaForm(
             formData = form,
-            sagaData = saga,
+            state = saga,
             updateTitle = {
                 form = form.copy(title = it)
             },
             updateDescription = {
                 form = form.copy(description = it)
                 saga =
-                    SagaData(
-                        title = form.title,
-                        description = it,
-                        color =
-                            form.genre.color
-                                .toArgb()
-                                .toString(),
-                        icon = form.genre.icon.toString(),
-                        createdAt = System.currentTimeMillis(),
+                    CreateSagaState.GeneratedSaga(
+                        SagaData(
+                            title = form.title,
+                            description = it,
+                            hexColor =
+                                form.genre.color
+                                    .toArgb()
+                                    .toString(),
+                            icon = form.genre.icon.toString(),
+                            createdAt = System.currentTimeMillis(),
+                        ),
                     )
             },
             updateGenre = {

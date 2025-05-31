@@ -26,6 +26,7 @@ class NewSagaUseCaseImpl
 
         override suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, SagaData> =
             try {
+                val schema = toJsonSchema(SagaData::class.java)
                 val saga =
                     textGenClient.generate(
                         generateSagaPrompt(sagaForm),
@@ -33,7 +34,7 @@ class NewSagaUseCaseImpl
                         generationConfig =
                             generationConfig {
                                 responseMimeType = "application/json"
-                                responseSchema = toJsonSchema(SagaData::class.java)
+                                responseSchema = schema
                             },
                     )
                 val content = saga!!.text

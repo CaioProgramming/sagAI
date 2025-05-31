@@ -2,6 +2,7 @@
 
 package com.ilustris.sagai.features.home.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -10,12 +11,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -78,7 +77,8 @@ private fun ChatList(
     onCreateNewChat: () -> Unit = {},
 ) {
     Box {
-        val styleGradient = gradientAnimation(genresGradient(), targetValue = 1000f, duration = 5.seconds)
+        val styleGradient =
+            gradientAnimation(genresGradient(), targetValue = 1000f, duration = 5.seconds)
 
         LazyColumn(
             modifier =
@@ -94,7 +94,7 @@ private fun ChatList(
                             onCreateNewChat()
                         },
                         modifier =
-                            Modifier.fillParentMaxSize()
+                            Modifier.fillParentMaxSize(),
                     )
                 }
             }
@@ -103,16 +103,18 @@ private fun ChatList(
                 ChatCard(chats[index])
             }
         }
-        SagaLoader(
-            brush = styleGradient,
-            modifier =
-                Modifier
-                    .clip(CircleShape)
-                    .size(100.dp)
-                    .clickable {
-                        onCreateNewChat()
-                    }.align(Alignment.BottomCenter),
-        )
+        AnimatedVisibility(chats.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
+            SagaLoader(
+                brush = styleGradient,
+                modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .size(100.dp)
+                        .clickable {
+                            onCreateNewChat()
+                        },
+            )
+        }
     }
 }
 
@@ -126,7 +128,7 @@ fun ChatCard(sagaData: SagaData) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
-        val color = Color(sagaData.color.toColorInt())
+        val color = Color(sagaData.hexColor.toColorInt())
         val colorBrush =
             Brush.linearGradient(
                 colors =
@@ -186,14 +188,29 @@ fun ChatCard(sagaData: SagaData) {
 }
 
 @Composable
-private fun NewChatCard(modifier: Modifier = Modifier, animatedBrush : Brush, onButtonClick: () -> Unit = {}) {
-
+private fun NewChatCard(
+    modifier: Modifier = Modifier,
+    animatedBrush: Brush,
+    onButtonClick: () -> Unit = {},
+) {
     Box(modifier.padding(16.dp)) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =Modifier.align(Alignment.Center),
         ) {
+            SagaLoader(
+                brush = animatedBrush,
+                animationDuration = 1.seconds,
+                modifier =
+                    Modifier
+                        .clip(CircleShape)
+                        .padding(8.dp)
+                        .size(200.dp)
+                        .clickable {
+                            onButtonClick()
+                        },
+            )
+
             Text(
                 "A jornada começa aqui",
                 modifier = Modifier.fillMaxWidth(),
@@ -217,10 +234,11 @@ private fun NewChatCard(modifier: Modifier = Modifier, animatedBrush : Brush, on
                 },
                 modifier =
                     Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.elevatedButtonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = Color.White,
-                ),
+                colors =
+                    ButtonDefaults.elevatedButtonColors(
+                        containerColor = MaterialTheme.colorScheme.onBackground,
+                        contentColor = Color.White,
+                    ),
                 shape = RoundedCornerShape(15.dp),
             ) {
                 Text(
@@ -228,22 +246,23 @@ private fun NewChatCard(modifier: Modifier = Modifier, animatedBrush : Brush, on
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.padding(8.dp).fillMaxWidth(0.85f).gradientFill(
-                        animatedBrush,
-                    ),
+                    modifier =
+                        Modifier.padding(8.dp).fillMaxWidth(0.85f).gradientFill(
+                            animatedBrush,
+                        ),
                 )
 
                 Icon(
                     Icons.AutoMirrored.Default.ArrowForward,
                     contentDescription = stringResource(R.string.new_saga_title),
-                    modifier = Modifier.padding(8.dp).size(24.dp).gradientFill(
-                        animatedBrush,
-                    ),
+                    modifier =
+                        Modifier.padding(8.dp).size(24.dp).gradientFill(
+                            animatedBrush,
+                        ),
                 )
             }
         }
     }
-
 }
 
 @Preview(showBackground = true)
@@ -289,13 +308,13 @@ fun HomeViewPreview() {
                         SagaData(
                             title = "Chat ${it + 1}",
                             description = "The journey of our lifes",
-                            color = "#5992cb",
+                            hexColor = "#5992cb",
                             icon = "",
                             createdAt = Calendar.getInstance().timeInMillis,
                         )
                     }
                 ChatList(
-                    emptyList(),
+                    previewChats,
                 )
             }
         }

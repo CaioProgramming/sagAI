@@ -9,10 +9,11 @@
     <string name="saga_genre_hint">Escolha um tema para sua história</string>
     <string name="saga_description">Por onde comecamos?</string>
     <string name="saga_description_subtitle">Vamos definir o início dessa aventura, nao se preocupe com os detalhes, vamos melhorando juntos.</string>
-    <string name="saga_description_hint">Conte um pouco sua história...</string>
+    <string name="saga_description_hint">Descreva sua história...</string>
     <string name="saga_saving">Hora de construir esse mundo!</string>
     <string name="saga_saving_subtitle">Deixa comigo, vou construir seu mundo em alguns instantes,</string>
     <string name="saga_saving_hint" />
     <string name="new_saga_title">Nova saga</string>
     <string name="home_title">Sagas</string>
+    <string name="save_saga">Salvar</string>
 </resources>

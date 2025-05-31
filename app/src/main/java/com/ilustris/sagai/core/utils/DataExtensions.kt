@@ -9,18 +9,35 @@ fun toJsonSchema(clazz: Class<*>) =
 
 fun Class<*>.toSchema(): Schema =
     when {
-        this.name.contains("String") -> Schema.string()
-        this.name.contains("Int") -> Schema.integer()
-        this.name.contains("Boolean") -> Schema.boolean()
-        this.name.contains("Double") -> Schema.double()
-        this.name.contains("Float") -> Schema.float()
-        this.name.contains("Long") -> Schema.long()
-        else -> Schema.string()
+        this.name.contains(String::class.java.simpleName, true) -> {
+            Schema.string()
+        }
+        this.name.contains(Int::class.java.simpleName, true) -> {
+            Schema.integer()
+        }
+        this.name.contains(Boolean::class.java.simpleName, true) -> {
+            Schema.boolean()
+        }
+        this.name.contains(Double::class.java.simpleName, true) -> {
+            Schema.double()
+        }
+        this.name.contains(Float::class.java.simpleName, true) -> {
+            Schema.float()
+        }
+        this.name.contains(Long::class.java.simpleName, true) -> {
+            Schema.long()
+        }
+        this.name.contains("List", true) || this.name.contains("Array", true) -> {
+            Schema.array(Schema.string()) // Default to string array for lists/arrays
+        }
+        else -> {
+            Schema.string() // Default fallback
+        }
     }
 
 fun Class<*>.toSchemaMap(): Map<String, Schema> =
     declaredFields
-        .filter { it.name != "stable" }
+        .filter { it.name != "\$stable" }
         .associate {
             it.name to it.type.toSchema()
         }

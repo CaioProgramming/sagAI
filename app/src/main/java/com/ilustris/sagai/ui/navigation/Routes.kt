@@ -2,7 +2,10 @@ package com.ilustris.sagai.ui.navigation
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -40,7 +43,7 @@ enum class Routes(
     CHAT,
     PROFILE,
     SETTINGS,
-    NEW_SAGA(title = R.string.new_saga_title, view = {
+    NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = {
         NewSagaView(it)
     }),
 }
@@ -50,42 +53,48 @@ fun SagaBottomNavigation(
     navController: NavHostController,
     currentRoute: Routes?,
 ) {
-    NavigationBar {
-        Routes.entries.filter { it.icon != null }.forEach { route ->
-            val isSelected = currentRoute == route
-            val iconColor by animateColorAsState(
-                if (isSelected) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                },
-            )
-            NavigationBarItem(
-                selected = isSelected,
-                label = {
-                    Text(stringResource(route.title ?: R.string.app_name))
-                },
-                colors =
-                    NavigationBarItemDefaults.colors().copy(
-                        unselectedIconColor = Color.Transparent,
-                        selectedIconColor = Color.Transparent,
-                        selectedIndicatorColor = Color.Transparent,
-                        selectedTextColor = iconColor,
-                    ),
-                icon = {
-                    route.icon?.let {
-                        Image(
-                            painterResource(it),
-                            contentDescription = route.name,
-                            modifier = Modifier.size(24.dp),
-                            colorFilter = ColorFilter.tint(iconColor),
-                        )
-                    }
-                },
-                onClick = {
-                    navController.navigate(route.name)
-                },
-            )
+    AnimatedVisibility(
+        currentRoute?.showBottomNav == true,
+        enter = slideInVertically { -it },
+        exit = slideOutVertically(),
+    ) {
+        NavigationBar {
+            Routes.entries.filter { it.icon != null }.forEach { route ->
+                val isSelected = currentRoute == route
+                val iconColor by animateColorAsState(
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    },
+                )
+                NavigationBarItem(
+                    selected = isSelected,
+                    label = {
+                        Text(stringResource(route.title ?: R.string.app_name))
+                    },
+                    colors =
+                        NavigationBarItemDefaults.colors().copy(
+                            unselectedIconColor = Color.Transparent,
+                            selectedIconColor = Color.Transparent,
+                            selectedIndicatorColor = Color.Transparent,
+                            selectedTextColor = iconColor,
+                        ),
+                    icon = {
+                        route.icon?.let {
+                            Image(
+                                painterResource(it),
+                                contentDescription = route.name,
+                                modifier = Modifier.size(24.dp),
+                                colorFilter = ColorFilter.tint(iconColor),
+                            )
+                        }
+                    },
+                    onClick = {
+                        navController.navigate(route.name)
+                    },
+                )
+            }
         }
     }
 }
