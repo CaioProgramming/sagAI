@@ -26,7 +26,6 @@ class CustomRotatingMorphShape(
         // By default this stretches the path to the size of the container, if you don't want stretching, use the same size.width for both x and y.
         matrix.scale(size.width / 2f, size.height / 2f)
         matrix.translate(1f, 1f)
-        matrix.rotateZ(rotation)
 
         val path = morph.toPath(progress = percentage).asComposePath()
         path.transform(matrix)

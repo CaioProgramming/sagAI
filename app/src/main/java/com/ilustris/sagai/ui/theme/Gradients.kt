@@ -1,7 +1,6 @@
 package com.ilustris.sagai.ui.theme
 
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -74,7 +73,6 @@ fun Color.gradientFade() =
         ),
     )
 
-
 val holographicGradient =
     listOf(
         Color(0xfffcc5e4),
@@ -85,16 +83,28 @@ val holographicGradient =
         Color(0xff020f75),
     )
 
-fun genresGradient() : List<Color> {
-
-    val colors = Genre.entries.map {
-        listOf(
-            it.color,
-            it.color.lighter(0.3f),
-            it.color.lighter(0.5f)
-        )
-    }
+fun genresGradient(): List<Color> {
+    val colors =
+        Genre.entries.map {
+            it.gradient()
+        }
 
     return colors.flatten()
-
 }
+
+fun Genre.gradient(): List<Color> =
+    when (this) {
+        Genre.FANTASY ->
+            listOf(
+                Color(0xffff0844),
+                Color(0xffffb199),
+                Color(0xff7a011e),
+            )
+
+        Genre.SCI_FI ->
+            listOf(
+                Color(0xff5271c4),
+                Color(0xffb19fff),
+                Color(0xffeca1fe),
+            )
+    }

@@ -34,9 +34,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,8 +59,8 @@ import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaLoader
 import com.ilustris.sagai.ui.theme.genresGradient
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -105,15 +110,29 @@ private fun ChatList(
             }
         }
         AnimatedVisibility(chats.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
-            SagaLoader(
-                brush = styleGradient,
+            Image(
+                painterResource(R.drawable.ic_spark),
+                contentDescription = "New Saga",
                 modifier =
                     Modifier
-                        .clip(CircleShape)
-                        .size(100.dp)
+                        .size(50.dp)
+                        .gradientFill(styleGradient)
+                        .blur(4.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded),
+                alignment = Alignment.BottomCenter,
+            )
+            Image(
+                painterResource(R.drawable.ic_spark),
+                contentDescription = "New Saga",
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                modifier =
+                    Modifier
+                        .size(50.dp)
+                        .scale(.8f)
+                        .alpha(.8f)
                         .clickable {
                             onCreateNewChat()
                         },
+                alignment = Alignment.BottomCenter,
             )
         }
     }
@@ -141,9 +160,9 @@ fun ChatCard(sagaData: SagaData) {
             contentDescription = sagaData.title,
             modifier =
                 Modifier
-                    .size(50.dp)
-                    .border(1.dp, color.gradientFade(), CircleShape)
-                    .padding(4.dp)
+                    .size(80.dp)
+                    .border(2.dp, Brush.verticalGradient(sagaData.genre.gradient()), CircleShape)
+                    .padding(2.dp)
                     .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
                     .clip(CircleShape),
         )

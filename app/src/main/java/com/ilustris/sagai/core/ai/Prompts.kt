@@ -31,12 +31,12 @@ fun Genre.iconPrompt(description: String) =
     when (this) {
         FANTASY ->
             """
-        Type: Closeup portrait  
+        Type: Ultra close-up portrait of a character's face and upper torso, dynamic composition.
         Subject: Warrior.
-        Appearance: Wearing light dark armor with red details.  
-        Action: With intimidating pose, standing the sword at the ground, with red inscriptions at the blade.  
+        Appearance: Wearing armor with red details.  
+        Action: Intimidating pose, Looking in 45 degree angle. With a brave and intimidating expression. The pose of the upper body should convey absolute confidence and readiness 
         Art Style: In the art style of Jim Lee, known for dynamic action, detailed characters, and a modern comic book aesthetic.  
-        Background: Pink sunset landscape, with moon barely visible and light and reflections at characters face. 
+        Background: Medieval fantasy landscape with orange and red color pallete. 
         Story context: "$description"
         """
         SCI_FI ->

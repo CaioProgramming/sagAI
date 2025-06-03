@@ -490,21 +490,18 @@ private fun SagaGenerator(
         val infiniteAnimation = rememberInfiniteTransition()
         val scaleAnimation by
             infiniteAnimation.animateFloat(
-                initialValue = 1f,
-                targetValue = 1.5f,
+                initialValue = .8f,
+                targetValue = 1.1f,
                 animationSpec =
                     infiniteRepeatable(
-                        animation = tween(duration.inWholeMilliseconds.toInt(), easing = EaseInElastic),
+                        animation = tween(duration.inWholeMilliseconds.toInt(), easing = EaseIn),
                         repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
                     ),
             )
-        AsyncImage(
-            "/data/user/0/com.ilustris.sagai/cache/deep.in.png",
-            contentDescription = sagaData?.title,
-            contentScale = ContentScale.Crop,
+        AnimatedVisibility(
+            (state as? CreateSagaState.Success)?.saga?.icon != null,
             modifier =
                 Modifier
-                    .padding(32.dp)
                     .constrainAs(sagaIcon) {
                         top.linkTo(animation.top)
                         start.linkTo(animation.start)
@@ -512,14 +509,24 @@ private fun SagaGenerator(
                         bottom.linkTo(animation.bottom)
                         height = Dimension.fillToConstraints
                         width = Dimension.fillToConstraints
-                    }.scale(scaleAnimation)
-                    .border(2.dp, gradient, CircleShape)
-                    .background(gradient, CircleShape)
-                    .clip(CircleShape),
-        )
+                    },
+        ) {
+            AsyncImage(
+                (state as? CreateSagaState.Success)?.saga?.icon,
+                contentDescription = sagaData?.title,
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .scale(scaleAnimation)
+                        .border(2.dp, gradient, CircleShape)
+                        .background(gradient, CircleShape)
+                        .clip(CircleShape),
+            )
+        }
 
         SagaLoader(
-            animationDuration = duration,
+            animationDuration = 2.seconds,
             modifier =
                 Modifier
                     .constrainAs(animation) {
@@ -640,7 +647,7 @@ private fun SagaGenerator(
 @Preview
 @Composable
 fun NewSagaViewPreview() {
-    SagAIScaffold(title = "nova saga") {
+    SagAIScaffold(title = null) {
         var form by remember {
             mutableStateOf(
                 SagaForm(
