@@ -34,8 +34,6 @@ import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.star
-import com.ilustris.sagai.ui.theme.CustomRotatingMorphShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -163,7 +161,7 @@ fun DistortingBubble(
     val rotateAnimation =
         infiniteTransition.animateFloat(
             initialValue = 0f,
-            targetValue = 45f,
+            targetValue = 180f,
             animationSpec =
                 infiniteRepeatable(
                     tween(duration, easing = EaseIn),

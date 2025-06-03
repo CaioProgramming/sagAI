@@ -8,4 +8,6 @@ interface NewSagaUseCase {
     suspend fun saveSaga(sagaData: SagaData): RequestResult<Exception, Long>
 
     suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, SagaData>
+
+    suspend fun generateSagaIcon(sagaForm: SagaForm): RequestResult<Exception, ByteArray>
 }

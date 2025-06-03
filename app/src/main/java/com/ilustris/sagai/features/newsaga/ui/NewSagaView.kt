@@ -6,8 +6,13 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -46,7 +51,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,9 +62,10 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +80,7 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -88,6 +94,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.holographicGradient
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -111,20 +118,6 @@ fun NewSagaView(
     }, saveSaga = {
         createSagaViewModel.saveSaga(it)
     })
-
-    LaunchedEffect(state) {
-        when (state) {
-            is CreateSagaState.Success -> {
-                navHostController.popBackStack()
-            }
-
-            is CreateSagaState.Error -> {
-                // Handle error state, e.g., show a snackbar or dialog
-            }
-
-            else -> {}
-        }
-    }
 }
 
 @Composable
@@ -153,6 +146,7 @@ fun NewSagaForm(
     ConstraintLayout(modifier = Modifier.fillMaxSize()) {
         val (sagaContent, descriptionInput) = createRefs()
 
+        val bottomAlpha by animateFloatAsState(if (state != CreateSagaState.Loading) 1f else 0f)
         Column(
             modifier =
                 Modifier
@@ -162,7 +156,7 @@ fun NewSagaForm(
                         bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
-                    },
+                    }.alpha(bottomAlpha),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AnimatedVisibility(genreSelectorVisible.value) {
@@ -185,6 +179,16 @@ fun NewSagaForm(
             )
         }
 
+        val alphaAnimation by animateDpAsState(
+            if (state != CreateSagaState.Loading) 0.dp else 50.dp,
+            animationSpec =
+                tween(
+                    durationMillis = 1500,
+                    easing = EaseIn,
+                ),
+            label = "SagaContentAlpha",
+        )
+
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier =
@@ -203,7 +207,10 @@ fun NewSagaForm(
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Black,
-                modifier = Modifier.fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .blur(alphaAnimation, edgeTreatment = BlurredEdgeTreatment.Unbounded),
             )
 
             TextField(
@@ -254,13 +261,22 @@ fun NewSagaForm(
                     ),
                 modifier =
                     Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .blur(alphaAnimation, edgeTreatment = BlurredEdgeTreatment.Unbounded),
             )
+            val animationDuration =
+                if (state == CreateSagaState.Loading) {
+                    1.seconds
+                } else {
+                    10.seconds
+                }
 
             SagaGenerator(
                 gradient,
                 formData,
                 (state as? CreateSagaState.GeneratedSaga)?.saga,
+                state,
+                duration = animationDuration,
                 onSaveSaga = { saveSaga(it) },
                 onResetSaga = { resetSaga() },
                 Modifier
@@ -459,17 +475,51 @@ private fun SagaGenerator(
     gradient: Brush,
     form: SagaForm,
     sagaData: SagaData?,
+    state: CreateSagaState,
+    duration: Duration = 5.seconds,
     onSaveSaga: (SagaData) -> Unit = {},
     onResetSaga: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     ConstraintLayout(modifier = modifier) {
-        val (animation, overview) = createRefs()
+        val (animation, overview, sagaIcon) = createRefs()
         val blur by animateDpAsState(
             if (sagaData != null) 50.dp else 0.dp,
         )
 
+        val infiniteAnimation = rememberInfiniteTransition()
+        val scaleAnimation by
+            infiniteAnimation.animateFloat(
+                initialValue = 1f,
+                targetValue = 1.5f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(duration.inWholeMilliseconds.toInt(), easing = EaseInElastic),
+                        repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+                    ),
+            )
+        AsyncImage(
+            "/data/user/0/com.ilustris.sagai/cache/deep.in.png",
+            contentDescription = sagaData?.title,
+            contentScale = ContentScale.Crop,
+            modifier =
+                Modifier
+                    .padding(32.dp)
+                    .constrainAs(sagaIcon) {
+                        top.linkTo(animation.top)
+                        start.linkTo(animation.start)
+                        end.linkTo(animation.end)
+                        bottom.linkTo(animation.bottom)
+                        height = Dimension.fillToConstraints
+                        width = Dimension.fillToConstraints
+                    }.scale(scaleAnimation)
+                    .border(2.dp, gradient, CircleShape)
+                    .background(gradient, CircleShape)
+                    .clip(CircleShape),
+        )
+
         SagaLoader(
+            animationDuration = duration,
             modifier =
                 Modifier
                     .constrainAs(animation) {
@@ -620,10 +670,7 @@ fun NewSagaViewPreview() {
                         SagaData(
                             title = form.title,
                             description = it,
-                            hexColor =
-                                form.genre.color
-                                    .toArgb()
-                                    .toString(),
+                            genre = Genre.SCI_FI,
                             icon = form.genre.icon.toString(),
                             createdAt = System.currentTimeMillis(),
                         ),

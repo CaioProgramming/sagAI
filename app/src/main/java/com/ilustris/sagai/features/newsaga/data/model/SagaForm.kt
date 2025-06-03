@@ -16,6 +16,16 @@ enum class Genre(
     val color: Color,
     val iconColor: Color,
 ) {
-    FANTASY("Fantasia", R.drawable.red_dragon, MaterialColor.Red800, Color.White),
-    SCI_FI("Ficção Científica", R.drawable.cyberpunk_girl, MaterialColor.DeepPurple400, Color.White),
+    FANTASY(
+        "Fantasia",
+        R.drawable.red_dragon,
+        MaterialColor.Red800,
+        Color.White,
+    ),
+    SCI_FI(
+        "Ficção Científica",
+        R.drawable.cyberpunk_girl,
+        MaterialColor.DeepPurple400,
+        Color.White,
+    ),
 }

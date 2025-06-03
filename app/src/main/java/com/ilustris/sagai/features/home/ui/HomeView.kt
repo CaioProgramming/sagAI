@@ -3,7 +3,6 @@
 package com.ilustris.sagai.features.home.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,17 +43,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaLoader
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -128,42 +129,24 @@ fun ChatCard(sagaData: SagaData) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
-        val color = Color(sagaData.hexColor.toColorInt())
-        val colorBrush =
-            Brush.linearGradient(
-                colors =
-                    listOf(
-                        color,
-                        color.copy(alpha = .5f),
-                        color.copy(alpha = .2f),
-                    ),
-            )
+        val color = sagaData.genre.color
         val date =
             Calendar.getInstance().apply {
                 timeInMillis = sagaData.createdAt
             }
         val time = "${date.get(Calendar.HOUR_OF_DAY)}:${date.get(Calendar.MINUTE)}"
-        Box(
+
+        AsyncImage(
+            sagaData.icon,
+            contentDescription = sagaData.title,
             modifier =
                 Modifier
-                    .size(40.dp)
-                    .background(color.copy(alpha = .3f), RoundedCornerShape(50))
-                    .border(
-                        BorderStroke(1.dp, brush = colorBrush),
-                        RoundedCornerShape(50),
-                    ),
-            contentAlignment = Alignment.Center,
-        ) {
-            // Placeholder for avatar image
-            Text(
-                text = sagaData.title.first().toString(),
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        brush = colorBrush,
-                    ),
-                modifier = Modifier.align(Alignment.Center),
-            )
-        }
+                    .size(50.dp)
+                    .border(1.dp, color.gradientFade(), CircleShape)
+                    .padding(4.dp)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
+                    .clip(CircleShape),
+        )
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -308,7 +291,7 @@ fun HomeViewPreview() {
                         SagaData(
                             title = "Chat ${it + 1}",
                             description = "The journey of our lifes",
-                            hexColor = "#5992cb",
+                            genre = Genre.FANTASY,
                             icon = "",
                             createdAt = Calendar.getInstance().timeInMillis,
                         )
