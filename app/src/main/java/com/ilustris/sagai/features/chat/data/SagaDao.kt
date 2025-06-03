@@ -14,7 +14,7 @@ interface SagaDao {
     fun getAllSagas(): Flow<List<SagaData>>
 
     @Query("SELECT * FROM SagaData WHERE id = :sagaId")
-    fun getSaga(sagaId: String): Flow<SagaData>
+    fun getSaga(sagaId: Int): SagaData?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveSagaData(sagaData: SagaData): Long

@@ -7,7 +7,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -51,6 +50,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -82,11 +82,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.addQueryParameter
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaState
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
+import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaLoader
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -118,6 +120,21 @@ fun NewSagaView(
     }, saveSaga = {
         createSagaViewModel.saveSaga(it)
     })
+
+    LaunchedEffect(state) {
+        if (state is CreateSagaState.Success) {
+            navHostController.navigate(
+                Routes.CHAT.name.addQueryParameter(
+                    "sagaId",
+                    (state as CreateSagaState.Success).saga.id.toString(),
+                ),
+            ) {
+                popUpTo("home") {
+                    inclusive = false
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -526,7 +543,7 @@ private fun SagaGenerator(
         }
 
         SagaLoader(
-            animationDuration = 2.seconds,
+            animationDuration = duration,
             modifier =
                 Modifier
                     .constrainAs(animation) {

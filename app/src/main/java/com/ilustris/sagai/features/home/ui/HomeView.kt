@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,14 +35,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,11 +49,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.addQueryParameter
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaLoader
+import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -65,6 +63,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
+@Suppress("ktlint:standard:function-naming")
 @Composable
 fun HomeView(
     navController: NavHostController,
@@ -72,15 +71,27 @@ fun HomeView(
 ) {
     val chats by viewModel.chats.collectAsStateWithLifecycle(emptyList())
 
-    ChatList(chats) {
-        navController.navigate(Routes.NEW_SAGA.name)
-    }
+    ChatList(
+        sagas = chats,
+        onCreateNewChat = {
+            navController.navigate(Routes.NEW_SAGA.name)
+        },
+        onSelectSaga = {
+            navController.navigate(
+                Routes.CHAT.name.addQueryParameter(
+                    "sagaId",
+                    it.id.toString(),
+                ),
+            )
+        },
+    )
 }
 
 @Composable
 private fun ChatList(
-    chats: List<SagaData>,
+    sagas: List<SagaData>,
     onCreateNewChat: () -> Unit = {},
+    onSelectSaga: (SagaData) -> Unit = {},
 ) {
     Box {
         val styleGradient =
@@ -92,7 +103,7 @@ private fun ChatList(
                     .padding(16.dp)
                     .fillMaxSize(),
         ) {
-            if (chats.isEmpty()) {
+            if (sagas.isEmpty()) {
                 item {
                     NewChatCard(
                         animatedBrush = styleGradient,
@@ -105,41 +116,30 @@ private fun ChatList(
                 }
             }
 
-            items(chats.size) { index ->
-                ChatCard(chats[index])
+            items(sagas) {
+                ChatCard(it) {
+                    onSelectSaga(it)
+                }
             }
         }
-        AnimatedVisibility(chats.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
-            Image(
-                painterResource(R.drawable.ic_spark),
-                contentDescription = "New Saga",
+        AnimatedVisibility(sagas.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
+            SparkIcon(
+                description = "Criar nova saga",
+                brush = styleGradient,
                 modifier =
-                    Modifier
-                        .size(50.dp)
-                        .gradientFill(styleGradient)
-                        .blur(4.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded),
-                alignment = Alignment.BottomCenter,
-            )
-            Image(
-                painterResource(R.drawable.ic_spark),
-                contentDescription = "New Saga",
-                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
-                modifier =
-                    Modifier
-                        .size(50.dp)
-                        .scale(.8f)
-                        .alpha(.8f)
-                        .clickable {
-                            onCreateNewChat()
-                        },
-                alignment = Alignment.BottomCenter,
+                    Modifier.size(50.dp).clickable {
+                        onCreateNewChat
+                    },
             )
         }
     }
 }
 
 @Composable
-fun ChatCard(sagaData: SagaData) {
+fun ChatCard(
+    sagaData: SagaData,
+    onClick: () -> Unit = {},
+) {
     Row(
         modifier =
             Modifier

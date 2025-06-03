@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -48,6 +49,32 @@ fun gradientAnimation(
         tileMode = TileMode.Clamp,
     )
 }
+
+@Composable
+fun fadeGradientBottom(tintColor: Color = MaterialTheme.colorScheme.background) =
+    Brush.verticalGradient(
+        0f to Color.Transparent,
+        0.5f to tintColor.copy(alpha = .5f),
+        1f to tintColor,
+    )
+
+@Composable
+fun fadeGradientTop(tintColor: Color = MaterialTheme.colorScheme.background) =
+    Brush.verticalGradient(
+        0f to tintColor,
+        0.5f to tintColor.copy(alpha = .5f),
+        1f to Color.Transparent,
+    )
+
+@Composable
+fun fadedGradientTopAndBottom(
+    tintColor: Color = MaterialTheme.colorScheme.background,
+): Brush =
+    Brush.verticalGradient(
+        0f to tintColor,
+        0.5f to Color.Transparent,
+        1f to tintColor,
+    )
 
 @Composable
 fun Modifier.gradientFill(brush: Brush) =
