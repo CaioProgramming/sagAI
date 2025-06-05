@@ -1,0 +1,16 @@
+package com.ilustris.sagai.features.chat.repository
+
+import com.ilustris.sagai.features.chat.data.model.Message
+import kotlinx.coroutines.flow.Flow
+
+interface MessageRepository {
+    suspend fun getMessages(sagaId: Int): Flow<List<Message>>
+
+    suspend fun saveMessage(message: Message): Long
+
+    suspend fun deleteMessage(messageId: Long)
+
+    suspend fun deleteMessages(sagaId: String)
+
+    suspend fun updateMessage(message: Message)
+}

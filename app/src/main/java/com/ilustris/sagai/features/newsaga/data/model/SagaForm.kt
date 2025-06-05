@@ -25,7 +25,7 @@ enum class Genre(
     SCI_FI(
         "Ficção Científica",
         R.drawable.cyberpunk_girl,
-        MaterialColor.DeepPurple400,
+        MaterialColor.DeepPurpleA200,
         Color.White,
     ),
 }

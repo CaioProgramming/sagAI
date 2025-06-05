@@ -11,4 +11,6 @@ class SagaHistoryUseCaseImpl
         private val sagaRepository: SagaRepository,
     ) : SagaHistoryUseCase {
         override fun getSagas(): Flow<List<SagaData>> = sagaRepository.getChats()
+
+        override suspend fun getSagaById(sagaId: Int): Flow<SagaData?> = sagaRepository.getSagaById(sagaId)
     }

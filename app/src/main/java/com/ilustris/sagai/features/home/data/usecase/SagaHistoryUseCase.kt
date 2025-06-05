@@ -5,4 +5,6 @@ import kotlinx.coroutines.flow.Flow
 
 interface SagaHistoryUseCase {
     fun getSagas(): Flow<List<SagaData>>
+
+    suspend fun getSagaById(sagaId: Int): Flow<SagaData?>
 }

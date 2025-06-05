@@ -6,9 +6,23 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
+import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCaseImpl
+import com.ilustris.sagai.features.chat.data.usecase.MessageUseCase
+import com.ilustris.sagai.features.chat.data.usecase.MessageUseCaseImpl
+import com.ilustris.sagai.features.chat.repository.MessageRepository
+import com.ilustris.sagai.features.chat.repository.MessageRepositoryImpl
+import com.ilustris.sagai.features.chat.repository.SagaRepository
+import com.ilustris.sagai.features.chat.repository.SagaRepositoryImpl
+import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -33,4 +47,30 @@ object AppModule {
     fun bindsFileHelper(
         @ApplicationContext context: Context,
     ) = FileHelper(context)
+}
+
+@InstallIn(ViewModelComponent::class)
+@Module
+abstract class UseCaseModule {
+    @Binds
+    abstract fun providesSagaHistoryUseCase(sagaHistoryUseCaseImpl: SagaHistoryUseCaseImpl): SagaHistoryUseCase
+
+    @Binds
+    abstract fun providesMessageUseCase(messageUseCaseImpl: MessageUseCaseImpl): MessageUseCase
+
+    @Binds
+    abstract fun providesChapterUseCase(chapterUseCaseImpl: ChapterUseCaseImpl): ChapterUseCase
+}
+
+@InstallIn(ViewModelComponent::class)
+@Module
+abstract class RepositoryModule {
+    @Binds
+    abstract fun bindsSagaRepository(sagaRepositoryImpl: SagaRepositoryImpl): SagaRepository
+
+    @Binds
+    abstract fun bindsMessageRepository(messageRepositoryImpl: MessageRepositoryImpl): MessageRepository
+
+    @Binds
+    abstract fun bindsChapterRepository(chapterRepositoryImpl: ChapterRepositoryImpl): ChapterRepository
 }

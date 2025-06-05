@@ -7,8 +7,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.toPath
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 class CustomRotatingMorphShape(
     private val morph: Morph,
@@ -54,4 +56,10 @@ class MorphPolygonShape(
         path.transform(matrix)
         return Outline.Generic(path)
     }
+}
+
+fun Genre.cornerSize() = when(this) {
+    Genre.FANTASY -> 15.dp
+    Genre.SCI_FI -> 8.dp
+    else -> 0.dp
 }

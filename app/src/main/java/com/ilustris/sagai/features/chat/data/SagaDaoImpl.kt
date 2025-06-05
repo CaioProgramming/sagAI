@@ -16,7 +16,7 @@ class SagaDaoImpl
 
         override fun getAllSagas(): Flow<List<SagaData>> = sagaDao.getAllSagas()
 
-        override fun getSaga(sagaId: String): Flow<SagaData> = sagaDao.getSaga(sagaId)
+        override fun getSaga(sagaId: Int) = sagaDao.getSaga(sagaId)
 
         override suspend fun saveSagaData(sagaData: SagaData): Long = sagaDao.saveSagaData(sagaData)
 

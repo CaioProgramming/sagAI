@@ -18,7 +18,7 @@ class ChatGenClient {
     fun startChat(messages: List<Message>) {
         val mappedMessages =
             messages.map {
-                content(role = if (it.senderId == SenderType.USER.name) "user" else "model") {
+                content(role = if (it.senderType == SenderType.USER) "user" else "model") {
                     text(it.text)
                 }
             }

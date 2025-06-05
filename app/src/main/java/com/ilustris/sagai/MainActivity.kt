@@ -9,6 +9,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,6 +44,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.SagaBottomNavigation
 import com.ilustris.sagai.ui.navigation.SagaNavGraph
+import com.ilustris.sagai.ui.navigation.findRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -57,15 +59,14 @@ class MainActivity : ComponentActivity() {
                 val currentEntry by navController.currentBackStackEntryFlow.collectAsState(initial = navController.currentBackStackEntry)
                 val route =
                     remember(currentEntry) {
-                        currentEntry?.destination?.route?.let { Routes.valueOf(it) }
-                            ?: Routes.HOME
+                        currentEntry?.destination?.route?.findRoute()
                     }
 
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                     TopAppBar(
                         title = {
                             Box(modifier = Modifier.fillMaxWidth() ) {
-                                route.title?.let {
+                                route?.title?.let {
                                     Text(
                                         text = stringResource(it),
                                         style = MaterialTheme.typography.titleSmall,
@@ -107,7 +108,7 @@ class MainActivity : ComponentActivity() {
                     SagaBottomNavigation(navController, route)
                 }) { pd ->
                     SharedTransitionLayout {
-                        Box(modifier = Modifier.padding(pd).fillMaxSize()) {
+                        Box(modifier = Modifier.padding(pd).fillMaxSize().animateContentSize()) {
                             SagaNavGraph(navController)
                         }
                     }
