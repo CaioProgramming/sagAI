@@ -6,6 +6,10 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
+import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCaseImpl
 import com.ilustris.sagai.features.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.chat.data.usecase.MessageUseCaseImpl
 import com.ilustris.sagai.features.chat.repository.MessageRepository
@@ -53,6 +57,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesMessageUseCase(messageUseCaseImpl: MessageUseCaseImpl): MessageUseCase
+
+    @Binds
+    abstract fun providesChapterUseCase(chapterUseCaseImpl: ChapterUseCaseImpl): ChapterUseCase
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -63,4 +70,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsMessageRepository(messageRepositoryImpl: MessageRepositoryImpl): MessageRepository
+
+    @Binds
+    abstract fun bindsChapterRepository(chapterRepositoryImpl: ChapterRepositoryImpl): ChapterRepository
 }

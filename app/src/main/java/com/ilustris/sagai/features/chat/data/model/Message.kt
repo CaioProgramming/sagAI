@@ -10,11 +10,13 @@ data class Message(
     val text: String,
     val timestamp: Long,
     val senderType: SenderType,
-    val sagaId: Int
+    val sagaId: Int,
+    val chapterId: Int? = null
 )
 
 enum class SenderType {
     USER,
     BOT,
-    NARRATOR
+    NARRATOR,
+    NEW_CHAPTER,
 }

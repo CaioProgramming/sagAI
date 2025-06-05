@@ -131,7 +131,7 @@ fun NewSagaView(
                     it to (state as CreateSagaState.Success).saga.id.toString()
                 },
             )
-            navHostController.popBackStack()
+            createSagaViewModel.resetSaga()
         }
     }
 }

@@ -1,0 +1,75 @@
+package com.ilustris.sagai.features.chapter.data.usecase
+
+import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.chapterPrompt
+import com.ilustris.sagai.core.ai.coverPrompt
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
+import com.ilustris.sagai.features.chat.data.model.Message
+import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import javax.inject.Inject
+
+class ChapterUseCaseImpl
+    @Inject
+    constructor(
+        private val chapterRepository: ChapterRepository,
+        private val textGenClient: TextGenClient,
+        private val imagenClient: ImagenClient,
+    ) : ChapterUseCase {
+        override fun getChaptersBySagaId(sagaId: Int) = chapterRepository.getChaptersBySagaId(sagaId)
+
+        override suspend fun getChapterBySagaAndMessageId(
+            sagaId: Int,
+            messageId: Int,
+        ) = chapterRepository.getChapterBySagaAndMessageId(sagaId, messageId)
+
+        override suspend fun saveChapter(chapter: Chapter): Long = chapterRepository.saveChapter(chapter)
+
+        override suspend fun deleteChapter(chapter: Chapter) = chapterRepository.deleteChapter(chapter)
+
+        override suspend fun updateChapter(chapter: Chapter) = chapterRepository.updateChapter(chapter)
+
+        override suspend fun deleteChapterById(chapterId: Int) = chapterRepository.deleteChapterById(chapterId)
+
+        override suspend fun deleteAllChapters() = chapterRepository.deleteAllChapters()
+
+        override suspend fun generateChapter(
+            saga: SagaData,
+            messages: List<Message>,
+        ) = try {
+            val genText =
+                textGenClient.generate<Chapter>(
+                    generateChapterPrompt(saga, messages),
+                    true,
+                )
+            RequestResult.Success(genText!!)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            RequestResult.Error(e)
+        }
+
+        @OptIn(PublicPreviewAPI::class)
+        override suspend fun generateChapterCover(
+            chapter: Chapter,
+            genre: Genre,
+        ): RequestResult<Exception, ByteArray> =
+            try {
+                val genCover = imagenClient.generateImage(chapter.coverPrompt(genre))
+                RequestResult.Success(genCover!!.data)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                RequestResult.Error(e)
+            }
+
+        private fun generateChapterPrompt(
+            saga: SagaData,
+            messages: List<Message>,
+        ) = chapterPrompt(
+            sagaData = saga,
+            messages = messages,
+        )
+    }

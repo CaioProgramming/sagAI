@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.chat.data.model.Message
+import com.ilustris.sagai.features.chat.data.model.MessageContent
 import com.ilustris.sagai.features.chat.data.model.SenderType
 import com.ilustris.sagai.features.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.chat.ui.presentation.ChatState
@@ -92,7 +93,7 @@ fun ChatView(
 fun ChatContent(
     state: ChatState = ChatState.Empty,
     saga: SagaData? = null,
-    messagesList: List<Message>? = null,
+    messagesList: List<MessageContent>? = null,
     onSendMessage: (String) -> Unit = {},
 ) {
     var input by remember {
@@ -159,7 +160,7 @@ fun ChatContent(
         TextField(
             value = input,
             onValueChange = {
-                if (it.length <= 100) {
+                if (it.length <= 200) {
                     input = it
                 }
             },
@@ -261,7 +262,7 @@ fun SagaHeader(saga: SagaData) {
 @Composable
 fun ChatList(
     saga: SagaData?,
-    messages: List<Message>?,
+    messages: List<MessageContent>?,
     modifier: Modifier,
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
@@ -275,7 +276,7 @@ fun ChatList(
     LazyColumn(modifier, state = listState, reverseLayout = true) {
         saga?.let {
             messages?.let {
-                items(messages, key = { it.id }) { message ->
+                items(messages, key = { it.message.id }) { message ->
                     ChatBubble(
                         message,
                         saga.genre,
@@ -382,7 +383,11 @@ fun ChatViewPreview() {
         ChatContent(
             successState,
             saga = saga,
-            messagesList = messages,
+            messagesList = messages.map {
+                MessageContent(
+                    message = it
+                )
+            },
         )
     }
 }
