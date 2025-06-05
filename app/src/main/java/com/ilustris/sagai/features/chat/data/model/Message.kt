@@ -16,4 +16,5 @@ data class Message(
 enum class SenderType {
     USER,
     BOT,
+    NARRATOR
 }

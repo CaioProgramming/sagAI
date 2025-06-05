@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface SagaRepository {
     fun getChats(): Flow<List<SagaData>>
 
-    fun getSagaById(id: Int): SagaData?
+    fun getSagaById(id: Int): Flow<SagaData?>
 
     suspend fun saveChat(sagaData: SagaData): Long
 

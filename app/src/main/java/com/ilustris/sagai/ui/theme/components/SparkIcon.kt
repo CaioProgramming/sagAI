@@ -57,8 +57,9 @@ fun SparkIcon(
                 Modifier
                     .fillMaxSize()
                     .gradientFill(brush)
-                    .blur(5.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded),
-            alignment = Alignment.BottomCenter,
+                    .blur(10.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+            ,
+            alignment = Alignment.Center,
         )
         Image(
             painterResource(R.drawable.ic_spark),
@@ -67,9 +68,9 @@ fun SparkIcon(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .scale(.8f)
-                    .alpha(.8f),
-            alignment = Alignment.BottomCenter,
+                    .alpha(.5f)
+                    .scale(.9f),
+            alignment = Alignment.Center,
         )
     }
 }

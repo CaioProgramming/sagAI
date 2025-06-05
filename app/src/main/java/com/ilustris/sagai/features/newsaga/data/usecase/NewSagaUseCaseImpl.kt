@@ -2,14 +2,11 @@ package com.ilustris.sagai.features.newsaga.data.usecase
 
 import androidx.compose.ui.text.capitalize
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.google.firebase.ai.type.generationConfig
-import com.google.gson.Gson
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.iconPrompt
 import com.ilustris.sagai.core.ai.sagaPrompt
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.utils.toJsonSchema
 import com.ilustris.sagai.features.chat.repository.SagaRepository
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -40,23 +37,13 @@ class NewSagaUseCaseImpl
 
         override suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, SagaData> =
             try {
-                val schema = toJsonSchema(SagaData::class.java)
                 val saga =
-                    textGenClient.generate(
+                    textGenClient.generate<SagaData>(
                         generateSagaPrompt(sagaForm),
                         true,
-                        generationConfig =
-                            generationConfig {
-                                responseMimeType = "application/json"
-                                responseSchema = schema
-                            },
                     )
-                val content = saga!!.text
-
-                val contentData = Gson().fromJson<SagaData>(content, SagaData::class.java)
-
                 RequestResult.Success(
-                    contentData,
+                    saga!!,
                 )
             } catch (e: Exception) {
                 e.printStackTrace()

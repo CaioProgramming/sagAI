@@ -1,59 +1,75 @@
 package com.ilustris.sagai.ui.theme
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
 @Composable
-fun WaveAnimation(modifier: Modifier = Modifier, waveColor: Color, duration: Duration = 1.seconds) {
-    val infiniteTransition = rememberInfiniteTransition()
-    val waveOffset = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        )
+fun TypewriterText(
+    text: String,
+    style: TextStyle = TextStyle.Default,
+    modifier: Modifier = Modifier,
+    duration: Duration = 3.seconds,
+    easing: Easing = EaseIn,
+    isAnimated: Boolean = true,
+    onAnimationFinished: () -> Unit = {  },
+    onTextUpdate : (String) -> Unit = {  }
+) {
+    var textTarget by remember { mutableIntStateOf(0) }
+    val charIndex by animateIntAsState(
+        targetValue = textTarget,
+        animationSpec = tween(duration.toInt(DurationUnit.MILLISECONDS),
+            easing = easing),
+        finishedListener = { onAnimationFinished() }
     )
 
-    Canvas(modifier = modifier) {
-        drawWave(waveOffset.value, waveColor)
+
+    LaunchedEffect(Unit) {
+        if (textTarget == 0 && isAnimated) {
+            textTarget = text.length
+        } else {
+            onTextUpdate(text)
+        }
     }
+
+    LaunchedEffect(charIndex) {
+        onTextUpdate(text.substring(0, charIndex))
+    }
+
+    Text(
+        text = if (isAnimated) text.substring(0, charIndex) else text,
+        modifier = modifier,
+        style = style,
+    )
 }
 
-private fun DrawScope.drawWave(offset: Float, color: Color = Color.Red) {
-    val path = Path()
-    val waveHeight = 50.dp.toPx()
-    val waveLength = size.width / 2
-
-    path.moveTo(0f, size.height / 2)
-    for (x in 0..size.width.toInt() step 10) {
-        val y = (waveHeight * kotlin.math.sin((x + offset) * Math.PI / waveLength)).toFloat()
-        path.lineTo(x.toFloat(), size.height / 2 + y)
-    }
-    path.lineTo(size.width, size.height)
-    path.lineTo(0f, size.height)
-    path.close()
-
-    drawPath(path, color = color)
-}
-
-@Preview
+@Preview(showBackground = true)
 @Composable
-fun WavePreview() {
-    WaveAnimation(modifier = Modifier.size(300.dp), MaterialTheme.colorScheme.primary)
+fun TypewriterTextPreview() {
+    val text = "Hello Typewritter!"
+    TypewriterText(
+        text = text,
+        duration = 5.seconds,
+        easing = EaseInBounce,
+        modifier = Modifier.fillMaxWidth().padding(16.dp),
+    )
+
 }

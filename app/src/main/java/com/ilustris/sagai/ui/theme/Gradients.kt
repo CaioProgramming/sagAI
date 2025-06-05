@@ -1,11 +1,13 @@
 package com.ilustris.sagai.ui.theme
 
+import ai.atick.material.MaterialColor
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,6 +18,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -23,7 +26,7 @@ import kotlin.time.DurationUnit
 
 @Composable
 fun gradientAnimation(
-    colors: List<Color>,
+    colors: List<Color> = themeBrushColors(),
     duration: Duration = 3.seconds,
     targetValue: Float = 100f,
 ): Brush {
@@ -67,9 +70,7 @@ fun fadeGradientTop(tintColor: Color = MaterialTheme.colorScheme.background) =
     )
 
 @Composable
-fun fadedGradientTopAndBottom(
-    tintColor: Color = MaterialTheme.colorScheme.background,
-): Brush =
+fun fadedGradientTopAndBottom(tintColor: Color = MaterialTheme.colorScheme.background): Brush =
     Brush.verticalGradient(
         0f to tintColor,
         0.5f to Color.Transparent,
@@ -110,6 +111,7 @@ val holographicGradient =
         Color(0xff020f75),
     )
 
+@Composable
 fun genresGradient(): List<Color> {
     val colors =
         Genre.entries.map {
@@ -119,19 +121,46 @@ fun genresGradient(): List<Color> {
     return colors.flatten()
 }
 
-fun Genre.gradient(): List<Color> =
-    when (this) {
-        Genre.FANTASY ->
-            listOf(
-                Color(0xffff0844),
-                Color(0xffffb199),
-                Color(0xff7a011e),
-            )
-
-        Genre.SCI_FI ->
-            listOf(
-                Color(0xff5271c4),
-                Color(0xffb19fff),
-                Color(0xffeca1fe),
-            )
+@Composable
+fun Genre.gradient(): List<Color> {
+    val isDarkTheme = isSystemInDarkTheme()
+   return List(4) {
+        val indexColorFactor = it / 10f
+        if (isDarkTheme.not()) {
+            this.color.lighter(indexColorFactor)
+        } else {
+            this.color.darker(indexColorFactor)
+        }
     }
+}
+
+@Composable
+fun Genre.userBubbleGradient(): Brush {
+    val colors = this.gradient()
+    return Brush.linearGradient(
+        colors = colors,
+        start = Offset.Zero,
+        end = Offset(100f, 100f),
+        tileMode = TileMode.Clamp,
+    )
+}
+
+@Composable
+fun Genre.botBubbleGradient(): Brush {
+    val color =
+        when (this) {
+            Genre.FANTASY -> MaterialColor.Orange100
+            Genre.SCI_FI -> MaterialColor.BlueGray700
+            else -> MaterialTheme.colorScheme.secondary
+        }
+    val colors =
+        List(4) {
+           color.darker(it / 10f)
+        }
+    return Brush.linearGradient(
+        colors = colors,
+        start = Offset(100f, 100f),
+        end = Offset.Zero,
+        tileMode = TileMode.Clamp,
+    )
+}

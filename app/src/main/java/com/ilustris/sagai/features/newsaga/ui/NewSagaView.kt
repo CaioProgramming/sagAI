@@ -82,13 +82,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.addQueryParameter
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaState
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
 import com.ilustris.sagai.ui.navigation.Routes
+import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaLoader
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -96,6 +96,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.holographicGradient
+import kotlinx.coroutines.delay
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -123,16 +124,14 @@ fun NewSagaView(
 
     LaunchedEffect(state) {
         if (state is CreateSagaState.Success) {
-            navHostController.navigate(
-                Routes.CHAT.name.addQueryParameter(
-                    "sagaId",
-                    (state as CreateSagaState.Success).saga.id.toString(),
-                ),
-            ) {
-                popUpTo("home") {
-                    inclusive = false
-                }
-            }
+            delay(3.seconds)
+            navHostController.navigateToRoute(
+                Routes.CHAT,
+                Routes.CHAT.arguments.associate {
+                    it to (state as CreateSagaState.Success).saga.id.toString()
+                },
+            )
+            navHostController.popBackStack()
         }
     }
 }

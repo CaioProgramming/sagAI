@@ -7,7 +7,7 @@ import java.util.Locale
 abstract class AIClient {
     abstract fun buildModel(generationConfig: GenerationConfig): GenerativeModel
 
-    protected fun modelLanguage(): String {
+    fun modelLanguage(): String {
         val locale = Locale.getDefault()
         locale.language
         return "All responses must be in ${locale.displayLanguage} (${locale.language})."

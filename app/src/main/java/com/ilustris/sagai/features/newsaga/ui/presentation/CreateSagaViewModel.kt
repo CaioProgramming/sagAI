@@ -48,13 +48,19 @@ class CreateSagaViewModel
                     is RequestResult.Error<*> -> {
                         finishSaveSaga(sagaData)
                     }
+
                     is RequestResult.Success<ByteArray> -> {
                         val iconFile =
                             fileHelper.saveToCache(
                                 sagaData.title.lowercase(),
                                 iconGeneration.success.value,
                             )
-                        finishSaveSaga(sagaData.copy(icon = iconFile?.absolutePath))
+                        finishSaveSaga(
+                            sagaData.copy(
+                                icon = iconFile?.absolutePath,
+                                genre = saga.value.genre,
+                            ),
+                        )
                     }
                 }
             }
@@ -67,9 +73,10 @@ class CreateSagaViewModel
                         is RequestResult.Error<Exception> -> {
                             sendErrorState(this.error.value)
                         }
+
                         is RequestResult.Success<Long> -> {
-                            state.value = CreateSagaState.Success(sagaData.copy(id = this.success.value.toInt()))
-                            resetSaga()
+                            state.value =
+                                CreateSagaState.Success(sagaData.copy(id = this.success.value.toInt()))
                         }
                     }
                 }

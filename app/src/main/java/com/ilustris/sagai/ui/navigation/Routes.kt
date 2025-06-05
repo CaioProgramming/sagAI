@@ -7,6 +7,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -22,25 +23,35 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
+import androidx.navigation.navArgument
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.chat.ui.ChatView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 
 enum class Routes(
-    val view: @Composable (NavHostController) -> Unit = {},
+    val view: @Composable (NavHostController) -> Unit = {
+        Text("Sample View for Route ", modifier = Modifier.padding(16.dp))
+    },
     val showBottomNav: Boolean = true,
     val showTitle: Boolean = true,
     @DrawableRes val icon: Int? = null,
     @StringRes val title: Int? = null,
     @StringRes val navigationTitle: Int? = R.string.saga,
+    val arguments: List<String> = emptyList(),
+    val deepLink: String? = null,
 ) {
     HOME(icon = R.drawable.ic_spark, view = {
         HomeView(it)
     }, title = R.string.home_title),
-    CHAT,
+    CHAT(view = {
+        val arguments = it.currentBackStackEntry?.arguments
+        ChatView(it, arguments?.getString(CHAT.arguments.first()))
+    }, arguments = listOf("sagaId"), deepLink = "saga://chat/{sagaId}"),
     PROFILE,
     SETTINGS,
     NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = {
@@ -55,8 +66,8 @@ fun SagaBottomNavigation(
 ) {
     AnimatedVisibility(
         currentRoute?.showBottomNav == true,
-        enter = slideInVertically { -it },
-        exit = slideOutVertically(),
+        enter = slideInVertically { it },
+        exit = slideOutVertically { it },
     ) {
         NavigationBar {
             Routes.entries.filter { it.icon != null }.forEach { route ->
@@ -104,10 +115,43 @@ fun SagaNavGraph(navController: NavHostController) {
     val graph =
         navController.createGraph(startDestination = Routes.HOME.name) {
             Routes.entries.forEach { route ->
-                composable(route.name) {
+                composable(
+                    route.deepLink ?: route.name,
+                    arguments =
+                        route.arguments.map {
+                            navArgument(it) {
+                                type = NavType.StringType
+                            }
+                        },
+                ) {
                     route.view(navController)
                 }
             }
         }
     NavHost(navController, graph = graph)
 }
+
+fun NavHostController.navigateToRoute(
+    route: Routes,
+    arguments: Map<String, String> = mapOf(),
+) {
+    var link = route.deepLink ?: route.name
+    if (arguments.isNotEmpty() && arguments.size == route.arguments.size) {
+        route.arguments.forEach { arg ->
+            val entry = arguments.entries.find { it.key == arg }
+            entry?.let {
+                if (link.contains(it.key)) {
+                    link = link.replace(it.key, it.value)
+                }
+            }
+        }
+    }
+
+    navigate(link.replace("{", "").replace("}", ""))
+}
+
+fun String.findRoute(): Routes? =
+    Routes.entries.find {
+        val mappedDeepLink = it.deepLink?.substringBeforeLast("/")
+        it.name == this || mappedDeepLink == this
+    }

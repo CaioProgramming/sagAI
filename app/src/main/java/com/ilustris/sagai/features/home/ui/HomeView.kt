@@ -49,10 +49,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.addQueryParameter
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
+import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SagaLoader
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -74,14 +74,14 @@ fun HomeView(
     ChatList(
         sagas = chats,
         onCreateNewChat = {
-            navController.navigate(Routes.NEW_SAGA.name)
+            navController.navigateToRoute(Routes.NEW_SAGA)
         },
-        onSelectSaga = {
-            navController.navigate(
-                Routes.CHAT.name.addQueryParameter(
-                    "sagaId",
-                    it.id.toString(),
-                ),
+        onSelectSaga = { sagaId ->
+            navController.navigateToRoute(
+                Routes.CHAT,
+                Routes.CHAT.arguments.associate {
+                    it to sagaId.id.toString()
+                },
             )
         },
     )
@@ -127,8 +127,8 @@ private fun ChatList(
                 description = "Criar nova saga",
                 brush = styleGradient,
                 modifier =
-                    Modifier.size(50.dp).clickable {
-                        onCreateNewChat
+                    Modifier.size(50.dp).clip(CircleShape).clickable {
+                        onCreateNewChat()
                     },
             )
         }
@@ -144,7 +144,10 @@ fun ChatCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(16.dp)
+                .clickable {
+                    onClick()
+                },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
@@ -160,7 +163,7 @@ fun ChatCard(
             contentDescription = sagaData.title,
             modifier =
                 Modifier
-                    .size(80.dp)
+                    .size(60.dp)
                     .border(2.dp, Brush.verticalGradient(sagaData.genre.gradient()), CircleShape)
                     .padding(2.dp)
                     .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
