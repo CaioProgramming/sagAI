@@ -59,6 +59,7 @@ android {
 
 dependencies {
 
+    implementation(libs.kotlin.reflection)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -89,7 +90,6 @@ dependencies {
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
-
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

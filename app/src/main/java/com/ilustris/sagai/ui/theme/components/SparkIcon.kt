@@ -1,88 +1,78 @@
 package com.ilustris.sagai.ui.theme.components
 
-import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
-import android.graphics.drawable.VectorDrawable
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.animation.core.EaseInCubic
+import androidx.compose.animation.core.RepeatMode.Reverse
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
-import com.ilustris.sagai.R
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.gradient
+import androidx.graphics.shapes.CornerRounding
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.star
+import com.ilustris.sagai.ui.theme.RoundedPolygonShape
+import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
-import kotlinx.coroutines.delay
 import kotlin.collections.plusAssign
 import kotlin.compareTo
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun SparkIcon(
     modifier: Modifier,
     description: String,
     brush: Brush,
+    blurRadius: Dp = 10.dp,
 ) {
-    Box(modifier.clip(CircleShape)) {
-        Image(
-            painterResource(R.drawable.ic_spark),
-            contentDescription = description,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .gradientFill(brush)
-                    .blur(10.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-            ,
-            alignment = Alignment.Center,
+    val infiniteTranition = rememberInfiniteTransition()
+    val starInnerRadius =
+        infiniteTranition.animateFloat(
+            initialValue = 1f / 3f,
+            targetValue = 1f / 2f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(5000, easing = EaseInCubic),
+                    Reverse,
+                ),
         )
-        Image(
-            painterResource(R.drawable.ic_spark),
-            contentDescription = description,
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .alpha(.5f)
-                    .scale(.9f),
-            alignment = Alignment.Center,
-        )
-    }
+
+    SagaLoader(
+        modifier = modifier,
+        brush = brush,
+        animationDuration = 10.seconds,
+        scaleDistortion = .8f to .8f,
+        blurRadius = 10.dp,
+        tint = MaterialTheme.colorScheme.background,
+        shape =
+            RoundedPolygonShape(
+                RoundedPolygon.star(
+                    numVerticesPerRadius = 4,
+                    innerRadius = starInnerRadius.value,
+                    radius = 1f,
+                    rounding = CornerRounding(.0f),
+                ),
+            ),
+    )
 }
 
 @Preview
 @Composable
 fun SparkIconPreview() {
-
-
     SparkIcon(
-        modifier = Modifier.size(100.dp),
+        modifier = Modifier.size(200.dp),
         description = "Spark Icon",
-        brush = gradientAnimation(Genre.SCI_FI.gradient()),
+        brush =
+            gradientAnimation(
+                genresGradient(),
+            ),
     )
 }

@@ -1,59 +1,25 @@
 package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.*
 
-fun sagaPrompt(
-    title: String,
-    description: String,
-    genre: String,
-) = """
-Develop a synopsis that engage the player to joins the adventure.
-This synopsis should establish the adventure's setting and core theme,
-outlining the journey players will undertake.
-Do not include specific characters or plot points,
-but rather focus on the overarching narrative and the world in which the adventure takes place.
-
-Adventure Details:
-1.  **Title:** $title
-2.  **Description:** $description
-3.  **Genre:** $genre
-
-
-The synopsis should include:
-1.  An engaging hook that sets the scene.
-3.  The main quest or objective for the player characters.
-5.  An indication of the adventure's scope and potential for a grand finale.
-
-Target a short synopsis with a maxium of 75 words, ensuring it engages the player to join the RPG experience.
-"""
-
 fun Genre.iconPrompt(description: String) =
-    when (this) {
-        FANTASY ->
-            """
-        Story Context: $description.
-        Meticulous detail in the armor and weapon, reflecting the warrior's history and purpose.
-        Enhanced contrast in shadows to clearly define the warrior's silhouette and emphasize their emotional state.
-        Lighting:Dramatic light and strong shadows across the main character and the landscape.
-        The light should create red reflections on the dark armor,
-        emphasizing the red details and the overall fiery atmosphere.
-        """
-        SCI_FI ->
-            """
-            Context: " A Young hacker in a cyberpunk world that loves retro futuristic outfits and cyberwear accessories, find herself in a dangerous quest to uncover the worst secrets of the Asaka Inc. This journey will be challenging and will costs everything."
-            Style: Flat colour anime style, clear image, highly detailed image, realistic body anatomy.
-            Refinement: Medium depth of field,rule of thirds,high aesthetic quality,smooth shading,detailed textures,clean lines,sharp edges,minimalistic composition.
-            Photography: Close-up portrait, dynamic action pose.
-            Background: Solid color contrasting with the character.
-            Lighting: Neon colors reflecting on character side face.            
-            """
-    }.trimIndent()
+    """
+    Subject: $description
+    ${GenrePrompts.bannerStyle(this)}
+    """.trimIndent()
 
-fun SagaData.introductionPrompt(): String =
+fun Genre.avatarPrompt(description: String) =
+    """
+    Subject: $description
+    ${GenrePrompts.iconStyle(this)}
+    """
+
+fun SagaData.introductionPrompt(character: Character?): String =
     """
         Write a introduction text for the story,
         presenting the world building,
@@ -64,7 +30,9 @@ fun SagaData.introductionPrompt(): String =
         1.  **Title:** $title
         2.  **Description:** $description
         3.  **Genre:** ${genre.name}
-       
+        
+        ${CharacterPrompts.details(character)}
+        
         The introduction should include:
         1.  Main character introduction.
         2.  The primary antagonist or opposing force.
@@ -74,39 +42,22 @@ fun SagaData.introductionPrompt(): String =
         Target a description length of 50 words, ensuring it captures the essence of a playable RPG experience.
         """
 
-fun SagaData.narratorBreakPrompt(messages: List<Message>) =
-    """"
-    
-    Write a narrator break for the story, summarizing the events that have happened so far.
-    Adventure Details:
-    1.  **Title:** $title
-    2.  **Description:** $description
-    3.  **Genre:** ${genre.name}
-    4.  **Last Messages context:** ${messages.joinToString("\n") { it.text }}
-    
-    The narrator break should include:
-    1.  A brief summary of the main events that have happened so far.
-    2.  A recap of the main character's actions and decisions.
-    3.  An indication of the current state of the world and the main character's situation.
-    Target a description length of 50 words, ensuring it captures the essence of a playable RPG experience.
-    """"
+fun SagaData.narratorBreakPrompt(messages: List<Message>) = SagaPrompts.narratorGeneration(this, messages)
 
 fun chatReplyPrompt(
     sagaData: SagaData,
-    message: Message,
-    lastMessages: List<Message> = emptyList(),
+    message: String,
+    lastMessages: List<String> = emptyList(),
 ) = """
     You are a character in a role-playing game (RPG) set in the world of ${sagaData.title}.
     The story is ${sagaData.description}.
     The genre is ${sagaData.genre.name}.
     
-    You are responding the message from the main character "${message.text}" .
+    You are responding the message from the main character "\n$message\n" .
     The last messages in the conversation were:
     \n
-        ${lastMessages.map {
-    "(${it.senderType.name}): ${it.text}"
-}.joinToString("\n") { it }
-}
+        ${lastMessages.joinToString("\n}") { it } }
+    \n    
     ]
     \n
     Write a reply to the main character's message, continuing the adventure.
@@ -151,3 +102,20 @@ fun Chapter.coverPrompt(genre: Genre): String =
     Background: Minimalist, contrasting with the character.
     Lighting: Dramatic lighting, emphasizing the character's features and the mood of the scene. 
     """.trimIndent()
+
+fun SagaData.characterPrompt(): String =
+    """
+    Write a character description for the main character of the story.
+    Story Details: $title : $description
+    Story theme: ${genre.name}
+    The character description should include:
+    1.  The character's name.
+    2.  A brief backstory that explains the character's motivations and goals.
+    3.  A description of the character's appearance, including clothing and accessories.
+    4.  A description of the character's personality, including strengths and weaknesses.
+    5.  Any special abilities or skills the character possesses.
+    6.  Keywords for the character, like their role or nicknames.
+    Target a description length of 50 words, ensuring it captures the essence of a playable RPG experience.
+    The description should be set in the context of the story and the character's role in it.
+    
+    """

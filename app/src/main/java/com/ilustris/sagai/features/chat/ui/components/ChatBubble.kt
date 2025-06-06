@@ -198,8 +198,8 @@ fun ChatBubble(
                     else -> FontStyle.Normal
                 }
 
-            if (sender == SenderType.NEW_CHAPTER && messageContent.content != null) {
-                val content = messageContent.content as? Chapter
+            if (sender == SenderType.NEW_CHAPTER && messageContent.chapter != null) {
+                val content = messageContent.chapter
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -218,8 +218,7 @@ fun ChatBubble(
                                     top.linkTo(title.top)
                                     bottom.linkTo(title.bottom)
                                     width = fillToConstraints
-                                }
-                                .height(1.dp)
+                                }.height(1.dp)
                                 .background(
                                     Brush.horizontalGradient(
                                         genre.gradient(),
@@ -228,12 +227,13 @@ fun ChatBubble(
                         )
                         Text(
                             text = "Chapter ${content?.title}",
-                            modifier = Modifier.padding(12.dp).constrainAs(title) {
-                                top.linkTo(parent.top)
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            },
+                            modifier =
+                                Modifier.padding(12.dp).constrainAs(title) {
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                },
                             style =
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Normal,
@@ -251,8 +251,7 @@ fun ChatBubble(
                                     top.linkTo(title.top)
                                     bottom.linkTo(title.bottom)
                                     width = fillToConstraints
-                                }
-                                .height(1.dp)
+                                }.height(1.dp)
                                 .background(
                                     Brush.horizontalGradient(
                                         genre.gradient(),
@@ -396,7 +395,7 @@ fun ChatBubblePreview() {
                             sagaId = 0,
                             chapterId = 1,
                         ),
-                        content =
+                        chapter =
                             Chapter(
                                 id = 1,
                                 sagaId = 0,
@@ -408,7 +407,7 @@ fun ChatBubblePreview() {
                             ),
                     ),
                 genre = genre,
-                canAnimate = false
+                canAnimate = false,
             )
         }
     }

@@ -5,30 +5,38 @@ import com.ilustris.sagai.core.ai.chatReplyPrompt
 import com.ilustris.sagai.core.ai.introductionPrompt
 import com.ilustris.sagai.core.ai.narratorBreakPrompt
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
+import com.ilustris.sagai.features.chat.data.model.MessageContent
 import com.ilustris.sagai.features.chat.repository.MessageRepository
 import com.ilustris.sagai.features.home.data.model.SagaData
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class MessageUseCaseImpl
     @Inject
     constructor(
-        private val repositoryImpl: MessageRepository,
+        private val messageRepository: MessageRepository,
         private val textGenClient: TextGenClient,
     ) : MessageUseCase {
-        override suspend fun getMessages(sagaId: Int): Flow<List<Message>> = repositoryImpl.getMessages(sagaId)
+        override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
 
-        override suspend fun saveMessage(message: Message): Long = repositoryImpl.saveMessage(message)
+        override suspend fun getMessageDetail(id: Int): MessageContent = messageRepository.getMessageDetail(id)
+
+        override suspend fun saveMessage(message: Message): Long = messageRepository.saveMessage(message)
 
         override suspend fun deleteMessage(messageId: Long) {
-            repositoryImpl.deleteMessage(messageId)
+            messageRepository.deleteMessage(messageId)
         }
 
-        override suspend fun generateIntroMessage(saga: SagaData): RequestResult<Exception, Message> {
+        override suspend fun getLastMessage(sagaId: Int): Message? = messageRepository.getLastMessage(sagaId)
+
+        override suspend fun generateIntroMessage(
+            saga: SagaData,
+            character: Character?,
+        ): RequestResult<Exception, Message> {
             val genText =
                 textGenClient.generate<Message>(
-                    generateSagaIntroductionPrompt(saga),
+                    generateSagaIntroductionPrompt(saga, character),
                     true,
                 )
 
@@ -44,12 +52,18 @@ class MessageUseCaseImpl
 
         override suspend fun generateMessage(
             saga: SagaData,
-            message: Message,
-            lastMessages: List<Message>,
+            message: Pair<String, String>,
+            lastMessages: List<Pair<String, String>>,
         ): RequestResult<Exception, Message> {
             val genText =
                 textGenClient.generate<Message>(
-                    generateReplyMessage(saga, message, lastMessages),
+                    generateReplyMessage(
+                        saga,
+                        "${message.first} : ${message.second}",
+                        lastMessages.map {
+                            "${it.first} : ${it.second}"
+                        },
+                    ),
                     true,
                 )
 
@@ -79,7 +93,10 @@ class MessageUseCaseImpl
         }
     }
 
-private fun generateSagaIntroductionPrompt(saga: SagaData): String = saga.introductionPrompt()
+private fun generateSagaIntroductionPrompt(
+    saga: SagaData,
+    character: Character?,
+): String = saga.introductionPrompt(character)
 
 private fun generateNarratorBreakPrompt(
     saga: SagaData,
@@ -88,8 +105,8 @@ private fun generateNarratorBreakPrompt(
 
 private fun generateReplyMessage(
     saga: SagaData,
-    message: Message,
-    lastMessages: List<Message>,
+    message: String,
+    lastMessages: List<String>,
 ) = chatReplyPrompt(
     saga,
     message,

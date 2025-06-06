@@ -1,7 +1,11 @@
 package com.ilustris.sagai.ui.theme.components
 
+import ai.atick.material.MaterialColor
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInCubic
+import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.RepeatMode.*
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -10,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,13 +35,20 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.circle
+import androidx.graphics.shapes.star
+import com.ilustris.sagai.ui.theme.RoundedPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
+import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.lighter
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -45,7 +57,11 @@ import kotlin.time.DurationUnit
 fun SagaLoader(
     modifier: Modifier = Modifier,
     brush: Brush = gradientAnimation(holographicGradient, targetValue = 500f),
+    tint: Color = MaterialTheme.colorScheme.surfaceContainer,
+    blurRadius: Dp = 20.dp,
     animationDuration: Duration = 5.seconds,
+    shape: Shape = CircleShape,
+    scaleDistortion: Pair<Float, Float> = Pair(0.9f, 1.2f),
 ) {
     val infiniteTransition = rememberInfiniteTransition()
 
@@ -62,53 +78,31 @@ fun SagaLoader(
             ),
     )
 
-    val rotateAnimation =
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec =
-                infiniteRepeatable(
-                    tween(5.seconds.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
-                    repeatMode = Reverse,
-                ),
-        )
-
-    val shapeA =
+    val starPolygon =
         remember {
-            RoundedPolygon(
-                100,
-                rounding = CornerRounding(1f),
+            RoundedPolygon.star(
+                numVerticesPerRadius = 4,
+                innerRadius = 1f / 5f,
+                radius = 1.5f,
+                rounding = CornerRounding(.0f),
             )
         }
-    val shapeB =
+    val circlePolygon =
         remember {
-            RoundedPolygon(
-                5,
-                rounding = CornerRounding(.5f),
+            RoundedPolygon.circle(
+                numVertices = 12,
             )
         }
-    val morph =
-        remember {
-            Morph(shapeA, shapeB)
-        }
-
-    val morphProgress =
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 0.9f,
-            animationSpec =
-                infiniteRepeatable(
-                    tween(animationDuration.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
-                    repeatMode = Reverse,
-                ),
-            label = "morph",
-        )
 
     DistortingBubble(
         modifier,
         brush,
+        tint,
+        blurRadius,
         animationDuration,
-        CircleShape,
+        shape,
+        verticalDistortion = scaleDistortion.first,
+        horizontalDistortion = scaleDistortion.second,
     )
 }
 
@@ -130,8 +124,12 @@ fun Modifier.glow(
 fun DistortingBubble(
     modifier: Modifier = Modifier,
     brush: Brush,
+    tint: Color,
+    blurRadius: Dp,
     animationDduration: Duration = 5.seconds,
     shape: Shape,
+    horizontalDistortion: Float = 0.9f,
+    verticalDistortion: Float = 1.2f,
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val duration = animationDduration.toInt(DurationUnit.MILLISECONDS)
@@ -139,7 +137,7 @@ fun DistortingBubble(
     val horizontalDistortion =
         infiniteTransition.animateFloat(
             initialValue = .9f,
-            targetValue = 1.20f,
+            targetValue = horizontalDistortion,
             animationSpec =
                 infiniteRepeatable(
                     animation = tween(durationMillis = duration, easing = EaseInOut),
@@ -150,7 +148,7 @@ fun DistortingBubble(
     val verticalDistortion =
         infiniteTransition.animateFloat(
             initialValue = 1f,
-            targetValue = 0.95f,
+            targetValue = verticalDistortion,
             animationSpec =
                 infiniteRepeatable(
                     animation = tween(durationMillis = duration, easing = EaseInOut),
@@ -164,18 +162,21 @@ fun DistortingBubble(
             targetValue = 180f,
             animationSpec =
                 infiniteRepeatable(
-                    tween(duration, easing = EaseIn),
+                    tween(duration, easing = EaseInElastic),
                     repeatMode = Reverse,
                 ),
         )
 
-    Box(modifier.padding(16.dp)) {
+    Box(
+        modifier
+            .padding(16.dp)
+            .scale(horizontalDistortion.value, verticalDistortion.value),
+    ) {
         Box(
             Modifier
                 .fillMaxSize()
                 .rotate(rotateAnimation.value)
-                .scale(scaleX = horizontalDistortion.value, scaleY = verticalDistortion.value)
-                .blur(10.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                .blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                 .border(5.dp, brush, shape),
         )
         Box(
@@ -183,41 +184,56 @@ fun DistortingBubble(
                 .fillMaxSize()
                 .align(Alignment.Center)
                 .rotate(rotateAnimation.value)
-                .scale(scaleX = horizontalDistortion.value, scaleY = verticalDistortion.value)
                 .background(
-                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
+                   tint.copy(alpha = .4f),
                     shape,
                 ),
         )
     }
 }
 
-private fun DrawScope.drawDistortedCircle(
-    horizontalScale: Float,
-    verticalScale: Float,
-) {
-    val width = size.width * horizontalScale
-    val height = size.height * verticalScale
-    drawRoundRect(
-        color = Color.Cyan,
-        size = Size(width, height),
-        cornerRadius = CornerRadius(width / 2, height / 2),
-        topLeft =
-            androidx.compose.ui.geometry.Offset(
-                (size.width - width) / 2,
-                (size.height - height) / 2,
-            ),
-    )
-}
+
 
 @Preview(showBackground = true)
 @Composable
 fun SagaLoaderPreview() {
     SagAIScaffold {
-        SagaLoader(
-            modifier = Modifier.size(200.dp),
-            brush = gradientAnimation(holographicGradient, targetValue = 500f),
-            animationDuration = 10.seconds,
-        )
+        Column {
+            SagaLoader(
+                modifier = Modifier.size(200.dp),
+                brush = gradientAnimation(holographicGradient, targetValue = 500f),
+                animationDuration = 5.seconds,
+            )
+
+            val infiniteTranition = rememberInfiniteTransition()
+            val starInnerRadius =
+                infiniteTranition.animateFloat(
+                    initialValue = 1f / 3f,
+                    targetValue = 1f / 2f,
+                    animationSpec =
+                        infiniteRepeatable(
+                            tween(5000, easing = EaseInCubic),
+                            Reverse,
+                        ),
+                )
+            
+            SagaLoader(
+                modifier = Modifier.size(200.dp),
+                brush = gradientAnimation(genresGradient(), targetValue = 500f),
+                animationDuration = 10.seconds,
+                scaleDistortion = .8f to .8f,
+                tint = MaterialColor.Red200,
+                shape =
+                    RoundedPolygonShape(
+                        RoundedPolygon.star(
+                            numVerticesPerRadius = 4,
+                            innerRadius = starInnerRadius.value,
+                            radius = 1f,
+                            rounding = CornerRounding(.0f),
+                        ),
+                    ),
+            )
+            
+        }
     }
 }

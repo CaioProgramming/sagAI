@@ -10,6 +10,10 @@ import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCaseImpl
+import com.ilustris.sagai.features.characters.domain.CharacterUseCase
+import com.ilustris.sagai.features.characters.domain.CharacterUseCaseImpl
+import com.ilustris.sagai.features.characters.repository.CharacterRepository
+import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
 import com.ilustris.sagai.features.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.chat.data.usecase.MessageUseCaseImpl
 import com.ilustris.sagai.features.chat.repository.MessageRepository
@@ -60,6 +64,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesChapterUseCase(chapterUseCaseImpl: ChapterUseCaseImpl): ChapterUseCase
+
+    @Binds
+    abstract fun providesCharacterUseCase(characterUseCaseImpl: CharacterUseCaseImpl): CharacterUseCase
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -73,4 +80,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsChapterRepository(chapterRepositoryImpl: ChapterRepositoryImpl): ChapterRepository
+
+    @Binds
+    abstract fun bindsCharacterRepository(characterRepositoryImpl: CharacterRepositoryImpl): CharacterRepository
 }

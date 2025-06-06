@@ -1,45 +1,88 @@
 package com.ilustris.sagai.core.utils
 
 import com.google.firebase.ai.type.Schema
+import java.lang.reflect.ParameterizedType
+import kotlin.toString
 
 fun toJsonSchema(clazz: Class<*>) =
     Schema.obj(
         properties = clazz.toSchemaMap(),
     )
 
-fun Class<*>.toSchema(): Schema =
-    when {
-        this.name.contains(String::class.java.simpleName, true) -> {
-            Schema.string()
+fun Class<*>.toSchema(nullable: Boolean): Schema {
+    if (this.isEnum) {
+        val enumConstants = this.enumConstants?.map { it.toString() } ?: emptyList()
+
+        return Schema.enumeration(enumConstants, nullable = nullable)
+    }
+
+    return when (this) {
+        String::class.java -> {
+            Schema.string(
+                nullable = nullable,
+            )
         }
-        this.name.contains(Int::class.java.simpleName, true) -> {
-            Schema.integer()
+
+        Int::class.java, Integer::class.java -> {
+            Schema.integer(
+                nullable = nullable,
+            )
         }
-        this.name.contains(Boolean::class.java.simpleName, true) -> {
-            Schema.boolean()
+
+        Boolean::class.java -> {
+            Schema.boolean(
+                nullable = nullable,
+            )
         }
-        this.name.contains(Double::class.java.simpleName, true) -> {
-            Schema.double()
+
+        Double::class.java -> {
+            Schema.double(
+                nullable = nullable,
+            )
         }
-        this.name.contains(Float::class.java.simpleName, true) -> {
-            Schema.float()
+
+        Float::class.java -> {
+            Schema.float(
+                nullable = nullable,
+            )
         }
-        this.name.contains(Long::class.java.simpleName, true) -> {
-            Schema.long()
+
+        Long::class.java -> {
+            Schema.long(
+                nullable = nullable,
+            )
         }
-        this.name.contains("List", true) || this.name.contains("Array", true) -> {
-            Schema.array(Schema.string()) // Default to string array for lists/arrays
+
+        List::class.java, Array::class.java -> {
+            val itemType =
+                this.genericInterfaces
+                    .filterIsInstance<ParameterizedType>()
+                    .firstOrNull()
+                    ?.actualTypeArguments
+                    ?.firstOrNull() as? Class<*>
+
+            Schema.array(
+                itemType?.toSchema(nullable = nullable) ?: Schema.string(nullable = nullable),
+            ) // Default to string array for lists/arrays
         }
+
         else -> {
-            Schema.string() // Default fallback
+            Schema.obj(properties = this.toSchemaMap(), nullable = nullable) // Default fallback
         }
     }
+}
 
 fun Class<*>.toSchemaMap(): Map<String, Schema> =
     declaredFields
         .filter { it.name != "\$stable" }
         .associate {
-            it.name to it.type.toSchema()
+            val memberIsNullable =
+                this
+                    .kotlin.members
+                    .find { member -> member.name == it.name }
+                    ?.returnType
+                    ?.isMarkedNullable
+            it.name to it.type.toSchema(memberIsNullable == true)
         }
 
 fun joinDeclaredFields(

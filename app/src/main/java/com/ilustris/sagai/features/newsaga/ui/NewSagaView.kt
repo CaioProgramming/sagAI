@@ -567,23 +567,79 @@ private fun SagaGenerator(
             enter = scaleIn(),
             exit = scaleOut() + fadeOut(),
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                        .border(2.dp, gradient, RoundedCornerShape(15.dp))
-                        .background(
-                            MaterialTheme.colorScheme.background.copy(alpha = .1f),
-                            RoundedCornerShape(15.dp),
-                        ).padding(16.dp)
-                        .verticalScroll(rememberScrollState()),
-            ) {
-                IconButton(onClick = {
-                    onResetSaga()
-                }, modifier = Modifier.align(Alignment.End)) {
+            ConstraintLayout(Modifier.padding(16.dp).fillMaxWidth()) {
+                val (sagaContent, resetButton, continueButton) = createRefs()
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier =
+                        Modifier
+                            .constrainAs(sagaContent) {
+                                top.linkTo(parent.top, margin = 10.dp)
+                                bottom.linkTo(continueButton.top, margin = 10.dp)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                height = Dimension.fillToConstraints
+                                width = Dimension.fillToConstraints
+                            }.border(2.dp, gradient, RoundedCornerShape(15.dp))
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(alpha = .1f),
+                                RoundedCornerShape(15.dp),
+                            ).padding(16.dp)
+                            .verticalScroll(rememberScrollState()),
+                ) {
+                    Image(
+                        painterResource(form.genre.icon),
+                        null,
+                        modifier =
+                            Modifier
+                                .size(50.dp)
+                                .clip(CircleShape),
+                    )
+
+                    Text(
+                        sagaData?.title ?: "",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+
+                    Text(
+                        form.genre.title,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = form.genre.color,
+                    )
+
+                    Text(
+                        sagaData?.description ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Justify,
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        onResetSaga()
+                    },
+                    modifier =
+                        Modifier
+                            .constrainAs(resetButton) {
+                                top.linkTo(parent.top)
+                                end.linkTo(sagaContent.end, margin = (-4).dp)
+                            }.size(50.dp)
+                            .border(
+                                3.dp,
+                                MaterialTheme.colorScheme.background,
+                                CircleShape,
+                            ).padding(2.dp)
+                            .border(
+                                2.dp,
+                                gradient,
+                                CircleShape,
+                            ).background(
+                                MaterialTheme.colorScheme.background,
+                                CircleShape,
+                            ).padding(8.dp),
+                ) {
                     Icon(
                         Icons.Rounded.Refresh,
                         "Gerar novamente",
@@ -594,33 +650,6 @@ private fun SagaGenerator(
                     )
                 }
 
-                Image(
-                    painterResource(form.genre.icon),
-                    null,
-                    modifier =
-                        Modifier
-                            .size(50.dp)
-                            .clip(CircleShape),
-                )
-
-                Text(
-                    sagaData?.title ?: "",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                )
-
-                Text(
-                    form.genre.title,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = form.genre.color,
-                )
-
-                Text(
-                    sagaData?.description ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Justify,
-                )
-
                 Button(
                     onClick = {
                         sagaData?.let {
@@ -628,11 +657,16 @@ private fun SagaGenerator(
                         }
                     },
                     modifier =
-                        Modifier.fillMaxWidth().background(gradient, RoundedCornerShape(15.dp)),
+                        Modifier.constrainAs(continueButton) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            width = Dimension.fillToConstraints
+                        },
                     colors =
                         ButtonDefaults.elevatedButtonColors(
-                            containerColor = Color.Transparent,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                            containerColor = MaterialTheme.colorScheme.onBackground,
+                            contentColor = MaterialTheme.colorScheme.background,
                         ),
                     shape = RoundedCornerShape(15.dp),
                 ) {
@@ -644,7 +678,8 @@ private fun SagaGenerator(
                         modifier =
                             Modifier
                                 .padding(8.dp)
-                                .fillMaxWidth(0.85f),
+                                .fillMaxWidth(.9f)
+                                .gradientFill(gradient),
                     )
 
                     Icon(
@@ -652,7 +687,8 @@ private fun SagaGenerator(
                         contentDescription = stringResource(R.string.new_saga_title),
                         modifier =
                             Modifier
-                                .size(50.dp),
+                                .size(32.dp)
+                                .gradientFill(gradient),
                     )
                 }
             }
@@ -696,6 +732,7 @@ fun NewSagaViewPreview() {
                             genre = Genre.SCI_FI,
                             icon = form.genre.icon.toString(),
                             createdAt = System.currentTimeMillis(),
+                            mainCharacterId = null,
                         ),
                     )
             },

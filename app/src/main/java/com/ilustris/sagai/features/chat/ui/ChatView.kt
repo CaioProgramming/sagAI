@@ -4,11 +4,16 @@ import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -44,10 +49,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.chat.data.model.MessageContent
 import com.ilustris.sagai.features.chat.data.model.SenderType
@@ -59,10 +66,12 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -77,6 +86,7 @@ fun ChatView(
     val state = viewModel.state.collectAsStateWithLifecycle()
     val saga by viewModel.saga.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
+    val mainCharacter by viewModel.mainCharacter.collectAsStateWithLifecycle()
 
     LaunchedEffect(saga) {
         if (saga == null) {
@@ -84,7 +94,7 @@ fun ChatView(
         }
     }
 
-    ChatContent(state.value, saga, messages) {
+    ChatContent(state.value, saga, messages, mainCharacter) {
         viewModel.sendInput(it)
     }
 }
@@ -94,6 +104,7 @@ fun ChatContent(
     state: ChatState = ChatState.Empty,
     saga: SagaData? = null,
     messagesList: List<MessageContent>? = null,
+    mainCharacter: Character?,
     onSendMessage: (String) -> Unit = {},
 ) {
     var input by remember {
@@ -106,7 +117,7 @@ fun ChatContent(
         val brush =
             saga?.genre?.gradient()?.let { gradientAnimation(it, targetValue = 500f) }
                 ?: gradientAnimation()
-        val (messages, chatInput) = createRefs()
+        val (messages, chatInput, inputBottomFade) = createRefs()
 
         AnimatedContent(
             state,
@@ -157,6 +168,21 @@ fun ChatContent(
             }
         }
 
+        Box(
+            Modifier
+                .constrainAs(inputBottomFade) {
+                    bottom.linkTo(chatInput.bottom)
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    width = Dimension.matchParent
+                }.fillMaxHeight(.3f)
+                .background(
+                    fadeGradientBottom(
+                        tintColor = saga?.genre?.color ?: MaterialTheme.colorScheme.background,
+                    ),
+                ),
+        )
+
         TextField(
             value = input,
             onValueChange = {
@@ -173,6 +199,29 @@ fun ChatContent(
                 ),
             textStyle = MaterialTheme.typography.labelSmall,
             maxLines = 3,
+            leadingIcon = {
+                AnimatedVisibility(mainCharacter != null, enter = scaleIn(), exit = scaleOut()) {
+                    mainCharacter?.let {
+                        val characterColor = Color(it.hexColor.toColorInt())
+                        AsyncImage(
+                            it.image,
+                            contentDescription = it.name,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .size(32.dp)
+                                    .background(
+                                        characterColor.gradientFade(),
+                                        CircleShape,
+                                    ).border(
+                                        2.dp,
+                                        characterColor,
+                                        CircleShape,
+                                    ),
+                        )
+                    }
+                }
+            },
             trailingIcon = {
                 AnimatedVisibility(state != ChatState.Loading && input.isNotEmpty()) {
                     IconButton(
@@ -242,12 +291,7 @@ fun SagaHeader(saga: SagaData) {
                 .fillMaxWidth()
                 .height(300.dp),
     ) {
-        val iconUrl =
-            if (saga.icon.isNullOrEmpty()) {
-                saga.genre.defaultHeaderImage()
-            } else {
-                saga.icon
-            }
+        val iconUrl = saga.icon ?: saga.genre.defaultHeaderImage()
         AsyncImage(
             iconUrl,
             contentDescription = null,
@@ -315,7 +359,7 @@ fun ChatList(
                             .fillMaxWidth()
                             .clickable {
                                 isDescriptionExpanded = !isDescriptionExpanded
-                            },
+                            }.animateContentSize(),
                 )
             }
             stickyHeader {
@@ -359,6 +403,7 @@ fun ChatViewPreview() {
             icon = "",
             genre = Genre.SCI_FI,
             createdAt = Calendar.getInstance().timeInMillis,
+            mainCharacterId = null,
         )
     val messages =
         List(17) {
@@ -383,11 +428,13 @@ fun ChatViewPreview() {
         ChatContent(
             successState,
             saga = saga,
-            messagesList = messages.map {
-                MessageContent(
-                    message = it
-                )
-            },
+            messagesList =
+                messages.map {
+                    MessageContent(
+                        message = it,
+                    )
+                },
+            null,
         )
     }
 }

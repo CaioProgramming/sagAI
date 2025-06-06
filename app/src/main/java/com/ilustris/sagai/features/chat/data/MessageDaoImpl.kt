@@ -15,6 +15,8 @@ class MessageDaoImpl
 
         override fun getMessages(sagaId: Int) = messageDao.getMessages(sagaId)
 
+        override suspend fun getMessageDetail(id: Int) = messageDao.getMessageDetail(id)
+
         override suspend fun saveMessage(message: Message) = messageDao.saveMessage(message)
 
         override suspend fun deleteMessage(messageId: Long) = messageDao.deleteMessage(messageId)
@@ -22,4 +24,6 @@ class MessageDaoImpl
         override suspend fun deleteMessages(sagaId: String) = messageDao.deleteMessages(sagaId)
 
         override suspend fun updateMessage(message: Message) = messageDao.updateMessage(message)
+
+        override suspend fun getLastMessage(sagaId: Int): Message? = messageDao.getLastMessage(sagaId)
     }

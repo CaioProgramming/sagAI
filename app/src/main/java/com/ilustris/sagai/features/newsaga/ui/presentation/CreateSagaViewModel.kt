@@ -46,7 +46,8 @@ class CreateSagaViewModel
                 val iconGeneration = newSagaUseCase.generateSagaIcon(saga.value)
                 when (iconGeneration) {
                     is RequestResult.Error<*> -> {
-                        finishSaveSaga(sagaData)
+                        finishSaveSaga(sagaData.copy(icon = null))
+                        Log.e(javaClass.simpleName, "saveSaga: couldnt generate icon!")
                     }
 
                     is RequestResult.Success<ByteArray> -> {
@@ -68,18 +69,14 @@ class CreateSagaViewModel
 
         private fun finishSaveSaga(sagaData: SagaData) {
             viewModelScope.launch {
-                newSagaUseCase.saveSaga(sagaData.copy(genre = saga.value.genre)).run {
-                    when (this) {
-                        is RequestResult.Error<Exception> -> {
-                            sendErrorState(this.error.value)
-                        }
-
-                        is RequestResult.Success<Long> -> {
-                            state.value =
-                                CreateSagaState.Success(sagaData.copy(id = this.success.value.toInt()))
-                        }
+                newSagaUseCase
+                    .saveSaga(sagaData.copy(genre = saga.value.genre))
+                    .onSuccess {
+                        state.value =
+                            CreateSagaState.Success(sagaData.copy(id = it.toInt()))
+                    }.onFailure {
+                        sendErrorState(it)
                     }
-                }
             }
         }
 
