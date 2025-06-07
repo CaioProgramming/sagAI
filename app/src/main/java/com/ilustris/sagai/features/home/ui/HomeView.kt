@@ -131,7 +131,8 @@ private fun ChatList(
         AnimatedVisibility(sagas.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
             SparkIcon(
                 description = "Criar nova saga",
-                brush = styleGradient,
+                brush = gradientAnimation(genresGradient()),
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = .99f),
                 blurRadius = 5.dp,
                 modifier =
                     Modifier.size(100.dp).clip(CircleShape).clickable {
@@ -189,7 +190,7 @@ fun ChatCard(
 
             val lastMessageText =
                 if (saga.messages.isNotEmpty()) {
-                    saga.messages.last().text
+                    saga.messages.first().text
                 } else {
                     "Sua saga começa agora!"
                 }
@@ -363,7 +364,7 @@ fun HomeViewPreview() {
                                         text = "Message ${it + 1} in chat ${it + 1}",
                                         timestamp = Calendar.getInstance().timeInMillis,
                                         sagaId = 0,
-                                        senderType = (if (it % 2 == 0) SenderType.USER else SenderType.BOT),
+                                        senderType = (if (it % 2 == 0) SenderType.USER else SenderType.CHARACTER),
                                     )
                                 },
                         )

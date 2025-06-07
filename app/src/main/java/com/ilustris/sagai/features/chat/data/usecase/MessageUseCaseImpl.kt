@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.chatReplyPrompt
 import com.ilustris.sagai.core.ai.introductionPrompt
 import com.ilustris.sagai.core.ai.narratorBreakPrompt
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.chat.data.model.MessageContent
@@ -53,16 +54,18 @@ class MessageUseCaseImpl
         override suspend fun generateMessage(
             saga: SagaData,
             message: Pair<String, String>,
+            mainCharacter: Character,
             lastMessages: List<Pair<String, String>>,
+            characters: List<Character>,
         ): RequestResult<Exception, Message> {
             val genText =
                 textGenClient.generate<Message>(
                     generateReplyMessage(
                         saga,
-                        "${message.first} : ${message.second}",
-                        lastMessages.map {
-                            "${it.first} : ${it.second}"
-                        },
+                        message.formatToString(),
+                        mainCharacter,
+                        lastMessages.map { it.formatToString() },
+                        characters,
                     ),
                     true,
                 )
@@ -79,7 +82,7 @@ class MessageUseCaseImpl
 
         override suspend fun generateNarratorBreak(
             data: SagaData,
-            messages: List<Message>,
+            messages: List<String>,
         ) = try {
             RequestResult.Success(
                 textGenClient.generate<Message>(
@@ -100,15 +103,19 @@ private fun generateSagaIntroductionPrompt(
 
 private fun generateNarratorBreakPrompt(
     saga: SagaData,
-    messages: List<Message>,
+    messages: List<String>,
 ): String = saga.narratorBreakPrompt(messages)
 
 private fun generateReplyMessage(
     saga: SagaData,
     message: String,
+    mainCharacter: Character,
     lastMessages: List<String>,
+    characters: List<Character>,
 ) = chatReplyPrompt(
     saga,
     message,
+    mainCharacter,
     lastMessages,
+    characters,
 )

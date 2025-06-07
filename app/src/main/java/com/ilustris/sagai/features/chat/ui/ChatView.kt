@@ -49,12 +49,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.chat.data.model.MessageContent
 import com.ilustris.sagai.features.chat.data.model.SenderType
@@ -191,33 +191,23 @@ fun ChatContent(
                 }
             },
             placeholder = { Text("Continua sua saga...") },
-            shape = RoundedCornerShape(25.dp),
+            shape = RoundedCornerShape(40.dp),
             colors =
                 TextFieldDefaults.colors().copy(
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = saga?.genre?.color ?: MaterialTheme.colorScheme.primary,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .7f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
                 ),
             textStyle = MaterialTheme.typography.labelSmall,
             maxLines = 3,
             leadingIcon = {
                 AnimatedVisibility(mainCharacter != null, enter = scaleIn(), exit = scaleOut()) {
                     mainCharacter?.let {
-                        val characterColor = Color(it.hexColor.toColorInt())
-                        AsyncImage(
-                            it.image,
-                            contentDescription = it.name,
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .size(32.dp)
-                                    .background(
-                                        characterColor.gradientFade(),
-                                        CircleShape,
-                                    ).border(
-                                        2.dp,
-                                        characterColor,
-                                        CircleShape,
-                                    ),
+                        CharacterAvatar(
+                            it,
+                            Modifier.size(32.dp),
                         )
                     }
                 }
@@ -250,7 +240,13 @@ fun ChatContent(
             modifier =
                 Modifier
                     .padding(16.dp)
-                    .constrainAs(chatInput) {
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onSurface
+                            .copy(alpha = .4f)
+                            .gradientFade(),
+                        RoundedCornerShape(40.dp),
+                    ).constrainAs(chatInput) {
                         bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
@@ -410,7 +406,7 @@ fun ChatViewPreview() {
             Message(
                 id = it,
                 text = "This is a sample message number $it.",
-                senderType = if (it % 2 == 0) SenderType.BOT else SenderType.USER,
+                senderType = if (it % 2 == 0) SenderType.CHARACTER else SenderType.USER,
                 timestamp = Calendar.getInstance().timeInMillis - it * 1000L,
                 sagaId = saga.id,
             )

@@ -31,6 +31,7 @@ import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension.Companion.fillToConstraints
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.chat.data.model.MessageContent
 import com.ilustris.sagai.features.chat.data.model.SenderType
@@ -60,7 +61,7 @@ fun ChatBubble(
     val bubbleColor =
         when (sender) {
             SenderType.USER -> genre.userBubbleGradient()
-            SenderType.BOT -> genre.botBubbleGradient()
+            SenderType.CHARACTER -> genre.botBubbleGradient()
             else ->
                 Brush.verticalGradient(
                     listOf(
@@ -78,7 +79,7 @@ fun ChatBubble(
     val alignment =
         when (sender) {
             SenderType.USER -> Alignment.CenterEnd
-            SenderType.BOT -> Alignment.CenterStart
+            SenderType.CHARACTER -> Alignment.CenterStart
             else -> Alignment.Center
         }
     val cornerSize = genre.cornerSize()
@@ -92,7 +93,7 @@ fun ChatBubble(
                     bottomEnd = 0.dp,
                 )
 
-            SenderType.BOT ->
+            SenderType.CHARACTER ->
                 RoundedCornerShape(
                     topStart = cornerSize,
                     topEnd = cornerSize,
@@ -151,7 +152,7 @@ fun ChatBubble(
                     bottom = 8.dp,
                 )
 
-            SenderType.BOT ->
+            SenderType.CHARACTER ->
                 PaddingValues(
                     start = 16.dp,
                     end = 100.dp,
@@ -174,163 +175,190 @@ fun ChatBubble(
             targetValue = if (isBubbleVisible.value) 1f else 0f,
             label = "Bubble Alpha Animation",
         )
+        Column {
+            Box(
+                modifier =
+                    Modifier
+                        .alpha(bubbleAlpha)
+                        .clip(bubbleShape)
+                        .border(
+                            borderSize,
+                            borderBrush,
+                            bubbleShape,
+                        ).background(bubbleColor),
+            ) {
+                val duration =
+                    when (sender) {
+                        SenderType.USER -> 0.seconds
+                        SenderType.CHARACTER -> 5.seconds
+                        else -> 10.seconds
+                    }
+                val fontStyle =
+                    when (sender) {
+                        SenderType.NARRATOR -> FontStyle.Italic
+                        else -> FontStyle.Normal
+                    }
 
-        Box(
-            modifier =
-                Modifier
-                    .alpha(bubbleAlpha)
-                    .clip(bubbleShape)
-                    .border(
-                        borderSize,
-                        borderBrush,
-                        bubbleShape,
-                    ).background(bubbleColor),
-        ) {
-            val duration =
-                when (sender) {
-                    SenderType.USER -> 0.seconds
-                    SenderType.BOT -> 5.seconds
-                    else -> 10.seconds
-                }
-            val fontStyle =
-                when (sender) {
-                    SenderType.NARRATOR -> FontStyle.Italic
-                    else -> FontStyle.Normal
-                }
+                if (sender == SenderType.NEW_CHAPTER && messageContent.chapter != null) {
+                    val content = messageContent.chapter
 
-            if (sender == SenderType.NEW_CHAPTER && messageContent.chapter != null) {
-                val content = messageContent.chapter
-
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    ConstraintLayout(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        val (firstDivider, title, secondDivider) = createRefs()
-                        Box(
-                            Modifier
-                                .constrainAs(firstDivider) {
-                                    start.linkTo(parent.start)
-                                    end.linkTo(title.start)
-                                    top.linkTo(title.top)
-                                    bottom.linkTo(title.bottom)
-                                    width = fillToConstraints
-                                }.height(1.dp)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        genre.gradient(),
+                        ConstraintLayout(
+                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        ) {
+                            val (firstDivider, title, secondDivider) = createRefs()
+                            Box(
+                                Modifier
+                                    .constrainAs(firstDivider) {
+                                        start.linkTo(parent.start)
+                                        end.linkTo(title.start)
+                                        top.linkTo(title.top)
+                                        bottom.linkTo(title.bottom)
+                                        width = fillToConstraints
+                                    }.height(1.dp)
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            genre.gradient(),
+                                        ),
                                     ),
+                            )
+                            Text(
+                                text = "Chapter ${content.title}",
+                                modifier =
+                                    Modifier.padding(12.dp).constrainAs(title) {
+                                        top.linkTo(parent.top)
+                                        bottom.linkTo(parent.bottom)
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                    },
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = genre.bodyFont(),
+                                        fontStyle = FontStyle.Italic,
+                                        color = textColor,
+                                        textAlign = TextAlign.Start,
+                                    ),
+                            )
+                            Box(
+                                Modifier
+                                    .constrainAs(secondDivider) {
+                                        start.linkTo(title.end)
+                                        end.linkTo(parent.end)
+                                        top.linkTo(title.top)
+                                        bottom.linkTo(title.bottom)
+                                        width = fillToConstraints
+                                    }.height(1.dp)
+                                    .background(
+                                        Brush.horizontalGradient(
+                                            genre.gradient(),
+                                        ),
+                                    ),
+                            )
+                        }
+
+                        Box {
+                            AsyncImage(
+                                model = content?.coverImage,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                            )
+
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp)
+                                        .background(fadedGradientTopAndBottom()),
+                            )
+                        }
+                        Text(
+                            text = content?.title ?: "New Chapter",
+                            modifier = Modifier.padding(16.dp),
+                            style =
+                                MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.Light,
+                                    letterSpacing = 5.sp,
+                                    fontFamily = genre.headerFont(),
+                                    fontStyle = fontStyle,
+                                    brush = gradientAnimation(genre.gradient()),
+                                    textAlign = TextAlign.Center,
                                 ),
                         )
-                        Text(
-                            text = "Chapter ${content?.title}",
-                            modifier =
-                                Modifier.padding(12.dp).constrainAs(title) {
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    start.linkTo(parent.start)
-                                    end.linkTo(parent.end)
-                                },
+
+                        TypewriterText(
+                            text = content?.overview ?: "Overview not available",
+                            modifier = Modifier.padding(16.dp),
                             style =
-                                MaterialTheme.typography.titleMedium.copy(
+                                MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Normal,
                                     fontFamily = genre.bodyFont(),
-                                    fontStyle = FontStyle.Italic,
+                                    fontStyle = fontStyle,
                                     color = textColor,
-                                    textAlign = TextAlign.Start,
+                                    textAlign = TextAlign.Center,
                                 ),
-                        )
-                        Box(
-                            Modifier
-                                .constrainAs(secondDivider) {
-                                    start.linkTo(title.end)
-                                    end.linkTo(parent.end)
-                                    top.linkTo(title.top)
-                                    bottom.linkTo(title.bottom)
-                                    width = fillToConstraints
-                                }.height(1.dp)
-                                .background(
-                                    Brush.horizontalGradient(
-                                        genre.gradient(),
-                                    ),
-                                ),
+                            onTextUpdate = {
+                                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
+                            },
                         )
                     }
-
-                    Box {
-                        AsyncImage(
-                            model = content?.coverImage,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp),
-                        )
-
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                                    .background(fadedGradientTopAndBottom()),
-                        )
-                    }
-                    Text(
-                        text = content?.title ?: "New Chapter",
-                        modifier = Modifier.padding(16.dp),
-                        style =
-                            MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Light,
-                                letterSpacing = 5.sp,
-                                fontFamily = genre.headerFont(),
-                                fontStyle = fontStyle,
-                                brush = gradientAnimation(genre.gradient()),
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-
+                } else {
+                    val padding =
+                        if (isUser) {
+                            PaddingValues(
+                                start = 16.dp,
+                                end = 8.dp,
+                                top = 8.dp,
+                                bottom = 8.dp,
+                            )
+                        } else {
+                            PaddingValues(
+                                start = 8.dp,
+                                end = 16.dp,
+                                top = 8.dp,
+                                bottom = 8.dp,
+                            )
+                        }
                     TypewriterText(
-                        text = content?.overview ?: "Overview not available",
-                        modifier = Modifier.padding(16.dp),
+                        text = message.text,
+                        isAnimated = isAnimated,
+                        duration = duration,
+                        modifier = Modifier.padding(padding),
                         style =
-                            MaterialTheme.typography.bodyLarge.copy(
+                            MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = FontWeight.Normal,
                                 fontFamily = genre.bodyFont(),
                                 fontStyle = fontStyle,
                                 color = textColor,
-                                textAlign = TextAlign.Center,
+                                textAlign = textAlignment,
                             ),
                         onTextUpdate = {
                             isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
                         },
+                        onAnimationFinished = {
+                            if (alreadyAnimatedMessages.contains(message.id).not()) {
+                                alreadyAnimatedMessages.add(message.id)
+                            }
+                        },
                     )
                 }
-            } else {
-                TypewriterText(
-                    text = message.text,
-                    isAnimated = isAnimated,
-                    duration = duration,
-                    modifier = Modifier.padding(8.dp),
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = genre.bodyFont(),
-                            fontStyle = fontStyle,
-                            color = textColor,
-                            textAlign = textAlignment,
+            }
+
+            messageContent.character?.let {
+                CharacterAvatar(
+                    it,
+                    modifier =
+                        Modifier.padding(8.dp).size(32.dp).align(
+                            if (isUser) Alignment.End else Alignment.Start,
                         ),
-                    onTextUpdate = {
-                        isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
-                    },
-                    onAnimationFinished = {
-                        if (alreadyAnimatedMessages.contains(message.id).not()) {
-                            alreadyAnimatedMessages.add(message.id)
-                        }
-                    },
                 )
             }
         }
@@ -375,7 +403,7 @@ fun ChatBubblePreview() {
                             Message(
                                 id = it,
                                 text = messageText,
-                                senderType = if (it % 2 == 0) SenderType.USER else SenderType.BOT,
+                                senderType = if (it % 2 == 0) SenderType.USER else SenderType.CHARACTER,
                                 timestamp = System.currentTimeMillis(),
                                 sagaId = 0,
                             ),

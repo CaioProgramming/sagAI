@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -20,6 +21,7 @@ import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.ui.theme.RoundedPolygonShape
+import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import kotlin.collections.plusAssign
@@ -31,6 +33,7 @@ fun SparkIcon(
     modifier: Modifier,
     description: String,
     brush: Brush,
+    tint: Color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
     blurRadius: Dp = 10.dp,
 ) {
     val infiniteTranition = rememberInfiniteTransition()
@@ -50,8 +53,8 @@ fun SparkIcon(
         brush = brush,
         animationDuration = 10.seconds,
         scaleDistortion = .8f to .8f,
-        blurRadius = 10.dp,
-        tint = MaterialTheme.colorScheme.background,
+        blurRadius = blurRadius,
+        tint = tint,
         shape =
             RoundedPolygonShape(
                 RoundedPolygon.star(
@@ -67,12 +70,15 @@ fun SparkIcon(
 @Preview
 @Composable
 fun SparkIconPreview() {
-    SparkIcon(
-        modifier = Modifier.size(200.dp),
-        description = "Spark Icon",
-        brush =
-            gradientAnimation(
-                genresGradient(),
-            ),
-    )
+    SagAIScaffold {
+        SparkIcon(
+            modifier = Modifier.size(200.dp),
+            description = "Spark Icon",
+            brush =
+                gradientAnimation(
+                    genresGradient(),
+                ),
+        )
+    }
+
 }

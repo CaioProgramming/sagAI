@@ -40,5 +40,4 @@ data class Details(
     val style: String = "",
     val gender: String = "",
     val occupation: String = "",
-    val keywords: List<String>,
 )

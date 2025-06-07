@@ -9,7 +9,7 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-            Action/Pose: Standing in a dynamic pose conveying bravery or anger, ready for a fight. 
+            Pose: Standing in a dynamic pose conveying bravery or anger, ready for a fight. 
             This could involve a wider stance, a tighter grip on their weapon (if visible), a raised fist (if weapon isn't the focus), or a forward lean.
             Their gaze should reflect determination or fury, looking towards the right. 
             Subtle sparkles of fire or embers drift around the character, hinting at recent action or a magical element, and now also emphasizing their intense emotion.
@@ -47,7 +47,8 @@ object GenrePrompts {
                     sharp lines, simple but effective shading, and anime/manga-inspired character design.
                     Background: Red contrasting with the character.
                     """
-                SCI_FI -> """
+                SCI_FI ->
+                    """
                     Pose: Close-up portrait, a slightly angled 3/4 view, with her looking intensely towards the upper left. The focus is tightly on her face and the details of her cybernetics.
                     Lighting: Dramatic lighting with a strong neon cyan glow originating from the upper left, casting bright highlights on her forehead, cheekbone, and cybernetic implants, with deep shadows on the right side of her face and neck. Subtle hints of a deep blue ambient light.
                     Art Style: Anime/manga-inspired style with clean, defined lines and meticulous detail on the cybernetics. Increased contrast and reduced overall saturation, with a color palette dominated by cool blues, grays, and accented by the bright cyan light.
@@ -55,4 +56,9 @@ object GenrePrompts {
                     """
             }
         }
+
+    fun detail(genre: Genre) =
+        """
+        theme: ${genre.name}
+        """"
 }

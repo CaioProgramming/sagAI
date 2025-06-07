@@ -1,12 +1,11 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
-import androidx.compose.ui.text.capitalize
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.SagaPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.characterPrompt
 import com.ilustris.sagai.core.ai.iconPrompt
-import com.ilustris.sagai.core.ai.sagaPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -14,7 +13,6 @@ import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.chat.repository.SagaRepository
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import java.util.Locale
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
@@ -92,8 +90,6 @@ class NewSagaUseCaseImpl
     }
 
 private fun generateSagaPrompt(sagaForm: SagaForm): String =
-    sagaPrompt(
-        sagaForm.title,
-        sagaForm.description,
-        sagaForm.genre.name.capitalize(Locale.getDefault()),
+    SagaPrompts.sagaGeneration(
+        sagaForm,
     )

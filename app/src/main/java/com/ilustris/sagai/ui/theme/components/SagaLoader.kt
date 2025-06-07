@@ -57,7 +57,7 @@ import kotlin.time.DurationUnit
 fun SagaLoader(
     modifier: Modifier = Modifier,
     brush: Brush = gradientAnimation(holographicGradient, targetValue = 500f),
-    tint: Color = MaterialTheme.colorScheme.surfaceContainer,
+    tint: Color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .6f),
     blurRadius: Dp = 20.dp,
     animationDuration: Duration = 5.seconds,
     shape: Shape = CircleShape,
@@ -185,7 +185,7 @@ fun DistortingBubble(
                 .align(Alignment.Center)
                 .rotate(rotateAnimation.value)
                 .background(
-                   tint.copy(alpha = .4f),
+                   tint,
                     shape,
                 ),
         )

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.utils
 
 import com.google.firebase.ai.type.Schema
+import com.google.gson.Gson
 import java.lang.reflect.ParameterizedType
 import kotlin.toString
 
@@ -105,3 +106,36 @@ fun String.removePackagePrefix(): String =
     this
         .substringAfterLast(".")
         .replace(".", "")
+
+fun Pair<String, String>.formatToString() =
+    """
+    { name: ${this.first},
+      text: ${this.second}
+    }
+    """
+
+fun Class<*>.toJsonString(): String {
+    val fields =
+        declaredFields
+            .filter { it.name != "\$stable" }
+            .joinToString(separator = ",\n") { field ->
+                val fieldName = field.name
+                val fieldType = field.type
+                val fieldValue =
+                    when {
+                        fieldType.isEnum -> "[ ${fieldType.enumConstants?.joinToString { it.toString() }} ]"
+                        fieldType == String::class.java -> "\"\""
+                        fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
+                        fieldType == Boolean::class.java -> "false"
+                        fieldType == Double::class.java -> "0.0"
+                        fieldType == Float::class.java -> "0.0f"
+                        fieldType == Long::class.java -> "0L"
+                        List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
+                        else -> "{}" // For nested objects, represent as empty JSON object
+                    }
+                "  \"$fieldName\": $fieldValue"
+            }
+    return "{\n$fields\n}"
+}
+
+fun Any.toJsonFormat() = Gson().toJson(this)

@@ -36,7 +36,7 @@ class TextGenClient : AIClient() {
                     "$prompt ${modelLanguage()}"
                 } else {
                     prompt
-                }
+                }.trimIndent()
             val content = model.generateContent(fullPrompt)
             Log.i(javaClass.simpleName, "prompt: $fullPrompt")
             Log.i(javaClass.simpleName, "generated: ${content.text}")

@@ -24,4 +24,9 @@ data class SagaContent(
         entityColumn = "sagaId",
     )
     val chapters: List<Chapter> = emptyList(),
+    @Relation(
+        parentColumn = "mainCharacterId",
+        entityColumn = "id",
+    )
+    val characters: List<Character> = emptyList(),
 )

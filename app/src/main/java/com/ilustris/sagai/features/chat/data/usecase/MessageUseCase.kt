@@ -26,11 +26,13 @@ interface MessageUseCase {
     suspend fun generateMessage(
         saga: SagaData,
         message: Pair<String, String>,
+        mainCharacter: Character,
         lastMessages: List<Pair<String, String>>,
+        characters: List<Character>,
     ): RequestResult<Exception, Message>
 
     suspend fun generateNarratorBreak(
         data: SagaData,
-        messages: List<Message>,
+        messages: List<String>,
     ): RequestResult<Exception, Message>
 }

@@ -6,9 +6,9 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.chapterPrompt
 import com.ilustris.sagai.core.ai.coverPrompt
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
-import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
@@ -39,11 +39,11 @@ class ChapterUseCaseImpl
 
         override suspend fun generateChapter(
             saga: SagaData,
-            messages: List<Message>,
+            messages: List<Pair<String, String>>,
         ) = try {
             val genText =
                 textGenClient.generate<Chapter>(
-                    generateChapterPrompt(saga, messages),
+                    generateChapterPrompt(saga, messages.map { it.formatToString() }),
                     true,
                 )
             RequestResult.Success(genText!!)
@@ -67,7 +67,7 @@ class ChapterUseCaseImpl
 
         private fun generateChapterPrompt(
             saga: SagaData,
-            messages: List<Message>,
+            messages: List<String>,
         ) = chapterPrompt(
             sagaData = saga,
             messages = messages,

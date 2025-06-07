@@ -47,7 +47,8 @@ data class Message(
 
 enum class SenderType {
     USER,
-    BOT,
+    CHARACTER,
     NARRATOR,
     NEW_CHAPTER,
+    NEW_CHARACTER,
 }

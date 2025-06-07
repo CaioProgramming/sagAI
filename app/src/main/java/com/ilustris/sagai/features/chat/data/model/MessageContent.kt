@@ -19,3 +19,5 @@ data class MessageContent(
     )
     val character: Character? = null,
 )
+
+fun MessageContent.joinMessage() = (character?.name ?: message.senderType.name) to message.text
