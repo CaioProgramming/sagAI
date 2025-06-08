@@ -20,4 +20,9 @@ data class MessageContent(
     val character: Character? = null,
 )
 
-fun MessageContent.joinMessage() = (character?.name ?: message.senderType.name) to message.text
+fun MessageContent.joinMessage(): Pair<String, String> =
+    if (message.senderType == SenderType.NEW_CHARACTER) {
+        message.senderType.name to message.text
+    } else {
+        (character?.name ?: message.senderType.name) to message.text
+    }

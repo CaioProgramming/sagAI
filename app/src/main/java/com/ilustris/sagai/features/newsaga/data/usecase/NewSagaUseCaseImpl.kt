@@ -40,11 +40,11 @@ class NewSagaUseCaseImpl
                         image = emptyString(),
                         sagaId = chatId.toInt(),
                     )?.let {
-                        characterRepository.insertCharacter(it).also { id ->
+                        characterRepository.insertCharacter(it).also { character ->
                             sagaRepository.updateChat(
                                 sagaData.copy(
                                     id = chatId.toInt(),
-                                    mainCharacterId = id.toInt(),
+                                    mainCharacterId = character.id,
                                 ),
                             )
                         }

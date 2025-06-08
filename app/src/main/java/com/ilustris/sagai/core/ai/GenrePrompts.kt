@@ -35,11 +35,10 @@ object GenrePrompts {
             """
         }.trimIndent()
 
-    fun iconStyle(genre: Genre) =
-        {
-            when (genre) {
-                FANTASY ->
-                    """
+    fun iconStyle(genre: Genre): String =
+        when (genre) {
+            FANTASY ->
+                """
                     Expression: Determined and resolute, with a strong gaze.
                     Pose: Upper body portrait, in 4/5 angle looking to the viewer.
                     Lighting: Dramatic lighting casting strong shadows and reflecting red light at face side.
@@ -47,18 +46,14 @@ object GenrePrompts {
                     sharp lines, simple but effective shading, and anime/manga-inspired character design.
                     Background: Red contrasting with the character.
                     """
-                SCI_FI ->
-                    """
+            SCI_FI ->
+                """
                     Pose: Close-up portrait, a slightly angled 3/4 view, with her looking intensely towards the upper left. The focus is tightly on her face and the details of her cybernetics.
                     Lighting: Dramatic lighting with a strong neon cyan glow originating from the upper left, casting bright highlights on her forehead, cheekbone, and cybernetic implants, with deep shadows on the right side of her face and neck. Subtle hints of a deep blue ambient light.
                     Art Style: Anime/manga-inspired style with clean, defined lines and meticulous detail on the cybernetics. Increased contrast and reduced overall saturation, with a color palette dominated by cool blues, grays, and accented by the bright cyan light.
                     Background: A blurred and out-of-focus cyberpunk cityscape at night, with muted blues and purples suggesting distant neon lights and towering structures."
                     """
-            }
         }
 
-    fun detail(genre: Genre) =
-        """
-        theme: ${genre.name}
-        """"
+    fun detail(genre: Genre) = "theme: ${genre.name}"
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -108,6 +109,9 @@ class ChatViewModel
                 } else {
                     val mappedMessages =
                         sagaContent.messages
+                            .sortedByDescending {
+                                it.timestamp
+                            }.reversed()
                             .map {
                                 messageUseCase.getMessageDetail(it.id)
                             }
@@ -116,7 +120,6 @@ class ChatViewModel
                     if (state.value != ChatState.Success) {
                         state.value = ChatState.Success
                     }
-                    checkIfNeedsNarrationBreak(messages.value)
                     if (mappedMessages.isNotEmpty()) {
                         observeChapterBreak(sagaContent, mappedMessages)
                     }
@@ -223,7 +226,7 @@ class ChatViewModel
                             ).also {
                                 updateChapter(
                                     chapter.copy(
-                                        messageReference = it.toInt(),
+                                        messageReference = it.id,
                                     ),
                                 )
                             }
@@ -306,11 +309,42 @@ class ChatViewModel
                             timestamp = Calendar.getInstance().timeInMillis,
                         ),
                     ).also {
-                        if (message.senderType == SenderType.USER) {
-                            delay(2.seconds)
-                            replyMessage(message.copy(id = it.toInt()))
+                        when (message.senderType) {
+                            SenderType.USER -> {
+                                delay(2.seconds)
+                                replyMessage(it)
+                            }
+
+                            SenderType.NEW_CHARACTER -> {
+                                generateCharacter(it)
+                            }
+                            else -> doNothing()
                         }
                     }
+            }
+        }
+
+        private fun generateCharacter(message: Message) {
+            viewModelScope.launch(Dispatchers.IO) {
+                characterUseCase
+                    .generateCharacter(
+                        saga.value!!,
+                        message.text,
+                    ).onSuccess {
+                        updateMessage(
+                            message.copy(
+                                characterId = it.id,
+                            ),
+                        )
+                    }.onFailure {
+                        Log.e(javaClass.simpleName, "generateCharacter: Error generating new character.")
+                    }
+            }
+        }
+
+        private fun updateMessage(message: Message) {
+            viewModelScope.launch(Dispatchers.IO) {
+                messageUseCase.updateMessage(message)
             }
         }
 
@@ -326,13 +360,14 @@ class ChatViewModel
                                 lastMessages =
                                     messages.value
                                         .reversed()
-                                        .take(10)
+                                        .takeLast(10)
                                         .map { m ->
                                             m.joinMessage()
                                         },
-                                characters.value.filter { c ->
-                                    c.id != mainCharacter.value?.id
-                                },
+                                characters =
+                                    characters.value.filter { c ->
+                                        c.id != mainCharacter.value?.id
+                                    },
                             ).onSuccess { reply ->
                                 sendMessage(
                                     reply.copy(

@@ -6,9 +6,9 @@ import kotlinx.coroutines.flow.Flow
 interface CharacterRepository {
     fun getAllCharacters(): Flow<List<Character>>
 
-    suspend fun insertCharacter(character: Character): Long
+    suspend fun insertCharacter(character: Character): Character
 
-    suspend fun updateCharacter(character: Character)
+    suspend fun updateCharacter(character: Character): Character
 
     suspend fun deleteCharacter(characterId: Int)
 

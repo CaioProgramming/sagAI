@@ -9,9 +9,9 @@ object SagaPrompts {
 
     fun SagaData.storyDetails() =
         """
-        You are set in the RPG world of:   
         Title: $title
         Description: ${description.trimEnd()}
+        Genre: $genre
         """
 
     fun SagaForm.storyDetails() =

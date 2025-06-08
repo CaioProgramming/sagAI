@@ -1,25 +1,28 @@
 package com.ilustris.sagai.features.chat.ui.components
 
 import android.content.res.Configuration
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -76,12 +79,7 @@ fun ChatBubble(
             SenderType.NARRATOR, SenderType.NEW_CHAPTER -> MaterialTheme.colorScheme.onBackground
             else -> genre.iconColor
         }
-    val alignment =
-        when (sender) {
-            SenderType.USER -> Alignment.CenterEnd
-            SenderType.CHARACTER -> Alignment.CenterStart
-            else -> Alignment.Center
-        }
+
     val cornerSize = genre.cornerSize()
     val bubbleShape =
         when (sender) {
@@ -142,226 +140,251 @@ fun ChatBubble(
             mutableStateOf(false)
         }
 
-    val bubblePadding =
+    val bubbleAlpha by animateFloatAsState(
+        targetValue = if (isBubbleVisible.value) 1f else 0f,
+        label = "Bubble Alpha Animation",
+    )
+
+    val duration =
         when (sender) {
-            SenderType.USER ->
-                PaddingValues(
-                    start = 100.dp,
-                    end = 16.dp,
-                    top = 8.dp,
-                    bottom = 8.dp,
-                )
-
-            SenderType.CHARACTER ->
-                PaddingValues(
-                    start = 16.dp,
-                    end = 100.dp,
-                    top = 8.dp,
-                    bottom = 8.dp,
-                )
-
-            else -> PaddingValues(0.dp)
+            SenderType.USER -> 0.seconds
+            SenderType.CHARACTER -> 5.seconds
+            else -> 10.seconds
+        }
+    val fontStyle =
+        when (sender) {
+            SenderType.NARRATOR -> FontStyle.Italic
+            else -> FontStyle.Normal
         }
 
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(bubblePadding)
-                .animateContentSize(),
-        contentAlignment = alignment,
-    ) {
-        val bubbleAlpha by animateFloatAsState(
-            targetValue = if (isBubbleVisible.value) 1f else 0f,
-            label = "Bubble Alpha Animation",
-        )
-        Column {
-            Box(
+    when (sender) {
+        SenderType.USER, SenderType.CHARACTER -> {
+            Column(
                 modifier =
                     Modifier
-                        .alpha(bubbleAlpha)
-                        .clip(bubbleShape)
-                        .border(
-                            borderSize,
-                            borderBrush,
-                            bubbleShape,
-                        ).background(bubbleColor),
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .padding(4.dp)
+                        .animateContentSize(),
             ) {
-                val duration =
-                    when (sender) {
-                        SenderType.USER -> 0.seconds
-                        SenderType.CHARACTER -> 5.seconds
-                        else -> 10.seconds
-                    }
-                val fontStyle =
-                    when (sender) {
-                        SenderType.NARRATOR -> FontStyle.Italic
-                        else -> FontStyle.Normal
-                    }
-
-                if (sender == SenderType.NEW_CHAPTER && messageContent.chapter != null) {
-                    val content = messageContent.chapter
-
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        ConstraintLayout(
-                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        ) {
-                            val (firstDivider, title, secondDivider) = createRefs()
-                            Box(
-                                Modifier
-                                    .constrainAs(firstDivider) {
-                                        start.linkTo(parent.start)
-                                        end.linkTo(title.start)
-                                        top.linkTo(title.top)
-                                        bottom.linkTo(title.bottom)
-                                        width = fillToConstraints
-                                    }.height(1.dp)
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            genre.gradient(),
-                                        ),
-                                    ),
-                            )
-                            Text(
-                                text = "Chapter ${content.title}",
-                                modifier =
-                                    Modifier.padding(12.dp).constrainAs(title) {
-                                        top.linkTo(parent.top)
-                                        bottom.linkTo(parent.bottom)
-                                        start.linkTo(parent.start)
-                                        end.linkTo(parent.end)
-                                    },
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = genre.bodyFont(),
-                                        fontStyle = FontStyle.Italic,
-                                        color = textColor,
-                                        textAlign = TextAlign.Start,
-                                    ),
-                            )
-                            Box(
-                                Modifier
-                                    .constrainAs(secondDivider) {
-                                        start.linkTo(title.end)
-                                        end.linkTo(parent.end)
-                                        top.linkTo(title.top)
-                                        bottom.linkTo(title.bottom)
-                                        width = fillToConstraints
-                                    }.height(1.dp)
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            genre.gradient(),
-                                        ),
-                                    ),
-                            )
+                val iconAlignment = if (isUser) Alignment.End else Alignment.Start
+                val padding =
+                    PaddingValues(
+                        start = if (isUser) 0.dp else 24.dp,
+                        end = if (isUser) 24.dp else 0.dp,
+                        top = 4.dp,
+                        bottom = 4.dp,
+                    )
+                TypewriterText(
+                    text = message.text,
+                    isAnimated = isAnimated,
+                    duration = duration,
+                    modifier =
+                        Modifier
+                            .padding(padding)
+                            .fillMaxWidth()
+                            .graphicsLayer(bubbleAlpha)
+                            .border(borderSize, borderBrush, bubbleShape)
+                            .background(
+                                bubbleColor,
+                                bubbleShape,
+                            ).padding(16.dp),
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Normal,
+                            fontFamily = genre.bodyFont(),
+                            fontStyle = fontStyle,
+                            color = textColor,
+                            textAlign = textAlignment,
+                        ),
+                    onTextUpdate = {
+                        isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
+                    },
+                    onAnimationFinished = {
+                        if (alreadyAnimatedMessages.contains(message.id).not()) {
+                            alreadyAnimatedMessages.add(message.id)
                         }
-
-                        Box {
-                            AsyncImage(
-                                model = content?.coverImage,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp),
-                            )
-
-                            Box(
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp)
-                                        .background(fadedGradientTopAndBottom()),
-                            )
-                        }
-                        Text(
-                            text = content?.title ?: "New Chapter",
-                            modifier = Modifier.padding(16.dp),
-                            style =
-                                MaterialTheme.typography.headlineSmall.copy(
-                                    fontWeight = FontWeight.Light,
-                                    letterSpacing = 5.sp,
-                                    fontFamily = genre.headerFont(),
-                                    fontStyle = fontStyle,
-                                    brush = gradientAnimation(genre.gradient()),
-                                    textAlign = TextAlign.Center,
-                                ),
-                        )
-
-                        TypewriterText(
-                            text = content?.overview ?: "Overview not available",
-                            modifier = Modifier.padding(16.dp),
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = genre.bodyFont(),
-                                    fontStyle = fontStyle,
-                                    color = textColor,
-                                    textAlign = TextAlign.Center,
-                                ),
-                            onTextUpdate = {
-                                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
-                            },
+                    },
+                )
+                val avatarSize = if (messageContent.character == null) 12.dp else 24.dp
+                Box(
+                    Modifier
+                        .padding(8.dp)
+                        .align(iconAlignment)
+                        .size(avatarSize)
+                        .background(MaterialTheme.colorScheme.surfaceContainer.gradientFade(), CircleShape),
+                ) {
+                    messageContent.character?.let {
+                        CharacterAvatar(
+                            it,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize(),
                         )
                     }
-                } else {
-                    val padding =
-                        if (isUser) {
-                            PaddingValues(
-                                start = 16.dp,
-                                end = 8.dp,
-                                top = 8.dp,
-                                bottom = 8.dp,
-                            )
-                        } else {
-                            PaddingValues(
-                                start = 8.dp,
-                                end = 16.dp,
-                                top = 8.dp,
-                                bottom = 8.dp,
-                            )
-                        }
-                    TypewriterText(
-                        text = message.text,
-                        isAnimated = isAnimated,
-                        duration = duration,
-                        modifier = Modifier.padding(padding),
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = genre.bodyFont(),
-                                fontStyle = fontStyle,
-                                color = textColor,
-                                textAlign = textAlignment,
-                            ),
-                        onTextUpdate = {
-                            isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
-                        },
-                        onAnimationFinished = {
-                            if (alreadyAnimatedMessages.contains(message.id).not()) {
-                                alreadyAnimatedMessages.add(message.id)
-                            }
-                        },
+                }
+            }
+        }
+
+        SenderType.NARRATOR -> {
+            TypewriterText(
+                text = message.text,
+                isAnimated = isAnimated,
+                duration = duration,
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontStyle = fontStyle,
+                        textAlign = textAlignment,
+                        fontFamily = genre.bodyFont(),
+                        color = textColor,
+                    ),
+            )
+        }
+
+        SenderType.NEW_CHAPTER -> {
+            AnimatedVisibility(messageContent.chapter != null) {
+                messageContent.chapter?.let {
+                    ChapterContentView(
+                        genre,
+                        it,
+                        textColor,
+                        fontStyle,
+                        isBubbleVisible,
+                        isAnimated,
                     )
                 }
             }
-
-            messageContent.character?.let {
-                CharacterAvatar(
-                    it,
-                    modifier =
-                        Modifier.padding(8.dp).size(32.dp).align(
-                            if (isUser) Alignment.End else Alignment.Start,
-                        ),
-                )
-            }
         }
+
+
+        SenderType.NEW_CHARACTER -> {
+            NewCharacterView(messageContent, genre)
+        }
+    }
+}
+
+@Composable
+private fun ChapterContentView(
+    genre: Genre,
+    content: Chapter,
+    textColor: Color,
+    fontStyle: FontStyle,
+    isBubbleVisible: MutableState<Boolean>,
+    isAnimated: Boolean,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ConstraintLayout(
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+        ) {
+            val (firstDivider, title, secondDivider) = createRefs()
+            Box(
+                Modifier
+                    .constrainAs(firstDivider) {
+                        start.linkTo(parent.start)
+                        end.linkTo(title.start)
+                        top.linkTo(title.top)
+                        bottom.linkTo(title.bottom)
+                        width = fillToConstraints
+                    }.height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            genre.gradient(),
+                        ),
+                    ),
+            )
+            Text(
+                text = "Chapter ${content.title}",
+                modifier =
+                    Modifier
+                        .padding(12.dp)
+                        .constrainAs(title) {
+                            top.linkTo(parent.top)
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                        },
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = genre.bodyFont(),
+                        fontStyle = FontStyle.Italic,
+                        color = textColor,
+                        textAlign = TextAlign.Start,
+                    ),
+            )
+            Box(
+                Modifier
+                    .constrainAs(secondDivider) {
+                        start.linkTo(title.end)
+                        end.linkTo(parent.end)
+                        top.linkTo(title.top)
+                        bottom.linkTo(title.bottom)
+                        width = fillToConstraints
+                    }.height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            genre.gradient(),
+                        ),
+                    ),
+            )
+        }
+
+        Box {
+            AsyncImage(
+                model = content.coverImage,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+            )
+
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .background(fadedGradientTopAndBottom()),
+            )
+        }
+        Text(
+            text = content.title,
+            modifier = Modifier.padding(16.dp),
+            style =
+                MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Light,
+                    letterSpacing = 5.sp,
+                    fontFamily = genre.headerFont(),
+                    fontStyle = fontStyle,
+                    brush = gradientAnimation(genre.gradient()),
+                    textAlign = TextAlign.Center,
+                ),
+        )
+
+        TypewriterText(
+            text = content.overview,
+            modifier = Modifier.padding(16.dp),
+            style =
+                MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = genre.bodyFont(),
+                    fontStyle = fontStyle,
+                    color = textColor,
+                    textAlign = TextAlign.Center,
+                ),
+            onTextUpdate = {
+                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
+            },
+        )
     }
 }
 

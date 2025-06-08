@@ -37,6 +37,7 @@ data class Message(
     val text: String,
     val timestamp: Long,
     val senderType: SenderType,
+    val speakerName: String? = null,
     @ColumnInfo(index = true)
     val sagaId: Int,
     @ColumnInfo(index = true)
@@ -52,3 +53,36 @@ enum class SenderType {
     NEW_CHAPTER,
     NEW_CHARACTER,
 }
+
+fun SenderType.isCharacter() = this == SenderType.CHARACTER
+
+fun SenderType.meaning() =
+    when (this) {
+        SenderType.USER ->
+            """
+            Represents a message sent by the player (Jeni). You, as the AI, must NEVER generate a message with this 'senderType'. This type is only for input from the player.
+            """
+        SenderType.CHARACTER ->
+            """
+            Use for dialogue spoken by an existing NPC (Non-Player Character) 
+            who is already established in the story or listed in 'CURRENT SAGA CAST'.'
+            """
+        SenderType.NARRATOR ->
+            """
+             Use for general story narration,
+             scene descriptions, or prompting the player for action."
+             You can't speak for another character in the story
+             """
+        SenderType.NEW_CHAPTER ->
+            """
+            Use ONLY when introducing a brand new, significant NPC for the very first time. 
+            If a character is mentioned or appears and is NOT in the Story,
+            you MUST use this type for their first message. 
+            The 'text' field for this type MUST contain a natural language description of this new character (including their name, key physical traits, and initial demeanor). 
+            """
+        SenderType.NEW_CHARACTER ->
+            """
+            Use when introducing a brand new, significant NPC for the very first time.
+            The 'text' field for this type MUST contain a natural language description of this new character (including their name, key physical traits, and initial demeanor).
+            """
+    }

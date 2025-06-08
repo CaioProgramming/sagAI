@@ -12,7 +12,7 @@ interface MessageUseCase {
 
     suspend fun getMessageDetail(id: Int): MessageContent
 
-    suspend fun saveMessage(message: Message): Long
+    suspend fun saveMessage(message: Message): Message
 
     suspend fun deleteMessage(messageId: Long)
 
@@ -35,4 +35,6 @@ interface MessageUseCase {
         data: SagaData,
         messages: List<String>,
     ): RequestResult<Exception, Message>
+
+    suspend fun updateMessage(message: Message): RequestResult<Exception, Unit>
 }

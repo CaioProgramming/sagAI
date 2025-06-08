@@ -15,9 +15,15 @@ class CharacterRepositoryImpl
 
         override fun getAllCharacters(): Flow<List<Character>> = characterDao.getAllCharacters()
 
-        override suspend fun insertCharacter(character: Character): Long = characterDao.insertCharacter(character)
+        override suspend fun insertCharacter(character: Character): Character =
+            character.copy(
+                id = characterDao.insertCharacter(character.copy(id = 0)).toInt(),
+            )
 
-        override suspend fun updateCharacter(character: Character) = characterDao.updateCharacter(character)
+        override suspend fun updateCharacter(character: Character): Character {
+            characterDao.updateCharacter(character)
+            return character
+        }
 
         override suspend fun deleteCharacter(characterId: Int) = characterDao.deleteCharacter(characterId)
 

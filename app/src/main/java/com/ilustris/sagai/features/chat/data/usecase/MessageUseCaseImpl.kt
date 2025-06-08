@@ -5,6 +5,8 @@ import com.ilustris.sagai.core.ai.chatReplyPrompt
 import com.ilustris.sagai.core.ai.introductionPrompt
 import com.ilustris.sagai.core.ai.narratorBreakPrompt
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.asError
+import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
@@ -23,7 +25,13 @@ class MessageUseCaseImpl
 
         override suspend fun getMessageDetail(id: Int): MessageContent = messageRepository.getMessageDetail(id)
 
-        override suspend fun saveMessage(message: Message): Long = messageRepository.saveMessage(message)
+        override suspend fun saveMessage(message: Message) =
+            message.copy(
+                id =
+                    messageRepository
+                        .saveMessage(message)
+                        .toInt(),
+            )
 
         override suspend fun deleteMessage(messageId: Long) {
             messageRepository.deleteMessage(messageId)
@@ -94,6 +102,13 @@ class MessageUseCaseImpl
             e.printStackTrace()
             RequestResult.Error(e)
         }
+
+        override suspend fun updateMessage(message: Message): RequestResult<Exception, Unit> =
+            try {
+                messageRepository.updateMessage(message).asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
     }
 
 private fun generateSagaIntroductionPrompt(
