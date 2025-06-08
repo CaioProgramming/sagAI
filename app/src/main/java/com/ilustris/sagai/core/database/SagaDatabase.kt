@@ -13,7 +13,7 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 
 @Database(
     entities = [SagaData::class, Message::class, Chapter::class, Character::class],
-    version = 7,
+    version = 8,
     exportSchema = true,
 )
 abstract class SagaDatabase : RoomDatabase() {
