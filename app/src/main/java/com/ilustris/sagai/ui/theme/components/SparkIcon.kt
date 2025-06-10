@@ -1,6 +1,6 @@
 package com.ilustris.sagai.ui.theme.components
 
-import androidx.compose.animation.core.EaseInCubic
+import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.RepeatMode.Reverse
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -20,30 +20,36 @@ import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.ui.theme.RoundedPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.holographicGradient
 import kotlin.collections.plusAssign
 import kotlin.compareTo
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 @Composable
 fun SparkIcon(
     modifier: Modifier,
-    description: String,
+    description: String = emptyString(),
     brush: Brush,
     tint: Color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
     blurRadius: Dp = 10.dp,
+    targetRadius: Float = 1f / 3f,
+    duration: Duration = 5.seconds,
+    rotationTarget : Float = 30f
 ) {
     val infiniteTranition = rememberInfiniteTransition()
     val starInnerRadius =
         infiniteTranition.animateFloat(
-            initialValue = 1f / 3f,
-            targetValue = 1f / 2f,
+            initialValue = 1f / 2f,
+            targetValue = targetRadius,
             animationSpec =
                 infiniteRepeatable(
-                    tween(5000, easing = EaseInCubic),
+                    tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseInElastic),
                     Reverse,
                 ),
         )
@@ -51,17 +57,18 @@ fun SparkIcon(
     SagaLoader(
         modifier = modifier,
         brush = brush,
-        animationDuration = 10.seconds,
+        animationDuration = duration,
         scaleDistortion = .8f to .8f,
         blurRadius = blurRadius,
         tint = tint,
+        rotationTarget = rotationTarget,
         shape =
             RoundedPolygonShape(
                 RoundedPolygon.star(
                     numVerticesPerRadius = 4,
                     innerRadius = starInnerRadius.value,
                     radius = 1f,
-                    rounding = CornerRounding(.0f),
+                    rounding = CornerRounding(0f),
                 ),
             ),
     )
@@ -74,11 +81,9 @@ fun SparkIconPreview() {
         SparkIcon(
             modifier = Modifier.size(200.dp),
             description = "Spark Icon",
-            brush =
-                gradientAnimation(
-                    genresGradient(),
-                ),
+            blurRadius = 10.dp,
+            targetRadius = 1f / 5f,
+            brush = gradientAnimation(holographicGradient, targetValue = 500f),
         )
     }
-
 }

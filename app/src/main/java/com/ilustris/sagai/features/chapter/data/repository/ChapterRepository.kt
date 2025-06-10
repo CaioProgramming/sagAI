@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.Flow
 interface ChapterRepository {
     fun getChaptersBySagaId(sagaId: Int): Flow<List<Chapter>>
 
-    suspend fun saveChapter(chapter: Chapter): Long
+    suspend fun saveChapter(chapter: Chapter): Chapter
 
     suspend fun updateChapter(chapter: Chapter): Int
 

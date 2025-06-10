@@ -1,6 +1,8 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonMap
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.chat.data.model.SenderType
@@ -11,6 +13,7 @@ object ChatPrompts {
     fun replyMessagePrompt(
         saga: SagaData,
         message: String,
+        currentChapter: Chapter?,
         mainCharacter: Character,
         lastMessages: List<String> = emptyList(),
         charactersDetails: List<Character> = emptyList(),
@@ -18,7 +21,9 @@ object ChatPrompts {
    You are the Saga Master for a text-based RPG called '${saga.title}'.
    Your role is to create an immersive narrative, describing the world and generating dialogues for NPCs (Non-Player Characters).
     
-   ${SagaPrompts.details(saga)}
+    ${SagaPrompts.details(saga)}
+    
+    ${currentChapter?.let { ChapterPrompts.chapterOverview(it)} ?: emptyString()}
 
     PLAYER INFORMATION (${mainCharacter.name}):
     ${CharacterPrompts.details(mainCharacter)}
@@ -27,8 +32,15 @@ object ChatPrompts {
 
 
     CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
-    ${lastMessages.joinToString(separator = ",\n")}
-
+    // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : Julie : ").
+    // ⚠️ CRITICAL RULE FOR THOUGHTS: 'THOUGHT' entries here represent the player character's INTERNAL monologue.
+    NPCs IN THE STORY DO NOT HEAR OR DIRECTLY RESPOND TO THESE THOUGHTS.
+    Your response to a 'THOUGHT' entry must be either a 'NARRATOR' message describing the scene, Any's internal state, or the outcome of her reflections; OR an NPC's action/dialogue that is NOT a direct response to the thought.
+    // 'ACTION' entries here represent explicit physical actions performed by the player character. 
+    You should narrate the outcome of these actions.
+    [
+        ${lastMessages.joinToString(separator = ",\n")}
+    ]
     GENERATE A REPLY TO THE MESSAGE:
     $message
     

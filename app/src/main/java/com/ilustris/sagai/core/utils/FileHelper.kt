@@ -14,7 +14,7 @@ class FileHelper(
         fileName: String,
         data: ByteArray,
     ): File? {
-        val file = context.cacheDir.resolve(fileName.plus(".png").trim())
+        val file = context.cacheDir.resolve(fileName.plus(".png").removeBlankSpace())
         file.writeBytes(data)
         return file.takeIf { it.exists() }
     }

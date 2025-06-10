@@ -4,11 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -27,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import java.io.File
 import java.util.Calendar
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -45,10 +40,12 @@ class ChatViewModel
     ) : ViewModel() {
         val state = MutableStateFlow<ChatState>(ChatState.Empty)
 
+        val content = MutableStateFlow<SagaContent?>(null)
         val saga = MutableStateFlow<SagaData?>(null)
         val messages = MutableStateFlow<List<MessageContent>>(emptyList())
         val characters = MutableStateFlow<List<Character>>(emptyList())
         val mainCharacter = MutableStateFlow<Character?>(null)
+        val isGenerating = MutableStateFlow(false)
 
         fun initChat(sagaId: String?) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -62,6 +59,7 @@ class ChatViewModel
                                         "Saga not found. Please select a valid saga.",
                                     )
                             } else {
+                                content.value = it
                                 saga.value = it.saga
                                 mainCharacter.value = it.mainCharacter
                                 characters.value = it.characters
@@ -127,7 +125,7 @@ class ChatViewModel
             }
         }
 
-        private suspend fun observeChapterBreak(
+        private fun observeChapterBreak(
             saga: SagaContent,
             mappedMessages: List<MessageContent>,
         ) {
@@ -138,99 +136,69 @@ class ChatViewModel
                     .filter { it.senderType == SenderType.NEW_CHAPTER }
                     .mapNotNull { it.chapterId }
 
-            if (chapterMessagesIds.isEmpty() || chapters.isEmpty() && messages.isNotEmpty()) {
-                createNewChapter(mappedMessages, chapters.lastOrNull())
+            if (chapterMessagesIds.isEmpty()) {
+                createNewChapter(mappedMessages)
             } else {
-                val lastChapterKey = chapterMessagesIds.last()
-                val lastChapterMessage = saga.messages.findLast { it.id == lastChapterKey }
+                val lastChapterMessage =
+                    mappedMessages.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
                 if (lastChapterMessage != null) {
-                    val messageIndex =
-                        mappedMessages.indexOfLast { it.message.id == lastChapterMessage.id }
+                    val messageIndex = mappedMessages.indexOf(lastChapterMessage)
                     createNewChapter(
                         mappedMessages.subList(messageIndex + 1, messages.size).takeLast(100),
-                        lastChapter = chapters.find { it.messageReference == lastChapterMessage.id },
+                        chapters,
                     )
                 } else {
-                    createNewChapter(mappedMessages.takeLast(100))
+                    createNewChapter(mappedMessages.takeLast(100), chapters)
                 }
             }
         }
 
-        private suspend fun createNewChapter(
+        private fun createNewChapter(
             messageList: List<MessageContent>,
-            lastChapter: Chapter? = null,
-        ) {
-            if (messageList.size > 100) {
-                chapterUseCase
-                    .generateChapter(
-                        saga.value!!,
-                        messageList.map { it.joinMessage() },
-                    ).onSuccess {
-                        saveChapter(
-                            it.copy(
-                                messageReference = messageList.last().message.id,
-                            ),
-                        )
-                    }.onFailure {
-                        state.value =
-                            ChatState.Error("Failed to generate chapter break: ${it.message ?: "Unknown error"}")
-                    }
-            }
-        }
-
-        private fun saveChapter(chapter: Chapter) {
-            viewModelScope.launch {
-                chapterUseCase
-                    .generateChapterCover(
-                        chapter,
-                        saga.value!!.genre,
-                    ).run {
-                        val file =
-                            (this as? RequestResult.Success<ByteArray>)?.success?.let {
-                                fileHelper.saveToCache(
-                                    chapter.title.trim().lowercase(),
-                                    it.value,
-                                )
-                            }
-                        finishSaveChapter(
-                            chapter,
-                            file,
-                        )
-                    }
-            }
-        }
-
-        private fun finishSaveChapter(
-            chapter: Chapter,
-            coverFile: File?,
+            chapters: List<Chapter> = emptyList(),
         ) {
             viewModelScope.launch(Dispatchers.IO) {
-                val filePath = coverFile?.absolutePath ?: emptyString()
-                chapterUseCase
-                    .saveChapter(
-                        chapter.copy(
-                            coverImage = filePath,
+                if (messageList.size >= 100 && isGenerating.value.not()) {
+                    val messageReference = messageList.last()
+                    isGenerating.value = true
+                    chapterUseCase
+                        .generateChapter(
+                            saga.value!!,
+                            messageReference.message.id,
+                            messageList.map { it.joinMessage() },
+                            chapters,
+                            characters.value,
+                        ).onSuccess {
+                            finishSaveChapter(it)
+                        }.onFailure {
+                            state.value =
+                                ChatState.Error("Failed to generate chapter break: ${it.message ?: "Unknown error"}")
+                        }
+                    isGenerating.value = false
+                }
+            }
+        }
+
+        private fun finishSaveChapter(chapter: Chapter) {
+            viewModelScope.launch(Dispatchers.IO) {
+                messageUseCase
+                    .saveMessage(
+                        Message(
+                            id = 0,
+                            text = "Capitulo '${chapter.title}' iniciado.",
+                            senderType = SenderType.NEW_CHAPTER,
                             sagaId = saga.value!!.id,
+                            timestamp = System.currentTimeMillis(),
+                            chapterId = chapter.id,
                         ),
                     ).also {
-                        messageUseCase
-                            .saveMessage(
-                                Message(
-                                    id = 0,
-                                    text = "Capitulo '${chapter.title}' iniciado.",
-                                    senderType = SenderType.NEW_CHAPTER,
-                                    sagaId = saga.value!!.id,
-                                    timestamp = System.currentTimeMillis(),
-                                    chapterId = it.toInt(),
-                                ),
-                            ).also {
-                                updateChapter(
-                                    chapter.copy(
-                                        messageReference = it.id,
-                                    ),
-                                )
-                            }
+                        updateChapter(
+                            chapter.copy(
+                                messageReference = it.id,
+                            ),
+                        )
                     }
+                isGenerating.value = false
             }
         }
 
@@ -242,39 +210,12 @@ class ChatViewModel
             }
         }
 
-        private fun checkIfNeedsNarrationBreak(messageList: List<MessageContent>) {
-            val lastNarrationIndex = messageList.indexOfLast { it.message.senderType == SenderType.NARRATOR }
-            val countSinceNarration =
-                messages.value
-                    .subList(lastNarrationIndex + 1, messages.value.size)
-                    .size
-
-            if (countSinceNarration > 25) {
-                viewModelScope.launch {
-                    messageUseCase
-                        .generateNarratorBreak(
-                            saga.value!!,
-                            messageList
-                                .filter {
-                                    it.message.senderType != SenderType.NARRATOR
-                                }.map {
-                                    it.joinMessage().formatToString()
-                                },
-                        ).onSuccess {
-                            sendMessage(it.copy(senderType = SenderType.NARRATOR))
-                        }.onFailure {
-                            state.value =
-                                ChatState.Error("Failed to generate narration break: ${it.message ?: "Unknown error"}")
-                        }
-                }
-            }
-        }
-
         private fun generateIntroduction(
             saga: SagaData,
             character: Character?,
         ) {
             viewModelScope.launch {
+                state.value = ChatState.Loading
                 messageUseCase
                     .generateIntroMessage(saga, character)
                     .onSuccess {
@@ -286,12 +227,15 @@ class ChatViewModel
             }
         }
 
-        fun sendInput(text: String) {
+        fun sendInput(
+            text: String,
+            sendType: SenderType,
+        ) {
             val message =
                 Message(
                     id = 0,
                     text = text,
-                    senderType = SenderType.USER,
+                    senderType = sendType,
                     sagaId = saga.value?.id ?: 0,
                     timestamp = System.currentTimeMillis(),
                     characterId = mainCharacter.value?.id,
@@ -301,31 +245,39 @@ class ChatViewModel
 
         fun sendMessage(message: Message) {
             viewModelScope.launch(Dispatchers.IO) {
+                val characterReference =
+                    characters.value.find {
+                        message.speakerName?.contains(it.name, true) == true ||
+                            message.characterId == mainCharacter.value?.id
+                    }
                 messageUseCase
                     .saveMessage(
                         message.copy(
                             id = 0,
                             sagaId = saga.value!!.id,
                             timestamp = Calendar.getInstance().timeInMillis,
+                            characterId = characterReference?.id,
                         ),
                     ).also {
-                        when (message.senderType) {
-                            SenderType.USER -> {
+                        when (message.characterId == mainCharacter.value?.id) {
+                            true -> {
                                 delay(2.seconds)
                                 replyMessage(it)
                             }
-
-                            SenderType.NEW_CHARACTER -> {
-                                generateCharacter(it)
+                            else -> {
+                                if (message.senderType == SenderType.NEW_CHARACTER) {
+                                    generateCharacter(it)
+                                }
                             }
-                            else -> doNothing()
                         }
                     }
+                isGenerating.value = false
             }
         }
 
         private fun generateCharacter(message: Message) {
             viewModelScope.launch(Dispatchers.IO) {
+                isGenerating.value = true
                 characterUseCase
                     .generateCharacter(
                         saga.value!!,
@@ -337,8 +289,13 @@ class ChatViewModel
                             ),
                         )
                     }.onFailure {
-                        Log.e(javaClass.simpleName, "generateCharacter: Error generating new character.")
+                        Log.e(
+                            javaClass.simpleName,
+                            "generateCharacter: Error generating new character.",
+                        )
                     }
+
+                isGenerating.value = false
             }
         }
 
@@ -352,9 +309,11 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 saga.value?.let { saga ->
                     messages.value.find { it.message.id == message.id }?.let {
+                        isGenerating.value = true
                         messageUseCase
                             .generateMessage(
                                 saga = saga,
+                                chapter = content.value?.chapters?.lastOrNull(),
                                 message = it.joinMessage(),
                                 mainCharacter = mainCharacter.value!!,
                                 lastMessages =

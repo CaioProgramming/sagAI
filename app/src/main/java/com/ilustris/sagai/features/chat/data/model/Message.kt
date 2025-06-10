@@ -48,10 +48,15 @@ data class Message(
 
 enum class SenderType {
     USER,
-    CHARACTER,
+    THOUGHT,
+
+    ACTION,
     NARRATOR,
     NEW_CHAPTER,
     NEW_CHARACTER,
+    CHARACTER,
+
+
 }
 
 fun SenderType.isCharacter() = this == SenderType.CHARACTER
@@ -84,5 +89,14 @@ fun SenderType.meaning() =
             """
             Use when introducing a brand new, significant NPC for the very first time.
             The 'text' field for this type MUST contain a natural language description of this new character (including their name, key physical traits, and initial demeanor).
+            """
+
+        SenderType.THOUGHT ->
+            """
+            Use when Character its thinking and not talking directly with other NPC.
+            """
+        SenderType.ACTION ->
+            """
+            Use to describe a character action
             """
     }

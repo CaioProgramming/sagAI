@@ -2,8 +2,8 @@ package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.flow.Flow
 
 interface ChapterUseCase {
@@ -14,7 +14,7 @@ interface ChapterUseCase {
         messageId: Int,
     ): Chapter?
 
-    suspend fun saveChapter(chapter: Chapter): Long
+    suspend fun saveChapter(chapter: Chapter): Chapter
 
     suspend fun deleteChapter(chapter: Chapter)
 
@@ -26,11 +26,9 @@ interface ChapterUseCase {
 
     suspend fun generateChapter(
         saga: SagaData,
+        messageId: Int,
         messages: List<Pair<String, String>>,
+        chapters: List<Chapter>,
+        characters: List<Character>,
     ): RequestResult<Exception, Chapter>
-
-    suspend fun generateChapterCover(
-        chapter: Chapter,
-        genre: Genre,
-    ): RequestResult<Exception, ByteArray>
 }

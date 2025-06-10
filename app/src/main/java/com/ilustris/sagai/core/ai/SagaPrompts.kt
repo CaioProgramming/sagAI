@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -83,6 +85,7 @@ object SagaPrompts {
     fun chapterGeneration(
         sagaData: SagaData,
         messages: List<String>,
+        chapters: List<Chapter>,
     ) = """
         Write a new chapter to continue the adventure in a role-playing game (RPG) set in the world of ${sagaData.title}.
         The story is ${sagaData.description}.
@@ -91,6 +94,9 @@ object SagaPrompts {
         Write a overview of what should be the next events connecting with the past events from the messages.
         The last messages in the conversation were:
         ${messages.joinToString("\n") { it }}
+        
+        You can use the following chapters as context:
+        ${chapters.joinToString("\n") { it.toJsonFormat() }}
         
         Your summary should be in character, reflecting the context of the story and the events that have happened so far.
         The chapter should include:

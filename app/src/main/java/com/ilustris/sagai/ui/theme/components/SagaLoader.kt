@@ -5,14 +5,12 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInCubic
 import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.EaseInOut
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.RepeatMode.*
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,27 +26,23 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.circle
 import androidx.graphics.shapes.star
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.RoundedPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.genresGradient
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.lighter
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -57,10 +51,11 @@ import kotlin.time.DurationUnit
 fun SagaLoader(
     modifier: Modifier = Modifier,
     brush: Brush = gradientAnimation(holographicGradient, targetValue = 500f),
-    tint: Color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .6f),
+    tint: Color = MaterialTheme.colorScheme.background.copy(alpha = .5f),
     blurRadius: Dp = 20.dp,
     animationDuration: Duration = 5.seconds,
     shape: Shape = CircleShape,
+    rotationTarget: Float = 180f,
     scaleDistortion: Pair<Float, Float> = Pair(0.9f, 1.2f),
 ) {
     val infiniteTransition = rememberInfiniteTransition()
@@ -101,6 +96,7 @@ fun SagaLoader(
         blurRadius,
         animationDuration,
         shape,
+        rotationTarget = rotationTarget,
         verticalDistortion = scaleDistortion.first,
         horizontalDistortion = scaleDistortion.second,
     )
@@ -130,6 +126,7 @@ fun DistortingBubble(
     shape: Shape,
     horizontalDistortion: Float = 0.9f,
     verticalDistortion: Float = 1.2f,
+    rotationTarget: Float = 180f,
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val duration = animationDduration.toInt(DurationUnit.MILLISECONDS)
@@ -159,7 +156,7 @@ fun DistortingBubble(
     val rotateAnimation =
         infiniteTransition.animateFloat(
             initialValue = 0f,
-            targetValue = 180f,
+            targetValue = rotationTarget,
             animationSpec =
                 infiniteRepeatable(
                     tween(duration, easing = EaseInElastic),
@@ -170,29 +167,26 @@ fun DistortingBubble(
     Box(
         modifier
             .padding(16.dp)
+            .rotate(rotateAnimation.value)
             .scale(horizontalDistortion.value, verticalDistortion.value),
     ) {
         Box(
             Modifier
                 .fillMaxSize()
-                .rotate(rotateAnimation.value)
                 .blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                .border(5.dp, brush, shape),
+                .background(brush, shape)
+            ,
         )
         Box(
             Modifier
                 .fillMaxSize()
-                .align(Alignment.Center)
-                .rotate(rotateAnimation.value)
                 .background(
-                   tint,
+                    tint,
                     shape,
                 ),
         )
     }
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
@@ -203,6 +197,7 @@ fun SagaLoaderPreview() {
                 modifier = Modifier.size(200.dp),
                 brush = gradientAnimation(holographicGradient, targetValue = 500f),
                 animationDuration = 5.seconds,
+                rotationTarget = 30f,
             )
 
             val infiniteTranition = rememberInfiniteTransition()
@@ -216,13 +211,13 @@ fun SagaLoaderPreview() {
                             Reverse,
                         ),
                 )
-            
+
             SagaLoader(
                 modifier = Modifier.size(200.dp),
-                brush = gradientAnimation(genresGradient(), targetValue = 500f),
+                brush = gradientAnimation(Genre.FANTASY.gradient(), targetValue = 500f),
                 animationDuration = 10.seconds,
                 scaleDistortion = .8f to .8f,
-                tint = MaterialColor.Red200,
+                tint = MaterialColor.RedA200.copy(alpha = .4f),
                 shape =
                     RoundedPolygonShape(
                         RoundedPolygon.star(
@@ -233,7 +228,6 @@ fun SagaLoaderPreview() {
                         ),
                     ),
             )
-            
         }
     }
 }

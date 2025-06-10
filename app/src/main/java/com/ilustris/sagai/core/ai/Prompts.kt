@@ -4,7 +4,6 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.Genre.*
 
 fun Genre.iconPrompt(description: String) =
     """
@@ -26,6 +25,7 @@ fun SagaData.narratorBreakPrompt(messages: List<String>) =
 
 fun chatReplyPrompt(
     sagaData: SagaData,
+    currentChapter: Chapter?,
     message: String,
     mainCharacter: Character,
     lastMessages: List<String> = emptyList(),
@@ -33,6 +33,7 @@ fun chatReplyPrompt(
 ) = ChatPrompts.replyMessagePrompt(
     sagaData,
     message,
+    currentChapter,
     mainCharacter,
     lastMessages,
     characters,
@@ -41,15 +42,20 @@ fun chatReplyPrompt(
 fun chapterPrompt(
     sagaData: SagaData,
     messages: List<String>,
-) = SagaPrompts.chapterGeneration(sagaData, messages)
+    chapters: List<Chapter>,
+) = SagaPrompts.chapterGeneration(sagaData, messages, chapters)
 
-fun Chapter.coverPrompt(genre: Genre): String =
+fun Chapter.coverPrompt(
+    genre: Genre,
+    characters: List<Character>,
+): String =
     """
     Create a illustration cover for the chapter "$title".
     Use the context of the chapter overview: "$overview".
     Emphasizing the chapter description.
     The cover should be in the theme of "${genre.name}".
-    Include main characters in a dynamic poses, with a background that reflects the theme ${genre.name}.
+    Include the characters in a dynamic poses, with a background that reflects the theme ${genre.name}.
+    ${CharacterPrompts.charactersOverview(characters)}
     High resolution, suitable for printing.
     Style: Flat colour anime style, clear image, highly detailed image, realistic body anatomy, clean illustration, no text in it.
     Refinement: Medium depth of field, rule of thirds, high aesthetic quality, smooth shading, detailed textures, clean lines, sharp edges, minimalistic composition.

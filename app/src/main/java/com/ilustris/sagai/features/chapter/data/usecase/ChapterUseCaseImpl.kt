@@ -5,10 +5,13 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.chapterPrompt
 import com.ilustris.sagai.core.ai.coverPrompt
-import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.asError
+import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
@@ -19,6 +22,7 @@ class ChapterUseCaseImpl
         private val chapterRepository: ChapterRepository,
         private val textGenClient: TextGenClient,
         private val imagenClient: ImagenClient,
+        private val fileHelper: FileHelper,
     ) : ChapterUseCase {
         override fun getChaptersBySagaId(sagaId: Int) = chapterRepository.getChaptersBySagaId(sagaId)
 
@@ -27,7 +31,7 @@ class ChapterUseCaseImpl
             messageId: Int,
         ) = chapterRepository.getChapterBySagaAndMessageId(sagaId, messageId)
 
-        override suspend fun saveChapter(chapter: Chapter): Long = chapterRepository.saveChapter(chapter)
+        override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
         override suspend fun deleteChapter(chapter: Chapter) = chapterRepository.deleteChapter(chapter)
 
@@ -39,37 +43,60 @@ class ChapterUseCaseImpl
 
         override suspend fun generateChapter(
             saga: SagaData,
+            messageId: Int,
             messages: List<Pair<String, String>>,
+            chapters: List<Chapter>,
+            characters: List<Character>,
         ) = try {
             val genText =
                 textGenClient.generate<Chapter>(
-                    generateChapterPrompt(saga, messages.map { it.formatToString() }),
+                    generateChapterPrompt(
+                        saga = saga,
+                        messages = messages.map { it.formatToString() },
+                        chapters = chapters,
+                    ),
                     true,
                 )
-            RequestResult.Success(genText!!)
+
+            val chapterCover =
+                generateChapterCover(
+                    chapter = genText!!,
+                    genre = saga.genre,
+                    characters = characters,
+                )
+            val coverFile = fileHelper.saveToCache(genText.title, chapterCover!!)
+            saveChapter(
+                genText.copy(
+                    coverImage = coverFile!!.path,
+                    messageReference = 0,
+                    sagaId = saga.id,
+                ),
+            ).asSuccess()
         } catch (e: Exception) {
-            e.printStackTrace()
-            RequestResult.Error(e)
+            e.asError()
         }
 
         @OptIn(PublicPreviewAPI::class)
-        override suspend fun generateChapterCover(
+        suspend fun generateChapterCover(
             chapter: Chapter,
             genre: Genre,
-        ): RequestResult<Exception, ByteArray> =
+            characters: List<Character>,
+        ): ByteArray? =
             try {
-                val genCover = imagenClient.generateImage(chapter.coverPrompt(genre))
-                RequestResult.Success(genCover!!.data)
+                val genCover = imagenClient.generateImage(chapter.coverPrompt(genre, characters))
+                genCover!!.data
             } catch (e: Exception) {
                 e.printStackTrace()
-                RequestResult.Error(e)
+                null
             }
 
         private fun generateChapterPrompt(
             saga: SagaData,
             messages: List<String>,
+            chapters: List<Chapter>,
         ) = chapterPrompt(
             sagaData = saga,
             messages = messages,
+            chapters = chapters,
         )
     }

@@ -17,7 +17,10 @@ class ChapterRepositoryImpl
 
         override fun getChaptersBySagaId(sagaId: Int): Flow<List<Chapter>> = chapterDao.getChaptersBySagaId(sagaId)
 
-        override suspend fun saveChapter(chapter: Chapter): Long = chapterDao.saveChapter(chapter)
+        override suspend fun saveChapter(chapter: Chapter) =
+            chapter.copy(
+                id = chapterDao.saveChapter(chapter).toInt(),
+            )
 
         override suspend fun updateChapter(chapter: Chapter): Int = chapterDao.updateChapter(chapter)
 

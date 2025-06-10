@@ -17,7 +17,10 @@ class CharacterRepositoryImpl
 
         override suspend fun insertCharacter(character: Character): Character =
             character.copy(
-                id = characterDao.insertCharacter(character.copy(id = 0)).toInt(),
+                id =
+                    characterDao
+                        .insertCharacter(character.copy(id = 0))
+                        .toInt(),
             )
 
         override suspend fun updateCharacter(character: Character): Character {

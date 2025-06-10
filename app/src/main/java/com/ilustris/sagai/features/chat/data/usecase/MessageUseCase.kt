@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.chat.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.chat.data.model.MessageContent
@@ -25,6 +26,7 @@ interface MessageUseCase {
 
     suspend fun generateMessage(
         saga: SagaData,
+        chapter: Chapter?,
         message: Pair<String, String>,
         mainCharacter: Character,
         lastMessages: List<Pair<String, String>>,

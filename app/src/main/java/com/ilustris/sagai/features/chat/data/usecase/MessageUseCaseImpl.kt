@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.chat.data.model.MessageContent
@@ -50,17 +51,15 @@ class MessageUseCaseImpl
                 )
 
             return try {
-                RequestResult.Success(
-                    genText!!,
-                )
+                genText!!.asSuccess()
             } catch (e: Exception) {
-                e.printStackTrace()
-                RequestResult.Error(e)
+                e.asError()
             }
         }
 
         override suspend fun generateMessage(
             saga: SagaData,
+            chapter: Chapter?,
             message: Pair<String, String>,
             mainCharacter: Character,
             lastMessages: List<Pair<String, String>>,
@@ -71,6 +70,7 @@ class MessageUseCaseImpl
                     generateReplyMessage(
                         saga,
                         message.formatToString(),
+                        chapter,
                         mainCharacter,
                         lastMessages.map { it.formatToString() },
                         characters,
@@ -124,11 +124,13 @@ private fun generateNarratorBreakPrompt(
 private fun generateReplyMessage(
     saga: SagaData,
     message: String,
+    currentChapter: Chapter?,
     mainCharacter: Character,
     lastMessages: List<String>,
     characters: List<Character>,
 ) = chatReplyPrompt(
     saga,
+    currentChapter,
     message,
     mainCharacter,
     lastMessages,

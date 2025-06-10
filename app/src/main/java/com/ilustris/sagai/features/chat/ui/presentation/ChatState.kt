@@ -10,4 +10,5 @@ sealed interface ChatState {
     ) : ChatState
 
     data object Empty : ChatState
+
 }

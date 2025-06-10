@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,14 +58,15 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
+import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
-import com.ilustris.sagai.ui.theme.components.SagaLoader
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.lighter
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -73,12 +75,14 @@ import kotlin.time.Duration.Companion.seconds
 @Composable
 fun HomeView(
     navController: NavHostController,
+    padding: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
 
     ChatList(
         sagas = sagas,
+        padding,
         onCreateNewChat = {
             navController.navigateToRoute(Routes.NEW_SAGA)
         },
@@ -96,10 +100,11 @@ fun HomeView(
 @Composable
 private fun ChatList(
     sagas: List<SagaContent>,
+    padding: PaddingValues = PaddingValues(0.dp),
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (SagaData) -> Unit = {},
 ) {
-    Box {
+    Box(Modifier.padding(padding)) {
         val styleGradient =
             gradientAnimation(genresGradient(), targetValue = 1000f, duration = 5.seconds)
 
@@ -131,9 +136,9 @@ private fun ChatList(
         AnimatedVisibility(sagas.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
             SparkIcon(
                 description = "Criar nova saga",
-                brush = gradientAnimation(genresGradient()),
-                tint = MaterialTheme.colorScheme.primary.copy(alpha = .99f),
-                blurRadius = 5.dp,
+                brush = gradientAnimation(holographicGradient, gradientType = GradientType.SWEEP),
+                tint = MaterialTheme.colorScheme.background.copy(alpha = .7f),
+                blurRadius = 10.dp,
                 modifier =
                     Modifier.size(100.dp).clip(CircleShape).clickable {
                         onCreateNewChat()
@@ -240,9 +245,10 @@ private fun NewChatCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            SagaLoader(
+            SparkIcon(
                 brush = animatedBrush,
-                animationDuration = 1.seconds,
+                duration = 3.seconds,
+                rotationTarget = 180f,
                 modifier =
                     Modifier
                         .clip(CircleShape)

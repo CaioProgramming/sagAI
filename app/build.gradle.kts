@@ -87,7 +87,10 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.gson)
     implementation(libs.lottie.compose)
-
+    implementation(libs.compose.cloudy)
+    implementation(libs.skydoves.balloon)
+    implementation(libs.chrisbanes.haze)
+    implementation(libs.chrisbanes.haze.materials)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
     testImplementation(libs.junit)

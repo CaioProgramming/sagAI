@@ -2,8 +2,11 @@ package com.ilustris.sagai.features.characters.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,18 +20,30 @@ class CharacterViewModel
     @Inject
     constructor(
         private val characterUseCase: CharacterUseCase,
+        private val sagaHistoryUseCase: SagaHistoryUseCase,
     ) : ViewModel() {
+
+
+        private val _saga= MutableStateFlow<SagaContent?>(null)
+        val saga: StateFlow<SagaContent?> = _saga.asStateFlow()
+
         private val _characters = MutableStateFlow<List<Character>>(emptyList())
         val characters: StateFlow<List<Character>> = _characters.asStateFlow()
+        val state = MutableStateFlow<State>(State.Loading)
 
-        init {
-            loadCharacters()
-        }
 
-        fun loadCharacters() {
+
+        fun loadCharacters(sagaId: Int?) {
+            if (sagaId == null) {
+                state.value = State.Error("Saga não encontrada")
+                return
+            }
             viewModelScope.launch {
-                characterUseCase.getAllCharacters().collectLatest {
-                    _characters.value = it
+                state.value = State.Loading
+                sagaHistoryUseCase.getSagaById(sagaId).collect {
+                    _saga.value = it
+                    _characters.value = it?.characters ?: emptyList()
+                    state.value = State.Success(Unit)
                 }
             }
         }
@@ -36,21 +51,18 @@ class CharacterViewModel
         fun addCharacter(character: Character) {
             viewModelScope.launch {
                 characterUseCase.insertCharacter(character)
-                loadCharacters()
             }
         }
 
         fun updateCharacter(character: Character) {
             viewModelScope.launch {
                 characterUseCase.updateCharacter(character)
-                loadCharacters()
             }
         }
 
         fun deleteCharacter(characterId: Int) {
             viewModelScope.launch {
                 characterUseCase.deleteCharacter(characterId)
-                loadCharacters()
             }
         }
     }
