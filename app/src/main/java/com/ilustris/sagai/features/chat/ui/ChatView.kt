@@ -148,6 +148,8 @@ fun ChatView(
                 mapOf("sagaId" to it.toString()),
             )
         },
+        openSagaDetails = {
+        },
     )
 }
 
@@ -155,7 +157,7 @@ fun ChatView(
 fun ChatContent(
     state: ChatState = ChatState.Loading,
     saga: SagaData? = null,
-    messagesList: List<MessageContent>? = null,
+    messagesList: List<MessageContent> = emptyList(),
     mainCharacter: Character?,
     characters: List<Character> = emptyList(),
     isGenerating: Boolean = false,
@@ -163,6 +165,7 @@ fun ChatContent(
     onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
     onCharacterSelected: (Int) -> Unit = {},
+    openSagaDetails: (SagaData) -> Unit = {},
 ) {
     var input by remember {
         mutableStateOf("")
@@ -180,15 +183,32 @@ fun ChatContent(
         TopAppBar(
             title = {
                 saga?.let {
-                    Text(
-                        saga.title,
-                        style =
-                            MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        fontWeight = FontWeight.Normal,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    Column(
+                        modifier =
+                            Modifier.fillMaxWidth().clickable {
+                                openSagaDetails(it)
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            saga.title,
+                            style =
+                                MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center,
+                                ),
+                        )
+
+                        Text(
+                            "${messagesList.size} mensagens",
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Light,
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier = Modifier.padding(4.dp),
+                        )
+                    }
                 }
             },
             navigationIcon = {
@@ -200,7 +220,7 @@ fun ChatContent(
                 Row(
                     Modifier
                         .padding(16.dp)
-                        .fillMaxWidth(.25f)
+                        .fillMaxWidth(.15f)
                         .clickable {
                             saga?.id?.let {
                                 onCharacterSelected(it)
@@ -421,16 +441,18 @@ fun ChatContent(
                             modifier =
                                 Modifier
                                     .padding(horizontal = 16.dp)
+                                    .animateContentSize()
                                     .weight(1f)
                                     .hazeSource(hazeState)
                                     .hazeEffect(state = hazeState, HazeMaterials.regular())
+                                    .clip(RoundedCornerShape(40.dp))
                                     .border(
                                         1.dp,
                                         MaterialTheme.colorScheme.onSurface
                                             .copy(alpha = .4f)
                                             .gradientFade(),
                                         RoundedCornerShape(40.dp),
-                                    ).animateContentSize(),
+                                    ),
                         )
 
                         this@Row.AnimatedVisibility(

@@ -18,10 +18,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
@@ -47,8 +47,8 @@ fun SenderType.itemOption(
     Column(
         Modifier
             .padding(vertical = 4.dp)
-            .border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), RoundedCornerShape(15.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .8f), RoundedCornerShape(15.dp))
+            .border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), RoundedCornerShape(25.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .8f), RoundedCornerShape(25.dp))
             .padding(8.dp),
     ) {
         Row(
@@ -56,9 +56,12 @@ fun SenderType.itemOption(
             horizontalArrangement =
                 Arrangement.Start,
             modifier =
-                Modifier.padding(8.dp).clickable {
-                    onSelect(this@itemOption)
-                },
+                Modifier
+                    .clip(
+                        RoundedCornerShape(25.dp),
+                    ).clickable {
+                        onSelect(this@itemOption)
+                    },
         ) {
             this@itemOption.icon()?.let {
                 Image(

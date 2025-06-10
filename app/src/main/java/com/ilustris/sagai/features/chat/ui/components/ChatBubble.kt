@@ -383,7 +383,7 @@ private fun ChapterContentView(
         }
         var imageSize by remember {
             mutableStateOf(
-                0.dp,
+                300.dp,
             )
         }
 
@@ -392,13 +392,13 @@ private fun ChapterContentView(
             label = "Image Size Animation",
         )
 
-        Box(modifier = Modifier.size(sizeAnimation)) {
+        Box(modifier = Modifier.fillMaxWidth().height(sizeAnimation)) {
             AsyncImage(
                 model = content.coverImage,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                onSuccess = {
-                    imageSize = 200.dp
+                onError = {
+                    imageSize = 0.dp
                 },
                 modifier =
                     Modifier.fillMaxSize(),
