@@ -428,6 +428,7 @@ private fun ChapterContentView(
         TypewriterText(
             text = content.overview,
             modifier = Modifier.padding(16.dp),
+            duration = 5.seconds,
             style =
                 MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Normal,

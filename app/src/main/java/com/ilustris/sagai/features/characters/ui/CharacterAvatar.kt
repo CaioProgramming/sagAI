@@ -3,10 +3,12 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import coil3.compose.AsyncImage
@@ -19,6 +21,8 @@ import com.ilustris.sagai.ui.theme.gradientFade
 fun CharacterAvatar(
     character: Character,
     isAnimated: Boolean = false,
+    borderColor: Color = MaterialTheme.colorScheme.onBackground,
+    borderSize: Dp = 2.dp,
     modifier: Modifier = Modifier,
 ) {
     val characterColor = Color(character.hexColor.toColorInt())
@@ -28,6 +32,11 @@ fun CharacterAvatar(
         modifier =
             modifier
                 .clip(CircleShape)
+                .border(
+                    borderSize,
+                    borderColor,
+                    CircleShape,
+                )
                 .background(
                     if (isAnimated.not()) {
                         characterColor.gradientFade()
@@ -36,10 +45,6 @@ fun CharacterAvatar(
                             characterColor.darkerPalette(),
                         )
                     },
-                    CircleShape,
-                ).border(
-                    1.dp,
-                    characterColor,
                     CircleShape,
                 ),
     )

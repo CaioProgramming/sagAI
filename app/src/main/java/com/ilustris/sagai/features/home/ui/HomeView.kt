@@ -67,7 +67,6 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.lighter
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -136,7 +135,7 @@ private fun ChatList(
         AnimatedVisibility(sagas.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
             SparkIcon(
                 description = "Criar nova saga",
-                brush = gradientAnimation(holographicGradient, gradientType = GradientType.SWEEP),
+                brush = gradientAnimation(holographicGradient, gradientType = GradientType.SWEEP, targetValue = 500f),
                 tint = MaterialTheme.colorScheme.background.copy(alpha = .7f),
                 blurRadius = 10.dp,
                 modifier =
@@ -165,11 +164,6 @@ fun ChatCard(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
-        val date =
-            Calendar.getInstance().apply {
-                timeInMillis = sagaData.createdAt
-            }
-        val time = "${date.get(Calendar.HOUR_OF_DAY)}:${date.get(Calendar.MINUTE)}"
 
         AsyncImage(
             sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
@@ -189,7 +183,7 @@ fun ChatCard(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = sagaData.title, // Replace with actual contact name
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
             )
 
@@ -202,8 +196,8 @@ fun ChatCard(
             Text(
                 text = lastMessageText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground.lighter(.3f),
-                maxLines = 3,
+                color = MaterialTheme.colorScheme.onBackground,
+                maxLines = 2,
             )
         }
 
@@ -211,25 +205,16 @@ fun ChatCard(
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             // Last Message Time
-            Text(
-                text = time, // Replace with actual last message time
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            saga.messages.lastOrNull()?.let {
+                val time = Calendar.getInstance().apply { timeInMillis = it.timestamp }
+                val timeText = String.format("%02d:%02d", time.get(Calendar.HOUR_OF_DAY), time.get(Calendar.MINUTE))
 
-            Text(
-                text = saga.messages.size.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = sagaData.genre.color,
-                modifier =
-                    Modifier
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer,
-                            CircleShape,
-                        ).padding(8.dp)
-                        .align(Alignment.End)
-                        .alpha(.4f),
-            )
+                Text(
+                    text = timeText, // Replace with actual last message time
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }
