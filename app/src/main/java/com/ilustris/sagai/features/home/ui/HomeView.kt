@@ -2,7 +2,6 @@
 
 package com.ilustris.sagai.features.home.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -66,7 +65,7 @@ import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.themeBrushColors
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -113,6 +112,44 @@ private fun ChatList(
                     .padding(16.dp)
                     .fillMaxSize(),
         ) {
+            item {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                            .clickable {
+                                onCreateNewChat()
+                            }.fillMaxWidth(),
+                ) {
+                    val brush =
+                        gradientAnimation(
+                            themeBrushColors(),
+                            gradientType = GradientType.VERTICAL,
+                            targetValue = 500f,
+                        )
+
+                    SparkIcon(
+                        description = "Criar nova saga",
+                        brush = brush,
+                        tint = MaterialTheme.colorScheme.background.copy(alpha = .7f),
+                        blurRadius = 10.dp,
+                        rotationTarget = 180f,
+                        modifier =
+                            Modifier.size(50.dp).clip(CircleShape),
+                    )
+
+                    Text(
+                        "Criar nova saga",
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                brush = brush,
+                            ),
+                    )
+                }
+            }
+
             if (sagas.isEmpty()) {
                 item {
                     NewChatCard(
@@ -132,18 +169,6 @@ private fun ChatList(
                 }
             }
         }
-        AnimatedVisibility(sagas.isNotEmpty(), modifier = Modifier.align(Alignment.BottomCenter)) {
-            SparkIcon(
-                description = "Criar nova saga",
-                brush = gradientAnimation(holographicGradient, gradientType = GradientType.SWEEP, targetValue = 500f),
-                tint = MaterialTheme.colorScheme.background.copy(alpha = .7f),
-                blurRadius = 10.dp,
-                modifier =
-                    Modifier.size(100.dp).clip(CircleShape).clickable {
-                        onCreateNewChat()
-                    },
-            )
-        }
     }
 }
 
@@ -158,9 +183,10 @@ fun ChatCard(
             Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
+                .clip(RoundedCornerShape(15.dp))
                 .clickable {
                     onClick()
-                },
+                }.padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
@@ -207,7 +233,12 @@ fun ChatCard(
             // Last Message Time
             saga.messages.lastOrNull()?.let {
                 val time = Calendar.getInstance().apply { timeInMillis = it.timestamp }
-                val timeText = String.format("%02d:%02d", time.get(Calendar.HOUR_OF_DAY), time.get(Calendar.MINUTE))
+                val timeText =
+                    String.format(
+                        "%02d:%02d",
+                        time.get(Calendar.HOUR_OF_DAY),
+                        time.get(Calendar.MINUTE),
+                    )
 
                 Text(
                     text = timeText, // Replace with actual last message time
