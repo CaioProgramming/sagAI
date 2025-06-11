@@ -1,20 +1,32 @@
 package com.ilustris.sagai.ui.theme
 
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.Box
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -25,6 +37,9 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.toPath
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlin.math.max
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 class CustomRotatingMorphShape(
     private val morph: Morph,
@@ -98,6 +113,99 @@ class RoundedPolygonShape(
     }
 }
 
+@Composable
+fun DrawShape(
+    modifier: Modifier,
+    strokeSize: Dp, // Your custom morph object, which can produce a Path
+    morph: Morph,
+    brush: Brush,
+    duration: Duration = 5.seconds,
+) {
+    val pathMeasurer =
+        remember {
+            PathMeasure() // Used to measure and get segments of a path
+        }
+    val infiniteTransition = rememberInfiniteTransition(label = "infinite")
+    val progress = // This progress value will go from 0f to 1f and back
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(
+                        duration.toInt(DurationUnit.MILLISECONDS),
+                        easing = EaseIn,
+                    ),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            label = "progress",
+        )
+
+    var morphPath =
+        remember {
+            Path() // The Path to be drawn (from your Morph object)
+        }
+    val destinationPath =
+        remember {
+            Path() // The segment of morphPath that will actually be rendered
+        }
+    var androidPath = // Helper for converting Morph to Compose Path
+        remember {
+            android.graphics.Path()
+        }
+    val matrix =
+        remember {
+            Matrix()
+        }
+
+    Box(
+        modifier =
+            modifier
+                .drawWithCache {
+                    // Good for caching expensive drawing operations
+                    // 1. Get the full path from your Morph object based on current progress
+                    // (Your Morph object seems to handle its own internal animation/state for morphing)
+                    // For a simple stroke animation of a static path, this would just be setting a fixed path.
+                    androidPath = morph.toPath(progress.value, androidPath) // Assuming morph.toPath can take progress for morphing
+                    morphPath = androidPath.asComposePath()
+
+                    // Optional: Scale the path to fit the Box (as in your code)
+                    matrix.reset()
+                    matrix.scale(size.minDimension / 2f, size.minDimension / 2f)
+                    morphPath.transform(matrix)
+
+                    // 2. Prepare PathMeasure
+                    pathMeasurer.setPath(morphPath, false) // Set the full path to measure
+                    val totalLength = pathMeasurer.length // Get total length of the path
+
+                    // 3. Get the segment to draw
+                    destinationPath.reset() // Clear previous segment
+                    pathMeasurer.getSegment(
+                        startDistance = 0f,
+                        stopDistance = totalLength * progress.value, // Animate up to this point
+                        destination = destinationPath,
+                        startWithMoveTo = true, // Important to start drawing correctly
+                    )
+
+                    onDrawBehind {
+                        // Or onDrawWithContent
+                        translate(size.width / 2f, size.height / 2f) {
+                            // Center the drawing
+                            // 4. Draw ONLY the destinationPath (the animated segment)
+                            drawPath(
+                                path = destinationPath, // Draw the progressively revealed segment
+                                brush = brush,
+                                style = Stroke(width = strokeSize.toPx(), cap = StrokeCap.Round),
+                            )
+
+                            // If you wanted to show the full path underneath faintly, you could draw morphPath here too
+                            // with a different style/alpha.
+                        }
+                    }
+                },
+    )
+}
+
 fun Modifier.dashedBorder(
     strokeWidth: Dp,
     color: Color,
@@ -134,3 +242,28 @@ fun Genre.cornerSize() =
         Genre.SCI_FI -> 8.dp
         else -> 0.dp
     }
+
+fun Morph.toComposePath(
+    progress: Float,
+    scale: Float = 1f,
+    path: Path = Path(),
+): Path {
+    var first = true
+    path.rewind()
+    forEachCubic(progress) { bezier ->
+        if (first) {
+            path.moveTo(bezier.anchor0X * scale, bezier.anchor0Y * scale)
+            first = false
+        }
+        path.cubicTo(
+            bezier.control0X * scale,
+            bezier.control0Y * scale,
+            bezier.control1X * scale,
+            bezier.control1Y * scale,
+            bezier.anchor1X * scale,
+            bezier.anchor1Y * scale,
+        )
+    }
+    path.close()
+    return path
+}

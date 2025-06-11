@@ -59,11 +59,13 @@ import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.themeBrushColors
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -86,9 +88,7 @@ fun HomeView(
         onSelectSaga = { sagaId ->
             navController.navigateToRoute(
                 Routes.CHAT,
-                Routes.CHAT.arguments.associate {
-                    it to sagaId.id.toString()
-                },
+                Routes.CHAT.arguments.associateWith { sagaId.id.toString() },
             )
         },
     )
@@ -108,12 +108,10 @@ private fun ChatList(
         LazyColumn(
             modifier =
                 Modifier
-                    .padding(16.dp)
                     .fillMaxSize(),
         ) {
             item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                Row (
                     modifier =
                         Modifier
                             .padding(16.dp)
@@ -124,28 +122,38 @@ private fun ChatList(
                 ) {
                     val brush =
                         gradientAnimation(
-                            themeBrushColors(),
-                            gradientType = GradientType.VERTICAL,
+                            holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
+                            gradientType = GradientType.LINEAR,
                             targetValue = 500f,
                         )
 
-                    SparkIcon(
-                        description = "Criar nova saga",
+                    SparkLoader(
                         brush = brush,
-                        tint = MaterialTheme.colorScheme.background.copy(alpha = .7f),
-                        blurRadius = 10.dp,
-                        rotationTarget = 180f,
+                        strokeSize = 2.dp,
                         modifier =
-                            Modifier.size(50.dp).clip(CircleShape),
+                            Modifier.clip(CircleShape).padding(4.dp).size(32.dp),
                     )
 
-                    Text(
-                        "Criar nova saga",
-                        style =
-                            MaterialTheme.typography.labelMedium.copy(
-                                brush = brush,
-                            ),
-                    )
+                    Column {
+                        Text(
+                            "Criar nova saga",
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    brush = brush,
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                        )
+
+                        Text(
+                            "Crie uma nova aventura e descubra o que o futuro reserva para você.",
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    brush = brush,
+                                    fontWeight = FontWeight.Light
+                                ),
+                        )
+                    }
+
                 }
             }
 
@@ -181,7 +189,7 @@ fun ChatCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(8.dp)
                 .clip(RoundedCornerShape(15.dp))
                 .clickable {
                     onClick()

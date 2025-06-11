@@ -128,7 +128,8 @@ fun SagaDetailContentView(
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
-                            .padding(top = 25.dp, start = 16.dp),
+                            .fillMaxWidth()
+                            .padding(top = 50.dp, start = 16.dp),
                 )
             }
             item {

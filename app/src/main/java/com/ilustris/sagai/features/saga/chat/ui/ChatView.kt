@@ -186,8 +186,8 @@ fun ChatContent(
     Column(
         modifier =
             Modifier
-                .padding(top = padding.calculateTopPadding())
                 .fillMaxSize()
+                .padding(top = padding.calculateTopPadding())
                 .hazeSource(state = hazeState),
     ) {
         saga?.let {
@@ -198,7 +198,7 @@ fun ChatContent(
                 onBackClick = onBack,
                 modifier =
                     Modifier
-                        .padding(top = 25.dp, start = 16.dp)
+                        .padding(top = 50.dp, start = 16.dp)
                         .fillMaxWidth()
                         .clickable {
                             openSagaDetails(it)
@@ -397,17 +397,17 @@ fun ChatContent(
                                 ) {
                                     CharacterAvatar(
                                         character,
-                                        true,
                                         borderColor =
                                             saga?.genre?.color
                                                 ?: MaterialTheme.colorScheme.primary,
-                                        2.dp,
-                                        Modifier
-                                            .size(48.dp)
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                balloonWindow?.showAsDropDown()
-                                            },
+                                        borderSize = 2.dp,
+                                        modifier =
+                                            Modifier
+                                                .size(48.dp)
+                                                .clip(CircleShape)
+                                                .clickable {
+                                                    balloonWindow?.showAsDropDown()
+                                                },
                                     )
                                 }
                             }
