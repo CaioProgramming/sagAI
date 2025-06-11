@@ -16,7 +16,3 @@ Welcome to AI Chat RPG, where **you** are the master of your own destiny! Forget
 Will you be a hero, a villain, or something in between? Will you seek fortune, knowledge, or simply survival? The power to create epic tales, hilarious misadventures, and poignant dramas rests in your hands.
 
 **The only limit is your imagination. Start your adventure today!**
-
----
-
-*Ready to dive in? Check out [Getting Started](docs/GETTING_STARTED.md) or explore some [Example Sagas](docs/EXAMPLE_SAGAS.md) to see what's possible!*
