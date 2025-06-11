@@ -1,9 +1,13 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.android)
+    alias(libs.plugins.google.services)
 }
 
 android {
@@ -20,6 +24,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val apikeyPropertiesFile = rootProject.file("app/config.properties")
+    val apikeyProperties = Properties()
+    apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -27,6 +35,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            buildConfigField("String", "AIKEY", apikeyProperties.getProperty("AI_KEY"))
+            buildConfigField("String", "AIMODEL", apikeyProperties.getProperty("AI_MODEL"))
+        }
+
+        debug {
+            buildConfigField("String", "AIKEY", apikeyProperties.getProperty("AI_KEY"))
+            buildConfigField("String", "AIMODEL", apikeyProperties.getProperty("AI_MODEL"))
         }
     }
     compileOptions {
@@ -38,11 +53,13 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
 dependencies {
 
+    implementation(libs.kotlin.reflection)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -54,6 +71,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.shapes)
+    implementation(libs.androidx.animations)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.android)
     kapt(libs.androidx.hilt.compiler)
@@ -66,10 +84,15 @@ dependencies {
     implementation(libs.material.colors)
     implementation(libs.accompanist.ui.controller)
     implementation(libs.accompanist.navigation.animation)
-    implementation(libs.generative.ai)
     implementation(libs.coil.compose)
     implementation(libs.gson)
     implementation(libs.lottie.compose)
+    implementation(libs.compose.cloudy)
+    implementation(libs.skydoves.balloon)
+    implementation(libs.chrisbanes.haze)
+    implementation(libs.chrisbanes.haze.materials)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.ai)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
