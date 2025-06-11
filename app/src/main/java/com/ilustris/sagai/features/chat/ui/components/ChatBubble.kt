@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension.Companion.fillToConstraints
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.chat.data.model.Message
@@ -64,8 +67,13 @@ fun ChatBubble(
     canAnimate: Boolean = true,
 ) {
     val message = messageContent.message
-    val isUser = message.senderType == SenderType.USER
     val sender = message.senderType
+
+    val isUser =
+        when (sender) {
+            SenderType.USER, SenderType.THOUGHT, SenderType.ACTION -> true
+            else -> false
+        }
     val bubbleColor =
         when (sender) {
             SenderType.USER -> genre.userBubbleGradient()
@@ -241,6 +249,7 @@ fun ChatBubble(
                     messageContent.character?.let {
                         CharacterAvatar(
                             it,
+                            borderSize = 1.dp,
                             modifier =
                                 Modifier
                                     .fillMaxSize(),
@@ -251,22 +260,42 @@ fun ChatBubble(
         }
 
         SenderType.ACTION -> {
-            TypewriterText(
-                text = message.text,
-                isAnimated = isAnimated,
-                duration = duration,
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontStyle = fontStyle,
-                        textAlign = textAlignment,
-                        fontFamily = genre.bodyFont(),
-                        color = textColor.copy(alpha = .7f),
-                    ),
-            )
+            Box(Modifier.padding(16.dp).fillMaxWidth()) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier =
+                        Modifier.align(
+                            Alignment.CenterEnd,
+                        ),
+                ) {
+                    Icon(
+                        painterResource(
+                            R.drawable.action_icon,
+                        ),
+                        null,
+                        modifier = Modifier.size(24.dp).graphicsLayer(alpha = .6f),
+                    )
+                    TypewriterText(
+                        text = message.text,
+                        isAnimated = isAnimated,
+                        duration = duration,
+                        modifier =
+                            Modifier
+                                .padding(16.dp),
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontStyle = fontStyle,
+                                textAlign = textAlignment,
+                                fontFamily = genre.bodyFont(),
+                                color = textColor.copy(alpha = .7f),
+                            ),
+                    )
+
+                    messageContent.character?.let {
+                        CharacterAvatar(it, borderSize = 1.dp, modifier = Modifier.size(24.dp))
+                    }
+                }
+            }
         }
 
         SenderType.NARRATOR -> {

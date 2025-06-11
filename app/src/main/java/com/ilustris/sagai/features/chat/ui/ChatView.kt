@@ -13,10 +13,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -70,6 +70,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
@@ -109,6 +110,9 @@ import com.skydoves.balloon.compose.Balloon
 import com.skydoves.balloon.compose.BalloonWindow
 import com.skydoves.balloon.compose.rememberBalloonBuilder
 import com.skydoves.balloon.compose.setBackgroundColor
+import dev.chrisbanes.haze.HazeDefaults
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
@@ -176,12 +180,13 @@ fun ChatContent(
     var sendAction by remember {
         mutableStateOf(SenderType.USER)
     }
-    val hazeState = rememberHazeState()
+    val hazeState = rememberHazeState(blurEnabled = true)
     Column(
         modifier =
             Modifier
-                .hazeSource(state = hazeState)
-                .padding(top = padding.calculateTopPadding()),
+                .padding(top = padding.calculateTopPadding())
+                .fillMaxSize()
+                .hazeSource(state = hazeState),
     ) {
         TopAppBar(
             title = {
@@ -329,7 +334,7 @@ fun ChatContent(
             AnimatedContent(
                 isGenerating,
                 transitionSpec = {
-                    slideInVertically() with slideOutVertically()
+                    fadeIn() with fadeOut()
                 },
                 modifier =
                     Modifier.constrainAs(chatInput) {
@@ -371,7 +376,11 @@ fun ChatContent(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .hazeEffect(state = hazeState, style = HazeMaterials.ultraThin())
+                                .fillMaxWidth(),
                     ) {
                         this@Column.AnimatedVisibility(
                             mainCharacter != null,
@@ -411,8 +420,7 @@ fun ChatContent(
                                                 ?: MaterialTheme.colorScheme.primary,
                                         2.dp,
                                         Modifier
-                                            .padding(horizontal = 8.dp)
-                                            .size(32.dp)
+                                            .size(48.dp)
                                             .clip(CircleShape)
                                             .clickable {
                                                 balloonWindow?.showAsDropDown()
@@ -421,7 +429,13 @@ fun ChatContent(
                                 }
                             }
                         }
-
+                        val inputStyle =
+                            HazeStyle(
+                                backgroundColor = MaterialTheme.colorScheme.background.copy(alpha = .5f),
+                                blurRadius = 25.dp,
+                                noiseFactor = HazeDefaults.noiseFactor,
+                                tint = HazeTint.Unspecified,
+                            )
                         TextField(
                             value = input,
                             onValueChange = {
@@ -429,7 +443,15 @@ fun ChatContent(
                                     input = it
                                 }
                             },
-                            placeholder = { Text("Continua sua saga...") },
+                            placeholder = {
+                                Text(
+                                    "Continua sua saga...",
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontSize = 12.sp,
+                                        ),
+                                )
+                            },
                             shape = RoundedCornerShape(40.dp),
                             colors =
                                 TextFieldDefaults.colors().copy(
@@ -438,24 +460,19 @@ fun ChatContent(
                                     cursorColor =
                                         saga?.genre?.color
                                             ?: MaterialTheme.colorScheme.primary,
-                                    focusedContainerColor =
-                                        MaterialTheme.colorScheme.surfaceContainer.copy(
-                                            alpha = .5f,
-                                        ),
-                                    unfocusedContainerColor =
-                                        MaterialTheme.colorScheme.surfaceContainer.copy(
-                                            alpha = .3f,
-                                        ),
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
                                 ),
-                            textStyle = MaterialTheme.typography.bodySmall,
+                            textStyle =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = 12.sp,
+                                ),
                             maxLines = 3,
                             modifier =
                                 Modifier
                                     .padding(horizontal = 16.dp)
-                                    .animateContentSize()
+                                    .height(48.dp)
                                     .weight(1f)
-                                    .hazeSource(hazeState)
-                                    .hazeEffect(state = hazeState, HazeMaterials.regular())
                                     .clip(RoundedCornerShape(40.dp))
                                     .border(
                                         1.dp,
@@ -463,7 +480,9 @@ fun ChatContent(
                                             .copy(alpha = .4f)
                                             .gradientFade(),
                                         RoundedCornerShape(40.dp),
-                                    ),
+                                    ).background(MaterialTheme.colorScheme.background.copy(alpha = .8f))
+                                    .hazeEffect(hazeState, inputStyle)
+                                    .animateContentSize(),
                         )
 
                         this@Row.AnimatedVisibility(

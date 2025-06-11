@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -36,7 +35,6 @@ class ChatViewModel
         private val sagaHistoryUseCase: SagaHistoryUseCase,
         private val characterUseCase: CharacterUseCase,
         private val chapterUseCase: ChapterUseCase,
-        private val fileHelper: FileHelper,
     ) : ViewModel() {
         val state = MutableStateFlow<ChatState>(ChatState.Empty)
 
@@ -174,6 +172,7 @@ class ChatViewModel
                             state.value =
                                 ChatState.Error("Failed to generate chapter break: ${it.message ?: "Unknown error"}")
                         }
+                    delay(3.seconds)
                     isGenerating.value = false
                 }
             }
