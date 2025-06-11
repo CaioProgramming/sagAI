@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.ui.presentation
+package com.ilustris.sagai.features.saga.chat.presentation
 
 sealed interface ChatState {
     data object Loading : ChatState
@@ -10,5 +10,4 @@ sealed interface ChatState {
     ) : ChatState
 
     data object Empty : ChatState
-
 }

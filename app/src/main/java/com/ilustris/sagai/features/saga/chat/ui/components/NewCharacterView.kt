@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.ui.components
+package com.ilustris.sagai.features.saga.chat.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,10 +17,10 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.MessageContent
-import com.ilustris.sagai.features.chat.data.model.SenderType
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont

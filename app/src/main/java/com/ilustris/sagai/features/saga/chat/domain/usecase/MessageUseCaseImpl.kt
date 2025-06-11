@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.data.usecase
+package com.ilustris.sagai.features.saga.chat.domain.usecase
 
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.chatReplyPrompt
@@ -10,10 +10,10 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.MessageContent
-import com.ilustris.sagai.features.chat.repository.MessageRepository
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import javax.inject.Inject
 
 class MessageUseCaseImpl

@@ -10,9 +10,9 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
-import com.ilustris.sagai.features.chat.repository.SagaRepository
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)

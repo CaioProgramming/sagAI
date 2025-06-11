@@ -1,10 +1,7 @@
 package com.ilustris.sagai.features.home.data.usecase
 
-import androidx.compose.animation.core.copy
-import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.features.chat.repository.SagaRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -20,8 +17,7 @@ class SagaHistoryUseCaseImpl
                 processSagaContent(content)
             }
 
-        override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> =
-            sagaRepository.getSagaById(sagaId)
+        override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
         private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
             val mappedSagas =

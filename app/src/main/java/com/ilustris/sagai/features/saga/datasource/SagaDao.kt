@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.data
+package com.ilustris.sagai.features.saga.datasource
 
 import androidx.room.Dao
 import androidx.room.Delete

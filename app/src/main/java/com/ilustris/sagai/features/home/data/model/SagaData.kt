@@ -24,7 +24,7 @@ data class SagaData(
     val title: String,
     val description: String,
     val icon: String?,
-    val createdAt: Long,
+    val createdAt: Long = System.currentTimeMillis(),
     val genre: Genre,
     @ColumnInfo(index = true)
     val mainCharacterId: Int?,

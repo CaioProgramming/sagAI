@@ -4,7 +4,7 @@
     ExperimentalHazeMaterialsApi::class,
 )
 
-package com.ilustris.sagai.features.chat.ui
+package com.ilustris.sagai.features.saga.chat.ui
 
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
@@ -41,7 +41,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -50,8 +49,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,19 +77,20 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.MessageContent
-import com.ilustris.sagai.features.chat.data.model.SenderType
-import com.ilustris.sagai.features.chat.ui.components.ChatBubble
-import com.ilustris.sagai.features.chat.ui.components.itemOption
-import com.ilustris.sagai.features.chat.ui.presentation.ChatState
-import com.ilustris.sagai.features.chat.ui.presentation.ChatViewModel
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.presentation.ChatState
+import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
+import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
+import com.ilustris.sagai.features.saga.chat.ui.components.itemOption
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
+import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -156,6 +154,10 @@ fun ChatView(
             )
         },
         openSagaDetails = {
+            navHostController.navigateToRoute(
+                Routes.SAGA_DETAIL,
+                mapOf("sagaId" to it.id.toString()),
+            )
         },
     )
 }
@@ -188,85 +190,60 @@ fun ChatContent(
                 .fillMaxSize()
                 .hazeSource(state = hazeState),
     ) {
-        TopAppBar(
-            title = {
-                saga?.let {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(modifier = Modifier.size(24.dp), onClick = { onBack() }) {
-                            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, "Voltar")
-                        }
-                        Column(
-                            modifier =
-                                Modifier.padding(horizontal = 12.dp).weight(1f).clickable {
-                                    openSagaDetails(it)
-                                },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                saga.title,
-                                style =
-                                    MaterialTheme.typography.titleSmall.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center,
-                                    ),
+        saga?.let {
+            SagaTopBar(
+                it.title,
+                "${messagesList.size} mensagens",
+                it.genre,
+                onBackClick = onBack,
+                modifier =
+                    Modifier
+                        .padding(top = 25.dp, start = 16.dp)
+                        .fillMaxWidth()
+                        .clickable {
+                            openSagaDetails(it)
+                        },
+                actionContent = {
+                    val overlapAmount = (-10).dp
+                    val density = LocalDensity.current
+                    val charactersToDisplay =
+                        characters.take(3)
+                    LazyRow(
+                        Modifier
+                            .fillMaxWidth(.15f)
+                            .clickable {
+                                onCharacterSelected(it.id)
+                            },
+                        userScrollEnabled = false,
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        // Get the list of characters to display
+                        itemsIndexed(charactersToDisplay) { index, character ->
+                            val overlapAmountPx = with(density) { overlapAmount.toPx() }
+                            CharacterAvatar(
+                                character,
+                                borderColor = MaterialTheme.colorScheme.background,
+                                borderSize = 2.dp,
+                                modifier =
+                                    Modifier
+                                        .zIndex(
+                                            if (index ==
+                                                0
+                                            ) {
+                                                charactersToDisplay.size.toFloat()
+                                            } else {
+                                                (charactersToDisplay.size - 1 - index).toFloat()
+                                            },
+                                        ).graphicsLayer(
+                                            translationX = if (index > 0) (index * overlapAmountPx) else 0f,
+                                        ).size(24.dp),
                             )
-
-                            Text(
-                                "${messagesList.size} mensagens",
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.padding(4.dp),
-                            )
-                        }
-                        val overlapAmount = (-10).dp
-                        val density = LocalDensity.current
-                        val charactersToDisplay =
-                            characters.take(3)
-                        LazyRow(
-                            Modifier
-                                .fillMaxWidth(.20f)
-                                .clickable {
-                                    onCharacterSelected(it.id)
-                                },
-                            userScrollEnabled = false,
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // Get the list of characters to display
-                            itemsIndexed(charactersToDisplay) { index, character ->
-                                val overlapAmountPx = with(density) { overlapAmount.toPx() }
-                                CharacterAvatar(
-                                    character,
-                                    borderColor = MaterialTheme.colorScheme.background,
-                                    borderSize = 2.dp,
-                                    modifier =
-                                        Modifier
-                                            .zIndex(
-                                                if (index ==
-                                                    0
-                                                ) {
-                                                    charactersToDisplay.size.toFloat()
-                                                } else {
-                                                    (charactersToDisplay.size - 1 - index).toFloat()
-                                                },
-                                            ).graphicsLayer(
-                                                translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                                            ).size(24.dp),
-                                )
-                            }
                         }
                     }
-                }
-            },
-            modifier = Modifier.background(fadeGradientBottom()),
-            colors =
-                TopAppBarDefaults.topAppBarColors().copy(
-                    containerColor = Color.Transparent,
-                ),
-        )
+                },
+            )
+        }
 
         ConstraintLayout(
             Modifier
@@ -311,7 +288,10 @@ fun ChatContent(
                             SparkIcon(
                                 brush = brush,
                                 tint = saga?.genre?.color ?: MaterialTheme.colorScheme.background,
-                                modifier = Modifier.align(Alignment.Center).size(150.dp),
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.Center)
+                                        .size(150.dp),
                             )
                         }
                 }
@@ -353,7 +333,10 @@ fun ChatContent(
                                     gradientType = GradientType.VERTICAL,
                                 ),
                             tint = MaterialColor.Gray50.copy(alpha = .5f),
-                            modifier = Modifier.align(Alignment.Center).size(50.dp),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .size(50.dp),
                         )
                     }
                 } else {

@@ -4,7 +4,7 @@ import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 
 data class SagaContent(
     @Embedded

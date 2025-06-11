@@ -9,10 +9,10 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import com.ilustris.sagai.features.chat.data.model.SenderType
-import com.ilustris.sagai.features.chat.data.model.isCharacter
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.*
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.isCharacter
 
 val Purple80 = Color(0xff11283b)
 val PurpleGrey80 = Color(0xFFCCC2DC)

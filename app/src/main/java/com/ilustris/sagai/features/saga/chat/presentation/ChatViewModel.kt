@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.ui.presentation
+package com.ilustris.sagai.features.saga.chat.presentation
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -8,15 +8,15 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.MessageContent
-import com.ilustris.sagai.features.chat.data.model.SenderType
-import com.ilustris.sagai.features.chat.data.model.joinMessage
-import com.ilustris.sagai.features.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -183,11 +183,9 @@ class ChatViewModel
                 messageUseCase
                     .saveMessage(
                         Message(
-                            id = 0,
                             text = "Capitulo '${chapter.title}' iniciado.",
                             senderType = SenderType.NEW_CHAPTER,
                             sagaId = saga.value!!.id,
-                            timestamp = System.currentTimeMillis(),
                             chapterId = chapter.id,
                         ),
                     ).also {
@@ -232,11 +230,9 @@ class ChatViewModel
         ) {
             val message =
                 Message(
-                    id = 0,
                     text = text,
                     senderType = sendType,
                     sagaId = saga.value?.id ?: 0,
-                    timestamp = System.currentTimeMillis(),
                     characterId = mainCharacter.value?.id,
                 )
             sendMessage(message)
@@ -252,9 +248,7 @@ class ChatViewModel
                 messageUseCase
                     .saveMessage(
                         message.copy(
-                            id = 0,
                             sagaId = saga.value!!.id,
-                            timestamp = Calendar.getInstance().timeInMillis,
                             characterId = characterReference?.id,
                         ),
                     ).also {

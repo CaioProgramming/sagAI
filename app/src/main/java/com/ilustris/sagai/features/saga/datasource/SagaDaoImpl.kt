@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.data
+package com.ilustris.sagai.features.saga.datasource
 
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.features.home.data.model.SagaContent

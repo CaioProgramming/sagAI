@@ -1,11 +1,11 @@
-package com.ilustris.sagai.features.chat.data.usecase
+package com.ilustris.sagai.features.saga.chat.domain.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.MessageContent
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import kotlinx.coroutines.flow.Flow
 
 interface MessageUseCase {

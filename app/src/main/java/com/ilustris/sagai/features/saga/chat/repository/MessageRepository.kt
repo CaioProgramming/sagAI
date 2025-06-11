@@ -1,7 +1,7 @@
-package com.ilustris.sagai.features.chat.repository
+package com.ilustris.sagai.features.saga.chat.repository
 
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import kotlinx.coroutines.flow.Flow
 
 interface MessageRepository {

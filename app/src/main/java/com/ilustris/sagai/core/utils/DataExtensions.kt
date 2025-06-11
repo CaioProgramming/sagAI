@@ -3,6 +3,9 @@ package com.ilustris.sagai.core.utils
 import com.google.firebase.ai.type.Schema
 import com.google.gson.Gson
 import java.lang.reflect.ParameterizedType
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlin.toString
 
 fun toJsonSchema(clazz: Class<*>) =
@@ -166,3 +169,11 @@ fun toJsonMap(
 fun Any.toJsonFormat() = Gson().toJson(this)
 
 fun doNothing() = {}
+
+
+
+fun Long.formatDate(): String {
+    val date = Date(this)
+    val format = SimpleDateFormat("dd 'of' MMMM yyyy", Locale.getDefault())
+    return format.format(date)
+}

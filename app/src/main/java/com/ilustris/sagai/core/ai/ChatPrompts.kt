@@ -4,10 +4,10 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.SenderType
-import com.ilustris.sagai.features.chat.data.model.meaning
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.meaning
 
 object ChatPrompts {
     fun replyMessagePrompt(

@@ -21,76 +21,39 @@ fun CharacterStats(
     genre: Genre,
 ) {
     Row(modifier = Modifier.padding(16.dp)) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        ) {
-            Text(
-                "${character.details.height}cm",
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
+        VerticalLabel("${character.details.height}cm", "Altura", genre)
+        VerticalLabel(character.details.race, "Raça", genre)
+        VerticalLabel("${character.details.weight}kg", "Peso", genre)
+    }
+}
 
-            Text(
-                "Altura",
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-        }
+@Composable
+fun VerticalLabel(
+    value: String,
+    label: String,
+    genre: Genre,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(horizontal = 8.dp),
+    ) {
+        Text(
+            value,
+            style =
+                MaterialTheme.typography.titleSmall.copy(
+                    fontFamily = genre.bodyFont(),
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                ),
+        )
 
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        ) {
-            Text(
-                character.details.race,
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold,
-                    ),
-                maxLines = 1
-
-            )
-
-            Text(
-                "Raça",
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(horizontal = 8.dp),
-        ) {
-            Text(
-                "${character.details.weight}kg",
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
-            Text(
-                "Peso",
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-        }
+        Text(
+            label,
+            style =
+                MaterialTheme.typography.bodySmall.copy(
+                    fontFamily = genre.bodyFont(),
+                    textAlign = TextAlign.Center,
+                ),
+        )
     }
 }

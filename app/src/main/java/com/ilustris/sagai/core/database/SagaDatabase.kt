@@ -6,10 +6,10 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
-import com.ilustris.sagai.features.chat.data.MessageDao
-import com.ilustris.sagai.features.chat.data.SagaDao
-import com.ilustris.sagai.features.chat.data.model.Message
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.datasource.MessageDao
+import com.ilustris.sagai.features.saga.datasource.SagaDao
 
 @Database(
     entities = [SagaData::class, Message::class, Chapter::class, Character::class],

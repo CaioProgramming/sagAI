@@ -12,6 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -19,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -59,6 +63,29 @@ fun TypewriterText(
         modifier = modifier,
         style = style,
     )
+}
+
+@Composable
+fun Modifier.zoomAnimation(): Modifier {
+    val infiniteTransition = rememberInfiniteTransition(label = "infinite zoom")
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.5f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(durationMillis = 1.minutes.toInt(DurationUnit.MILLISECONDS)),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "imageZoom",
+    )
+
+    return this
+        .graphicsLayer(
+            scaleX = scale,
+            scaleY = scale,
+            transformOrigin = TransformOrigin.Center,
+        ).clipToBounds()
+
 }
 
 @Preview(showBackground = true)

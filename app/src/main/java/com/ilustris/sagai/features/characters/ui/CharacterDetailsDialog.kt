@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
@@ -105,12 +106,17 @@ fun CharacterDetailsDialog(
                 animationSpec = tween(durationMillis = 300),
                 label = "cardHeight",
             )
+        val cardBorderColor by animateColorAsState(
+            targetValue = if (isExpanded.value) Color.Transparent else genre.color,
+            animationSpec = tween(durationMillis = 300),
+            label = "cardBorderColor",
+        )
         Card(
             modifier =
                 Modifier
                     .border(
                         2.dp,
-                        genre.color.gradientFade(),
+                        cardBorderColor.gradientFade(),
                         RoundedCornerShape(cornerSize.value),
                     ).fillMaxWidth()
                     .fillMaxHeight(cardHeight.value)

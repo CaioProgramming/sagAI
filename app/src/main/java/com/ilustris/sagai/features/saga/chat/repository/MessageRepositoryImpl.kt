@@ -1,8 +1,8 @@
-package com.ilustris.sagai.features.chat.repository
+package com.ilustris.sagai.features.saga.chat.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.features.chat.data.MessageDao
-import com.ilustris.sagai.features.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.datasource.MessageDao
 import javax.inject.Inject
 
 class MessageRepositoryImpl

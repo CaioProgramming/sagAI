@@ -37,9 +37,10 @@ import androidx.navigation.createGraph
 import androidx.navigation.navArgument
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterGalleryView
-import com.ilustris.sagai.features.chat.ui.ChatView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
+import com.ilustris.sagai.features.saga.chat.ui.ChatView
+import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
 
 enum class Routes(
     val view: @Composable (NavHostController, PaddingValues) -> Unit = { nav, padding ->
@@ -95,6 +96,20 @@ enum class Routes(
         arguments = listOf("sagaId"),
         deepLink = "saga://character_gallery/{sagaId}",
         showBottomNav = false, // Or true, depending on your desired UX
+    ),
+    SAGA_DETAIL(
+        view = { nav, padding ->
+            val arguments = nav.currentBackStackEntry?.arguments
+            SagaDetailView(
+                navHostController = nav,
+                paddingValues = padding,
+                sagaId = arguments?.getString(SAGA_DETAIL.arguments.first()) ?: "",
+            )
+        },
+        topBarContent = { Box {} },
+        arguments = listOf("sagaId"),
+        deepLink = "saga://saga_detail/{sagaId}",
+        showBottomNav = false,
     ),
 }
 

@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.ui.components
+package com.ilustris.sagai.features.saga.chat.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
@@ -41,10 +41,10 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.MessageContent
-import com.ilustris.sagai.features.chat.data.model.SenderType
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.botBubbleGradient
@@ -339,7 +339,7 @@ fun ChatBubble(
 }
 
 @Composable
-private fun ChapterContentView(
+fun ChapterContentView(
     genre: Genre,
     content: Chapter,
     textColor: Color,
@@ -375,7 +375,7 @@ private fun ChapterContentView(
                     ),
             )
             Text(
-                text = "Chapter ${content.title}",
+                text = "${content.title}",
                 modifier =
                     Modifier
                         .padding(12.dp)
@@ -458,6 +458,7 @@ private fun ChapterContentView(
             text = content.overview,
             modifier = Modifier.padding(16.dp),
             duration = 5.seconds,
+            isAnimated = isAnimated,
             style =
                 MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Normal,

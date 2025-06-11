@@ -19,7 +19,7 @@ class CharacterRepositoryImpl
             character.copy(
                 id =
                     characterDao
-                        .insertCharacter(character.copy(id = 0))
+                        .insertCharacter(character)
                         .toInt(),
             )
 

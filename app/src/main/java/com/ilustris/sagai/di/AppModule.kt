@@ -14,14 +14,16 @@ import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.characters.domain.CharacterUseCaseImpl
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
-import com.ilustris.sagai.features.chat.data.usecase.MessageUseCase
-import com.ilustris.sagai.features.chat.data.usecase.MessageUseCaseImpl
-import com.ilustris.sagai.features.chat.repository.MessageRepository
-import com.ilustris.sagai.features.chat.repository.MessageRepositoryImpl
-import com.ilustris.sagai.features.chat.repository.SagaRepository
-import com.ilustris.sagai.features.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
+import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
+import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
+import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
+import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -67,6 +69,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesCharacterUseCase(characterUseCaseImpl: CharacterUseCaseImpl): CharacterUseCase
+
+    @Binds
+    abstract fun providesSagaDetailUseCase(sagaDetailUseCaseImpl: SagaDetailUseCaseImpl): SagaDetailUseCase
 }
 
 @InstallIn(ViewModelComponent::class)

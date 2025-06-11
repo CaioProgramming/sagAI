@@ -1,9 +1,10 @@
-package com.ilustris.sagai.features.chat.repository
+package com.ilustris.sagai.features.saga.chat.repository
 
+import android.icu.util.Calendar
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.features.chat.data.SagaDao
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.datasource.SagaDao
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -20,7 +21,8 @@ class SagaRepositoryImpl
 
         override fun getSagaById(id: Int) = sagaDao.getSagaContent(id)
 
-        override suspend fun saveChat(sagaData: SagaData): Long = sagaDao.saveSagaData(sagaData)
+        override suspend fun saveChat(sagaData: SagaData): Long =
+            sagaDao.saveSagaData(sagaData)
 
         override suspend fun updateChat(sagaData: SagaData) = sagaDao.updateSaga(sagaData)
 

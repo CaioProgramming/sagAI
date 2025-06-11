@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.data.model
+package com.ilustris.sagai.features.saga.chat.domain.usecase.model
 
 import androidx.room.Embedded
 import androidx.room.Relation

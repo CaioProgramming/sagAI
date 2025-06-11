@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.chat.data.model
+package com.ilustris.sagai.features.saga.chat.domain.usecase.model
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -33,9 +33,9 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 )
 data class Message(
     @PrimaryKey(autoGenerate = true)
-    val id: Int,
+    val id: Int = 0,
     val text: String,
-    val timestamp: Long,
+    val timestamp: Long = System.currentTimeMillis(),
     val senderType: SenderType,
     val speakerName: String? = null,
     @ColumnInfo(index = true)
@@ -55,8 +55,6 @@ enum class SenderType {
     NEW_CHAPTER,
     NEW_CHARACTER,
     CHARACTER,
-
-
 }
 
 fun SenderType.isCharacter() = this == SenderType.CHARACTER

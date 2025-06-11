@@ -1,6 +1,5 @@
-package com.ilustris.sagai.features.chat.ui.components
+package com.ilustris.sagai.features.saga.chat.ui.components
 
-import android.graphics.ColorFilter
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -20,12 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.ui.theme.gradientFade
 
 @Composable
@@ -68,7 +68,7 @@ fun SenderType.itemOption(
                     painter = painterResource(id = it),
                     contentDescription = this@itemOption.title(),
                     colorFilter =
-                        androidx.compose.ui.graphics.ColorFilter
+                        ColorFilter
                             .tint(color),
                     modifier = Modifier.size(24.dp),
                     contentScale = ContentScale.Fit,
