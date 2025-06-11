@@ -30,3 +30,10 @@ sealed class RequestResult<out L, out R> {
     val success get() = this as Success
     val error get() = this as Error
 }
+
+fun <R> R.asSuccess() = RequestResult.Success(this)
+
+fun <L : Exception> L.asError(): RequestResult.Error<L> {
+    this.printStackTrace()
+    return RequestResult.Error(this)
+}

@@ -6,3 +6,5 @@ fun String.addQueryParameter(
 ): String = this.plus("?$key=$value")
 
 fun emptyString() = ""
+
+fun String.removeBlankSpace() = this.replace(" ", emptyString())

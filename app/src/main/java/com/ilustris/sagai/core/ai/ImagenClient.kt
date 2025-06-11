@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai
 
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.ImagenInlineImage
@@ -13,7 +14,8 @@ class ImagenClient {
 
     suspend fun generateImage(prompt: String): ImagenInlineImage? =
         try {
-            val response = model.generateImages(prompt)
+            Log.i(javaClass.simpleName, "generateImage: Generating image with prompt:\n$prompt")
+            val response = model.generateImages(prompt.trimIndent())
             response.images.first()
         } catch (e: Exception) {
             e.printStackTrace()

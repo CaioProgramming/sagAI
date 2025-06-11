@@ -16,4 +16,6 @@
     <string name="new_saga_title">Nova saga</string>
     <string name="home_title">Sagas</string>
     <string name="save_saga">Salvar</string>
+    <string name="character_gallery_title">Personagens</string>
+    <string name="back_button_description">Voltar</string>
 </resources>

@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
@@ -56,60 +57,69 @@ class MainActivity : ComponentActivity() {
         setContent {
             SagAITheme {
                 val navController = rememberNavController()
-                val currentEntry by navController.currentBackStackEntryFlow.collectAsState(initial = navController.currentBackStackEntry)
+                val currentEntry by navController
+                    .currentBackStackEntryFlow
+                    .collectAsState(initial = navController.currentBackStackEntry)
                 val route =
                     remember(currentEntry) {
                         currentEntry?.destination?.route?.findRoute()
                     }
 
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
-                    TopAppBar(
-                        title = {
-                            Box(modifier = Modifier.fillMaxWidth() ) {
-                                route?.title?.let {
-                                    Text(
-                                        text = stringResource(it),
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.Center,
-                                        modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth(),
-                                    )
-                                }?: run {
-                                    Image(
-                                        painterResource(R.drawable.ic_spark),
-                                        contentDescription = stringResource(R.string.app_name),
-                                        modifier = Modifier.align(Alignment.Center).size(24.dp).align(Alignment.Center),
-                                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
-                                    )
-                                }
-                            }
+                    AnimatedContent(route) {
+                        if(it?.topBarContent != null) {
+                            it.topBarContent(navController)
+                        } else {
+                            TopAppBar(
+                                title = {
+                                    Box(modifier = Modifier.fillMaxWidth() ) {
+                                        route?.title?.let {
+                                            Text(
+                                                text = stringResource(it),
+                                                style = MaterialTheme.typography.titleSmall,
+                                                fontWeight = FontWeight.Medium,
+                                                textAlign = TextAlign.Center,
+                                                modifier =
+                                                    Modifier
+                                                        .padding(16.dp)
+                                                        .fillMaxWidth(),
+                                            )
+                                        }?: run {
+                                            Image(
+                                                painterResource(R.drawable.ic_spark),
+                                                contentDescription = stringResource(R.string.app_name),
+                                                modifier = Modifier.align(Alignment.Center).size(24.dp).align(Alignment.Center),
+                                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                                            )
+                                        }
+                                    }
 
 
-                        },
-                        actions = {},
-                        navigationIcon = {
-                            AnimatedVisibility(route != Routes.HOME) {
-                                IconButton(onClick = {
-                                    navController.popBackStack()
-                                }) {
-                                    Icon(
-                                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                                        contentDescription = "Back",
-                                        tint = MaterialTheme.colorScheme.onBackground,
-                                    )
-                                }
-                            }
-                        },
-                    )
+                                },
+                                actions = {},
+                                navigationIcon = {
+                                    AnimatedVisibility(route != Routes.HOME) {
+                                        IconButton(onClick = {
+                                            navController.popBackStack()
+                                        }) {
+                                            Icon(
+                                                Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
+                                                contentDescription = "Back",
+                                                tint = MaterialTheme.colorScheme.onBackground,
+                                            )
+                                        }
+                                    }
+                                },
+                            )
+                        }
+                    }
+
                 }, bottomBar = {
                     SagaBottomNavigation(navController, route)
-                }) { pd ->
+                }) { padding ->
                     SharedTransitionLayout {
-                        Box(modifier = Modifier.padding(pd).fillMaxSize().animateContentSize()) {
-                            SagaNavGraph(navController)
+                        Box(modifier = Modifier.fillMaxSize().animateContentSize()) {
+                            SagaNavGraph(navController, padding)
                         }
                     }
 

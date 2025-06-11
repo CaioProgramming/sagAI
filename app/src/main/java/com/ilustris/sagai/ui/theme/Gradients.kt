@@ -18,17 +18,58 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalContext
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
+
+enum class GradientType {
+    LINEAR,
+    VERTICAL,
+    RADIAL,
+    SWEEP,
+    ;
+
+    fun toBrush(
+        colors: List<Color>,
+        offsetAnimationValue: Float,
+    ): Brush =
+        when (this) {
+            LINEAR ->
+                Brush.linearGradient(
+                    colors = colors,
+                    start = Offset.Zero,
+                    end = Offset(offsetAnimationValue * 2, offsetAnimationValue * 3),
+                    tileMode = TileMode.Clamp,
+                )
+            VERTICAL ->
+                Brush.verticalGradient(
+                    colors = colors,
+                    startY = 0f,
+                    endY = offsetAnimationValue * 3,
+                    tileMode = TileMode.Clamp,
+                )
+            RADIAL ->
+                Brush.radialGradient(
+                    colors = colors,
+                    center = Offset(offsetAnimationValue, offsetAnimationValue),
+                    radius = offsetAnimationValue * 2,
+                    tileMode = TileMode.Clamp,
+                )
+            SWEEP ->
+                Brush.sweepGradient(
+                    colors = colors,
+                    center = Offset(offsetAnimationValue, offsetAnimationValue),
+                )
+        }
+}
 
 @Composable
 fun gradientAnimation(
     colors: List<Color> = themeBrushColors(),
     duration: Duration = 3.seconds,
     targetValue: Float = 100f,
+    gradientType: GradientType = GradientType.LINEAR,
 ): Brush {
     val infiniteTransition = rememberInfiniteTransition()
     val offsetAnimation =
@@ -45,12 +86,7 @@ fun gradientAnimation(
                 ),
             label = "Gradient Offset Animation",
         )
-    return Brush.linearGradient(
-        colors = colors,
-        start = Offset.Zero,
-        end = Offset(offsetAnimation.value * 2, offsetAnimation.value * 3),
-        tileMode = TileMode.Clamp,
-    )
+    return gradientType.toBrush(colors = colors, offsetAnimationValue = offsetAnimation.value)
 }
 
 @Composable
@@ -101,6 +137,15 @@ fun Color.gradientFade() =
         ),
     )
 
+fun Color.darkerPalette(
+    count: Int = 4,
+    factor: Float = 0.1f,
+): List<Color> =
+    List(count) {
+        val indexColorFactor = it * factor
+        this.darker(indexColorFactor)
+    }
+
 val holographicGradient =
     listOf(
         Color(0xfffcc5e4),
@@ -124,7 +169,7 @@ fun genresGradient(): List<Color> {
 @Composable
 fun Genre.gradient(): List<Color> {
     val isDarkTheme = isSystemInDarkTheme()
-   return List(4) {
+    return List(4) {
         val indexColorFactor = it / 10f
         if (isDarkTheme.not()) {
             this.color.lighter(indexColorFactor)
@@ -155,7 +200,7 @@ fun Genre.botBubbleGradient(): Brush {
         }
     val colors =
         List(4) {
-           color.darker(it / 10f)
+            color.darker(it / 10f)
         }
     return Brush.linearGradient(
         colors = colors,

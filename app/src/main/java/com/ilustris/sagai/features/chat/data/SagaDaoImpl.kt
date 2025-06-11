@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.chat.data
 
 import com.ilustris.sagai.core.database.DatabaseBuilder
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -20,9 +21,15 @@ class SagaDaoImpl
 
         override suspend fun saveSagaData(sagaData: SagaData): Long = sagaDao.saveSagaData(sagaData)
 
+        override suspend fun updateSaga(sagaData: SagaData) = sagaDao.updateSaga(sagaData)
+
         override suspend fun deleteSagaData(sagaData: SagaData) = sagaDao.deleteSagaData(sagaData)
 
         override suspend fun deleteSagaData(sagaId: String) = sagaDao.deleteSagaData(sagaId)
 
         override suspend fun deleteAllSagas() = sagaDao.deleteAllSagas()
+
+        override fun getSagaContent(sagaId: Int): Flow<SagaContent> = sagaDao.getSagaContent(sagaId)
+
+        override fun getSagaContent() = sagaDao.getSagaContent()
     }
