@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.newsaga.ui.presentation
 
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
 
 sealed class CreateSagaState {
@@ -11,11 +12,15 @@ sealed class CreateSagaState {
         val exception: Exception,
     ) : CreateSagaState()
 
+    data class GeneratedCharacter(
+        val character: Character,
+    ) : CreateSagaState()
+
     data class GeneratedSaga(
         val saga: SagaData,
     ) : CreateSagaState()
 
-    object Loading : CreateSagaState()
+    object Initial : CreateSagaState()
 
-    object Idle : CreateSagaState()
+    object Loading : CreateSagaState()
 }

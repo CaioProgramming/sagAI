@@ -21,10 +21,13 @@ class SagaRepositoryImpl
 
         override fun getSagaById(id: Int) = sagaDao.getSagaContent(id)
 
-        override suspend fun saveChat(sagaData: SagaData): Long =
-            sagaDao.saveSagaData(sagaData)
+        override suspend fun saveChat(sagaData: SagaData) =
+           sagaData.copy(id=  sagaDao.saveSagaData(sagaData).toInt())
 
-        override suspend fun updateChat(sagaData: SagaData) = sagaDao.updateSaga(sagaData)
+        override suspend fun updateChat(sagaData: SagaData) : SagaData {
+            sagaDao.updateSaga(sagaData)
+            return sagaData
+        }
 
         override suspend fun deleteChat(sagaData: SagaData) = sagaDao.deleteSagaData(sagaData)
 

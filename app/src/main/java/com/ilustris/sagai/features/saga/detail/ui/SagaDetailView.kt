@@ -52,6 +52,7 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
+import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -168,7 +169,6 @@ fun SagaDetailContentView(
                             ) {
                                 CharacterAvatar(
                                     mainChar,
-                                    borderColor = it.saga.genre.color,
                                     modifier = Modifier.padding(8.dp).size(200.dp),
                                 )
                             }
@@ -271,7 +271,6 @@ fun SagaDetailContentView(
                             ) {
                                 CharacterAvatar(
                                     chars,
-                                    borderColor = characterColor,
                                     borderSize = 2.dp,
                                     modifier =
                                         Modifier
@@ -349,6 +348,7 @@ fun SagaDetailContentViewPreview() {
                             createdAt = System.currentTimeMillis(),
                             genre = Genre.SCI_FI,
                             mainCharacterId = null,
+                            visuals = IllustrationVisuals(),
                         ),
                     mainCharacter =
                         Character(

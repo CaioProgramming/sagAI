@@ -9,7 +9,7 @@ interface MessageRepository {
 
     suspend fun getMessageDetail(id: Int): MessageContent
 
-    suspend fun saveMessage(message: Message): Long
+    suspend fun saveMessage(message: Message): Message
 
     suspend fun deleteMessage(messageId: Long)
 

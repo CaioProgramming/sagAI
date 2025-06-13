@@ -224,6 +224,7 @@ fun SagaNavGraph(
 fun NavHostController.navigateToRoute(
     route: Routes,
     arguments: Map<String, String> = mapOf(),
+    popUpToRoute: Routes? = null,
 ) {
     var link = route.deepLink ?: route.name
     if (arguments.isNotEmpty() && arguments.size == route.arguments.size) {
@@ -236,8 +237,17 @@ fun NavHostController.navigateToRoute(
             }
         }
     }
+    val newLink = link.replace("{", "").replace("}", "")
 
-    navigate(link.replace("{", "").replace("}", ""))
+    if (popUpToRoute != null) {
+        navigate(newLink) {
+            popUpTo(popUpToRoute.name) {
+                inclusive = true
+            }
+        }
+    } else {
+        navigate(newLink)
+    }
 }
 
 fun String.findRoute(): Routes? =

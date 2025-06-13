@@ -4,19 +4,30 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 object CharacterPrompts {
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
 
     fun generateImage(
         character: Character,
-        genre: Genre,
+        saga: SagaData,
     ) = """
-        Generate a illustration of the character:
-        ${details(character)}
-        Following the style:
-        ${GenrePrompts.iconStyle(genre)}
+        ${CharacterFraming.PORTRAIT.name} of ${character.name}:
+        Appearance: ${character.details.appearance}
+        Pose: ${saga.visuals.characterPose}
+        Expression: ${saga.visuals.characterExpression}
+        With the art style:
+        ${GenrePrompts.artStyle(saga.genre)}
+        Using this visuals:
+        ${saga.visuals.colorPalette},
+        ${saga.visuals.lightingDetails},
+        ${saga.visuals.environmentDetails}
+
+        Background elements: ${saga.visuals.backgroundElements}.
+        
+        The image should evoke a ${saga.visuals.overallMood}.
+        
+        !IMPORTANT AVOID: ${GenrePrompts.negativePrompt(saga.genre)}
         """
 
     fun charactersOverview(characters: List<Character>): String =

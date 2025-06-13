@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -66,7 +67,6 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.themeBrushColors
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -103,60 +103,18 @@ private fun ChatList(
 ) {
     Box(Modifier.padding(padding)) {
         val styleGradient =
-            gradientAnimation(genresGradient(), targetValue = 1000f, duration = 5.seconds)
+            gradientAnimation(
+                genresGradient(),
+                targetValue = 2000f,
+                duration = 10.seconds,
+                gradientType = GradientType.VERTICAL,
+            )
 
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize(),
         ) {
-            item {
-                Row (
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .clip(RoundedCornerShape(15.dp))
-                            .clickable {
-                                onCreateNewChat()
-                            }.fillMaxWidth(),
-                ) {
-                    val brush =
-                        gradientAnimation(
-                            holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
-                            gradientType = GradientType.LINEAR,
-                            targetValue = 500f,
-                        )
-
-                    SparkLoader(
-                        brush = brush,
-                        strokeSize = 2.dp,
-                        modifier =
-                            Modifier.clip(CircleShape).padding(4.dp).size(32.dp),
-                    )
-
-                    Column {
-                        Text(
-                            "Criar nova saga",
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    brush = brush,
-                                    fontWeight = FontWeight.SemiBold
-                                ),
-                        )
-
-                        Text(
-                            "Crie uma nova aventura e descubra o que o futuro reserva para você.",
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    brush = brush,
-                                    fontWeight = FontWeight.Light
-                                ),
-                        )
-                    }
-
-                }
-            }
-
             if (sagas.isEmpty()) {
                 item {
                     NewChatCard(
@@ -167,6 +125,52 @@ private fun ChatList(
                         modifier =
                             Modifier.fillParentMaxSize(),
                     )
+                }
+            } else {
+                item {
+                    Row(
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .clip(RoundedCornerShape(15.dp))
+                                .clickable {
+                                    onCreateNewChat()
+                                }.fillMaxWidth(),
+                    ) {
+                        val brush =
+                            gradientAnimation(
+                                holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
+                                gradientType = GradientType.LINEAR,
+                                targetValue = 500f,
+                            )
+
+                        SparkLoader(
+                            brush = brush,
+                            strokeSize = 2.dp,
+                            modifier =
+                                Modifier.clip(CircleShape).padding(4.dp).size(32.dp),
+                        )
+
+                        Column {
+                            Text(
+                                "Criar nova saga",
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        brush = brush,
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                            )
+
+                            Text(
+                                "Crie uma nova aventura e descubra o que o futuro reserva para você.",
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        brush = brush,
+                                        fontWeight = FontWeight.Light,
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
 
@@ -384,6 +388,7 @@ fun HomeViewPreview() {
                                 icon = "",
                                 createdAt = Calendar.getInstance().timeInMillis,
                                 mainCharacterId = null,
+                                visuals = IllustrationVisuals(),
                             ),
                             mainCharacter = null,
                             messages =

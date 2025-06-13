@@ -35,13 +35,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            buildConfigField("String", "AIKEY", apikeyProperties.getProperty("AI_KEY"))
-            buildConfigField("String", "AIMODEL", apikeyProperties.getProperty("AI_MODEL"))
+            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("CLOUDFLARE_KEY"))
+            buildConfigField("String", "ACCOUNTID", apikeyProperties.getProperty("CLOUDFLARE_ID"))
         }
 
         debug {
-            buildConfigField("String", "AIKEY", apikeyProperties.getProperty("AI_KEY"))
-            buildConfigField("String", "AIMODEL", apikeyProperties.getProperty("AI_MODEL"))
+            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("CLOUDFLARE_KEY"))
+            buildConfigField("String", "ACCOUNTID", apikeyProperties.getProperty("CLOUDFLARE_ID"))
         }
     }
     compileOptions {
@@ -72,6 +72,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout.compose)
     implementation(libs.androidx.shapes)
     implementation(libs.androidx.animations)
+    implementation(libs.androidx.palette.ktx)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.android)
     kapt(libs.androidx.hilt.compiler)
@@ -81,6 +82,13 @@ dependencies {
     implementation(libs.androidx.room.guava)
     implementation(libs.androidx.room.testing)
     kapt(libs.androidx.room.compiler)
+
+    // Retrofit & OkHttp
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp.core)
+    implementation(libs.okhttp.logging.interceptor)
+
     implementation(libs.material.colors)
     implementation(libs.accompanist.ui.controller)
     implementation(libs.accompanist.navigation.animation)

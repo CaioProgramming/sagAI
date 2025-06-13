@@ -3,19 +3,6 @@ package com.ilustris.sagai.core.ai
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-
-fun Genre.iconPrompt(description: String) =
-    """
-    Subject: $description
-    ${GenrePrompts.bannerStyle(this)}
-    """
-
-fun Genre.avatarPrompt(description: String) =
-    """
-    Subject: $description
-    ${GenrePrompts.iconStyle(this)}
-    """
 
 fun SagaData.introductionPrompt(character: Character?): String = SagaPrompts.introductionGeneration(this, character)
 
@@ -46,29 +33,31 @@ fun chapterPrompt(
 ) = SagaPrompts.chapterGeneration(sagaData, messages, chapters)
 
 fun Chapter.coverPrompt(
-    genre: Genre,
+    saga: SagaData,
     characters: List<Character>,
 ): String =
     """
     Create a illustration cover for the chapter "$title".
     Use the context of the chapter overview: "$overview".
-    Emphasizing the chapter description.
-    The cover should be in the theme of "${genre.name}".
-    Include the characters in a dynamic poses, with a background that reflects the theme ${genre.name}.
+    Use this visuals to generate the cover:
+    Color palette: ${saga.visuals.colorPalette},
+    Lighting: ${saga.visuals.lightingDetails},
+    Environment: ${saga.visuals.environmentDetails},
+    Characters Pose: ${saga.visuals.characterPose},
+    Characters expressions: ${saga.visuals.characterExpression},
+    Use the artStyle of the genre "${saga.genre.name}":
+    ${GenrePrompts.artStyle(saga.genre)}
+    Don't write the title of the chapter, only the cover.
     ${CharacterPrompts.charactersOverview(characters)}
-    High resolution, suitable for printing.
-    Style: Flat colour anime style, clear image, highly detailed image, realistic body anatomy, clean illustration, no text in it.
-    Refinement: Medium depth of field, rule of thirds, high aesthetic quality, smooth shading, detailed textures, clean lines, sharp edges, minimalistic composition.
-    Photography: Action photography, character focus.
-    Background: Minimalist, contrasting with the character.
-    Lighting: Dramatic lighting, emphasizing the character's features and the mood of the scene. 
     """
 
-fun SagaData.characterPrompt(): String =
+fun SagaData.characterPrompt(description: String): String =
     """
-    Write a character description for the main character of the story.
+    Generate the main character of the story. Following the user's description and the story theme.
     Story Details: $title : $description
     Story theme: ${genre.name}
+    Description provided by the user:
+    $description
     The character description should include:
     1.  The character's name.
     2.  A brief backstory that explains the character's motivations and goals.

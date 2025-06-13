@@ -179,6 +179,7 @@ fun DistortingBubble(
         Box(
             Modifier
                 .fillMaxSize()
+                .blur(2.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                 .background(
                     tint,
                     shape,

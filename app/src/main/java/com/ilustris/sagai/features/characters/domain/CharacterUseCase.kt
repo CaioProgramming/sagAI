@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.characters.domain
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.flow.Flow
 
 interface CharacterUseCase {
@@ -19,7 +18,7 @@ interface CharacterUseCase {
 
     suspend fun generateCharacterImage(
         character: Character,
-        genre: Genre,
+        saga: SagaData,
     ): RequestResult<Exception, Character>
 
     suspend fun generateCharacter(

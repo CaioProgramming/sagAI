@@ -10,7 +10,6 @@ import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -35,12 +34,12 @@ class CharacterUseCaseImpl
 
         override suspend fun generateCharacterImage(
             character: Character,
-            genre: Genre,
+            saga: SagaData,
         ): RequestResult<Exception, Character> =
             try {
                 val image =
                     imagenClient.generateImage(
-                        CharacterPrompts.generateImage(character, genre),
+                        CharacterPrompts.generateImage(character, saga),
                     )
                 val file = fileHelper.saveToCache(character.name, image!!.data)
                 val newCharacter = character.copy(image = file!!.path)
@@ -66,7 +65,7 @@ class CharacterUseCaseImpl
                 val characterTransaction = insertCharacter(newCharacter!!.copy(sagaId = sagaData.id))
                 generateCharacterImage(
                     character = characterTransaction,
-                    genre = sagaData.genre,
+                    saga = sagaData,
                 )
             } catch (e: Exception) {
                 e.asError()

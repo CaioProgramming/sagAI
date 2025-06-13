@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -11,7 +12,6 @@ import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
@@ -22,7 +22,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import java.util.Calendar
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -64,7 +63,7 @@ class ChatViewModel
                                 loadSagaMessages(it)
                                 it.mainCharacter?.let { character ->
                                     if (character.image.isEmpty()) {
-                                        generateCharacterImage(character, it.saga.genre)
+                                        generateCharacterImage(character, it.saga)
                                     }
                                 }
                             }
@@ -82,11 +81,11 @@ class ChatViewModel
 
         private fun generateCharacterImage(
             character: Character,
-            genre: Genre,
+            saga: SagaData,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase
-                    .generateCharacterImage(character, genre)
+                    .generateCharacterImage(character, saga)
                     .onSuccess {
                         mainCharacter.value = it
                     }.onFailure {
@@ -216,7 +215,7 @@ class ChatViewModel
                 messageUseCase
                     .generateIntroMessage(saga, character)
                     .onSuccess {
-                        sendMessage(it.copy(senderType = SenderType.NARRATOR))
+                        sendMessage(it.copy(senderType = SenderType.NARRATOR, characterId = mainCharacter.value!!.id))
                     }.onFailure {
                         state.value =
                             ChatState.Error("Failed to generate introduction: ${it.message ?: "Unknown error"}")
@@ -252,11 +251,13 @@ class ChatViewModel
                             characterId = characterReference?.id,
                         ),
                     ).also {
+                        checkLoreUpdate()
                         when (message.characterId == mainCharacter.value?.id) {
                             true -> {
                                 delay(2.seconds)
                                 replyMessage(it)
                             }
+
                             else -> {
                                 if (message.senderType == SenderType.NEW_CHARACTER) {
                                     generateCharacter(it)
@@ -265,6 +266,40 @@ class ChatViewModel
                         }
                     }
                 isGenerating.value = false
+            }
+        }
+
+        private fun checkLoreUpdate() {
+            viewModelScope.launch {
+                val currentSaga = saga.value
+                val messageList = messages.value
+                val lastLoreMessage =
+                    messageList.find { it.message.id == currentSaga?.lastLoreReference }
+                val messageSubList =
+                    lastLoreMessage?.let {
+                        messageList.subList(messageList.indexOf(it), messageList.size)
+                    } ?: messageList
+
+                if ((messageList.isNotEmpty() && messageSubList.size == 35) ||
+                    messageSubList.last().message.senderType == SenderType.NEW_CHAPTER
+                ) {
+                    val chapterMessage = messageSubList.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
+                    val messageReference =
+                        if (messageSubList.size == 35) {
+                            messageSubList.last().message.id
+                        } else {
+                            (
+                                chapterMessage?.message?.id
+                                    ?: messageList.last().message.id
+                            )
+                        }
+                    sagaHistoryUseCase.generateLore(
+                        currentSaga!!,
+                        mainCharacter.value!!,
+                        messageReference,
+                        messageSubList.map { it.joinMessage().formatToString() },
+                    )
+                }
             }
         }
 

@@ -9,9 +9,9 @@ interface SagaRepository {
 
     fun getSagaById(id: Int): Flow<SagaContent?>
 
-    suspend fun saveChat(sagaData: SagaData): Long
+    suspend fun saveChat(sagaData: SagaData): SagaData
 
-    suspend fun updateChat(sagaData: SagaData)
+    suspend fun updateChat(sagaData: SagaData) : SagaData
 
     suspend fun deleteChat(sagaData: SagaData)
 

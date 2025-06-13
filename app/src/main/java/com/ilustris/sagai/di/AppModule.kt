@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.network.CloudflareApiService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
@@ -31,11 +32,19 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.components.ViewModelComponent
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
+
+    // TODO: Replace with your actual Cloudflare Base URL
+    private const val CLOUDFLARE_BASE_URL = "YOUR_CLOUDFLARE_BASE_URL_HERE"
+
     @Provides
     @Singleton
     fun provideSagaDatabase(databaseBuilder: DatabaseBuilder): SagaDatabase = databaseBuilder.buildDataBase()
@@ -53,6 +62,34 @@ object AppModule {
     fun bindsFileHelper(
         @ApplicationContext context: Context,
     ) = FileHelper(context)
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = HttpLoggingInterceptor.Level.BODY // Or Level.BASIC, Level.HEADERS
+        }
+        return OkHttpClient.Builder()
+            .addInterceptor(loggingInterceptor)
+            // Add other interceptors or configurations as needed
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(CLOUDFLARE_BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create()) // Using Gson as an example
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCloudflareApiService(retrofit: Retrofit): CloudflareApiService {
+        return retrofit.create(CloudflareApiService::class.java)
+    }
 }
 
 @InstallIn(ViewModelComponent::class)

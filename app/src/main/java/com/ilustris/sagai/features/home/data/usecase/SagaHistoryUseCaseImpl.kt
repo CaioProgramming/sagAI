@@ -1,6 +1,13 @@
 package com.ilustris.sagai.features.home.data.usecase
 
+import com.ilustris.sagai.core.ai.SagaPrompts
+import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.asError
+import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -10,6 +17,7 @@ class SagaHistoryUseCaseImpl
     @Inject
     constructor(
         private val sagaRepository: SagaRepository,
+        private val textGenClient: TextGenClient,
     ) : SagaHistoryUseCase {
         override fun getSagas(): Flow<List<SagaContent>> =
             sagaRepository.getChats().map { content ->
@@ -19,18 +27,39 @@ class SagaHistoryUseCaseImpl
 
         override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
-        private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
-            val mappedSagas =
-                content.map { saga ->
-                    saga.copy(
-                        messages = saga.messages.sortedByDescending { it.timestamp },
+        override suspend fun generateLore(
+            saga: SagaData?,
+            character: Character?,
+            loreReference: Int,
+            lastMessages: List<String>,
+        ): RequestResult<Exception, String> =
+            try {
+                val newLore =
+                    textGenClient.generate<String>(
+                        SagaPrompts.loreGeneration(
+                            saga!!,
+                            lastMessages,
+                            character!!,
+                        ),
                     )
-                }
-
-            mappedSagas.sortedByDescending { saga ->
-                saga.messages.firstOrNull()?.timestamp ?: 0L
+                sagaRepository.updateChat(saga.copy(lore = newLore!!, lastLoreReference = loreReference))
+                newLore.asSuccess()
+            } catch (e: Exception) {
+                e.asError()
             }
-
-            return mappedSagas
-        }
     }
+
+private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
+    val mappedSagas =
+        content.map { saga ->
+            saga.copy(
+                messages = saga.messages.sortedByDescending { it.timestamp },
+            )
+        }
+
+    mappedSagas.sortedByDescending { saga ->
+        saga.messages.firstOrNull()?.timestamp ?: 0L
+    }
+
+    return mappedSagas
+}

@@ -165,7 +165,6 @@ fun CharacterYearbookItem(
         CharacterAvatar(
             character = character,
             isAnimated = isMainCharacter,
-            borderColor = characterColor,
             modifier =
                 Modifier
                     .fillMaxWidth()

@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
+import android.icu.util.Calendar
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -18,7 +19,13 @@ class MessageRepositoryImpl
 
         override suspend fun getMessageDetail(id: Int) = messageDao.getMessageDetail(id)
 
-        override suspend fun saveMessage(message: Message): Long = messageDao.saveMessage(message)
+        override suspend fun saveMessage(message: Message) =
+            message.copy(
+                id =
+                    messageDao
+                        .saveMessage(message.copy(timestamp = Calendar.getInstance().timeInMillis))
+                        .toInt(),
+            )
 
         override suspend fun deleteMessage(messageId: Long) {
             messageDao.deleteMessage(messageId)

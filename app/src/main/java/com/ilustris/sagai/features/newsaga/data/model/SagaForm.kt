@@ -8,6 +8,7 @@ data class SagaForm(
     val title: String = "",
     val description: String = "",
     val genre: Genre = Genre.entries.first(),
+    val characterDescription: String = "",
 )
 
 enum class Genre(

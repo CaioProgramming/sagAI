@@ -13,7 +13,6 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -61,7 +60,7 @@ class ChapterUseCaseImpl
             val chapterCover =
                 generateChapterCover(
                     chapter = genText!!,
-                    genre = saga.genre,
+                    saga = saga,
                     characters = characters,
                 )
             val coverFile = fileHelper.saveToCache(genText.title, chapterCover!!)
@@ -79,11 +78,11 @@ class ChapterUseCaseImpl
         @OptIn(PublicPreviewAPI::class)
         suspend fun generateChapterCover(
             chapter: Chapter,
-            genre: Genre,
+            saga: SagaData,
             characters: List<Character>,
         ): ByteArray? =
             try {
-                val genCover = imagenClient.generateImage(chapter.coverPrompt(genre, characters))
+                val genCover = imagenClient.generateImage(chapter.coverPrompt(saga, characters))
                 genCover!!.data
             } catch (e: Exception) {
                 e.printStackTrace()

@@ -77,6 +77,7 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
+import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
@@ -223,7 +224,6 @@ fun ChatContent(
                             val overlapAmountPx = with(density) { overlapAmount.toPx() }
                             CharacterAvatar(
                                 character,
-                                borderColor = MaterialTheme.colorScheme.background,
                                 borderSize = 2.dp,
                                 modifier =
                                     Modifier
@@ -397,9 +397,6 @@ fun ChatContent(
                                 ) {
                                     CharacterAvatar(
                                         character,
-                                        borderColor =
-                                            saga?.genre?.color
-                                                ?: MaterialTheme.colorScheme.primary,
                                         borderSize = 2.dp,
                                         modifier =
                                             Modifier
@@ -666,6 +663,7 @@ fun ChatViewPreview() {
             genre = Genre.SCI_FI,
             createdAt = Calendar.getInstance().timeInMillis,
             mainCharacterId = null,
+            visuals = IllustrationVisuals()
         )
     val messages =
         List(17) {

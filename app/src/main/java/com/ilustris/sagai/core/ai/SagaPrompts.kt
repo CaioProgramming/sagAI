@@ -40,6 +40,45 @@ object SagaPrompts {
         5.  An indication of the adventure's scope and potential for a grand finale.
         
         Target a short synopsis with a maxium of 75 words, ensuring it engages the player to join the RPG experience.
+        
+        You MUST fill the visuals field:
+        //WRITE THE FIELDS IN ENGLISH
+        // FOLLOW this structure to fill the visuals field:
+        {
+          "illustrationVisuals": { // This object will describe the visual aspects for generating saga illustrations.
+            "characterPose": "string", // Describe the main character's pose (e.g., "Standing heroically with crossed arms", "Crouching cautiously", "Running frantically").
+            "characterExpression": "string", // Describe the character's facial expression (e.g., "Determined and serious", "Curious and slightly surprised", "Melancholy with a touch of hope").
+            "environmentDetails": "string", // Describe the main environment of the illustration (e.g., "Rainy cyberpunk street with neon signs", "Ancient elven forest with gnarled trees and magic mist", "Deserted and rusty spaceship interior").
+            "lightingDetails": "string", // Describe the lighting of the scene (e.g., "Dramatic neon backlight from behind the character", "Soft moonlight filtering through leaves", "Harsh overhead fluorescent lights").
+            "colorPalette": "string", // Describe the dominant color palette (e.g., "Dominance of electric blues, purples, and dark grays, with splashes of red", "Earthy greens, browns, and golden hues, with mysterious purples").
+            "foregroundElements": "string", // Describe elements in the foreground that add depth (e.g., "Raindrops streaking across the view, smoke rising from manholes", "Gnarled roots on the ground, small floating light orbs").
+            "backgroundElements": "string", // Describe elements in the background that enrich the scene (e.g., "Towering skyscrapers with glass facades and LED panels displaying distorted ads", "Silhouetted mountains, a distant burning city").
+            "overallMood": "string" // Describe the overall mood or emotion of the illustration (e.g., "Gritty and tense", "Mysterious and enchanting", "Desolate yet hopeful").
+          }
+        }
+        """
+
+    fun wallpaperGeneration(
+        saga: SagaData,
+        mainCharacter: Character,
+    ) = """
+        ${GenrePrompts.artStyle(saga.genre)}
+        
+        ${saga.visuals.colorPalette},
+        ${saga.visuals.lightingDetails},
+        ${saga.visuals.environmentDetails},
+        
+        featuring ${mainCharacter.details.appearance},
+        in a ${saga.visuals.characterPose},
+        with a ${saga.visuals.characterExpression} expression.
+           
+        The framing should be: ${CharacterFraming.MEDIUM_SHOT}
+        
+        Foreground elements: ${saga.visuals.foregroundElements}.
+        Background elements: ${saga.visuals.backgroundElements}.
+        
+        The image should evoke a ${saga.visuals.overallMood}.
+        
         """
 
     fun narratorGeneration(
@@ -105,4 +144,47 @@ object SagaPrompts {
         3.  An indication of the current state of the world and the main character's situation.
         Target a description length of 100 words, ensuring it captures the essence of a playable RPG experience.
         """.trimIndent()
+
+    fun loreGeneration(
+        saga: SagaData,
+        messages: List<String>,
+        character: Character,
+    ) = """"
+        You are the "Saga Chronicler" for a text-based RPG.
+        Your primary role is to efficiently and accurately summarize key narrative elements from a given segment of the saga's conversation history,
+        **integrating it with the existing long-term memory.**
+        This updated summary will serve as a continuous, evolving long-term memory for the main Saga Master AI,
+        ensuring narrative consistency over extended gameplay sessions and across multiple chapters.
+
+        Your summary must be concise, accurate, and focus only on the most crucial details for ongoing
+        story progression, character consistency, and plot points that remain relevant across chapters.
+        DO NOT include conversational filler, minor details, or repetitive elements that are no longer critical.
+        Focus on WHAT happened, WHERE it happened (if significant), WHO was involved, and WHY it's important for the future.
+        
+        SAGA CONTEXT:
+        // This section provides high-level information about the saga to help you contextualize the events.
+        Title: ${saga.title}
+        Description: ${saga.description}
+        Player Character: $character
+        
+        CURRENT LORE SUMMARY (Existing Long-Term Memory):
+        / This is the most recent condensed long-term memory of the saga's key events and states.
+        // Use this as the foundational base upon which to integrate and update with new information.
+        // If this is the first summary, this section will be empty or contain an initial saga premise.
+        ${saga.lore}
+        
+        CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
+        ${messages.joinToString("\n") { it }}
+
+        GENERATE THE UPDATED SAGAS LORE/MEMORY AS A CONCISE LIST OF BULLET POINTS.
+        This new summary should be a synthesis of the 'CURRENT LORE SUMMARY' and the 'CONVERSATION HISTORY TO SUMMARIZE'.
+        Prioritize:
+        - Major plot developments and revelations.
+        - Key character interactions or changes in relationships (e.g., trust gained/lost).
+        - Main objectives, quests, or unsolved mysteries that are still active.
+        - Introduction of new significant NPCs or locations.
+        - Important items acquired or lost.
+        - Overall shifts in the saga's tone or major turning points.
+        - Ensure the summary does not exceed ~200-300 words to maintain conciseness.
+        """"
 }

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.home.data.model
 
 import androidx.room.ColumnInfo
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
@@ -21,11 +22,26 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 data class SagaData(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val title: String,
-    val description: String,
-    val icon: String?,
+    val title: String = "",
+    val description: String = "",
+    val icon: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
-    val genre: Genre,
+    val genre: Genre = Genre.entries.first(),
     @ColumnInfo(index = true)
-    val mainCharacterId: Int?,
+    val mainCharacterId: Int? = null,
+    @Embedded
+    val visuals: IllustrationVisuals = IllustrationVisuals(),
+    val lore: String = "",
+    val lastLoreReference: Int? = null,
+)
+
+data class IllustrationVisuals(
+    val characterPose: String = "",
+    val characterExpression: String = "",
+    val environmentDetails: String = "",
+    val lightingDetails: String = "",
+    val colorPalette: String = "",
+    val foregroundElements: String? = "",
+    val backgroundElements: String? = "",
+    val overallMood: String = "",
 )

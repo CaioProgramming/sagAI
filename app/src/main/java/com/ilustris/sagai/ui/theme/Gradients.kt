@@ -153,7 +153,8 @@ val holographicGradient =
         Color(0xffff7882),
         Color(0xffc8699e),
         Color(0xff7046aa),
-        Color(0xff020f75),
+        Color(0xff3e52ee),
+        Color(0xffd3a7ff),
     )
 
 @Composable

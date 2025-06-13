@@ -48,7 +48,6 @@ object GenrePrompts {
                     """
             SCI_FI ->
                 """
-                    Pose: Close-up portrait, a slightly angled 3/4 view, with her looking intensely towards the upper left. The focus is tightly on her face and the details of her cybernetics.
                     Lighting: Dramatic lighting with a strong neon cyan glow originating from the upper left, casting bright highlights on her forehead, cheekbone, and cybernetic implants, with deep shadows on the right side of her face and neck. Subtle hints of a deep blue ambient light.
                     Art Style: Anime/manga-inspired style with clean, defined lines and meticulous detail on the cybernetics. Increased contrast and reduced overall saturation, with a color palette dominated by cool blues, grays, and accented by the bright cyan light.
                     Background: A blurred and out-of-focus cyberpunk cityscape at night, with muted blues and purples suggesting distant neon lights and towering structures."
@@ -56,4 +55,36 @@ object GenrePrompts {
         }
 
     fun detail(genre: Genre) = "theme: ${genre.name}"
+
+    fun artStyle(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+                fantasy illustration in the style of vintage classic art,
+                painterly technique with visible brushstrokes and rich impasto,
+                detailed and varied textures reminiscent of oil painting on canvas,
+                dramatic yet soft lighting with volumetric light, desaturated, antique color tones,
+                strong focal point on the character with an atmospheric background,
+                evoking a sense of history and legend, slight film grain.
+                """
+            Genre.SCI_FI ->
+                """
+                Anime illustration, sharp and angular lines aesthetic, crisp and contrasting shading for dramatic depth,
+                predominantly cool and desaturated colors, dark and immersive atmosphere,
+                inspired by Ghost in the Shell 1995 film style."
+                """
+        }
+
+    fun negativePrompt(genre: Genre) =
+        when (genre) {
+            Genre.FANTASY ->
+                """
+                digital illustration, sharp lines, clean edges, vector art, smooth gradients,
+                excessive saturation, cartoon, comic book, modern render, pixel art, photography, 3D render
+                """
+            Genre.SCI_FI ->
+                """
+                blurry, messy, ugly, low resolution, childish, cartoon, comic book, medieval, fantasy elements, organic textures, soft focus, painterly brushstrokes, hand-drawn sketch, watercolor, oil painting, excessive historical details.
+                """
+        }.uppercase()
 }

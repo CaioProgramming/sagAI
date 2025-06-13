@@ -26,7 +26,7 @@ fun Genre.headerFont(): FontFamily {
     val fontResource =
         when (this) {
             Genre.FANTASY -> R.font.dragon_force
-            Genre.SCI_FI -> R.font.akihibara_hyper
+            Genre.SCI_FI -> R.font.neo_tech
             else -> null
         }
     return if (fontResource != null) {

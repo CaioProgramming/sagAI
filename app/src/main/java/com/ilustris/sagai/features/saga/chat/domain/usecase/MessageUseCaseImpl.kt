@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.domain.usecase
 
+import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.chatReplyPrompt
 import com.ilustris.sagai.core.ai.introductionPrompt
@@ -27,12 +28,7 @@ class MessageUseCaseImpl
         override suspend fun getMessageDetail(id: Int): MessageContent = messageRepository.getMessageDetail(id)
 
         override suspend fun saveMessage(message: Message) =
-            message.copy(
-                id =
-                    messageRepository
-                        .saveMessage(message)
-                        .toInt(),
-            )
+            messageRepository.saveMessage(message.copy(id = 0, timestamp = Calendar.getInstance().timeInMillis))
 
         override suspend fun deleteMessage(messageId: Long) {
             messageRepository.deleteMessage(messageId)
