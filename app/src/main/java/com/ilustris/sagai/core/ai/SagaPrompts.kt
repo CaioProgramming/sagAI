@@ -62,23 +62,22 @@ object SagaPrompts {
         saga: SagaData,
         mainCharacter: Character,
     ) = """
+        ${CharacterFraming.EPIC_WIDE_SHOT.name} of ${mainCharacter.name}:
+        
+        Appearance: ${mainCharacter.details.appearance}
+        Expression: ${saga.visuals.characterExpression}
+        With the art style:
         ${GenrePrompts.artStyle(saga.genre)}
         
-        ${saga.visuals.colorPalette},
-        ${saga.visuals.lightingDetails},
-        ${saga.visuals.environmentDetails},
-        
-        featuring ${mainCharacter.details.appearance},
-        in a ${saga.visuals.characterPose},
-        with a ${saga.visuals.characterExpression} expression.
-           
-        The framing should be: ${CharacterFraming.MEDIUM_SHOT}
-        
+        Color palette: ${saga.visuals.colorPalette},
+        illumination: ${saga.visuals.lightingDetails},
+        environment: ${saga.visuals.environmentDetails}
+   
         Foreground elements: ${saga.visuals.foregroundElements}.
         Background elements: ${saga.visuals.backgroundElements}.
+        The image should evoke a ${saga.visuals.overallMood} mood.
         
-        The image should evoke a ${saga.visuals.overallMood}.
-        
+        avoid: ${GenrePrompts.negativePrompt(saga.genre)}}
         """
 
     fun narratorGeneration(

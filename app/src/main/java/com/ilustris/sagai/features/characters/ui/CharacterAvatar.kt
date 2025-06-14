@@ -2,6 +2,8 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -45,49 +47,53 @@ fun CharacterAvatar(
 
     val context = LocalContext.current
 
-    AsyncImage(
-        model = character.image,
-        contentDescription = character.name,
-        onSuccess = { successState: AsyncImagePainter.State.Success ->
-            val image = successState.result.image
-            val drawable = image.asDrawable(context.resources)
+    Box(
+        modifier
+            .border(
+                borderSize,
+                initialBorderColor, // Use the dynamic brush for the border
+                CircleShape,
+            ).clip(CircleShape)
+            .background(
+                MaterialTheme.colorScheme.surfaceContainer,
+                CircleShape,
+            ),
+    ) {
+        AsyncImage(
+            model = character.image,
+            contentDescription = character.name,
+            onSuccess = { successState: AsyncImagePainter.State.Success ->
+                val image = successState.result.image
+                val drawable = image.asDrawable(context.resources)
 
-            drawable.generatePaletteAsync { palette ->
-                // Use the extension function
+                drawable.generatePaletteAsync { palette ->
+                    // Use the extension function
 
-                val gradientColors = mutableListOf<Color>()
-                palette?.dominantSwatch?.rgb?.let {
-                    gradientColors.add(Color(it))
-                }
-                palette?.vibrantSwatch?.rgb?.let { gradientColors.add(Color(it)) }
-                palette?.mutedSwatch?.rgb?.let { gradientColors.add(Color(it)) }
-
-                val distinctColors = gradientColors.distinct()
-
-                // Update the brush based on the palette
-                dynamicBorderBrush =
-                    when {
-                        distinctColors.size >= 2 -> Brush.linearGradient(colors = distinctColors)
-                        distinctColors.isNotEmpty() -> distinctColors.first().gradientFade()
-                        // Fallback to dominant color's gradient, or initial if dominant is not found
-                        else ->
-                            (
-                                palette?.dominantSwatch?.rgb?.let { Color(it) }
-                                    ?: initialBorderColor
-                            ).gradientFade()
+                    val gradientColors = mutableListOf<Color>()
+                    palette?.dominantSwatch?.rgb?.let {
+                        gradientColors.add(Color(it))
                     }
-            }
-        },
-        modifier =
-            modifier
-                .border(
-                    borderSize,
-                    initialBorderColor, // Use the dynamic brush for the border
-                    CircleShape,
-                ).clip(CircleShape)
-                .background(
-                    MaterialTheme.colorScheme.surfaceContainer,
-                    CircleShape,
-                ),
-    )
+                    palette?.vibrantSwatch?.rgb?.let { gradientColors.add(Color(it)) }
+                    palette?.mutedSwatch?.rgb?.let { gradientColors.add(Color(it)) }
+
+                    val distinctColors = gradientColors.distinct()
+
+                    // Update the brush based on the palette
+                    dynamicBorderBrush =
+                        when {
+                            distinctColors.size >= 2 -> Brush.linearGradient(colors = distinctColors)
+                            distinctColors.isNotEmpty() -> distinctColors.first().gradientFade()
+                            // Fallback to dominant color's gradient, or initial if dominant is not found
+                            else ->
+                                (
+                                    palette?.dominantSwatch?.rgb?.let { Color(it) }
+                                        ?: initialBorderColor
+                                ).gradientFade()
+                        }
+                }
+            },
+            modifier =
+                Modifier.fillMaxSize().clip(CircleShape),
+        )
+    }
 }

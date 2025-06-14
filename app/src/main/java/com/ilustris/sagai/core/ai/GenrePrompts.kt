@@ -60,31 +60,51 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                fantasy illustration in the style of vintage classic art,
-                painterly technique with visible brushstrokes and rich impasto,
-                detailed and varied textures reminiscent of oil painting on canvas,
-                dramatic yet soft lighting with volumetric light, desaturated, antique color tones,
-                strong focal point on the character with an atmospheric background,
-                evoking a sense of history and legend, slight film grain.
+                masterpiece fantasy illustration, in the style of classical oil painting and vintage heroic fantasy art,
+                rich painterly technique with expressive brushstrokes and substantial impasto,
+                luxurious and varied textures reminiscent of aged canvas and traditional pigments,
+                heroic and luminous natural lighting, with profound volumetric light and atmospheric depth,
+                a grand color palette of deep, harmonious, and subtly desaturated tones, evoking a timeless grandeur,
+                strong focal point on the character, immersed in a majestic and atmospheric background,
+                evoking a sense of ancient lore, epic sagas, and enduring legend, with a soft, cinematic film grain.
                 """
-            Genre.SCI_FI ->
+            SCI_FI ->
                 """
-                Anime illustration, sharp and angular lines aesthetic, crisp and contrasting shading for dramatic depth,
-                predominantly cool and desaturated colors, dark and immersive atmosphere,
-                inspired by Ghost in the Shell 1995 film style."
+                anime illustration, inspired by Ghost in the Shell 1995 film style,
+                sharp and angular lines aesthetic,
+                crisp and contrasting shading for dramatic depth,
+                predominantly cool and desaturated colors,
+                dark and immersive atmosphere,
+                highly detailed cybernetic and futuristic elements,
+                sleek character design,
+                single, strong light source casting defined shadows,
+                bright specular highlights,
+                atmospheric lighting with subtle colored rim lighting,
+                meticulous attention to technical details,
+                evoking a sense of melancholic futurism, cyberpunk mystery and oppressive atmosphere.
                 """
         }
 
     fun negativePrompt(genre: Genre) =
         when (genre) {
-            Genre.FANTASY ->
+            FANTASY ->
                 """
-                digital illustration, sharp lines, clean edges, vector art, smooth gradients,
-                excessive saturation, cartoon, comic book, modern render, pixel art, photography, 3D render
+                masterpiece fantasy illustration, in the style of classical realism painting and vintage fantasy art,
+                exquisite painterly technique with delicate brushstrokes and subtle impasto for texture,
+                rich and nuanced textures reminiscent of fine art canvas and traditional pigments,
+                soft yet dramatic natural lighting, with profound volumetric light and a gentle atmospheric haze,
+                a refined color palette of deep, harmonious, and subtly desaturated natural tones, evoking a sense of grounded reality,
+                strong focal point on the character, realistically rendered within a detailed and atmospheric background,
+                evoking a sense of history, depth of character, and a believable world, with a subtle film grain.
                 """
-            Genre.SCI_FI ->
+            SCI_FI ->
                 """
-                blurry, messy, ugly, low resolution, childish, cartoon, comic book, medieval, fantasy elements, organic textures, soft focus, painterly brushstrokes, hand-drawn sketch, watercolor, oil painting, excessive historical details.
+                blurry, messy, ugly, low resolution, childish, cartoon, comic book, medieval,
+                fantasy elements, organic textures, soft focus, painterly brushstrokes,
+                hand-drawn sketch, watercolor, oil painting, excessive historical details,
+                **overly saturated neon, flat digital rendering
+                 generic digital illustration, hyper-stylized modern digital art,
+                 vibrant primary colors as dominant, sterile white backgrounds.**
                 """
         }.uppercase()
 }

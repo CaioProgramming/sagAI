@@ -1,18 +1,15 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,8 +45,7 @@ fun SagaCard(
                 2.dp,
                 gradientAnimation(sagaData.genre.color.darkerPalette()),
                 RoundedCornerShape(cornerSize),
-            )
-            .clip(RoundedCornerShape(cornerSize))
+            ).clip(RoundedCornerShape(cornerSize))
             .clipToBounds(),
     ) {
         AsyncImage(
@@ -74,7 +70,12 @@ fun SagaCard(
                 ),
         )
 
-        Column(modifier = Modifier.padding(16.dp).align(Alignment.Center)) {
+        Column(
+            modifier =
+                Modifier.padding(16.dp).align(Alignment.Center).verticalScroll(
+                    rememberScrollState(),
+                ),
+        ) {
             Text(
                 text = sagaData.title,
                 style =
@@ -90,7 +91,7 @@ fun SagaCard(
                     ),
                 modifier =
                     Modifier
-                        .padding(16.dp)
+                        .padding(8.dp)
                         .fillMaxWidth(),
             )
 
@@ -101,5 +102,4 @@ fun SagaCard(
             )
         }
     }
-
 }

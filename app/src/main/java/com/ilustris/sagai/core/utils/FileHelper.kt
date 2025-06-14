@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Base64
 import java.io.File
 
 class FileHelper(
@@ -19,8 +20,18 @@ class FileHelper(
         return file.takeIf { it.exists() }
     }
 
+    fun saveBase64ToCache(
+        fileName: String,
+        binary: String,
+    ): File? {
+        val decodedBytes = Base64.decode(binary, Base64.DEFAULT)
+        val file = context.cacheDir.resolve(fileName.removeBlankSpace().plus(".png"))
+        file.writeBytes(decodedBytes)
+        return file.takeIf { it.exists() }
+    }
+
     fun readFromCache(fileName: String): ByteArray? {
-        val file = context.cacheDir.resolve(fileName)
+        val file = context.cacheDir.resolve(fileName.removeBlankSpace())
         return if (file.exists()) {
             file.readBytes()
         } else {

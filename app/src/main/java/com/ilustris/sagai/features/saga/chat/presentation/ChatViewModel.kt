@@ -251,7 +251,9 @@ class ChatViewModel
                             characterId = characterReference?.id,
                         ),
                     ).also {
-                        checkLoreUpdate()
+                        if (messages.value.isNotEmpty()) {
+                            checkLoreUpdate()
+                        }
                         when (message.characterId == mainCharacter.value?.id) {
                             true -> {
                                 delay(2.seconds)
@@ -280,7 +282,7 @@ class ChatViewModel
                         messageList.subList(messageList.indexOf(it), messageList.size)
                     } ?: messageList
 
-                if ((messageList.isNotEmpty() && messageSubList.size == 35) ||
+                if (messageSubList.size == 35 ||
                     messageSubList.last().message.senderType == SenderType.NEW_CHAPTER
                 ) {
                     val chapterMessage = messageSubList.findLast { it.message.senderType == SenderType.NEW_CHAPTER }

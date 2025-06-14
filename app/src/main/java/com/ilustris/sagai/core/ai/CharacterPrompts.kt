@@ -27,7 +27,7 @@ object CharacterPrompts {
         
         The image should evoke a ${saga.visuals.overallMood}.
         
-        !IMPORTANT AVOID: ${GenrePrompts.negativePrompt(saga.genre)}
+        YOU MUST AVOID: ${GenrePrompts.negativePrompt(saga.genre)}
         """
 
     fun charactersOverview(characters: List<Character>): String =

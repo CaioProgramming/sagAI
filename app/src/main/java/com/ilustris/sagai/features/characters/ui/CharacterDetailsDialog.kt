@@ -145,6 +145,7 @@ fun CharacterDetailsDialog(
                                 .zoomAnimation()
                                 .clipToBounds(),
                     )
+
                     Box(
                         Modifier
                             .fillMaxSize()

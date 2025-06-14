@@ -663,7 +663,7 @@ fun ChatViewPreview() {
             genre = Genre.SCI_FI,
             createdAt = Calendar.getInstance().timeInMillis,
             mainCharacterId = null,
-            visuals = IllustrationVisuals()
+            visuals = IllustrationVisuals(),
         )
     val messages =
         List(17) {

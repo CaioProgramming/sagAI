@@ -5,7 +5,6 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.SagaPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.characterPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -57,14 +56,6 @@ class NewSagaUseCaseImpl
             } catch (e: Exception) {
                 e.asError()
             }
-
-        private suspend fun generateCharacter(
-            sagaData: SagaData,
-            characterDescription: String,
-        ): Character? =
-            textGenClient.generate<Character>(
-                sagaData.characterPrompt(characterDescription),
-            )
 
         override suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, SagaData> =
             try {
