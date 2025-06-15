@@ -45,3 +45,7 @@ data class IllustrationVisuals(
     val backgroundElements: String? = "",
     val overallMood: String = "",
 )
+
+data class Lore(
+    val story: String = "",
+)

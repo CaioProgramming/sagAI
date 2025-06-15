@@ -13,9 +13,10 @@ fun NewSagaPagesView(
     pagerState: PagerState,
     currentData: SagaForm,
     saga: SagaData?,
+    modifier: Modifier = Modifier,
     onSendData: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
-    HorizontalPager(pagerState, modifier = Modifier.fillMaxSize()) {
+    HorizontalPager(pagerState, userScrollEnabled = saga != null, modifier = modifier) {
         val page = NewSagaPages.entries[it]
         val data =
             when (page) {

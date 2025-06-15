@@ -49,10 +49,16 @@ import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
+import dev.chrisbanes.haze.HazeState
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
-    val view: @Composable (NavHostController, PaddingValues, SharedTransitionScope) -> Unit = { nav, padding, transitionScope ->
+    val view: @Composable (
+        NavHostController,
+        PaddingValues,
+        SharedTransitionScope,
+        HazeState,
+    ) -> Unit = { nav, padding, transitionScope, haze ->
         Text("Sample View for Route ", modifier = Modifier.padding(16.dp))
     },
     val topBarContent: (@Composable (NavHostController) -> Unit)? = null,
@@ -62,7 +68,7 @@ enum class Routes(
     val arguments: List<String> = emptyList(),
     val deepLink: String? = null,
 ) {
-    HOME(icon = R.drawable.ic_spark, view = { nav, padding, _ ->
+    HOME(icon = R.drawable.ic_spark, view = { nav, padding, _, _ ->
         HomeView(nav, padding)
     }, title = R.string.home_title, topBarContent = {
         Row(
@@ -88,11 +94,12 @@ enum class Routes(
         }
     }),
     CHAT(
-        view = { nav, padding, _ ->
+        view = { nav, padding, _, haze ->
             val arguments = nav.currentBackStackEntry?.arguments
             ChatView(
                 navHostController = nav,
                 padding,
+                haze,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
             )
         },
@@ -103,7 +110,7 @@ enum class Routes(
     ),
     PROFILE,
     SETTINGS,
-    NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = { nav, padding, _ ->
+    NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = { nav, padding, _, _ ->
         Box(
             Modifier
                 .padding(padding)
@@ -114,7 +121,7 @@ enum class Routes(
     }),
     CHARACTER_GALLERY(
         // Added Character Gallery Route
-        view = { nav, padding, transitionScope ->
+        view = { nav, padding, transitionScope, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
             CharacterGalleryView(
                 navController = nav,
@@ -130,7 +137,7 @@ enum class Routes(
         showBottomNav = false, // Or true, depending on your desired UX
     ),
     SAGA_DETAIL(
-        view = { nav, padding, _ ->
+        view = { nav, padding, _, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
             SagaDetailView(
                 navHostController = nav,
@@ -201,6 +208,7 @@ fun SagaNavGraph(
     navController: NavHostController,
     padding: PaddingValues,
     transitionScope: SharedTransitionScope,
+    hazeState: HazeState,
 ) {
     val graph =
         navController.createGraph(startDestination = Routes.HOME.name) {
@@ -214,7 +222,7 @@ fun SagaNavGraph(
                             }
                         },
                 ) {
-                    route.view(navController, padding, transitionScope)
+                    route.view(navController, padding, transitionScope, hazeState)
                 }
             }
         }

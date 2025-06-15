@@ -34,6 +34,8 @@ object ChatPrompts {
     CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
     // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : Julie : ").
     // ⚠️ CRITICAL RULE FOR THOUGHTS: 'THOUGHT' entries here represent the player character's INTERNAL monologue.
+    / Under NO CIRCUMSTANCES should you generate a 'CHARACTER' senderType for a character NOT explicitly present in this list.
+    // If a character is introduced by the NARRATOR but not yet in this list, the VERY NEXT message you generate MUST be a "NEW_CHARACTER" type for them.
     NPCs IN THE STORY DO NOT HEAR OR DIRECTLY RESPOND TO THESE THOUGHTS.
     Your response to a 'THOUGHT' entry must be either a 'NARRATOR' message describing the scene, Any's internal state, or the outcome of her reflections; OR an NPC's action/dialogue that is NOT a direct response to the thought.
     // 'ACTION' entries here represent explicit physical actions performed by the player character. 

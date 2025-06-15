@@ -2,6 +2,7 @@
 
 package com.ilustris.sagai.features.home.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +34,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,6 +69,7 @@ import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -135,7 +139,8 @@ private fun ChatList(
                                 .clip(RoundedCornerShape(15.dp))
                                 .clickable {
                                     onCreateNewChat()
-                                }.fillMaxWidth(),
+                                }
+                                .fillMaxWidth(),
                     ) {
                         val brush =
                             gradientAnimation(
@@ -148,7 +153,10 @@ private fun ChatList(
                             brush = brush,
                             strokeSize = 2.dp,
                             modifier =
-                                Modifier.clip(CircleShape).padding(4.dp).size(32.dp),
+                                Modifier
+                                    .clip(CircleShape)
+                                    .padding(4.dp)
+                                    .size(32.dp),
                         )
 
                         Column {
@@ -197,22 +205,47 @@ fun ChatCard(
                 .clip(RoundedCornerShape(15.dp))
                 .clickable {
                     onClick()
-                }.padding(12.dp),
+                }
+                .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
-
-        AsyncImage(
-            sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
-            contentDescription = sagaData.title,
+        val imageLoaded = remember {
+            mutableStateOf(false)
+        }
+        Box(
             modifier =
                 Modifier
                     .size(50.dp)
                     .border(2.dp, Brush.verticalGradient(sagaData.genre.gradient()), CircleShape)
-                    .padding(2.dp)
-                    .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
-                    .clip(CircleShape),
-        )
+                    .padding(4.dp)
+                    .clip(CircleShape)
+                    .background(sagaData.genre.color, CircleShape)
+        ) {
+            AsyncImage(
+                sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
+                contentDescription = sagaData.title,
+                modifier = Modifier.fillMaxSize(),
+                onSuccess = {
+                    imageLoaded.value = true
+                }
+            )
+
+            this@Row.AnimatedVisibility(
+                imageLoaded.value.not(),
+                modifier = Modifier.align(Alignment.Center)) {
+                    Text(
+                        sagaData.title.first().uppercase(),
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = sagaData.genre.headerFont(),
+                            color = sagaData.genre.iconColor,
+                            textAlign = TextAlign.Center,
+                        ),
+                    )
+                }
+
+        }
+
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -322,18 +355,24 @@ private fun NewChatCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary,
                     modifier =
-                        Modifier.padding(8.dp).fillMaxWidth(0.85f).gradientFill(
-                            animatedBrush,
-                        ),
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(0.85f)
+                            .gradientFill(
+                                animatedBrush,
+                            ),
                 )
 
                 Icon(
                     Icons.AutoMirrored.Default.ArrowForward,
                     contentDescription = stringResource(R.string.new_saga_title),
                     modifier =
-                        Modifier.padding(8.dp).size(24.dp).gradientFill(
-                            animatedBrush,
-                        ),
+                        Modifier
+                            .padding(8.dp)
+                            .size(24.dp)
+                            .gradientFill(
+                                animatedBrush,
+                            ),
                 )
             }
         }

@@ -26,6 +26,7 @@ import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.core.ui.extensions.generatePaletteAsync // Import the extension
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.grayScale
 
 @Composable
 fun CharacterAvatar(
@@ -93,7 +94,7 @@ fun CharacterAvatar(
                 }
             },
             modifier =
-                Modifier.fillMaxSize().clip(CircleShape),
+                Modifier.fillMaxSize().clip(CircleShape).grayScale(.7f),
         )
     }
 }

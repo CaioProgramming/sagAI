@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.Lore
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -35,15 +36,15 @@ class SagaHistoryUseCaseImpl
         ): RequestResult<Exception, String> =
             try {
                 val newLore =
-                    textGenClient.generate<String>(
+                    textGenClient.generate<Lore>(
                         SagaPrompts.loreGeneration(
                             saga!!,
                             lastMessages,
                             character!!,
                         ),
                     )
-                sagaRepository.updateChat(saga.copy(lore = newLore!!, lastLoreReference = loreReference))
-                newLore.asSuccess()
+                sagaRepository.updateChat(saga.copy(lore = newLore!!.story, lastLoreReference = loreReference))
+                newLore.story.asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }

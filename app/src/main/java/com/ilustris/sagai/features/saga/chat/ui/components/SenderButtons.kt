@@ -47,9 +47,6 @@ fun SenderType.itemOption(
     Column(
         Modifier
             .padding(vertical = 4.dp)
-            .border(1.dp, MaterialTheme.colorScheme.onBackground.gradientFade(), RoundedCornerShape(25.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .8f), RoundedCornerShape(25.dp))
-            .padding(8.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -103,6 +100,7 @@ fun SenderType.icon() =
         SenderType.NARRATOR -> R.drawable.ic_feather
         SenderType.THOUGHT -> R.drawable.think_icon
         SenderType.ACTION -> R.drawable.action_icon
+        SenderType.NEW_CHARACTER -> R.drawable.character_icon
         else -> null
     }
 
@@ -112,5 +110,6 @@ fun SenderType.title() =
         SenderType.NARRATOR -> "Narrar"
         SenderType.THOUGHT -> "Pensar"
         SenderType.ACTION -> "Ação"
+        SenderType.NEW_CHARACTER -> "Novo personagem"
         else -> null
     }

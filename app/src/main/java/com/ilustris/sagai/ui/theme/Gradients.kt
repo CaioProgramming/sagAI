@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -210,3 +211,53 @@ fun Genre.botBubbleGradient(): Brush {
         tileMode = TileMode.Clamp,
     )
 }
+
+enum class FadeDirection {
+    TOP_TO_BOTTOM,
+    BOTTOM_TO_TOP,
+    LEFT_TO_RIGHT,
+    RIGHT_TO_LEFT,
+    // You could add more, like corners, etc.
+}
+
+fun Modifier.fadeMask(
+    fadeDirection: FadeDirection,
+    startFadeFraction: Float = 0.0f,
+    endFadeFraction: Float = 0.3f
+): Modifier = this
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .drawWithCache {
+        val gradientBrush = when (fadeDirection) {
+            FadeDirection.BOTTOM_TO_TOP -> Brush.verticalGradient(
+                colors = listOf(Color.Transparent, Color.Black),
+                startY = size.height * (1f - startFadeFraction),
+                endY = size.height * (1f - endFadeFraction)
+            )
+            FadeDirection.TOP_TO_BOTTOM -> Brush.verticalGradient(
+                colors = listOf(Color.Black, Color.Transparent),
+                startY = size.height * startFadeFraction,
+                endY = size.height * endFadeFraction
+            )
+            FadeDirection.LEFT_TO_RIGHT -> Brush.horizontalGradient(
+                colors = listOf(Color.Black, Color.Transparent),
+                startX = size.width * startFadeFraction,
+                endX = size.width * endFadeFraction
+            )
+            FadeDirection.RIGHT_TO_LEFT -> Brush.horizontalGradient(
+                colors = listOf(Color.Transparent, Color.Black),
+                startX = size.width * (1f - startFadeFraction),
+                endX = size.width * (1f - endFadeFraction)
+            )
+        }
+
+        onDrawWithContent {
+            // 1. Draw the original content of the Composable this modifier is applied to
+            drawContent()
+
+            // 2. Draw the gradient mask on top with DstIn blend mode
+            drawRect(
+                brush = gradientBrush,
+                blendMode = BlendMode.DstIn
+            )
+        }
+    }

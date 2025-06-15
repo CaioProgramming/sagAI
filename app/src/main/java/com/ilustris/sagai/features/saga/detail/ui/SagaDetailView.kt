@@ -233,8 +233,16 @@ fun SagaDetailContentView(
 
             item {
                 CharacterSection(
-                    "Historia",
+                    "Descrição",
                     it.saga.description,
+                    it.saga.genre,
+                )
+            }
+
+            item {
+                CharacterSection(
+                    "História",
+                    it.saga.lore,
                     it.saga.genre,
                 )
             }

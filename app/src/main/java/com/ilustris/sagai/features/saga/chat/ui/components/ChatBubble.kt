@@ -178,7 +178,7 @@ fun ChatBubble(
             Column(
                 modifier =
                     Modifier
-                        .padding(16.dp)
+                        .padding(8.dp)
                         .fillMaxWidth()
                         .padding(8.dp)
                         .animateContentSize(),
@@ -235,7 +235,7 @@ fun ChatBubble(
                         }
                     },
                 )
-                val avatarSize = if (messageContent.character == null) 12.dp else 24.dp
+                val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
                 Box(
                     Modifier
                         .padding(8.dp)

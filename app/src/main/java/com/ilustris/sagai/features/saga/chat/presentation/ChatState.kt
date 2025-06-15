@@ -9,5 +9,9 @@ sealed interface ChatState {
         val message: String,
     ) : ChatState
 
+    data class LoreUpdated(
+        val lore: String?,
+    ) : ChatState
+
     data object Empty : ChatState
 }

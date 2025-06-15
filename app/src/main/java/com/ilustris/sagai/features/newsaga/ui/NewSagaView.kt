@@ -4,17 +4,26 @@ package com.ilustris.sagai.features.newsaga.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -36,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -50,6 +61,7 @@ import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -138,11 +150,10 @@ fun NewSagaView(
         if (state is CreateSagaState.Success) {
             val saga = (state as CreateSagaState.Success).saga
             coroutineScope.launch {
-                delay(5.seconds)
+                delay(2.seconds)
                 navHostController.navigateToRoute(
                     Routes.CHAT,
                     Routes.CHAT.arguments.associateWith { saga.id.toString() },
-                    popUpToRoute = Routes.HOME,
                 )
             }
         } else if (state is CreateSagaState.GeneratedSaga) {
@@ -171,8 +182,10 @@ fun NewSagaFlow(
     updateContent: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
     val currentPage = NewSagaPages.entries[pagerState.currentPage]
-
-    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    var data = remember<Any?> {
+        mutableStateOf(null)
+    }
+    Column(modifier = modifier.animateContentSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         currentPage.title?.let {
             Text(
                 stringResource(it),
@@ -196,8 +209,59 @@ fun NewSagaFlow(
             pagerState,
             form,
             saga,
-            updateContent,
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            { _, newValue ->
+                data = newValue
+            },
         )
+
+        val brush = Brush.linearGradient(holographicGradient)
+        val pageEnabled = when(currentPage) {
+            GENRE -> true
+            TITLE -> form.title.isNotEmpty()
+            DESCRIPTION -> form.description.isNotEmpty()
+            CHARACTER -> form.characterDescription.isNotEmpty()
+            GENERATING -> saga != null
+            INTRO -> false
+            RESULT -> false
+        }
+        AnimatedVisibility(pageEnabled) {
+            Button(
+                onClick = {
+                    updateContent(currentPage, data)
+                },
+                shape = RoundedCornerShape(15.dp),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                        .border(2.dp, brush, RoundedCornerShape(15.dp)),
+                colors =
+                    ButtonDefaults.buttonColors().copy(
+                        containerColor = MaterialTheme.colorScheme.background,
+                    ),
+            ) {
+                Text(
+                    text = stringResource(R.string.next),
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            color = MaterialTheme.colorScheme.background,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .gradientFill(brush),
+                )
+
+                Icon(
+                    Icons.AutoMirrored.Rounded.ArrowForward,
+                    contentDescription = "Next",
+                    modifier = Modifier.gradientFill(brush).size(24.dp),
+                    tint = MaterialTheme.colorScheme.background,
+                )
+            }
+
+        }
     }
 }
 

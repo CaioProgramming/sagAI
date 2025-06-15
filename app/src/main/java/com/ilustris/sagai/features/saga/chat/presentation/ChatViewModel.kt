@@ -43,6 +43,7 @@ class ChatViewModel
         val characters = MutableStateFlow<List<Character>>(emptyList())
         val mainCharacter = MutableStateFlow<Character?>(null)
         val isGenerating = MutableStateFlow(false)
+        val loreUpdated = MutableStateFlow(false)
 
         fun initChat(sagaId: String?) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -106,8 +107,7 @@ class ChatViewModel
                         sagaContent.messages
                             .sortedByDescending {
                                 it.timestamp
-                            }.reversed()
-                            .map {
+                            }.map {
                                 messageUseCase.getMessageDetail(it.id)
                             }
                     this@ChatViewModel.messages.value = mappedMessages.reversed()
@@ -215,7 +215,12 @@ class ChatViewModel
                 messageUseCase
                     .generateIntroMessage(saga, character)
                     .onSuccess {
-                        sendMessage(it.copy(senderType = SenderType.NARRATOR, characterId = mainCharacter.value!!.id))
+                        sendMessage(
+                            it.copy(
+                                senderType = SenderType.NARRATOR,
+                                characterId = null,
+                            ),
+                        )
                     }.onFailure {
                         state.value =
                             ChatState.Error("Failed to generate introduction: ${it.message ?: "Unknown error"}")
@@ -251,9 +256,11 @@ class ChatViewModel
                             characterId = characterReference?.id,
                         ),
                     ).also {
+                        checkForCharacter(it)
                         if (messages.value.isNotEmpty()) {
                             checkLoreUpdate()
                         }
+
                         when (message.characterId == mainCharacter.value?.id) {
                             true -> {
                                 delay(2.seconds)
@@ -282,12 +289,13 @@ class ChatViewModel
                         messageList.subList(messageList.indexOf(it), messageList.size)
                     } ?: messageList
 
-                if (messageSubList.size == 35 ||
+                if (messageSubList.size >= 35 ||
                     messageSubList.last().message.senderType == SenderType.NEW_CHAPTER
                 ) {
-                    val chapterMessage = messageSubList.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
+                    val chapterMessage =
+                        messageSubList.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
                     val messageReference =
-                        if (messageSubList.size == 35) {
+                        if (messageSubList.size >= 35) {
                             messageSubList.last().message.id
                         } else {
                             (
@@ -295,13 +303,33 @@ class ChatViewModel
                                     ?: messageList.last().message.id
                             )
                         }
-                    sagaHistoryUseCase.generateLore(
-                        currentSaga!!,
-                        mainCharacter.value!!,
-                        messageReference,
-                        messageSubList.map { it.joinMessage().formatToString() },
-                    )
+                    sagaHistoryUseCase
+                        .generateLore(
+                            currentSaga!!,
+                            mainCharacter.value!!,
+                            messageReference,
+                            messageSubList.map { it.joinMessage().formatToString() },
+                        ).onSuccess {
+                            notifyLoreUpdate()
+                        }
                 }
+            }
+        }
+
+        private fun checkForCharacter(message: Message) {
+            if (message.senderType == SenderType.CHARACTER && message.speakerName?.isNotEmpty() == true) {
+                val character = characters.value.find { it.name == message.speakerName }
+                if (character == null) {
+                    generateCharacter(message)
+                }
+            }
+        }
+
+        private fun notifyLoreUpdate() {
+            viewModelScope.launch {
+                loreUpdated.value = true
+                delay(10.seconds)
+                loreUpdated.value = false
             }
         }
 
