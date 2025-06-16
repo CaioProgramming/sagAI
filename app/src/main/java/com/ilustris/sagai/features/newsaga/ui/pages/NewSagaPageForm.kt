@@ -1,10 +1,11 @@
 package com.ilustris.sagai.features.newsaga.ui.pages
 
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
@@ -14,9 +15,9 @@ fun NewSagaPagesView(
     currentData: SagaForm,
     saga: SagaData?,
     modifier: Modifier = Modifier,
-    onSendData: (NewSagaPages, Any?) -> Unit = { _, _ -> },
+    onUpdateData: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
-    HorizontalPager(pagerState, userScrollEnabled = saga != null, modifier = modifier) {
+    HorizontalPager(pagerState, modifier = modifier) {
         val page = NewSagaPages.entries[it]
         val data =
             when (page) {
@@ -24,15 +25,26 @@ fun NewSagaPagesView(
                 NewSagaPages.TITLE -> currentData.title
                 NewSagaPages.GENRE -> currentData.genre
                 NewSagaPages.DESCRIPTION -> currentData.description
-                NewSagaPages.GENERATING -> null
                 NewSagaPages.RESULT -> saga
                 NewSagaPages.CHARACTER -> currentData.characterDescription
             }
         page.content(
             { newData ->
-                onSendData(page, newData)
+                onUpdateData(page, newData)
             },
             data,
         )
+
+        LaunchedEffect(page) {
+            when (page) {
+                NewSagaPages.RESULT -> {
+                    onUpdateData(page, saga)
+                }
+                NewSagaPages.GENRE -> {
+                    onUpdateData(page, currentData.genre)
+                }
+                else -> doNothing()
+            }
+        }
     }
 }

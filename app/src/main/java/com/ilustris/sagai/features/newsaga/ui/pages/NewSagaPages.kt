@@ -13,17 +13,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -60,7 +54,6 @@ import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
@@ -125,17 +118,6 @@ enum class NewSagaPages(
             }
         },
     ),
-
-    GENERATING(
-        content = { _, _ ->
-            Box(Modifier.fillMaxSize()) {
-                SparkLoader(
-                    brush = gradientAnimation(genresGradient(), targetValue = 500f),
-                    modifier = Modifier.size(100.dp).align(Alignment.Center),
-                )
-            }
-        },
-    ),
     RESULT(
         content = { onSend, data ->
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -143,57 +125,6 @@ enum class NewSagaPages(
                     val brush = gradientAnimation(it.genre.color.darkerPalette())
 
                     SagaCard(it, Modifier.padding(16.dp).fillMaxWidth().weight(1f))
-
-                    Button(
-                        onClick = { onSend(data) },
-                        shape = RoundedCornerShape(15.dp),
-                        modifier =
-                            Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth()
-                                .border(
-                                    width = 2.dp,
-                                    brush = brush,
-                                    shape = RoundedCornerShape(15.dp),
-                                ),
-                        colors =
-                            ButtonDefaults.buttonColors().copy(
-                                containerColor = MaterialTheme.colorScheme.background,
-                            ),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.next),
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .gradientFill(brush),
-                        )
-
-                        Icon(
-                            Icons.AutoMirrored.Rounded.ArrowForward,
-                            contentDescription = "Next",
-                            modifier = Modifier.gradientFill(brush).size(24.dp),
-                            tint = MaterialTheme.colorScheme.background,
-                        )
-                    }
-
-                    Button(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        onClick = {
-                            onSend(null)
-                        },
-                        colors =
-                            ButtonDefaults.buttonColors().copy(
-                                containerColor = Color.Transparent,
-                            ),
-                        shape = RoundedCornerShape(15.dp),
-                    ) {
-                        Text(text = "Voltar")
-                    }
                 } ?: run {
                     Box(Modifier.fillMaxSize()) {
                         SparkIcon(
@@ -216,14 +147,16 @@ fun TitlePageView(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(16.dp).fillMaxWidth(),
     ) {
-        val isValidTitle = title.isNotEmpty() && title.length <= 30
-        val brush = Brush.linearGradient(holographicGradient)
         var input by remember { mutableStateOf(title) }
+
+        val isValidTitle = input.isNotEmpty() && input.length <= 30
+        val brush = Brush.linearGradient(holographicGradient)
 
         TextField(
             value = input,
             onValueChange = {
                 input = it
+                onSendTitle(input)
             },
             colors =
                 TextFieldDefaults.colors(
@@ -239,7 +172,7 @@ fun TitlePageView(
             keyboardOptions =
                 KeyboardOptions(
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Send,
+                    imeAction = ImeAction.Done,
                     capitalization = KeyboardCapitalization.Sentences,
                     autoCorrect = true,
                 ),
@@ -268,42 +201,10 @@ fun TitlePageView(
                 MaterialTheme.typography.displayMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Center,
+                    brush = brush,
                 ),
             modifier = Modifier.wrapContentSize(),
         )
-
-        Button(
-            onClick = { onSendTitle(input) },
-            shape = RoundedCornerShape(15.dp),
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth()
-                    .border(2.dp, brush, RoundedCornerShape(15.dp)),
-            colors =
-                ButtonDefaults.buttonColors().copy(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-        ) {
-            Text(
-                text = stringResource(R.string.next),
-                style =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.background,
-                    ),
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .gradientFill(brush),
-            )
-
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowForward,
-                contentDescription = "Next",
-                modifier = Modifier.gradientFill(brush).size(24.dp),
-                tint = MaterialTheme.colorScheme.background,
-            )
-        }
     }
 }
 
@@ -369,6 +270,7 @@ fun GenresPageView(
     genre: Genre,
     onSelectGenre: (Genre) -> Unit,
 ) {
+    var selection by remember { mutableStateOf(genre) }
     val genres = Genre.entries
 
     LazyVerticalGrid(
@@ -378,17 +280,15 @@ fun GenresPageView(
                 .border(
                     2.dp,
                     gradientAnimation(holographicGradient),
-                    RoundedCornerShape(15.dp),
-                ).background(
-                    MaterialTheme.colorScheme.surfaceContainer,
-                    RoundedCornerShape(15.dp),
+                    RoundedCornerShape(25.dp),
                 ).padding(16.dp),
         columns = GridCells.Fixed(3),
         horizontalArrangement = Arrangement.Center,
     ) {
         items(genres) {
-            GenreAvatar(it, true, it == genre) { g ->
+            GenreAvatar(it, true, it == selection) { g ->
                 onSelectGenre(g)
+                selection = g
             }
         }
     }
@@ -415,6 +315,7 @@ fun DescriptionPageView(
             value = input,
             onValueChange = {
                 input = it
+                onSendDescription(it)
             },
             colors =
                 TextFieldDefaults.colors(
@@ -448,7 +349,6 @@ fun DescriptionPageView(
                             fontWeight = FontWeight.Medium,
                         ),
                     text = placeHolder,
-                    color = MaterialTheme.colorScheme.onBackground,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -459,6 +359,7 @@ fun DescriptionPageView(
                 MaterialTheme.typography.bodySmall.copy(
                     fontWeight = FontWeight.SemiBold,
                     textAlign = TextAlign.Start,
+                    brush = brush,
                 ),
             modifier =
                 Modifier
@@ -473,38 +374,5 @@ fun DescriptionPageView(
                         brush = Brush.verticalGradient(holographicGradient),
                     ),
         )
-
-        Button(
-            onClick = { onSendDescription(input) },
-            shape = RoundedCornerShape(15.dp),
-            modifier =
-                Modifier
-                    .padding(vertical = 12.dp)
-                    .fillMaxWidth()
-                    .border(2.dp, brush, RoundedCornerShape(15.dp)),
-            colors =
-                ButtonDefaults.buttonColors().copy(
-                    containerColor = MaterialTheme.colorScheme.background,
-                ),
-        ) {
-            Text(
-                text = stringResource(R.string.next),
-                style =
-                    MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.background,
-                    ),
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .gradientFill(brush),
-            )
-
-            Icon(
-                Icons.AutoMirrored.Rounded.ArrowForward,
-                contentDescription = "Next",
-                modifier = Modifier.gradientFill(brush).size(24.dp),
-                tint = MaterialTheme.colorScheme.background,
-            )
-        }
     }
 }

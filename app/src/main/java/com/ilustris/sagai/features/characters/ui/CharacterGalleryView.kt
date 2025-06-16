@@ -26,10 +26,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.core.data.State
@@ -42,6 +40,7 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -160,11 +159,12 @@ fun CharacterYearbookItem(
             modifier
                 .padding(8.dp),
     ) {
-        val characterColor = Color(character.hexColor.toColorInt())
-
         CharacterAvatar(
             character = character,
-            isAnimated = isMainCharacter,
+            textStyle =
+                MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = genre.headerFont(),
+                ),
             modifier =
                 Modifier
                     .fillMaxWidth()

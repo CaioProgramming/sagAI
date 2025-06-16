@@ -62,7 +62,7 @@ object SagaPrompts {
         saga: SagaData,
         mainCharacter: Character,
     ) = """
-        ${CharacterFraming.EPIC_WIDE_SHOT.name} of ${mainCharacter.name}:
+        ${CharacterFraming.EPIC_WIDE_SHOT.description} of ${mainCharacter.name}:
         
         Appearance: ${mainCharacter.details.appearance}
         Expression: ${saga.visuals.characterExpression}
@@ -75,9 +75,7 @@ object SagaPrompts {
    
         Foreground elements: ${saga.visuals.foregroundElements}.
         Background elements: ${saga.visuals.backgroundElements}.
-        The image should evoke a ${saga.visuals.overallMood} mood.
         
-        avoid: ${GenrePrompts.negativePrompt(saga.genre)}}
         """
 
     fun narratorGeneration(

@@ -12,22 +12,12 @@ object CharacterPrompts {
         character: Character,
         saga: SagaData,
     ) = """
-        ${CharacterFraming.PORTRAIT.name} of ${character.name}:
+        ${CharacterFraming.PORTRAIT.description}  
+        Character: ${character.name}
         Appearance: ${character.details.appearance}
-        Pose: ${saga.visuals.characterPose}
         Expression: ${saga.visuals.characterExpression}
         With the art style:
         ${GenrePrompts.artStyle(saga.genre)}
-        Using this visuals:
-        ${saga.visuals.colorPalette},
-        ${saga.visuals.lightingDetails},
-        ${saga.visuals.environmentDetails}
-
-        Background elements: ${saga.visuals.backgroundElements}.
-        
-        The image should evoke a ${saga.visuals.overallMood}.
-        
-        YOU MUST AVOID: ${GenrePrompts.negativePrompt(saga.genre)}
         """
 
     fun charactersOverview(characters: List<Character>): String =
@@ -46,8 +36,10 @@ object CharacterPrompts {
         ${SagaPrompts.details(saga)}
 
         use this message as a reference to get character details:
-        // You MUST use the character's name, core appearance details, and personality hints from this message.
-        // Invent reasonable and consistent details for any missing fields (like backstory, specific occupation, height, weight, race, hexColor, image, IDs).
         $description
+       use this message as a reference to get character details:
+        // **CRITICAL INSTRUCTION:** You MUST use the character's name provided in this reference message. DO NOT invent a new name.
+        // **You MUST also** use the core appearance details and any personality hints from this message.
+        // Invent reasonable and consistent details for any missing fields (like backstory, specific occupation, height, weight, race, hexColor, image, IDs).
         """
 }

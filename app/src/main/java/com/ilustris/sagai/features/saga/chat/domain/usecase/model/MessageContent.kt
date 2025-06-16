@@ -24,7 +24,8 @@ fun MessageContent.joinMessage(): Pair<String, String> =
     when (message.senderType) {
         SenderType.USER -> "${character?.name}(Player)" to message.text
         SenderType.THOUGHT,
-        SenderType.ACTION ->
-            ("${character?.name}(Player)} - (${message.senderType})") to message.text
+        SenderType.ACTION,
+        ->
+            ("${character?.name}(Player) - (${message.senderType})") to message.text
         else -> message.senderType.name to message.text
     }

@@ -60,11 +60,12 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                masterpiece fantasy illustration, in the style of classical oil painting and vintage heroic fantasy art,
-                rich painterly technique with expressive brushstrokes and substantial impasto,
-                luxurious and varied textures reminiscent of aged canvas and traditional pigments,
-                heroic and luminous natural lighting, with profound volumetric light and atmospheric depth,
-                a grand color palette of deep, harmonious, and subtly desaturated tones, evoking a timeless grandeur,
+                Highly detailed,photorealistic painting,
+                Renaissance-inspired reflections,
+                evoking the styles of Eric Zener, Rachel Walpole,
+                Chris Moore,Michael Hoppen,Stephen Hickman,and Mary Jane Ansell.
+                Luminous natural lighting, with profound volumetric light and atmospheric depth,
+                Grand color palette of deep, harmonious, and subtly desaturated tones, evoking a timeless grandeur,
                 strong focal point on the character, immersed in a majestic and atmospheric background,
                 evoking a sense of ancient lore, epic sagas, and enduring legend, with a soft, cinematic film grain.
                 """

@@ -74,10 +74,16 @@ class CharacterUseCaseImpl
                     )
 
                 val characterTransaction = insertCharacter(newCharacter!!.copy(sagaId = sagaData.id))
-                generateCharacterImage(
-                    character = characterTransaction,
-                    saga = sagaData,
-                )
+                val iconGen =
+                    generateCharacterImage(
+                        character = characterTransaction,
+                        saga = sagaData,
+                    )
+                if (iconGen is RequestResult.Success) {
+                    RequestResult.Success(characterTransaction)
+                } else {
+                    RequestResult.Success(characterTransaction)
+                }
             } catch (e: Exception) {
                 e.asError()
             }

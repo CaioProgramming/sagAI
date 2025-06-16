@@ -7,6 +7,7 @@
 package com.ilustris.sagai.features.saga.chat.ui
 
 import android.content.res.Configuration
+import android.graphics.ColorFilter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -29,6 +30,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -64,7 +66,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -80,7 +81,6 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil3.Image
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
@@ -101,6 +101,8 @@ import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -198,7 +200,7 @@ fun ChatContent(
 
     LaunchedEffect(messagesList.size) {
         delay(3.seconds)
-        listState.animateScrollToItem(messagesList.size - 1)
+        listState.animateScrollToItem(messagesList.size)
     }
 
     AnimatedVisibility(
@@ -211,13 +213,23 @@ fun ChatContent(
             Image(
                 painterResource(it.genre.background),
                 null,
-                contentScale = ContentScale.Crop,
                 colorFilter =
-                    ColorFilter.tint(
-                        Color.Black.copy(alpha = .5f),
-                        blendMode = BlendMode.Darken,
+                    androidx.compose.ui.graphics.ColorFilter.tint(
+                        MaterialTheme.colorScheme.background.copy(alpha = .4f),
+                        blendMode = BlendMode.SrcOver,
                     ),
-                modifier = Modifier.fillMaxSize().grayScale(.5f),
+                contentScale = ContentScale.Crop,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .grayScale(.5f),
+            )
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(.4f)
+                    .background(fadeGradientTop()),
             )
         }
     }
@@ -476,7 +488,7 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             }.background(MaterialTheme.colorScheme.background)
-                            .padding(top = 50.dp, start = 16.dp)
+                            .padding(top = 50.dp, start = 16.dp, end = 16.dp)
                             .fillMaxWidth()
                             .clickable {
                                 openSagaDetails(it)
@@ -521,23 +533,43 @@ private fun EmptyMessagesView(
 
 @Composable
 fun SagaHeader(saga: SagaData) {
+    var size by remember {
+        mutableStateOf(300.dp)
+    }
+    val imageSize by animateDpAsState(
+        targetValue = size,
+        animationSpec = tween(200, easing = EaseIn),
+    )
     Box(
         modifier =
             Modifier
                 .background(MaterialTheme.colorScheme.background)
                 .fillMaxWidth()
-                .height(300.dp),
+                .height(imageSize),
     ) {
         val iconUrl = saga.icon ?: saga.genre.defaultHeaderImage()
         AsyncImage(
             iconUrl,
             contentDescription = null,
             contentScale = ContentScale.Crop,
+            onError = {
+                size = 0.dp
+            },
             modifier =
                 Modifier
                     .align(Alignment.Center)
                     .fillMaxSize()
-                    .grayScale(.7f),
+                    .grayScale(.4f),
+        )
+
+
+
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(.3f)
+                .background(fadeGradientBottom()),
         )
     }
 }
@@ -551,7 +583,7 @@ fun ChatList(
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
-    LazyColumn(modifier, state = listState) {
+    LazyColumn(modifier.padding(bottom = 16.dp), state = listState) {
         saga?.let {
             item {
                 SagaHeader(saga)
@@ -567,6 +599,7 @@ fun ChatList(
                     textAlign = TextAlign.Center,
                     modifier =
                         Modifier
+                            .background(fadeGradientTop())
                             .fillMaxWidth()
                             .padding(16.dp)
                             .gradientFill(
@@ -621,10 +654,10 @@ fun ChatList(
                     )
                 }
             }
+        }
 
-            item {
-                Spacer(Modifier.height(50.dp))
-            }
+        item {
+            Spacer(Modifier.fillMaxWidth().height(65.dp))
         }
     }
 }
@@ -673,7 +706,7 @@ private fun CharactersTopIcons(
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_TYPE_NORMAL)
 @Composable
 fun ChatViewPreview() {
     val saga =

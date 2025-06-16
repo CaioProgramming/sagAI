@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }, bottomBar = {
-                    SagaBottomNavigation(navController, route)
+                    //SagaBottomNavigation(navController, route)
                 }) { padding ->
                     SharedTransitionLayout {
                         val hazeEffect = rememberHazeState(blurEnabled = true)

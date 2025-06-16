@@ -13,6 +13,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +60,7 @@ import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -123,12 +124,9 @@ fun NewSagaView(
                     animateToPage(pagerState.currentPage + 1)
                 }
 
-                GENERATING -> doNothing()
-
                 RESULT -> {
-                    data?.let {
-                        createSagaViewModel.saveSaga((it as SagaData))
-                    }
+                    saga?.let { createSagaViewModel.saveSaga(it) }
+
                 }
             }
         }
@@ -139,8 +137,8 @@ fun NewSagaView(
             exit = scaleOut(),
             modifier = Modifier.align(Alignment.Center),
         ) {
-            SparkIcon(
-                brush = gradientAnimation(holographicGradient),
+            SparkLoader(
+                brush = gradientAnimation(holographicGradient, targetValue = 500f, duration = 5.seconds),
                 modifier = Modifier.size(100.dp),
             )
         }
@@ -182,8 +180,8 @@ fun NewSagaFlow(
     updateContent: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
     val currentPage = NewSagaPages.entries[pagerState.currentPage]
-    var data = remember<Any?> {
-        mutableStateOf(null)
+    var data by remember {
+        mutableStateOf<Any?>(null)
     }
     Column(modifier = modifier.animateContentSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         currentPage.title?.let {
@@ -209,23 +207,21 @@ fun NewSagaFlow(
             pagerState,
             form,
             saga,
-            modifier = Modifier.fillMaxWidth().weight(1f),
-            { _, newValue ->
+            modifier = Modifier.fillMaxWidth().fillMaxHeight(.6f),
+            { page, newValue ->
                 data = newValue
             },
         )
 
-        val brush = Brush.linearGradient(holographicGradient)
-        val pageEnabled = when(currentPage) {
-            GENRE -> true
-            TITLE -> form.title.isNotEmpty()
-            DESCRIPTION -> form.description.isNotEmpty()
-            CHARACTER -> form.characterDescription.isNotEmpty()
-            GENERATING -> saga != null
-            INTRO -> false
-            RESULT -> false
-        }
-        AnimatedVisibility(pageEnabled) {
+        val brush = gradientAnimation(holographicGradient, targetValue = 700f)
+        val pageEnabled =
+            when (currentPage) {
+                GENRE -> true
+                TITLE, DESCRIPTION, CHARACTER -> (data as? String)?.isNotEmpty() == true
+                INTRO -> false
+                RESULT -> true
+            }
+        AnimatedVisibility(pageEnabled, modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxWidth()) {
             Button(
                 onClick = {
                     updateContent(currentPage, data)
@@ -260,7 +256,6 @@ fun NewSagaFlow(
                     tint = MaterialTheme.colorScheme.background,
                 )
             }
-
         }
     }
 }
