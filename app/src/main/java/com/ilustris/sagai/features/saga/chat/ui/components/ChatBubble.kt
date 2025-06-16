@@ -8,7 +8,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,8 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.constraintlayout.compose.Dimension.Companion.fillToConstraints
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -51,6 +48,8 @@ import com.ilustris.sagai.ui.theme.botBubbleGradient
 import com.ilustris.sagai.ui.theme.bubbleTextColors
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -147,8 +146,7 @@ fun ChatBubble(
     val isAnimated =
         remember {
             canAnimate.not() &&
-                alreadyAnimatedMessages.contains(message.id).not() &&
-                isUser.not()
+                alreadyAnimatedMessages.none { it == message.id }
         }
 
     val isBubbleVisible =
@@ -260,7 +258,11 @@ fun ChatBubble(
         }
 
         SenderType.ACTION -> {
-            Box(Modifier.padding(16.dp).fillMaxWidth()) {
+            Box(
+                Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
@@ -273,7 +275,10 @@ fun ChatBubble(
                             R.drawable.action_icon,
                         ),
                         null,
-                        modifier = Modifier.size(24.dp).graphicsLayer(alpha = .6f),
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .graphicsLayer(alpha = .6f),
                     )
                     TypewriterText(
                         text = message.text,
@@ -350,66 +355,44 @@ fun ChapterContentView(
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ConstraintLayout(
-            modifier =
-                Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
+        Row(
+            Modifier
+                .background(fadeGradientBottom())
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val (firstDivider, title, secondDivider) = createRefs()
             Box(
                 Modifier
-                    .constrainAs(firstDivider) {
-                        start.linkTo(parent.start)
-                        end.linkTo(title.start)
-                        top.linkTo(title.top)
-                        bottom.linkTo(title.bottom)
-                        width = fillToConstraints
-                    }.height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            genre.gradient(),
-                        ),
-                    ),
+                    .fillMaxWidth(.20f)
+                    .height(1.dp)
+                    .background(genre.color),
             )
+
             Text(
-                text = "${content.title}",
+                text = content.title,
                 modifier =
                     Modifier
-                        .padding(12.dp)
-                        .constrainAs(title) {
-                            top.linkTo(parent.top)
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        },
+                        .padding(16.dp)
+                        .weight(1f),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
                         fontWeight = FontWeight.Normal,
                         fontFamily = genre.bodyFont(),
                         fontStyle = FontStyle.Italic,
                         color = textColor,
-                        textAlign = TextAlign.Start,
+                        textAlign = TextAlign.Center,
                     ),
             )
+
             Box(
                 Modifier
-                    .constrainAs(secondDivider) {
-                        start.linkTo(title.end)
-                        end.linkTo(parent.end)
-                        top.linkTo(title.top)
-                        bottom.linkTo(title.bottom)
-                        width = fillToConstraints
-                    }.height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            genre.gradient(),
-                        ),
-                    ),
+                    .fillMaxWidth(.20f)
+                    .height(1.dp)
+                    .background(genre.color),
             )
         }
+
         var imageSize by remember {
             mutableStateOf(
                 300.dp,
@@ -421,7 +404,12 @@ fun ChapterContentView(
             label = "Image Size Animation",
         )
 
-        Box(modifier = Modifier.fillMaxWidth().height(sizeAnimation)) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(sizeAnimation),
+        ) {
             AsyncImage(
                 model = content.coverImage,
                 contentDescription = null,
@@ -434,15 +422,18 @@ fun ChapterContentView(
             )
 
             Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .background(fadedGradientTopAndBottom()),
+                Modifier
+                    .fillMaxSize()
+                    .background(fadedGradientTopAndBottom()),
             )
         }
+
         Text(
             text = content.title,
-            modifier = Modifier.padding(16.dp),
+            modifier =
+                Modifier
+                    .background(fadeGradientTop())
+                    .padding(16.dp),
             style =
                 MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = FontWeight.Light,
@@ -457,7 +448,7 @@ fun ChapterContentView(
         TypewriterText(
             text = content.overview,
             modifier = Modifier.padding(16.dp),
-            duration = 5.seconds,
+            duration = 8.seconds,
             isAnimated = isAnimated,
             style =
                 MaterialTheme.typography.bodyLarge.copy(

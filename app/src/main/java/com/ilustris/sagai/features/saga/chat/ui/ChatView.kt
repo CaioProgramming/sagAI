@@ -108,7 +108,6 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
 import com.skydoves.balloon.ArrowPositionRules
 import com.skydoves.balloon.BalloonAnimation
@@ -122,9 +121,7 @@ import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.materials.HazeMaterials
 import dev.chrisbanes.haze.rememberHazeState
-import kotlinx.coroutines.delay
 import java.util.Calendar
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -199,7 +196,6 @@ fun ChatContent(
     val listState = rememberLazyListState()
 
     LaunchedEffect(messagesList.size) {
-        delay(3.seconds)
         listState.animateScrollToItem(messagesList.size)
     }
 
@@ -221,8 +217,7 @@ fun ChatContent(
                 contentScale = ContentScale.Crop,
                 modifier =
                     Modifier
-                        .fillMaxSize()
-                        .grayScale(.5f),
+                        .fillMaxSize(),
             )
 
             Box(
@@ -292,213 +287,228 @@ fun ChatContent(
                         }
                 }
             }
-
-            AnimatedContent(
-                isGenerating,
-                transitionSpec = {
-                    fadeIn() with fadeOut()
-                },
-                modifier =
-                    Modifier.constrainAs(chatInput) {
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
+            if (state !is ChatState.Error) {
+                AnimatedContent(
+                    isGenerating,
+                    transitionSpec = {
+                        fadeIn() with fadeOut()
                     },
-            ) {
-                if (it) {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        SparkIcon(
-                            brush =
-                                gradientAnimation(
-                                    genresGradient(),
-                                    gradientType = GradientType.VERTICAL,
-                                ),
-                            tint = MaterialTheme.colorScheme.background,
+                    modifier =
+                        Modifier.constrainAs(chatInput) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            width = Dimension.fillToConstraints
+                        },
+                ) {
+                    if (it) {
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            SparkIcon(
+                                brush =
+                                    gradientAnimation(
+                                        genresGradient(),
+                                        gradientType = GradientType.VERTICAL,
+                                    ),
+                                tint = MaterialTheme.colorScheme.background,
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.Center)
+                                        .size(50.dp),
+                            )
+                        }
+                    } else {
+                        val balloonBackground = MaterialTheme.colorScheme.surfaceContainer
+                        var balloonWindow: BalloonWindow? by remember { mutableStateOf(null) }
+                        val builder =
+                            rememberBalloonBuilder {
+                                setArrowSize(10)
+                                setArrowPosition(0f)
+                                setArrowPositionRules(ArrowPositionRules.ALIGN_ANCHOR)
+                                setWidth(BalloonSizeSpec.WRAP)
+                                setHeight(BalloonSizeSpec.WRAP)
+                                setPadding(12)
+                                setMarginHorizontal(4)
+                                setCornerRadius(15f)
+                                setBackgroundColor(balloonBackground)
+                                setBalloonAnimation(BalloonAnimation.OVERSHOOT)
+                            }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier =
                                 Modifier
-                                    .align(Alignment.Center)
-                                    .size(50.dp),
-                        )
-                    }
-                } else {
-                    val balloonBackground = MaterialTheme.colorScheme.surfaceContainer
-                    var balloonWindow: BalloonWindow? by remember { mutableStateOf(null) }
-                    val builder =
-                        rememberBalloonBuilder {
-                            setArrowSize(10)
-                            setArrowPosition(0f)
-                            setArrowPositionRules(ArrowPositionRules.ALIGN_ANCHOR)
-                            setWidth(BalloonSizeSpec.WRAP)
-                            setHeight(BalloonSizeSpec.WRAP)
-                            setPadding(12)
-                            setMarginHorizontal(4)
-                            setCornerRadius(15f)
-                            setBackgroundColor(balloonBackground)
-                            setBalloonAnimation(BalloonAnimation.OVERSHOOT)
-                        }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth()
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.onSurface
-                                        .copy(alpha = .4f)
-                                        .gradientFade(),
-                                    RoundedCornerShape(40.dp),
-                                ).background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    RoundedCornerShape(40.dp),
-                                ).padding(horizontal = 8.dp, vertical = 2.dp)
-                                .hazeEffect(
-                                    state = hazeState,
-                                    style = HazeMaterials.regular(),
-                                ) {
-                                    blurEnabled = true
-                                    blurRadius = 20.dp
-                                },
-                    ) {
-                        mainCharacter?.let { character ->
-                            Balloon(
-                                builder = builder,
-                                onBalloonWindowInitialized = { balloonWindow = it },
-                                balloonContent = {
-                                    Column {
-                                        SenderType.entries
-                                            .filter {
-                                                it != SenderType.CHARACTER &&
-                                                    it != SenderType.NEW_CHAPTER
-                                            }.forEach { type ->
-                                                type.itemOption(
-                                                    sendAction,
-                                                    selectedColor =
-                                                        saga?.genre?.color
-                                                            ?: MaterialTheme.colorScheme.primary,
-                                                ) { action ->
-                                                    sendAction = action
-                                                    balloonWindow?.dismissWithDelay(1000)
+                                    .padding(16.dp)
+                                    .fillMaxWidth()
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.onSurface
+                                            .copy(alpha = .4f)
+                                            .gradientFade(),
+                                        RoundedCornerShape(40.dp),
+                                    ).background(
+                                        MaterialTheme.colorScheme.surfaceContainer,
+                                        RoundedCornerShape(40.dp),
+                                    ).padding(horizontal = 8.dp, vertical = 2.dp)
+                                    .hazeEffect(
+                                        state = hazeState,
+                                        style = HazeMaterials.regular(),
+                                    ) {
+                                        blurEnabled = true
+                                        blurRadius = 20.dp
+                                    },
+                        ) {
+                            mainCharacter?.let { character ->
+                                Balloon(
+                                    builder = builder,
+                                    onBalloonWindowInitialized = { balloonWindow = it },
+                                    balloonContent = {
+                                        Column {
+                                            SenderType.entries
+                                                .filter {
+                                                    it != SenderType.CHARACTER &&
+                                                        it != SenderType.NEW_CHAPTER
+                                                }.forEach { type ->
+                                                    type.itemOption(
+                                                        sendAction,
+                                                        selectedColor =
+                                                            saga?.genre?.color
+                                                                ?: MaterialTheme.colorScheme.primary,
+                                                    ) { action ->
+                                                        sendAction = action
+                                                        balloonWindow?.dismissWithDelay(1000)
+                                                    }
                                                 }
-                                            }
+                                        }
+                                    },
+                                ) {
+                                    CharacterAvatar(
+                                        character,
+                                        borderSize = 2.dp,
+                                        modifier =
+                                            Modifier
+                                                .size(32.dp)
+                                                .clip(CircleShape)
+                                                .clickable {
+                                                    balloonWindow?.showAsDropDown()
+                                                },
+                                    )
+                                }
+                            }
+
+                            TextField(
+                                value = input,
+                                onValueChange = {
+                                    if (it.length <= 200) {
+                                        input = it
                                     }
                                 },
+                                placeholder = {
+                                    Text(
+                                        "Continua sua saga...",
+                                        style =
+                                            MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 12.sp,
+                                            ),
+                                    )
+                                },
+                                shape = RoundedCornerShape(40.dp),
+                                colors =
+                                    TextFieldDefaults.colors().copy(
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                        cursorColor =
+                                            saga?.genre?.color
+                                                ?: MaterialTheme.colorScheme.primary,
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                    ),
+                                textStyle =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontSize = 12.sp,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .wrapContentHeight()
+                                        .weight(1f),
+                            )
+
+                            val buttonSize by animateDpAsState(
+                                if (input.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
+                            )
+                            val buttonColor =
+                                saga?.genre?.color ?: MaterialTheme.colorScheme.primary
+                            IconButton(
+                                onClick = {
+                                    onSendMessage(input, sendAction)
+                                    input = ""
+                                },
+                                modifier =
+                                    Modifier
+                                        .border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.onBackground.gradientFade(),
+                                            CircleShape,
+                                        ).background(
+                                            buttonColor,
+                                            CircleShape,
+                                        ).size(buttonSize),
                             ) {
-                                CharacterAvatar(
-                                    character,
-                                    borderSize = 2.dp,
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                    contentDescription = "Send Message",
                                     modifier =
-                                        Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                balloonWindow?.showAsDropDown()
-                                            },
+                                        Modifier.padding(4.dp).fillMaxSize(),
+                                    tint = Color.White,
                                 )
                             }
                         }
-
-                        TextField(
-                            value = input,
-                            onValueChange = {
-                                if (it.length <= 200) {
-                                    input = it
-                                }
-                            },
-                            placeholder = {
-                                Text(
-                                    "Continua sua saga...",
-                                    style =
-                                        MaterialTheme.typography.labelSmall.copy(
-                                            fontSize = 12.sp,
-                                        ),
-                                )
-                            },
-                            shape = RoundedCornerShape(40.dp),
-                            colors =
-                                TextFieldDefaults.colors().copy(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    cursorColor =
-                                        saga?.genre?.color
-                                            ?: MaterialTheme.colorScheme.primary,
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                ),
-                            textStyle =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 12.sp,
-                                ),
-                            modifier =
-                                Modifier
-                                    .wrapContentHeight()
-                                    .weight(1f),
-                        )
-
-                        val buttonSize by animateDpAsState(
-                            if (input.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
-                        )
-                        val buttonColor = saga?.genre?.color ?: MaterialTheme.colorScheme.primary
-                        IconButton(
-                            onClick = {
-                                onSendMessage(input, sendAction)
-                                input = ""
-                            },
-                            modifier =
-                                Modifier
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.onBackground.gradientFade(),
-                                        CircleShape,
-                                    ).background(
-                                        buttonColor,
-                                        CircleShape,
-                                    ).size(buttonSize),
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Send Message",
-                                modifier =
-                                    Modifier.padding(4.dp).fillMaxSize(),
-                                tint = Color.White,
-                            )
-                        }
                     }
                 }
-            }
 
-            saga?.let {
-                val alpha by animateFloatAsState(
-                    if (listState.firstVisibleItemIndex != 0) 1f else 0f,
-                    animationSpec = tween(450, easing = EaseIn),
-                )
-                SagaTopBar(
-                    it.title,
-                    "${messagesList.size} mensagens",
-                    it.genre,
-                    onBackClick = onBack,
-                    modifier =
-                        Modifier
-                            .graphicsLayer(alpha = alpha)
-                            .constrainAs(topBar) {
-                                top.linkTo(parent.top)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }.background(MaterialTheme.colorScheme.background)
-                            .padding(top = 50.dp, start = 16.dp, end = 16.dp)
-                            .fillMaxWidth()
-                            .clickable {
-                                openSagaDetails(it)
-                            },
-                    actionContent = {
-                        CharactersTopIcons(characters, onCharacterSelected, it)
-                    },
-                )
+                saga?.let {
+                    val alpha by animateFloatAsState(
+                        if (listState.firstVisibleItemIndex != 0) 1f else 0f,
+                        animationSpec = tween(450, easing = EaseIn),
+                    )
+                    SagaTopBar(
+                        it.title,
+                        "${messagesList.size} mensagens",
+                        it.genre,
+                        onBackClick = onBack,
+                        modifier =
+                            Modifier
+                                .graphicsLayer(alpha = alpha)
+                                .constrainAs(topBar) {
+                                    top.linkTo(parent.top)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                }.background(MaterialTheme.colorScheme.background)
+                                .padding(top = 50.dp, start = 16.dp, end = 16.dp)
+                                .fillMaxWidth()
+                                .clickable {
+                                    openSagaDetails(it)
+                                },
+                        actionContent = {
+                            CharactersTopIcons(characters, onCharacterSelected, it)
+                        },
+                    )
+                }
             }
         }
+    }
+
+    AnimatedVisibility(isLoreUpdated) {
+        Text(
+            "História atualizada.",
+            style = MaterialTheme.typography.bodySmall,
+            textAlign = TextAlign.Start,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(16.dp),
+        )
     }
 }
 
@@ -558,11 +568,8 @@ fun SagaHeader(saga: SagaData) {
             modifier =
                 Modifier
                     .align(Alignment.Center)
-                    .fillMaxSize()
-                    .grayScale(.4f),
+                    .fillMaxSize(),
         )
-
-
 
         Box(
             Modifier
@@ -657,7 +664,7 @@ fun ChatList(
         }
 
         item {
-            Spacer(Modifier.fillMaxWidth().height(65.dp))
+            Spacer(Modifier.fillMaxWidth().height(50.dp))
         }
     }
 }
@@ -688,6 +695,8 @@ private fun CharactersTopIcons(
             CharacterAvatar(
                 character,
                 borderSize = 2.dp,
+                borderColor = MaterialTheme.colorScheme.background,
+                innerPadding = 0.dp,
                 modifier =
                     Modifier
                         .zIndex(

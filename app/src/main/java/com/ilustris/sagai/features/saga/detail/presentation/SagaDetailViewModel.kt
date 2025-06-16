@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.detail.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +30,12 @@ class SagaDetailViewModel
                         _state.value = State.Success(data)
                     }
                 }
+            }
+        }
+
+        fun deleteSaga(saga: SagaData) {
+            viewModelScope.launch {
+                sagaDetailUseCase.deleteSaga(saga)
             }
         }
     }

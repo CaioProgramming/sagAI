@@ -12,12 +12,18 @@ object CharacterPrompts {
         character: Character,
         saga: SagaData,
     ) = """
+        ${GenrePrompts.artStyle(saga.genre)}
         ${CharacterFraming.PORTRAIT.description}  
         Character: ${character.name}
+        Race: ${character.details.race}
+        Gender: ${character.details.gender}
+        Style: ${character.details.style}
+        Occupation: ${character.details.occupation}
+        Ethnicity: ${character.details.ethnicity}
+        Height: ${character.details.height}
+        Weight: ${character.details.weight}
         Appearance: ${character.details.appearance}
-        Expression: ${saga.visuals.characterExpression}
-        With the art style:
-        ${GenrePrompts.artStyle(saga.genre)}
+        Use a expression that matches character personality: ${character.details.personality}
         """
 
     fun charactersOverview(characters: List<Character>): String =
@@ -35,10 +41,10 @@ object CharacterPrompts {
         Write a character description for a new character in the story.
         ${SagaPrompts.details(saga)}
 
-        use this message as a reference to get character details:
+        use this messages as a reference to get character details:
         $description
-       use this message as a reference to get character details:
-        // **CRITICAL INSTRUCTION:** You MUST use the character's name provided in this reference message. DO NOT invent a new name.
+        use this message as a reference to get character details:
+        // **CRITICAL INSTRUCTION:** You MUST use the character's name provided in the conversation context. DO NOT invent a new name.
         // **You MUST also** use the core appearance details and any personality hints from this message.
         // Invent reasonable and consistent details for any missing fields (like backstory, specific occupation, height, weight, race, hexColor, image, IDs).
         """

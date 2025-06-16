@@ -36,7 +36,8 @@ import com.ilustris.sagai.ui.theme.grayScale
 @Composable
 fun CharacterAvatar(
     character: Character,
-    initialBorderColor: Color = MaterialTheme.colorScheme.background,
+    borderColor: Color? = null,
+    innerPadding: Dp = 4.dp,
     borderSize: Dp = 2.dp,
     textStyle: TextStyle = MaterialTheme.typography.labelSmall,
     modifier: Modifier = Modifier,
@@ -50,9 +51,10 @@ fun CharacterAvatar(
         modifier
             .border(
                 borderSize,
-                Brush.verticalGradient(characterColor.darkerPalette()),
+                borderColor ?: characterColor,
                 CircleShape,
-            ).padding(4.dp)
+            )
+            .padding(innerPadding)
             .clip(CircleShape)
             .background(
                 characterColor,

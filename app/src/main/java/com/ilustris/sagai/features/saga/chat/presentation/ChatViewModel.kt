@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.core.utils.afterLast
+import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
@@ -115,9 +117,6 @@ class ChatViewModel
                     if (state.value != ChatState.Success) {
                         state.value = ChatState.Success
                     }
-                    if (mappedMessages.isNotEmpty()) {
-                        observeChapterBreak(sagaContent, mappedMessages)
-                    }
                 }
             }
         }
@@ -138,12 +137,16 @@ class ChatViewModel
             } else {
                 val lastChapterMessage =
                     mappedMessages.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
+
                 if (lastChapterMessage != null) {
-                    val messageIndex = mappedMessages.indexOf(lastChapterMessage)
-                    createNewChapter(
-                        mappedMessages.subList(messageIndex + 1, messages.size).takeLast(100),
-                        chapters,
-                    )
+                    val chapterMessages =
+                        mappedMessages.afterLast { it.message.id == lastChapterMessage?.message?.id }
+                    if (chapterMessages.size >= 100) {
+                        createNewChapter(
+                            chapterMessages.takeLast(100),
+                            chapters,
+                        )
+                    }
                 } else {
                     createNewChapter(mappedMessages.takeLast(100), chapters)
                 }
@@ -235,14 +238,18 @@ class ChatViewModel
             val message =
                 Message(
                     text = text,
+                    speakerName = null,
                     senderType = sendType,
                     sagaId = saga.value?.id ?: 0,
-                    characterId = mainCharacter.value?.id,
+                    characterId = if (sendType == SenderType.NEW_CHARACTER) null else mainCharacter.value?.id,
                 )
-            sendMessage(message)
+            sendMessage(message, true)
         }
 
-        fun sendMessage(message: Message) {
+        fun sendMessage(
+            message: Message,
+            fromPlayer: Boolean = false,
+        ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val characterReference =
                     characters.value.find {
@@ -256,22 +263,27 @@ class ChatViewModel
                             characterId = characterReference?.id,
                         ),
                     ).also {
-                        checkForCharacter(it)
+                        if (message.senderType == SenderType.CHARACTER && characterReference == null) {
+                            checkForCharacter(it)
+                        }
+
                         if (messages.value.isNotEmpty()) {
                             checkLoreUpdate()
+                            content.value?.let { it1 -> observeChapterBreak(it1, messages.value) }
                         }
 
                         when (message.characterId == mainCharacter.value?.id) {
                             true -> {
+                                isGenerating.value = true
                                 delay(2.seconds)
                                 replyMessage(it)
                             }
 
-                            else -> {
-                                if (message.senderType == SenderType.NEW_CHARACTER) {
-                                    generateCharacter(it)
-                                }
-                            }
+                            else -> doNothing()
+                        }
+
+                        if (message.senderType == SenderType.NEW_CHARACTER) {
+                            generateCharacter(message)
                         }
                     }
                 isGenerating.value = false
@@ -367,7 +379,6 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 saga.value?.let { saga ->
                     messages.value.find { it.message.id == message.id }?.let {
-                        isGenerating.value = true
                         messageUseCase
                             .generateMessage(
                                 saga = saga,
@@ -376,7 +387,6 @@ class ChatViewModel
                                 mainCharacter = mainCharacter.value!!,
                                 lastMessages =
                                     messages.value
-                                        .reversed()
                                         .takeLast(10)
                                         .map { m ->
                                             m.joinMessage()

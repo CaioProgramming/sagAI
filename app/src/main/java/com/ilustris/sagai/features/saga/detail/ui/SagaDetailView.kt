@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
+import ai.atick.material.MaterialColor
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,15 +20,20 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -82,7 +88,10 @@ fun SagaDetailView(
     paddingValues: PaddingValues,
     viewModel: SagaDetailViewModel = hiltViewModel(),
 ) {
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
+
     SagaDetailContentView(state, paddingValues, {
         navHostController.navigateToRoute(
             Routes.CHARACTER_GALLERY,
@@ -90,7 +99,41 @@ fun SagaDetailView(
         )
     }, onBack = {
         navHostController.popBackStack()
+    }, onDelete = { saga ->
+        sagaToDelete = saga
+        showDeleteConfirmation = true
     })
+
+    if (showDeleteConfirmation && sagaToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Confirmar Exclusão") },
+            text = { Text("Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        sagaToDelete?.let { viewModel.deleteSaga(it) }
+                        showDeleteConfirmation = false
+                        navHostController.popBackStack()
+                    },
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                ) { Text("Excluir") }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showDeleteConfirmation = false },
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                ) { Text("Cancelar") }
+            },
+        )
+    }
 
     LaunchedEffect(Unit) {
         viewModel.fetchSagaDetails(sagaId)
@@ -103,6 +146,7 @@ fun SagaDetailContentView(
     paddingValues: PaddingValues,
     selectCharacter: (Int) -> Unit = {},
     onBack: () -> Unit = {},
+    onDelete: (SagaData) -> Unit = {},
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     LazyColumn(
@@ -325,6 +369,21 @@ fun SagaDetailContentView(
                     remember { mutableStateOf(true) },
                     false,
                 )
+            }
+
+            item {
+                Button(
+                    onClick = {
+                        onDelete(it.saga)
+                    },
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialColor.Red400,
+                        ),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                ) {
+                    Text("Excluir Saga", textAlign = TextAlign.Center)
+                }
             }
         }
     }
