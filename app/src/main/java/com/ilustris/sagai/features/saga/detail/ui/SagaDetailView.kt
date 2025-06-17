@@ -113,7 +113,7 @@ fun SagaDetailView(
                     onClick = {
                         sagaToDelete?.let { viewModel.deleteSaga(it) }
                         showDeleteConfirmation = false
-                        navHostController.popBackStack()
+                        navHostController.navigateToRoute(Routes.HOME)
                     },
                     colors =
                         ButtonDefaults.buttonColors(

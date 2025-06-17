@@ -43,28 +43,19 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
+import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.skydoves.balloon.ArrowPositionRules
-import com.skydoves.balloon.Balloon
-import com.skydoves.balloon.BalloonAnimation
-import com.skydoves.balloon.BalloonSizeSpec
-import com.skydoves.balloon.compose.Balloon
-import com.skydoves.balloon.compose.BalloonWindow
-import com.skydoves.balloon.compose.rememberBalloonBuilder
-import com.skydoves.balloon.compose.setBackgroundColor
 
 @Composable
 fun ChatInputView(
     mainCharacter: Character?,
     characters: List<Character>,
-    sendAction: SenderType,
     saga: SagaData?,
-    input: String,
     state: ChatState,
     onSendMessage: (String, SenderType) -> Unit,
 ) {
-    var sendAction = sendAction
-    var inputField by remember { mutableStateOf(input) }
+    var action by remember { mutableStateOf(SenderType.USER) }
+    var inputField by remember { mutableStateOf("") }
     var textSelection by remember { mutableStateOf(TextRange(inputField.length)) }
 
     Row(
@@ -72,7 +63,7 @@ fun ChatInputView(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
             Modifier
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 4.dp)
                 .fillMaxWidth()
                 .border(
                     1.dp,
@@ -86,8 +77,8 @@ fun ChatInputView(
                 ).padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
         mainCharacter?.let { character ->
-            MainCharacterInputButton(sendAction, saga, character) {
-                sendAction = it
+            MainCharacterInputButton(action, saga, character) {
+                action = it
             }
         }
         var charactersExpanded by remember { mutableStateOf(false) }
@@ -112,6 +103,7 @@ fun ChatInputView(
                                     endIndex,
                                     newText,
                                 )
+
                             textSelection = TextRange(startIndex + newText.length)
                             charactersExpanded = false
                         },
@@ -178,7 +170,7 @@ fun ChatInputView(
             saga?.genre?.color ?: MaterialTheme.colorScheme.primary
         IconButton(
             onClick = {
-                onSendMessage(inputField, sendAction)
+                onSendMessage(inputField, action)
                 inputField = ""
             },
             modifier =
@@ -212,54 +204,49 @@ private fun MainCharacterInputButton(
     character: Character,
     onChangeAction: (SenderType) -> Unit = {},
 ) {
-    val balloonBackground = MaterialTheme.colorScheme.surfaceContainer
-    var balloonWindow: BalloonWindow? by remember { mutableStateOf(null) }
-    val builder =
-        rememberBalloonBuilder {
-            setArrowSize(10)
-            setArrowPosition(0f)
-            setArrowPositionRules(ArrowPositionRules.ALIGN_ANCHOR)
-            setWidth(BalloonSizeSpec.WRAP)
-            setHeight(BalloonSizeSpec.WRAP)
-            setPadding(12)
-            setMarginHorizontal(4)
-            setCornerRadius(15f)
-            setBackgroundColor(balloonBackground)
-            setBalloonAnimation(BalloonAnimation.OVERSHOOT)
-        }
-    Balloon(
-        builder = builder,
-        onBalloonWindowInitialized = { balloonWindow = it },
-        balloonContent = {
-            Column {
-                SenderType.entries
-                    .filter {
-                        it != SenderType.CHARACTER &&
-                            it != SenderType.NEW_CHAPTER
-                    }.forEach { type ->
-                        type.itemOption(
-                            sendAction,
-                            selectedColor =
-                                saga?.genre?.color
-                                    ?: MaterialTheme.colorScheme.primary,
-                        ) { action ->
-                            onChangeAction(action)
-                            balloonWindow?.dismissWithDelay(1000)
-                        }
-                    }
-            }
+    var action by remember {
+        mutableStateOf(sendAction)
+    }
+    var actionsExpanded by remember {
+        mutableStateOf(false)
+    }
+
+    DropdownMenu(
+        actionsExpanded,
+        shape = RoundedCornerShape(saga?.genre?.cornerSize() ?: 15.dp),
+        onDismissRequest = {
+            actionsExpanded = false
         },
     ) {
-        CharacterAvatar(
-            character,
-            borderSize = 2.dp,
-            modifier =
-                Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .clickable {
-                        balloonWindow?.showAsDropDown()
-                    },
-        )
+        Column {
+            SenderType.entries
+                .filter {
+                    it != SenderType.CHARACTER &&
+                        it != SenderType.NEW_CHAPTER
+                }.forEach { type ->
+                    type.itemOption(
+                        action,
+                        selectedColor =
+                            saga?.genre?.color
+                                ?: MaterialTheme.colorScheme.primary,
+                    ) { selectedAction ->
+                        action = selectedAction
+                        onChangeAction(selectedAction)
+                        actionsExpanded = false
+                    }
+                }
+        }
     }
+
+    CharacterAvatar(
+        character,
+        borderSize = 2.dp,
+        modifier =
+            Modifier
+                .size(32.dp)
+                .clip(CircleShape)
+                .clickable {
+                    actionsExpanded = true
+                },
+    )
 }

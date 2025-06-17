@@ -74,16 +74,25 @@ object GenrePrompts {
                 anime illustration, inspired by Ghost in the Shell 1995 film style,
                 sharp and angular lines aesthetic,
                 crisp and contrasting shading for dramatic depth,
-                predominantly cool and desaturated colors,
                 dark and immersive atmosphere,
                 highly detailed cybernetic and futuristic elements,
                 sleek character design,
-                single, strong light source casting defined shadows,
-                bright specular highlights,
-                atmospheric lighting with subtle colored rim lighting,
                 meticulous attention to technical details,
                 evoking a sense of melancholic futurism, cyberpunk mystery and oppressive atmosphere.
                 """
+        }
+
+    fun portraitStyle(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+            The background is A sky at volumetric clouds in warm, gently blurred
+            """
+            SCI_FI ->
+                """
+            A solid, contrasting background with subtle, futuristic vector lines,
+            either as abstract patterns.
+            """
         }
 
     fun negativePrompt(genre: Genre) =

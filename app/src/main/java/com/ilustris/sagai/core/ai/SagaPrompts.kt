@@ -3,6 +3,8 @@ package com.ilustris.sagai.core.ai
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterExpression
+import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
@@ -62,20 +64,16 @@ object SagaPrompts {
         saga: SagaData,
         mainCharacter: Character,
     ) = """
-        ${CharacterFraming.EPIC_WIDE_SHOT.description} of ${mainCharacter.name}:
-        
-        Appearance: ${mainCharacter.details.appearance}
-        Expression: ${saga.visuals.characterExpression}
-        With the art style:
         ${GenrePrompts.artStyle(saga.genre)}
+        ${CharacterFraming.EPIC_WIDE_SHOT.description}
+        Featuring:
+        Appearance: ${mainCharacter.details.appearance}
+        Expression: ${CharacterExpression.random().description}
+        Pose: ${CharacterPose.random().description}
+        Color palette: ${saga.visuals.colorPalette}
         
-        Color palette: ${saga.visuals.colorPalette},
-        illumination: ${saga.visuals.lightingDetails},
-        environment: ${saga.visuals.environmentDetails}
-   
-        Foreground elements: ${saga.visuals.foregroundElements}.
-        Background elements: ${saga.visuals.backgroundElements}.
-        
+        Environment: ${saga.visuals.environmentDetails}
+        Background: ${saga.visuals.backgroundElements}
         """
 
     fun narratorGeneration(
@@ -122,6 +120,7 @@ object SagaPrompts {
         sagaData: SagaData,
         messages: List<String>,
         chapters: List<Chapter>,
+        characters: List<Character>,
     ) = """
         Write a new chapter to continue the adventure in a role-playing game (RPG) set in the world of ${sagaData.title}.
         The story is ${sagaData.description}.
@@ -140,6 +139,17 @@ object SagaPrompts {
         2.  A recap of the main character's actions and decisions.
         3.  An indication of the current state of the world and the main character's situation.
         Target a description length of 100 words, ensuring it captures the essence of a playable RPG experience.
+        
+        Saga photography:
+        Color palette: ${sagaData.visuals.colorPalette},
+        illumination: ${sagaData.visuals.lightingDetails},
+        environment: ${sagaData.visuals.environmentDetails}
+        
+        On the visualDescription field Write a prompt of a illustration that defines this chapter.
+        YOU MUST USE THE SAGA PHOTOGRAPHY TO IMPROVE YOUR PROMPT
+        You can use the characters in the story to improve your prompt:
+        USE ONLY RELEVANT CHARACTERS FROM THE CURRENT CHAPTER
+        ${characters.map { it.toJsonFormat() }}}
         """.trimIndent()
 
     fun loreGeneration(

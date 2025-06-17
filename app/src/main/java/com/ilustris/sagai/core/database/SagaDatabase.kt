@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -13,8 +14,11 @@ import com.ilustris.sagai.features.saga.datasource.SagaDao
 
 @Database(
     entities = [SagaData::class, Message::class, Chapter::class, Character::class],
-    version = 11,
+    version = 12,
     exportSchema = true,
+    autoMigrations = [
+        AutoMigration(from = 11, to = 12),
+    ],
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao

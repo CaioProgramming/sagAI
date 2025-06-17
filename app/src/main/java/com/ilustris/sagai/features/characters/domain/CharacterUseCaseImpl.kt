@@ -52,7 +52,7 @@ class CharacterUseCaseImpl
                         prompt,
                     )
 
-                val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
+                val file = fileHelper.saveFile(character.name, image!!.data, path = "sagas/${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)
                 RequestResult.Success(newCharacter)

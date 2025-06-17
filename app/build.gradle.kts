@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
+    alias(libs.plugins.androidx.room)
 }
 
 android {
@@ -27,6 +28,10 @@ android {
     val apikeyPropertiesFile = rootProject.file("app/config.properties")
     val apikeyProperties = Properties()
     apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
+
+    room {
+        schemaDirectory("$projectDir/schemas")
+    }
 
     buildTypes {
         release {

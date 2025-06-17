@@ -3,6 +3,7 @@ package com.ilustris.sagai.core.ai
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.home.data.model.SagaData
 
 object CharacterPrompts {
@@ -13,6 +14,7 @@ object CharacterPrompts {
         saga: SagaData,
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
+        ${GenrePrompts.portraitStyle(saga.genre)}
         ${CharacterFraming.PORTRAIT.description}  
         Race: ${character.details.race}
         Gender: ${character.details.gender}
@@ -22,7 +24,7 @@ object CharacterPrompts {
         Height: ${character.details.height}
         Weight: ${character.details.weight}
         Appearance: ${character.details.appearance}
-        Use a expression that matches character personality: ${character.details.personality}
+        Expression: ${CharacterExpression.random().description}
         """
 
     fun charactersOverview(characters: List<Character>): String =

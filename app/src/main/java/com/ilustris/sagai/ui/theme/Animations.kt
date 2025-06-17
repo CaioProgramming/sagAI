@@ -64,7 +64,7 @@ fun TypewriterText(
 
     val annotatedText =
         buildCharactersAnnotatedString(
-            currentText,
+            text,
             characters,
         )
     ClickableText(

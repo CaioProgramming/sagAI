@@ -23,11 +23,11 @@ import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -160,12 +160,6 @@ fun ChatContent(
     onCharacterSelected: (Int) -> Unit = {},
     openSagaDetails: (SagaData) -> Unit = {},
 ) {
-    var input by remember {
-        mutableStateOf("")
-    }
-    var sendAction by remember {
-        mutableStateOf(SenderType.USER)
-    }
     val listState = rememberLazyListState()
 
     LaunchedEffect(messagesList.size) {
@@ -221,7 +215,7 @@ fun ChatContent(
                 state,
                 Modifier.constrainAs(messages) {
                     top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
+                    bottom.linkTo(chatInput.top)
                     start.linkTo(parent.start)
                     end.linkTo(parent.end)
                     width = Dimension.fillToConstraints
@@ -234,9 +228,10 @@ fun ChatContent(
                             saga = saga,
                             messages = messagesList,
                             characters,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.fillMaxSize(),
                             listState = listState,
                             openCharacter = { saga?.id?.let { sagaId -> onCharacterSelected(sagaId) } },
+                            openSaga = { saga?.let { saga -> openSagaDetails(saga) } },
                         )
                     }
 
@@ -295,9 +290,7 @@ fun ChatContent(
                         ChatInputView(
                             mainCharacter,
                             characters,
-                            sendAction,
                             saga,
-                            input,
                             state,
                             onSendMessage,
                         )
@@ -427,6 +420,7 @@ fun ChatList(
     modifier: Modifier,
     listState: LazyListState,
     openCharacter: () -> Unit = {},
+    openSaga: () -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
@@ -454,7 +448,12 @@ fun ChatList(
                                     saga.genre.gradient(),
                                     targetValue = 500f,
                                 ),
-                            ),
+                            ).clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) {
+                                openSaga()
+                            },
                 )
             }
 
@@ -501,10 +500,6 @@ fun ChatList(
                     openCharacters = openCharacter,
                 )
             }
-        }
-
-        item {
-            Spacer(Modifier.fillMaxWidth().height(50.dp))
         }
     }
 }

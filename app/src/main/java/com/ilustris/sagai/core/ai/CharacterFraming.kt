@@ -5,7 +5,15 @@ enum class CharacterFraming(
 ) {
     CLOSE_UP("close-up"),
     PORTRAIT("Portrait of character in a 3/4 angle from neck-up with a smooth texture background"),
-    MEDIUM_SHOT("medium shot"),
+    MEDIUM_SHOT(
+        """
+            medium shot, showing the character from the waist up,
+            focusing on their upper body and immediate actions or expressions,
+            with relevant background context 
+            visible but not overpowering the subject
+            """,
+    ),
+
     FULL_BODY("full body shot"),
     EPIC_WIDE_SHOT(
         """

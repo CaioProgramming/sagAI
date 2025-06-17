@@ -54,6 +54,7 @@ fun SenderType.itemOption(
                 Arrangement.Start,
             modifier =
                 Modifier
+                    .padding(horizontal = 8.dp)
                     .clip(
                         RoundedCornerShape(25.dp),
                     ).clickable {

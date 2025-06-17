@@ -33,6 +33,7 @@ fun buildCharactersAnnotatedString(
                     SpanStyle(
                         color = characterColor,
                         fontWeight = FontWeight.Bold,
+                        background = characterColor.copy(alpha = .2f),
                     ),
                 start = startIndex,
                 end = endIndex,

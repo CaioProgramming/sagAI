@@ -53,6 +53,7 @@ class ChapterUseCaseImpl
                         saga = saga,
                         messages = messages.map { it.formatToString() },
                         chapters = chapters,
+                        characters = characters,
                     ),
                     true,
                 )
@@ -63,14 +64,15 @@ class ChapterUseCaseImpl
                     saga = saga,
                     characters = characters,
                 )
+            val newChapter =
+                saveChapter(
+                    genText.copy(
+                        messageReference = 0,
+                        sagaId = saga.id,
+                    ),
+                )
             val coverFile = fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.id}/chapters/")
-            saveChapter(
-                genText.copy(
-                    coverImage = coverFile!!.path,
-                    messageReference = 0,
-                    sagaId = saga.id,
-                ),
-            ).asSuccess()
+            updateChapter(newChapter.copy(coverImage = coverFile.toString())).asSuccess()
         } catch (e: Exception) {
             e.asError()
         }
@@ -93,9 +95,11 @@ class ChapterUseCaseImpl
             saga: SagaData,
             messages: List<String>,
             chapters: List<Chapter>,
+            characters: List<Character>,
         ) = chapterPrompt(
             sagaData = saga,
             messages = messages,
             chapters = chapters,
+            characters = characters,
         )
     }
