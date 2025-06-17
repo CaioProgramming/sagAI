@@ -57,22 +57,22 @@ class ChapterUseCaseImpl
                     ),
                     true,
                 )
-
             val chapterCover =
                 generateChapterCover(
                     chapter = genText!!,
                     saga = saga,
                     characters = characters,
                 )
-            val newChapter =
-                saveChapter(
-                    genText.copy(
-                        messageReference = 0,
-                        sagaId = saga.id,
-                    ),
-                )
-            val coverFile = fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.id}/chapters/")
-            updateChapter(newChapter.copy(coverImage = coverFile.toString())).asSuccess()
+            val coverFile =
+                fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.id}/chapters/")
+
+            saveChapter(
+                genText.copy(
+                    messageReference = messageId,
+                    sagaId = saga.id,
+                    coverImage = coverFile!!.absolutePath,
+                ),
+            ).asSuccess()
         } catch (e: Exception) {
             e.asError()
         }

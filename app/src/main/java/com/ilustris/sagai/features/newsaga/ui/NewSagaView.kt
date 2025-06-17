@@ -149,6 +149,7 @@ fun NewSagaView(
             val saga = (state as CreateSagaState.Success).saga
             coroutineScope.launch {
                 delay(2.seconds)
+                navHostController.popBackStack()
                 navHostController.navigateToRoute(
                     Routes.CHAT,
                     Routes.CHAT.arguments.associateWith { saga.id.toString() },

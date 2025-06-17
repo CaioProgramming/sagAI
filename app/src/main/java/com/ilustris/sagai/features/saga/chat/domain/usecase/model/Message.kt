@@ -7,6 +7,7 @@ import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
+import java.util.Calendar
 
 @Entity(
     tableName = "messages",
@@ -35,7 +36,7 @@ data class Message(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val text: String,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = Calendar.getInstance().timeInMillis,
     val senderType: SenderType,
     val speakerName: String? = null,
     @ColumnInfo(index = true)

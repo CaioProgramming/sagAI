@@ -16,7 +16,7 @@ class FileHelper(
     ): File? {
         val directory =
             if (path != null) {
-                context.filesDir.resolve(path)
+                context.filesDir.resolve("sagas/$path")
             } else {
                 context.filesDir
             }

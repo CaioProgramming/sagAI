@@ -458,6 +458,7 @@ fun ChapterContentView(
             text = content.title,
             modifier =
                 Modifier
+                    .fillMaxWidth()
                     .background(fadeGradientTop())
                     .padding(16.dp),
             style =

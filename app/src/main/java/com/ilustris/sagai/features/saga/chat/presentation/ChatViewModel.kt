@@ -126,7 +126,6 @@ class ChatViewModel
             mappedMessages: List<MessageContent>,
         ) {
             val chapters = saga.chapters
-            val messages = saga.messages
             val chapterMessagesIds =
                 saga.messages
                     .filter { it.senderType == SenderType.NEW_CHAPTER }

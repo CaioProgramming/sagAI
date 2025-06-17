@@ -40,7 +40,7 @@ fun Chapter.coverPrompt(
     characters: List<Character>,
 ): String =
     """
-    ${GenrePrompts.artStyle(saga.genre)}}    
+    ${GenrePrompts.artStyle(saga.genre)} 
     ${CharacterFraming.MEDIUM_SHOT.description}   
     Pose: ${CharacterPose.random().description}
     Expression ${CharacterExpression.random().description}

@@ -77,7 +77,7 @@ class NewSagaUseCaseImpl
                 val request = imageGenClient.generateImage(prompt)
                 val image = request!!.data
 
-                val file = fileHelper.saveFile(sagaForm.title, image, path = "sagas/${sagaForm.id}")
+                val file = fileHelper.saveFile(sagaForm.title, image, path = "${sagaForm.id}")
 
                 sagaRepository
                     .updateChat(sagaForm.copy(icon = file!!.absolutePath))
