@@ -14,10 +14,8 @@ import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
-import kotlinx.coroutines.delay
 import java.util.Calendar
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(PublicPreviewAPI::class)
 class NewSagaUseCaseImpl
@@ -79,9 +77,7 @@ class NewSagaUseCaseImpl
                 val request = imageGenClient.generateImage(prompt)
                 val image = request!!.data
 
-                val file = fileHelper.saveToCache(sagaForm.title, image)
-
-                delay(1.seconds)
+                val file = fileHelper.saveFile(sagaForm.title, image, path = "sagas/${sagaForm.id}")
 
                 sagaRepository
                     .updateChat(sagaForm.copy(icon = file!!.absolutePath))

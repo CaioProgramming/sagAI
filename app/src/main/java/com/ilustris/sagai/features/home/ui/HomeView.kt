@@ -139,8 +139,7 @@ private fun ChatList(
                                 .clip(RoundedCornerShape(15.dp))
                                 .clickable {
                                     onCreateNewChat()
-                                }
-                                .fillMaxWidth(),
+                                }.fillMaxWidth(),
                     ) {
                         val brush =
                             gradientAnimation(
@@ -205,14 +204,14 @@ fun ChatCard(
                 .clip(RoundedCornerShape(15.dp))
                 .clickable {
                     onClick()
-                }
-                .padding(12.dp),
+                }.padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
-        val imageLoaded = remember {
-            mutableStateOf(false)
-        }
+        val imageLoaded =
+            remember {
+                mutableStateOf(false)
+            }
         Box(
             modifier =
                 Modifier
@@ -220,7 +219,7 @@ fun ChatCard(
                     .border(2.dp, Brush.verticalGradient(sagaData.genre.gradient()), CircleShape)
                     .padding(4.dp)
                     .clip(CircleShape)
-                    .background(sagaData.genre.color, CircleShape)
+                    .background(sagaData.genre.color, CircleShape),
         ) {
             AsyncImage(
                 sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
@@ -228,24 +227,24 @@ fun ChatCard(
                 modifier = Modifier.fillMaxSize(),
                 onSuccess = {
                     imageLoaded.value = true
-                }
+                },
             )
 
             this@Row.AnimatedVisibility(
                 imageLoaded.value.not(),
-                modifier = Modifier.align(Alignment.Center)) {
-                    Text(
-                        sagaData.title.first().uppercase(),
-                        style = MaterialTheme.typography.bodyLarge.copy(
+                modifier = Modifier.align(Alignment.Center),
+            ) {
+                Text(
+                    sagaData.title.first().uppercase(),
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
                             fontFamily = sagaData.genre.headerFont(),
                             color = sagaData.genre.iconColor,
                             textAlign = TextAlign.Center,
                         ),
-                    )
-                }
-
+                )
+            }
         }
-
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -266,8 +265,9 @@ fun ChatCard(
             Text(
                 text = lastMessageText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                 maxLines = 2,
+                modifier = Modifier.padding(4.dp),
             )
         }
 

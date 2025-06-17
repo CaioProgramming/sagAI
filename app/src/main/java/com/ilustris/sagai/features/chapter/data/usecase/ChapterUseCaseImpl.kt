@@ -63,7 +63,7 @@ class ChapterUseCaseImpl
                     saga = saga,
                     characters = characters,
                 )
-            val coverFile = fileHelper.saveToCache(genText.title, chapterCover!!)
+            val coverFile = fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.id}/chapters/")
             saveChapter(
                 genText.copy(
                     coverImage = coverFile!!.path,
