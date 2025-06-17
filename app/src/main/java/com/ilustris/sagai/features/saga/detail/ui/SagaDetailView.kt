@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -58,6 +56,7 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
+import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
@@ -183,7 +182,6 @@ fun SagaDetailContentView(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .height(300.dp)
                                 .clipToBounds(),
                     ) {
                         AsyncImage(
@@ -192,48 +190,51 @@ fun SagaDetailContentView(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .fillMaxHeight()
+                                    .height(300.dp)
                                     .background(
                                         it.saga.genre.color
                                             .gradientFade(),
-                                    ).zoomAnimation(),
+                                    ).clipToBounds()
+                                    .zoomAnimation(),
                             contentScale = ContentScale.Crop,
                         )
 
                         Box(
                             Modifier
                                 .background(fadedGradientTopAndBottom())
-                                .fillMaxSize(),
+                                .fillMaxWidth()
+                                .height(300.dp),
                         )
 
                         it.mainCharacter?.let { mainChar ->
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.align(Alignment.Center),
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(top = 150.dp),
                             ) {
                                 CharacterAvatar(
                                     mainChar,
-                                    modifier = Modifier.padding(8.dp).size(200.dp),
+                                    borderSize = 3.dp,
+                                    modifier = Modifier.padding(8.dp).size(170.dp),
+                                )
+                                Text(
+                                    it.mainCharacter?.name.orEmpty(),
+                                    style =
+                                        MaterialTheme.typography.displaySmall.copy(
+                                            fontFamily = it.saga.genre.headerFont(),
+                                            fontWeight = FontWeight.SemiBold,
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                    modifier =
+                                        Modifier.padding(8.dp).gradientFill(
+                                            gradientAnimation(
+                                                it.saga.genre.gradient(),
+                                                targetValue = 1500f,
+                                            ),
+                                        ),
                                 )
                             }
                         }
                     }
-                    Text(
-                        it.mainCharacter?.name.orEmpty(),
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontFamily = it.saga.genre.headerFont(),
-                                fontWeight = FontWeight.SemiBold,
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier.padding(8.dp).gradientFill(
-                                gradientAnimation(
-                                    it.saga.genre.gradient(),
-                                    targetValue = 1500f,
-                                ),
-                            ),
-                    )
                 }
             }
 
@@ -279,14 +280,6 @@ fun SagaDetailContentView(
                 CharacterSection(
                     "Descrição",
                     it.saga.description,
-                    it.saga.genre,
-                )
-            }
-
-            item {
-                CharacterSection(
-                    "História",
-                    it.saga.lore,
                     it.saga.genre,
                 )
             }
@@ -364,10 +357,19 @@ fun SagaDetailContentView(
                 ChapterContentView(
                     it.saga.genre,
                     chapter,
+                    characters = it.characters,
                     MaterialTheme.colorScheme.onBackground,
                     FontStyle.Normal,
                     remember { mutableStateOf(true) },
                     false,
+                )
+            }
+
+            item {
+                CharacterSection(
+                    "História",
+                    buildCharactersAnnotatedString(it.saga.lore, it.characters),
+                    it.saga.genre,
                 )
             }
 

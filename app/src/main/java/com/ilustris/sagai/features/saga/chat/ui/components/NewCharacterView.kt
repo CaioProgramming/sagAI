@@ -55,6 +55,7 @@ fun NewCharacterView(
             TypewriterText(
                 text = messageContent.message.text,
                 modifier = Modifier.padding(16.dp),
+                characters = emptyList(),
                 style =
                     MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Normal,

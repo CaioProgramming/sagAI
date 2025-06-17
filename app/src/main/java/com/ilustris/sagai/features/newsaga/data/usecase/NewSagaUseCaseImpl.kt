@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.delay
+import java.util.Calendar
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -37,7 +38,7 @@ class NewSagaUseCaseImpl
                     sagaRepository.saveChat(
                         sagaData.copy(
                             id = 0,
-                            createdAt = System.currentTimeMillis(),
+                            createdAt = Calendar.getInstance().timeInMillis,
                             mainCharacterId = null,
                         ),
                     )

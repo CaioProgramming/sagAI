@@ -3,10 +3,13 @@ package com.ilustris.sagai.features.saga.chat.ui.components
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -37,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
@@ -62,8 +67,10 @@ import kotlin.time.Duration.Companion.seconds
 fun ChatBubble(
     messageContent: MessageContent,
     genre: Genre,
+    characters: List<Character>,
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
+    openCharacters: () -> Unit = {},
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -145,8 +152,7 @@ fun ChatBubble(
 
     val isAnimated =
         remember {
-            canAnimate.not() &&
-                alreadyAnimatedMessages.none { it == message.id }
+            isUser.not() && alreadyAnimatedMessages.none { it == message.id }
         }
 
     val isBubbleVisible =
@@ -204,7 +210,12 @@ fun ChatBubble(
                 TypewriterText(
                     text = message.text,
                     isAnimated = isAnimated,
+                    characters = characters,
                     duration = duration,
+                    easing = if (isUser) EaseIn else LinearOutSlowInEasing,
+                    onTextClick = {
+                        openCharacters()
+                    },
                     modifier =
                         Modifier
                             .padding(padding)
@@ -237,12 +248,9 @@ fun ChatBubble(
                 Box(
                     Modifier
                         .padding(8.dp)
+                        .clip(CircleShape)
                         .align(iconAlignment)
-                        .size(avatarSize)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer.gradientFade(),
-                            CircleShape,
-                        ),
+                        .size(avatarSize),
                 ) {
                     messageContent.character?.let {
                         CharacterAvatar(
@@ -250,7 +258,10 @@ fun ChatBubble(
                             borderSize = 1.dp,
                             modifier =
                                 Modifier
-                                    .fillMaxSize(),
+                                    .fillMaxSize()
+                                    .clickable {
+                                        openCharacters()
+                                    },
                         )
                     }
                 }
@@ -284,6 +295,7 @@ fun ChatBubble(
                         text = message.text,
                         isAnimated = isAnimated,
                         duration = duration,
+                        characters = characters,
                         modifier =
                             Modifier
                                 .padding(16.dp),
@@ -294,10 +306,18 @@ fun ChatBubble(
                                 fontFamily = genre.bodyFont(),
                                 color = textColor.copy(alpha = .7f),
                             ),
+                        onTextClick = openCharacters,
                     )
 
                     messageContent.character?.let {
-                        CharacterAvatar(it, borderSize = 1.dp, modifier = Modifier.size(24.dp))
+                        CharacterAvatar(
+                            it,
+                            borderSize = 1.dp,
+                            modifier =
+                                Modifier.clip(CircleShape).size(32.dp).clickable {
+                                    openCharacters()
+                                },
+                        )
                     }
                 }
             }
@@ -308,6 +328,7 @@ fun ChatBubble(
                 text = message.text,
                 isAnimated = isAnimated,
                 duration = duration,
+                characters = characters,
                 modifier =
                     Modifier
                         .padding(16.dp)
@@ -319,6 +340,7 @@ fun ChatBubble(
                         fontFamily = genre.bodyFont(),
                         color = textColor,
                     ),
+                onTextClick = openCharacters,
             )
         }
 
@@ -328,10 +350,12 @@ fun ChatBubble(
                     ChapterContentView(
                         genre,
                         it,
+                        emptyList(),
                         textColor,
                         fontStyle,
                         isBubbleVisible,
                         isAnimated,
+                        openCharacters = openCharacters,
                     )
                 }
             }
@@ -347,10 +371,12 @@ fun ChatBubble(
 fun ChapterContentView(
     genre: Genre,
     content: Chapter,
+    characters: List<Character>,
     textColor: Color,
     fontStyle: FontStyle,
     isBubbleVisible: MutableState<Boolean>,
     isAnimated: Boolean,
+    openCharacters: () -> Unit = {},
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -450,6 +476,7 @@ fun ChapterContentView(
             modifier = Modifier.padding(16.dp),
             duration = 8.seconds,
             isAnimated = isAnimated,
+            characters = characters,
             style =
                 MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Normal,
@@ -461,6 +488,7 @@ fun ChapterContentView(
             onTextUpdate = {
                 isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
             },
+            onTextClick = openCharacters,
         )
     }
 }
@@ -500,6 +528,7 @@ fun ChatBubblePreview() {
                             ),
                         ),
                     genre = genre,
+                    characters = emptyList(),
                 )
             }
 

@@ -22,13 +22,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,24 +34,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,10 +51,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -74,7 +61,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
@@ -93,7 +79,7 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
-import com.ilustris.sagai.features.saga.chat.ui.components.itemOption
+import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
@@ -106,21 +92,10 @@ import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.skydoves.balloon.ArrowPositionRules
-import com.skydoves.balloon.BalloonAnimation
-import com.skydoves.balloon.BalloonSizeSpec
-import com.skydoves.balloon.compose.Balloon
-import com.skydoves.balloon.compose.BalloonWindow
-import com.skydoves.balloon.compose.rememberBalloonBuilder
-import com.skydoves.balloon.compose.setBackgroundColor
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.materials.HazeMaterials
-import dev.chrisbanes.haze.rememberHazeState
 import java.util.Calendar
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -153,7 +128,6 @@ fun ChatView(
         isGenerating,
         isLoreUpdated,
         padding,
-        hazeState,
         viewModel::sendInput,
         navHostController::popBackStack,
         onCharacterSelected = {
@@ -177,11 +151,10 @@ fun ChatContent(
     saga: SagaData? = null,
     messagesList: List<MessageContent> = emptyList(),
     mainCharacter: Character?,
-    characters: List<Character> = emptyList(),
+    characters: List<Character>,
     isGenerating: Boolean = false,
     isLoreUpdated: Boolean = false,
     padding: PaddingValues = PaddingValues(),
-    hazeState: HazeState = rememberHazeState(),
     onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
     onCharacterSelected: (Int) -> Unit = {},
@@ -196,7 +169,7 @@ fun ChatContent(
     val listState = rememberLazyListState()
 
     LaunchedEffect(messagesList.size) {
-        listState.animateScrollToItem(messagesList.size)
+        listState.animateScrollToItem(messagesList.size + 3)
     }
 
     AnimatedVisibility(
@@ -260,8 +233,10 @@ fun ChatContent(
                         ChatList(
                             saga = saga,
                             messages = messagesList,
+                            characters,
                             modifier = Modifier.fillMaxWidth(),
                             listState = listState,
+                            openCharacter = { saga?.id?.let { sagaId -> onCharacterSelected(sagaId) } },
                         )
                     }
 
@@ -317,152 +292,15 @@ fun ChatContent(
                             )
                         }
                     } else {
-                        val balloonBackground = MaterialTheme.colorScheme.surfaceContainer
-                        var balloonWindow: BalloonWindow? by remember { mutableStateOf(null) }
-                        val builder =
-                            rememberBalloonBuilder {
-                                setArrowSize(10)
-                                setArrowPosition(0f)
-                                setArrowPositionRules(ArrowPositionRules.ALIGN_ANCHOR)
-                                setWidth(BalloonSizeSpec.WRAP)
-                                setHeight(BalloonSizeSpec.WRAP)
-                                setPadding(12)
-                                setMarginHorizontal(4)
-                                setCornerRadius(15f)
-                                setBackgroundColor(balloonBackground)
-                                setBalloonAnimation(BalloonAnimation.OVERSHOOT)
-                            }
-
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth()
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.onSurface
-                                            .copy(alpha = .4f)
-                                            .gradientFade(),
-                                        RoundedCornerShape(40.dp),
-                                    ).background(
-                                        MaterialTheme.colorScheme.surfaceContainer,
-                                        RoundedCornerShape(40.dp),
-                                    ).padding(horizontal = 8.dp, vertical = 2.dp)
-                                    .hazeEffect(
-                                        state = hazeState,
-                                        style = HazeMaterials.regular(),
-                                    ) {
-                                        blurEnabled = true
-                                        blurRadius = 20.dp
-                                    },
-                        ) {
-                            mainCharacter?.let { character ->
-                                Balloon(
-                                    builder = builder,
-                                    onBalloonWindowInitialized = { balloonWindow = it },
-                                    balloonContent = {
-                                        Column {
-                                            SenderType.entries
-                                                .filter {
-                                                    it != SenderType.CHARACTER &&
-                                                        it != SenderType.NEW_CHAPTER
-                                                }.forEach { type ->
-                                                    type.itemOption(
-                                                        sendAction,
-                                                        selectedColor =
-                                                            saga?.genre?.color
-                                                                ?: MaterialTheme.colorScheme.primary,
-                                                    ) { action ->
-                                                        sendAction = action
-                                                        balloonWindow?.dismissWithDelay(1000)
-                                                    }
-                                                }
-                                        }
-                                    },
-                                ) {
-                                    CharacterAvatar(
-                                        character,
-                                        borderSize = 2.dp,
-                                        modifier =
-                                            Modifier
-                                                .size(32.dp)
-                                                .clip(CircleShape)
-                                                .clickable {
-                                                    balloonWindow?.showAsDropDown()
-                                                },
-                                    )
-                                }
-                            }
-
-                            TextField(
-                                value = input,
-                                onValueChange = {
-                                    if (it.length <= 200) {
-                                        input = it
-                                    }
-                                },
-                                placeholder = {
-                                    Text(
-                                        "Continua sua saga...",
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 12.sp,
-                                            ),
-                                    )
-                                },
-                                shape = RoundedCornerShape(40.dp),
-                                colors =
-                                    TextFieldDefaults.colors().copy(
-                                        focusedIndicatorColor = Color.Transparent,
-                                        unfocusedIndicatorColor = Color.Transparent,
-                                        cursorColor =
-                                            saga?.genre?.color
-                                                ?: MaterialTheme.colorScheme.primary,
-                                        focusedContainerColor = Color.Transparent,
-                                        unfocusedContainerColor = Color.Transparent,
-                                    ),
-                                textStyle =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 12.sp,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .wrapContentHeight()
-                                        .weight(1f),
-                            )
-
-                            val buttonSize by animateDpAsState(
-                                if (input.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
-                            )
-                            val buttonColor =
-                                saga?.genre?.color ?: MaterialTheme.colorScheme.primary
-                            IconButton(
-                                onClick = {
-                                    onSendMessage(input, sendAction)
-                                    input = ""
-                                },
-                                modifier =
-                                    Modifier
-                                        .border(
-                                            1.dp,
-                                            MaterialTheme.colorScheme.onBackground.gradientFade(),
-                                            CircleShape,
-                                        ).background(
-                                            buttonColor,
-                                            CircleShape,
-                                        ).size(buttonSize),
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                    contentDescription = "Send Message",
-                                    modifier =
-                                        Modifier.padding(4.dp).fillMaxSize(),
-                                    tint = Color.White,
-                                )
-                            }
-                        }
+                        ChatInputView(
+                            mainCharacter,
+                            characters,
+                            sendAction,
+                            saga,
+                            input,
+                            state,
+                            onSendMessage,
+                        )
                     }
                 }
 
@@ -584,9 +422,11 @@ fun SagaHeader(saga: SagaData) {
 @Composable
 fun ChatList(
     saga: SagaData?,
-    messages: List<MessageContent>?,
+    messages: List<MessageContent>,
+    characters: List<Character>,
     modifier: Modifier,
     listState: LazyListState,
+    openCharacter: () -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
@@ -651,15 +491,15 @@ fun ChatList(
                 )
             }
 
-            messages?.let {
-                items(messages, key = { it.message.id }) { message ->
-                    ChatBubble(
-                        message,
-                        saga.genre,
-                        animatedMessages,
-                        canAnimate = message != messages.first(),
-                    )
-                }
+            items(messages, key = { it.message.id }) { message ->
+                ChatBubble(
+                    message,
+                    saga.genre,
+                    characters = characters,
+                    animatedMessages,
+                    canAnimate = message != messages.first(),
+                    openCharacters = openCharacter,
+                )
             }
         }
 
@@ -752,13 +592,14 @@ fun ChatViewPreview() {
         ChatContent(
             successState,
             saga = saga,
+            characters = emptyList(),
             messagesList =
                 messages.map {
                     MessageContent(
                         message = it,
                     )
                 },
-            null,
+            mainCharacter = null,
         )
     }
 }

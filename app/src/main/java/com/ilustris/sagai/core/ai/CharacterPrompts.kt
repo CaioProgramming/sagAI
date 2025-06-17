@@ -14,7 +14,6 @@ object CharacterPrompts {
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
         ${CharacterFraming.PORTRAIT.description}  
-        Character: ${character.name}
         Race: ${character.details.race}
         Gender: ${character.details.gender}
         Style: ${character.details.style}
