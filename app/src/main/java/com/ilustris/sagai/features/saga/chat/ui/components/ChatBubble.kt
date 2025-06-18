@@ -96,7 +96,7 @@ fun ChatBubble(
     val textColor =
         when (sender) {
             SenderType.NARRATOR, SenderType.NEW_CHAPTER,
-            SenderType.THOUGHT, SenderType.ACTION,
+            SenderType.THOUGHT, SenderType.ACTION, SenderType.NEW_CHARACTER,
             -> MaterialTheme.colorScheme.onBackground
 
             else -> genre.bubbleTextColors(sender)

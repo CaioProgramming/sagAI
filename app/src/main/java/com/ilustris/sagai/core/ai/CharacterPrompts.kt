@@ -39,12 +39,13 @@ object CharacterPrompts {
         saga: SagaData,
         description: String,
     ) = """
-        Write a new character for our ${saga.genre.name} saga.
-        use this messages as a reference to get character details:
-        $description
+        Write a character description for a new character in the story.
+        ${SagaPrompts.details(saga)}
+
         use this message as a reference to get character details:
-        // **CRITICAL INSTRUCTION:** You MUST use the character's name provided in the conversation context. DO NOT invent a new name neither use the name on saga description.
-        // **You MUST also** use the core appearance details and any personality hints from this message.
-        // Invent reasonable and consistent details for any missing fields (like backstory, specific occupation, height, weight, race, hexColor, image, IDs).
+        // You MUST use the character's name, core appearance details, and personality hints from this message.
+        // Invent reasonable and consistent details for any missing fields
+        (like backstory, specific occupation, height, weight, race, hexColor, image).
+        $description
         """
 }

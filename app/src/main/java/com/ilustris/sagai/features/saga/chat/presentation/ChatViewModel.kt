@@ -121,33 +121,36 @@ class ChatViewModel
             }
         }
 
-        private fun observeChapterBreak(
-            saga: SagaContent,
-            mappedMessages: List<MessageContent>,
-        ) {
-            val chapters = saga.chapters
-            val chapterMessagesIds =
-                saga.messages
-                    .filter { it.senderType == SenderType.NEW_CHAPTER }
-                    .mapNotNull { it.chapterId }
+        private fun observeChapterBreak() {
+            viewModelScope.launch(Dispatchers.IO) {
+                val sagaContent = content.value
+                if (sagaContent == null) return@launch
 
-            if (chapterMessagesIds.isEmpty()) {
-                createNewChapter(mappedMessages)
-            } else {
-                val lastChapterMessage =
-                    mappedMessages.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
+                val mappedMessages = messages.value
+                val chapters = sagaContent.chapters
+                val chapterMessagesIds =
+                    sagaContent.messages
+                        .filter { it.senderType == SenderType.NEW_CHAPTER }
+                        .mapNotNull { it.chapterId }
 
-                if (lastChapterMessage != null) {
-                    val chapterMessages =
-                        mappedMessages.afterLast { it.message.id == lastChapterMessage?.message?.id }
-                    if (chapterMessages.size >= 100) {
-                        createNewChapter(
-                            chapterMessages.takeLast(100),
-                            chapters,
-                        )
-                    }
+                if (chapterMessagesIds.isEmpty()) {
+                    createNewChapter(mappedMessages)
                 } else {
-                    createNewChapter(mappedMessages.takeLast(100), chapters)
+                    val lastChapterMessage =
+                        mappedMessages.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
+
+                    if (lastChapterMessage != null) {
+                        val chapterMessages =
+                            mappedMessages.afterLast { it.message.id == lastChapterMessage.message.id }
+                        if (chapterMessages.size >= 100) {
+                            createNewChapter(
+                                chapterMessages.takeLast(100),
+                                chapters,
+                            )
+                        }
+                    } else {
+                        createNewChapter(mappedMessages.takeLast(100), chapters)
+                    }
                 }
             }
         }
@@ -262,13 +265,9 @@ class ChatViewModel
                             characterId = characterReference?.id,
                         ),
                     ).also {
-                        if (message.senderType == SenderType.CHARACTER && characterReference == null) {
-                            checkForCharacter(it)
-                        }
-
                         if (messages.value.isNotEmpty()) {
                             checkLoreUpdate()
-                            content.value?.let { it1 -> observeChapterBreak(it1, messages.value) }
+                            observeChapterBreak()
                         }
 
                         when (message.characterId == mainCharacter.value?.id) {
@@ -282,7 +281,7 @@ class ChatViewModel
                         }
 
                         if (message.senderType == SenderType.NEW_CHARACTER) {
-                            generateCharacter(message)
+                            generateCharacter(it)
                         }
                     }
                 isGenerating.value = false
@@ -323,15 +322,6 @@ class ChatViewModel
                         ).onSuccess {
                             notifyLoreUpdate()
                         }
-                }
-            }
-        }
-
-        private fun checkForCharacter(message: Message) {
-            if (message.senderType == SenderType.CHARACTER && message.speakerName?.isNotEmpty() == true) {
-                val character = characters.value.find { it.name == message.speakerName }
-                if (character == null) {
-                    generateCharacter(message)
                 }
             }
         }

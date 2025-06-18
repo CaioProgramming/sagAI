@@ -7,7 +7,6 @@
 package com.ilustris.sagai.features.saga.chat.ui
 
 import android.content.res.Configuration
-import android.graphics.ColorFilter
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -82,18 +81,18 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
-import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.lighter
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import java.util.Calendar
@@ -227,9 +226,10 @@ fun ChatContent(
                         ChatList(
                             saga = saga,
                             messages = messagesList,
-                            characters,
-                            modifier = Modifier.fillMaxSize(),
+                            characters = characters,
+                            isGenerating = isGenerating,
                             listState = listState,
+                            modifier = Modifier.fillMaxSize(),
                             openCharacter = { saga?.id?.let { sagaId -> onCharacterSelected(sagaId) } },
                             openSaga = { saga?.let { saga -> openSagaDetails(saga) } },
                         )
@@ -257,12 +257,14 @@ fun ChatContent(
                         }
                 }
             }
+
             if (state !is ChatState.Error) {
-                AnimatedContent(
+                ChatInputView(
+                    mainCharacter,
+                    characters,
+                    saga,
+                    state,
                     isGenerating,
-                    transitionSpec = {
-                        fadeIn() with fadeOut()
-                    },
                     modifier =
                         Modifier.constrainAs(chatInput) {
                             bottom.linkTo(parent.bottom)
@@ -270,32 +272,8 @@ fun ChatContent(
                             end.linkTo(parent.end)
                             width = Dimension.fillToConstraints
                         },
-                ) {
-                    if (it) {
-                        Box(modifier = Modifier.fillMaxWidth()) {
-                            SparkIcon(
-                                brush =
-                                    gradientAnimation(
-                                        genresGradient(),
-                                        gradientType = GradientType.VERTICAL,
-                                    ),
-                                tint = MaterialTheme.colorScheme.background,
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.Center)
-                                        .size(50.dp),
-                            )
-                        }
-                    } else {
-                        ChatInputView(
-                            mainCharacter,
-                            characters,
-                            saga,
-                            state,
-                            onSendMessage,
-                        )
-                    }
-                }
+                    onSendMessage,
+                )
 
                 saga?.let {
                     val alpha by animateFloatAsState(
@@ -419,6 +397,7 @@ fun ChatList(
     characters: List<Character>,
     modifier: Modifier,
     listState: LazyListState,
+    isGenerating: Boolean = false,
     openCharacter: () -> Unit = {},
     openSaga: () -> Unit = {},
 ) {
@@ -499,6 +478,21 @@ fun ChatList(
                     canAnimate = message != messages.first(),
                     openCharacters = openCharacter,
                 )
+            }
+
+            item {
+                AnimatedVisibility(isGenerating, enter = fadeIn(), exit = fadeOut()) {
+                    Box(Modifier.fillMaxWidth()) {
+                        SparkIcon(
+                            brush = gradientAnimation(it.genre.color.darkerPalette()),
+                            tint = it.genre.color.lighter(.3f),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .size(50.dp),
+                        )
+                    }
+                }
             }
         }
     }

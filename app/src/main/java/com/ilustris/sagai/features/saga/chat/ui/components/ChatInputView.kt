@@ -1,6 +1,9 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -44,7 +48,10 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.holographicGradient
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun ChatInputView(
@@ -52,27 +59,33 @@ fun ChatInputView(
     characters: List<Character>,
     saga: SagaData?,
     state: ChatState,
+    isGenerating: Boolean,
+    modifier: Modifier = Modifier,
     onSendMessage: (String, SenderType) -> Unit,
 ) {
     var action by remember { mutableStateOf(SenderType.USER) }
-    var inputField by remember { mutableStateOf("") }
-    var textSelection by remember { mutableStateOf(TextRange(inputField.length)) }
-
+    var inputField by remember { mutableStateOf(TextFieldValue("")) }
+    val inputBrush =
+        if (isGenerating) {
+            gradientAnimation(holographicGradient, targetValue = 500f, duration = 2.seconds)
+        } else {
+            MaterialTheme.colorScheme.onSurface
+                .copy(alpha = .4f)
+                .gradientFade()
+        }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier =
-            Modifier
+            modifier
                 .padding(horizontal = 16.dp, vertical = 4.dp)
                 .fillMaxWidth()
                 .border(
                     1.dp,
-                    MaterialTheme.colorScheme.onSurface
-                        .copy(alpha = .4f)
-                        .gradientFade(),
+                    inputBrush,
                     RoundedCornerShape(40.dp),
                 ).background(
-                    MaterialTheme.colorScheme.surfaceContainer,
+                    MaterialTheme.colorScheme.background,
                     RoundedCornerShape(40.dp),
                 ).padding(horizontal = 8.dp, vertical = 2.dp),
     ) {
@@ -93,18 +106,23 @@ fun ChatInputView(
                 characters.forEach {
                     CharacterHorizontalView(
                         Modifier.clip(RoundedCornerShape(25.dp)).clickable {
-                            val startIndex = inputField.indexOfLast { char -> char == '@' }
-                            val endIndex = inputField.length
+                            val startIndex = inputField.text.indexOfLast { char -> char == '@' }
+                            val endIndex = inputField.text.length
 
                             val newText = it.name
-                            inputField =
-                                inputField.replaceRange(
+                            val textReplacement =
+                                inputField.text.replaceRange(
                                     startIndex,
                                     endIndex,
                                     newText,
                                 )
 
-                            textSelection = TextRange(startIndex + newText.length)
+                            inputField =
+                                TextFieldValue(
+                                    textReplacement,
+                                    TextRange(textReplacement.length),
+                                )
+
                             charactersExpanded = false
                         },
                         character = it,
@@ -117,20 +135,21 @@ fun ChatInputView(
 
         val maxLength = 300
         TextField(
+            enabled = isGenerating.not(),
             visualTransformation = {
                 return@TextField transformTextWithCharacters(
                     characters,
-                    inputField,
+                    inputField.text,
                 )
             },
             value = inputField,
             onValueChange = {
-                if (it.length <= maxLength) {
+                if (it.text.length <= maxLength) {
                     inputField = it
 
-                    charactersExpanded = it.isNotEmpty() &&
-                        it.last().toString() == "@" &&
-                        it.length <= (maxLength - 20)
+                    charactersExpanded = it.text.isNotEmpty() &&
+                        it.text.last().toString() == "@" &&
+                        it.text.length <= (maxLength - 20)
                 }
             },
             placeholder = {
@@ -150,6 +169,8 @@ fun ChatInputView(
                     cursorColor =
                         saga?.genre?.color
                             ?: MaterialTheme.colorScheme.primary,
+                    disabledIndicatorColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
                 ),
@@ -164,35 +185,37 @@ fun ChatInputView(
         )
 
         val buttonSize by animateDpAsState(
-            if (inputField.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
+            if (inputField.text.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
         )
         val buttonColor =
             saga?.genre?.color ?: MaterialTheme.colorScheme.primary
-        IconButton(
-            onClick = {
-                onSendMessage(inputField, action)
-                inputField = ""
-            },
-            modifier =
-                Modifier
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.onBackground.gradientFade(),
-                        CircleShape,
-                    ).background(
-                        buttonColor,
-                        CircleShape,
-                    ).size(buttonSize),
-        ) {
-            Icon(
-                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = "Send Message",
+        AnimatedVisibility(inputField.text.isNotEmpty(), enter = fadeIn(), exit = scaleOut()) {
+            IconButton(
+                onClick = {
+                    onSendMessage(inputField.text, action)
+                    inputField = TextFieldValue("")
+                },
                 modifier =
                     Modifier
-                        .padding(4.dp)
-                        .fillMaxSize(),
-                tint = Color.White,
-            )
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.onBackground.gradientFade(),
+                            CircleShape,
+                        ).background(
+                            buttonColor,
+                            CircleShape,
+                        ).size(buttonSize),
+            ) {
+                Icon(
+                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                    contentDescription = "Send Message",
+                    modifier =
+                        Modifier
+                            .padding(4.dp)
+                            .fillMaxSize(),
+                    tint = Color.White,
+                )
+            }
         }
     }
 }
