@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import ai.atick.material.MaterialColor
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -11,9 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +48,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.ui.theme.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.botBubbleGradient
@@ -103,27 +106,14 @@ fun ChatBubble(
         }
 
     val cornerSize = genre.cornerSize()
+    val tailAlignment = if (isUser) BubbleTailAlignment.BottomRight else BubbleTailAlignment.BottomLeft
     val bubbleShape =
-        when (sender) {
-            SenderType.USER ->
-                RoundedCornerShape(
-                    topStart = cornerSize,
-                    topEnd = cornerSize,
-                    bottomStart = cornerSize,
-                    bottomEnd = 0.dp,
-                )
-
-            SenderType.CHARACTER ->
-                RoundedCornerShape(
-                    topStart = cornerSize,
-                    topEnd = cornerSize,
-                    bottomStart = 0.dp,
-                    bottomEnd = cornerSize,
-                )
-
-            else -> RoundedCornerShape(0.dp)
-        }
-
+        CurvedChatBubbleShape(
+            cornerRadius = cornerSize,
+            tailWidth = 5.dp,
+            tailHeight = 8.dp,
+            tailAlignment = tailAlignment,
+        )
     val borderBrush =
         when (sender) {
             SenderType.NARRATOR, SenderType.NEW_CHAPTER ->
@@ -179,92 +169,141 @@ fun ChatBubble(
 
     when (sender) {
         SenderType.USER, SenderType.CHARACTER, SenderType.THOUGHT -> {
-            Column(
-                modifier =
-                    Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                        .animateContentSize(),
-            ) {
-                val iconAlignment = if (isUser) Alignment.End else Alignment.Start
-                val padding =
-                    PaddingValues(
-                        start = if (isUser) 0.dp else 24.dp,
-                        end = if (isUser) 24.dp else 0.dp,
-                        top = 4.dp,
-                        bottom = 4.dp,
-                    )
-
-                @Composable
-                fun Modifier.senderBorder() =
-                    if (sender == SenderType.THOUGHT) {
-                        this.dashedBorder(
-                            1.dp,
-                            textColor.copy(alpha = .3f),
-                            cornerSize,
-                        )
-                    } else {
-                        this.border(borderSize, borderBrush, bubbleShape)
-                    }
-                TypewriterText(
-                    text = message.text,
-                    isAnimated = isAnimated,
-                    characters = characters,
-                    duration = duration,
-                    easing = if (isUser) EaseIn else LinearOutSlowInEasing,
-                    onTextClick = {
-                        openCharacters()
-                    },
+            Box(Modifier.fillMaxWidth()) {
+                Row(
                     modifier =
                         Modifier
-                            .padding(padding)
-                            .align(iconAlignment)
-                            .fillMaxWidth(.65f)
-                            .graphicsLayer(bubbleAlpha)
-                            .senderBorder()
-                            .background(
-                                bubbleColor,
-                                bubbleShape,
-                            ).padding(16.dp),
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = genre.bodyFont(),
-                            fontStyle = fontStyle,
-                            color = textColor,
-                            textAlign = textAlignment,
-                        ),
-                    onTextUpdate = {
-                        isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
-                    },
-                    onAnimationFinished = {
-                        if (alreadyAnimatedMessages.contains(message.id).not()) {
-                            alreadyAnimatedMessages.add(message.id)
-                        }
-                    },
-                )
-                val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
-                Box(
-                    Modifier
-                        .padding(8.dp)
-                        .clip(CircleShape)
-                        .align(iconAlignment)
-                        .size(avatarSize),
+                            .fillMaxWidth(.7f)
+                            .align(if (isUser) Alignment.BottomEnd else Alignment.BottomStart)
+                            .padding(8.dp)
+                            .animateContentSize(),
+                    horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
+                    verticalAlignment = Alignment.Bottom,
                 ) {
-                    messageContent.character?.let {
-                        CharacterAvatar(
-                            it,
-                            borderSize = 1.dp,
+                    @Composable
+                    fun Modifier.senderBorder() =
+                        if (sender == SenderType.THOUGHT) {
+                            this.dashedBorder(
+                                1.dp,
+                                textColor.copy(alpha = .3f),
+                                cornerSize,
+                            )
+                        } else {
+                            this.border(borderSize, borderBrush, bubbleShape)
+                        }
+                    val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
+
+                    if (isUser) {
+                        TypewriterText(
+                            text = message.text,
+                            isAnimated = isAnimated,
+                            characters = characters,
+                            duration = duration,
+                            easing = EaseIn,
+                            onTextClick = {
+                                openCharacters()
+                            },
                             modifier =
                                 Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        openCharacters()
-                                    },
+                                    .weight(1f)
+                                    .align(Alignment.CenterVertically)
+                                    .senderBorder()
+                                    .background(
+                                        bubbleColor,
+                                        bubbleShape,
+                                    )
+                                    .padding(16.dp),
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = genre.bodyFont(),
+                                    fontStyle = fontStyle,
+                                    color = textColor,
+                                    textAlign = textAlignment,
+                                ),
+                            onTextUpdate = {
+                                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
+                            },
+                            onAnimationFinished = {
+                                if (alreadyAnimatedMessages.contains(message.id).not()) {
+                                    alreadyAnimatedMessages.add(message.id)
+                                }
+                            },
+                        )
+                        Box(
+                            Modifier
+                                .clip(CircleShape)
+                                .size(avatarSize),
+                        ) {
+                            messageContent.character?.let {
+                                CharacterAvatar(
+                                    it,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .clickable {
+                                                openCharacters()
+                                            },
+                                )
+                            }
+                        }
+                    } else {
+                        Box(
+                            Modifier
+                                .clip(CircleShape)
+                                .size(avatarSize),
+                        ) {
+                            messageContent.character?.let {
+                                CharacterAvatar(
+                                    it,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxSize()
+                                            .clickable {
+                                                openCharacters()
+                                            },
+                                )
+                            }
+                        }
+                        TypewriterText(
+                            text = message.text,
+                            isAnimated = isAnimated,
+                            characters = characters,
+                            duration = duration,
+                            easing = LinearOutSlowInEasing,
+                            onTextClick = {
+                                openCharacters()
+                            },
+                            modifier =
+                                Modifier
+                                    .weight(.5f, false)
+                                    .graphicsLayer(bubbleAlpha)
+                                    .border(2.dp, MaterialColor.Gray100.gradientFade(), bubbleShape)
+                                    .background(
+                                        bubbleColor,
+                                        bubbleShape,
+                                    ).padding(16.dp),
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = genre.bodyFont(),
+                                    fontStyle = fontStyle,
+                                    color = textColor,
+                                    textAlign = textAlignment,
+                                ),
+                            onTextUpdate = {
+                                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
+                            },
+                            onAnimationFinished = {
+                                if (alreadyAnimatedMessages.contains(message.id).not()) {
+                                    alreadyAnimatedMessages.add(message.id)
+                                }
+                            },
                         )
                     }
                 }
+
+
             }
         }
 
@@ -298,6 +337,7 @@ fun ChatBubble(
                         characters = characters,
                         modifier =
                             Modifier
+                                .weight(1f)
                                 .padding(16.dp),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
@@ -350,7 +390,7 @@ fun ChatBubble(
                     ChapterContentView(
                         genre,
                         it,
-                        emptyList(),
+                        characters,
                         textColor,
                         fontStyle,
                         isBubbleVisible,

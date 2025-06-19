@@ -299,13 +299,13 @@ class ChatViewModel
                         messageList.subList(messageList.indexOf(it), messageList.size)
                     } ?: messageList
 
-                if (messageSubList.size >= 35 ||
+                if (messageSubList.size >= LORE_UPDATE_THRESHOLD ||
                     messageSubList.last().message.senderType == SenderType.NEW_CHAPTER
                 ) {
                     val chapterMessage =
                         messageSubList.findLast { it.message.senderType == SenderType.NEW_CHAPTER }
                     val messageReference =
-                        if (messageSubList.size >= 35) {
+                        if (messageSubList.size >= LORE_UPDATE_THRESHOLD) {
                             messageSubList.last().message.id
                         } else {
                             (
@@ -376,7 +376,7 @@ class ChatViewModel
                                 mainCharacter = mainCharacter.value!!,
                                 lastMessages =
                                     messages.value
-                                        .takeLast(10)
+                                        .takeLast(25)
                                         .map { m ->
                                             m.joinMessage()
                                         },
@@ -400,3 +400,5 @@ class ChatViewModel
             }
         }
     }
+
+private const val LORE_UPDATE_THRESHOLD = 30

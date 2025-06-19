@@ -84,15 +84,16 @@ import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.lighter
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import java.util.Calendar
@@ -229,6 +230,7 @@ fun ChatContent(
                             characters = characters,
                             isGenerating = isGenerating,
                             listState = listState,
+                            isLoreUpdated = isLoreUpdated,
                             modifier = Modifier.fillMaxSize(),
                             openCharacter = { saga?.id?.let { sagaId -> onCharacterSelected(sagaId) } },
                             openSaga = { saga?.let { saga -> openSagaDetails(saga) } },
@@ -398,6 +400,7 @@ fun ChatList(
     modifier: Modifier,
     listState: LazyListState,
     isGenerating: Boolean = false,
+    isLoreUpdated: Boolean = false,
     openCharacter: () -> Unit = {},
     openSaga: () -> Unit = {},
 ) {
@@ -485,11 +488,28 @@ fun ChatList(
                     Box(Modifier.fillMaxWidth()) {
                         SparkIcon(
                             brush = gradientAnimation(it.genre.color.darkerPalette()),
-                            tint = it.genre.color.lighter(.3f),
+                            tint = it.genre.color.darker(.5f),
                             modifier =
                                 Modifier
                                     .align(Alignment.Center)
                                     .size(50.dp),
+                        )
+                    }
+                }
+            }
+
+            item {
+                AnimatedVisibility(isLoreUpdated) {
+                    Column {
+                        SparkIcon(
+                            Modifier.align(Alignment.CenterHorizontally).size(32.dp),
+                            brush = it.genre.color.gradientFade(),
+                        )
+
+                        Text(
+                            "História atualizada.",
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }

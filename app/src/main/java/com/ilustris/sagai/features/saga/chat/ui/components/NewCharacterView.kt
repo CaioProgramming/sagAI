@@ -49,6 +49,7 @@ fun NewCharacterView(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                     ),
+
                 modifier = Modifier.padding(16.dp),
             )
 
@@ -61,6 +62,7 @@ fun NewCharacterView(
                         fontWeight = FontWeight.Normal,
                         fontFamily = genre.bodyFont(),
                         textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
                     ),
             )
         }
