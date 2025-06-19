@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 
 package com.ilustris.sagai.ui.navigation
 
@@ -6,16 +6,23 @@ import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -28,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -37,12 +45,20 @@ import androidx.navigation.createGraph
 import androidx.navigation.navArgument
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.ui.CharacterGalleryView
-import com.ilustris.sagai.features.chat.ui.ChatView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
+import com.ilustris.sagai.features.saga.chat.ui.ChatView
+import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
+import dev.chrisbanes.haze.HazeState
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
-    val view: @Composable (NavHostController, PaddingValues) -> Unit = { nav, padding ->
+    val view: @Composable (
+        NavHostController,
+        PaddingValues,
+        SharedTransitionScope,
+        HazeState,
+    ) -> Unit = { nav, padding, transitionScope, haze ->
         Text("Sample View for Route ", modifier = Modifier.padding(16.dp))
     },
     val topBarContent: (@Composable (NavHostController) -> Unit)? = null,
@@ -52,15 +68,38 @@ enum class Routes(
     val arguments: List<String> = emptyList(),
     val deepLink: String? = null,
 ) {
-    HOME(icon = R.drawable.ic_spark, view = { nav, padding ->
+    HOME(icon = R.drawable.ic_spark, view = { nav, padding, _, _ ->
         HomeView(nav, padding)
-    }, title = R.string.home_title),
+    }, title = R.string.home_title, topBarContent = {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(start = 16.dp, end = 16.dp, top = 50.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                painterResource(R.drawable.ic_spark),
+                null,
+                modifier = Modifier.size(32.dp),
+                tint = MaterialTheme.colorScheme.onBackground,
+            )
+            Text(
+                stringResource(R.string.home_title),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Black,
+                    ),
+            )
+        }
+    }),
     CHAT(
-        view = { nav, padding ->
+        view = { nav, padding, _, haze ->
             val arguments = nav.currentBackStackEntry?.arguments
             ChatView(
                 navHostController = nav,
                 padding,
+                haze,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
             )
         },
@@ -71,7 +110,7 @@ enum class Routes(
     ),
     PROFILE,
     SETTINGS,
-    NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = { nav, padding ->
+    NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = { nav, padding, _, _ ->
         Box(
             Modifier
                 .padding(padding)
@@ -80,8 +119,9 @@ enum class Routes(
             NewSagaView(nav)
         }
     }),
-    CHARACTER_GALLERY( // Added Character Gallery Route
-        view = { nav, padding ->
+    CHARACTER_GALLERY(
+        // Added Character Gallery Route
+        view = { nav, padding, transitionScope, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
             CharacterGalleryView(
                 navController = nav,
@@ -95,6 +135,20 @@ enum class Routes(
         arguments = listOf("sagaId"),
         deepLink = "saga://character_gallery/{sagaId}",
         showBottomNav = false, // Or true, depending on your desired UX
+    ),
+    SAGA_DETAIL(
+        view = { nav, padding, _, _ ->
+            val arguments = nav.currentBackStackEntry?.arguments
+            SagaDetailView(
+                navHostController = nav,
+                paddingValues = padding,
+                sagaId = arguments?.getString(SAGA_DETAIL.arguments.first()) ?: "",
+            )
+        },
+        topBarContent = { Box {} },
+        arguments = listOf("sagaId"),
+        deepLink = "saga://saga_detail/{sagaId}",
+        showBottomNav = false,
     ),
 }
 
@@ -153,6 +207,8 @@ fun SagaBottomNavigation(
 fun SagaNavGraph(
     navController: NavHostController,
     padding: PaddingValues,
+    transitionScope: SharedTransitionScope,
+    hazeState: HazeState,
 ) {
     val graph =
         navController.createGraph(startDestination = Routes.HOME.name) {
@@ -166,7 +222,7 @@ fun SagaNavGraph(
                             }
                         },
                 ) {
-                    route.view(navController, padding)
+                    route.view(navController, padding, transitionScope, hazeState)
                 }
             }
         }
@@ -176,6 +232,7 @@ fun SagaNavGraph(
 fun NavHostController.navigateToRoute(
     route: Routes,
     arguments: Map<String, String> = mapOf(),
+    popUpToRoute: Routes? = null,
 ) {
     var link = route.deepLink ?: route.name
     if (arguments.isNotEmpty() && arguments.size == route.arguments.size) {
@@ -188,8 +245,17 @@ fun NavHostController.navigateToRoute(
             }
         }
     }
+    val newLink = link.replace("{", "").replace("}", "")
 
-    navigate(link.replace("{", "").replace("}", ""))
+    if (popUpToRoute != null) {
+        navigate(newLink) {
+            popUpTo(popUpToRoute.name) {
+                inclusive = true
+            }
+        }
+    } else {
+        navigate(newLink)
+    }
 }
 
 fun String.findRoute(): Routes? =
@@ -197,7 +263,10 @@ fun String.findRoute(): Routes? =
         Log.i("Route find:", "looking for route $this...")
         val mappedDeepLink = it.deepLink?.sanitizeDeepLink()
         val mappedRoute = this.sanitizeDeepLink()
-        Log.d("Route find:", "findRoute: trying to match(${it.name}) $mappedDeepLink with $mappedRoute")
+        Log.d(
+            "Route find:",
+            "findRoute: trying to match(${it.name}) $mappedDeepLink with $mappedRoute",
+        )
         it.name.lowercase() == this || mappedDeepLink == mappedRoute
     }
 

@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import kotlinx.coroutines.flow.Flow
+import java.util.Calendar
 import javax.inject.Inject
 
 class CharacterRepositoryImpl
@@ -19,8 +20,12 @@ class CharacterRepositoryImpl
             character.copy(
                 id =
                     characterDao
-                        .insertCharacter(character.copy(id = 0))
-                        .toInt(),
+                        .insertCharacter(
+                            character.copy(
+                                id = 0,
+                                joinedAt = Calendar.getInstance().timeInMillis,
+                            ),
+                        ).toInt(),
             )
 
         override suspend fun updateCharacter(character: Character): Character {

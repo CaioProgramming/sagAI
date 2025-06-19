@@ -2,9 +2,11 @@ package com.ilustris.sagai.di
 
 import android.content.Context
 import com.ilustris.sagai.core.ai.ImagenClient
+import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.network.CloudflareApiService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
@@ -14,14 +16,16 @@ import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.characters.domain.CharacterUseCaseImpl
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
-import com.ilustris.sagai.features.chat.data.usecase.MessageUseCase
-import com.ilustris.sagai.features.chat.data.usecase.MessageUseCaseImpl
-import com.ilustris.sagai.features.chat.repository.MessageRepository
-import com.ilustris.sagai.features.chat.repository.MessageRepositoryImpl
-import com.ilustris.sagai.features.chat.repository.SagaRepository
-import com.ilustris.sagai.features.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
+import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
+import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
+import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
+import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -34,6 +38,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
+    // TODO: Replace with your actual Cloudflare Base URL
+
     @Provides
     @Singleton
     fun provideSagaDatabase(databaseBuilder: DatabaseBuilder): SagaDatabase = databaseBuilder.buildDataBase()
@@ -44,13 +50,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun bindsImagenClient() = ImagenClient()
-
-    @Provides
-    @Singleton
     fun bindsFileHelper(
         @ApplicationContext context: Context,
     ) = FileHelper(context)
+
+    @Provides
+    @Singleton
+    fun providesCloudFlareApiService() = CloudflareApiService()
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -67,6 +73,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesCharacterUseCase(characterUseCaseImpl: CharacterUseCaseImpl): CharacterUseCase
+
+    @Binds
+    abstract fun providesSagaDetailUseCase(sagaDetailUseCaseImpl: SagaDetailUseCaseImpl): SagaDetailUseCase
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -83,4 +92,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsCharacterRepository(characterRepositoryImpl: CharacterRepositoryImpl): CharacterRepository
+
+    @Binds
+    abstract fun bindsImagenClient(imagenClientImpl: ImagenClientImpl): ImagenClient
 }

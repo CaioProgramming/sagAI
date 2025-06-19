@@ -3,20 +3,28 @@ package com.ilustris.sagai.core.ai
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 object CharacterPrompts {
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
 
     fun generateImage(
         character: Character,
-        genre: Genre,
+        saga: SagaData,
     ) = """
-        Generate a illustration of the character:
-        ${details(character)}
-        Following the style:
-        ${GenrePrompts.iconStyle(genre)}
+        ${GenrePrompts.artStyle(saga.genre)}
+        ${GenrePrompts.portraitStyle(saga.genre)}
+        ${CharacterFraming.PORTRAIT.description}  
+        Race: ${character.details.race}
+        Gender: ${character.details.gender}
+        Style: ${character.details.style}
+        Occupation: ${character.details.occupation}
+        Ethnicity: ${character.details.ethnicity}
+        Height: ${character.details.height}
+        Weight: ${character.details.weight}
+        Appearance: ${character.details.appearance}
+        Expression: ${CharacterExpression.random().description}
         """
 
     fun charactersOverview(characters: List<Character>): String =
@@ -36,7 +44,8 @@ object CharacterPrompts {
 
         use this message as a reference to get character details:
         // You MUST use the character's name, core appearance details, and personality hints from this message.
-        // Invent reasonable and consistent details for any missing fields (like backstory, specific occupation, height, weight, race, hexColor, image, IDs).
+        // Invent reasonable and consistent details for any missing fields
+        (like backstory, specific occupation, height, weight, race, hexColor, image).
         $description
         """
 }

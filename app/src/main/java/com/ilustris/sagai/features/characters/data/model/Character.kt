@@ -21,7 +21,7 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 data class Character(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val name: String,
+    val name: String = "",
     val backstory: String = "",
     val image: String = "",
     val hexColor: String = "#3d98f7",
@@ -29,6 +29,7 @@ data class Character(
     val sagaId: Int = 0,
     @Embedded
     val details: Details,
+    val joinedAt: Long = 0L,
 )
 
 data class Details(
@@ -40,4 +41,5 @@ data class Details(
     val style: String = "",
     val gender: String = "",
     val occupation: String = "",
+    val ethnicity: String = "",
 )

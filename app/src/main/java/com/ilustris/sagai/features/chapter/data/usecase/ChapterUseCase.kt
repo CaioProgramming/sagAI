@@ -18,7 +18,7 @@ interface ChapterUseCase {
 
     suspend fun deleteChapter(chapter: Chapter)
 
-    suspend fun updateChapter(chapter: Chapter): Int
+    suspend fun updateChapter(chapter: Chapter): Chapter
 
     suspend fun deleteChapterById(chapterId: Int)
 

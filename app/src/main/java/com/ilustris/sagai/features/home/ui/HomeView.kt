@@ -2,6 +2,7 @@
 
 package com.ilustris.sagai.features.home.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,9 +34,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -50,22 +52,25 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.chat.data.model.Message
-import com.ilustris.sagai.features.chat.data.model.SenderType
+import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.themeBrushColors
+import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.holographicGradient
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -87,9 +92,7 @@ fun HomeView(
         onSelectSaga = { sagaId ->
             navController.navigateToRoute(
                 Routes.CHAT,
-                Routes.CHAT.arguments.associate {
-                    it to sagaId.id.toString()
-                },
+                Routes.CHAT.arguments.associateWith { sagaId.id.toString() },
             )
         },
     )
@@ -104,52 +107,18 @@ private fun ChatList(
 ) {
     Box(Modifier.padding(padding)) {
         val styleGradient =
-            gradientAnimation(genresGradient(), targetValue = 1000f, duration = 5.seconds)
+            gradientAnimation(
+                genresGradient(),
+                targetValue = 2000f,
+                duration = 10.seconds,
+                gradientType = GradientType.VERTICAL,
+            )
 
         LazyColumn(
             modifier =
                 Modifier
-                    .padding(16.dp)
                     .fillMaxSize(),
         ) {
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .clip(RoundedCornerShape(15.dp))
-                            .clickable {
-                                onCreateNewChat()
-                            }.fillMaxWidth(),
-                ) {
-                    val brush =
-                        gradientAnimation(
-                            themeBrushColors(),
-                            gradientType = GradientType.VERTICAL,
-                            targetValue = 500f,
-                        )
-
-                    SparkIcon(
-                        description = "Criar nova saga",
-                        brush = brush,
-                        tint = MaterialTheme.colorScheme.background.copy(alpha = .7f),
-                        blurRadius = 10.dp,
-                        rotationTarget = 180f,
-                        modifier =
-                            Modifier.size(50.dp).clip(CircleShape),
-                    )
-
-                    Text(
-                        "Criar nova saga",
-                        style =
-                            MaterialTheme.typography.labelMedium.copy(
-                                brush = brush,
-                            ),
-                    )
-                }
-            }
-
             if (sagas.isEmpty()) {
                 item {
                     NewChatCard(
@@ -160,6 +129,55 @@ private fun ChatList(
                         modifier =
                             Modifier.fillParentMaxSize(),
                     )
+                }
+            } else {
+                item {
+                    Row(
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .clip(RoundedCornerShape(15.dp))
+                                .clickable {
+                                    onCreateNewChat()
+                                }.fillMaxWidth(),
+                    ) {
+                        val brush =
+                            gradientAnimation(
+                                holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
+                                gradientType = GradientType.LINEAR,
+                                targetValue = 500f,
+                            )
+
+                        SparkLoader(
+                            brush = brush,
+                            strokeSize = 2.dp,
+                            modifier =
+                                Modifier
+                                    .clip(CircleShape)
+                                    .padding(4.dp)
+                                    .size(32.dp),
+                        )
+
+                        Column {
+                            Text(
+                                "Criar nova saga",
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        brush = brush,
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                            )
+
+                            Text(
+                                "Crie uma nova aventura e descubra o que o futuro reserva para você.",
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        brush = brush,
+                                        fontWeight = FontWeight.Light,
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
 
@@ -182,7 +200,7 @@ fun ChatCard(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(8.dp)
                 .clip(RoundedCornerShape(15.dp))
                 .clickable {
                     onClick()
@@ -190,18 +208,43 @@ fun ChatCard(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar
-
-        AsyncImage(
-            sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
-            contentDescription = sagaData.title,
+        val imageLoaded =
+            remember {
+                mutableStateOf(false)
+            }
+        Box(
             modifier =
                 Modifier
                     .size(50.dp)
                     .border(2.dp, Brush.verticalGradient(sagaData.genre.gradient()), CircleShape)
-                    .padding(2.dp)
-                    .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
-                    .clip(CircleShape),
-        )
+                    .padding(4.dp)
+                    .clip(CircleShape)
+                    .background(sagaData.genre.color, CircleShape),
+        ) {
+            AsyncImage(
+                sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
+                contentDescription = sagaData.title,
+                modifier = Modifier.fillMaxSize(),
+                onSuccess = {
+                    imageLoaded.value = true
+                },
+            )
+
+            this@Row.AnimatedVisibility(
+                imageLoaded.value.not(),
+                modifier = Modifier.align(Alignment.Center),
+            ) {
+                Text(
+                    sagaData.title.first().uppercase(),
+                    style =
+                        MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = sagaData.genre.headerFont(),
+                            color = sagaData.genre.iconColor,
+                            textAlign = TextAlign.Center,
+                        ),
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -222,8 +265,9 @@ fun ChatCard(
             Text(
                 text = lastMessageText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                 maxLines = 2,
+                modifier = Modifier.padding(4.dp),
             )
         }
 
@@ -311,18 +355,24 @@ private fun NewChatCard(
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary,
                     modifier =
-                        Modifier.padding(8.dp).fillMaxWidth(0.85f).gradientFill(
-                            animatedBrush,
-                        ),
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(0.85f)
+                            .gradientFill(
+                                animatedBrush,
+                            ),
                 )
 
                 Icon(
                     Icons.AutoMirrored.Default.ArrowForward,
                     contentDescription = stringResource(R.string.new_saga_title),
                     modifier =
-                        Modifier.padding(8.dp).size(24.dp).gradientFill(
-                            animatedBrush,
-                        ),
+                        Modifier
+                            .padding(8.dp)
+                            .size(24.dp)
+                            .gradientFill(
+                                animatedBrush,
+                            ),
                 )
             }
         }
@@ -377,6 +427,7 @@ fun HomeViewPreview() {
                                 icon = "",
                                 createdAt = Calendar.getInstance().timeInMillis,
                                 mainCharacterId = null,
+                                visuals = IllustrationVisuals(),
                             ),
                             mainCharacter = null,
                             messages =

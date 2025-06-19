@@ -13,7 +13,6 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -54,22 +53,24 @@ class ChapterUseCaseImpl
                         saga = saga,
                         messages = messages.map { it.formatToString() },
                         chapters = chapters,
+                        characters = characters,
                     ),
                     true,
                 )
-
             val chapterCover =
                 generateChapterCover(
                     chapter = genText!!,
-                    genre = saga.genre,
+                    saga = saga,
                     characters = characters,
                 )
-            val coverFile = fileHelper.saveToCache(genText.title, chapterCover!!)
+            val coverFile =
+                fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.id}/chapters/")
+
             saveChapter(
                 genText.copy(
-                    coverImage = coverFile!!.path,
-                    messageReference = 0,
+                    messageReference = messageId,
                     sagaId = saga.id,
+                    coverImage = coverFile!!.absolutePath,
                 ),
             ).asSuccess()
         } catch (e: Exception) {
@@ -79,11 +80,11 @@ class ChapterUseCaseImpl
         @OptIn(PublicPreviewAPI::class)
         suspend fun generateChapterCover(
             chapter: Chapter,
-            genre: Genre,
+            saga: SagaData,
             characters: List<Character>,
         ): ByteArray? =
             try {
-                val genCover = imagenClient.generateImage(chapter.coverPrompt(genre, characters))
+                val genCover = imagenClient.generateImage(chapter.coverPrompt(saga, characters))
                 genCover!!.data
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -94,9 +95,11 @@ class ChapterUseCaseImpl
             saga: SagaData,
             messages: List<String>,
             chapters: List<Chapter>,
+            characters: List<Character>,
         ) = chapterPrompt(
             sagaData = saga,
             messages = messages,
             chapters = chapters,
+            characters = characters,
         )
     }

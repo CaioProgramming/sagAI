@@ -22,7 +22,7 @@ class ChapterRepositoryImpl
                 id = chapterDao.saveChapter(chapter).toInt(),
             )
 
-        override suspend fun updateChapter(chapter: Chapter): Int = chapterDao.updateChapter(chapter)
+        override suspend fun updateChapter(chapter: Chapter) = chapter.copy(id = chapterDao.updateChapter(chapter))
 
         override suspend fun deleteChapter(chapter: Chapter) = chapterDao.deleteChapter(chapter)
 

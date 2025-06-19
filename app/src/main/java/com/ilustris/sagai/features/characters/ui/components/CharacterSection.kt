@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -13,29 +14,65 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 
 @Composable
-fun CharacterSection(title: String, content: String, genre: Genre) {
+fun CharacterSection(
+    title: String,
+    content: String,
+    genre: Genre,
+) {
     Text(
         title,
         style =
-        MaterialTheme.typography.titleLarge.copy(
-            fontFamily = genre.headerFont(),
-            fontWeight = FontWeight.Normal,
-        ),
+            MaterialTheme.typography.titleLarge.copy(
+                fontFamily = genre.headerFont(),
+                fontWeight = FontWeight.Normal,
+            ),
         modifier =
-        Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth(),
+            Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth(),
     )
 
     Text(
         content,
         style =
-        MaterialTheme.typography.bodyMedium.copy(
-            fontFamily = genre.bodyFont(),
-        ),
+            MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = genre.bodyFont(),
+            ),
         modifier =
-        Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .fillMaxWidth(),
+            Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+    )
+}
+
+@Composable
+fun CharacterSection(
+    title: String,
+    content: AnnotatedString,
+    genre: Genre,
+) {
+    Text(
+        title,
+        style =
+            MaterialTheme.typography.titleLarge.copy(
+                fontFamily = genre.headerFont(),
+                fontWeight = FontWeight.Normal,
+            ),
+        modifier =
+            Modifier
+                .padding(horizontal = 16.dp)
+                .fillMaxWidth(),
+    )
+
+    Text(
+        content,
+        style =
+            MaterialTheme.typography.bodyMedium.copy(
+                fontFamily = genre.bodyFont(),
+            ),
+        modifier =
+            Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth(),
     )
 }

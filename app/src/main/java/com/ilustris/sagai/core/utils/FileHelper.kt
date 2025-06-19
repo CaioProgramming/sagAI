@@ -3,24 +3,46 @@ package com.ilustris.sagai.core.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Base64
 import java.io.File
 
 class FileHelper(
     private val context: Context,
 ) {
-    fun getCacheFilePath(fileName: String): String = context.cacheDir.resolve(fileName).absolutePath
-
-    fun saveToCache(
+    fun saveFile(
         fileName: String,
         data: ByteArray,
+        path: String? = null,
     ): File? {
-        val file = context.cacheDir.resolve(fileName.plus(".png").removeBlankSpace())
+        val directory =
+            if (path != null) {
+                context.filesDir.resolve("sagas/$path")
+            } else {
+                context.filesDir
+            }
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val file = directory.resolve(fileName.plus(".png").removeBlankSpace())
         file.writeBytes(data)
         return file.takeIf { it.exists() }
     }
 
-    fun readFromCache(fileName: String): ByteArray? {
-        val file = context.cacheDir.resolve(fileName)
+    fun saveBase64File(
+        fileName: String,
+        binary: String,
+        path: String? = null,
+    ): File? {
+        val decodedBytes = Base64.decode(binary, Base64.DEFAULT)
+        return saveFile(fileName, decodedBytes, path)
+    }
+
+    fun readFile(
+        fileName: String,
+        path: String? = null,
+    ): ByteArray? {
+        val directory = path?.let { context.filesDir.resolve(it) } ?: context.filesDir
+        val file = directory.resolve(fileName.removeBlankSpace())
         return if (file.exists()) {
             file.readBytes()
         } else {

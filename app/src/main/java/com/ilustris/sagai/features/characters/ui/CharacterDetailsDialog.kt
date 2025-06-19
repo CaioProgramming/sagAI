@@ -2,13 +2,10 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -45,8 +42,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
@@ -71,8 +66,7 @@ import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.DurationUnit
+import com.ilustris.sagai.ui.theme.zoomAnimation
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -105,12 +99,17 @@ fun CharacterDetailsDialog(
                 animationSpec = tween(durationMillis = 300),
                 label = "cardHeight",
             )
+        val cardBorderColor by animateColorAsState(
+            targetValue = if (isExpanded.value) Color.Transparent else genre.color,
+            animationSpec = tween(durationMillis = 300),
+            label = "cardBorderColor",
+        )
         Card(
             modifier =
                 Modifier
                     .border(
                         2.dp,
-                        genre.color.gradientFade(),
+                        cardBorderColor.gradientFade(),
                         RoundedCornerShape(cornerSize.value),
                     ).fillMaxWidth()
                     .fillMaxHeight(cardHeight.value)
@@ -136,18 +135,6 @@ fun CharacterDetailsDialog(
                         .height(300.dp)
                         .clipToBounds(),
                 ) {
-                    val infiniteTransition = rememberInfiniteTransition(label = "infinite zoom")
-                    val scale by infiniteTransition.animateFloat(
-                        initialValue = 1f,
-                        targetValue = 1.5f,
-                        animationSpec =
-                            infiniteRepeatable(
-                                animation = tween(durationMillis = 1.minutes.toInt(DurationUnit.MILLISECONDS)),
-                                repeatMode = RepeatMode.Reverse,
-                            ),
-                        label = "imageZoom",
-                    )
-
                     AsyncImage(
                         character.image,
                         contentDescription = character.name,
@@ -155,12 +142,10 @@ fun CharacterDetailsDialog(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    transformOrigin = TransformOrigin.Center,
-                                ).clipToBounds(),
+                                .zoomAnimation()
+                                .clipToBounds(),
                     )
+
                     Box(
                         Modifier
                             .fillMaxSize()

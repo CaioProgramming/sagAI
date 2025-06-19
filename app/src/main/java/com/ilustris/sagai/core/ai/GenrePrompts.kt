@@ -48,7 +48,6 @@ object GenrePrompts {
                     """
             SCI_FI ->
                 """
-                    Pose: Close-up portrait, a slightly angled 3/4 view, with her looking intensely towards the upper left. The focus is tightly on her face and the details of her cybernetics.
                     Lighting: Dramatic lighting with a strong neon cyan glow originating from the upper left, casting bright highlights on her forehead, cheekbone, and cybernetic implants, with deep shadows on the right side of her face and neck. Subtle hints of a deep blue ambient light.
                     Art Style: Anime/manga-inspired style with clean, defined lines and meticulous detail on the cybernetics. Increased contrast and reduced overall saturation, with a color palette dominated by cool blues, grays, and accented by the bright cyan light.
                     Background: A blurred and out-of-focus cyberpunk cityscape at night, with muted blues and purples suggesting distant neon lights and towering structures."
@@ -56,4 +55,66 @@ object GenrePrompts {
         }
 
     fun detail(genre: Genre) = "theme: ${genre.name}"
+
+    fun artStyle(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+                Highly detailed,photorealistic painting,
+                Renaissance-inspired reflections,
+                evoking the styles of Eric Zener, Rachel Walpole,
+                Chris Moore,Michael Hoppen,Stephen Hickman,and Mary Jane Ansell.
+                Luminous natural lighting, with profound volumetric light and atmospheric depth,
+                Grand color palette of deep, harmonious, and subtly desaturated tones, evoking a timeless grandeur,
+                strong focal point on the character, immersed in a majestic and atmospheric background,
+                evoking a sense of ancient lore, epic sagas, and enduring legend, with a soft, cinematic film grain.
+                """
+            SCI_FI ->
+                """
+                anime illustration, inspired by Ghost in the Shell 1995 film style,
+                sharp and angular lines aesthetic,
+                crisp and contrasting shading for dramatic depth,
+                dark and immersive atmosphere,
+                highly detailed cybernetic and futuristic elements,
+                sleek character design,
+                meticulous attention to technical details,
+                evoking a sense of melancholic futurism, cyberpunk mystery and oppressive atmosphere.
+                """
+        }
+
+    fun portraitStyle(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+            The background is A sky at volumetric clouds in warm, gently blurred
+            """
+            SCI_FI ->
+                """
+            A solid, contrasting background with subtle, futuristic vector lines,
+            either as abstract patterns.
+            """
+        }
+
+    fun negativePrompt(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+                masterpiece fantasy illustration, in the style of classical realism painting and vintage fantasy art,
+                exquisite painterly technique with delicate brushstrokes and subtle impasto for texture,
+                rich and nuanced textures reminiscent of fine art canvas and traditional pigments,
+                soft yet dramatic natural lighting, with profound volumetric light and a gentle atmospheric haze,
+                a refined color palette of deep, harmonious, and subtly desaturated natural tones, evoking a sense of grounded reality,
+                strong focal point on the character, realistically rendered within a detailed and atmospheric background,
+                evoking a sense of history, depth of character, and a believable world, with a subtle film grain.
+                """
+            SCI_FI ->
+                """
+                blurry, messy, ugly, low resolution, childish, cartoon, comic book, medieval,
+                fantasy elements, organic textures, soft focus, painterly brushstrokes,
+                hand-drawn sketch, watercolor, oil painting, excessive historical details,
+                **overly saturated neon, flat digital rendering
+                 generic digital illustration, hyper-stylized modern digital art,
+                 vibrant primary colors as dominant, sterile white backgrounds.**
+                """
+        }.uppercase()
 }

@@ -10,7 +10,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -37,10 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.SagaBottomNavigation
@@ -48,6 +43,8 @@ import com.ilustris.sagai.ui.navigation.SagaNavGraph
 import com.ilustris.sagai.ui.navigation.findRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
+import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.rememberHazeState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -62,18 +59,18 @@ class MainActivity : ComponentActivity() {
                     .collectAsState(initial = navController.currentBackStackEntry)
                 val route =
                     remember(currentEntry) {
-                        currentEntry?.destination?.route?.findRoute()
+                        currentEntry?.destination?.route?.findRoute() ?: Routes.HOME
                     }
 
                 Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
                     AnimatedContent(route) {
-                        if(it?.topBarContent != null) {
+                        if (it.topBarContent != null) {
                             it.topBarContent(navController)
                         } else {
                             TopAppBar(
                                 title = {
-                                    Box(modifier = Modifier.fillMaxWidth() ) {
-                                        route?.title?.let {
+                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                        route.title?.let {
                                             Text(
                                                 text = stringResource(it),
                                                 style = MaterialTheme.typography.titleSmall,
@@ -84,17 +81,15 @@ class MainActivity : ComponentActivity() {
                                                         .padding(16.dp)
                                                         .fillMaxWidth(),
                                             )
-                                        }?: run {
+                                        } ?: run {
                                             Image(
                                                 painterResource(R.drawable.ic_spark),
                                                 contentDescription = stringResource(R.string.app_name),
                                                 modifier = Modifier.align(Alignment.Center).size(24.dp).align(Alignment.Center),
-                                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
                                             )
                                         }
                                     }
-
-
                                 },
                                 actions = {},
                                 navigationIcon = {
@@ -113,37 +108,17 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
-
                 }, bottomBar = {
-                    SagaBottomNavigation(navController, route)
+                    //SagaBottomNavigation(navController, route)
                 }) { padding ->
                     SharedTransitionLayout {
-                        Box(modifier = Modifier.fillMaxSize().animateContentSize()) {
-                            SagaNavGraph(navController, padding)
+                        val hazeEffect = rememberHazeState(blurEnabled = true)
+                        Box(modifier = Modifier.fillMaxSize().haze(hazeEffect)) {
+                            SagaNavGraph(navController, padding, this@SharedTransitionLayout, hazeEffect)
                         }
                     }
-
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(
-    name: String,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier,
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    SagAITheme {
-        Greeting("Android")
     }
 }

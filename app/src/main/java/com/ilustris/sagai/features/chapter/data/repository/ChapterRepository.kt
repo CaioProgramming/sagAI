@@ -8,7 +8,7 @@ interface ChapterRepository {
 
     suspend fun saveChapter(chapter: Chapter): Chapter
 
-    suspend fun updateChapter(chapter: Chapter): Int
+    suspend fun updateChapter(chapter: Chapter): Chapter
 
     suspend fun deleteChapter(chapter: Chapter)
 
