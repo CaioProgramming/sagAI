@@ -22,13 +22,15 @@ class TextGenClient : AIClient() {
     suspend inline fun <reified T> generate(
         prompt: String,
         requireTranslation: Boolean = true,
+        lisItemMap: Map<String, Class<*>>? = null,
     ): T? {
         try {
+            val schema = toJsonSchema(T::class.java, lisItemMap)
             val model =
                 buildModel(
                     generationConfig {
                         responseMimeType = "application/json"
-                        responseSchema = toJsonSchema(T::class.java)
+                        responseSchema = schema
                     },
                 )
             val fullPrompt =

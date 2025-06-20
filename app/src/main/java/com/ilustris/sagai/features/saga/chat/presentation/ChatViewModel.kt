@@ -229,9 +229,6 @@ class ChatViewModel
                             characterId = speakerId,
                         ),
                     ).also {
-                        checkLoreUpdate()
-                        observeChapterBreak()
-
                         when (it.characterId == mainCharacter.id) {
                             true -> {
                                 isGenerating.value = true
@@ -244,17 +241,21 @@ class ChatViewModel
                         if (it.senderType == SenderType.NEW_CHARACTER) {
                             generateCharacter(it)
                         }
+
+                        isGenerating.value = false
+                        delay(2.seconds)
+                        checkLoreUpdate()
+                        observeChapterBreak()
                     }
-                isGenerating.value = false
             }
         }
 
         private fun checkLoreUpdate() {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 val currentSaga = content.value ?: return@launch
                 val messageList = messages.value
                 val lastLoreItem =
-                    currentSaga.timelines.minByOrNull {
+                    currentSaga.timelines.maxByOrNull {
                         it.createdAt
                     }
 

@@ -2,22 +2,35 @@ package com.ilustris.sagai.core.utils
 
 import com.google.firebase.ai.type.Schema
 import com.google.gson.Gson
-import java.lang.reflect.ParameterizedType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.toString
 
-fun toJsonSchema(clazz: Class<*>) =
-    Schema.obj(
-        properties = clazz.toSchemaMap(),
-    )
+fun toJsonSchema(
+    clazz: Class<*>,
+    lisItemMap: Map<String, Class<*>>? = null,
+) = Schema.obj(
+    properties = clazz.toSchemaMap(lisItemMap),
+)
 
-fun Class<*>.toSchema(nullable: Boolean): Schema {
+fun Class<*>.toSchema(
+    nullable: Boolean,
+    lisItemMap: Map<String, Class<*>>? = null,
+): Schema {
     if (this.isEnum) {
         val enumConstants = this.enumConstants?.map { it.toString() } ?: emptyList()
 
         return Schema.enumeration(enumConstants, nullable = nullable)
+    }
+
+    if (this.isArray) {
+        val arrayItemType = this.componentType
+        return Schema.array(
+            arrayItemType?.toSchema(nullable = false)
+                ?: Schema.string(nullable = false),
+            nullable = nullable,
+        )
     }
 
     return when (this) {
@@ -58,25 +71,21 @@ fun Class<*>.toSchema(nullable: Boolean): Schema {
         }
 
         List::class.java, Array::class.java -> {
-            val itemType =
-                this.genericInterfaces
-                    .filterIsInstance<ParameterizedType>()
-                    .firstOrNull()
-                    ?.actualTypeArguments
-                    ?.firstOrNull() as? Class<*>
+            val classMap = lisItemMap?.get(this.simpleName)
 
             Schema.array(
-                itemType?.toSchema(nullable = nullable) ?: Schema.string(nullable = nullable),
-            ) // Default to string array for lists/arrays
+                classMap?.toSchema(nullable = false)
+                    ?: Schema.string(nullable = false),
+            )
         }
 
         else -> {
-            Schema.obj(properties = this.toSchemaMap(), nullable = nullable) // Default fallback
+            Schema.obj(properties = this.toSchemaMap(), nullable = nullable)
         }
     }
 }
 
-fun Class<*>.toSchemaMap(): Map<String, Schema> =
+fun Class<*>.toSchemaMap(lisItemMap: Map<String, Class<*>>? = null): Map<String, Schema> =
     declaredFields
         .filter { it.name != "\$stable" }
         .associate {
@@ -86,7 +95,22 @@ fun Class<*>.toSchemaMap(): Map<String, Schema> =
                     .find { member -> member.name == it.name }
                     ?.returnType
                     ?.isMarkedNullable
-            it.name to it.type.toSchema(memberIsNullable == true)
+            val fieldName = it.name
+            val fieldType = it.type
+
+            val mapItem = lisItemMap?.get(fieldName)
+
+            return@associate if (mapItem != null) {
+                val schema = mapItem.toSchema(memberIsNullable == true, lisItemMap)
+                fieldName to
+                    Schema.array(
+                        schema,
+                        nullable = memberIsNullable == true,
+                    )
+            } else {
+                val schema = fieldType.toSchema(memberIsNullable == true, lisItemMap)
+                fieldName to schema
+            }
         }
 
 fun joinDeclaredFields(
@@ -169,8 +193,6 @@ fun toJsonMap(
 fun Any.toJsonFormat() = Gson().toJson(this)
 
 fun doNothing() = {}
-
-
 
 fun Long.formatDate(): String {
     val date = Date(this)

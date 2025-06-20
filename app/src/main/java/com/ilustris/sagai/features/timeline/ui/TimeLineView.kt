@@ -136,7 +136,7 @@ fun TimeLineContent(
                         if (isCurrentPage) color else MaterialTheme.colorScheme.onBackground.copy(alpha = .4f),
                     )
                     val iconSize by animateDpAsState(
-                        if (isCurrentPage) 24.dp else 0.dp,
+                        if (isCurrentPage) 24.dp else 12.dp,
                     )
                     val fractionSize by animateFloatAsState(
                         if (isCurrentPage) .4f else fraction,
@@ -151,7 +151,7 @@ fun TimeLineContent(
                         Image(
                             painterResource(R.drawable.ic_spark),
                             contentDescription = null,
-                            modifier = Modifier.size(iconSize),
+                            modifier = Modifier.padding(4.dp).size(iconSize),
                             colorFilter = ColorFilter.tint(tint),
                         )
 
