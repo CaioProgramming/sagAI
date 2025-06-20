@@ -31,8 +31,7 @@ data class SagaData(
     val mainCharacterId: Int? = null,
     @Embedded
     val visuals: IllustrationVisuals = IllustrationVisuals(),
-    val lore: String = "",
-    val lastLoreReference: Int? = null,
+    val lastLoreReference: Int = 0,
 )
 
 data class IllustrationVisuals(
@@ -44,8 +43,4 @@ data class IllustrationVisuals(
     val foregroundElements: String? = "",
     val backgroundElements: String? = "",
     val overallMood: String = "",
-)
-
-data class Lore(
-    val story: String = "",
 )

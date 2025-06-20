@@ -84,8 +84,7 @@ import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
@@ -97,6 +96,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import java.util.Calendar
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,20 +108,20 @@ fun ChatView(
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
-    val saga by viewModel.saga.collectAsStateWithLifecycle()
+    val content by viewModel.content.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
-    val mainCharacter by viewModel.mainCharacter.collectAsStateWithLifecycle()
-    val characters by viewModel.characters.collectAsStateWithLifecycle()
+    val mainCharacter = content?.mainCharacter
+    val characters = content?.characters ?: emptyList()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val isLoreUpdated by viewModel.loreUpdated.collectAsStateWithLifecycle()
-    LaunchedEffect(saga) {
-        if (saga == null) {
+    LaunchedEffect(content) {
+        if (content == null) {
             viewModel.initChat(sagaId)
         }
     }
     ChatContent(
         state.value,
-        saga,
+        content?.data,
         messages,
         mainCharacter,
         characters,
@@ -163,7 +163,7 @@ fun ChatContent(
     val listState = rememberLazyListState()
 
     LaunchedEffect(messagesList.size) {
-        listState.animateScrollToItem(messagesList.size + 3)
+        listState.scrollToItem(messagesList.size + 3)
     }
 
     AnimatedVisibility(
@@ -484,26 +484,17 @@ fun ChatList(
             }
 
             item {
-                AnimatedVisibility(isGenerating, enter = fadeIn(), exit = fadeOut()) {
-                    Box(Modifier.fillMaxWidth()) {
-                        SparkIcon(
-                            brush = gradientAnimation(it.genre.color.darkerPalette()),
-                            tint = it.genre.color.darker(.5f),
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .size(50.dp),
-                        )
-                    }
-                }
-            }
-
-            item {
                 AnimatedVisibility(isLoreUpdated) {
-                    Column {
-                        SparkIcon(
-                            Modifier.align(Alignment.CenterHorizontally).size(32.dp),
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        SparkLoader(
                             brush = it.genre.color.gradientFade(),
+                            modifier = Modifier.align(Alignment.CenterHorizontally).size(32.dp),
+                            duration = 2.seconds,
+                            strokeSize = 2.dp,
                         )
 
                         Text(

@@ -1,12 +1,17 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.characters.data.model.CharacterPose
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.timeline.data.model.LoreGen
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 object SagaPrompts {
     fun details(saga: SagaData) = saga.storyDetails()
@@ -153,45 +158,75 @@ object SagaPrompts {
         """.trimIndent()
 
     fun loreGeneration(
-        saga: SagaData,
+        sagaContent: SagaContent,
         messages: List<String>,
-        character: Character,
     ) = """"
-        You are the "Saga Chronicler" for a text-based RPG.
-        Your primary role is to efficiently and accurately summarize key narrative elements from a given segment of the saga's conversation history,
-        **integrating it with the existing long-term memory.**
-        This updated summary will serve as a continuous, evolving long-term memory for the main Saga Master AI,
-        ensuring narrative consistency over extended gameplay sessions and across multiple chapters.
+        You are the Saga Chronicler, an AI specialized in maintaining the long-term memory and knowledge base of the 'bit to bit' RPG.
+        Your task is to review the saga's current timeline and the latest segment of conversation history (e.g., last 20 messages), then generate three things:
+        1. A list of NEW, significant timeline events that occurred in this conversation segment.
+        2. A list of any new or significantly updated world knowledge entries.
+        3. A list of any existing characters whose details have significantly changed.
 
-        Your summary must be concise, accurate, and focus only on the most crucial details for ongoing
-        story progression, character consistency, and plot points that remain relevant across chapters.
-        DO NOT include conversational filler, minor details, or repetitive elements that are no longer critical.
-        Focus on WHAT happened, WHERE it happened (if significant), WHO was involved, and WHY it's important for the future.
+        Saga Context:
+        ${details(sagaContent.data)}
         
-        SAGA CONTEXT:
-        // This section provides high-level information about the saga to help you contextualize the events.
-        Title: ${saga.title}
-        Description: ${saga.description}
-        Player Character: $character
+        **CURRENT LORE TIMELINE (Existing Saga's History):**
+        // This is a chronological list of key events and developments that have already occurred in the saga.
+        // Each entry is a concise, independent summary of a major plot point, character arc progression, or significant revelation.
+        // Use this list to understand the saga's current historical state and to ensure new events are not duplicates.
+        // Your task is to identify truly NEW and important events from 'CONVERSATION HISTORY TO SUMMARIZE' that are NOT already covered here.
+        [
+         ${sagaContent.timelines.joinToString(",\n") { it.toJsonFormat() }}
+        ]
         
-        CURRENT LORE SUMMARY (Existing Long-Term Memory):
-        / This is the most recent condensed long-term memory of the saga's key events and states.
-        // Use this as the foundational base upon which to integrate and update with new information.
-        // If this is the first summary, this section will be empty or contain an initial saga premise.
-        ${saga.lore}
+        CONVERSATION HISTORY TO SUMMARIZE (New Segment - e.g., last 20 messages):
+        // This is the new chunk of messages that needs to be analyzed for new lore events, wiki updates, and character updates.
+        // Focus on extracting the most significant and lasting events from this segment.
+        // [As últimas 20 mensagens da conversa ou o segmento desde o último ponto de atualização]
+        [
+         ${messages.joinToString(",\n")}
+        ]
         
-        CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
-        ${messages.joinToString("\n") { it }}
+        EXISTING WORLD WIKI ENTRIES (For reference, to avoid duplicates or identify updates):
+        [
+         ${sagaContent.wikis.formatToJsonArray()}
+        ]
 
-        GENERATE THE UPDATED SAGAS LORE/MEMORY AS A CONCISE LIST OF BULLET POINTS.
-        This new summary should be a synthesis of the 'CURRENT LORE SUMMARY' and the 'CONVERSATION HISTORY TO SUMMARIZE'.
-        Prioritize:
-        - Major plot developments and revelations.
-        - Key character interactions or changes in relationships (e.g., trust gained/lost).
-        - Main objectives, quests, or unsolved mysteries that are still active.
-        - Introduction of new significant NPCs or locations.
-        - Important items acquired or lost.
-        - Overall shifts in the saga's tone or major turning points.
-        - Ensure the summary does not exceed ~200-300 words to maintain conciseness.
+        EXISTING SAGA CAST (For reference, to identify character updates):
+        [
+         ${sagaContent.characters.formatToJsonArray()}
+        ]
+        
+        GENERATE A SINGLE, COMPREHENSIVE JSON RESPONSE that contains a list of NEW timeline events, any new or significantly updated WORLD WIKI ENTRIES, and any updated CHARACTER DETAILS.
+        Follow this EXACT JSON structure for your response. Do NOT include any other text outside this JSON.
+        DO NOT Wrap objects in array with string, return a JSON Object
+        {
+         ${toJsonMap(LoreGen::class.java)}
+        }
+        
+        **EXISTING WORLD WIKI ENTRIES (For reference, to avoid duplicates or identify updates):**
+        // This is a list of all world entities (locations, organizations, items, concepts, events, technologies etc.) that are ALREADY stored in this saga's World Knowledge Base.
+        // Use this list to determine if an entity emerging in the 'CONVERSATION HISTORY TO SUMMARIZE' is truly new, or if it's an existing entity that needs an update.
+        // **CRITICAL INSTRUCTIONS FOR 'wikiUpdates' output:**
+        // - If an entity (by its 'name' or any of its 'aliases') from 'CONVERSATION HISTORY TO SUMMARIZE' already exists in THIS 'EXISTING WORLD WIKI ENTRIES' list, then:
+        //   - DO NOT create a new entry for it in your 'wikiUpdates' array, UNLESS its 'description' has SIGNIFICANTLY changed or new crucial information has emerged for it in the 'CONVERSATION HISTORY TO SUMMARIZE'.
+        //   - If you update an existing entity, ensure its 'name' in 'wikiUpdates' EXACTLY matches the existing entry's 'name'.
+        // - If an entity from 'CONVERSATION HISTORY TO SUMMARIZE' is genuinely NEW and is NOT present in THIS 'EXISTING WORLD WIKI ENTRIES' list, then you MUST include it as a new entry in your 'wikiUpdates'.
+        ${sagaContent.wikis.joinToString(",\n") { it.toJsonFormat() }}
+        Follow this structure for wiki updates:
+        [
+          ${toJsonMap(Wiki::class.java)}
+        ]
+         
+        **EXISTING SAGA CAST (For reference, to identify character updates):**
+        // This is a list of all characters (NPCs) that are ALREADY in the saga's current cast.
+        // Use this list to identify if an existing character's status (e.g., alive/dead), backstory, occupation, or personality has SIGNIFICANTLY changed due to events in the 'CONVERSATION HISTORY TO SUMMARIZE'.
+        // **CRITICAL INSTRUCTIONS FOR 'characterUpdates' output:**
+        // - Only include a character in 'characterUpdates' if their 'status' (e.g., if they died), 'backstory', 'occupation', or 'personality' has undergone a major, lasting change in the 'CONVERSATION HISTORY TO SUMMARIZE'.
+        // - If you update a character, their 'name' in 'characterUpdates' MUST EXACTLY match their 'name' in this 'EXISTING SAGA CAST' list.
+        // - Provide ONLY the fields that have changed. Do NOT include fields that remain the same.
+        // - For 'backstory' or 'personality' fields, provide the *new, updated complete text* if it's changing, not just a summary of the change.        
+        ${sagaContent.characters.joinToString(",\n") { it.toJsonFormat() }}
+
         """"
 }

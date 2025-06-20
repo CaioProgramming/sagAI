@@ -49,6 +49,7 @@ import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
+import com.ilustris.sagai.features.timeline.ui.TimelineView
 import dev.chrisbanes.haze.HazeState
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -148,6 +149,19 @@ enum class Routes(
         topBarContent = { Box {} },
         arguments = listOf("sagaId"),
         deepLink = "saga://saga_detail/{sagaId}",
+        showBottomNav = false,
+    ),
+    TIMELINE(
+        view = { nav, padding, _, _ ->
+            val arguments = nav.currentBackStackEntry?.arguments
+            TimelineView(
+                sagaId = arguments?.getString(TIMELINE.arguments.first()) ?: "",
+                navHostController = nav,
+            )
+        },
+        topBarContent = { Box {} },
+        arguments = listOf("sagaId"),
+        deepLink = "saga://timeline/{sagaId}",
         showBottomNav = false,
     ),
 }

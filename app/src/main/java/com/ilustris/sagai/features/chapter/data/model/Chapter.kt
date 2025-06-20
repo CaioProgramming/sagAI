@@ -15,4 +15,5 @@ data class Chapter(
     val coverImage: String,
     @ColumnInfo(defaultValue = "")
     val visualDescription: String = "",
+    val createdAt: Long? = 0L,
 )

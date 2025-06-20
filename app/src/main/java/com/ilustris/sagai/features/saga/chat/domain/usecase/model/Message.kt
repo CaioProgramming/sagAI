@@ -40,7 +40,7 @@ data class Message(
     val senderType: SenderType,
     val speakerName: String? = null,
     @ColumnInfo(index = true)
-    val sagaId: Int,
+    val sagaId: Int = 0,
     @ColumnInfo(index = true)
     val chapterId: Int? = null,
     @ColumnInfo(index = true)

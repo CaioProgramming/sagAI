@@ -183,7 +183,7 @@ private fun ChatList(
 
             items(sagas) {
                 ChatCard(it) {
-                    onSelectSaga(it.saga)
+                    onSelectSaga(it.data)
                 }
             }
         }
@@ -195,7 +195,7 @@ fun ChatCard(
     saga: SagaContent,
     onClick: () -> Unit = {},
 ) {
-    val sagaData = saga.saga
+    val sagaData = saga.data
     Row(
         modifier =
             Modifier

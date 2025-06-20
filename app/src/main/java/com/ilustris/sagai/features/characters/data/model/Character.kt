@@ -30,6 +30,8 @@ data class Character(
     @Embedded
     val details: Details,
     val joinedAt: Long = 0L,
+    @ColumnInfo(defaultValue = "")
+    val status: String = "",
 )
 
 data class Details(
