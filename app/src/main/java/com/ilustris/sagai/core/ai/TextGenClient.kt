@@ -6,6 +6,7 @@ import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.generationConfig
 import com.google.gson.Gson
 import com.ilustris.sagai.core.utils.toJsonSchema
@@ -23,9 +24,10 @@ class TextGenClient : AIClient() {
         prompt: String,
         requireTranslation: Boolean = true,
         lisItemMap: Map<String, Class<*>>? = null,
+        customSchema: Schema? = null,
     ): T? {
         try {
-            val schema = toJsonSchema(T::class.java, lisItemMap)
+            val schema = customSchema ?: toJsonSchema(T::class.java)
             val model =
                 buildModel(
                     generationConfig {
@@ -43,7 +45,7 @@ class TextGenClient : AIClient() {
             Log.i(javaClass.simpleName, "prompt: $fullPrompt")
             Log.i(javaClass.simpleName, "generated: ${content.text}")
 
-            val contentData = Gson().fromJson<T>(content.text, T::class.java)
+            val contentData = Gson().fromJson(content.text, T::class.java)
 
             return contentData
         } catch (e: Exception) {

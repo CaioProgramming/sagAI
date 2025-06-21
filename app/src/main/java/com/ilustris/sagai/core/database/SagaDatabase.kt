@@ -25,10 +25,10 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao // Added WikiDao imp
         Wiki::class,
         Timeline::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 15, to = 16),
+        AutoMigration(from = 16, to = 17),
     ],
 )
 abstract class SagaDatabase : RoomDatabase() {

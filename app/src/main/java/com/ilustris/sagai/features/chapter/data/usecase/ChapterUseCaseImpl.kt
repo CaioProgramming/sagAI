@@ -8,11 +8,14 @@ import com.ilustris.sagai.core.ai.coverPrompt
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -41,36 +44,32 @@ class ChapterUseCaseImpl
         override suspend fun deleteAllChapters() = chapterRepository.deleteAllChapters()
 
         override suspend fun generateChapter(
-            saga: SagaData,
-            messageId: Int,
-            messages: List<Pair<String, String>>,
-            chapters: List<Chapter>,
-            characters: List<Character>,
+            saga: SagaContent,
+            messageReference: Message,
+            messages: List<MessageContent>,
         ) = try {
             val genText =
                 textGenClient.generate<Chapter>(
                     generateChapterPrompt(
                         saga = saga,
-                        messages = messages.map { it.formatToString() },
-                        chapters = chapters,
-                        characters = characters,
+                        messages = messages,
                     ),
                     true,
                 )
             val chapterCover =
                 generateChapterCover(
                     chapter = genText!!,
-                    saga = saga,
-                    characters = characters,
+                    saga = saga.data,
+                    characters = saga.characters,
                 )
             val coverFile =
-                fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.id}/chapters/")
+                fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.data.id}/chapters/")
 
             saveChapter(
                 genText.copy(
-                    messageReference = messageId,
-                    sagaId = saga.id,
-                    coverImage = coverFile!!.absolutePath,
+                    messageReference = messageReference.id,
+                    sagaId = saga.data.id,
+                    coverImage = coverFile?.absolutePath ?: emptyString(),
                 ),
             ).asSuccess()
         } catch (e: Exception) {
@@ -92,14 +91,10 @@ class ChapterUseCaseImpl
             }
 
         private fun generateChapterPrompt(
-            saga: SagaData,
-            messages: List<String>,
-            chapters: List<Chapter>,
-            characters: List<Character>,
+            saga: SagaContent,
+            messages: List<MessageContent>,
         ) = chapterPrompt(
             sagaData = saga,
             messages = messages,
-            chapters = chapters,
-            characters = characters,
         )
     }

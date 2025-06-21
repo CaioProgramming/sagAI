@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.utils.afterLast
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -38,9 +39,11 @@ class ChatViewModel
         val messages = MutableStateFlow<List<MessageContent>>(emptyList())
         val isGenerating = MutableStateFlow(false)
         val loreUpdated = MutableStateFlow(false)
+        val characters = MutableStateFlow<List<Character>>(emptyList())
 
         private fun sendError(errorMessage: String) {
             state.value = ChatState.Error(errorMessage)
+            isGenerating.value = false
         }
 
         fun initChat(sagaId: String?) {
@@ -62,6 +65,7 @@ class ChatViewModel
                     if (it != null) {
                         content.value = it
                         loadSagaMessages(it)
+                        characters.value = sortCharactersByMessageCount(it.characters, it.messages)
                     }
                 }
             }
@@ -127,7 +131,7 @@ class ChatViewModel
                     val newChapter =
                         sagaContentManager
                             .createNewChapter(
-                                messageReference.message.id,
+                                messageReference.message,
                                 messageList,
                             )
                     if (newChapter != null) {
@@ -229,24 +233,30 @@ class ChatViewModel
                             characterId = speakerId,
                         ),
                     ).also {
-                        when (it.characterId == mainCharacter.id) {
-                            true -> {
-                                isGenerating.value = true
-                                replyMessage(it)
-                            }
-
-                            else -> doNothing()
+                        viewModelScope.launch(Dispatchers.Main) {
+                            handleNewMessage(it)
                         }
-
-                        if (it.senderType == SenderType.NEW_CHARACTER) {
-                            generateCharacter(it)
-                        }
-
-                        isGenerating.value = false
-                        delay(2.seconds)
-                        checkLoreUpdate()
-                        observeChapterBreak()
                     }
+            }
+        }
+
+        private fun handleNewMessage(it: Message) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val mainCharacter = content.value!!.mainCharacter ?: return@launch
+                when (it.characterId == mainCharacter.id) {
+                    true -> {
+                        replyMessage(it)
+                    }
+
+                    else -> doNothing()
+                }
+
+                if (it.senderType == SenderType.NEW_CHARACTER) {
+                    generateCharacter(it)
+                }
+                delay(2.seconds)
+                checkLoreUpdate()
+                observeChapterBreak()
             }
         }
 
@@ -271,7 +281,9 @@ class ChatViewModel
                     sagaContentManager
                         .updateLore(
                             reference = messageList.last().message,
-                            messageSubList.takeLast(LORE_UPDATE_THRESHOLD),
+                            messageSubList
+                                .filter { it.message.senderType != SenderType.NEW_CHAPTER }
+                                .takeLast(LORE_UPDATE_THRESHOLD),
                         ).run {
                             if (this != null) {
                                 notifyLoreUpdate()
@@ -314,6 +326,7 @@ class ChatViewModel
         }
 
         private fun replyMessage(message: Message) {
+            isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val mainCharacter = content.value!!.mainCharacter ?: return@launch
@@ -354,6 +367,7 @@ class ChatViewModel
                                 chapterId = null,
                             ),
                         )
+                        isGenerating.value = false
                     }.onFailure {
                         sendError(it.message ?: "Unknown error")
                     }

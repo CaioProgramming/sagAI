@@ -14,8 +14,8 @@ interface SagaContentManager {
     suspend fun loadSaga(sagaId: String)
 
     suspend fun createNewChapter(
-        referenceMessage: Int,
-        messages: List<MessageContent>,
+        messageReference: Message,
+        messageList: List<MessageContent>,
     ): Chapter?
 
     suspend fun updateChapter(chapter: Chapter)

@@ -15,12 +15,12 @@ data class SagaContent(
         parentColumn = "mainCharacterId",
         entityColumn = "id",
     )
-    val mainCharacter: Character?,
+    val mainCharacter: Character? = null,
     @Relation(
         parentColumn = "id",
         entityColumn = "sagaId",
     )
-    val messages: List<Message>,
+    val messages: List<Message> = emptyList(),
     @Relation(
         parentColumn = "id",
         entityColumn = "sagaId",

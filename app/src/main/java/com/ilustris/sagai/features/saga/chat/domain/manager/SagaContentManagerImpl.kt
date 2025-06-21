@@ -36,18 +36,17 @@ class SagaContentManagerImpl
             }
 
         override suspend fun createNewChapter(
-            messageReference: Int,
+            messageReference: Message,
             messageList: List<MessageContent>,
         ): Chapter? {
-            val saga = content.value!!
             return try {
+                val saga = content.value!!
+
                 chapterUseCase
                     .generateChapter(
-                        saga.data,
+                        saga,
                         messageReference,
-                        messageList.map { it.joinMessage() },
-                        saga.chapters,
-                        saga.characters,
+                        messageList,
                     ).success.value
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -115,7 +114,7 @@ class SagaContentManagerImpl
             newLore: LoreGen,
             currentSaga: SagaContent,
         ) {
-            newLore.newEntries.forEach {
+            newLore.wikiUpdates.forEach {
                 val savedWiki =
                     currentSaga.wikis.find { wiki ->
                         wiki.title.contentEquals(it.title, true) ||
@@ -140,7 +139,7 @@ class SagaContentManagerImpl
             return try {
                 characterUseCase
                     .generateCharacter(
-                        sagaData = content.value!!.data,
+                        sagaContent = content.value!!,
                         description = message.text,
                     ).success.value
             } catch (e: Exception) {

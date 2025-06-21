@@ -1,15 +1,17 @@
 package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
@@ -122,23 +124,24 @@ object SagaPrompts {
         """
 
     fun chapterGeneration(
-        sagaData: SagaData,
-        messages: List<String>,
-        chapters: List<Chapter>,
-        characters: List<Character>,
+        sagaContent: SagaContent,
+        messages: List<MessageContent>,
     ) = """
-        Write a new chapter to continue the adventure in a role-playing game (RPG) set in the world of ${sagaData.title}.
-        The story is ${sagaData.description}.
-        The genre is ${sagaData.genre.name}.
+        Write a new chapter to continue the adventure in a role-playing game (RPG) set in the world of ${sagaContent.data.title}.
+        ${details(sagaContent.data)}
         
         Write a overview of what should be the next events connecting with the past events from the messages.
         The last messages in the conversation were:
-        ${messages.joinToString("\n") { it }}
-        
+        [
+            ${messages.joinToString("\n") { it.joinMessage().formatToString() }}  }}
+        ]
         You can use the following chapters as context:
-        ${chapters.joinToString("\n") { it.toJsonFormat() }}
+        ${sagaContent.chapters.formatToJsonArray()}
         
-        Your summary should be in character, reflecting the context of the story and the events that have happened so far.
+        Use the current timeline to refine your response and write a concise chapter that continues the story.
+        ${sagaContent.timelines.formatToJsonArray()}
+        
+        Your summary should reflect the context of the story and the events that have happened so far.
         The chapter should include:
         1.  A brief summary of the main events that have happened so far.
         2.  A recap of the main character's actions and decisions.
@@ -146,15 +149,16 @@ object SagaPrompts {
         Target a description length of 100 words, ensuring it captures the essence of a playable RPG experience.
         
         Saga photography:
-        Color palette: ${sagaData.visuals.colorPalette},
-        illumination: ${sagaData.visuals.lightingDetails},
-        environment: ${sagaData.visuals.environmentDetails}
+        Color palette: ${sagaContent.data.visuals.colorPalette},
+        illumination: ${sagaContent.data.visuals.lightingDetails},
+        environment: ${sagaContent.data.visuals.environmentDetails}
         
         On the visualDescription field Write a prompt of a illustration that defines this chapter.
         YOU MUST USE THE SAGA PHOTOGRAPHY TO IMPROVE YOUR PROMPT
         You can use the characters in the story to improve your prompt:
         USE ONLY RELEVANT CHARACTERS FROM THE CURRENT CHAPTER
-        ${characters.map { it.toJsonFormat() }}}
+        // IMPORTANT TO USE CHARACTER APPEARANCE ON YOUR PROMPT, KEEPING CONSISTENT.
+        ${sagaContent.characters.formatToJsonArray()}
         """.trimIndent()
 
     fun loreGeneration(

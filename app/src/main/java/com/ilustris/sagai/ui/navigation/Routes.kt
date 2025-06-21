@@ -44,6 +44,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import androidx.navigation.navArgument
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.CharacterGalleryView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
@@ -163,6 +164,23 @@ enum class Routes(
         arguments = listOf("sagaId"),
         deepLink = "saga://timeline/{sagaId}",
         showBottomNav = false,
+    ),
+    CHARACTER_DETAIL(
+        arguments =
+            listOf(
+                "characterId",
+                "sagaId",
+            ),
+        deepLink = "saga://character_detail/{characterId}/{sagaId}",
+        showBottomNav = false,
+        topBarContent = { Box {} },
+        view = { nav, padding, _, _ ->
+            CharacterDetailsView(
+                navHostController = nav,
+                characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
+                sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
+            )
+        },
     ),
 }
 

@@ -3,12 +3,14 @@ package com.ilustris.sagai.features.timeline.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -30,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -116,7 +121,8 @@ fun TimeLineContent(
             title = "Linha do tempo",
             subtitle = "${content.timelines.size} eventos",
             genre = content.data.genre,
-            modifier = Modifier.padding(top = 50.dp).fillMaxWidth(),
+            modifier = Modifier.padding(top = 50.dp, start = 16.dp, end = 16.dp)
+            .fillMaxWidth(),
             onBackClick = { onBack() },
         )
 
@@ -126,7 +132,7 @@ fun TimeLineContent(
 
         Row {
             Column(
-                modifier = Modifier.fillMaxWidth(.1f),
+                modifier = Modifier.fillMaxWidth(.1f).fillMaxHeight(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 val fraction = 1f / events.size
@@ -137,6 +143,10 @@ fun TimeLineContent(
                     )
                     val iconSize by animateDpAsState(
                         if (isCurrentPage) 24.dp else 12.dp,
+                        tween(
+                            easing = EaseInElastic,
+                            durationMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS),
+                        ),
                     )
                     val fractionSize by animateFloatAsState(
                         if (isCurrentPage) .4f else fraction,
@@ -151,7 +161,10 @@ fun TimeLineContent(
                         Image(
                             painterResource(R.drawable.ic_spark),
                             contentDescription = null,
-                            modifier = Modifier.padding(4.dp).size(iconSize),
+                            modifier =
+                                Modifier.clip(CircleShape).padding(2.dp).size(iconSize).clickable {
+                                    pagerState.requestScrollToPage(index)
+                                },
                             colorFilter = ColorFilter.tint(tint),
                         )
 
@@ -176,7 +189,7 @@ fun TimeLineContent(
                     event,
                     content.data.genre,
                     pagerState.currentPage == it,
-                    modifier = Modifier.fillMaxHeight(.5f),
+                    modifier = Modifier.wrapContentHeight(),
                 )
             }
         }
@@ -205,6 +218,11 @@ fun TimeLineCard(
 
     val textColor by animateColorAsState(
         if (isCurrentPage) genre.iconColor else MaterialTheme.colorScheme.onBackground,
+        tween(
+            easing = EaseIn,
+            durationMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS),
+            delayMillis = 2.seconds.toInt(DurationUnit.MILLISECONDS),
+        ),
     )
 
     Column(

@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -43,6 +44,8 @@ import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.navigation.Routes
+import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -58,7 +61,8 @@ fun CharacterGalleryView(
     sagaId: String?,
     characterViewModel: CharacterViewModel = hiltViewModel(),
 ) {
-    val saga by characterViewModel.saga.collectAsState()
+    val saga by characterViewModel.saga.collectAsStateWithLifecycle()
+    val characters by characterViewModel.characters.collectAsStateWithLifecycle()
     val state by characterViewModel.state.collectAsState()
 
     LaunchedEffect(saga) {
@@ -67,33 +71,33 @@ fun CharacterGalleryView(
         }
     }
 
-    val showCharacterDialog =
-        remember {
-            mutableStateOf<Character?>(null)
-        }
 
     CharactersGalleryContent(
         saga,
+        characters,
         state,
-        onSelectCharacter = {
-            showCharacterDialog.value = it
+        onSelectCharacter = { charId, sagId ->
+            navController.navigateToRoute(
+                Routes.CHARACTER_DETAIL,
+                arguments =
+                    mapOf(
+                        "characterId" to charId.toString(),
+                        "sagaId" to sagId.toString(),
+                    ),
+            )
         },
         onBackClick = {
             navController.popBackStack()
         },
     )
-    showCharacterDialog.value?.let {
-        CharacterDetailsDialog(character = it, saga?.data?.genre ?: Genre.FANTASY) {
-            showCharacterDialog.value = null
-        }
-    }
 }
 
 @Composable
 fun CharactersGalleryContent(
     content: SagaContent?,
+    characters: List<Character> = emptyList<Character>(),
     state: State,
-    onSelectCharacter: (Character) -> Unit = {},
+    onSelectCharacter: (Int, Int) -> Unit = { _, _ ->},
     onBackClick: () -> Unit = {},
 ) {
     AnimatedContent(state) {
@@ -122,14 +126,14 @@ fun CharactersGalleryContent(
                                         .padding(top = 25.dp),
                             )
                         }
-                        items(saga.characters, key = { character -> character.id }) { character ->
+                        items(characters, key = { character -> character.id }) { character ->
                             CharacterYearbookItem(
                                 character = character,
                                 character.id == saga.mainCharacter?.id,
                                 saga.data.genre,
                                 modifier =
                                     Modifier.clickable {
-                                        onSelectCharacter(character)
+                                        onSelectCharacter(character.id, saga.data.id)
                                     },
                             )
                         }

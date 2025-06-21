@@ -18,6 +18,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -39,6 +40,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
@@ -110,10 +113,11 @@ fun ChatView(
     val state = viewModel.state.collectAsStateWithLifecycle()
     val content by viewModel.content.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
-    val mainCharacter = content?.mainCharacter
-    val characters = content?.characters ?: emptyList()
+    val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val isLoreUpdated by viewModel.loreUpdated.collectAsStateWithLifecycle()
+    val mainCharacter = content?.mainCharacter
+
     LaunchedEffect(content) {
         if (content == null) {
             viewModel.initChat(sagaId)
@@ -163,7 +167,7 @@ fun ChatContent(
     val listState = rememberLazyListState()
 
     LaunchedEffect(messagesList.size) {
-        listState.scrollToItem(messagesList.size + 3)
+        listState.scrollToItem(messagesList.size + 4)
     }
 
     AnimatedVisibility(
@@ -251,10 +255,13 @@ fun ChatContent(
                             SparkIcon(
                                 brush = brush,
                                 tint = saga?.genre?.color ?: MaterialTheme.colorScheme.background,
+                                duration = 2.seconds,
+                                rotationTarget = 90f,
+                                targetRadius = 1 / 4f,
                                 modifier =
                                     Modifier
                                         .align(Alignment.Center)
-                                        .size(150.dp),
+                                        .size(50.dp),
                             )
                         }
                 }
@@ -268,12 +275,13 @@ fun ChatContent(
                     state,
                     isGenerating,
                     modifier =
-                        Modifier.constrainAs(chatInput) {
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            width = Dimension.fillToConstraints
-                        },
+                        Modifier
+                            .constrainAs(chatInput) {
+                                bottom.linkTo(parent.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                width = Dimension.fillToConstraints
+                            }.padding(bottom = 16.dp, top = 2.dp),
                     onSendMessage,
                 )
 
@@ -301,25 +309,16 @@ fun ChatContent(
                                     openSagaDetails(it)
                                 },
                         actionContent = {
-                            CharactersTopIcons(characters, onCharacterSelected, it)
+                            AnimatedContent(characters, transitionSpec = {
+                                slideInVertically() + fadeIn() with fadeOut()
+                            }) { chars ->
+                                CharactersTopIcons(chars, onCharacterSelected, it)
+                            }
                         },
                     )
                 }
             }
         }
-    }
-
-    AnimatedVisibility(isLoreUpdated) {
-        Text(
-            "História atualizada.",
-            style = MaterialTheme.typography.bodySmall,
-            textAlign = TextAlign.Start,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(16.dp),
-        )
     }
 }
 
@@ -521,7 +520,8 @@ private fun CharactersTopIcons(
         characters.take(3)
     LazyRow(
         Modifier
-            .fillMaxWidth(.15f)
+            .clip(RoundedCornerShape(25.dp))
+            .fillMaxWidth(.2f)
             .clickable {
                 onCharacterSelected(data.id)
             },
@@ -529,7 +529,6 @@ private fun CharactersTopIcons(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Get the list of characters to display
         itemsIndexed(charactersToDisplay) { index, character ->
             val overlapAmountPx = with(density) { overlapAmount.toPx() }
             CharacterAvatar(

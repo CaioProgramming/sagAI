@@ -87,7 +87,7 @@ fun ChatInputView(
                 ).background(
                     MaterialTheme.colorScheme.background,
                     RoundedCornerShape(40.dp),
-                ).padding(horizontal = 8.dp, vertical = 2.dp),
+                ).padding(horizontal = 16.dp, vertical = 2.dp),
     ) {
         mainCharacter?.let { character ->
             MainCharacterInputButton(action, saga, character) {

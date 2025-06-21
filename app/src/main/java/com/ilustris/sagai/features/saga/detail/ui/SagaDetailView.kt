@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
@@ -357,6 +358,7 @@ fun SagaDetailContentView(
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
+                                            .clip(CircleShape)
                                             .size(120.dp)
                                             .padding(8.dp)
                                             .clickable {

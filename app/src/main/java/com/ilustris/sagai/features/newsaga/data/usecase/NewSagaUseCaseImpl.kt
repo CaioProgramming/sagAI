@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -41,7 +42,12 @@ class NewSagaUseCaseImpl
                         ),
                     )
 
-                val genCharacter = characterUseCase.generateCharacter(saga, characterDescription).success.value
+                val genCharacter =
+                    characterUseCase
+                        .generateCharacter(
+                            SagaContent(data = saga),
+                            characterDescription,
+                        ).success.value
 
                 val updatedSaga =
                     sagaRepository.updateChat(

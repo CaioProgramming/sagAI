@@ -105,86 +105,83 @@ private fun ChatList(
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (SagaData) -> Unit = {},
 ) {
-    Box(Modifier.padding(padding)) {
-        val styleGradient =
-            gradientAnimation(
-                genresGradient(),
-                targetValue = 2000f,
-                duration = 10.seconds,
-                gradientType = GradientType.VERTICAL,
-            )
+    val styleGradient =
+        gradientAnimation(
+            genresGradient(),
+            targetValue = 2000f,
+            duration = 10.seconds,
+            gradientType = GradientType.VERTICAL,
+        )
 
-        LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxSize(),
-        ) {
-            if (sagas.isEmpty()) {
-                item {
-                    NewChatCard(
-                        animatedBrush = styleGradient,
-                        onButtonClick = {
-                            onCreateNewChat()
-                        },
-                        modifier =
-                            Modifier.fillParentMaxSize(),
-                    )
-                }
-            } else {
-                item {
-                    Row(
-                        modifier =
-                            Modifier
-                                .padding(16.dp)
-                                .clip(RoundedCornerShape(15.dp))
-                                .clickable {
-                                    onCreateNewChat()
-                                }.fillMaxWidth(),
-                    ) {
-                        val brush =
-                            gradientAnimation(
-                                holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
-                                gradientType = GradientType.LINEAR,
-                                targetValue = 500f,
-                            )
-
-                        SparkLoader(
-                            brush = brush,
-                            strokeSize = 2.dp,
-                            modifier =
-                                Modifier
-                                    .clip(CircleShape)
-                                    .padding(4.dp)
-                                    .size(32.dp),
+    LazyColumn(
+        modifier =
+            Modifier.padding(padding),
+    ) {
+        if (sagas.isEmpty()) {
+            item {
+                NewChatCard(
+                    animatedBrush = styleGradient,
+                    onButtonClick = {
+                        onCreateNewChat()
+                    },
+                    modifier =
+                        Modifier.fillParentMaxSize(),
+                )
+            }
+        } else {
+            item {
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .clip(RoundedCornerShape(15.dp))
+                            .clickable {
+                                onCreateNewChat()
+                            }.fillMaxWidth(),
+                ) {
+                    val brush =
+                        gradientAnimation(
+                            holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
+                            gradientType = GradientType.LINEAR,
+                            targetValue = 500f,
                         )
 
-                        Column {
-                            Text(
-                                "Criar nova saga",
-                                style =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        brush = brush,
-                                        fontWeight = FontWeight.SemiBold,
-                                    ),
-                            )
+                    SparkLoader(
+                        brush = brush,
+                        strokeSize = 2.dp,
+                        modifier =
+                            Modifier
+                                .clip(CircleShape)
+                                .padding(4.dp)
+                                .size(32.dp),
+                    )
 
-                            Text(
-                                "Crie uma nova aventura e descubra o que o futuro reserva para você.",
-                                style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        brush = brush,
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                            )
-                        }
+                    Column {
+                        Text(
+                            "Criar nova saga",
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    brush = brush,
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
+                        )
+
+                        Text(
+                            "Crie uma nova aventura e descubra o que o futuro reserva para você.",
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    brush = brush,
+                                    fontWeight = FontWeight.Light,
+                                ),
+                        )
                     }
                 }
             }
+        }
 
-            items(sagas) {
-                ChatCard(it) {
-                    onSelectSaga(it.data)
-                }
+        items(sagas) {
+            ChatCard(it) {
+                onSelectSaga(it.data)
             }
         }
     }

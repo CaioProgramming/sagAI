@@ -44,6 +44,7 @@ class SagaHistoryUseCaseImpl
                             saga,
                             lastMessages.map { it.toJsonFormat() },
                         ),
+                        customSchema = LoreGen.toSchema(),
                         lisItemMap =
                             mapOf(
                                 "newEntries" to Wiki::class.java,

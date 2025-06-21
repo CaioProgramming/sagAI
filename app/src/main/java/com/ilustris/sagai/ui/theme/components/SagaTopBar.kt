@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
@@ -28,7 +29,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 @Composable
 fun SagaTopBar(
     title: String,
-    subtitle: String,
+    subtitle: String = emptyString(),
     genre: Genre,
     actionContent: (@Composable () -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,

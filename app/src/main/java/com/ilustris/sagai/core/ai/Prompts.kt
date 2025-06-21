@@ -4,7 +4,9 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.characters.data.model.CharacterPose
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 
 fun SagaData.introductionPrompt(character: Character?): String = SagaPrompts.introductionGeneration(this, character)
 
@@ -29,11 +31,9 @@ fun chatReplyPrompt(
 )
 
 fun chapterPrompt(
-    sagaData: SagaData,
-    messages: List<String>,
-    chapters: List<Chapter>,
-    characters: List<Character>,
-) = SagaPrompts.chapterGeneration(sagaData, messages, chapters, characters)
+    sagaData: SagaContent,
+    messages: List<MessageContent>,
+) = SagaPrompts.chapterGeneration(sagaData, messages)
 
 fun Chapter.coverPrompt(
     saga: SagaData,
