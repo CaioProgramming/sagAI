@@ -19,6 +19,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -34,6 +35,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
@@ -43,12 +45,14 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -96,8 +100,8 @@ import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -106,7 +110,7 @@ import kotlin.time.Duration.Companion.seconds
 fun ChatView(
     navHostController: NavHostController,
     padding: PaddingValues = PaddingValues(0.dp),
-    hazeState: HazeState,
+    snackbarState: SnackbarHostState,
     sagaId: String? = null,
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
@@ -117,12 +121,24 @@ fun ChatView(
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val isLoreUpdated by viewModel.loreUpdated.collectAsStateWithLifecycle()
     val mainCharacter = content?.mainCharacter
-
+    val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(content) {
         if (content == null) {
             viewModel.initChat(sagaId)
         }
     }
+
+    LaunchedEffect(isLoreUpdated) {
+        if (isLoreUpdated) {
+            coroutineScope.launch {
+                snackbarState.showSnackbar(
+                    "História atualizada.",
+                    withDismissAction = true,
+                )
+            }
+        }
+    }
+
     ChatContent(
         state.value,
         content?.data,
@@ -217,7 +233,10 @@ fun ChatContent(
 
             AnimatedContent(
                 state,
-                Modifier.constrainAs(messages) {
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
+                modifier =Modifier.constrainAs(messages) {
                     top.linkTo(parent.top)
                     bottom.linkTo(chatInput.top)
                     start.linkTo(parent.start)
@@ -267,56 +286,63 @@ fun ChatContent(
                 }
             }
 
-            if (state !is ChatState.Error) {
-                ChatInputView(
-                    mainCharacter,
-                    characters,
-                    saga,
-                    state,
-                    isGenerating,
-                    modifier =
-                        Modifier
-                            .constrainAs(chatInput) {
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                                width = Dimension.fillToConstraints
-                            }.padding(bottom = 16.dp, top = 2.dp),
-                    onSendMessage,
-                )
-
-                saga?.let {
-                    val alpha by animateFloatAsState(
-                        if (listState.firstVisibleItemIndex != 0) 1f else 0f,
-                        animationSpec = tween(450, easing = EaseIn),
-                    )
-                    SagaTopBar(
-                        it.title,
-                        "${messagesList.size} mensagens",
-                        it.genre,
-                        onBackClick = onBack,
-                        modifier =
-                            Modifier
-                                .graphicsLayer(alpha = alpha)
-                                .constrainAs(topBar) {
-                                    top.linkTo(parent.top)
-                                    start.linkTo(parent.start)
-                                    end.linkTo(parent.end)
-                                }.background(MaterialTheme.colorScheme.background)
-                                .padding(top = 50.dp, start = 16.dp, end = 16.dp)
-                                .fillMaxWidth()
-                                .clickable {
-                                    openSagaDetails(it)
-                                },
-                        actionContent = {
-                            AnimatedContent(characters, transitionSpec = {
-                                slideInVertically() + fadeIn() with fadeOut()
-                            }) { chars ->
-                                CharactersTopIcons(chars, onCharacterSelected, it)
-                            }
-                        },
+            this@Column.AnimatedVisibility(
+                state !is ChatState.Loading,
+                modifier =
+                    Modifier
+                        .constrainAs(chatInput) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            width = Dimension.fillToConstraints
+                        }.padding(bottom = 16.dp, top = 2.dp),
+                enter = slideInVertically(),
+                exit = fadeOut(),
+            ) {
+                if (saga != null) {
+                    ChatInputView(
+                        mainCharacter,
+                        characters,
+                        saga,
+                        state,
+                        isGenerating,
+                        Modifier.fillMaxWidth().wrapContentHeight(),
+                        onSendMessage,
                     )
                 }
+            }
+
+            saga?.let {
+                val alpha by animateFloatAsState(
+                    if (listState.firstVisibleItemIndex != 0) 1f else 0f,
+                    animationSpec = tween(450, easing = EaseIn),
+                )
+                SagaTopBar(
+                    it.title,
+                    "${messagesList.size} mensagens",
+                    it.genre,
+                    onBackClick = onBack,
+                    modifier =
+                        Modifier
+                            .graphicsLayer(alpha = alpha)
+                            .constrainAs(topBar) {
+                                top.linkTo(parent.top)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            }.background(MaterialTheme.colorScheme.background)
+                            .padding(top = 50.dp, start = 16.dp, end = 16.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                openSagaDetails(it)
+                            },
+                    actionContent = {
+                        AnimatedContent(characters, transitionSpec = {
+                            slideInVertically() + fadeIn() with fadeOut()
+                        }) { chars ->
+                            CharactersTopIcons(chars, onCharacterSelected, it)
+                        }
+                    },
+                )
             }
         }
     }
@@ -405,7 +431,7 @@ fun ChatList(
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
-    LazyColumn(modifier.padding(bottom = 16.dp), state = listState) {
+    LazyColumn(modifier.padding(bottom = 2.dp), state = listState) {
         saga?.let {
             item {
                 SagaHeader(saga)

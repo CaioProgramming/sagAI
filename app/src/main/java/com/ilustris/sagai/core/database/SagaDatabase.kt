@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.database
 
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -27,9 +26,6 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao // Added WikiDao imp
     ],
     version = 17,
     exportSchema = true,
-    autoMigrations = [
-        AutoMigration(from = 16, to = 17),
-    ],
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao

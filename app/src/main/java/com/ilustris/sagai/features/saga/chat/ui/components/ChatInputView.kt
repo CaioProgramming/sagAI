@@ -1,9 +1,16 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,16 +27,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,12 +50,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.PopupProperties
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithCharacters
+import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
@@ -197,11 +215,7 @@ fun ChatInputView(
                 },
                 modifier =
                     Modifier
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.onBackground.gradientFade(),
-                            CircleShape,
-                        ).background(
+                        .background(
                             buttonColor,
                             CircleShape,
                         ).size(buttonSize),
@@ -213,7 +227,7 @@ fun ChatInputView(
                         Modifier
                             .padding(4.dp)
                             .fillMaxSize(),
-                    tint = Color.White,
+                    tint = saga?.genre?.iconColor ?: MaterialTheme.colorScheme.onBackground,
                 )
             }
         }
@@ -231,12 +245,21 @@ private fun MainCharacterInputButton(
         mutableStateOf(sendAction)
     }
     var actionsExpanded by remember {
-        mutableStateOf(false)
+        mutableStateOf(true)
     }
+
+    val tooltipState = rememberTooltipState()
 
     DropdownMenu(
         actionsExpanded,
+        properties =
+            PopupProperties(
+                usePlatformDefaultWidth = false,
+            ),
         shape = RoundedCornerShape(saga?.genre?.cornerSize() ?: 15.dp),
+        containerColor = Color.Transparent,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         onDismissRequest = {
             actionsExpanded = false
         },
@@ -248,6 +271,7 @@ private fun MainCharacterInputButton(
                         it != SenderType.NEW_CHAPTER
                 }.forEach { type ->
                     type.itemOption(
+                        iconSize = 42.dp,
                         action,
                         selectedColor =
                             saga?.genre?.color
@@ -260,16 +284,135 @@ private fun MainCharacterInputButton(
                 }
         }
     }
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberRichTooltipPositionProvider(),
+        tooltip = {
+            RichTooltip(
+                title = { Text(action.title()) },
+                caretSize = DpSize(12.dp, 16.dp),
+                shape = RoundedCornerShape(saga?.genre?.cornerSize() ?: 0.dp)
+            ) {
+                Text(action.description())
+            }
+        },
+        state = tooltipState,
+    ) {
+        AnimatedContent(action, transitionSpec = {
+            scaleIn() + fadeIn(tween(300)) togetherWith scaleOut() + fadeOut()
+        }) {
+            when (it) {
+                SenderType.USER ->
+                    CharacterAvatar(
+                        character,
+                        borderSize = 2.dp,
+                        modifier =
+                            Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .clickable {
+                                    actionsExpanded = actionsExpanded.not()
+                                },
+                    )
 
-    CharacterAvatar(
-        character,
-        borderSize = 2.dp,
-        modifier =
-            Modifier
-                .size(32.dp)
-                .clip(CircleShape)
-                .clickable {
-                    actionsExpanded = true
-                },
-    )
+                else ->
+                    it.itemOption(
+                        iconSize = 32.dp,
+                        action,
+                        selectedColor =
+                            saga?.genre?.color
+                                ?: MaterialTheme.colorScheme.primary,
+                    ) {
+                        actionsExpanded = actionsExpanded.not()
+                    }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun ChatInputViewPreview() {
+    ChatInputView(
+        mainCharacter =
+            Character(
+                id = 0,
+                name = "Character Name",
+                backstory = "Character backstory",
+                image = "image_url",
+                hexColor = "#FF0000",
+                sagaId = 0,
+                details =
+                    Details(
+                        appearance = "Appearance",
+                        personality = "Personality",
+                        race = "Race",
+                        height = 1.80,
+                        weight = 70.0,
+                        style = "Style",
+                        gender = "Gender",
+                        occupation = "Occupation",
+                        ethnicity = "Ethnicity",
+                    ),
+                joinedAt = System.currentTimeMillis(),
+                status = "Character status",
+            ),
+        characters = listOf(),
+        saga =
+            SagaData(
+                id = 0,
+                title = "Saga Title",
+                description = "Saga description",
+                icon = "icon_url",
+                createdAt = System.currentTimeMillis(),
+                genre = Genre.FANTASY,
+                mainCharacterId = 0,
+                visuals = IllustrationVisuals(),
+                lastLoreReference = 0,
+            ),
+        state = ChatState.Success,
+        isGenerating = false,
+    ) { _, _ -> }
+}
+
+@Preview
+@Composable
+fun MainCharacterInputButtonPreview() {
+    MainCharacterInputButton(
+        sendAction = SenderType.USER,
+        saga =
+            SagaData(
+                id = 0,
+                title = "Saga Title",
+                description = "Saga description",
+                icon = "icon_url",
+                createdAt = System.currentTimeMillis(),
+                genre = Genre.FANTASY,
+                mainCharacterId = 0,
+                visuals = IllustrationVisuals(),
+                lastLoreReference = 0,
+            ),
+        character =
+            Character(
+                id = 0,
+                name = "Character Name",
+                backstory = "Character backstory",
+                image = "image_url",
+                hexColor = "#FF0000",
+                sagaId = 0,
+                details =
+                    Details(
+                        appearance = "Appearance",
+                        personality = "Personality",
+                        race = "Race",
+                        height = 1.80,
+                        weight = 70.0,
+                        style = "Style",
+                        gender = "Gender",
+                        occupation = "Occupation",
+                        ethnicity = "Ethnicity",
+                    ),
+                joinedAt = System.currentTimeMillis(),
+                status = "Character status",
+            ),
+    ) {}
 }

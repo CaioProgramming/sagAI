@@ -47,6 +47,7 @@ class ChatViewModel
         }
 
         fun initChat(sagaId: String?) {
+            state.value = ChatState.Loading
             observeSaga()
             viewModelScope.launch(Dispatchers.IO) {
                 sagaId?.let {
@@ -66,6 +67,7 @@ class ChatViewModel
                         content.value = it
                         loadSagaMessages(it)
                         characters.value = sortCharactersByMessageCount(it.characters, it.messages)
+
                     }
                 }
             }
@@ -86,6 +88,7 @@ class ChatViewModel
                     this@ChatViewModel.messages.value = mappedMessages.reversed()
 
                     if (state.value != ChatState.Success) {
+                        delay(500)
                         state.value = ChatState.Success
                     }
                 }

@@ -9,7 +9,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,10 +16,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.paddingFrom
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -37,14 +41,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
@@ -53,9 +62,9 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
+import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -121,78 +130,24 @@ fun TimeLineContent(
             title = "Linha do tempo",
             subtitle = "${content.timelines.size} eventos",
             genre = content.data.genre,
-            modifier = Modifier.padding(top = 50.dp, start = 16.dp, end = 16.dp)
-            .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .padding(top = 50.dp, start = 16.dp, end = 16.dp)
+                    .fillMaxWidth(),
             onBackClick = { onBack() },
         )
 
-        val color = content.data.genre.color
-        val cornerSize = content.data.genre.cornerSize()
-        val pagerState = rememberPagerState(initialPage = events.lastIndex) { events.size }
-
-        Row {
-            Column(
-                modifier = Modifier.fillMaxWidth(.1f).fillMaxHeight(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                val fraction = 1f / events.size
-                events.forEachIndexed { index, event ->
-                    val isCurrentPage = index == pagerState.currentPage
-                    val tint by animateColorAsState(
-                        if (isCurrentPage) color else MaterialTheme.colorScheme.onBackground.copy(alpha = .4f),
-                    )
-                    val iconSize by animateDpAsState(
-                        if (isCurrentPage) 24.dp else 12.dp,
-                        tween(
-                            easing = EaseInElastic,
-                            durationMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS),
-                        ),
-                    )
-                    val fractionSize by animateFloatAsState(
-                        if (isCurrentPage) .4f else fraction,
-                        tween(
-                            easing = EaseIn,
-                            durationMillis = 2.seconds.toInt(DurationUnit.MILLISECONDS),
-                            delayMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS),
-                        ),
-                    )
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            contentDescription = null,
-                            modifier =
-                                Modifier.clip(CircleShape).padding(2.dp).size(iconSize).clickable {
-                                    pagerState.requestScrollToPage(index)
-                                },
-                            colorFilter = ColorFilter.tint(tint),
-                        )
-
-                        Box(
-                            modifier =
-                                Modifier
-                                    .width(2.dp)
-                                    .fillMaxHeight(fractionSize)
-                                    .background(
-                                        tint,
-                                        shape = RoundedCornerShape(cornerSize),
-                                    ),
-                        )
-                    }
-                }
-            }
-
-            VerticalPager(pagerState, modifier = Modifier.weight(1f).fillMaxHeight()) {
-                val event = events[it]
-
-                TimeLineCard(
-                    event,
-                    content.data.genre,
-                    pagerState.currentPage == it,
-                    modifier = Modifier.wrapContentHeight(),
-                )
+        val lazyListState = rememberLazyListState()
+        LazyColumn(state = lazyListState) {
+            items(content.timelines) {
+                TimeLineCard(it, content.data.genre, modifier = Modifier.fillMaxWidth())
             }
         }
+
+        LaunchedEffect(content) {
+            lazyListState.animateScrollToItem(content.timelines.size - 1)
+        }
+
     }
 }
 
@@ -200,24 +155,15 @@ fun TimeLineContent(
 fun TimeLineCard(
     event: Timeline,
     genre: Genre,
-    isCurrentPage: Boolean,
+    isLast: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val color = genre.color
     val cornerSize = genre.cornerSize()
     val cardShape = RoundedCornerShape(cornerSize)
 
-    val backgroundColor by animateColorAsState(
-        if (isCurrentPage) color else MaterialTheme.colorScheme.background,
-        tween(
-            easing = EaseIn,
-            durationMillis = 2.seconds.toInt(DurationUnit.MILLISECONDS),
-            delayMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS),
-        ),
-    )
-
     val textColor by animateColorAsState(
-        if (isCurrentPage) genre.iconColor else MaterialTheme.colorScheme.onBackground,
+        MaterialTheme.colorScheme.onBackground,
         tween(
             easing = EaseIn,
             durationMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS),
@@ -225,44 +171,114 @@ fun TimeLineCard(
         ),
     )
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(4.dp),
-        horizontalAlignment = Alignment.Start,
-        modifier =
-            modifier
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth()
-                .border(1.dp, genre.color.gradientFade(), cardShape)
-                .background(
-                    backgroundColor,
-                    cardShape,
-                ).padding(16.dp),
-    ) {
-        Text(
-            event.createdAt.formatDate(),
-            style =
-                MaterialTheme.typography.labelMedium.copy(
-                    color = textColor,
-                ),
-        )
 
-        Text(
-            event.title,
-            style =
-                MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = genre.headerFont(),
-                    color = textColor,
-                ),
-        )
+    ConstraintLayout(modifier.fillMaxWidth()) {
+        val (iconView, titleContent, contentView) = createRefs()
+        Column(modifier = Modifier.constrainAs(iconView) {
+            top.linkTo(parent.top)
+            bottom.linkTo(contentView.bottom)
+            start.linkTo(parent.start)
+            height = Dimension.fillToConstraints
+        }, horizontalAlignment = Alignment.CenterHorizontally) {
+            Image(
+                painterResource(R.drawable.ic_spark),
+                null,
+                modifier = Modifier.size(24.dp),
+                colorFilter = ColorFilter.tint(genre.color),
+            )
+
+            if (isLast.not()) {
+                Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(genre.color))
+            }
+        }
+
+
+        Column(modifier = Modifier.padding(horizontal = 8.dp).constrainAs(titleContent) {
+            top.linkTo(iconView.top)
+            start.linkTo(iconView.end)
+            end.linkTo(parent.end)
+            width = Dimension.fillToConstraints
+
+        }) {
+            Text(
+                event.title,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = genre.headerFont(),
+                        color = genre.color,
+                    ),
+            )
+
+            Text(
+                event.createdAt.formatDate(),
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = textColor.copy(alpha = .4f),
+                        fontWeight = FontWeight.Light,
+                    ),
+            )
+        }
 
         Text(
             event.content,
-            modifier = Modifier.padding(vertical = 8.dp),
+            modifier = Modifier.constrainAs(contentView) {
+                top.linkTo(titleContent.bottom)
+                start.linkTo(titleContent.start)
+                end.linkTo(parent.end)
+                bottom.linkTo(parent.bottom)
+                width = Dimension.fillToConstraints
+            }.padding(8.dp),
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     fontFamily = genre.bodyFont(),
                     color = textColor,
+                    textAlign = TextAlign.Start,
                 ),
         )
+
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TimeLineContentPreview() {
+    val content =
+        SagaContent(
+            data =
+                SagaData(
+                    title = "My Awesome Saga",
+                    description = "A saga about adventure and stuff.",
+                    genre = Genre.FANTASY,
+                ),
+            timelines =
+                listOf(
+                    Timeline(
+                        title = "Event 1",
+                        content = "Something happened",
+                        createdAt = Calendar.getInstance().timeInMillis,
+                    ),
+                    Timeline(
+                        title = "Event 2",
+                        content = "Something else happened",
+                        createdAt = Calendar.getInstance().timeInMillis + 100000,
+                    ),
+                ),
+        )
+    TimeLineContent(content)
+}
+
+@Preview(showBackground = true)
+@Composable
+fun TimeLineCardPreview() {
+    val event =
+        Timeline(
+            title = "The Great Battle",
+            content = "A fierce battle took place, changing the course of history.",
+            createdAt = Calendar.getInstance().timeInMillis,
+        )
+    val genre = Genre.FANTASY
+    TimeLineCard(
+        event = event,
+        genre = genre,
+    )
 }

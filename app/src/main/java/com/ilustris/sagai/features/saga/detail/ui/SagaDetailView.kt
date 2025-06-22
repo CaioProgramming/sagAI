@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -40,9 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -55,6 +54,7 @@ import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
@@ -66,7 +66,6 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.features.saga.chat.ui.components.ChapterContentView
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.ui.navigation.Routes
@@ -184,7 +183,7 @@ fun SagaDetailContentView(
             stickyHeader { position ->
                 SagaTopBar(
                     it.data.title,
-                    "Desde ${it.data.createdAt.formatDate()}",
+                    "Criado em ${it.data.createdAt.formatDate()}",
                     it.data.genre,
                     onBackClick = onBack,
                     modifier =
@@ -417,6 +416,7 @@ fun SagaDetailContentView(
                             false,
                             modifier =
                                 Modifier
+                                    .padding(16.dp)
                                     .clip(RoundedCornerShape(it.data.genre.cornerSize()))
                                     .clickable {
                                         openTimeLine(it.data.id)
@@ -486,72 +486,14 @@ fun SagaDetailContentView(
                 )
             }
 
-            items(it.chapters) { chapter ->
-                ChapterContentView(
-                    it.data.genre,
-                    chapter,
-                    characters = it.characters,
-                    MaterialTheme.colorScheme.onBackground,
-                    FontStyle.Normal,
-                    remember { mutableStateOf(true) },
-                    false,
-                )
-            }
-
             item {
-                Column(
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier =
-                            Modifier.clickable {
-                                openTimeLine(it.data.id)
-                            },
-                    ) {
-                        Text(
-                            "Linha do tempo",
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = it.data.genre.headerFont(),
-                                ),
-                            modifier = Modifier.padding(16.dp).weight(1f),
-                        )
-
-                        Icon(
-                            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                            contentDescription = "Ver detalhes",
-                            modifier = Modifier.size(32.dp),
-                        )
-                    }
-                    Text(
-                        "Acompanhe o progresso da saga desde o início",
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = it.data.genre.bodyFont(),
-                                fontWeight = FontWeight.Light,
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp)
-                                .graphicsLayer(alpha = .5f),
-                    )
-                    it.timelines.lastOrNull()?.let { event ->
-                        TimeLineCard(
-                            event,
+                LazyRow(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    items(it.chapters) { chapter ->
+                        ChapterCardView(
+                            chapter,
                             it.data.genre,
-                            true,
-                            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-                        )
-                    } ?: run {
-                        Text(
-                            "Nenhum evento registrado",
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
+                            it.characters,
+                            Modifier.padding(8.dp).width(250.dp).height(350.dp),
                         )
                     }
                 }

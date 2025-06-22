@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,7 +52,6 @@ import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
 import com.ilustris.sagai.features.timeline.ui.TimelineView
-import dev.chrisbanes.haze.HazeState
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
@@ -59,8 +59,8 @@ enum class Routes(
         NavHostController,
         PaddingValues,
         SharedTransitionScope,
-        HazeState,
-    ) -> Unit = { nav, padding, transitionScope, haze ->
+        SnackbarHostState,
+    ) -> Unit = { nav, padding, transitionScope, snackState ->
         Text("Sample View for Route ", modifier = Modifier.padding(16.dp))
     },
     val topBarContent: (@Composable (NavHostController) -> Unit)? = null,
@@ -96,12 +96,12 @@ enum class Routes(
         }
     }),
     CHAT(
-        view = { nav, padding, _, haze ->
+        view = { nav, padding, _, snack ->
             val arguments = nav.currentBackStackEntry?.arguments
             ChatView(
                 navHostController = nav,
                 padding,
-                haze,
+                snack,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
             )
         },
@@ -240,7 +240,7 @@ fun SagaNavGraph(
     navController: NavHostController,
     padding: PaddingValues,
     transitionScope: SharedTransitionScope,
-    hazeState: HazeState,
+    hazeState: SnackbarHostState,
 ) {
     val graph =
         navController.createGraph(startDestination = Routes.HOME.name) {

@@ -5,16 +5,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,13 +23,16 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType.*
 
 @Composable
 fun SenderType.itemOption(
+    iconSize: Dp = 40.dp,
     selectedItem: SenderType? = null,
     iconTint: Color = MaterialTheme.colorScheme.onBackground,
     selectedColor: Color = MaterialTheme.colorScheme.primary,
@@ -44,41 +47,36 @@ fun SenderType.itemOption(
                 iconTint
             },
     )
-    Column(
-        Modifier
-            .padding(vertical = 4.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement =
-                Arrangement.Start,
+
+    val borderColor by animateColorAsState(
+        if (isSelected) selectedColor else MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+    )
+
+    this@itemOption.icon()?.let {
+        Box(
             modifier =
                 Modifier
-                    .padding(horizontal = 8.dp)
-                    .clip(
-                        RoundedCornerShape(25.dp),
-                    ).clickable {
+                    .padding(vertical = 8.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, borderColor, CircleShape)
+                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(100))
+                    .size(iconSize)
+                    .clickable {
                         onSelect(this@itemOption)
                     },
         ) {
-            this@itemOption.icon()?.let {
-                Image(
-                    painter = painterResource(id = it),
-                    contentDescription = this@itemOption.title(),
-                    colorFilter =
-                        ColorFilter
-                            .tint(color),
-                    modifier = Modifier.size(24.dp),
-                    contentScale = ContentScale.Fit,
-                )
-
-                Text(
-                    text = this@itemOption.title() ?: "",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(8.dp),
-                    color = color,
-                )
-            }
+            Image(
+                painter = painterResource(id = it),
+                contentDescription = this@itemOption.title(),
+                colorFilter =
+                    ColorFilter
+                        .tint(color),
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .align(Alignment.Center),
+                contentScale = ContentScale.Fit,
+            )
         }
     }
 }
@@ -112,5 +110,18 @@ fun SenderType.title() =
         SenderType.THOUGHT -> "Pensar"
         SenderType.ACTION -> "Ação"
         SenderType.NEW_CHARACTER -> "Novo personagem"
-        else -> null
+        else -> emptyString()
+    }
+
+@Composable
+fun SenderType.description() =
+
+ when (this) {
+        USER -> "Fala do seu personagem, o que ele diz na conversa atual."
+        THOUGHT -> "O que seu personagem está pensando, quais seus planos e receios."
+        ACTION -> "Uma ação que seu personagem está fazendo."
+        NARRATOR -> "Complete a história com eventos externos ou acontecimentos no ambiente."
+        NEW_CHAPTER -> "Inicie um novo capítulo na história, isso irá gerar um novo resumo para sua saga."
+        NEW_CHARACTER -> "Adicione um novo personagem a sua história, ele poderá interagir com o personagem principal e demais personagens."
+        CHARACTER -> "Faça uma pergunta para um personagem específico sobre a história."
     }

@@ -23,6 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.collectAsState
@@ -38,13 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
 import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.SagaBottomNavigation
 import com.ilustris.sagai.ui.navigation.SagaNavGraph
 import com.ilustris.sagai.ui.navigation.findRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.rememberHazeState
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -61,8 +60,10 @@ class MainActivity : ComponentActivity() {
                     remember(currentEntry) {
                         currentEntry?.destination?.route?.findRoute() ?: Routes.HOME
                     }
-
-                Scaffold(modifier = Modifier.fillMaxSize(), topBar = {
+                val snackbarHostState = remember { SnackbarHostState() }
+                Scaffold(modifier = Modifier.fillMaxSize(), snackbarHost = {
+                    SnackbarHost(hostState = snackbarHostState)
+                }, topBar = {
                     AnimatedContent(route) {
                         if (it.topBarContent != null) {
                             it.topBarContent(navController)
@@ -109,12 +110,11 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }, bottomBar = {
-                    //SagaBottomNavigation(navController, route)
+                    // SagaBottomNavigation(navController, route)
                 }) { padding ->
                     SharedTransitionLayout {
-                        val hazeEffect = rememberHazeState(blurEnabled = true)
-                        Box(modifier = Modifier.fillMaxSize().haze(hazeEffect)) {
-                            SagaNavGraph(navController, padding, this@SharedTransitionLayout, hazeEffect)
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            SagaNavGraph(navController, padding, this@SharedTransitionLayout, snackbarHostState)
                         }
                     }
                 }
