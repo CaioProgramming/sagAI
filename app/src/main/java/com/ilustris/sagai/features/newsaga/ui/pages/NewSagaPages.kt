@@ -6,9 +6,11 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -46,11 +48,10 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.ui.components.GenreAvatar
+import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -276,19 +277,22 @@ fun GenresPageView(
     LazyVerticalGrid(
         modifier =
             Modifier
-                .padding(24.dp)
-                .border(
-                    2.dp,
-                    gradientAnimation(holographicGradient),
-                    RoundedCornerShape(25.dp),
-                ).padding(16.dp),
-        columns = GridCells.Fixed(3),
+                .padding(8.dp)
+                .fillMaxSize(),
+        columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.Center,
     ) {
         items(genres) {
-            GenreAvatar(it, true, it == selection) { g ->
-                onSelectGenre(g)
-                selection = g
+            GenreCard(
+                it,
+                it == selection,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(300.dp)
+            ) { genre ->
+                selection = genre
+                onSelectGenre(genre)
             }
         }
     }

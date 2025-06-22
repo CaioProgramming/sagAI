@@ -319,7 +319,7 @@ fun CharacterHorizontalView(
     Row(
         modifier =
             modifier
-                .padding(8.dp),
+               ,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -333,8 +333,7 @@ fun CharacterHorizontalView(
                 ),
             modifier =
                 Modifier
-                    .size(imageSize)
-                    .aspectRatio(1f),
+                    .size(imageSize),
         )
 
         Text(
@@ -346,7 +345,7 @@ fun CharacterHorizontalView(
                     color = Color(character.hexColor.toColorInt()),
                 ),
             textAlign = TextAlign.Start,
-            modifier = Modifier.align(Alignment.CenterVertically).weight(1f),
+            modifier = Modifier.align(Alignment.CenterVertically),
         )
     }
 }

@@ -36,7 +36,6 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val DarkColorScheme =
@@ -199,7 +198,6 @@ fun MorphShape(modifier: Modifier) {
 
 fun Genre.defaultHeaderImage() =
     when (this) {
-        Genre.FANTASY -> "https://i.imgur.com/LjoI5EW.png"
-        Genre.SCI_FI -> "https://i.imgur.com/byyXnNS.png"
-        else -> emptyString()
+        Genre.FANTASY -> "https://i.ibb.co/1JQVxD69/retrato-neoclassico-medieval-de-ilustracao-de-cavaleiro.jpg"
+        Genre.SCI_FI -> "https://i.ibb.co/b5CMmtvg/personagem-de-anime-usando-oculos-de-realidade-virtual-no-metaverso.png"
     }

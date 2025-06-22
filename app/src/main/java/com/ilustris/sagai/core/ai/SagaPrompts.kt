@@ -43,6 +43,9 @@ object SagaPrompts {
         
         ${saga.storyDetails()}
         
+        Starring:
+        ${saga.characterDescription}
+        
         The synopsis should include:
         1.  An engaging hook that sets the scene.
         3.  The main quest or objective for the player characters.
@@ -73,7 +76,6 @@ object SagaPrompts {
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
         ${CharacterFraming.EPIC_WIDE_SHOT.description}
-        Featuring:
         Appearance: ${mainCharacter.details.appearance}
         Expression: ${CharacterExpression.random().description}
         Pose: ${CharacterPose.random().description}

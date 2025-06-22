@@ -99,6 +99,7 @@ dependencies {
     implementation(libs.accompanist.ui.controller)
     implementation(libs.accompanist.navigation.animation)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network)
     implementation(libs.gson)
     implementation(libs.lottie.compose)
     implementation(libs.compose.cloudy)
