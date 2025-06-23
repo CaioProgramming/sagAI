@@ -22,8 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -71,7 +69,6 @@ fun CharacterGalleryView(
         }
     }
 
-
     CharactersGalleryContent(
         saga,
         characters,
@@ -81,8 +78,8 @@ fun CharacterGalleryView(
                 Routes.CHARACTER_DETAIL,
                 arguments =
                     mapOf(
-                        "characterId" to charId.toString(),
                         "sagaId" to sagId.toString(),
+                        "characterId" to charId.toString(),
                     ),
             )
         },
@@ -97,7 +94,7 @@ fun CharactersGalleryContent(
     content: SagaContent?,
     characters: List<Character> = emptyList<Character>(),
     state: State,
-    onSelectCharacter: (Int, Int) -> Unit = { _, _ ->},
+    onSelectCharacter: (Int, Int) -> Unit = { _, _ -> },
     onBackClick: () -> Unit = {},
 ) {
     AnimatedContent(state) {
@@ -318,8 +315,7 @@ fun CharacterHorizontalView(
 ) {
     Row(
         modifier =
-            modifier
-               ,
+        modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {

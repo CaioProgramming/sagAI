@@ -6,12 +6,10 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -45,11 +43,6 @@ class SagaHistoryUseCaseImpl
                             lastMessages.map { it.toJsonFormat() },
                         ),
                         customSchema = LoreGen.toSchema(),
-                        lisItemMap =
-                            mapOf(
-                                "newEntries" to Wiki::class.java,
-                                "updatedCharacters" to Character::class.java,
-                            ),
                     )!!
                     .asSuccess()
             } catch (e: Exception) {

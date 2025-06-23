@@ -53,6 +53,7 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -95,11 +96,18 @@ fun SagaDetailView(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
 
-    SagaDetailContentView(state, paddingValues, {
-        navHostController.navigateToRoute(
-            Routes.CHARACTER_GALLERY,
-            mapOf("sagaId" to it.toString()),
-        )
+    SagaDetailContentView(state, paddingValues, selectCharacter = {
+        it?.let { id ->
+            navHostController.navigateToRoute(
+                Routes.CHARACTER_DETAIL,
+                mapOf(
+                    "sagaId" to sagaId,
+                    "characterId" to id.toString(),
+                ),
+            )
+        } ?: run {
+            navHostController.navigateToRoute(Routes.CHARACTER_GALLERY, mapOf("sagaId" to sagaId))
+        }
     }, onBack = {
         navHostController.popBackStack()
     }, onDelete = { saga ->
@@ -150,7 +158,7 @@ fun SagaDetailView(
 fun SagaDetailContentView(
     state: State,
     paddingValues: PaddingValues,
-    selectCharacter: (Int) -> Unit = {},
+    selectCharacter: (Int?) -> Unit = {},
     openTimeLine: (Int) -> Unit,
     onBack: () -> Unit = {},
     onDelete: (SagaData) -> Unit = {},
@@ -336,7 +344,7 @@ fun SagaDetailContentView(
                         )
 
                         IconButton(onClick = {
-                            selectCharacter(it.data.id)
+                            selectCharacter(null)
                         }, modifier = Modifier.size(24.dp)) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -346,7 +354,12 @@ fun SagaDetailContentView(
                     }
 
                     LazyRow {
-                        items(it.characters) { chars ->
+                        items(
+                            sortCharactersByMessageCount(
+                                it.characters,
+                                it.messages,
+                            ),
+                        ) { chars ->
                             Column(
                                 Modifier.padding(8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -361,7 +374,7 @@ fun SagaDetailContentView(
                                             .size(120.dp)
                                             .padding(8.dp)
                                             .clickable {
-                                                selectCharacter(it.data.id)
+                                                selectCharacter(chars.id)
                                             },
                                 )
 
@@ -379,122 +392,130 @@ fun SagaDetailContentView(
                 }
             }
 
-            item {
-                Column {
-                    Row(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                    ) {
-                        Text(
-                            "Linha do tempo",
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = it.data.genre.headerFont(),
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .weight(1f),
-                        )
+            if (it.timelines.isNotEmpty()) {
+                item {
+                    Column {
+                        Row(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                        ) {
+                            Text(
+                                "Linha do tempo",
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = it.data.genre.headerFont(),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .weight(1f),
+                            )
 
-                        IconButton(onClick = {
-                            openTimeLine(it.data.id)
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Ver Linha do tempo",
+                            IconButton(onClick = {
+                                openTimeLine(it.data.id)
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                    contentDescription = "Ver Linha do tempo",
+                                )
+                            }
+                        }
+
+                        it.timelines.lastOrNull()?.let { event ->
+                            TimeLineCard(
+                                event,
+                                it.data.genre,
+                                false,
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .clip(RoundedCornerShape(it.data.genre.cornerSize()))
+                                        .clickable {
+                                            openTimeLine(it.data.id)
+                                        }.fillMaxWidth()
+                                        .wrapContentHeight(),
+                            )
+                        } ?: run {
+                            Text(
+                                "Nenhum evento registrado",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
                             )
                         }
-                    }
-
-                    it.timelines.lastOrNull()?.let { event ->
-                        TimeLineCard(
-                            event,
-                            it.data.genre,
-                            false,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .clip(RoundedCornerShape(it.data.genre.cornerSize()))
-                                    .clickable {
-                                        openTimeLine(it.data.id)
-                                    }.fillMaxWidth()
-                                    .wrapContentHeight(),
-                        )
-                    } ?: run {
-                        Text(
-                            "Nenhum evento registrado",
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
                     }
                 }
             }
 
-            item {
-                Column {
-                    Row(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                    ) {
-                        Text(
-                            "Wiki",
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = it.data.genre.headerFont(),
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .weight(1f),
-                        )
-
-                        IconButton(onClick = {
-                            // openTimeLine(it.data.id)
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Ver wiki",
+            if (it.wikis.isNotEmpty()) {
+                item {
+                    Column {
+                        Row(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                        ) {
+                            Text(
+                                "Wiki",
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = it.data.genre.headerFont(),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .weight(1f),
                             )
-                        }
-                    }
 
-                    if (it.wikis.isEmpty()) {
-                        Text(
-                            "Nenhuma informação salva",
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    } else {
+                            IconButton(onClick = {
+                                // openTimeLine(it.data.id)
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                    contentDescription = "Ver wiki",
+                                )
+                            }
+                        }
+
+                        if (it.wikis.isEmpty()) {
+                            Text(
+                                "Nenhuma informação salva",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        } else {
+                        }
                     }
                 }
             }
 
-            item {
-                Text(
-                    "Capítulos",
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = it.data.genre.headerFont(),
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            item {
-                LazyRow(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    items(it.chapters) { chapter ->
-                        ChapterCardView(
-                            chapter,
-                            it.data.genre,
-                            it.characters,
-                            Modifier.padding(8.dp).width(250.dp).height(350.dp),
-                        )
+            if (it.chapters.isNotEmpty()) {
+                item {
+                    Text(
+                        "Capítulos",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Normal,
+                                fontFamily = it.data.genre.headerFont(),
+                            ),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+                item {
+                    LazyRow(modifier = Modifier.padding(horizontal = 16.dp)) {
+                        items(it.chapters) { chapter ->
+                            ChapterCardView(
+                                chapter,
+                                it.data.genre,
+                                it.characters,
+                                Modifier
+                                    .padding(8.dp)
+                                    .width(250.dp)
+                                    .height(350.dp),
+                            )
+                        }
                     }
                 }
             }

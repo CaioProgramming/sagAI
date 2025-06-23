@@ -143,7 +143,7 @@ private fun ChatList(
                         gradientAnimation(
                             holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
                             gradientType = GradientType.LINEAR,
-                            targetValue = 500f,
+                            targetValue = 300f,
                         )
 
                     SparkLoader(

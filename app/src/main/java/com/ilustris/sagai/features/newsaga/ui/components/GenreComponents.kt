@@ -2,6 +2,8 @@ package com.ilustris.sagai.features.newsaga.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBounce
+import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -42,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
@@ -56,6 +60,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.zoomAnimation
+import dev.chrisbanes.haze.hazeEffect
 
 @Composable
 fun GenreSelectionCard(
@@ -81,46 +86,7 @@ fun GenreSelectionCard(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun GenreSelectionCardPreview() {
-    val selectedGenre =
-        remember {
-            mutableStateOf(Genre.FANTASY)
-        }
-    GenreSelectionCard(
-        selectedGenre = selectedGenre.value,
-        selectItem = {
-            selectedGenre.value = it
-        },
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GenreCardPreview() {
-    val selectedGenre =
-        remember {
-            mutableStateOf(Genre.FANTASY)
-        }
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier.fillMaxSize(),
-    ) {
-        items(Genre.entries.size) {
-            val genre = Genre.entries[it]
-            GenreCard(
-                genre = genre,
-                isSelected = genre == selectedGenre.value,
-                modifier = Modifier.size(200.dp, 300.dp),
-                onClick = { selectedGenre.value = genre },
-            )
-        }
-    }
-}
 
 @Composable
 fun GenreAvatar(
@@ -140,6 +106,7 @@ fun GenreAvatar(
     )
     val scale by animateFloatAsState(
         if (isSelected) 1.1f else 1f,
+        tween()
     )
     Column(
         modifier =
@@ -181,6 +148,19 @@ fun GenreAvatar(
     }
 }
 
+
+@Preview
+@Composable
+fun GenreAvatarPreview() {
+    GenreAvatar(
+        genre = Genre.FANTASY,
+        showText = true,
+        isSelected = false,
+        modifier = Modifier,
+        onClick = {},
+    )
+}
+
 @Composable
 fun GenreCard(
     genre: Genre,
@@ -190,9 +170,11 @@ fun GenreCard(
 ) {
     val saturation by animateFloatAsState(
         if (isSelected) 1f else 0f,
+        tween(500, easing = EaseIn)
     )
     val scale by animateFloatAsState(
         if (isSelected) 1f else .8f,
+        tween(700, easing = EaseInBounce)
     )
 
     val borderColor by animateColorAsState(
@@ -223,6 +205,12 @@ fun GenreCard(
             .size(Size.ORIGINAL)
             .build()
 
+        val textSize by animateFloatAsState(
+            if (isSelected) 22f else 16f,
+            tween(
+                200, easing = EaseInElastic
+            )
+        )
 
         AsyncImage(
             imageRequest,
@@ -242,8 +230,9 @@ fun GenreCard(
         Text(
             genre.title,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = genre.headerFont(),
+            fontSize = textSize.sp,
             color = genre.iconColor,
             modifier =
                 Modifier
@@ -253,14 +242,44 @@ fun GenreCard(
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
-fun GenreAvatarPreview() {
-    GenreAvatar(
-        genre = Genre.FANTASY,
-        showText = true,
-        isSelected = false,
-        modifier = Modifier,
-        onClick = {},
+fun GenreSelectionCardPreview() {
+    val selectedGenre =
+        remember {
+            mutableStateOf(Genre.FANTASY)
+        }
+    GenreSelectionCard(
+        selectedGenre = selectedGenre.value,
+        selectItem = {
+            selectedGenre.value = it
+        },
     )
 }
+
+@Preview(showBackground = true)
+@Composable
+fun GenreCardPreview() {
+    val selectedGenre =
+        remember {
+            mutableStateOf(Genre.FANTASY)
+        }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(0.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        items(Genre.entries.size) {
+            val genre = Genre.entries[it]
+            GenreCard(
+                genre = genre,
+                isSelected = genre == selectedGenre.value,
+                modifier = Modifier.padding(4.dp).fillMaxWidth().height(300.dp),
+                onClick = { selectedGenre.value = genre },
+            )
+        }
+    }
+}
+

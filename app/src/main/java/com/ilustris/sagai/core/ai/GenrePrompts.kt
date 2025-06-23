@@ -1,5 +1,11 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.network.body.ColorPreset
+import com.ilustris.sagai.core.network.body.Effects
+import com.ilustris.sagai.core.network.body.FramingPreset
+import com.ilustris.sagai.core.network.body.ImageStyling
+import com.ilustris.sagai.core.network.body.LightningPreset
+import com.ilustris.sagai.core.network.body.StylePreset
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SCI_FI
@@ -97,24 +103,79 @@ object GenrePrompts {
 
     fun negativePrompt(genre: Genre) =
         when (genre) {
-            FANTASY ->
-                """
-                masterpiece fantasy illustration, in the style of classical realism painting and vintage fantasy art,
-                exquisite painterly technique with delicate brushstrokes and subtle impasto for texture,
-                rich and nuanced textures reminiscent of fine art canvas and traditional pigments,
-                soft yet dramatic natural lighting, with profound volumetric light and a gentle atmospheric haze,
-                a refined color palette of deep, harmonious, and subtly desaturated natural tones, evoking a sense of grounded reality,
-                strong focal point on the character, realistically rendered within a detailed and atmospheric background,
-                evoking a sense of history, depth of character, and a believable world, with a subtle film grain.
-                """
-            SCI_FI ->
-                """
-                blurry, messy, ugly, low resolution, childish, cartoon, comic book, medieval,
-                fantasy elements, organic textures, soft focus, painterly brushstrokes,
-                hand-drawn sketch, watercolor, oil painting, excessive historical details,
-                **overly saturated neon, flat digital rendering
-                 generic digital illustration, hyper-stylized modern digital art,
-                 vibrant primary colors as dominant, sterile white backgrounds.**
-                """
+            FANTASY -> StylePreset.entries.filter { it != StylePreset.FANTASY }.joinToString()
+            SCI_FI -> StylePreset.entries.filter { it != StylePreset.CYBERPUNK && it != StylePreset.ANIME }.joinToString()
         }.uppercase()
+
+    fun characterStyling(genre: Genre): ImageStyling =
+        when (genre) {
+            SCI_FI ->
+                ImageStyling(
+                    style = StylePreset.ANIME.key,
+                    effects =
+                        Effects(
+                            color = ColorPreset.COLD_NEON,
+                            lightning = LightningPreset.DRAMATIC,
+                            framing = FramingPreset.CLOSE_UP,
+                        ),
+                )
+            FANTASY ->
+                ImageStyling(
+                    style = StylePreset.VINTAGE.key,
+                    effects =
+                        Effects(
+                            color = ColorPreset.GOLD_GLOW,
+                            lightning = LightningPreset.DRAMATIC,
+                            framing = FramingPreset.PORTRAIT,
+                        ),
+                )
+        }
+
+    fun chapterCoverStyling(genre: Genre): ImageStyling =
+        when (genre) {
+            FANTASY ->
+                ImageStyling(
+                    style = StylePreset.FANTASY.key,
+                    effects =
+                        Effects(
+                            color = ColorPreset.GOLD_GLOW,
+                            lightning = LightningPreset.STUDIO,
+                            framing = FramingPreset.entries.random(),
+                        ),
+                )
+            SCI_FI ->
+                ImageStyling(
+                    style = StylePreset.CYBERPUNK.key,
+                    effects =
+                        Effects(
+                            color = ColorPreset.COLD_NEON,
+                            lightning = LightningPreset.VOLUMETRIC,
+                            framing = FramingPreset.entries.random(),
+                        ),
+                )
+        }
+
+    fun sagaWallpaperStyling(genre: Genre): ImageStyling =
+        when (genre) {
+            FANTASY ->
+                ImageStyling(
+                    style = StylePreset.FANTASY.key,
+                    effects =
+                        Effects(
+                            color = ColorPreset.GOLD_GLOW,
+                            lightning = LightningPreset.STUDIO,
+                            framing = FramingPreset.CINEMATIC,
+                        ),
+                )
+            SCI_FI ->
+                ImageStyling(
+                    style = StylePreset.CYBERPUNK.key,
+                    effects =
+                        Effects(
+                            color = ColorPreset.COLD_NEON,
+                            lightning = LightningPreset.VOLUMETRIC,
+                            framing = FramingPreset.CINEMATIC,
+                        ),
+                )
+        }
 }

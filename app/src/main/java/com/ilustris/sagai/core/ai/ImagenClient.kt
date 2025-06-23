@@ -5,23 +5,23 @@ import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.core.network.CloudflareApiService
-import com.ilustris.sagai.core.network.body.StableDiffusionRequest
-import com.ilustris.sagai.core.network.response.StableDiffusionResponse
+import com.ilustris.sagai.core.network.FreePikApiService
+import com.ilustris.sagai.core.network.body.FreepikRequest
+import com.ilustris.sagai.core.network.response.FreePikResponse
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 interface ImagenClient {
     suspend fun generateImage(prompt: String): ImagenInlineImage?
 
-    suspend fun generateWithStableDiffusion(request: StableDiffusionRequest): StableDiffusionResponse?
+    suspend fun generateWithFreePik(request: FreepikRequest): FreePikResponse?
 }
 
 @OptIn(PublicPreviewAPI::class)
 class ImagenClientImpl
     @Inject
     constructor(
-        val service: CloudflareApiService,
+        val service: FreePikApiService,
     ) : ImagenClient {
         val model by lazy {
             Firebase.ai.imagenModel(
@@ -39,8 +39,9 @@ class ImagenClientImpl
                 null
             }
 
-        override suspend fun generateWithStableDiffusion(request: StableDiffusionRequest) =
+        override suspend fun generateWithFreePik(request: FreepikRequest): FreePikResponse? =
             try {
+                Log.i(javaClass.simpleName, "generateImage: Generating freePik image with prompt:\n$request")
                 service.generateImage(request)
             } catch (e: Exception) {
                 e.printStackTrace()

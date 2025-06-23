@@ -1,8 +1,8 @@
 package com.ilustris.sagai.core.network
 
 import com.ilustris.sagai.BuildConfig
-import com.ilustris.sagai.core.network.body.StableDiffusionRequest
-import com.ilustris.sagai.core.network.response.StableDiffusionResponse
+import com.ilustris.sagai.core.network.body.FreepikRequest
+import com.ilustris.sagai.core.network.response.FreePikResponse
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -11,19 +11,19 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.POST
 
-interface CloudflareApi {
+interface FreePikApi {
     companion object {
-        const val BASE_URL = "https://api.cloudflare.com/client/v4/accounts/"
+        const val BASE_URL = "https://api.freepik.com/v1/ai/"
     }
 
-    @POST("${BuildConfig.ACCOUNTID}/ai/run/@cf/bytedance/stable-diffusion-xl-lightning")
+    @POST("text-to-image")
     suspend fun generateImage(
-        @Body body: StableDiffusionRequest,
-    ): StableDiffusionResponse
+        @Body body: FreepikRequest,
+    ): FreePikResponse
 }
 
-class CloudflareApiService {
-    private val api: CloudflareApi by lazy {
+class FreePikApiService {
+    private val api: FreePikApi by lazy {
         val logging = HttpLoggingInterceptor()
         logging.level = HttpLoggingInterceptor.Level.BODY
         Retrofit
@@ -38,16 +38,16 @@ class CloudflareApiService {
                                 chain
                                     .request()
                                     .newBuilder()
-                                    .addHeader("Authorization", "Bearer ${BuildConfig.APIKEY}")
+                                    .addHeader("x-freepik-api-key", BuildConfig.APIKEY)
                                     .build()
                             chain.proceed(request)
                         },
                     ).build(),
-            ).baseUrl(CloudflareApi.BASE_URL)
+            ).baseUrl(FreePikApi.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(CloudflareApi::class.java)
+            .create(FreePikApi::class.java)
     }
 
-    suspend fun generateImage(promptRequest: StableDiffusionRequest) = api.generateImage(promptRequest)
+    suspend fun generateImage(promptRequest: FreepikRequest) = api.generateImage(promptRequest)
 }

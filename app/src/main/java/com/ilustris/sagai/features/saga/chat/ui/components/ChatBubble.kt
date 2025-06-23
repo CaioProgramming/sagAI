@@ -141,10 +141,7 @@ fun ChatBubble(
             else -> TextAlign.Start
         }
 
-    val isAnimated =
-        remember {
-            isUser.not() && alreadyAnimatedMessages.none { it == message.id }
-        }
+    val isAnimated = isUser.not() && canAnimate
 
     val isBubbleVisible =
         remember {

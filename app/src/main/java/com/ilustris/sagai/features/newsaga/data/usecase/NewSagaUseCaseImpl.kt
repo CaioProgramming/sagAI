@@ -81,7 +81,16 @@ class NewSagaUseCaseImpl
             try {
                 val prompt = generateSagaIconPrompt(sagaForm, character)
                 val request = imageGenClient.generateImage(prompt)
-                val image = request!!.data
+               /* val request =
+                    FreepikRequest(
+                        prompt = prompt,
+                        negative_prompt = GenrePrompts.negativePrompt(sagaForm.genre),
+                        style = GenrePrompts.sagaWallpaperStyling(sagaForm.genre),
+                    )*/
+                val image =
+                    imageGenClient
+                        .generateImage(prompt)!!
+                        .data
 
                 val file = fileHelper.saveFile(sagaForm.title, image, path = "${sagaForm.id}")
 

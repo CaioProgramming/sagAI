@@ -67,7 +67,6 @@ class ChatViewModel
                         content.value = it
                         loadSagaMessages(it)
                         characters.value = sortCharactersByMessageCount(it.characters, it.messages)
-
                     }
                 }
             }
@@ -208,10 +207,13 @@ class ChatViewModel
                     senderType = sendType,
                     characterId = content.value?.mainCharacter?.id,
                 )
-            sendMessage(message)
+            sendMessage(message, true)
         }
 
-        fun sendMessage(message: Message) {
+        fun sendMessage(
+            message: Message,
+            isFromUser: Boolean = false,
+        ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val mainCharacter = content.value!!.mainCharacter ?: return@launch
@@ -236,17 +238,19 @@ class ChatViewModel
                             characterId = speakerId,
                         ),
                     ).also {
-                        viewModelScope.launch(Dispatchers.Main) {
-                            handleNewMessage(it)
+                        viewModelScope.launch(Dispatchers.IO) {
+                            handleNewMessage(it, isFromUser)
                         }
                     }
             }
         }
 
-        private fun handleNewMessage(it: Message) {
+        private fun handleNewMessage(
+            it: Message,
+            isFromUser: Boolean,
+        ) {
             viewModelScope.launch(Dispatchers.IO) {
-                val mainCharacter = content.value!!.mainCharacter ?: return@launch
-                when (it.characterId == mainCharacter.id) {
+                when (isFromUser && it.senderType != SenderType.NEW_CHARACTER) {
                     true -> {
                         replyMessage(it)
                     }

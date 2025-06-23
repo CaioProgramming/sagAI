@@ -35,10 +35,7 @@ fun chapterPrompt(
     messages: List<MessageContent>,
 ) = SagaPrompts.chapterGeneration(sagaData, messages)
 
-fun Chapter.coverPrompt(
-    saga: SagaData,
-    characters: List<Character>,
-): String =
+fun Chapter.coverPrompt(saga: SagaData): String =
     """
     ${GenrePrompts.artStyle(saga.genre)} 
     ${CharacterFraming.MEDIUM_SHOT.description}   

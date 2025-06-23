@@ -28,7 +28,7 @@ enum class Genre(
         R.drawable.fantasy,
     ),
     SCI_FI(
-        "Ficção Científica",
+        "Cyberpunk",
         R.drawable.scifi_icon,
         MaterialColor.DeepPurpleA200,
         Color.White,

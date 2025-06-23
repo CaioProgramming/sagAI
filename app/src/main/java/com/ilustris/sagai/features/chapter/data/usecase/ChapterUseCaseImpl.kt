@@ -1,14 +1,15 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.core.ai.GenrePrompts
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.chapterPrompt
 import com.ilustris.sagai.core.ai.coverPrompt
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -56,22 +57,16 @@ class ChapterUseCaseImpl
                     ),
                     true,
                 )
-            val chapterCover =
-                generateChapterCover(
-                    chapter = genText!!,
-                    saga = saga.data,
-                    characters = saga.characters,
-                )
-            val coverFile =
-                fileHelper.saveFile(genText.title, chapterCover!!, path = "${saga.data.id}/chapters/")
 
-            saveChapter(
-                genText.copy(
-                    messageReference = messageReference.id,
-                    sagaId = saga.data.id,
-                    coverImage = coverFile?.absolutePath ?: emptyString(),
-                ),
-            ).asSuccess()
+            val newChapter =
+                saveChapter(
+                    genText!!.copy(
+                        messageReference = messageReference.id,
+                        sagaId = saga.data.id,
+                    ),
+                )
+
+            generateChapterCover(newChapter, saga.data, saga.characters)!!.asSuccess()
         } catch (e: Exception) {
             e.asError()
         }
@@ -81,10 +76,22 @@ class ChapterUseCaseImpl
             chapter: Chapter,
             saga: SagaData,
             characters: List<Character>,
-        ): ByteArray? =
+        ): Chapter? =
             try {
-                val genCover = imagenClient.generateImage(chapter.coverPrompt(saga, characters))
-                genCover!!.data
+                val prompt = chapter.coverPrompt(saga)
+                val freepikRequest =
+                    FreepikRequest(
+                        prompt = prompt,
+                        negative_prompt = GenrePrompts.negativePrompt(saga.genre),
+                        GenrePrompts.chapterCoverStyling(saga.genre),
+                    )
+                val genCover =
+                    imagenClient
+                        .generateImage(prompt)!!
+                        .data
+                val coverFile =
+                    fileHelper.saveFile(chapter.title, genCover, path = "${saga.id}/chapters/")
+                updateChapter(chapter.copy(coverImage = coverFile!!.absolutePath))
             } catch (e: Exception) {
                 e.printStackTrace()
                 null

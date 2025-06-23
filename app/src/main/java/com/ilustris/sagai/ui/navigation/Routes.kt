@@ -168,17 +168,17 @@ enum class Routes(
     CHARACTER_DETAIL(
         arguments =
             listOf(
-                "characterId",
                 "sagaId",
+                "characterId",
             ),
-        deepLink = "saga://character_detail/{characterId}/{sagaId}",
+        deepLink = "saga://character_detail/{sagaId}/{characterId}",
         showBottomNav = false,
         topBarContent = { Box {} },
         view = { nav, padding, _, _ ->
             CharacterDetailsView(
                 navHostController = nav,
-                characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
-                sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
+                sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
+                characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
             )
         },
     ),

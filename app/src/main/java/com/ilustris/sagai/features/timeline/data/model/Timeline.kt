@@ -49,7 +49,7 @@ data class LoreGen(
                                 "content" to Schema.string(nullable = false),
                             ),
                         ),
-                    "newEntries" to
+                    "wikiUpdates" to
                         Schema.array(
                             description = "New updates for the saga world building.",
                             items =

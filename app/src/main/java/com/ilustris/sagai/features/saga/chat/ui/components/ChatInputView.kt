@@ -96,11 +96,11 @@ fun ChatInputView(
                 .gradientFade()
         }
     var charactersExpanded by remember {
-        mutableStateOf(true)
+        mutableStateOf(false)
     }
 
     var actionsExpanded by remember {
-        mutableStateOf(true)
+        mutableStateOf(false)
     }
     val inputShape = RoundedCornerShape(50.dp)
     Column(
