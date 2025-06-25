@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.datasource
 
+import android.util.Log
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import javax.inject.Inject
@@ -17,7 +18,15 @@ class MessageDaoImpl
 
         override suspend fun getMessageDetail(id: Int) = messageDao.getMessageDetail(id)
 
-        override suspend fun saveMessage(message: Message) = messageDao.saveMessage(message)
+        override suspend fun saveMessage(message: Message) =
+            try {
+                Log.i(javaClass.simpleName, "saveMessage: saving $message")
+                messageDao.saveMessage(message)
+            } catch (e: Exception) {
+                Log.e(javaClass.simpleName, "Error saving $message\n ${e.message}")
+
+                null
+            }
 
         override suspend fun deleteMessage(messageId: Long) = messageDao.deleteMessage(messageId)
 

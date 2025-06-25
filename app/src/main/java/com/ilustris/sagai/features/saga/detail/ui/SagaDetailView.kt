@@ -242,6 +242,7 @@ fun SagaDetailContentView(
                                 CharacterAvatar(
                                     mainChar,
                                     borderSize = 3.dp,
+                                    genre = it.data.genre,
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
@@ -367,6 +368,7 @@ fun SagaDetailContentView(
                                 CharacterAvatar(
                                     chars,
                                     borderSize = 2.dp,
+                                    genre = it.data.genre,
                                     modifier =
                                         Modifier
                                             .padding(8.dp)

@@ -17,7 +17,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
@@ -25,13 +24,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
-// import androidx.core.graphics.drawable.toBitmap // No longer directly used here
-// import androidx.palette.graphics.Palette // No longer directly used here
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.theme.brightness
+import com.ilustris.sagai.ui.theme.contrast
 import com.ilustris.sagai.ui.theme.grayScale
+import com.ilustris.sagai.ui.theme.noiseGrain
+import effectForGenre
 
 @Composable
 fun CharacterAvatar(
@@ -40,6 +41,7 @@ fun CharacterAvatar(
     innerPadding: Dp = 4.dp,
     borderSize: Dp = 2.dp,
     textStyle: TextStyle = MaterialTheme.typography.labelSmall,
+    genre: Genre,
     modifier: Modifier = Modifier,
 ) {
     val isLoaded =
@@ -53,8 +55,7 @@ fun CharacterAvatar(
                 borderSize,
                 borderColor ?: characterColor,
                 CircleShape,
-            )
-            .padding(innerPadding)
+            ).padding(innerPadding)
             .clip(CircleShape)
             .background(
                 characterColor,
@@ -72,6 +73,7 @@ fun CharacterAvatar(
                     .fillMaxSize()
                     .clip(CircleShape)
                     .background(characterColor, CircleShape)
+                    .effectForGenre(genre),
         )
 
         val textAlpha by animateFloatAsState(

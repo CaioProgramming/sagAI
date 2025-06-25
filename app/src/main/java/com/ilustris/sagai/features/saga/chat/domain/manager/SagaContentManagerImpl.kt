@@ -1,5 +1,8 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.asError
+import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
@@ -11,13 +14,16 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
+import kotlin.collections.emptyList
 
 const val LORE_UPDATE_THRESHOLD = 20
+const val CHAPTER_UPDATE_THRESHOLD = 5
 
 class SagaContentManagerImpl
     @Inject
@@ -35,18 +41,45 @@ class SagaContentManagerImpl
                 content.value = saga
             }
 
-        override suspend fun createNewChapter(
-            messageReference: Message,
-            messageList: List<MessageContent>,
-        ): Chapter? {
+        private fun lastEvents(): List<Timeline> {
+            val saga = content.value ?: return emptyList()
+            val lastChapter = saga.chapters.maxByOrNull { it.id }
+            val events = saga.timelines
+            val eventReference = lastChapter?.eventReference?.let { referenceId -> saga.timelines.find { it.id == referenceId } }
+            return eventReference?.let {
+                val referenceIndex = events.indexOf(it)
+                events.subList(referenceIndex, events.size).takeLast(5)
+            } ?: events
+        }
+
+        override suspend fun createNewChapter(): Chapter? {
             return try {
                 val saga = content.value!!
+                val lastEvents = lastEvents()
 
+                val genChapter =
+                    chapterUseCase
+                        .generateChapter(
+                            saga,
+                            lastAddedEvents = lastEvents,
+                        ).success.value
+
+                updateWikis(genChapter.wikiUpdates)
+                val newChapter =
+                    chapterUseCase
+                        .saveChapter(
+                            genChapter.chapter
+                                .copy(
+                                    sagaId = saga.data.id,
+                                    eventReference = lastEvents().last().id,
+                                    messageReference = 0,
+                                ),
+                        )
                 chapterUseCase
-                    .generateChapter(
-                        saga,
-                        messageReference,
-                        messageList,
+                    .generateChapterCover(
+                        newChapter,
+                        saga.data,
+                        saga.characters,
                     ).success.value
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -61,31 +94,40 @@ class SagaContentManagerImpl
         override suspend fun updateLore(
             reference: Message,
             messageSubList: List<MessageContent>,
-        ): LoreGen? {
+        ) = try {
+            val currentSaga = content.value!!
+            val newLore =
+                sagaHistoryUseCase
+                    .generateLore(
+                        currentSaga,
+                        reference.id,
+                        messageSubList.map { it.joinMessage().formatToString() },
+                    ).success.value
+
+            timelineUseCase.saveTimeline(
+                newLore.timeLine.copy(
+                    sagaId = currentSaga.data.id,
+                    messageReference = reference.id,
+                ),
+            )
+
+            updateCharacters(newLore, currentSaga)
+
+            newLore.asSuccess()
+        } catch (e: Exception) {
+            e.asError()
+        }
+
+        override suspend fun checkForChapter(): RequestResult<Exception, Chapter> {
+            val lastEvents = lastEvents()
             return try {
-                val currentSaga = content.value!!
-                val newLore =
-                    sagaHistoryUseCase
-                        .generateLore(
-                            currentSaga,
-                            reference.id,
-                            messageSubList.map { it.joinMessage().formatToString() },
-                        ).success.value
-
-                timelineUseCase.saveTimeline(
-                    newLore.timeLine.copy(
-                        sagaId = currentSaga.data.id,
-                        messageReference = reference.id,
-                    ),
-                )
-
-                updateWikis(newLore, currentSaga)
-                updateCharacters(newLore, currentSaga)
-
-                newLore
+                if (lastEvents.size >= CHAPTER_UPDATE_THRESHOLD) {
+                    createNewChapter()!!.asSuccess()
+                } else {
+                    RequestResult.Error(Exception("Not enough events to create a new chapter"))
+                }
             } catch (e: Exception) {
-                e.printStackTrace()
-                return null
+                e.asError()
             }
         }
 
@@ -110,11 +152,9 @@ class SagaContentManagerImpl
             }
         }
 
-        private suspend fun updateWikis(
-            newLore: LoreGen,
-            currentSaga: SagaContent,
-        ) {
-            newLore.wikiUpdates.forEach {
+        private suspend fun updateWikis(wikis: List<Wiki>) {
+            val currentSaga = content.value ?: return
+            wikis.forEach {
                 val savedWiki =
                     currentSaga.wikis.find { wiki ->
                         wiki.title.contentEquals(it.title, true) ||

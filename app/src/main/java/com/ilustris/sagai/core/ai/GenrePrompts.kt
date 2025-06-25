@@ -29,6 +29,7 @@ object GenrePrompts {
             Include intentional color accents on the warrior to add visual interest and potentially tie into the red theme subtly (e.g., a crimson detail, reddish-brown elements).
             The fire sparkles should also contribute to the red and orange tones, further highlighting the warrior's emotional state.
             """
+
             SCI_FI ->
                 """
             Clothing: Practical and functional cyberwear, reminiscent of clothing seen in Ghost in the Shell; includes tactical elements and sleek lines, with a slightly subdued color palette.
@@ -41,59 +42,34 @@ object GenrePrompts {
             """
         }.trimIndent()
 
-    fun iconStyle(genre: Genre): String =
-        when (genre) {
-            FANTASY ->
-                """
-                    Expression: Determined and resolute, with a strong gaze.
-                    Pose: Upper body portrait, in 4/5 angle looking to the viewer.
-                    Lighting: Dramatic lighting casting strong shadows and reflecting red light at face side.
-                    Art Style: Clean, vector-like illustration with bold colors,
-                    sharp lines, simple but effective shading, and anime/manga-inspired character design.
-                    Background: Red contrasting with the character.
-                    """
-            SCI_FI ->
-                """
-                    Lighting: Dramatic lighting with a strong neon cyan glow originating from the upper left, casting bright highlights on her forehead, cheekbone, and cybernetic implants, with deep shadows on the right side of her face and neck. Subtle hints of a deep blue ambient light.
-                    Art Style: Anime/manga-inspired style with clean, defined lines and meticulous detail on the cybernetics. Increased contrast and reduced overall saturation, with a color palette dominated by cool blues, grays, and accented by the bright cyan light.
-                    Background: A blurred and out-of-focus cyberpunk cityscape at night, with muted blues and purples suggesting distant neon lights and towering structures."
-                    """
-        }
-
     fun detail(genre: Genre) = "theme: ${genre.name}"
 
     fun artStyle(genre: Genre) =
         when (genre) {
             FANTASY ->
                 """
-                Highly detailed,photorealistic painting,
-                Renaissance-inspired reflections,
-                evoking the styles of Eric Zener, Rachel Walpole,
-                Chris Moore,Michael Hoppen,Stephen Hickman,and Mary Jane Ansell.
-                Luminous natural lighting, with profound volumetric light and atmospheric depth,
-                Grand color palette of deep, harmonious, and subtly desaturated tones, evoking a timeless grandeur,
-                strong focal point on the character, immersed in a majestic and atmospheric background,
-                evoking a sense of ancient lore, epic sagas, and enduring legend, with a soft, cinematic film grain.
+                masterpiece classical oil painting,
+                rich impasto texture, visible brushstrokes,
+                strong chiaroscuro.
+                Renaissance-inspired aesthetic, deep harmonious colors, authentic painterly grain.
                 """
+
             SCI_FI ->
                 """
-                anime illustration, inspired by Ghost in the Shell 1995 film style,
-                sharp and angular lines aesthetic,
-                crisp and contrasting shading for dramatic depth,
-                dark and immersive atmosphere,
-                highly detailed cybernetic and futuristic elements,
-                sleek character design,
-                meticulous attention to technical details,
-                evoking a sense of melancholic futurism, cyberpunk mystery and oppressive atmosphere.
-                """
+                masterpiece retro anime illustration, 80s 90s anime style,
+                sharp ink outlines, cel shading, slightly desaturated colors, 
+                im and moody lighting, stylized character features,
+                Melancholic city background.
+                 """
         }
 
     fun portraitStyle(genre: Genre) =
         when (genre) {
             FANTASY ->
                 """
-            The background is A sky at volumetric clouds in warm, gently blurred
+            With a clear sky background in any daytime(eg: moonlight, golden hour, dawn, sunset, pink sky).
             """
+
             SCI_FI ->
                 """
             A solid, contrasting background with subtle, futuristic vector lines,
@@ -104,7 +80,10 @@ object GenrePrompts {
     fun negativePrompt(genre: Genre) =
         when (genre) {
             FANTASY -> StylePreset.entries.filter { it != StylePreset.FANTASY }.joinToString()
-            SCI_FI -> StylePreset.entries.filter { it != StylePreset.CYBERPUNK && it != StylePreset.ANIME }.joinToString()
+            SCI_FI ->
+                StylePreset.entries
+                    .filter { it != StylePreset.CYBERPUNK && it != StylePreset.ANIME }
+                    .joinToString()
         }.uppercase()
 
     fun characterStyling(genre: Genre): ImageStyling =
@@ -119,6 +98,7 @@ object GenrePrompts {
                             framing = FramingPreset.CLOSE_UP,
                         ),
                 )
+
             FANTASY ->
                 ImageStyling(
                     style = StylePreset.VINTAGE.key,
@@ -143,6 +123,7 @@ object GenrePrompts {
                             framing = FramingPreset.entries.random(),
                         ),
                 )
+
             SCI_FI ->
                 ImageStyling(
                     style = StylePreset.CYBERPUNK.key,
@@ -167,6 +148,7 @@ object GenrePrompts {
                             framing = FramingPreset.CINEMATIC,
                         ),
                 )
+
             SCI_FI ->
                 ImageStyling(
                     style = StylePreset.CYBERPUNK.key,

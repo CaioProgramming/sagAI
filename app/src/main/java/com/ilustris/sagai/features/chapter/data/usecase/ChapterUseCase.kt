@@ -2,9 +2,11 @@ package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.model.ChapterGen
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.Flow
 
 interface ChapterUseCase {
@@ -25,9 +27,14 @@ interface ChapterUseCase {
 
     suspend fun deleteAllChapters()
 
+    suspend fun generateChapterCover(
+        chapter: Chapter,
+        saga: SagaData,
+        characters: List<Character>,
+    ): RequestResult<Exception, Chapter>
+
     suspend fun generateChapter(
         saga: SagaContent,
-        messageReference: Message,
-        messages: List<MessageContent>,
-    ): RequestResult<Exception, Chapter>
+        lastAddedEvents: List<Timeline>,
+    ): RequestResult<Exception, ChapterGen>
 }

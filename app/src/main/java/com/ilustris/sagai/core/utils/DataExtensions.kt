@@ -9,7 +9,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.toString
 
-fun toJsonSchema(clazz: Class<*>) =
+fun toFirebaseSchema(clazz: Class<*>) =
     Schema.obj(
         properties = clazz.toSchemaMap(),
     )
@@ -146,7 +146,7 @@ fun toJsonMap(
     clazz: Class<*>,
     filteredFields: List<String> = emptyList(),
 ): String {
-    val deniedFields = filteredFields.plus("\$stable")
+    val deniedFields = filteredFields.plus("\$stable").plus("Companion")
     val fields =
         clazz
             .declaredFields

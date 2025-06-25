@@ -4,7 +4,15 @@ enum class CharacterFraming(
     val description: String,
 ) {
     CLOSE_UP("close-up"),
-    PORTRAIT("Portrait of character in a 3/4 angle from neck-up with a smooth texture background"),
+    PORTRAIT(
+        """
+        head and shoulders portrait
+        (e.g., direct engaging gaze,
+        subtle head tilt, looking off-camera,
+        over-the-shoulder glance, profile with a slight turn, chin raised proudly,
+        chin lowered contemplatively)
+        """,
+    ),
     MEDIUM_SHOT(
         """
             medium shot, showing the character from the waist up,

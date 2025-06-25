@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.newsaga.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
-import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -46,7 +45,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
@@ -55,12 +53,10 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.zoomAnimation
-import dev.chrisbanes.haze.hazeEffect
 
 @Composable
 fun GenreSelectionCard(
@@ -86,8 +82,6 @@ fun GenreSelectionCard(
     }
 }
 
-
-
 @Composable
 fun GenreAvatar(
     genre: Genre,
@@ -106,7 +100,7 @@ fun GenreAvatar(
     )
     val scale by animateFloatAsState(
         if (isSelected) 1.1f else 1f,
-        tween()
+        tween(),
     )
     Column(
         modifier =
@@ -148,7 +142,6 @@ fun GenreAvatar(
     }
 }
 
-
 @Preview
 @Composable
 fun GenreAvatarPreview() {
@@ -170,11 +163,11 @@ fun GenreCard(
 ) {
     val saturation by animateFloatAsState(
         if (isSelected) 1f else 0f,
-        tween(500, easing = EaseIn)
+        tween(500, easing = EaseIn),
     )
     val scale by animateFloatAsState(
         if (isSelected) 1f else .8f,
-        tween(700, easing = EaseInBounce)
+        tween(700, easing = EaseInBounce),
     )
 
     val borderColor by animateColorAsState(
@@ -200,16 +193,19 @@ fun GenreCard(
             }
 
         val imageUrl = genre.defaultHeaderImage()
-        val imageRequest = ImageRequest.Builder(LocalPlatformContext.current)
-            .data(imageUrl)
-            .size(Size.ORIGINAL)
-            .build()
+        val imageRequest =
+            ImageRequest
+                .Builder(LocalPlatformContext.current)
+                .data(imageUrl)
+                .size(Size.ORIGINAL)
+                .build()
 
         val textSize by animateFloatAsState(
-            if (isSelected) 22f else 16f,
+            if (isSelected) 20f else 16f,
             tween(
-                200, easing = EaseInElastic
-            )
+                200,
+                easing = EaseIn,
+            ),
         )
 
         AsyncImage(
@@ -236,8 +232,9 @@ fun GenreCard(
             color = genre.iconColor,
             modifier =
                 Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .align(Alignment.BottomCenter),
         )
     }
 }
@@ -282,4 +279,3 @@ fun GenreCardPreview() {
         }
     }
 }
-

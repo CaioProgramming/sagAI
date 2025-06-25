@@ -38,6 +38,7 @@ import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
+import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -117,7 +118,7 @@ fun ChapterContentView(
                     imageSize = 0.dp
                 },
                 modifier =
-                    Modifier.fillMaxSize(),
+                    Modifier.fillMaxSize().effectForGenre(genre),
             )
 
             Box(

@@ -50,8 +50,81 @@ fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {
     }
 }
 
+fun Modifier.brightness(brightnessFactor: Float): Modifier {
+    val brightnessMatrix =
+        ColorMatrix().apply {
+            val scale = brightnessFactor + 1f
+            this[0, 0] = scale
+            this[1, 1] = scale
+            this[2, 2] = scale
+        }
+    val brightnessFilter = ColorFilter.colorMatrix(brightnessMatrix)
+    val paint = Paint().apply { colorFilter = brightnessFilter }
+
+    return drawWithCache {
+        val canvasBounds = Rect(Offset.Zero, size)
+        onDrawWithContent {
+            drawIntoCanvas {
+                it.saveLayer(canvasBounds, paint)
+                drawContent()
+                it.restore()
+            }
+        }
+    }
+}
+
 fun Genre.bubbleTextColors(sender: SenderType) =
     when (this) {
         FANTASY -> if (sender.isCharacter()) Color.Black else Color.White
         SCI_FI -> Color.White
+    }
+
+fun Modifier.contrast(contrastFactor: Float): Modifier {
+    val contrastMatrix =
+        ColorMatrix().apply {
+            val scale = contrastFactor + 1f
+            val translate = (-.5f * scale + .5f) * 255f
+            this[0, 0] = scale
+            this[0, 4] = translate
+            this[1, 1] = scale
+            this[1, 4] = translate
+            this[2, 2] = scale
+            this[2, 4] = translate
+        }
+    val contrastFilter = ColorFilter.colorMatrix(contrastMatrix)
+    val paint = Paint().apply { colorFilter = contrastFilter }
+    return drawWithCache {
+        val canvasBounds = Rect(Offset.Zero, size)
+        onDrawWithContent {
+            drawIntoCanvas {
+                it.saveLayer(canvasBounds, paint)
+                drawContent()
+                it.restore()
+            }
+        }
+    }
+}
+
+fun Modifier.noiseGrain(
+    intensity: Float = 0.1f,
+    grainColor: Color = Color.Black,
+): Modifier =
+    drawWithCache {
+        onDrawWithContent {
+            drawContent()
+            val noisePaint =
+                Paint().apply {
+                    color = grainColor
+                    alpha = intensity
+                }
+            drawIntoCanvas { canvas ->
+                val width = size.width.toInt()
+                val height = size.height.toInt()
+                for (i in 0 until (width * height * intensity).toInt()) {
+                    val x = (Math.random() * width).toFloat()
+                    val y = (Math.random() * height).toFloat()
+                    canvas.drawRect(x, y, x + 1, y + 1, noisePaint)
+                }
+            }
+        }
     }

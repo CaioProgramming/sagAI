@@ -24,7 +24,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao // Added WikiDao imp
         Wiki::class,
         Timeline::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = true,
 )
 abstract class SagaDatabase : RoomDatabase() {

@@ -42,9 +42,11 @@ fun NewCharacterView(
         ) {
             CharacterAvatar(
                 it,
-                modifier = Modifier.clip(CircleShape).size(75.dp).clickable {
-                    onSelectCharacter(it)
-                }
+                genre = genre,
+                modifier =
+                    Modifier.clip(CircleShape).size(75.dp).clickable {
+                        onSelectCharacter(it)
+                    },
             )
 
             Text(
@@ -55,7 +57,6 @@ fun NewCharacterView(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                     ),
-
                 modifier = Modifier.padding(16.dp),
             )
 
@@ -68,7 +69,7 @@ fun NewCharacterView(
                         fontWeight = FontWeight.Normal,
                         fontFamily = genre.bodyFont(),
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = MaterialTheme.colorScheme.onBackground,
                     ),
             )
         }

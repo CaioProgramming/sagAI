@@ -13,7 +13,7 @@ interface MessageUseCase {
 
     suspend fun getMessageDetail(id: Int): MessageContent
 
-    suspend fun saveMessage(message: Message): Message
+    suspend fun saveMessage(message: Message): RequestResult<Exception, Message>
 
     suspend fun deleteMessage(messageId: Long)
 

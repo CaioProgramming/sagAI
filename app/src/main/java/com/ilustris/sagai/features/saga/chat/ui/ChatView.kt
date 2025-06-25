@@ -18,16 +18,20 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,12 +53,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +77,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
@@ -92,19 +95,17 @@ import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import kotlinx.coroutines.launch
+import effectForGenre
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -122,23 +123,12 @@ fun ChatView(
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val isLoreUpdated by viewModel.loreUpdated.collectAsStateWithLifecycle()
+    val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
     val mainCharacter = content?.mainCharacter
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(content) {
         if (content == null) {
             viewModel.initChat(sagaId)
-        }
-    }
-
-    LaunchedEffect(isLoreUpdated) {
-        if (isLoreUpdated) {
-            coroutineScope.launch {
-                snackbarState.showSnackbar(
-                    "História atualizada.",
-                    withDismissAction = true,
-                )
-            }
         }
     }
 
@@ -166,7 +156,6 @@ fun ChatView(
                             mainCharacter,
                             characters,
                             isGenerating,
-                            isLoreUpdated,
                             padding,
                             viewModel::sendInput,
                             navHostController::popBackStack,
@@ -195,6 +184,42 @@ fun ChatView(
                         tint = MaterialTheme.colorScheme.background,
                     )
             }
+
+            AnimatedVisibility(
+                snackbarMessage != null,
+                modifier = Modifier.align(Alignment.TopCenter),
+                enter = scaleIn(),
+                exit = shrinkOut(),
+            ) {
+                snackbarMessage?.let { message ->
+                    val backgroundColor =
+                        content?.data?.genre?.color ?: MaterialTheme.colorScheme.primary
+                    val contentColor =
+                        content?.data?.genre?.iconColor ?: MaterialTheme.colorScheme.onPrimary
+                    Row(
+                        Modifier
+                            .padding(32.dp)
+                            .fillMaxWidth()
+                            .border(
+                                1.dp,
+                                gradientAnimation(genresGradient(), targetValue = 500f),
+                                RoundedCornerShape(25.dp),
+                            ).background(
+                                MaterialTheme.colorScheme.background,
+                                RoundedCornerShape(25.dp),
+                            ).gradientFill(gradientAnimation(genresGradient(), targetValue = 500f)),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            modifier = Modifier.padding(8.dp).size(12.dp),
+                        )
+                        Text(message, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+                    }
+                }
+            }
         }
     }
 }
@@ -207,7 +232,6 @@ fun ChatContent(
     mainCharacter: Character?,
     characters: List<Character>,
     isGenerating: Boolean = false,
-    isLoreUpdated: Boolean = false,
     padding: PaddingValues = PaddingValues(),
     onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
     onBack: () -> Unit = {},
@@ -260,7 +284,6 @@ fun ChatContent(
                 characters = characters,
                 isGenerating = isGenerating,
                 listState = listState,
-                isLoreUpdated = isLoreUpdated,
                 modifier =
                     Modifier.constrainAs(messages) {
                         top.linkTo(parent.top)
@@ -298,19 +321,8 @@ fun ChatContent(
                 )
             }
 
-            var firstVisibleItem by remember {
-                mutableIntStateOf(0)
-            }
-
-            LaunchedEffect(listState) {
-                snapshotFlow { listState.firstVisibleItemIndex }
-                    .collect {
-                        firstVisibleItem = it
-                    }
-            }
-
             val alpha by animateFloatAsState(
-                if (firstVisibleItem != messagesList.lastIndex) 1f else 0f,
+                if (listState.canScrollForward.not()) 0f else 1f,
                 animationSpec = tween(450, easing = EaseIn),
             )
             SagaTopBar(
@@ -373,9 +385,12 @@ private fun EmptyMessagesView(
 }
 
 @Composable
-fun SagaHeader(saga: SagaData) {
+fun SagaHeader(
+    saga: SagaData,
+    isEmpty: Boolean,
+) {
     var size by remember {
-        mutableStateOf(300.dp)
+        mutableStateOf(if (isEmpty) 500.dp else 300.dp)
     }
     val imageSize by animateDpAsState(
         targetValue = size,
@@ -399,6 +414,7 @@ fun SagaHeader(saga: SagaData) {
             modifier =
                 Modifier
                     .align(Alignment.Center)
+                    .effectForGenre(saga.genre)
                     .fillMaxSize(),
         )
 
@@ -420,7 +436,6 @@ fun ChatList(
     modifier: Modifier,
     listState: LazyListState,
     isGenerating: Boolean = false,
-    isLoreUpdated: Boolean = false,
     openCharacter: () -> Unit = {},
     openSaga: () -> Unit = {},
 ) {
@@ -437,29 +452,6 @@ fun ChatList(
                     canAnimate = message == messages.last(),
                     openCharacters = openCharacter,
                 )
-            }
-
-            item {
-                AnimatedVisibility(isLoreUpdated) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        SparkLoader(
-                            brush = it.genre.color.gradientFade(),
-                            modifier = Modifier.align(Alignment.CenterHorizontally).size(32.dp),
-                            duration = 2.seconds,
-                            strokeSize = 2.dp,
-                        )
-
-                        Text(
-                            "História atualizada.",
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
             }
 
             item {
@@ -524,7 +516,7 @@ fun ChatList(
             }
 
             item {
-                SagaHeader(saga)
+                SagaHeader(saga, messages.isEmpty())
             }
         }
     }
@@ -558,6 +550,7 @@ private fun CharactersTopIcons(
                 borderSize = 2.dp,
                 borderColor = MaterialTheme.colorScheme.background,
                 innerPadding = 0.dp,
+                genre = data.genre,
                 modifier =
                     Modifier
                         .zIndex(

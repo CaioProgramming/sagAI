@@ -298,6 +298,7 @@ private fun MainCharacterInputButton(
                     CharacterAvatar(
                         character,
                         borderSize = 2.dp,
+                        genre = saga.genre,
                         modifier =
                             Modifier
                                 .size(32.dp)

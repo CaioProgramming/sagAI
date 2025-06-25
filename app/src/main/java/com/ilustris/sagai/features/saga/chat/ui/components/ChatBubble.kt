@@ -1,12 +1,10 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
-import ai.atick.material.MaterialColor
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,7 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,17 +28,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
@@ -53,18 +46,10 @@ import com.ilustris.sagai.ui.theme.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.botBubbleGradient
-import com.ilustris.sagai.ui.theme.bubbleTextColors
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
-import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.userBubbleGradient
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -86,15 +71,12 @@ fun ChatBubble(
         }
     val bubbleColor =
         when (sender) {
-            SenderType.USER -> genre.userBubbleGradient()
-            SenderType.CHARACTER -> genre.botBubbleGradient()
-            else ->
-                Brush.verticalGradient(
-                    listOf(
-                        Color.Transparent,
-                        Color.Transparent,
-                    ),
+            SenderType.USER -> genre.color
+            SenderType.CHARACTER ->
+                genre.color.copy(
+                    alpha = .4f,
                 )
+            else -> Color.Transparent
         }
 
     val textColor =
@@ -103,7 +85,7 @@ fun ChatBubble(
             SenderType.THOUGHT, SenderType.ACTION, SenderType.NEW_CHARACTER,
             -> MaterialTheme.colorScheme.onBackground
 
-            else -> genre.bubbleTextColors(sender)
+            else -> genre.iconColor
         }
 
     val cornerSize = genre.cornerSize()
@@ -131,7 +113,7 @@ fun ChatBubble(
     val borderSize =
         when (sender) {
             SenderType.NARRATOR, SenderType.NEW_CHAPTER, SenderType.ACTION, SenderType.THOUGHT -> 0.dp
-            else -> 1.dp
+            else -> 0.dp
         }
 
     val textAlignment =
@@ -207,10 +189,9 @@ fun ChatBubble(
                                     .align(Alignment.CenterVertically)
                                     .senderBorder()
                                     .background(
-                                        bubbleColor,
+                                        color = bubbleColor,
                                         bubbleShape,
-                                    )
-                                    .padding(16.dp),
+                                    ).padding(16.dp),
                             style =
                                 MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Normal,
@@ -236,6 +217,7 @@ fun ChatBubble(
                             messageContent.character?.let {
                                 CharacterAvatar(
                                     it,
+                                    genre = genre,
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
@@ -254,6 +236,7 @@ fun ChatBubble(
                             messageContent.character?.let {
                                 CharacterAvatar(
                                     it,
+                                    genre = genre,
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
@@ -276,7 +259,6 @@ fun ChatBubble(
                                 Modifier
                                     .weight(.5f, false)
                                     .graphicsLayer(bubbleAlpha)
-                                    .border(2.dp, MaterialColor.Gray100.gradientFade(), bubbleShape)
                                     .background(
                                         bubbleColor,
                                         bubbleShape,
@@ -300,8 +282,6 @@ fun ChatBubble(
                         )
                     }
                 }
-
-
             }
         }
 
@@ -351,6 +331,7 @@ fun ChatBubble(
                         CharacterAvatar(
                             it,
                             borderSize = 1.dp,
+                            genre = genre,
                             modifier =
                                 Modifier.clip(CircleShape).size(32.dp).clickable {
                                     openCharacters()
@@ -404,8 +385,6 @@ fun ChatBubble(
         }
     }
 }
-
-
 
 @Preview(
     uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,

@@ -9,7 +9,7 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.generationConfig
 import com.google.gson.Gson
-import com.ilustris.sagai.core.utils.toJsonSchema
+import com.ilustris.sagai.core.utils.toFirebaseSchema
 
 class TextGenClient : AIClient() {
     override fun buildModel(generationConfig: GenerationConfig): GenerativeModel =
@@ -27,7 +27,7 @@ class TextGenClient : AIClient() {
         customSchema: Schema? = null,
     ): T? {
         try {
-            val schema = customSchema ?: toJsonSchema(T::class.java)
+            val schema = customSchema ?: toFirebaseSchema(T::class.java)
             val model =
                 buildModel(
                     generationConfig {

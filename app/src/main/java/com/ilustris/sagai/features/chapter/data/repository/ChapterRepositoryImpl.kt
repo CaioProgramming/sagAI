@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import kotlinx.coroutines.flow.Flow
+import java.util.Calendar
 import javax.inject.Inject
 
 class ChapterRepositoryImpl
@@ -20,9 +21,13 @@ class ChapterRepositoryImpl
         override suspend fun saveChapter(chapter: Chapter) =
             chapter.copy(
                 id = chapterDao.saveChapter(chapter).toInt(),
+                createdAt = Calendar.getInstance().timeInMillis,
             )
 
-        override suspend fun updateChapter(chapter: Chapter) = chapter.copy(id = chapterDao.updateChapter(chapter))
+        override suspend fun updateChapter(chapter: Chapter): Chapter {
+            chapterDao.updateChapter(chapter)
+            return chapter
+        }
 
         override suspend fun deleteChapter(chapter: Chapter) = chapterDao.deleteChapter(chapter)
 

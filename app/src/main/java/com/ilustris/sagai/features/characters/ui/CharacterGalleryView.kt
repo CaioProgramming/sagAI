@@ -189,6 +189,7 @@ private fun CharacterVerticalItem(
                 MaterialTheme.typography.titleLarge.copy(
                     fontFamily = genre.headerFont(),
                 ),
+            genre = genre,
             modifier =
                 Modifier
                     .align(Alignment.CenterHorizontally)
@@ -327,6 +328,7 @@ fun CharacterHorizontalView(
                 MaterialTheme.typography.titleLarge.copy(
                     fontFamily = genre.headerFont(),
                 ),
+            genre = genre,
             modifier =
                 Modifier
                     .size(imageSize),

@@ -1,29 +1,13 @@
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
-import com.ilustris.sagai.R
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.theme.brightness
+import com.ilustris.sagai.ui.theme.contrast
+import com.ilustris.sagai.ui.theme.grayScale
 
 @Composable
-fun GrainOverlay(alpha: Float = .5f) {
-    val grainPainter = painterResource(R.drawable.grain_overlay)
-
-    Image(
-        painter = grainPainter,
-        null,
-        colorFilter =
-            ColorFilter.tint(
-                Color.Black.copy(alpha = alpha),
-                blendMode = BlendMode.Overlay,
-            ),
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .graphicsLayer(alpha = alpha),
-    )
-}
+fun Modifier.effectForGenre(genre: Genre): Modifier =
+    this
+        .grayScale(.5f)
+        .brightness((.01f).unaryMinus())
+        .contrast(0.85f)

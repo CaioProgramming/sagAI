@@ -60,6 +60,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
+import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -140,7 +141,8 @@ fun CharacterDetailsContent(
                         Modifier
                             .fillMaxSize()
                             .zoomAnimation()
-                            .clipToBounds(),
+                            .clipToBounds()
+                            .effectForGenre(genre),
                 )
 
                 Box(
@@ -185,12 +187,11 @@ fun CharacterDetailsContent(
                         .fillMaxWidth()
                         .gradientFill(
                             gradientAnimation(
-                                characterColor.darkerPalette()
-                                , targetValue = 500f,
-                                gradientType = GradientType.VERTICAL
-                            )
-                        )
-                        .padding(top = 50.dp, start = 16.dp),
+                                characterColor.darkerPalette(),
+                                targetValue = 500f,
+                                gradientType = GradientType.VERTICAL,
+                            ),
+                        ).padding(top = 50.dp, start = 16.dp),
                 genre = genre,
             )
         }

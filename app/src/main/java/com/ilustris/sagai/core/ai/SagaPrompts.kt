@@ -1,8 +1,6 @@
 package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.formatToString
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterExpression
@@ -10,9 +8,8 @@ import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 object SagaPrompts {
@@ -76,11 +73,12 @@ object SagaPrompts {
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
         ${CharacterFraming.EPIC_WIDE_SHOT.description}
-        Appearance: ${mainCharacter.details.appearance}
+        With:
+        ${mainCharacter.details.race}, ${mainCharacter.details.gender}, ${mainCharacter.details.ethnicity}, ${mainCharacter.details.appearance}
+
         Expression: ${CharacterExpression.random().description}
         Pose: ${CharacterPose.random().description}
-        Color palette: ${saga.visuals.colorPalette}
-        
+        Color palette: ${saga.visuals.colorPalette}        
         Environment: ${saga.visuals.environmentDetails}
         Background: ${saga.visuals.backgroundElements}
         """
@@ -127,39 +125,44 @@ object SagaPrompts {
 
     fun chapterGeneration(
         sagaContent: SagaContent,
-        messages: List<MessageContent>,
+        lastAddedEvents: List<Timeline>,
     ) = """
         Write a new chapter to continue the adventure in a role-playing game (RPG) set in the world of ${sagaContent.data.title}.
         ${details(sagaContent.data)}
         
-        Write a overview of what should be the next events connecting with the past events from the messages.
-        The last messages in the conversation were:
-        [
-            ${messages.joinToString("\n") { it.joinMessage().formatToString() }}  }}
-        ]
         You can use the following chapters as context:
         ${sagaContent.chapters.formatToJsonArray()}
         
-        Use the current timeline to refine your response and write a concise chapter that continues the story.
+        This is the current saga full timeline:
         ${sagaContent.timelines.formatToJsonArray()}
         
-        Your summary should reflect the context of the story and the events that have happened so far.
-        The chapter should include:
-        1.  A brief summary of the main events that have happened so far.
-        2.  A recap of the main character's actions and decisions.
-        3.  An indication of the current state of the world and the main character's situation.
-        Target a description length of 100 words, ensuring it captures the essence of a playable RPG experience.
+        The most recent events on the story was:
+        ${lastAddedEvents.formatToJsonArray()}
         
+        **EXISTING WORLD WIKI ENTRIES (For consistent terminology and referencing important world elements):**
+        // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
+        // Use this list to ensure you use the correct and consistent names for known entities when mentioning them in the chapter description. Your goal is to naturally weave these terms into the narrative where relevant.
+
+        [ ${sagaContent.wikis.formatToJsonArray()} ]
+        Always follow that structure for items in the array: 
+        ${toJsonMap(Wiki::class.java)}
+        
+        **Your chapter description should be concise, compelling, and around 100 words.** It must capture the essence of a playable RPG experience and prepare the player for the next phase of the story.
+        
+        The chapter description MUST effectively summarize the latest developments by including:
+        1.  **Key Events & Current Situation:** A brief summary of the main events that have just happened, clearly indicating the current state of the world and the main character's situation. **Ensure this incorporates relevant world entities (locations, organizations, items, concepts, technologies, or events) from the 'EXISTING WORLD WIKI ENTRIES', especially if they are new or have become significantly important in this segment.**
+        2.  **Main Character's Role:** A recap of the main character's (Any's) actions and pivotal decisions within this chapter's events.
+
         Saga photography:
         Color palette: ${sagaContent.data.visuals.colorPalette},
         illumination: ${sagaContent.data.visuals.lightingDetails},
         environment: ${sagaContent.data.visuals.environmentDetails}
         
-        On the visualDescription field Write a prompt of a illustration that defines this chapter.
-        YOU MUST USE THE SAGA PHOTOGRAPHY TO IMPROVE YOUR PROMPT
+        On the visualDescription field, Write a concise prompt for an illustration that visually defines this chapter.
+        YOU MUST USE THE SAGA PHOTOGRAPHY TO IMPROVE YOUR PROMPT.
         You can use the characters in the story to improve your prompt:
-        USE ONLY RELEVANT CHARACTERS FROM THE CURRENT CHAPTER
-        // IMPORTANT TO USE CHARACTER APPEARANCE ON YOUR PROMPT, KEEPING CONSISTENT.
+        USE ONLY RELEVANT CHARACTERS FROM THE CURRENT CHAPTER.
+        IMPORTANT TO USE CHARACTER APPEARANCE ON YOUR PROMPT, KEEPING CONSISTENT.
         ${sagaContent.characters.formatToJsonArray()}
         """.trimIndent()
 
@@ -182,18 +185,17 @@ object SagaPrompts {
         // Use this list to understand the saga's current historical state and to ensure new events are not duplicates.
         // Your task is to identify truly NEW and important events from 'CONVERSATION HISTORY TO SUMMARIZE' that are NOT already covered here.
         [
-         ${sagaContent.timelines.joinToString(",\n") { it.toJsonFormat() }}
+         ${sagaContent.timelines.formatToJsonArray()}
         ]
         
         CONVERSATION HISTORY TO SUMMARIZE (New Segment - e.g., last 20 messages):
-        // This is the new chunk of messages that needs to be analyzed for new lore events, wiki updates, and character updates.
+        // This is the new chunk of messages that needs to be analyzed for new lore events and character updates.
         // Focus on extracting the most significant and lasting events from this segment.
-        // [As últimas 20 mensagens da conversa ou o segmento desde o último ponto de atualização]
         [
          ${messages.joinToString(",\n")}
         ]
         
-        EXISTING WORLD WIKI ENTRIES (For reference, to avoid duplicates or identify updates):
+        EXISTING WORLD WIKI ENTRIES (For reference):
         [
          ${sagaContent.wikis.formatToJsonArray()}
         ]
@@ -210,19 +212,6 @@ object SagaPrompts {
          ${toJsonMap(LoreGen::class.java)}
         }
         
-        **EXISTING WORLD WIKI ENTRIES (For reference, to avoid duplicates or identify updates):**
-        // This is a list of all world entities (locations, organizations, items, concepts, events, technologies etc.) that are ALREADY stored in this saga's World Knowledge Base.
-        // Use this list to determine if an entity emerging in the 'CONVERSATION HISTORY TO SUMMARIZE' is truly new, or if it's an existing entity that needs an update.
-        // **CRITICAL INSTRUCTIONS FOR 'wikiUpdates' output:**
-        // - If an entity (by its 'name' or any of its 'aliases') from 'CONVERSATION HISTORY TO SUMMARIZE' already exists in THIS 'EXISTING WORLD WIKI ENTRIES' list, then:
-        //   - DO NOT create a new entry for it in your 'wikiUpdates' array, UNLESS its 'description' has SIGNIFICANTLY changed or new crucial information has emerged for it in the 'CONVERSATION HISTORY TO SUMMARIZE'.
-        //   - If you update an existing entity, ensure its 'name' in 'wikiUpdates' EXACTLY matches the existing entry's 'name'.
-        // - If an entity from 'CONVERSATION HISTORY TO SUMMARIZE' is genuinely NEW and is NOT present in THIS 'EXISTING WORLD WIKI ENTRIES' list, then you MUST include it as a new entry in your 'wikiUpdates'.
-        ${sagaContent.wikis.joinToString(",\n") { it.toJsonFormat() }}
-        Follow this structure for wiki updates:
-        [
-          ${toJsonMap(Wiki::class.java)}
-        ]
          
         **EXISTING SAGA CAST (For reference, to identify character updates):**
         // This is a list of all characters (NPCs) that are ALREADY in the saga's current cast.
@@ -232,7 +221,7 @@ object SagaPrompts {
         // - If you update a character, their 'name' in 'characterUpdates' MUST EXACTLY match their 'name' in this 'EXISTING SAGA CAST' list.
         // - Provide ONLY the fields that have changed. Do NOT include fields that remain the same.
         // - For 'backstory' or 'personality' fields, provide the *new, updated complete text* if it's changing, not just a summary of the change.        
-        ${sagaContent.characters.joinToString(",\n") { it.toJsonFormat() }}
+       [ ${sagaContent.characters.formatToJsonArray()} ]
 
         """"
 }

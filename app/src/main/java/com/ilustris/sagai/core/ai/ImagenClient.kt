@@ -25,7 +25,7 @@ class ImagenClientImpl
     ) : ImagenClient {
         val model by lazy {
             Firebase.ai.imagenModel(
-                "imagen-3.0-generate-002",
+                "imagen-4.0-generate-preview-06-06",
             )
         }
 
