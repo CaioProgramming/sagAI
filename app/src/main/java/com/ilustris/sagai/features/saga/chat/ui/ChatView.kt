@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -270,7 +271,7 @@ fun ChatContent(
     val listState = rememberLazyListState()
 
     LaunchedEffect(messagesList.size) {
-        listState.scrollToItem(0)
+        listState.animateScrollToItem(0)
     }
 
     Box {
@@ -324,7 +325,7 @@ fun ChatContent(
                 modifier =
                     Modifier.constrainAs(messages) {
                         top.linkTo(parent.top)
-                        bottom.linkTo(chatInput.top)
+                        bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
                         width = Dimension.fillToConstraints
@@ -480,8 +481,13 @@ fun ChatList(
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
-    LazyColumn(modifier.padding(bottom = 2.dp), state = listState, reverseLayout = true) {
+    LazyColumn(modifier, state = listState, reverseLayout = true) {
         saga?.let {
+
+            item {
+                Spacer(Modifier.fillMaxWidth().height(75.dp))
+            }
+
             items(messages.reversed(), key = { it.message.id }) { message ->
                 ChatBubble(
                     message,

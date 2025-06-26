@@ -112,7 +112,7 @@ fun ChatInputView(
                 inputBrush,
                 inputShape,
             ).background(
-                MaterialTheme.colorScheme.background,
+                MaterialTheme.colorScheme.background.copy(alpha = .8f),
                 inputShape,
             ).padding(horizontal = 8.dp, vertical = 0.dp)
             .animateContentSize(tween(300, easing = EaseIn)),

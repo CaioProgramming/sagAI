@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
+import android.util.Log
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -64,7 +65,7 @@ class SagaContentManagerImpl
                             lastAddedEvents = lastEvents,
                         ).success.value
 
-                updateWikis(genChapter.wikiUpdates)
+                updateWikis(lastEvents)
                 val newChapter =
                     chapterUseCase
                         .saveChapter(
@@ -152,8 +153,9 @@ class SagaContentManagerImpl
             }
         }
 
-        private suspend fun updateWikis(wikis: List<Wiki>) {
+        private suspend fun updateWikis(events: List<Timeline>) {
             val currentSaga = content.value ?: return
+            val wikis = wikiUseCase.generateWiki(currentSaga, events)
             wikis.forEach {
                 val savedWiki =
                     currentSaga.wikis.find { wiki ->
@@ -172,6 +174,9 @@ class SagaContentManagerImpl
                 } ?: run {
                     wikiUseCase.saveWiki(it)
                 }
+            }
+            if (wikis.isEmpty()) {
+                Log.w(javaClass.simpleName, "updateWikis: No wiki updates for the ${events.size} events.")
             }
         }
 

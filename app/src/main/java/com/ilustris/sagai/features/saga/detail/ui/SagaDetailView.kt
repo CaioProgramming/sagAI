@@ -14,11 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -69,6 +68,7 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
+import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -84,6 +84,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun SagaDetailView(
@@ -163,15 +164,21 @@ fun SagaDetailContentView(
     onBack: () -> Unit = {},
     onDelete: (SagaData) -> Unit = {},
 ) {
+    val columnCount = 2
     val saga = ((state as? State.Success)?.data as? SagaContent)
-    LazyColumn(
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columnCount),
         modifier =
             Modifier
                 .padding(paddingValues)
                 .animateContentSize(),
     ) {
         if (state is State.Loading) {
-            item {
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -188,7 +195,10 @@ fun SagaDetailContentView(
         }
 
         saga?.let {
-            stickyHeader { position ->
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
                 SagaTopBar(
                     it.data.title,
                     "Criado em ${it.data.createdAt.formatDate()}",
@@ -201,7 +211,10 @@ fun SagaDetailContentView(
                             .padding(top = 50.dp, start = 16.dp),
                 )
             }
-            item {
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         modifier =
@@ -249,6 +262,16 @@ fun SagaDetailContentView(
                                             .size(170.dp),
                                 )
                                 Text(
+                                    "A jornada de",
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = it.data.genre.bodyFont(),
+                                            fontWeight = FontWeight.Light,
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                Text(
                                     it.mainCharacter.name,
                                     style =
                                         MaterialTheme.typography.displaySmall.copy(
@@ -262,7 +285,8 @@ fun SagaDetailContentView(
                                             .gradientFill(
                                                 gradientAnimation(
                                                     it.data.genre.gradient(),
-                                                    targetValue = 1500f,
+                                                    targetValue = 500f,
+                                                    duration = 2.seconds,
                                                 ),
                                             ),
                                 )
@@ -272,7 +296,10 @@ fun SagaDetailContentView(
                 }
             }
 
-            item {
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     modifier =
@@ -285,7 +312,10 @@ fun SagaDetailContentView(
                 }
             }
 
-            item {
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(16.dp),
@@ -316,7 +346,10 @@ fun SagaDetailContentView(
                 }
             }
 
-            item {
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
                 CharacterSection(
                     "Descrição",
                     it.data.description,
@@ -324,78 +357,82 @@ fun SagaDetailContentView(
                 )
             }
 
-            item {
-                Column {
-                    Row(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                    ) {
-                        Text(
-                            "Personagens",
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = it.data.genre.headerFont(),
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .weight(1f),
-                        )
-
-                        IconButton(onClick = {
-                            selectCharacter(null)
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Ver personagens",
-                            )
-                        }
-                    }
-
-                    LazyRow {
-                        items(
-                            sortCharactersByMessageCount(
-                                it.characters,
-                                it.messages,
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
+                Row(
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                ) {
+                    Text(
+                        "Personagens",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Normal,
+                                fontFamily = it.data.genre.headerFont(),
                             ),
-                        ) { chars ->
-                            Column(
-                                Modifier.padding(8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                CharacterAvatar(
-                                    chars,
-                                    borderSize = 2.dp,
-                                    genre = it.data.genre,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .clip(CircleShape)
-                                            .size(120.dp)
-                                            .padding(8.dp)
-                                            .clickable {
-                                                selectCharacter(chars.id)
-                                            },
-                                )
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .weight(1f),
+                    )
 
-                                Text(
-                                    chars.name,
-                                    style =
-                                        MaterialTheme.typography.bodySmall.copy(
-                                            fontWeight = FontWeight.Light,
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                )
-                            }
-                        }
+                    IconButton(onClick = {
+                        selectCharacter(null)
+                    }, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            contentDescription = "Ver personagens",
+                        )
                     }
                 }
             }
 
+            items(
+                sortCharactersByMessageCount(
+                    it.characters,
+                    it.messages,
+                ),
+            ) { chars ->
+
+                Column(
+                    Modifier.padding(8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    CharacterAvatar(
+                        chars,
+                        borderSize = 2.dp,
+                        genre = it.data.genre,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .clip(CircleShape)
+                                .size(120.dp)
+                                .padding(8.dp)
+                                .clickable {
+                                    selectCharacter(chars.id)
+                                },
+                    )
+
+                    Text(
+                        chars.name,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Light,
+                                textAlign = TextAlign.Center,
+                                fontFamily = it.data.genre.bodyFont(),
+                            ),
+                    )
+                }
+            }
+
             if (it.timelines.isNotEmpty()) {
-                item {
+                item(span = {
+                    androidx.compose.foundation.lazy.grid
+                        .GridItemSpan(columnCount)
+                }) {
                     Column {
                         Row(
                             Modifier
@@ -451,7 +488,10 @@ fun SagaDetailContentView(
             }
 
             if (it.wikis.isNotEmpty()) {
-                item {
+                item(span = {
+                    androidx.compose.foundation.lazy.grid
+                        .GridItemSpan(columnCount)
+                }) {
                     Column {
                         Row(
                             Modifier
@@ -487,14 +527,28 @@ fun SagaDetailContentView(
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
                             )
-                        } else {
                         }
                     }
+                }
+
+                items(it.wikis) { wiki ->
+                    WikiCard(
+                        wiki,
+                        it.data.genre,
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .fillMaxWidth()
+                                .height(270.dp),
+                    )
                 }
             }
 
             if (it.chapters.isNotEmpty()) {
-                item {
+                item(span = {
+                    androidx.compose.foundation.lazy.grid
+                        .GridItemSpan(columnCount)
+                }) {
                     Text(
                         "Capítulos",
                         style =
@@ -505,24 +559,23 @@ fun SagaDetailContentView(
                         modifier = Modifier.padding(16.dp),
                     )
                 }
-                item {
-                    LazyRow(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        items(it.chapters) { chapter ->
-                            ChapterCardView(
-                                chapter,
-                                it.data.genre,
-                                it.characters,
-                                Modifier
-                                    .padding(8.dp)
-                                    .width(250.dp)
-                                    .height(350.dp),
-                            )
-                        }
-                    }
+                items(it.chapters) { chapter ->
+                    ChapterCardView(
+                        chapter,
+                        it.data.genre,
+                        it.characters,
+                        Modifier
+                            .padding(4.dp)
+                            .fillMaxWidth()
+                            .height(300.dp),
+                    )
                 }
             }
 
-            item {
+            item(span = {
+                androidx.compose.foundation.lazy.grid
+                    .GridItemSpan(columnCount)
+            }) {
                 Button(
                     onClick = {
                         onDelete(it.data)

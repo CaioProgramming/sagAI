@@ -105,7 +105,7 @@ fun ChapterCardView(
             Text(
                 text = chapter.title,
                 style =
-                    MaterialTheme.typography.titleLarge.copy(
+                    MaterialTheme.typography.titleMedium.copy(
                         fontFamily = genre.headerFont(),
                         brush = Brush.verticalGradient(genre.color.darkerPalette()),
                         textAlign = TextAlign.Center,
@@ -126,7 +126,7 @@ fun ChapterCardView(
                 Text(
                     text = chapter.title,
                     style =
-                        MaterialTheme.typography.titleLarge.copy(
+                        MaterialTheme.typography.titleMedium.copy(
                             fontFamily = genre.headerFont(),
                             brush = gradientAnimation(genre.color.darkerPalette()),
                             textAlign = TextAlign.Center,
