@@ -1,5 +1,7 @@
 package com.ilustris.sagai.ui.theme
 
+import ai.atick.material.MaterialColor
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -128,3 +130,10 @@ fun Modifier.noiseGrain(
             }
         }
     }
+
+
+@Composable
+fun Genre.backgroundTintFade() : Pair<Color, Color> = when(this) {
+    Genre.FANTASY -> Color.Black to Color.Black
+    Genre.SCI_FI -> MaterialColor.DeepPurple400 to Color.Black
+}

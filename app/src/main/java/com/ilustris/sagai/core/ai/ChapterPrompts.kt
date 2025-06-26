@@ -37,7 +37,11 @@ object ChapterPrompts {
         **EXISTING WORLD WIKI ENTRIES (For consistent terminology and referencing important world elements):**
         // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
         // Use this list to ensure you use the correct and consistent names for known entities when mentioning them in the chapter description. Your goal is to naturally weave these terms into the narrative where relevant.
-
+        // Instructions for wikiUpdates:
+        // - Extract information that is newly revealed, significantly detailed, or changed within the narrative of the chapter you are generating.
+        // - Focus on key nouns: names of characters, places, organizations, unique items, specific technologies, and major plot developments.
+        // - Each description should be brief and factual, summarizing only what is learned in this chapter.
+        // - If the chapter does not introduce any new information relevant for a wiki update, the wikiUpdates array should be empty [].
         [ ${sagaContent.wikis.formatToJsonArray()} ]
         Always follow that structure for items in the array: 
         ${toJsonMap(Wiki::class.java)}

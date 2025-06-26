@@ -19,8 +19,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,7 +60,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -93,8 +92,12 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
+import com.ilustris.sagai.ui.theme.backgroundTintFade
+import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
@@ -178,7 +181,10 @@ fun ChatView(
                 else ->
                     SparkIcon(
                         brush = gradientAnimation(genresGradient()),
-                        modifier = Modifier.size(64.dp).align(Alignment.Center),
+                        modifier =
+                            Modifier
+                                .size(64.dp)
+                                .align(Alignment.Center),
                         duration = 2.seconds,
                         blurRadius = 3.dp,
                         tint = MaterialTheme.colorScheme.background,
@@ -188,35 +194,58 @@ fun ChatView(
             AnimatedVisibility(
                 snackbarMessage != null,
                 modifier = Modifier.align(Alignment.TopCenter),
-                enter = scaleIn(),
-                exit = shrinkOut(),
+                enter = scaleIn() + fadeIn(),
+                exit = slideOutVertically(),
             ) {
                 snackbarMessage?.let { message ->
                     val backgroundColor =
                         content?.data?.genre?.color ?: MaterialTheme.colorScheme.primary
                     val contentColor =
                         content?.data?.genre?.iconColor ?: MaterialTheme.colorScheme.onPrimary
+                    val brush =
+                        gradientAnimation(
+                            backgroundColor.darkerPalette(factor = .4f),
+                            targetValue = 500f,
+                            duration = 2.seconds,
+                        )
                     Row(
                         Modifier
                             .padding(32.dp)
                             .fillMaxWidth()
                             .border(
                                 1.dp,
-                                gradientAnimation(genresGradient(), targetValue = 500f),
+                                brush,
                                 RoundedCornerShape(25.dp),
                             ).background(
                                 MaterialTheme.colorScheme.background,
                                 RoundedCornerShape(25.dp),
-                            ).gradientFill(gradientAnimation(genresGradient(), targetValue = 500f)),
+                            ).gradientFill(brush),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
                     ) {
                         Image(
                             painterResource(R.drawable.ic_spark),
                             null,
-                            modifier = Modifier.padding(8.dp).size(12.dp),
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .size(12.dp),
                         )
-                        Text(message, style = MaterialTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+                        Text(
+                            message,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = content?.data?.genre?.bodyFont(),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .size(12.dp),
+                        )
                     }
                 }
             }
@@ -244,35 +273,43 @@ fun ChatContent(
         listState.scrollToItem(0)
     }
 
-    Image(
-        painterResource(saga.genre.background),
-        null,
-        colorFilter =
-            androidx.compose.ui.graphics.ColorFilter.tint(
-                MaterialTheme.colorScheme.background.copy(alpha = .4f),
-                blendMode = BlendMode.SrcOver,
-            ),
-        contentScale = ContentScale.Crop,
-        modifier =
-            Modifier
-                .fillMaxSize(),
-    )
+    Box {
+        val fadeTints = saga.genre.backgroundTintFade()
+        Image(
+            painterResource(saga.genre.background),
+            null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+                .brightness(.2f.unaryMinus()),
+        )
 
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(.4f)
-            .background(fadeGradientTop()),
-    )
-
-    Column(
-        modifier =
+        Box(
             Modifier
-                .fillMaxSize()
-                .padding(top = padding.calculateTopPadding()),
-    ) {
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(.15f)
+                .background(
+                    fadeGradientTop(
+                        fadeTints.first,
+                    ),
+                ),
+        )
+
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(.3f)
+                .background(
+                    fadeGradientBottom(
+                        fadeTints.second,
+                    ),
+                ),
+        )
+
         ConstraintLayout(
             Modifier
+                .padding(top = padding.calculateTopPadding())
                 .fillMaxSize(),
         ) {
             val brush = gradientAnimation(saga.genre.gradient(), targetValue = 500f)
@@ -297,7 +334,7 @@ fun ChatContent(
                 openSaga = { openSagaDetails(saga) },
             )
 
-            this@Column.AnimatedVisibility(
+            AnimatedVisibility(
                 state !is ChatState.Loading,
                 modifier =
                     Modifier
@@ -316,7 +353,9 @@ fun ChatContent(
                     saga,
                     state,
                     isGenerating,
-                    Modifier.fillMaxWidth().wrapContentHeight(),
+                    Modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
                     onSendMessage,
                 )
             }
@@ -569,7 +608,10 @@ private fun CharactersTopIcons(
     }
 }
 
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_TYPE_NORMAL)
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,
+)
 @Composable
 fun ChatViewPreview() {
     val saga =

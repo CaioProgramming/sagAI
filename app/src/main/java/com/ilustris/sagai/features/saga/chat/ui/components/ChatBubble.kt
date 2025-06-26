@@ -169,7 +169,7 @@ fun ChatBubble(
                                 cornerSize,
                             )
                         } else {
-                            this.border(borderSize, borderBrush, bubbleShape)
+                            this.border(0.dp, Color.Transparent, bubbleShape)
                         }
                     val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
 

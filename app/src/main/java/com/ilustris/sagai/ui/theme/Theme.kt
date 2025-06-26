@@ -1,6 +1,7 @@
 package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -94,43 +95,46 @@ fun SagAITheme(
 @Composable
 fun SagAIScaffold(
     title: String? = null,
+    showTopBar: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     SagAITheme {
         Scaffold(topBar = {
-            TopAppBar(
-                title = {
-                    title?.let {
-                        Text(
-                            text = it,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                        )
-                    } ?: run {
-                        Box(Modifier.fillMaxWidth()) {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                contentDescription = stringResource(R.string.app_name),
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.Center)
-                                        .size(50.dp),
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    Box(Modifier.size(24.dp))
-                },
-                navigationIcon = {
-                    Box(modifier = Modifier.size(24.dp))
-                },
-            )
+            AnimatedVisibility(showTopBar) {
+                 TopAppBar(
+                     title = {
+                         title?.let {
+                             Text(
+                                 text = it,
+                                 textAlign = TextAlign.Center,
+                                 style = MaterialTheme.typography.headlineSmall,
+                                 fontWeight = FontWeight.Bold,
+                                 modifier =
+                                     Modifier
+                                         .padding(16.dp)
+                                         .fillMaxWidth(),
+                             )
+                         } ?: run {
+                             Box(Modifier.fillMaxWidth()) {
+                                 Image(
+                                     painterResource(R.drawable.ic_spark),
+                                     contentDescription = stringResource(R.string.app_name),
+                                     modifier =
+                                         Modifier
+                                             .align(Alignment.Center)
+                                             .size(50.dp),
+                                 )
+                             }
+                         }
+                     },
+                     actions = {
+                         Box(Modifier.size(24.dp))
+                     },
+                     navigationIcon = {
+                         Box(modifier = Modifier.size(24.dp))
+                     },
+                 )
+             }
         }) {
             Box(modifier = Modifier.padding(it)) {
                 content()
