@@ -21,7 +21,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,6 +41,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
@@ -57,6 +57,7 @@ fun ChatBubble(
     messageContent: MessageContent,
     genre: Genre,
     characters: List<Character>,
+    wiki: List<Wiki>,
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
     openCharacters: () -> Unit = {},
@@ -79,14 +80,7 @@ fun ChatBubble(
             else -> Color.Transparent
         }
 
-    val textColor =
-        when (sender) {
-            SenderType.NARRATOR, SenderType.NEW_CHAPTER,
-            SenderType.THOUGHT, SenderType.ACTION, SenderType.NEW_CHARACTER,
-            -> MaterialTheme.colorScheme.onBackground
-
-            else -> genre.iconColor
-        }
+    val textColor = genre.iconColor
 
     val cornerSize = genre.cornerSize()
     val tailAlignment = if (isUser) BubbleTailAlignment.BottomRight else BubbleTailAlignment.BottomLeft
@@ -178,6 +172,7 @@ fun ChatBubble(
                             text = message.text,
                             isAnimated = isAnimated,
                             characters = characters,
+                            wiki = wiki,
                             duration = duration,
                             easing = EaseIn,
                             onTextClick = {
@@ -250,6 +245,7 @@ fun ChatBubble(
                             text = message.text,
                             isAnimated = isAnimated,
                             characters = characters,
+                            wiki = wiki,
                             duration = duration,
                             easing = LinearOutSlowInEasing,
                             onTextClick = {
@@ -303,6 +299,7 @@ fun ChatBubble(
                             R.drawable.action_icon,
                         ),
                         null,
+                        tint = genre.iconColor,
                         modifier =
                             Modifier
                                 .size(24.dp)
@@ -313,6 +310,7 @@ fun ChatBubble(
                         isAnimated = isAnimated,
                         duration = duration,
                         characters = characters,
+                        wiki = wiki,
                         modifier =
                             Modifier
                                 .weight(1f)
@@ -348,6 +346,7 @@ fun ChatBubble(
                 isAnimated = isAnimated,
                 duration = duration,
                 characters = characters,
+                wiki = wiki,
                 modifier =
                     Modifier
                         .padding(16.dp)
@@ -370,6 +369,7 @@ fun ChatBubble(
                         genre,
                         it,
                         characters,
+                        wiki,
                         textColor,
                         fontStyle,
                         isBubbleVisible,
@@ -381,7 +381,9 @@ fun ChatBubble(
         }
 
         SenderType.NEW_CHARACTER -> {
-            NewCharacterView(messageContent, genre)
+            NewCharacterView(messageContent, genre, characters, wiki) {
+                openCharacters()
+            }
         }
     }
 }
@@ -422,6 +424,7 @@ fun ChatBubblePreview() {
                         ),
                     genre = genre,
                     characters = emptyList(),
+                    wiki = emptyList()
                 )
             }
 

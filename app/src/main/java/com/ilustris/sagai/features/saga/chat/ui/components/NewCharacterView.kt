@@ -24,6 +24,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -32,6 +33,8 @@ import com.ilustris.sagai.ui.theme.bodyFont
 fun NewCharacterView(
     messageContent: MessageContent,
     genre: Genre,
+    characters: List<Character> = emptyList(),
+    wiki: List<Wiki> = emptyList(),
     onSelectCharacter: (Character) -> Unit = {},
 ) {
     messageContent.character?.let {
@@ -63,7 +66,8 @@ fun NewCharacterView(
             TypewriterText(
                 text = messageContent.message.text,
                 modifier = Modifier.padding(16.dp),
-                characters = emptyList(),
+                characters = characters,
+                wiki = wiki,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Normal,

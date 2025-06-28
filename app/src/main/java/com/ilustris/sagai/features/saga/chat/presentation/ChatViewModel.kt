@@ -16,6 +16,7 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -269,6 +270,18 @@ class ChatViewModel
             }
         }
 
+        private fun lastEvents(): List<Timeline> {
+            val saga = content.value ?: return emptyList()
+            val lastChapter = saga.chapters.maxByOrNull { it.id }
+            val events = saga.timelines
+            val eventReference =
+                lastChapter?.eventReference?.let { referenceId -> saga.timelines.find { it.id == referenceId } }
+            return eventReference?.let {
+                val referenceIndex = events.indexOf(it)
+                events.subList(referenceIndex, events.size).takeLast(5)
+            } ?: events
+        }
+
         private fun replyMessage(message: Message) {
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
@@ -283,11 +296,10 @@ class ChatViewModel
 
                 messageUseCase
                     .generateMessage(
-                        saga = saga.data,
+                        saga = saga,
                         chapter = content.value?.chapters?.lastOrNull(),
                         message = newMessage.joinMessage(),
-                        mainCharacter = mainCharacter,
-                        characters = saga.characters,
+                        lastEvents = lastEvents(),
                         lastMessages =
                             messages.value
                                 .takeLast(25)

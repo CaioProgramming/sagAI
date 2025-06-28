@@ -1,35 +1,43 @@
 package com.ilustris.sagai.core.ai
 
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.meaning
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ChatPrompts {
     fun replyMessagePrompt(
-        saga: SagaData,
+        saga: SagaContent,
         message: String,
         currentChapter: Chapter?,
-        mainCharacter: Character,
+        currentTimeline: List<Timeline> = emptyList(),
         lastMessages: List<String> = emptyList(),
-        charactersDetails: List<Character> = emptyList(),
     ) = """
-   You are the Saga Master for a text-based RPG called '${saga.title}'.
+   You are the Saga Master for a text-based RPG called '${saga.data.title}'.
    Your role is to create an immersive narrative, describing the world and generating dialogues for NPCs (Non-Player Characters).
     
-    ${SagaPrompts.details(saga)}
+    ${SagaPrompts.details(saga.data)}
     
     ${currentChapter?.let { ChapterPrompts.chapterOverview(it)} ?: emptyString()}
 
-    PLAYER INFORMATION (${mainCharacter.name}):
-    ${CharacterPrompts.details(mainCharacter)}
-    
-    ${CharacterPrompts.charactersOverview(charactersDetails)}
+    PLAYER INFORMATION (${saga.mainCharacter?.name}):
+    ${CharacterPrompts.details(saga.mainCharacter)}
+    ${CharacterPrompts.charactersOverview(saga.characters)}
 
+    **WORLD WIKI KNOWLEDGE BASE:**
+    // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
+    // Use this information to ensure consistent terminology and to provide accurate details when referencing world elements.
+    [ ${saga.wikis.formatToJsonArray()} ]
+    
+   **CURRENT SAGA TIMELINE (Most Recent Events):**
+    // This section provides the most recent events from the saga's timeline (max 5 events).
+    // Use this to understand the immediate plot progression and current situation.
+    [ ${currentTimeline.formatToJsonArray()} ]
 
     CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
     // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : Julie : ").
@@ -44,15 +52,17 @@ object ChatPrompts {
         ${lastMessages.joinToString(separator = ",\n")}
     ]
     GENERATE A REPLY TO THE MESSAGE:
-    $message
-    
+    ' $message '
     ---
     **Your NEXT RESPONSE MUST BE ONLY A VALID JSON OBJECT. Follow EXACTLY this structure:**
     ${toJsonMap(
         Message::class.java,
     )}
     
-    In the "text" property you should include: The actual reply or new content. This should be a direct response to ${mainCharacter.name}'s.} last message, a narration, or a character description. DO NOT copy ${mainCharacter.name}'s last message here. If senderType is 'CHARACTER', DO NOT include the character's name in this 'text' field (e.g., not 'Homem: Fala', just 'Fala'). 
+    In the "text" property you should include: The actual reply or new content.
+    This should be a direct response to ${saga.mainCharacter?.name}'s. Last message, a narration, or a character description.
+    DO NOT copy ${saga.mainCharacter?.name}'s last message here.
+    If senderType is 'CHARACTER', DO NOT include the character's name in this 'text' field (e.g., not 'Homem: Fala', just 'Fala'). 
     For the senderType property, consider this examples:
     ${typesExplanation()}
     ${typesPriority()}

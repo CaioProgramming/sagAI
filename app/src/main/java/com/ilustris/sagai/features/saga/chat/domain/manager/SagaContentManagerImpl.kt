@@ -54,6 +54,7 @@ class SagaContentManagerImpl
         }
 
         override suspend fun createNewChapter(): Chapter? {
+            var chapterOperation: Chapter? = null
             return try {
                 val saga = content.value!!
                 val lastEvents = lastEvents()
@@ -76,15 +77,20 @@ class SagaContentManagerImpl
                                     messageReference = 0,
                                 ),
                         )
+                chapterOperation = newChapter
+                val featuredCharacters =
+                    genChapter.featuredCharacters.mapNotNull { name ->
+                        saga.characters.find { it.name.equals(name, true) }
+                    }
                 chapterUseCase
                     .generateChapterCover(
                         newChapter,
                         saga.data,
-                        saga.characters,
+                        featuredCharacters,
                     ).success.value
             } catch (e: Exception) {
                 e.printStackTrace()
-                return null
+                return chapterOperation
             }
         }
 

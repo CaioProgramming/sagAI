@@ -45,6 +45,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import androidx.navigation.navArgument
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.CharacterGalleryView
 import com.ilustris.sagai.features.home.ui.HomeView
@@ -179,6 +180,21 @@ enum class Routes(
                 navHostController = nav,
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
                 characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
+            )
+        },
+    ),
+    SAGA_CHAPTERS(
+        arguments =
+            listOf(
+                "sagaId",
+            ),
+        deepLink = "saga://saga_chapters/{sagaId}",
+        showBottomNav = false,
+        topBarContent = { Box {} },
+        view = { nav, padding, _, _ ->
+            ChapterView(
+                nav,
+                sagaId = nav.currentBackStackEntry?.arguments?.getString(SAGA_CHAPTERS.arguments.first()),
             )
         },
     ),

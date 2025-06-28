@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.ai.ChapterPrompts
 import com.ilustris.sagai.core.ai.GenrePrompts
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.coverPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -71,7 +70,10 @@ class ChapterUseCaseImpl
             characters: List<Character>,
         ): RequestResult<Exception, Chapter> =
             try {
-                val prompt = chapter.coverPrompt(saga)
+                if (characters.isEmpty()) {
+                    Exception("No characters provided").asError()
+                }
+                val prompt = ChapterPrompts.chapterCover(saga, characters)
                 val freepikRequest =
                     FreepikRequest(
                         prompt = prompt,

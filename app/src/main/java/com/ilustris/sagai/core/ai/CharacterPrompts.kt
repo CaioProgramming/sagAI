@@ -24,6 +24,12 @@ object CharacterPrompts {
         Expression: ${CharacterExpression.random().description}
         """
 
+    fun appearance(character: Character) =
+        """
+        ${character.details.race},${character.details.gender},${character.details.ethnicity}
+        Appearance:${character.details.appearance}."
+        """
+
     fun charactersOverview(characters: List<Character>): String =
         """
             CURRENT SAGA CAST (If a character is not listed here, they are considered new):

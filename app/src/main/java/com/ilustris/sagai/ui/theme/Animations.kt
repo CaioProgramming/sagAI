@@ -18,7 +18,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
+import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -33,6 +36,7 @@ fun TypewriterText(
     easing: Easing = EaseIn,
     isAnimated: Boolean = true,
     characters: List<Character>,
+    wiki: List<Wiki>,
     onAnimationFinished: () -> Unit = { },
     onTextUpdate: (String) -> Unit = { },
     onTextClick: () -> Unit = { },
@@ -67,8 +71,14 @@ fun TypewriterText(
             currentText,
             characters,
         )
+    val wikiAnnotation =
+        buildWikiAndCharactersAnnotation(
+            annotatedText.text,
+            characters,
+            wiki,
+        )
     ClickableText(
-        text = annotatedText,
+        text = wikiAnnotation,
         style = style,
         onClick = { offset ->
             annotatedText
@@ -109,12 +119,15 @@ fun Modifier.zoomAnimation(): Modifier {
 @Preview(showBackground = true)
 @Composable
 fun TypewriterTextPreview() {
-    val text = "Hello Typewritter!"
+    val text = "Hello test bro make a wiki test!"
     TypewriterText(
         text = text,
-        duration = 5.seconds,
+        duration = 2.seconds,
         easing = EaseInBounce,
         modifier = Modifier.fillMaxWidth().padding(16.dp),
-        characters = emptyList(),
+        characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f",details = Details())),
+        wiki = listOf(
+            Wiki(title = "wiki test", sagaId = 0)
+        )
     )
 }

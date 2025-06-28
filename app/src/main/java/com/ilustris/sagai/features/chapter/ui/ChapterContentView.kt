@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.chapter.ui
 
+import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -46,6 +48,7 @@ fun ChapterContentView(
     genre: Genre,
     content: Chapter,
     characters: List<Character>,
+    wiki: List<Wiki>,
     textColor: Color,
     fontStyle: FontStyle,
     isBubbleVisible: MutableState<Boolean>,
@@ -149,9 +152,11 @@ fun ChapterContentView(
         TypewriterText(
             text = content.overview,
             modifier = Modifier.padding(16.dp),
-            duration = 8.seconds,
+            duration = 3.seconds,
+            easing = EaseInBounce,
             isAnimated = isAnimated,
             characters = characters,
+            wiki = wiki,
             style =
                 MaterialTheme.typography.bodyLarge.copy(
                     fontWeight = FontWeight.Normal,

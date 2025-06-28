@@ -10,22 +10,6 @@ fun SagaData.narratorBreakPrompt(messages: List<String>) =
     SagaPrompts
         .narratorGeneration(this, messages)
 
-fun chatReplyPrompt(
-    sagaData: SagaData,
-    currentChapter: Chapter?,
-    message: String,
-    mainCharacter: Character,
-    lastMessages: List<String> = emptyList(),
-    characters: List<Character> = emptyList(),
-) = ChatPrompts.replyMessagePrompt(
-    sagaData,
-    message,
-    currentChapter,
-    mainCharacter,
-    lastMessages,
-    characters,
-)
-
 fun Chapter.coverPrompt(saga: SagaData): String =
     """
     ${GenrePrompts.artStyle(saga.genre)} 

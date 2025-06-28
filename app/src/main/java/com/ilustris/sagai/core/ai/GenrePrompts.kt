@@ -63,6 +63,19 @@ object GenrePrompts {
                  """
         }
 
+    fun coverComposition(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+                Simple background in celestial tones, with subtle, stylized 
+                ancient ruins.
+                """
+            SCI_FI ->
+                """
+            Minimalist background in cold tones with single Big Stylized kanji symbol behind the characters.
+            """
+        }
+
     fun portraitStyle(genre: Genre) =
         when (genre) {
             FANTASY ->

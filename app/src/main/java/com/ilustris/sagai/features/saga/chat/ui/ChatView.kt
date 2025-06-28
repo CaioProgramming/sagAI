@@ -81,6 +81,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
@@ -90,6 +91,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -128,7 +130,6 @@ fun ChatView(
     val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
-    val mainCharacter = content?.mainCharacter
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(content) {
         if (content == null) {
@@ -155,10 +156,9 @@ fun ChatView(
                     content?.let { cont ->
                         ChatContent(
                             state.value,
-                            cont.data,
-                            messages,
-                            mainCharacter,
+                            cont,
                             characters,
+                            messages,
                             isGenerating,
                             padding,
                             viewModel::sendInput,
@@ -211,14 +211,14 @@ fun ChatView(
                         )
                     Row(
                         Modifier
-                            .padding(32.dp)
+                            .padding(50.dp)
                             .fillMaxWidth()
                             .border(
                                 1.dp,
                                 brush,
                                 RoundedCornerShape(25.dp),
                             ).background(
-                                MaterialTheme.colorScheme.background,
+                                backgroundColor,
                                 RoundedCornerShape(25.dp),
                             ).gradientFill(brush),
                         verticalAlignment = Alignment.CenterVertically,
@@ -257,10 +257,9 @@ fun ChatView(
 @Composable
 fun ChatContent(
     state: ChatState = ChatState.Loading,
-    saga: SagaData,
+    content: SagaContent,
+    characters: List<Character> = emptyList(),
     messagesList: List<MessageContent> = emptyList(),
-    mainCharacter: Character?,
-    characters: List<Character>,
     isGenerating: Boolean = false,
     padding: PaddingValues = PaddingValues(),
     onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
@@ -268,6 +267,8 @@ fun ChatContent(
     onCharacterSelected: (Int) -> Unit = {},
     openSagaDetails: (SagaData) -> Unit = {},
 ) {
+    val saga = content.data
+    val wiki = content.wikis
     val listState = rememberLazyListState()
 
     LaunchedEffect(messagesList.size) {
@@ -280,8 +281,10 @@ fun ChatContent(
             painterResource(saga.genre.background),
             null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-                .brightness(.2f.unaryMinus()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .brightness(.2f.unaryMinus()),
         )
 
         Box(
@@ -296,30 +299,19 @@ fun ChatContent(
                 ),
         )
 
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .fillMaxHeight(.3f)
-                .background(
-                    fadeGradientBottom(
-                        fadeTints.second,
-                    ),
-                ),
-        )
-
         ConstraintLayout(
             Modifier
                 .padding(top = padding.calculateTopPadding())
                 .fillMaxSize(),
         ) {
             val brush = gradientAnimation(saga.genre.gradient(), targetValue = 500f)
-            val (messages, chatInput, topBar) = createRefs()
+            val (messages, chatInput, topBar, bottomFade) = createRefs()
 
             ChatList(
                 saga = saga,
                 messages = messagesList,
                 characters = characters,
+                wiki = wiki,
                 isGenerating = isGenerating,
                 listState = listState,
                 modifier =
@@ -333,6 +325,18 @@ fun ChatContent(
                     },
                 openCharacter = { onCharacterSelected(saga.id) },
                 openSaga = { openSagaDetails(saga) },
+            )
+
+            Box(
+                Modifier
+                    .constrainAs(bottomFade) {
+                        bottom.linkTo(parent.bottom)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                        width = Dimension.fillToConstraints
+                    }.fillMaxWidth()
+                    .height(100.dp)
+                    .background(fadeGradientBottom()),
             )
 
             AnimatedVisibility(
@@ -349,15 +353,14 @@ fun ChatContent(
                 exit = fadeOut(),
             ) {
                 ChatInputView(
-                    mainCharacter,
-                    characters,
-                    saga,
-                    state,
-                    isGenerating,
-                    Modifier
-                        .fillMaxWidth()
-                        .wrapContentHeight(),
-                    onSendMessage,
+                    content = content,
+                    state = state,
+                    isGenerating = isGenerating,
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
+                    onSendMessage = onSendMessage,
                 )
             }
 
@@ -457,14 +460,6 @@ fun SagaHeader(
                     .effectForGenre(saga.genre)
                     .fillMaxSize(),
         )
-
-        Box(
-            Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .fillMaxHeight(.3f)
-                .background(fadeGradientBottom()),
-        )
     }
 }
 
@@ -473,6 +468,7 @@ fun ChatList(
     saga: SagaData?,
     messages: List<MessageContent>,
     characters: List<Character>,
+    wiki: List<Wiki>,
     modifier: Modifier,
     listState: LazyListState,
     isGenerating: Boolean = false,
@@ -483,7 +479,6 @@ fun ChatList(
 
     LazyColumn(modifier, state = listState, reverseLayout = true) {
         saga?.let {
-
             item {
                 Spacer(Modifier.fillMaxWidth().height(75.dp))
             }
@@ -493,6 +488,7 @@ fun ChatList(
                     message,
                     saga.genre,
                     characters = characters,
+                    wiki = wiki,
                     animatedMessages,
                     canAnimate = message == messages.last(),
                     openCharacters = openCharacter,
@@ -653,15 +649,12 @@ fun ChatViewPreview() {
     SagAIScaffold {
         ChatContent(
             successState,
-            saga = saga,
-            characters = emptyList(),
-            messagesList =
-                messages.map {
-                    MessageContent(
-                        message = it,
-                    )
-                },
-            mainCharacter = null,
+            SagaContent(
+                saga,
+                characters = emptyList(),
+                wikis = emptyList(),
+                mainCharacter = null,
+            ),
         )
     }
 }

@@ -16,13 +16,14 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -51,8 +52,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,23 +65,22 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
-import com.ilustris.sagai.features.characters.ui.components.transformTextWithCharacters
+import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.holographicGradient
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun ChatInputView(
-    mainCharacter: Character?,
-    characters: List<Character>,
-    saga: SagaData,
+    content: SagaContent,
     state: ChatState,
     isGenerating: Boolean,
     modifier: Modifier = Modifier,
@@ -89,11 +90,11 @@ fun ChatInputView(
     var inputField by remember { mutableStateOf(TextFieldValue("")) }
     val inputBrush =
         if (isGenerating) {
-            gradientAnimation(holographicGradient, targetValue = 500f, duration = 2.seconds)
+            gradientAnimation(holographicGradient, targetValue = 700f, duration = 2.seconds)
         } else {
-            MaterialTheme.colorScheme.onSurface
-                .copy(alpha = .4f)
-                .gradientFade()
+            Brush.verticalGradient(
+                Color.Transparent.darkerPalette()
+            )
         }
     var charactersExpanded by remember {
         mutableStateOf(false)
@@ -112,15 +113,15 @@ fun ChatInputView(
                 inputBrush,
                 inputShape,
             ).background(
-                MaterialTheme.colorScheme.background.copy(alpha = .8f),
+                MaterialTheme.colorScheme.background,
                 inputShape,
             ).padding(horizontal = 8.dp, vertical = 0.dp)
             .animateContentSize(tween(300, easing = EaseIn)),
     ) {
-        if (characters.isNotEmpty()) {
+        if (content.characters.isNotEmpty()) {
             AnimatedVisibility(charactersExpanded) {
                 LazyRow(Modifier.padding(12.dp).fillMaxWidth()) {
-                    items(characters) {
+                    items(content.characters) {
                         CharacterHorizontalView(
                             Modifier.padding(4.dp).wrapContentSize().clickable {
                                 val startIndex = inputField.text.indexOfLast { char -> char == '@' }
@@ -144,7 +145,7 @@ fun ChatInputView(
                             },
                             character = it,
                             imageSize = 24.dp,
-                            genre = saga.genre,
+                            genre = content.data.genre,
                             borderSize = 1.dp,
                             style = MaterialTheme.typography.labelSmall,
                         )
@@ -156,8 +157,8 @@ fun ChatInputView(
         Row(
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            mainCharacter?.let { character ->
-                MainCharacterInputButton(saga, character, action) {
+            content.mainCharacter?.let { character ->
+                MainCharacterInputButton(content.data, character, action) {
                     actionsExpanded = actionsExpanded.not()
                 }
             }
@@ -166,12 +167,12 @@ fun ChatInputView(
             TextField(
                 enabled = isGenerating.not(),
                 visualTransformation = {
-                    return@TextField transformTextWithCharacters(
-                        characters,
+                    return@TextField transformTextWithContent(
+                        content.characters,
+                        content.wikis,
                         inputField.text,
                     )
                 },
-
                 value = inputField,
                 onValueChange = {
                     if (it.text.length <= maxLength) {
@@ -189,7 +190,7 @@ fun ChatInputView(
                             MaterialTheme.typography.labelSmall.copy(
                                 fontSize = 12.sp,
                             ),
-                        modifier = Modifier.padding(0.dp)
+                        modifier = Modifier.padding(0.dp),
                     )
                 },
                 shape = RoundedCornerShape(40.dp),
@@ -198,7 +199,7 @@ fun ChatInputView(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         cursorColor =
-                            saga.genre.color,
+                            content.data.genre.color,
                         disabledIndicatorColor = Color.Transparent,
                         disabledContainerColor = Color.Transparent,
                         focusedContainerColor = Color.Transparent,
@@ -214,7 +215,7 @@ fun ChatInputView(
             val buttonSize by animateDpAsState(
                 if (inputField.text.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
             )
-            val buttonColor = saga.genre.color
+            val buttonColor = content.data.genre.color
             AnimatedVisibility(inputField.text.isNotEmpty(), enter = fadeIn(), exit = scaleOut()) {
                 IconButton(
                     onClick = {
@@ -235,7 +236,7 @@ fun ChatInputView(
                             Modifier
                                 .padding(4.dp)
                                 .fillMaxSize(),
-                        tint = saga.genre.iconColor,
+                        tint = content.data.genre.iconColor,
                     )
                 }
             }
@@ -248,13 +249,16 @@ fun ChatInputView(
                         it != SenderType.CHARACTER &&
                             it != SenderType.NEW_CHAPTER
                     }
-            LazyVerticalGrid(columns = GridCells.Fixed(4), modifier = Modifier.padding(vertical = 8.dp)) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(4),
+                modifier = Modifier.padding(vertical = 8.dp),
+            ) {
                 items(actions) {
                     it.itemOption(
                         selectedItem = action,
                         showText = true,
-                        genre = saga.genre,
-                        iconSize = 32.dp
+                        genre = content.data.genre,
+                        iconSize = 32.dp,
                     ) { selectedAction ->
                         actionsExpanded = actionsExpanded.not()
                         action = selectedAction
@@ -290,33 +294,46 @@ private fun MainCharacterInputButton(
         },
         state = tooltipState,
     ) {
-        AnimatedContent(currentAction, modifier = Modifier.padding(start = 10.dp), transitionSpec = {
-            scaleIn() + fadeIn(tween(300)) togetherWith scaleOut() + fadeOut()
-        }) {
-            when (it) {
-                SenderType.USER ->
-                    CharacterAvatar(
-                        character,
-                        borderSize = 2.dp,
-                        genre = saga.genre,
-                        modifier =
-                            Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .clickable {
-                                    onClickAction()
-                                },
-                    )
+        Box(
+            Modifier
+                .size(32.dp)
+                .clickable {
+                    onClickAction()
+                },
+        ) {
+            CharacterAvatar(
+                character,
+                borderSize = 2.dp,
+                genre = saga.genre,
+                modifier = Modifier.fillMaxSize(),
+            )
 
-                else ->
-                    it.itemOption(
-                        iconSize = 32.dp,
-                        selectedItem = currentAction,
-                        showText = false,
-                        genre = saga.genre,
-                    ) {
-                        onClickAction()
+            AnimatedContent(
+                currentAction,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 2.dp, y = 2.dp)
+                ,
+                transitionSpec = {
+                    scaleIn() + fadeIn(tween(300)) togetherWith scaleOut() + fadeOut()
+                },
+            ) {
+                it.icon()?.let { icon ->
+                    Box(modifier = Modifier
+                        .border(1.dp, MaterialTheme.colorScheme.background, CircleShape)
+                        .background(saga.genre.color, CircleShape)
+                        .size(16.dp).padding(3.dp)) {
+                        Icon(
+                            painterResource(icon),
+                            null,
+                            tint = saga.genre.iconColor,
+                            modifier = Modifier.align(Alignment.Center)
+                                .fillMaxSize()
+                            ,
+                        )
                     }
+                }
             }
         }
     }
@@ -326,6 +343,7 @@ private fun MainCharacterInputButton(
 @Composable
 fun ChatInputViewPreview() {
     ChatInputView(
+        SagaContent(
         mainCharacter =
             Character(
                 id = 0,
@@ -462,7 +480,7 @@ fun ChatInputViewPreview() {
                     status = "Character status",
                 ),
             ),
-        saga =
+        data =
             SagaData(
                 id = 0,
                 title = "Saga Title",
@@ -473,7 +491,8 @@ fun ChatInputViewPreview() {
                 mainCharacterId = 0,
                 visuals = IllustrationVisuals(),
                 lastLoreReference = 0,
-            ),
+            )
+        ),
         state = ChatState.Success,
         isGenerating = false,
     ) { _, _ -> }

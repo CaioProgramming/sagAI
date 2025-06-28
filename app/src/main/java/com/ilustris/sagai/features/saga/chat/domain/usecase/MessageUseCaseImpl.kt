@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.domain.usecase
 
+import com.ilustris.sagai.core.ai.ChatPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.chatReplyPrompt
 import com.ilustris.sagai.core.ai.introductionPrompt
 import com.ilustris.sagai.core.ai.narratorBreakPrompt
 import com.ilustris.sagai.core.data.RequestResult
@@ -10,10 +10,12 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import javax.inject.Inject
 
 class MessageUseCaseImpl
@@ -59,22 +61,20 @@ class MessageUseCaseImpl
         }
 
         override suspend fun generateMessage(
-            saga: SagaData,
+            saga: SagaContent,
             chapter: Chapter?,
+            lastEvents: List<Timeline>,
             message: Pair<String, String>,
-            mainCharacter: Character,
             lastMessages: List<Pair<String, String>>,
-            characters: List<Character>,
         ): RequestResult<Exception, Message> {
             val genText =
                 textGenClient.generate<Message>(
                     generateReplyMessage(
                         saga,
-                        message.formatToString(),
                         chapter,
-                        mainCharacter,
-                        lastMessages.map { it.formatToString() },
-                        characters,
+                        lastEvents,
+                        message,
+                        lastMessages,
                     ),
                     true,
                 )
@@ -123,17 +123,15 @@ private fun generateNarratorBreakPrompt(
 ): String = saga.narratorBreakPrompt(messages)
 
 private fun generateReplyMessage(
-    saga: SagaData,
-    message: String,
-    currentChapter: Chapter?,
-    mainCharacter: Character,
-    lastMessages: List<String>,
-    characters: List<Character>,
-) = chatReplyPrompt(
-    saga,
-    currentChapter,
-    message,
-    mainCharacter,
-    lastMessages,
-    characters,
+    sagaContent: SagaContent,
+    chapter: Chapter?,
+    lastEvents: List<Timeline>,
+    message: Pair<String, String>,
+    lastMessages: List<Pair<String, String>>,
+) = ChatPrompts.replyMessagePrompt(
+    saga = sagaContent,
+    message.formatToString(),
+    chapter,
+    lastEvents,
+    lastMessages.map { it.formatToString() },
 )

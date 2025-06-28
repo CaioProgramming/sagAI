@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
-import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -14,10 +13,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -84,7 +87,17 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
+import effectForGenre
 import kotlin.time.Duration.Companion.seconds
+
+enum class DetailAction {
+    CHARACTERS,
+    DELETE,
+    TIMELINE,
+    CHAPTERS,
+    WIKI,
+    BACK,
+}
 
 @Composable
 fun SagaDetailView(
@@ -97,27 +110,42 @@ fun SagaDetailView(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
 
-    SagaDetailContentView(state, paddingValues, selectCharacter = {
-        it?.let { id ->
-            navHostController.navigateToRoute(
-                Routes.CHARACTER_DETAIL,
-                mapOf(
-                    "sagaId" to sagaId,
-                    "characterId" to id.toString(),
-                ),
-            )
-        } ?: run {
-            navHostController.navigateToRoute(Routes.CHARACTER_GALLERY, mapOf("sagaId" to sagaId))
+    SagaDetailContentView(state, paddingValues) { action, saga, value ->
+        when (action) {
+            DetailAction.CHARACTERS -> {
+                if (value == null) {
+                    navHostController.navigateToRoute(
+                        Routes.CHARACTER_GALLERY,
+                        mapOf("sagaId" to saga.data.id.toString()),
+                    )
+                } else {
+                    navHostController.navigateToRoute(
+                        Routes.CHARACTER_DETAIL,
+                        mapOf(
+                            "sagaId" to saga.data.id.toString(),
+                            "characterId" to value.toString(),
+                        ),
+                    )
+                }
+            }
+            DetailAction.DELETE -> {
+                sagaToDelete = saga.data
+                showDeleteConfirmation = true
+            }
+            DetailAction.TIMELINE ->
+                navHostController.navigateToRoute(
+                    Routes.TIMELINE,
+                    mapOf("sagaId" to saga.data.id.toString()),
+                )
+            DetailAction.CHAPTERS ->
+                navHostController.navigateToRoute(
+                    Routes.SAGA_CHAPTERS,
+                    mapOf("sagaId" to saga.data.id.toString()),
+                )
+            DetailAction.WIKI -> TODO()
+            DetailAction.BACK -> navHostController.popBackStack()
         }
-    }, onBack = {
-        navHostController.popBackStack()
-    }, onDelete = { saga ->
-        sagaToDelete = saga
-        showDeleteConfirmation = true
-    }, openTimeLine = {
-        Log.d("sagadetail", "SagaDetailView: Opening timeLine")
-        navHostController.navigateToRoute(Routes.TIMELINE, mapOf("sagaId" to it.toString()))
-    })
+    }
 
     if (showDeleteConfirmation && sagaToDelete != null) {
         AlertDialog(
@@ -159,10 +187,7 @@ fun SagaDetailView(
 fun SagaDetailContentView(
     state: State,
     paddingValues: PaddingValues,
-    selectCharacter: (Int?) -> Unit = {},
-    openTimeLine: (Int) -> Unit,
-    onBack: () -> Unit = {},
-    onDelete: (SagaData) -> Unit = {},
+    detailAction: (DetailAction, SagaContent, Any?) -> Unit = { _, _, _ -> },
 ) {
     val columnCount = 2
     val saga = ((state as? State.Success)?.data as? SagaContent)
@@ -176,8 +201,7 @@ fun SagaDetailContentView(
     ) {
         if (state is State.Loading) {
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 Box(
                     Modifier
@@ -196,14 +220,13 @@ fun SagaDetailContentView(
 
         saga?.let {
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 SagaTopBar(
                     it.data.title,
                     "Criado em ${it.data.createdAt.formatDate()}",
                     it.data.genre,
-                    onBackClick = onBack,
+                    onBackClick = { detailAction(DetailAction.BACK, it, null) },
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
@@ -212,8 +235,7 @@ fun SagaDetailContentView(
                 )
             }
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
@@ -232,7 +254,8 @@ fun SagaDetailContentView(
                                     .background(
                                         it.data.genre.color
                                             .gradientFade(),
-                                    ).clipToBounds()
+                                    ).effectForGenre(saga.data.genre)
+                                    .clipToBounds()
                                     .zoomAnimation(),
                             contentScale = ContentScale.Crop,
                         )
@@ -297,8 +320,7 @@ fun SagaDetailContentView(
             }
 
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
@@ -313,8 +335,7 @@ fun SagaDetailContentView(
             }
 
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -347,8 +368,7 @@ fun SagaDetailContentView(
             }
 
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 CharacterSection(
                     "Descrição",
@@ -358,8 +378,7 @@ fun SagaDetailContentView(
             }
 
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 Row(
                     Modifier
@@ -380,7 +399,7 @@ fun SagaDetailContentView(
                     )
 
                     IconButton(onClick = {
-                        selectCharacter(null)
+                        detailAction(DetailAction.CHARACTERS, it, null)
                     }, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -390,48 +409,47 @@ fun SagaDetailContentView(
                 }
             }
 
-            items(
-                sortCharactersByMessageCount(
-                    it.characters,
-                    it.messages,
-                ),
-            ) { chars ->
-
-                Column(
-                    Modifier.padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    CharacterAvatar(
-                        chars,
-                        borderSize = 2.dp,
-                        genre = it.data.genre,
-                        modifier =
+            item(span = { GridItemSpan(columnCount) }) {
+                LazyRow {
+                    items(sortCharactersByMessageCount(it.characters, it.messages)) { char ->
+                        Column(
                             Modifier
                                 .padding(8.dp)
-                                .clip(CircleShape)
-                                .size(120.dp)
-                                .padding(8.dp)
+                                .clip(RoundedCornerShape(it.data.genre.cornerSize()))
                                 .clickable {
-                                    selectCharacter(chars.id)
+                                    detailAction(DetailAction.CHARACTERS, it, char.id)
                                 },
-                    )
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            CharacterAvatar(
+                                char,
+                                borderSize = 2.dp,
+                                genre = it.data.genre,
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .clip(CircleShape)
+                                        .size(120.dp)
+                                        .padding(8.dp),
+                            )
 
-                    Text(
-                        chars.name,
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Light,
-                                textAlign = TextAlign.Center,
-                                fontFamily = it.data.genre.bodyFont(),
-                            ),
-                    )
+                            Text(
+                                char.name,
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Light,
+                                        textAlign = TextAlign.Center,
+                                        fontFamily = it.data.genre.bodyFont(),
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
 
             if (it.timelines.isNotEmpty()) {
                 item(span = {
-                    androidx.compose.foundation.lazy.grid
-                        .GridItemSpan(columnCount)
+                    GridItemSpan(columnCount)
                 }) {
                     Column {
                         Row(
@@ -453,7 +471,11 @@ fun SagaDetailContentView(
                             )
 
                             IconButton(onClick = {
-                                openTimeLine(it.data.id)
+                                detailAction(
+                                    DetailAction.TIMELINE,
+                                    it,
+                                    null,
+                                )
                             }, modifier = Modifier.size(24.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -472,7 +494,11 @@ fun SagaDetailContentView(
                                         .padding(16.dp)
                                         .clip(RoundedCornerShape(it.data.genre.cornerSize()))
                                         .clickable {
-                                            openTimeLine(it.data.id)
+                                            detailAction(
+                                                DetailAction.TIMELINE,
+                                                it,
+                                                null,
+                                            )
                                         }.fillMaxWidth()
                                         .wrapContentHeight(),
                             )
@@ -489,8 +515,7 @@ fun SagaDetailContentView(
 
             if (it.wikis.isNotEmpty()) {
                 item(span = {
-                    androidx.compose.foundation.lazy.grid
-                        .GridItemSpan(columnCount)
+                    GridItemSpan(columnCount)
                 }) {
                     Column {
                         Row(
@@ -546,39 +571,70 @@ fun SagaDetailContentView(
 
             if (it.chapters.isNotEmpty()) {
                 item(span = {
-                    androidx.compose.foundation.lazy.grid
-                        .GridItemSpan(columnCount)
+                    GridItemSpan(columnCount)
                 }) {
-                    Text(
-                        "Capítulos",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = it.data.genre.headerFont(),
-                            ),
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
-                items(it.chapters) { chapter ->
-                    ChapterCardView(
-                        chapter,
-                        it.data.genre,
-                        it.characters,
+                    Row(
                         Modifier
-                            .padding(4.dp)
-                            .fillMaxWidth()
-                            .height(300.dp),
-                    )
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                    ) {
+                        Text(
+                            "Capítulos",
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Normal,
+                                    fontFamily = it.data.genre.headerFont(),
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .weight(1f),
+                        )
+
+                        IconButton(onClick = {
+                            detailAction(
+                                DetailAction.CHAPTERS,
+                                it,
+                                null,
+                            )
+                        }, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = "Ver personagens",
+                            )
+                        }
+                    }
+                }
+
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    LazyRow {
+                        items(it.chapters) { chapter ->
+                            ChapterCardView(
+                                chapter,
+                                it.data.genre,
+                                it.characters,
+                                Modifier
+                                    .padding(4.dp)
+                                    .width(300.dp)
+                                    .height(300.dp),
+                            )
+                        }
+                    }
                 }
             }
 
             item(span = {
-                androidx.compose.foundation.lazy.grid
-                    .GridItemSpan(columnCount)
+                GridItemSpan(columnCount)
             }) {
                 Button(
                     onClick = {
-                        onDelete(it.data)
+                        detailAction(
+                            DetailAction.DELETE,
+                            it,
+                            null,
+                        )
                     },
                     colors =
                         ButtonDefaults.textButtonColors(
@@ -603,7 +659,6 @@ fun SagaDetailContentViewLoadingPreview() {
         SagaDetailContentView(
             state = State.Loading,
             paddingValues = PaddingValues(0.dp),
-            openTimeLine = {},
         )
     }
 }
@@ -668,7 +723,6 @@ fun SagaDetailContentViewPreview() {
         SagaDetailContentView(
             state = state,
             paddingValues = PaddingValues(0.dp),
-            openTimeLine = {},
         )
     }
 }

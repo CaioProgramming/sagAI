@@ -1,7 +1,9 @@
 package com.ilustris.sagai.features.characters.ui.components
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,30 +21,33 @@ fun CharacterSection(
     content: String,
     genre: Genre,
 ) {
-    Text(
-        title,
-        style =
-            MaterialTheme.typography.titleLarge.copy(
-                fontFamily = genre.headerFont(),
-                fontWeight = FontWeight.Normal,
-            ),
-        modifier =
-            Modifier
-                .padding(horizontal = 16.dp)
-                .fillMaxWidth(),
-    )
+    Column(Modifier.fillMaxWidth().wrapContentHeight()) {
+        Text(
+            title,
+            style =
+                MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = genre.headerFont(),
+                    fontWeight = FontWeight.Normal,
+                ),
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp)
+                    .fillMaxWidth()
+                    .wrapContentHeight(),
+        )
 
-    Text(
-        content,
-        style =
-            MaterialTheme.typography.bodyMedium.copy(
-                fontFamily = genre.bodyFont(),
-            ),
-        modifier =
-            Modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .fillMaxWidth(),
-    )
+        Text(
+            content,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                ),
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .fillMaxWidth(),
+        )
+    }
 }
 
 @Composable

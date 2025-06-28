@@ -14,7 +14,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,23 +56,22 @@ fun WikiCard(
                         RoundedCornerShape(
                             genre.cornerSize(),
                         ),
-                )
-                .clip(RoundedCornerShape(genre.cornerSize())),
+                ).clip(RoundedCornerShape(genre.cornerSize())),
     ) {
         Image(
             painterResource(wiki.type.iconForType(genre)),
             null,
             contentScale = ContentScale.Fit,
             colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f)),
-            modifier = Modifier.fillMaxSize().scale(1.4f).offset(x = (-50).dp, y = (50).dp),
+            modifier = Modifier.fillMaxSize().scale(1.4f).offset(x = (-50).dp, y = (60).dp),
         )
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(12.dp).verticalScroll(rememberScrollState()),
         ) {
             Text(
                 text = wiki.title,
                 style =
-                    Typography.titleLarge.copy(
+                    Typography.titleSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontFamily = genre.bodyFont(),
                     ),
@@ -79,7 +80,7 @@ fun WikiCard(
             Text(
                 text = wiki.content,
                 style =
-                    Typography.bodyMedium.copy(
+                    Typography.bodySmall.copy(
                         fontFamily = genre.bodyFont(),
                     ),
                 color = MaterialTheme.colorScheme.onBackground,

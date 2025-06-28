@@ -5,7 +5,6 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.firebase.ai.type.Schema
 import com.ilustris.sagai.core.utils.toFirebaseSchema
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 @Entity
 data class Chapter(
@@ -24,17 +23,24 @@ data class Chapter(
 
 data class ChapterGen(
     val chapter: Chapter,
-    val wikiUpdates: List<Wiki>,
+    val featuredCharacters: List<String> = emptyList(),
 ) {
     companion object {
         fun toSchema() =
             Schema.obj(
                 mapOf(
                     "chapter" to toFirebaseSchema(Chapter::class.java),
-                    "wikiUpdates" to
+                    "featuredCharacters" to
                         Schema.array(
-                            items = toFirebaseSchema(Wiki::class.java),
-                            description = "New world building information about the saga eg(locations, factions, etc.)",
+                            items =
+                                Schema.string(
+                                    description = "Character name",
+                                ),
+                            description = """
+                                Maximum 3 characters featured in the chapter +
+                                It must be the name of the character
+                                and the character needs be TOO MUCH RELEVANT TO Current Chapter",
+                        """,
                         ),
                 ),
             )
