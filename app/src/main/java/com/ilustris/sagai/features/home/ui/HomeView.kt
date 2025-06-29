@@ -71,6 +71,7 @@ import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
+import effectForGenre
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -117,64 +118,50 @@ private fun ChatList(
         modifier =
             Modifier.padding(padding),
     ) {
-        if (sagas.isEmpty()) {
-            item {
-                NewChatCard(
-                    animatedBrush = styleGradient,
-                    onButtonClick = {
-                        onCreateNewChat()
-                    },
-                    modifier =
-                        Modifier.fillParentMaxSize(),
+        item {
+            val brush =
+                gradientAnimation(
+                    holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
+                    gradientType = GradientType.LINEAR,
+                    targetValue = 500f,
+                    duration = 10.seconds
                 )
-            }
-        } else {
-            item {
-                Row(
+            Row(
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .gradientFill(brush)
+                        .clip(RoundedCornerShape(15.dp))
+                        .clickable {
+                            onCreateNewChat()
+                        }.fillMaxWidth(),
+            ) {
+                SparkLoader(
+                    brush = Brush.verticalGradient(holographicGradient),
+                    strokeSize = 2.dp,
                     modifier =
                         Modifier
-                            .padding(16.dp)
-                            .clip(RoundedCornerShape(15.dp))
-                            .clickable {
-                                onCreateNewChat()
-                            }.fillMaxWidth(),
-                ) {
-                    val brush =
-                        gradientAnimation(
-                            holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
-                            gradientType = GradientType.LINEAR,
-                            targetValue = 300f,
-                        )
+                            .clip(CircleShape)
+                            .padding(4.dp)
+                            .size(32.dp),
+                )
 
-                    SparkLoader(
-                        brush = brush,
-                        strokeSize = 2.dp,
-                        modifier =
-                            Modifier
-                                .clip(CircleShape)
-                                .padding(4.dp)
-                                .size(32.dp),
+                Column {
+                    Text(
+                        "Criar nova saga",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                            ),
                     )
 
-                    Column {
-                        Text(
-                            "Criar nova saga",
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    brush = brush,
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
-                        )
-
-                        Text(
-                            "Crie uma nova aventura e descubra o que o futuro reserva para você.",
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    brush = brush,
-                                    fontWeight = FontWeight.Light,
-                                ),
-                        )
-                    }
+                    Text(
+                        "Crie uma nova aventura e descubra o que o futuro reserva para você.",
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Light,
+                            ),
+                    )
                 }
             }
         }
@@ -221,7 +208,7 @@ fun ChatCard(
             AsyncImage(
                 sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
                 contentDescription = sagaData.title,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().effectForGenre(sagaData.genre),
                 onSuccess = {
                     imageLoaded.value = true
                 },

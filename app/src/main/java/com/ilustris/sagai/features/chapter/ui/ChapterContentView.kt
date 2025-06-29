@@ -1,6 +1,6 @@
 package com.ilustris.sagai.features.chapter.ui
 
-import androidx.compose.animation.core.EaseInBounce
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -47,6 +47,7 @@ import kotlin.time.Duration.Companion.seconds
 fun ChapterContentView(
     genre: Genre,
     content: Chapter,
+    mainCharacter: Character? = null,
     characters: List<Character>,
     wiki: List<Wiki>,
     textColor: Color,
@@ -153,8 +154,10 @@ fun ChapterContentView(
             text = content.overview,
             modifier = Modifier.padding(16.dp),
             duration = 3.seconds,
-            easing = EaseInBounce,
+            easing = LinearEasing,
             isAnimated = isAnimated,
+            genre = genre,
+            mainCharacter = mainCharacter,
             characters = characters,
             wiki = wiki,
             style =

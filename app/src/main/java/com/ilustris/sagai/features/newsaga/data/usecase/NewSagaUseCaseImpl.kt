@@ -13,6 +13,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import java.util.Calendar
@@ -79,7 +80,12 @@ class NewSagaUseCaseImpl
             character: Character,
         ): RequestResult<Exception, SagaData> =
             try {
-                val prompt = generateSagaIconPrompt(sagaForm, character)
+                val genre = sagaForm.genre
+                val prompt =
+                    when (genre) {
+                        Genre.FANTASY -> generateFantasyIcon(sagaForm)
+                        else -> generateSagaIconPrompt(sagaForm, character)
+                    }
                 val request = imageGenClient.generateImage(prompt)
                /* val request =
                     FreepikRequest(
@@ -108,6 +114,11 @@ class NewSagaUseCaseImpl
             sagaData,
             mainCharacter,
         )
+
+        private fun generateFantasyIcon(sagaData: SagaData) =
+            SagaPrompts.fantasyWallpaperGeneration(
+                sagaData,
+            )
 
         private fun generateSagaPrompt(sagaForm: SagaForm): String =
             SagaPrompts.sagaGeneration(

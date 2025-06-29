@@ -15,3 +15,14 @@ sealed interface ChatState {
 
     data object Empty : ChatState
 }
+
+data class SnackBarState(
+    val title: String,
+    val text: String,
+    val redirectAction: Triple<ChatAction, String, Any?>? = null,
+)
+
+enum class ChatAction {
+    RESEND,
+    OPEN_TIMELINE,
+}

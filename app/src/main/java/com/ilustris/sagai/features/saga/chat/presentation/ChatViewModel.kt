@@ -39,10 +39,15 @@ class ChatViewModel
         val messages = MutableStateFlow<List<MessageContent>>(emptyList())
         val isGenerating = MutableStateFlow(false)
         val characters = MutableStateFlow<List<Character>>(emptyList())
-        val snackbarMessage = MutableStateFlow<String?>(null)
+        val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
 
         private fun sendError(errorMessage: String) {
-            snackbarMessage.value = "Ocorreu um erro inesperado $errorMessage"
+            snackBarMessage.value =
+                SnackBarState(
+                    title = "Ocorreu um erro inesperado",
+                    text = errorMessage,
+                    redirectAction = Triple(ChatAction.RESEND, "Ok", null),
+                )
             isGenerating.value = false
         }
 
@@ -159,12 +164,12 @@ class ChatViewModel
                         message.speakerName?.contains(it.name, true) == true ||
                             message.characterId == mainCharacter.id
                     }
-                val sendType = message.senderType
+                val sendType = if (characterReference?.id == mainCharacter.id) SenderType.USER else message.senderType
                 val speakerId =
                     when (sendType) {
                         SenderType.NARRATOR -> message.characterId
                         SenderType.NEW_CHARACTER, SenderType.NEW_CHAPTER -> null
-                        SenderType.USER, SenderType.THOUGHT, SenderType.ACTION -> mainCharacter.id
+                        SenderType.USER -> mainCharacter.id
                         else -> characterReference?.id
                     }
                 messageUseCase
@@ -220,7 +225,7 @@ class ChatViewModel
                                 .filter { it.message.senderType != SenderType.NEW_CHAPTER }
                                 .takeLast(LORE_UPDATE_THRESHOLD),
                         ).onSuccess {
-                            notifyLoreUpdate()
+                            notifyLoreUpdate(it)
                         }.onFailure {
                             sendError("Ocorreu um erro ao atualizar a história.")
                         }
@@ -228,13 +233,17 @@ class ChatViewModel
             }
         }
 
-        private fun notifyLoreUpdate() {
+        private fun notifyLoreUpdate(newEvent: Timeline) {
             isGenerating.value = false
             viewModelScope.launch(Dispatchers.IO) {
-                snackbarMessage.value = "História atualizada"
+                snackBarMessage.value =
+                    SnackBarState(
+                        "História atualizada",
+                        newEvent.content,
+                        redirectAction = Triple(ChatAction.OPEN_TIMELINE, "Ver mais", newEvent.id),
+                    )
                 delay(10.seconds)
-                snackbarMessage.value = null
-
+                snackBarMessage.value = null
                 sagaContentManager
                     .checkForChapter()
                     .onSuccess {
@@ -253,12 +262,14 @@ class ChatViewModel
                 sagaContentManager
                     .generateCharacter(
                         message,
-                    ).also {
+                    ).onSuccess {
                         updateMessage(
                             message.copy(
-                                characterId = it?.id,
+                                characterId = it.id,
                             ),
                         )
+                        val previousMessage = messages.value[messages.value.lastIndex - 1].message
+                        replyMessage(previousMessage)
                     }
                 isGenerating.value = false
             }
@@ -328,5 +339,9 @@ class ChatViewModel
                         sendError(it.message ?: "Unknown error")
                     }
             }
+        }
+
+        fun dismissSnackBar() {
+            snackBarMessage.value = null
         }
     }

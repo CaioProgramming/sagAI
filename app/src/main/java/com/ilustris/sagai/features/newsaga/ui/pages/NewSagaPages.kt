@@ -4,16 +4,13 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -26,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,37 +48,13 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.genresGradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.seconds
 
 enum class NewSagaPages(
     @StringRes val title: Int? = null,
     @StringRes val subtitle: Int? = null,
     val content: @Composable (((Any?) -> Unit), Any?) -> Unit = { _, _ -> },
 ) {
-    INTRO(
-        R.string.lets_create_saga,
-        R.string.lets_create_saga_subtitle,
-        content = { sendContent, _ ->
-            Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
-
-                SparkIcon(
-                    brush = gradientAnimation(genresGradient(), targetValue = 500f),
-                    modifier = Modifier.align(Alignment.CenterHorizontally).size(200.dp),
-                    tint = MaterialTheme.colorScheme.background.copy(alpha = .7f),
-                )
-            }
-            LaunchedEffect(Unit) {
-                delay(8.seconds)
-                sendContent(Unit)
-            }
-        },
-    ),
     TITLE(
         R.string.start_saga,
         R.string.start_saga_subtitle,
@@ -117,24 +89,6 @@ enum class NewSagaPages(
         content = { onSendData, data ->
             DescriptionPageView(data as String, "Descreva seu personagem...") {
                 onSendData(it)
-            }
-        },
-    ),
-    RESULT(
-        content = { onSend, data ->
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                (data as? SagaData)?.let {
-                    val brush = gradientAnimation(it.genre.color.darkerPalette())
-
-                    SagaCard(it, Modifier.padding(16.dp).fillMaxWidth().weight(1f))
-                } ?: run {
-                    Box(Modifier.fillMaxSize()) {
-                        SparkIcon(
-                            Modifier.size(100.dp).align(Alignment.Center),
-                            brush = gradientAnimation(genresGradient()),
-                        )
-                    }
-                }
             }
         },
     ),
@@ -292,7 +246,7 @@ fun GenresPageView(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .height(300.dp)
+                        .height(300.dp),
             ) { genre ->
                 selection = genre
                 onSelectGenre(genre)

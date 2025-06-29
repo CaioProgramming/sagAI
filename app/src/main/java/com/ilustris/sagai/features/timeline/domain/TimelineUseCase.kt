@@ -8,7 +8,7 @@ interface TimelineUseCase {
 
     suspend fun getTimeline(id: String): Flow<Timeline>
 
-    suspend fun saveTimeline(timeline: Timeline): Long
+    suspend fun saveTimeline(timeline: Timeline): Timeline
 
     suspend fun updateTimeline(timeline: Timeline)
 

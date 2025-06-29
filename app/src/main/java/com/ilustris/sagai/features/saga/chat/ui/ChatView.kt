@@ -13,14 +13,15 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -47,9 +48,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,7 +79,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
@@ -87,6 +88,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.presentation.ChatAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
@@ -107,6 +109,7 @@ import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -120,7 +123,6 @@ import kotlin.time.Duration.Companion.seconds
 fun ChatView(
     navHostController: NavHostController,
     padding: PaddingValues = PaddingValues(0.dp),
-    snackbarState: SnackbarHostState,
     sagaId: String? = null,
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
@@ -129,7 +131,7 @@ fun ChatView(
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val snackbarMessage by viewModel.snackbarMessage.collectAsStateWithLifecycle()
+    val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     LaunchedEffect(content) {
         if (content == null) {
@@ -193,60 +195,106 @@ fun ChatView(
             }
 
             AnimatedVisibility(
-                snackbarMessage != null,
+                snackBarMessage != null,
                 modifier = Modifier.align(Alignment.TopCenter),
                 enter = scaleIn() + fadeIn(),
-                exit = slideOutVertically(),
+                exit = fadeOut() + scaleOut(),
             ) {
-                snackbarMessage?.let { message ->
-                    val backgroundColor =
-                        content?.data?.genre?.color ?: MaterialTheme.colorScheme.primary
+                snackBarMessage?.let { snackBar ->
+                    var isExpanded by remember {
+                        mutableStateOf(false)
+                    }
+
                     val contentColor =
-                        content?.data?.genre?.iconColor ?: MaterialTheme.colorScheme.onPrimary
+                        content?.data?.genre?.color ?: MaterialTheme.colorScheme.onPrimary
                     val brush =
                         gradientAnimation(
-                            backgroundColor.darkerPalette(factor = .4f),
+                            contentColor.darkerPalette(factor = .4f),
                             targetValue = 500f,
                             duration = 2.seconds,
                         )
-                    Row(
+
+                    Column(
                         Modifier
-                            .padding(50.dp)
-                            .fillMaxWidth()
-                            .border(
+                            .padding(vertical = 75.dp, horizontal = 16.dp)
+                            .clip(
+                                RoundedCornerShape(25.dp),
+                            ).border(
                                 1.dp,
-                                brush,
+                                MaterialTheme.colorScheme.onBackground.gradientFade(),
                                 RoundedCornerShape(25.dp),
                             ).background(
-                                backgroundColor,
+                                MaterialTheme.colorScheme.background,
                                 RoundedCornerShape(25.dp),
-                            ).gradientFill(brush),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center,
+                            ).fillMaxWidth()
+                            .clickable {
+                                isExpanded = isExpanded.not()
+                            }.animateContentSize(
+                                animationSpec = tween(200, easing = LinearOutSlowInEasing),
+                            ),
                     ) {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .size(12.dp),
-                        )
-                        Text(
-                            message,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = content?.data?.genre?.bodyFont(),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .size(12.dp),
-                        )
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            SparkIcon(
+                                modifier = Modifier.size(50.dp),
+                                brush = brush,
+                                tint = contentColor,
+                                blurRadius = 5.dp,
+                                duration = 2.seconds,
+                            )
+                            Text(
+                                snackBar.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontFamily = content?.data?.genre?.bodyFont(),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.padding(8.dp).weight(1f),
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = isExpanded,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
+                            Text(
+                                snackBar.text,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontFamily = content?.data?.genre?.bodyFont(),
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                            )
+                        }
+
+                        AnimatedVisibility(isExpanded) {
+                            if (snackBar.redirectAction != null) {
+                                Button(
+                                    onClick = {
+                                        when (snackBar.redirectAction.first) {
+                                            ChatAction.RESEND -> viewModel.dismissSnackBar()
+                                            ChatAction.OPEN_TIMELINE -> {
+                                                content?.data?.let { saga ->
+                                                    navHostController.navigateToRoute(
+                                                        Routes.TIMELINE,
+                                                        mapOf("sagaId" to saga.id.toString()),
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    },
+                                    colors = ButtonDefaults.textButtonColors(),
+                                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        snackBar.redirectAction.second,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontFamily = content?.data?.genre?.bodyFont(),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -309,6 +357,7 @@ fun ChatContent(
 
             ChatList(
                 saga = saga,
+                mainCharacter = content.mainCharacter,
                 messages = messagesList,
                 characters = characters,
                 wiki = wiki,
@@ -325,18 +374,6 @@ fun ChatContent(
                     },
                 openCharacter = { onCharacterSelected(saga.id) },
                 openSaga = { openSagaDetails(saga) },
-            )
-
-            Box(
-                Modifier
-                    .constrainAs(bottomFade) {
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        width = Dimension.fillToConstraints
-                    }.fillMaxWidth()
-                    .height(100.dp)
-                    .background(fadeGradientBottom()),
             )
 
             AnimatedVisibility(
@@ -460,12 +497,23 @@ fun SagaHeader(
                     .effectForGenre(saga.genre)
                     .fillMaxSize(),
         )
+
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(.4f)
+                .background(
+                    fadeGradientBottom(),
+                ),
+        )
     }
 }
 
 @Composable
 fun ChatList(
     saga: SagaData?,
+    mainCharacter: Character?,
     messages: List<MessageContent>,
     characters: List<Character>,
     wiki: List<Wiki>,
@@ -480,12 +528,17 @@ fun ChatList(
     LazyColumn(modifier, state = listState, reverseLayout = true) {
         saga?.let {
             item {
-                Spacer(Modifier.fillMaxWidth().height(75.dp))
+                Spacer(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(75.dp),
+                )
             }
 
             items(messages.reversed(), key = { it.message.id }) { message ->
                 ChatBubble(
                     message,
+                    mainCharacter = mainCharacter,
                     saga.genre,
                     characters = characters,
                     wiki = wiki,

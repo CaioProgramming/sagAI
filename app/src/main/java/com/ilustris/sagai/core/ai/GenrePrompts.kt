@@ -48,10 +48,13 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                masterpiece classical oil painting,
+                Classical oil painting,
                 rich impasto texture, visible brushstrokes,
                 strong chiaroscuro.
-                Renaissance-inspired aesthetic, deep harmonious colors, authentic painterly grain.
+                natural lighting.
+                Harmonious colors, authentic painterly grain.
+                Medieval Themed minimalist background.
+                no borders.
                 """
 
             SCI_FI ->

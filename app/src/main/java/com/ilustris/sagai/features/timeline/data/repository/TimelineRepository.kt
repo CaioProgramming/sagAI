@@ -4,7 +4,7 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.Flow
 
 interface TimelineRepository {
-    suspend fun saveTimeline(timeline: Timeline): Long
+    suspend fun saveTimeline(timeline: Timeline): Timeline
 
     suspend fun getTimeline(id: String): Flow<Timeline>
 

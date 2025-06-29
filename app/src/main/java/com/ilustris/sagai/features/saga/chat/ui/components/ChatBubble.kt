@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
@@ -47,14 +48,17 @@ import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.lighter
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun ChatBubble(
     messageContent: MessageContent,
+    mainCharacter: Character?,
     genre: Genre,
     characters: List<Character>,
     wiki: List<Wiki>,
@@ -66,24 +70,42 @@ fun ChatBubble(
     val sender = message.senderType
 
     val isUser =
-        when (sender) {
-            SenderType.USER, SenderType.THOUGHT, SenderType.ACTION -> true
-            else -> false
+        if (message.characterId == mainCharacter?.id || message.speakerName == mainCharacter?.name) {
+            true
+        } else {
+            when (sender) {
+                SenderType.USER, SenderType.THOUGHT, SenderType.ACTION -> true
+                else -> false
+            }
         }
+
     val bubbleColor =
-        when (sender) {
-            SenderType.USER -> genre.color
-            SenderType.CHARACTER ->
-                genre.color.copy(
-                    alpha = .4f,
-                )
-            else -> Color.Transparent
+
+            when (sender) {
+                SenderType.USER -> genre.color
+                SenderType.CHARACTER -> {
+                    if (isUser) {
+                        genre.color
+                    } else {
+                        if (isSystemInDarkTheme()) {
+                            genre.color.darker(.7f)
+                        } else {
+                            genre.color.lighter(
+                                .65f,
+                            )
+                        }
+                    }
+                }
+
+                else -> Color.Transparent
+
         }
 
     val textColor = genre.iconColor
 
     val cornerSize = genre.cornerSize()
-    val tailAlignment = if (isUser) BubbleTailAlignment.BottomRight else BubbleTailAlignment.BottomLeft
+    val tailAlignment =
+        if (isUser) BubbleTailAlignment.BottomRight else BubbleTailAlignment.BottomLeft
     val bubbleShape =
         CurvedChatBubbleShape(
             cornerRadius = cornerSize,
@@ -91,24 +113,6 @@ fun ChatBubble(
             tailHeight = 8.dp,
             tailAlignment = tailAlignment,
         )
-    val borderBrush =
-        when (sender) {
-            SenderType.NARRATOR, SenderType.NEW_CHAPTER ->
-                Brush.verticalGradient(
-                    listOf(
-                        Color.Transparent,
-                        Color.Transparent,
-                    ),
-                )
-
-            else -> MaterialTheme.colorScheme.onBackground.gradientFade()
-        }
-
-    val borderSize =
-        when (sender) {
-            SenderType.NARRATOR, SenderType.NEW_CHAPTER, SenderType.ACTION, SenderType.THOUGHT -> 0.dp
-            else -> 0.dp
-        }
 
     val textAlignment =
         when (sender) {
@@ -133,7 +137,7 @@ fun ChatBubble(
         when (sender) {
             SenderType.USER -> 0.seconds
             SenderType.CHARACTER -> 5.seconds
-            else -> 10.seconds
+            else -> 7.seconds
         }
     val fontStyle =
         when (sender) {
@@ -165,12 +169,15 @@ fun ChatBubble(
                         } else {
                             this.border(0.dp, Color.Transparent, bubbleShape)
                         }
+
                     val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
 
                     if (isUser) {
                         TypewriterText(
                             text = message.text,
                             isAnimated = isAnimated,
+                            genre = genre,
+                            mainCharacter = mainCharacter,
                             characters = characters,
                             wiki = wiki,
                             duration = duration,
@@ -244,6 +251,8 @@ fun ChatBubble(
                         TypewriterText(
                             text = message.text,
                             isAnimated = isAnimated,
+                            genre = genre,
+                            mainCharacter = mainCharacter,
                             characters = characters,
                             wiki = wiki,
                             duration = duration,
@@ -309,6 +318,8 @@ fun ChatBubble(
                         text = message.text,
                         isAnimated = isAnimated,
                         duration = duration,
+                        genre = genre,
+                        mainCharacter = mainCharacter,
                         characters = characters,
                         wiki = wiki,
                         modifier =
@@ -331,9 +342,12 @@ fun ChatBubble(
                             borderSize = 1.dp,
                             genre = genre,
                             modifier =
-                                Modifier.clip(CircleShape).size(32.dp).clickable {
-                                    openCharacters()
-                                },
+                                Modifier
+                                    .clip(CircleShape)
+                                    .size(32.dp)
+                                    .clickable {
+                                        openCharacters()
+                                    },
                         )
                     }
                 }
@@ -345,6 +359,8 @@ fun ChatBubble(
                 text = message.text,
                 isAnimated = isAnimated,
                 duration = duration,
+                genre = genre,
+                mainCharacter = mainCharacter,
                 characters = characters,
                 wiki = wiki,
                 modifier =
@@ -368,6 +384,7 @@ fun ChatBubble(
                     ChapterContentView(
                         genre,
                         it,
+                        mainCharacter,
                         characters,
                         wiki,
                         textColor,
@@ -424,7 +441,8 @@ fun ChatBubblePreview() {
                         ),
                     genre = genre,
                     characters = emptyList(),
-                    wiki = emptyList()
+                    wiki = emptyList(),
+                    mainCharacter = null,
                 )
             }
 

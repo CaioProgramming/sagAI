@@ -23,7 +23,7 @@ data class MessageContent(
 fun MessageContent.joinMessage(): Pair<String, String> =
     when (message.senderType) {
         SenderType.USER -> "${character?.name}(${message.senderType})" to message.text
-        SenderType.CHARACTER -> "${character?.name}(${message.senderType})" to message.text
+        SenderType.CHARACTER -> "${(character?.name) ?: "Unknown"}(${message.senderType})" to message.text
         SenderType.THOUGHT,
         SenderType.ACTION,
         ->

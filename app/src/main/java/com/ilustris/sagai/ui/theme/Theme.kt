@@ -27,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val DarkColorScheme =
     darkColorScheme(
+        onPrimary = Color.White,
         primary = MaterialColor.BlueA400,
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
@@ -101,40 +103,40 @@ fun SagAIScaffold(
     SagAITheme {
         Scaffold(topBar = {
             AnimatedVisibility(showTopBar) {
-                 TopAppBar(
-                     title = {
-                         title?.let {
-                             Text(
-                                 text = it,
-                                 textAlign = TextAlign.Center,
-                                 style = MaterialTheme.typography.headlineSmall,
-                                 fontWeight = FontWeight.Bold,
-                                 modifier =
-                                     Modifier
-                                         .padding(16.dp)
-                                         .fillMaxWidth(),
-                             )
-                         } ?: run {
-                             Box(Modifier.fillMaxWidth()) {
-                                 Image(
-                                     painterResource(R.drawable.ic_spark),
-                                     contentDescription = stringResource(R.string.app_name),
-                                     modifier =
-                                         Modifier
-                                             .align(Alignment.Center)
-                                             .size(50.dp),
-                                 )
-                             }
-                         }
-                     },
-                     actions = {
-                         Box(Modifier.size(24.dp))
-                     },
-                     navigationIcon = {
-                         Box(modifier = Modifier.size(24.dp))
-                     },
-                 )
-             }
+                TopAppBar(
+                    title = {
+                        title?.let {
+                            Text(
+                                text = it,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
+                            )
+                        } ?: run {
+                            Box(Modifier.fillMaxWidth()) {
+                                Image(
+                                    painterResource(R.drawable.ic_spark),
+                                    contentDescription = stringResource(R.string.app_name),
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.Center)
+                                            .size(50.dp),
+                                )
+                            }
+                        }
+                    },
+                    actions = {
+                        Box(Modifier.size(24.dp))
+                    },
+                    navigationIcon = {
+                        Box(modifier = Modifier.size(24.dp))
+                    },
+                )
+            }
         }) {
             Box(modifier = Modifier.padding(it)) {
                 content()

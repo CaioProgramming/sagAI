@@ -49,22 +49,6 @@ object SagaPrompts {
         5.  An indication of the adventure's scope and potential for a grand finale.
         
         Target a short synopsis with a maxium of 75 words, ensuring it engages the player to join the RPG experience.
-        
-        You MUST fill the visuals field:
-        //WRITE THE FIELDS IN ENGLISH
-        // FOLLOW this structure to fill the visuals field:
-        {
-          "illustrationVisuals": { // This object will describe the visual aspects for generating saga illustrations.
-            "characterPose": "string", // Describe the main character's pose (e.g., "Standing heroically with crossed arms", "Crouching cautiously", "Running frantically").
-            "characterExpression": "string", // Describe the character's facial expression (e.g., "Determined and serious", "Curious and slightly surprised", "Melancholy with a touch of hope").
-            "environmentDetails": "string", // Describe the main environment of the illustration (e.g., "Rainy cyberpunk street with neon signs", "Ancient elven forest with gnarled trees and magic mist", "Deserted and rusty spaceship interior").
-            "lightingDetails": "string", // Describe the lighting of the scene (e.g., "Dramatic neon backlight from behind the character", "Soft moonlight filtering through leaves", "Harsh overhead fluorescent lights").
-            "colorPalette": "string", // Describe the dominant color palette (e.g., "Dominance of electric blues, purples, and dark grays, with splashes of red", "Earthy greens, browns, and golden hues, with mysterious purples").
-            "foregroundElements": "string", // Describe elements in the foreground that add depth (e.g., "Raindrops streaking across the view, smoke rising from manholes", "Gnarled roots on the ground, small floating light orbs").
-            "backgroundElements": "string", // Describe elements in the background that enrich the scene (e.g., "Towering skyscrapers with glass facades and LED panels displaying distorted ads", "Silhouetted mountains, a distant burning city").
-            "overallMood": "string" // Describe the overall mood or emotion of the illustration (e.g., "Gritty and tense", "Mysterious and enchanting", "Desolate yet hopeful").
-          }
-        }
         """
 
     fun wallpaperGeneration(
@@ -224,4 +208,15 @@ object SagaPrompts {
        [ ${sagaContent.characters.formatToJsonArray()} ]
 
         """"
+
+    fun fantasyWallpaperGeneration(sagaData: SagaData) =
+        """
+        single central Cosmic symbol element with a divine cosmic texturization.
+        positioned perfectly in the absolute center,
+        textured solid color background,
+        in a color combo with gold, evoking fantasy vibes.
+        ample clear space around the central symbol,
+        wallpaper style,
+        focus on color and texture.
+        """
 }

@@ -64,7 +64,9 @@ fun SenderType.meaning() =
     when (this) {
         SenderType.USER ->
             """
-            Represents a message sent by the player (Jeni). You, as the AI, must NEVER generate a message with this 'senderType'. This type is only for input from the player.
+            Represents a message sent by the player.
+            You, as the AI, must NEVER generate a message with this 'senderType'.
+            This type is only for input from the player.
             """
         SenderType.CHARACTER ->
             """
@@ -73,10 +75,12 @@ fun SenderType.meaning() =
             """
         SenderType.NARRATOR ->
             """
-             Use for general story narration,
-             scene descriptions, or prompting the player for action."
-             You can't speak for another character in the story
-             """
+            Use for general story narration,
+            scene descriptions, or prompting the player for action.
+            **CRITICAL RULE: The NARRATOR MUST NEVER include direct or indirect dialogue from any character (NPCs or player).
+            Narration should describe actions, environments, and non-verbal reactions only.
+            All character speech must be in a 'CHARACTER' senderType.**
+            """
         SenderType.NEW_CHAPTER ->
             """
             Use ONLY when introducing a brand new, significant NPC for the very first time. 

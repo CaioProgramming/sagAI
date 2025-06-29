@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +22,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -35,6 +37,8 @@ fun TypewriterText(
     duration: Duration = 3.seconds,
     easing: Easing = EaseIn,
     isAnimated: Boolean = true,
+    genre: Genre,
+    mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
     onAnimationFinished: () -> Unit = { },
@@ -74,8 +78,11 @@ fun TypewriterText(
     val wikiAnnotation =
         buildWikiAndCharactersAnnotation(
             annotatedText.text,
+            genre,
+            mainCharacter,
             characters,
             wiki,
+            MaterialTheme.colorScheme.background
         )
     ClickableText(
         text = wikiAnnotation,
@@ -128,6 +135,8 @@ fun TypewriterTextPreview() {
         characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f",details = Details())),
         wiki = listOf(
             Wiki(title = "wiki test", sagaId = 0)
-        )
+        ),
+        mainCharacter = null,
+        genre = Genre.SCI_FI
     )
 }

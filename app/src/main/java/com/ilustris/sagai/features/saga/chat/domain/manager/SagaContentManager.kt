@@ -6,7 +6,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
-import com.ilustris.sagai.features.timeline.data.model.LoreGen
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.MutableStateFlow
 
 interface SagaContentManager {
@@ -23,7 +23,7 @@ interface SagaContentManager {
     suspend fun updateLore(
         reference: Message,
         messageSubList: List<MessageContent>,
-    ): RequestResult<Exception, LoreGen>
+    ): RequestResult<Exception, Timeline>
 
-    suspend fun generateCharacter(message: Message): Character?
+    suspend fun generateCharacter(message: Message): RequestResult<Exception, Character>
 }

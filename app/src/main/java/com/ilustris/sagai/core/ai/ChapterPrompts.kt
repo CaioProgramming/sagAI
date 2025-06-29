@@ -63,8 +63,8 @@ object ChapterPrompts {
         characters: List<Character>,
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
-        Featuring:
-        ${coverCompositions(characters)}
+        ${CharacterFraming.MEDIUM_SHOT.description}
+        Featuring: ${coverCompositions(characters)}
         ${GenrePrompts.coverComposition(saga.genre)}
         """
 
@@ -73,10 +73,10 @@ object ChapterPrompts {
         ${
             when (characters.size) {
                 1 ->
-                    "Full-body shot of ${CharacterPrompts.appearance(characters.first())}" +
+                    CharacterPrompts.appearance(characters.first()) +
                         "in a ${CharacterPose.random()} pose and a ${CharacterExpression.random()} expression."
                 else -> "${characters.size} Characters: ${characters.joinToString {
-                    "Full-body shot of ${CharacterPrompts.appearance(
+                    "${CharacterPrompts.appearance(
                         it,
                     )} in a ${CharacterPose.random()} pose and a ${CharacterExpression.random()} expression."
                 }}"

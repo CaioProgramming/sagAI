@@ -66,6 +66,8 @@ fun NewCharacterView(
             TypewriterText(
                 text = messageContent.message.text,
                 modifier = Modifier.padding(16.dp),
+                genre = genre,
+                mainCharacter = null,
                 characters = characters,
                 wiki = wiki,
                 style =

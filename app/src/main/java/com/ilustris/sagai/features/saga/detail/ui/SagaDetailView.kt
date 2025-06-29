@@ -255,8 +255,7 @@ fun SagaDetailContentView(
                                         it.data.genre.color
                                             .gradientFade(),
                                     ).effectForGenre(saga.data.genre)
-                                    .clipToBounds()
-                                    .zoomAnimation(),
+                                    .clipToBounds(),
                             contentScale = ContentScale.Crop,
                         )
 

@@ -51,7 +51,7 @@ object ChatPrompts {
     [
         ${lastMessages.joinToString(separator = ",\n")}
     ]
-    GENERATE A REPLY TO THE MESSAGE:
+    **LAST TURN'S OUTPUT / CURRENT CONTEXT:** //
     ' $message '
     ---
     **Your NEXT RESPONSE MUST BE ONLY A VALID JSON OBJECT. Follow EXACTLY this structure:**
@@ -59,13 +59,12 @@ object ChatPrompts {
         Message::class.java,
     )}
     
-    In the "text" property you should include: The actual reply or new content.
-    This should be a direct response to ${saga.mainCharacter?.name}'s. Last message, a narration, or a character description.
-    DO NOT copy ${saga.mainCharacter?.name}'s last message here.
-    If senderType is 'CHARACTER', DO NOT include the character's name in this 'text' field (e.g., not 'Homem: Fala', just 'Fala'). 
-    For the senderType property, consider this examples:
-    ${typesExplanation()}
-    ${typesPriority()}
+   In the "text" property you should include: **The actual next narrative turn, dialogue, or character action/thought.**
+   **⚠️ CRITICAL RULE: DO NOT COPY OR REPEAT ANY PART OF THE 'LAST TURN'S OUTPUT / CURRENT CONTEXT' IN YOUR RESPONSE'S 'text' FIELD. Generate NEW content only.**
+   If senderType is 'CHARACTER', DO NOT include the character's name in this 'text' field (e.g., NOT 'Man: Speaks', just 'Speaks').    For the senderType property, consider this examples:
+   **⚠️ ABSOLUTE CRITICAL RULE: Under NO circumstances should the 'speakerName' field in your generated JSON response be '${saga.mainCharacter?.name}'. You, as the Saga Master, NEVER speak for the player character.**
+   ${typesExplanation()}
+   ${typesPriority()}
     """
 
     fun typesPriority() =

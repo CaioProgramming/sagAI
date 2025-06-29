@@ -57,6 +57,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.zoomAnimation
+import effectForGenre
 
 @Composable
 fun GenreSelectionCard(
@@ -167,7 +168,7 @@ fun GenreCard(
     )
     val scale by animateFloatAsState(
         if (isSelected) 1f else .8f,
-        tween(700, easing = EaseInBounce),
+        tween(700, easing = EaseIn),
     )
 
     val borderColor by animateColorAsState(
@@ -180,6 +181,7 @@ fun GenreCard(
             .border(1.dp, borderColor.gradientFade(), RoundedCornerShape(genre.cornerSize()))
             .clip(RoundedCornerShape(genre.cornerSize()))
             .clipToBounds()
+            .effectForGenre(genre)
             .grayScale(saturation)
             .clickable {
                 onClick(genre)

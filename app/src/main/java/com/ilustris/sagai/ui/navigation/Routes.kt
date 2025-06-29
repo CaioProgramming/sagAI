@@ -102,7 +102,6 @@ enum class Routes(
             ChatView(
                 navHostController = nav,
                 padding,
-                snack,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
             )
         },

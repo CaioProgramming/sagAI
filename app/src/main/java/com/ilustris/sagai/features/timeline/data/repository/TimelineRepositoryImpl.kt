@@ -17,9 +17,13 @@ class TimelineRepositoryImpl
         }
 
         override suspend fun saveTimeline(timeline: Timeline) =
-            timelineDao.saveTimeline(
-                timeline
-                    .copy(id = 0, createdAt = Calendar.getInstance().timeInMillis),
+            timeline.copy(
+                id =
+                    timelineDao
+                        .saveTimeline(
+                            timeline
+                                .copy(id = 0, createdAt = Calendar.getInstance().timeInMillis),
+                        ).toInt(),
             )
 
         override suspend fun getTimeline(id: String): Flow<Timeline> = timelineDao.getTimeline(id)

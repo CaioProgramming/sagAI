@@ -48,7 +48,7 @@ class CharacterUseCaseImpl
                         GenrePrompts.characterStyling(saga.genre),
                     )
                 val image = imagenClient.generateImage(prompt)!!.data
-                val file = fileHelper.saveFile(character.name, image, path = "characters/")
+                val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)

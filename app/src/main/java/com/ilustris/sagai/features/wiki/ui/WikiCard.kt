@@ -48,7 +48,11 @@ fun WikiCard(
     Box(
         modifier =
             modifier
-                .background(MaterialTheme.colorScheme.surfaceContainer)
+
+                .background(MaterialTheme.colorScheme.surfaceContainer,  shape =
+                    RoundedCornerShape(
+                        genre.cornerSize(),
+                    ))
                 .border(
                     width = 1.dp,
                     color = genre.color.copy(alpha = .4f),

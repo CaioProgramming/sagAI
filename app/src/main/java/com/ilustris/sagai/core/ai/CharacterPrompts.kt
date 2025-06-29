@@ -27,7 +27,7 @@ object CharacterPrompts {
     fun appearance(character: Character) =
         """
         ${character.details.race},${character.details.gender},${character.details.ethnicity}
-        Appearance:${character.details.appearance}."
+        ${character.details.appearance}."
         """
 
     fun charactersOverview(characters: List<Character>): String =
@@ -59,6 +59,9 @@ object CharacterPrompts {
         //     -   **DO NOT USE "Unknown", "Desconhecido", "Stranger", or similar generic terms for the character's name.** Always provide a proper, specific name.
         // 2.  **GENDER**: Derive from explicit mentions or strong implications (e.g., "jovem guerreira" (young warrior) or "cavaleiro" (knight)). If gender is not explicitly stated or clearly implied, you may invent it.
         // 3.  **Core APPEARANCE DETAILS** (e.g., facial features, hair, clothing, equipment): Use ALL details provided in this message.
+        // **IMPORTANT**: Appareance description needs to be: 
+        A highly precise, objective, and detailed description of the character's physical appearance and typical attire.
+        This description is CRITICAL for consistent visual representation across all chapters and for high-fidelity image generation.
         // 4.  **Personality hints**: Use ALL hints provided in this message.
         // 5. **RACE**: 
          - Use ALL details provided in this message.

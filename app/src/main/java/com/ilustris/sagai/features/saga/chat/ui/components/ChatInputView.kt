@@ -164,13 +164,17 @@ fun ChatInputView(
             }
 
             val maxLength = 300
+            val tagBackgroundColor = MaterialTheme.colorScheme.background
             TextField(
                 enabled = isGenerating.not(),
                 visualTransformation = {
                     return@TextField transformTextWithContent(
+                        content.data.genre,
+                        content.mainCharacter,
                         content.characters,
                         content.wikis,
                         inputField.text,
+                        tagBackgroundColor
                     )
                 },
                 value = inputField,

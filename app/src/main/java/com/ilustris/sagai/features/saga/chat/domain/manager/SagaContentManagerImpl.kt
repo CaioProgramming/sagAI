@@ -7,7 +7,6 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -111,16 +110,17 @@ class SagaContentManagerImpl
                         messageSubList.map { it.joinMessage().formatToString() },
                     ).success.value
 
-            timelineUseCase.saveTimeline(
-                newLore.timeLine.copy(
-                    sagaId = currentSaga.data.id,
-                    messageReference = reference.id,
-                ),
-            )
+            val newTimeLine =
+                timelineUseCase.saveTimeline(
+                    newLore.timeLine.copy(
+                        sagaId = currentSaga.data.id,
+                        messageReference = reference.id,
+                    ),
+                )
 
             updateCharacters(newLore, currentSaga)
 
-            newLore.asSuccess()
+            newTimeLine.asSuccess()
         } catch (e: Exception) {
             e.asError()
         }
@@ -186,16 +186,14 @@ class SagaContentManagerImpl
             }
         }
 
-        override suspend fun generateCharacter(message: Message): Character? {
-            return try {
+        override suspend fun generateCharacter(message: Message) =
+            try {
                 characterUseCase
                     .generateCharacter(
                         sagaContent = content.value!!,
                         description = message.text,
-                    ).success.value
+                    )
             } catch (e: Exception) {
-                e.printStackTrace()
-                return null
+                e.asError()
             }
-        }
     }

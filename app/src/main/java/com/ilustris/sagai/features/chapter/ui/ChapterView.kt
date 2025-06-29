@@ -81,6 +81,7 @@ fun ChapterContent(saga: SagaContent) {
             ChapterContentView(
                 saga.data.genre,
                 it,
+                saga.mainCharacter,
                 saga.characters,
                 saga.wikis,
                 MaterialTheme.colorScheme.onBackground,

@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.characters.ui.components
 
+import ai.atick.material.MaterialColor
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -10,7 +12,10 @@ import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.core.graphics.toColorInt
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.headerFont
 import kotlin.text.indexOf
 
 data class AnnotationRule(
@@ -25,11 +30,22 @@ data class AnnotationStyleGroup(
 )
 
 fun transformTextWithContent(
+    genre: Genre,
+    mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
     text: String,
+    tagBackgroundColor: Color = MaterialColor.Gray500,
 ): TransformedText {
-    val annotatedString = buildWikiAndCharactersAnnotation(text, characters, wiki)
+    val annotatedString =
+        buildWikiAndCharactersAnnotation(
+            text,
+            genre,
+            mainCharacter,
+            characters,
+            wiki,
+            tagBackgroundColor,
+        )
     return TransformedText(annotatedString, OffsetMapping.Identity)
 }
 
@@ -67,8 +83,11 @@ fun buildCharactersAnnotatedString(
 
 fun buildWikiAndCharactersAnnotation(
     text: String,
+    genre: Genre,
+    mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
+    defaultBackground: Color,
 ): AnnotatedString {
     val characterRules =
         characters.map { character ->
@@ -78,15 +97,31 @@ fun buildWikiAndCharactersAnnotation(
                 } catch (e: Exception) {
                     Color.Gray
                 }
+
+            val span =
+                if (character.id == mainCharacter?.id) {
+                    SpanStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = genre.headerFont(),
+                        brush =
+                            Brush.verticalGradient(
+                                genre.color.darkerPalette(
+                                    factor = 0.3f,
+                                    count = 2,
+                                ),
+                            ),
+                    )
+                } else {
+                    SpanStyle(
+                        fontWeight = FontWeight.Bold,
+                        color = characterColor.copy(alpha = .4f),
+                        background = defaultBackground.copy(alpha = .7f),
+                    )
+                }
             AnnotationRule(
                 searchTerm = character.name,
                 annotationValue = "character:${character.id}",
-                spanStyle =
-                    SpanStyle(
-                        fontWeight = FontWeight.Bold,
-                        color = characterColor,
-                        background = characterColor.copy(alpha = .3f),
-                    ),
+                spanStyle = span,
             )
         }
     val characterStyleGroup =
