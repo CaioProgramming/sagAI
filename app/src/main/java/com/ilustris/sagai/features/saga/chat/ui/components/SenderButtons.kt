@@ -70,7 +70,7 @@ fun SenderType.itemOption(
                     .clickable {
                         onSelect(this@itemOption)
                     }
-                    .padding(2.dp),
+                    .padding(4.dp),
             horizontalAlignment = alignment,
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {

@@ -25,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -50,7 +49,6 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.lighter
 import kotlin.time.Duration.Companion.seconds
@@ -81,27 +79,26 @@ fun ChatBubble(
 
     val bubbleColor =
 
-            when (sender) {
-                SenderType.USER -> genre.color
-                SenderType.CHARACTER -> {
-                    if (isUser) {
-                        genre.color
+        when (sender) {
+            SenderType.USER -> genre.color
+            SenderType.CHARACTER -> {
+                if (isUser) {
+                    genre.color
+                } else {
+                    if (isSystemInDarkTheme()) {
+                        genre.color.darker(.7f)
                     } else {
-                        if (isSystemInDarkTheme()) {
-                            genre.color.darker(.7f)
-                        } else {
-                            genre.color.lighter(
-                                .65f,
-                            )
-                        }
+                        genre.color.lighter(
+                            .65f,
+                        )
                     }
                 }
-
-                else -> Color.Transparent
-
+            }
+            SenderType.THOUGHT -> MaterialTheme.colorScheme.background.copy(alpha = .7f)
+            else -> Color.Transparent
         }
 
-    val textColor = genre.iconColor
+    val textColor = if (sender == SenderType.THOUGHT) MaterialTheme.colorScheme.onBackground else genre.iconColor
 
     val cornerSize = genre.cornerSize()
     val tailAlignment =
@@ -190,6 +187,7 @@ fun ChatBubble(
                                     .weight(1f)
                                     .align(Alignment.CenterVertically)
                                     .senderBorder()
+                                    .padding(4.dp)
                                     .background(
                                         color = bubbleColor,
                                         bubbleShape,
@@ -331,7 +329,7 @@ fun ChatBubble(
                                 fontStyle = fontStyle,
                                 textAlign = textAlignment,
                                 fontFamily = genre.bodyFont(),
-                                color = textColor.copy(alpha = .7f),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
                             ),
                         onTextClick = openCharacters,
                     )
@@ -372,7 +370,7 @@ fun ChatBubble(
                         fontStyle = fontStyle,
                         textAlign = textAlignment,
                         fontFamily = genre.bodyFont(),
-                        color = textColor,
+                        color = MaterialTheme.colorScheme.onBackground,
                     ),
                 onTextClick = openCharacters,
             )
@@ -387,7 +385,7 @@ fun ChatBubble(
                         mainCharacter,
                         characters,
                         wiki,
-                        textColor,
+                        MaterialTheme.colorScheme.onBackground,
                         fontStyle,
                         isBubbleVisible,
                         isAnimated,

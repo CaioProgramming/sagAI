@@ -28,10 +28,6 @@ import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.brightness
-import com.ilustris.sagai.ui.theme.contrast
-import com.ilustris.sagai.ui.theme.grayScale
-import com.ilustris.sagai.ui.theme.noiseGrain
 import effectForGenre
 
 @Composable

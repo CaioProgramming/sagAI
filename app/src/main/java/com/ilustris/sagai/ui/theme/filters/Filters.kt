@@ -102,7 +102,7 @@ fun Modifier.effectForGenre(genre: Genre): Modifier {
                         bloomThreshold = 0.50f,
                         bloomIntensity = 0.10f,
                         bloomRadius = 5.8f,
-                        softFocusRadius = 1.25f,
+                        softFocusRadius = 1.15f,
                         saturation = 0.70f, // e.g., slightly desaturated
                         contrast = 1.2f, // e.g., slightly increased contrast
                         brightness = 0.10f, // e.g., slightly brighter
@@ -118,7 +118,7 @@ fun Modifier.effectForGenre(genre: Genre): Modifier {
                         bloomThreshold = 0.45f,
                         bloomIntensity = 0.15f,
                         bloomRadius = 2.0f,
-                        softFocusRadius = 0.20f,
+                        softFocusRadius = 0.15f,
                         saturation = 0.50f, // More desaturated for Sci-Fi
                         contrast = 1.35f, // Higher contrast
                         brightness = -0.05f, // Slightly darker

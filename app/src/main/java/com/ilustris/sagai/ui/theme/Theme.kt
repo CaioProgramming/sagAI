@@ -46,6 +46,8 @@ private val DarkColorScheme =
         primary = MaterialColor.BlueA400,
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
+        background = MaterialColor.Black,
+        surfaceContainer = MaterialColor.Gray800,
     )
 
 private val LightColorScheme =
@@ -54,6 +56,8 @@ private val LightColorScheme =
         secondary = MaterialColor.Blue800,
         tertiary = MaterialColor.Teal300,
         onPrimary = MaterialColor.White,
+        background = MaterialColor.White,
+        surfaceContainer = MaterialColor.Gray100,
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),

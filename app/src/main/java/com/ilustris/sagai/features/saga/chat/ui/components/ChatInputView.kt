@@ -2,6 +2,8 @@
 
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import android.content.res.Configuration
+import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -16,6 +18,8 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,12 +30,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -40,8 +43,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberTooltipState
@@ -52,8 +53,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
@@ -93,7 +97,7 @@ fun ChatInputView(
             gradientAnimation(holographicGradient, targetValue = 700f, duration = 2.seconds)
         } else {
             Brush.verticalGradient(
-                Color.Transparent.darkerPalette()
+                Color.Transparent.darkerPalette(),
             )
         }
     var charactersExpanded by remember {
@@ -101,22 +105,25 @@ fun ChatInputView(
     }
 
     var actionsExpanded by remember {
-        mutableStateOf(false)
+        mutableStateOf(true)
     }
     val inputShape = RoundedCornerShape(50.dp)
+
     Column(
         modifier
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .background(MaterialTheme.colorScheme.background)
             .fillMaxWidth()
-            .border(
-                1.dp,
-                inputBrush,
-                inputShape,
-            ).background(
-                MaterialTheme.colorScheme.background,
-                inputShape,
-            ).padding(horizontal = 8.dp, vertical = 0.dp)
-            .animateContentSize(tween(300, easing = EaseIn)),
+            .animateContentSize(tween(300, easing = EaseIn))
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(onDragEnd = {}) { change, dragAmount ->
+                    Log.i("inputDrag", "dragAmount: $dragAmount")
+                    if (dragAmount < (DRAG_THRESHOLD).unaryMinus()) {
+                        actionsExpanded = true
+                    } else if (dragAmount > 0.0f) {
+                        actionsExpanded = false
+                    }
+                }
+            }.padding(bottom = 24.dp),
     ) {
         if (content.characters.isNotEmpty()) {
             AnimatedVisibility(charactersExpanded) {
@@ -155,7 +162,8 @@ fun ChatInputView(
         }
 
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(8.dp).fillMaxWidth(),
         ) {
             content.mainCharacter?.let { character ->
                 MainCharacterInputButton(content.data, character, action) {
@@ -163,21 +171,17 @@ fun ChatInputView(
                 }
             }
 
-            val maxLength = 300
+            val textStyle =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+            val maxLength = 350
             val tagBackgroundColor = MaterialTheme.colorScheme.background
-            TextField(
+
+            BasicTextField(
+                inputField,
                 enabled = isGenerating.not(),
-                visualTransformation = {
-                    return@TextField transformTextWithContent(
-                        content.data.genre,
-                        content.mainCharacter,
-                        content.characters,
-                        content.wikis,
-                        inputField.text,
-                        tagBackgroundColor
-                    )
-                },
-                value = inputField,
                 onValueChange = {
                     if (it.text.length <= maxLength) {
                         inputField = it
@@ -187,33 +191,39 @@ fun ChatInputView(
                             it.text.length <= (maxLength - 20)
                     }
                 },
-                placeholder = {
-                    Text(
-                        action.hint(),
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 12.sp,
-                            ),
-                        modifier = Modifier.padding(0.dp),
+                textStyle = textStyle,
+                visualTransformation = {
+                    transformTextWithContent(
+                        content.data.genre,
+                        content.mainCharacter,
+                        content.characters,
+                        content.wikis,
+                        inputField.text,
+                        tagBackgroundColor,
                     )
                 },
-                shape = RoundedCornerShape(40.dp),
-                colors =
-                    TextFieldDefaults.colors().copy(
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        cursorColor =
-                            content.data.genre.color,
-                        disabledIndicatorColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                    ),
-                textStyle =
-                    MaterialTheme.typography.labelSmall,
+                cursorBrush = inputBrush,
+                decorationBox = { innerTextField ->
+                    Box(contentAlignment = Alignment.CenterStart) {
+                        // Or your desired alignment
+                        if (inputField.text.isEmpty()) {
+                            Text(
+                                action.hint(),
+                                style = textStyle,
+                                modifier = Modifier.fillMaxWidth().padding(8.dp).alpha(.4f),
+                            )
+                        } else {
+                            Box(Modifier.padding(8.dp)) {
+                                innerTextField()
+                            }
+                        }
+                    }
+                },
                 modifier =
                     Modifier
-                        .weight(1f),
+                        .padding(horizontal = 8.dp)
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape),
             )
 
             val buttonSize by animateDpAsState(
@@ -253,9 +263,9 @@ fun ChatInputView(
                         it != SenderType.CHARACTER &&
                             it != SenderType.NEW_CHAPTER
                     }
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                modifier = Modifier.padding(vertical = 8.dp),
+            LazyRow(
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 items(actions) {
                     it.itemOption(
@@ -290,7 +300,7 @@ private fun MainCharacterInputButton(
         tooltip = {
             RichTooltip(
                 title = { Text(currentAction.title()) },
-                caretSize = DpSize(12.dp, 8.dp),
+                caretSize = DpSize(12.dp, 12.dp),
                 shape = RoundedCornerShape(saga.genre.cornerSize()),
             ) {
                 Text(currentAction.description())
@@ -299,17 +309,16 @@ private fun MainCharacterInputButton(
         state = tooltipState,
     ) {
         Box(
-            Modifier
-                .size(32.dp)
-                .clickable {
-                    onClickAction()
-                },
+            Modifier.size(32.dp),
         ) {
             CharacterAvatar(
                 character,
                 borderSize = 2.dp,
                 genre = saga.genre,
-                modifier = Modifier.fillMaxSize(),
+                modifier =
+                    Modifier.clip(CircleShape).fillMaxSize().clickable {
+                        onClickAction()
+                    },
             )
 
             AnimatedContent(
@@ -317,24 +326,28 @@ private fun MainCharacterInputButton(
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .offset(x = 2.dp, y = 2.dp)
-                ,
+                        .offset(x = 2.dp, y = 2.dp),
                 transitionSpec = {
                     scaleIn() + fadeIn(tween(300)) togetherWith scaleOut() + fadeOut()
                 },
             ) {
                 it.icon()?.let { icon ->
-                    Box(modifier = Modifier
-                        .border(1.dp, MaterialTheme.colorScheme.background, CircleShape)
-                        .background(saga.genre.color, CircleShape)
-                        .size(16.dp).padding(3.dp)) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .background(saga.genre.color, CircleShape)
+                                .size(16.dp)
+                                .padding(3.dp),
+                    ) {
                         Icon(
                             painterResource(icon),
                             null,
                             tint = saga.genre.iconColor,
-                            modifier = Modifier.align(Alignment.Center)
-                                .fillMaxSize()
-                            ,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .fillMaxSize(),
                         )
                     }
                 }
@@ -343,159 +356,162 @@ private fun MainCharacterInputButton(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,
+)
 @Composable
 fun ChatInputViewPreview() {
     ChatInputView(
         SagaContent(
-        mainCharacter =
-            Character(
-                id = 0,
-                name = "Character Name",
-                backstory = "Character backstory",
-                image = "image_url",
-                hexColor = "#FF0000",
-                sagaId = 0,
-                details =
-                    Details(
-                        appearance = "Appearance",
-                        personality = "Personality",
-                        race = "Race",
-                        height = 1.80,
-                        weight = 70.0,
-                        style = "Style",
-                        gender = "Gender",
-                        occupation = "Occupation",
-                        ethnicity = "Ethnicity",
+            mainCharacter =
+                Character(
+                    id = 0,
+                    name = "Character Name",
+                    backstory = "Character backstory",
+                    image = "image_url",
+                    hexColor = "#FF0000",
+                    sagaId = 0,
+                    details =
+                        Details(
+                            appearance = "Appearance",
+                            personality = "Personality",
+                            race = "Race",
+                            height = 1.80,
+                            weight = 70.0,
+                            style = "Style",
+                            gender = "Gender",
+                            occupation = "Occupation",
+                            ethnicity = "Ethnicity",
+                        ),
+                    joinedAt = System.currentTimeMillis(),
+                    status = "Character status",
+                ),
+            characters =
+                listOf(
+                    Character(
+                        id = 1,
+                        name = "Character 1",
+                        backstory = "Character backstory",
+                        image = "image_url",
+                        hexColor = "#FF0000",
+                        sagaId = 0,
+                        details =
+                            Details(
+                                appearance = "Appearance",
+                                personality = "Personality",
+                                race = "Race",
+                                height = 1.80,
+                                weight = 70.0,
+                                style = "Style",
+                                gender = "Gender",
+                                occupation = "Occupation",
+                                ethnicity = "Ethnicity",
+                            ),
+                        joinedAt = System.currentTimeMillis(),
+                        status = "Character status",
                     ),
-                joinedAt = System.currentTimeMillis(),
-                status = "Character status",
-            ),
-        characters =
-            listOf(
-                Character(
-                    id = 1,
-                    name = "Character 1",
-                    backstory = "Character backstory",
-                    image = "image_url",
-                    hexColor = "#FF0000",
-                    sagaId = 0,
-                    details =
-                        Details(
-                            appearance = "Appearance",
-                            personality = "Personality",
-                            race = "Race",
-                            height = 1.80,
-                            weight = 70.0,
-                            style = "Style",
-                            gender = "Gender",
-                            occupation = "Occupation",
-                            ethnicity = "Ethnicity",
-                        ),
-                    joinedAt = System.currentTimeMillis(),
-                    status = "Character status",
+                    Character(
+                        id = 2,
+                        name = "Character 2",
+                        backstory = "Character backstory",
+                        image = "image_url",
+                        hexColor = "#FF0000",
+                        sagaId = 0,
+                        details =
+                            Details(
+                                appearance = "Appearance",
+                                personality = "Personality",
+                                race = "Race",
+                                height = 1.80,
+                                weight = 70.0,
+                                style = "Style",
+                                gender = "Gender",
+                                occupation = "Occupation",
+                                ethnicity = "Ethnicity",
+                            ),
+                        joinedAt = System.currentTimeMillis(),
+                        status = "Character status",
+                    ),
+                    Character(
+                        id = 3,
+                        name = "Character 3",
+                        backstory = "Character backstory",
+                        image = "image_url",
+                        hexColor = "#FF0000",
+                        sagaId = 0,
+                        details =
+                            Details(
+                                appearance = "Appearance",
+                                personality = "Personality",
+                                race = "Race",
+                                height = 1.80,
+                                weight = 70.0,
+                                style = "Style",
+                                gender = "Gender",
+                                occupation = "Occupation",
+                                ethnicity = "Ethnicity",
+                            ),
+                        joinedAt = System.currentTimeMillis(),
+                        status = "Character status",
+                    ),
+                    Character(
+                        id = 4,
+                        name = "Character 4",
+                        backstory = "Character backstory",
+                        image = "image_url",
+                        hexColor = "#FF0000",
+                        sagaId = 0,
+                        details =
+                            Details(
+                                appearance = "Appearance",
+                                personality = "Personality",
+                                race = "Race",
+                                height = 1.80,
+                                weight = 70.0,
+                                style = "Style",
+                                gender = "Gender",
+                                occupation = "Occupation",
+                                ethnicity = "Ethnicity",
+                            ),
+                        joinedAt = System.currentTimeMillis(),
+                        status = "Character status",
+                    ),
+                    Character(
+                        id = 5,
+                        name = "Character 5",
+                        backstory = "Character backstory",
+                        image = "image_url",
+                        hexColor = "#FF0000",
+                        sagaId = 0,
+                        details =
+                            Details(
+                                appearance = "Appearance",
+                                personality = "Personality",
+                                race = "Race",
+                                height = 1.80,
+                                weight = 70.0,
+                                style = "Style",
+                                gender = "Gender",
+                                occupation = "Occupation",
+                                ethnicity = "Ethnicity",
+                            ),
+                        joinedAt = System.currentTimeMillis(),
+                        status = "Character status",
+                    ),
                 ),
-                Character(
-                    id = 2,
-                    name = "Character 2",
-                    backstory = "Character backstory",
-                    image = "image_url",
-                    hexColor = "#FF0000",
-                    sagaId = 0,
-                    details =
-                        Details(
-                            appearance = "Appearance",
-                            personality = "Personality",
-                            race = "Race",
-                            height = 1.80,
-                            weight = 70.0,
-                            style = "Style",
-                            gender = "Gender",
-                            occupation = "Occupation",
-                            ethnicity = "Ethnicity",
-                        ),
-                    joinedAt = System.currentTimeMillis(),
-                    status = "Character status",
+            data =
+                SagaData(
+                    id = 0,
+                    title = "Saga Title",
+                    description = "Saga description",
+                    icon = "icon_url",
+                    createdAt = System.currentTimeMillis(),
+                    genre = Genre.FANTASY,
+                    mainCharacterId = 0,
+                    visuals = IllustrationVisuals(),
+                    lastLoreReference = 0,
                 ),
-                Character(
-                    id = 3,
-                    name = "Character 3",
-                    backstory = "Character backstory",
-                    image = "image_url",
-                    hexColor = "#FF0000",
-                    sagaId = 0,
-                    details =
-                        Details(
-                            appearance = "Appearance",
-                            personality = "Personality",
-                            race = "Race",
-                            height = 1.80,
-                            weight = 70.0,
-                            style = "Style",
-                            gender = "Gender",
-                            occupation = "Occupation",
-                            ethnicity = "Ethnicity",
-                        ),
-                    joinedAt = System.currentTimeMillis(),
-                    status = "Character status",
-                ),
-                Character(
-                    id = 4,
-                    name = "Character 4",
-                    backstory = "Character backstory",
-                    image = "image_url",
-                    hexColor = "#FF0000",
-                    sagaId = 0,
-                    details =
-                        Details(
-                            appearance = "Appearance",
-                            personality = "Personality",
-                            race = "Race",
-                            height = 1.80,
-                            weight = 70.0,
-                            style = "Style",
-                            gender = "Gender",
-                            occupation = "Occupation",
-                            ethnicity = "Ethnicity",
-                        ),
-                    joinedAt = System.currentTimeMillis(),
-                    status = "Character status",
-                ),
-                Character(
-                    id = 5,
-                    name = "Character 5",
-                    backstory = "Character backstory",
-                    image = "image_url",
-                    hexColor = "#FF0000",
-                    sagaId = 0,
-                    details =
-                        Details(
-                            appearance = "Appearance",
-                            personality = "Personality",
-                            race = "Race",
-                            height = 1.80,
-                            weight = 70.0,
-                            style = "Style",
-                            gender = "Gender",
-                            occupation = "Occupation",
-                            ethnicity = "Ethnicity",
-                        ),
-                    joinedAt = System.currentTimeMillis(),
-                    status = "Character status",
-                ),
-            ),
-        data =
-            SagaData(
-                id = 0,
-                title = "Saga Title",
-                description = "Saga description",
-                icon = "icon_url",
-                createdAt = System.currentTimeMillis(),
-                genre = Genre.FANTASY,
-                mainCharacterId = 0,
-                visuals = IllustrationVisuals(),
-                lastLoreReference = 0,
-            )
         ),
         state = ChatState.Success,
         isGenerating = false,
@@ -544,3 +560,5 @@ fun MainCharacterInputButtonPreview() {
             ),
     ) {}
 }
+
+private const val DRAG_THRESHOLD = -50f

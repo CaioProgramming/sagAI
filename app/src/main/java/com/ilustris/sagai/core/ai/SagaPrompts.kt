@@ -3,8 +3,6 @@ package com.ilustris.sagai.core.ai
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterExpression
-import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -54,18 +52,7 @@ object SagaPrompts {
     fun wallpaperGeneration(
         saga: SagaData,
         mainCharacter: Character,
-    ) = """
-        ${GenrePrompts.artStyle(saga.genre)}
-        ${CharacterFraming.EPIC_WIDE_SHOT.description}
-        With:
-        ${mainCharacter.details.race}, ${mainCharacter.details.gender}, ${mainCharacter.details.ethnicity}, ${mainCharacter.details.appearance}
-
-        Expression: ${CharacterExpression.random().description}
-        Pose: ${CharacterPose.random().description}
-        Color palette: ${saga.visuals.colorPalette}        
-        Environment: ${saga.visuals.environmentDetails}
-        Background: ${saga.visuals.backgroundElements}
-        """
+    ) = GenrePrompts.iconPrompt(saga.genre, mainCharacter)
 
     fun narratorGeneration(
         saga: SagaData,
@@ -208,15 +195,4 @@ object SagaPrompts {
        [ ${sagaContent.characters.formatToJsonArray()} ]
 
         """"
-
-    fun fantasyWallpaperGeneration(sagaData: SagaData) =
-        """
-        single central Cosmic symbol element with a divine cosmic texturization.
-        positioned perfectly in the absolute center,
-        textured solid color background,
-        in a color combo with gold, evoking fantasy vibes.
-        ample clear space around the central symbol,
-        wallpaper style,
-        focus on color and texture.
-        """
 }

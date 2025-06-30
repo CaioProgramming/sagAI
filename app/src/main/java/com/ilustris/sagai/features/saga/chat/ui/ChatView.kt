@@ -23,7 +23,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.with
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,12 +61,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -97,9 +96,8 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.backgroundTintFade
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.brightness
+import com.ilustris.sagai.ui.theme.components.ConditionalImage
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -109,7 +107,6 @@ import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -221,7 +218,7 @@ fun ChatView(
                                 RoundedCornerShape(25.dp),
                             ).border(
                                 1.dp,
-                                MaterialTheme.colorScheme.onBackground.gradientFade(),
+                                MaterialTheme.colorScheme.onBackground,
                                 RoundedCornerShape(25.dp),
                             ).background(
                                 MaterialTheme.colorScheme.background,
@@ -249,7 +246,7 @@ fun ChatView(
                                 snackBar.title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontFamily = content?.data?.genre?.bodyFont(),
-                                textAlign = TextAlign.Center,
+                                textAlign = TextAlign.Start,
                                 modifier = Modifier.padding(8.dp).weight(1f),
                             )
                         }
@@ -324,27 +321,29 @@ fun ChatContent(
     }
 
     Box {
-        val fadeTints = saga.genre.backgroundTintFade()
-        Image(
-            painterResource(saga.genre.background),
-            null,
-            contentScale = ContentScale.Crop,
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .brightness(.2f.unaryMinus()),
+        val brush =
+            if (isGenerating) {
+                gradientAnimation(
+                    genresGradient(),
+                    targetValue = 2000f,
+                    duration = 3.seconds,
+                )
+            } else {
+                Brush.verticalGradient(saga.genre.gradient())
+            }
+        ConditionalImage(
+            saga.genre.background,
+            brush,
+            customBlendMode = null,
+            Modifier.alpha(.8f).fillMaxSize(),
         )
 
         Box(
             Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .fillMaxHeight(.15f)
-                .background(
-                    fadeGradientTop(
-                        fadeTints.first,
-                    ),
-                ),
+                .fillMaxHeight(.4f)
+                .background(fadeGradientTop()),
         )
 
         ConstraintLayout(
@@ -385,7 +384,7 @@ fun ChatContent(
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                             width = Dimension.fillToConstraints
-                        }.padding(bottom = 16.dp, top = 2.dp),
+                        },
                 enter = slideInVertically(),
                 exit = fadeOut(),
             ) {
@@ -396,7 +395,8 @@ fun ChatContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .wrapContentHeight(),
+                            .wrapContentHeight()
+                    ,
                     onSendMessage = onSendMessage,
                 )
             }
@@ -501,8 +501,7 @@ fun SagaHeader(
         Box(
             Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .fillMaxHeight(.4f)
+                .fillMaxSize()
                 .background(
                     fadeGradientBottom(),
                 ),
@@ -525,7 +524,7 @@ fun ChatList(
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
-    LazyColumn(modifier, state = listState, reverseLayout = true) {
+    LazyColumn(modifier, state = listState, reverseLayout = messages.isNotEmpty()) {
         saga?.let {
             item {
                 Spacer(
@@ -665,7 +664,8 @@ private fun CharactersTopIcons(
 
 @Preview(
     showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,
+    showSystemUi = true,
+    uiMode = Configuration.UI_MODE_TYPE_NORMAL,
 )
 @Composable
 fun ChatViewPreview() {

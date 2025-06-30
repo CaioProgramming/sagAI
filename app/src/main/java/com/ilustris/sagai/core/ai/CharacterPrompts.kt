@@ -21,6 +21,7 @@ object CharacterPrompts {
         ${CharacterFraming.PORTRAIT.description}  
         ${character.details.race}, ${character.details.gender}, ${character.details.ethnicity}
         Appearance: ${character.details.appearance}
+        ${GenrePrompts.thematicVisuals(saga.genre)}
         Expression: ${CharacterExpression.random().description}
         """
 
@@ -60,6 +61,7 @@ object CharacterPrompts {
         // 2.  **GENDER**: Derive from explicit mentions or strong implications (e.g., "jovem guerreira" (young warrior) or "cavaleiro" (knight)). If gender is not explicitly stated or clearly implied, you may invent it.
         // 3.  **Core APPEARANCE DETAILS** (e.g., facial features, hair, clothing, equipment): Use ALL details provided in this message.
         // **IMPORTANT**: Appareance description needs to be: 
+        HIGHLY CONTEXTUALIZED TO THE THEME ${saga.data.genre.title}.
         A highly precise, objective, and detailed description of the character's physical appearance and typical attire.
         This description is CRITICAL for consistent visual representation across all chapters and for high-fidelity image generation.
         // 4.  **Personality hints**: Use ALL hints provided in this message.

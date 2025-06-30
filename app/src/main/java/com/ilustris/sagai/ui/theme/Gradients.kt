@@ -115,15 +115,15 @@ fun fadedGradientTopAndBottom(tintColor: Color = MaterialTheme.colorScheme.backg
     )
 
 @Composable
-fun Modifier.gradientFill(brush: Brush) =
+fun Modifier.gradientFill(brush: Brush, blendMode : BlendMode = BlendMode.SrcAtop) =
     this
-        .graphicsLayer(alpha = 0.99f)
+        .graphicsLayer(alpha = 0.90f)
         .drawWithCache {
             onDrawWithContent {
                 drawContent()
                 drawRect(
                     brush,
-                    blendMode = BlendMode.SrcAtop,
+                    blendMode = blendMode,
                 )
             }
         }

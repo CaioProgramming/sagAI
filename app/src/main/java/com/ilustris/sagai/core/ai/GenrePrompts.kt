@@ -6,6 +6,8 @@ import com.ilustris.sagai.core.network.body.FramingPreset
 import com.ilustris.sagai.core.network.body.ImageStyling
 import com.ilustris.sagai.core.network.body.LightningPreset
 import com.ilustris.sagai.core.network.body.StylePreset
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SCI_FI
@@ -66,6 +68,43 @@ object GenrePrompts {
                  """
         }
 
+    fun iconPrompt(
+        genre: Genre,
+        mainCharacter: Character,
+    ) = when (genre) {
+        FANTASY -> {
+            val symbol = symbolOptions.random()
+            val backgroundColor = backgroundColorOptions.random()
+            val texture = textures.random()
+            """
+                ${artStyle(genre)}
+                single central $symbol element with a $texture texturization.
+                positioned perfectly in the absolute center,
+                textured solid $backgroundColor background,
+                in a color combo with gold, evoking fantasy vibes.
+                ample clear space around the central symbol,
+                wallpaper style,
+                focus on color and texture.
+                """
+        }
+
+        SCI_FI -> """"
+                Cyberpunk Icon
+                ${artStyle(genre)}
+                close-up of ${mainCharacter.details.gender}, face with prominent cybernetic implants and exposed mechanical parts,
+                ${mainCharacter.details.appearance}, a ${CharacterExpression.entries.random()},
+                dramatic pose, conveying emotion through body language (e.g., looking over the shoulder with a defiant gaze, head tilted upwards with a melancholic expression, intense side profile glance),
+                fusion of organic and synthetic elements,
+                dystopian aesthetic, gritty and dark atmosphere,
+                intricate details of wires, circuits, and metallic components integrated with skin and bone,
+                vibrant colored eyes (deep purple) that stand out in the painting, subtle neon accents on implants if desired,
+                minimalist dark and cold background (deep blues) with subtle, faint undulating mesh lines or abstract circuit patterns, no gradients,
+                focus on the contrast between humanity and technology,
+                not black and white (allow for color, even if muted),
+                icon style
+                """
+    }.trimIndent()
+
     fun coverComposition(genre: Genre) =
         when (genre) {
             FANTASY ->
@@ -73,6 +112,7 @@ object GenrePrompts {
                 Simple background in celestial tones, with subtle, stylized 
                 ancient ruins.
                 """
+
             SCI_FI ->
                 """
             Minimalist background in cold tones with single Big Stylized kanji symbol behind the characters.
@@ -176,4 +216,63 @@ object GenrePrompts {
                         ),
                 )
         }
+
+    fun thematicVisuals(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+                wearing period-appropriate attire (e.g., worn leather, chainmail, simple tunic, flowing robes),
+                adorned with subtle fantasy elements (e.g., elven ear tips, runic tattoos, a magical glow in the eyes),
+                """
+            SCI_FI ->
+                """
+                prominent cybernetic implants and exposed mechanical parts,
+                intricate details of wires, circuits,
+                and metallic components integrated with skin and bone,
+                subtle neon accents on implants, cybernetic details primarily on cheeks and below,
+                minimal to no cybernetics in hair,
+                """
+        }
+
+    private val symbolOptions =
+        listOf(
+            "wolf",
+            "dragon",
+            "moon",
+            "sun",
+            "sword",
+            "crown",
+            "chalice",
+            "orb",
+            "phoenix",
+            "griffin",
+            "unicorn",
+            "castle",
+            "tree",
+            "star",
+        )
+
+    private val backgroundColorOptions =
+        listOf(
+            "deep-purple",
+            "emerald-green",
+            "ruby-red",
+            "sapphire-blue",
+            "onyx-black",
+            "ivory-white",
+            "burgundy",
+            "forest-green",
+        )
+
+    private val textures =
+        listOf(
+            "glass",
+            "nature",
+            "fire",
+            "cosmic",
+            "Wooden",
+            "Iron",
+            "Diamond",
+            "Dreaming",
+        )
 }

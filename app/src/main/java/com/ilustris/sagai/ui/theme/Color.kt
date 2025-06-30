@@ -1,7 +1,5 @@
 package com.ilustris.sagai.ui.theme
 
-import ai.atick.material.MaterialColor
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -40,6 +38,46 @@ fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {
     val saturationFilter = ColorFilter.colorMatrix(saturationMatrix)
     val paint = Paint().apply { colorFilter = saturationFilter }
 
+    return drawWithCache {
+        val canvasBounds = Rect(Offset.Zero, size)
+        onDrawWithContent {
+            drawIntoCanvas {
+                it.saveLayer(canvasBounds, paint)
+                drawContent()
+                it.restore()
+            }
+        }
+    }
+}
+
+fun Modifier.invertedColors(): Modifier {
+    val invertMatrix =
+        ColorMatrix(
+            floatArrayOf(
+                -1f,
+                0f,
+                0f,
+                0f,
+                255f,
+                0f,
+                -1f,
+                0f,
+                0f,
+                255f,
+                0f,
+                0f,
+                -1f,
+                0f,
+                255f,
+                0f,
+                0f,
+                0f,
+                1f,
+                0f,
+            ),
+        )
+    val invertFilter = ColorFilter.colorMatrix(invertMatrix)
+    val paint = Paint().apply { colorFilter = invertFilter }
     return drawWithCache {
         val canvasBounds = Rect(Offset.Zero, size)
         onDrawWithContent {
@@ -105,35 +143,4 @@ fun Modifier.contrast(contrastFactor: Float): Modifier {
             }
         }
     }
-}
-
-fun Modifier.noiseGrain(
-    intensity: Float = 0.1f,
-    grainColor: Color = Color.Black,
-): Modifier =
-    drawWithCache {
-        onDrawWithContent {
-            drawContent()
-            val noisePaint =
-                Paint().apply {
-                    color = grainColor
-                    alpha = intensity
-                }
-            drawIntoCanvas { canvas ->
-                val width = size.width.toInt()
-                val height = size.height.toInt()
-                for (i in 0 until (width * height * intensity).toInt()) {
-                    val x = (Math.random() * width).toFloat()
-                    val y = (Math.random() * height).toFloat()
-                    canvas.drawRect(x, y, x + 1, y + 1, noisePaint)
-                }
-            }
-        }
-    }
-
-
-@Composable
-fun Genre.backgroundTintFade() : Pair<Color, Color> = when(this) {
-    Genre.FANTASY -> Color.Black to Color.Black
-    Genre.SCI_FI -> MaterialColor.DeepPurple400 to Color.Black
 }
