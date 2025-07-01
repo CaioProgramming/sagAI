@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -65,6 +66,8 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
+import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -106,14 +109,6 @@ private fun ChatList(
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (SagaData) -> Unit = {},
 ) {
-    val styleGradient =
-        gradientAnimation(
-            genresGradient(),
-            targetValue = 2000f,
-            duration = 10.seconds,
-            gradientType = GradientType.VERTICAL,
-        )
-
     LazyColumn(
         modifier =
             Modifier.padding(padding),
@@ -121,10 +116,10 @@ private fun ChatList(
         item {
             val brush =
                 gradientAnimation(
-                    holographicGradient.plus(MaterialTheme.colorScheme.onBackground),
+                    genresGradient(),
                     gradientType = GradientType.LINEAR,
                     targetValue = 500f,
-                    duration = 10.seconds
+                    duration = 4.seconds,
                 )
             Row(
                 modifier =
@@ -152,6 +147,7 @@ private fun ChatList(
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
+                                brush = Brush.verticalGradient(holographicGradient),
                             ),
                     )
 
@@ -160,6 +156,7 @@ private fun ChatList(
                         style =
                             MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Light,
+                                brush = Brush.verticalGradient(holographicGradient),
                             ),
                     )
                 }
@@ -180,101 +177,118 @@ fun ChatCard(
     onClick: () -> Unit = {},
 ) {
     val sagaData = saga.data
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(8.dp)
-                .clip(RoundedCornerShape(15.dp))
-                .clickable {
-                    onClick()
-                }.padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Avatar
-        val imageLoaded =
-            remember {
-                mutableStateOf(false)
-            }
-        Box(
+    Column {
+        Row(
             modifier =
                 Modifier
-                    .size(50.dp)
-                    .border(2.dp, Brush.verticalGradient(sagaData.genre.gradient()), CircleShape)
-                    .padding(4.dp)
-                    .clip(CircleShape)
-                    .background(sagaData.genre.color, CircleShape),
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clip(RoundedCornerShape(15.dp))
+                    .clickable {
+                        onClick()
+                    }.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            AsyncImage(
-                sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
-                contentDescription = sagaData.title,
-                modifier = Modifier.fillMaxSize().effectForGenre(sagaData.genre),
-                onSuccess = {
-                    imageLoaded.value = true
-                },
-            )
-
-            this@Row.AnimatedVisibility(
-                imageLoaded.value.not(),
-                modifier = Modifier.align(Alignment.Center),
-            ) {
-                Text(
-                    sagaData.title.first().uppercase(),
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = sagaData.genre.headerFont(),
-                            color = sagaData.genre.iconColor,
-                            textAlign = TextAlign.Center,
-                        ),
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        // Name and Last Message
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = sagaData.title, // Replace with actual contact name
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-            )
-
-            val lastMessageText =
-                if (saga.messages.isNotEmpty()) {
-                    saga.messages.first().text
-                } else {
-                    "Sua saga começa agora!"
+            // Avatar
+            val imageLoaded =
+                remember {
+                    mutableStateOf(false)
                 }
-            Text(
-                text = lastMessageText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                maxLines = 2,
-                modifier = Modifier.padding(4.dp),
-            )
-        }
+            Box(
+                modifier =
+                    Modifier
+                        .size(50.dp)
+                        .border(2.dp, sagaData.genre.gradient(), CircleShape)
+                        .padding(4.dp)
+                        .clip(CircleShape)
+                        .background(sagaData.genre.color, CircleShape),
+            ) {
+                AsyncImage(
+                    sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
+                    contentDescription = sagaData.title,
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .effectForGenre(sagaData.genre, focusRadius = 0f, customGrain = 0.05f)
+                            .selectiveColorHighlight(
+                                SelectiveColorParams(
+                                    targetColor = sagaData.genre.color,
+                                ),
+                            ),
+                    onSuccess = {
+                        imageLoaded.value = true
+                    },
+                )
 
-        Spacer(modifier = Modifier.width(8.dp))
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Last Message Time
-            saga.messages.lastOrNull()?.let {
-                val time = Calendar.getInstance().apply { timeInMillis = it.timestamp }
-                val timeText =
-                    String.format(
-                        "%02d:%02d",
-                        time.get(Calendar.HOUR_OF_DAY),
-                        time.get(Calendar.MINUTE),
+                this@Row.AnimatedVisibility(
+                    imageLoaded.value.not(),
+                    modifier = Modifier.align(Alignment.Center),
+                ) {
+                    Text(
+                        sagaData.title.first().uppercase(),
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = sagaData.genre.headerFont(),
+                                color = sagaData.genre.iconColor,
+                                textAlign = TextAlign.Center,
+                            ),
                     )
+                }
+            }
 
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Name and Last Message
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = timeText, // Replace with actual last message time
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = sagaData.title, // Replace with actual contact name
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                )
+
+                val lastMessageText =
+                    if (saga.messages.isNotEmpty()) {
+                        saga.messages.first().text
+                    } else {
+                        "Sua saga começa agora!"
+                    }
+                Text(
+                    text = lastMessageText,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                    maxLines = 2,
+                    modifier = Modifier.padding(4.dp),
                 )
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Last Message Time
+                saga.messages.lastOrNull()?.let {
+                    val time = Calendar.getInstance().apply { timeInMillis = it.timestamp }
+                    val timeText =
+                        String.format(
+                            "%02d:%02d",
+                            time.get(Calendar.HOUR_OF_DAY),
+                            time.get(Calendar.MINUTE),
+                        )
+
+                    Text(
+                        text = timeText, // Replace with actual last message time
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
         }
+
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f)),
+        )
     }
 }
 

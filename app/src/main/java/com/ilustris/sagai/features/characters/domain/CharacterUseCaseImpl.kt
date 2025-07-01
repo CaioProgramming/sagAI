@@ -68,10 +68,14 @@ class CharacterUseCaseImpl
                             sagaContent,
                             description,
                         ),
-                    )
+                    )!!
 
+                val characterQuery = repository.getCharacterByName(newCharacter.name)
+                if (characterQuery != null) {
+                    throw Exception("Character already exists")
+                }
                 val characterTransaction =
-                    insertCharacter(newCharacter!!.copy(sagaId = sagaContent.data.id))
+                    insertCharacter(newCharacter.copy(sagaId = sagaContent.data.id))
                 val iconGen =
                     generateCharacterImage(
                         character = characterTransaction,

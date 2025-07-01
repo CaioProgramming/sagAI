@@ -28,6 +28,8 @@ object ChatPrompts {
     PLAYER INFORMATION (${saga.mainCharacter?.name}):
     ${CharacterPrompts.details(saga.mainCharacter)}
     ${CharacterPrompts.charactersOverview(saga.characters)}
+    If a character is NOT listed here, they are considered new and MUST be introduced with 'senderType': "NEW_CHARACTER" upon their first significant appearance or mention.
+    
 
     **WORLD WIKI KNOWLEDGE BASE:**
     // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
@@ -40,29 +42,31 @@ object ChatPrompts {
     [ ${currentTimeline.formatToJsonArray()} ]
 
     CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
-    // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : Julie : ").
+    // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : ${saga.mainCharacter?.name} : ").
     // ⚠️ CRITICAL RULE FOR THOUGHTS: 'THOUGHT' entries here represent the player character's INTERNAL monologue.
-    / Under NO CIRCUMSTANCES should you generate a 'CHARACTER' senderType for a character NOT explicitly present in this list.
+    // Under NO CIRCUMSTANCES should you generate a 'CHARACTER' senderType for a character NOT explicitly present in this list.
     // If a character is introduced by the NARRATOR but not yet in this list, the VERY NEXT message you generate MUST be a "NEW_CHARACTER" type for them.
-    NPCs IN THE STORY DO NOT HEAR OR DIRECTLY RESPOND TO THESE THOUGHTS.
-    Your response to a 'THOUGHT' entry must be either a 'NARRATOR' message describing the scene, Any's internal state, or the outcome of her reflections; OR an NPC's action/dialogue that is NOT a direct response to the thought.
-    // 'ACTION' entries here represent explicit physical actions performed by the player character. 
-    You should narrate the outcome of these actions.
-    [
-        ${lastMessages.joinToString(separator = ",\n")}
-    ]
+    // NPCs IN THE STORY DO NOT HEAR OR DIRECTLY RESPOND TO THESE THOUGHTS.
+    // Your response to a 'THOUGHT' entry must be either a 'NARRATOR' message describing the scene, ${saga.mainCharacter?.name}'s internal state, or the outcome of her reflections; OR an NPC's action/dialogue that is NOT a direct response to the thought.
+    // 'ACTION' entries here represent explicit physical actions performed by the player character.
+    // You should narrate the outcome of these actions.
+    [ ${lastMessages.joinToString(separator = ",\n")} ]
     **LAST TURN'S OUTPUT / CURRENT CONTEXT:** //
-    ' $message '
+    " $message "
     ---
     **Your NEXT RESPONSE MUST BE ONLY A VALID JSON OBJECT. Follow EXACTLY this structure:**
     ${toJsonMap(
         Message::class.java,
+        filteredFields = listOf("id", "timeStamp", "chapterId"),
+        fieldCustomDescription = "senderType" to "[ ${SenderType.filterUserInputTypes().joinToString()} ]",
     )}
     
-   In the "text" property you should include: **The actual next narrative turn, dialogue, or character action/thought.**
-   **⚠️ CRITICAL RULE: DO NOT COPY OR REPEAT ANY PART OF THE 'LAST TURN'S OUTPUT / CURRENT CONTEXT' IN YOUR RESPONSE'S 'text' FIELD. Generate NEW content only.**
-   If senderType is 'CHARACTER', DO NOT include the character's name in this 'text' field (e.g., NOT 'Man: Speaks', just 'Speaks').    For the senderType property, consider this examples:
-   **⚠️ ABSOLUTE CRITICAL RULE: Under NO circumstances should the 'speakerName' field in your generated JSON response be '${saga.mainCharacter?.name}'. You, as the Saga Master, NEVER speak for the player character.**
+    **⚠️ ABSOLUTE CRITICAL RULE (DO NOT FORGET):**
+    **1. DO NOT COPY OR REPEAT ANY PART OF THE 'LAST TURN'S OUTPUT / CURRENT CONTEXT' IN YOUR RESPONSE'S 'text' FIELD. Generate ONLY NEW, original, and creative content.**
+    **2. Under NO circumstances should the 'speakerName' field in your generated JSON response be '${saga.mainCharacter?.name}' (the player's name).
+    You, as the Saga Master, NEVER speak for the player character.**
+    **3. You MUST NEVER generate a response with 'senderType': 'USER' or 'senderType': 'THOUGHT'. These senderTypes are exclusively for player input.**
+
    ${typesExplanation()}
    ${typesPriority()}
     """
@@ -74,11 +78,11 @@ object ChatPrompts {
         NEW_CHAPTER: If a significant narrative transition is required.
         CHARACTER: If an existing character from 'CURRENT SAGA CAST' is speaking.
         NARRATOR: For scene descriptions, player prompts, or general story progression not tied to a specific character's action.
-        """
+        """.trimIndent()
 
     fun typesExplanation() =
         """
-        Meaning of 'senderType' options
+        Meaning of 'senderType' options:
         ${SenderType.entries.joinToString(separator = "\n") { it.name + ": " + it.meaning() }}
-        """
+        """.trimIndent()
 }

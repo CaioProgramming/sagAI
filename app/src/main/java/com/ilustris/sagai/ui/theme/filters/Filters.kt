@@ -51,7 +51,11 @@ fun loadShaderFromAssetsOnce(assetFileName: String): String? {
 }
 
 @Composable
-fun Modifier.effectForGenre(genre: Genre): Modifier {
+fun Modifier.effectForGenre(
+    genre: Genre,
+    focusRadius: Float? = null,
+    customGrain: Float? = null,
+): Modifier {
     // Check if the current Android version is below 33 (Android 13)
     // If it is, return a fallback effect as RenderEffect and RuntimeShader are not available.
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -90,22 +94,22 @@ fun Modifier.effectForGenre(genre: Genre): Modifier {
     // These values will need careful tuning!
     // The values you had for saturation, brightness, contrast will need to be re-evaluated
     // in the context of how the AGSL shader handles them (e.g., 1.0 is neutral for contrast).
-    val fantasyPalette = FantasyColorTones.ETHEREAL_WHITE_GOLD_DIVINITY
-    val cyberpunkPalette = SciFiColorTones.CYBERPUNK_MAGENTA_GLOW
+    val fantasyPalette = FantasyColorTones.ETHEREAL_LAVENDER_MOONLIGHT
+    val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
     val uniformValues =
         remember(genre) {
             // Recalculate only when genre changes
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
-                        grainIntensity = 0.10f,
-                        bloomThreshold = 0.50f,
-                        bloomIntensity = 0.10f,
-                        bloomRadius = 5.8f,
-                        softFocusRadius = 1.15f,
-                        saturation = 0.70f, // e.g., slightly desaturated
-                        contrast = 1.2f, // e.g., slightly increased contrast
-                        brightness = 0.10f, // e.g., slightly brighter
+                        grainIntensity = customGrain ?: 0.15f,
+                        bloomThreshold = 0.30f,
+                        bloomIntensity = 0.20f,
+                        bloomRadius = 4.5f,
+                        softFocusRadius = focusRadius ?: 1.25f,
+                        saturation = 0.60f, // e.g., slightly desaturated
+                        contrast = 1.50f, // e.g., slightly increased contrast
+                        brightness = 0.05f, // e.g., slightly brighter
                         highlightTint = fantasyPalette.highlightTint, // Warm highlights
                         shadowTint = fantasyPalette.shadowTint, // Cool shadows
                         tintStrength = fantasyPalette.defaultTintStrength,
@@ -114,19 +118,19 @@ fun Modifier.effectForGenre(genre: Genre): Modifier {
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
-                        grainIntensity = 0.10f,
-                        bloomThreshold = 0.45f,
+                        grainIntensity = customGrain ?: 0.15f,
+                        bloomThreshold = 0.30f,
                         bloomIntensity = 0.15f,
                         bloomRadius = 2.0f,
-                        softFocusRadius = 0.15f,
+                        softFocusRadius = focusRadius ?: 0.10f,
                         saturation = 0.50f, // More desaturated for Sci-Fi
-                        contrast = 1.35f, // Higher contrast
+                        contrast = 1.40f, // Higher contrast
                         brightness = -0.05f, // Slightly darker
                         highlightTint = cyberpunkPalette.highlightTint, // Cyan/Cool highlights
                         shadowTint = cyberpunkPalette.shadowTint, // Slightly warm/muted shadows
                         tintStrength = cyberpunkPalette.defaultTintStrength,
-                        vignetteStrength = 0.35f,
-                        vignetteSoftness = 0.4f,
+                        vignetteStrength = 0.15f,
+                        vignetteSoftness = 0.6f,
                     )
                 // Add other genres and their specific shader parameters
                 else -> ShaderParams() // Default parameters

@@ -141,10 +141,7 @@ fun CharactersGalleryContent(
             else ->
                 Box {
                     SparkIcon(
-                        brush =
-                            gradientAnimation(
-                                content?.data?.genre?.gradient() ?: holographicGradient,
-                            ),
+                        brush = content?.data?.genre?.gradient() ?: gradientAnimation(holographicGradient),
                         modifier =
                             Modifier
                                 .size(50.dp)

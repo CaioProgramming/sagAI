@@ -164,7 +164,8 @@ class ChatViewModel
                         message.speakerName?.contains(it.name, true) == true ||
                             message.characterId == mainCharacter.id
                     }
-                val sendType = if (characterReference?.id == mainCharacter.id) SenderType.USER else message.senderType
+                val sendType =
+                    if (characterReference?.id == mainCharacter.id) SenderType.USER else message.senderType
                 val speakerId =
                     when (sendType) {
                         SenderType.NARRATOR -> message.characterId
@@ -190,18 +191,20 @@ class ChatViewModel
             it: Message,
             isFromUser: Boolean,
         ) {
-            when (isFromUser && it.senderType != SenderType.NEW_CHARACTER) {
-                true -> {
-                    replyMessage(it)
+            viewModelScope.launch(Dispatchers.IO) {
+                when (isFromUser && it.senderType != SenderType.NEW_CHARACTER) {
+                    true -> {
+                        replyMessage(it)
+                    }
+
+                    else -> doNothing()
                 }
 
-                else -> doNothing()
+                if (it.senderType == SenderType.NEW_CHARACTER) {
+                    generateCharacter(it)
+                }
+                checkLoreUpdate()
             }
-
-            if (it.senderType == SenderType.NEW_CHARACTER) {
-                generateCharacter(it)
-            }
-            checkLoreUpdate()
         }
 
         private fun checkLoreUpdate() {

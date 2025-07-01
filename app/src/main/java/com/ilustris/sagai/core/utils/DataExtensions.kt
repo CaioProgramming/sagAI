@@ -145,6 +145,7 @@ fun Class<*>.toJsonString(): String {
 fun toJsonMap(
     clazz: Class<*>,
     filteredFields: List<String> = emptyList(),
+    fieldCustomDescription: Pair<String, String>? = null,
 ): String {
     val deniedFields = filteredFields.plus("\$stable").plus("Companion")
     val fields =
@@ -165,9 +166,13 @@ fun toJsonMap(
                         fieldType == Float::class.java -> "0.0f"
                         fieldType == Long::class.java -> "0L"
                         List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
-                        else -> "{}" // For nested objects, represent as empty JSON object
+                        else -> toJsonMap(fieldType)
                     }
-                "  \"$fieldName\": $fieldValue"
+                if (fieldCustomDescription != null && field.name == fieldCustomDescription.first) {
+                    "\"${fieldCustomDescription.first}\": \"${fieldCustomDescription.second}\""
+                } else {
+                    "\"$fieldName\": $fieldValue"
+                }
             }
     return "{\n$fields\n}"
 }

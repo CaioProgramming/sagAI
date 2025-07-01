@@ -80,13 +80,14 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
@@ -128,20 +129,24 @@ fun SagaDetailView(
                     )
                 }
             }
+
             DetailAction.DELETE -> {
                 sagaToDelete = saga.data
                 showDeleteConfirmation = true
             }
+
             DetailAction.TIMELINE ->
                 navHostController.navigateToRoute(
                     Routes.TIMELINE,
                     mapOf("sagaId" to saga.data.id.toString()),
                 )
+
             DetailAction.CHAPTERS ->
                 navHostController.navigateToRoute(
                     Routes.SAGA_CHAPTERS,
                     mapOf("sagaId" to saga.data.id.toString()),
                 )
+
             DetailAction.WIKI -> TODO()
             DetailAction.BACK -> navHostController.popBackStack()
         }
@@ -255,7 +260,11 @@ fun SagaDetailContentView(
                                         it.data.genre.color
                                             .gradientFade(),
                                     ).effectForGenre(saga.data.genre)
-                                    .clipToBounds(),
+                                    .selectiveColorHighlight(
+                                        SelectiveColorParams(
+                                            it.data.genre.color,
+                                        ),
+                                    ).clipToBounds(),
                             contentScale = ContentScale.Crop,
                         )
 
@@ -304,12 +313,7 @@ fun SagaDetailContentView(
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
-                                            .gradientFill(
-                                                gradientAnimation(
-                                                    it.data.genre.gradient(),
-                                                    targetValue = 500f,
-                                                    duration = 2.seconds,
-                                                ),
+                                            .gradientFill(it.data.genre.gradient(true),
                                             ),
                                 )
                             }

@@ -35,3 +35,20 @@ enum class Genre(
         R.drawable.scifi,
     ),
 }
+
+
+fun Genre.colorPalette() = when(this) {
+    Genre.FANTASY -> listOf(
+        MaterialColor.Red700,
+        MaterialColor.RedA400,
+        MaterialColor.OrangeA400,
+        MaterialColor.Red900,
+        MaterialColor.Amber400,
+    )
+    Genre.SCI_FI -> listOf(
+        MaterialColor.DeepPurple300,
+        MaterialColor.Blue800,
+        MaterialColor.PurpleA700,
+        MaterialColor.LightBlue900,
+    )
+}

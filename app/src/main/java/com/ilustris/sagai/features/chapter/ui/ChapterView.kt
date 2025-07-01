@@ -87,7 +87,6 @@ fun ChapterContent(saga: SagaContent) {
                 MaterialTheme.colorScheme.onBackground,
                 FontStyle.Normal,
                 isAnimated = false,
-                isBubbleVisible = isVisible,
             )
         }
     }

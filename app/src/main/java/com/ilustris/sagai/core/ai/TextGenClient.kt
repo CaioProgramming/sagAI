@@ -23,7 +23,6 @@ class TextGenClient : AIClient() {
     suspend inline fun <reified T> generate(
         prompt: String,
         requireTranslation: Boolean = true,
-        lisItemMap: Map<String, Class<*>>? = null,
         customSchema: Schema? = null,
     ): T? {
         try {

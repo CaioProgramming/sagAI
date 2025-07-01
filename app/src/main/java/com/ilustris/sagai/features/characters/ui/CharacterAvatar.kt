@@ -39,6 +39,8 @@ fun CharacterAvatar(
     textStyle: TextStyle = MaterialTheme.typography.labelSmall,
     genre: Genre,
     modifier: Modifier = Modifier,
+    softFocusRadius: Float? = null,
+    grainRadius: Float? = null,
 ) {
     val isLoaded =
         remember {
@@ -69,7 +71,7 @@ fun CharacterAvatar(
                     .fillMaxSize()
                     .clip(CircleShape)
                     .background(characterColor, CircleShape)
-                    .effectForGenre(genre),
+                    .effectForGenre(genre, focusRadius = softFocusRadius, customGrain = grainRadius),
         )
 
         val textAlpha by animateFloatAsState(

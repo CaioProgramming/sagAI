@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.characters.ui.components
 import ai.atick.material.MaterialColor
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -13,8 +14,8 @@ import androidx.compose.ui.text.input.TransformedText
 import androidx.core.graphics.toColorInt
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.headerFont
 import kotlin.text.indexOf
 
@@ -87,7 +88,7 @@ fun buildWikiAndCharactersAnnotation(
     mainCharacter: Character?,
     characters: List<Character>,
     wiki: List<Wiki>,
-    defaultBackground: Color,
+    shadowColor: Color = Color.Black,
 ): AnnotatedString {
     val characterRules =
         characters.map { character ->
@@ -97,25 +98,27 @@ fun buildWikiAndCharactersAnnotation(
                 } catch (e: Exception) {
                     Color.Gray
                 }
-
+            val shadow =
+                Shadow(
+                    color = shadowColor,
+                    blurRadius = 3f,
+                    offset =
+                        androidx.compose.ui.geometry
+                            .Offset(2f, -2f),
+                )
             val span =
                 if (character.id == mainCharacter?.id) {
                     SpanStyle(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.Normal,
                         fontFamily = genre.headerFont(),
-                        brush =
-                            Brush.verticalGradient(
-                                genre.color.darkerPalette(
-                                    factor = 0.3f,
-                                    count = 2,
-                                ),
-                            ),
+                        shadow = shadow,
+                        brush = Brush.horizontalGradient(genre.colorPalette()),
                     )
                 } else {
                     SpanStyle(
                         fontWeight = FontWeight.Bold,
-                        color = characterColor.copy(alpha = .4f),
-                        background = defaultBackground.copy(alpha = .7f),
+                        color = characterColor,
+                        shadow = shadow,
                     )
                 }
             AnnotationRule(

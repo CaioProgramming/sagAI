@@ -5,13 +5,7 @@ enum class CharacterFraming(
 ) {
     PORTRAIT(
         """
-        head and shoulders portrait,
-        clear facial features, engaging expression,
-        well-lit face,
-        (e.g., direct engaging gaze, subtle head tilt, looking off-camera,
-        over-the-shoulder glance, profile with a slight turn, chin raised proudly,
-        chin lowered contemplatively),
-        simple or softly blurred background to keep focus on the character
+        Upper body portrait, including head and upper torso.
         """,
     ),
     MEDIUM_SHOT(

@@ -82,7 +82,7 @@ fun TypewriterText(
             mainCharacter,
             characters,
             wiki,
-            MaterialTheme.colorScheme.background
+            MaterialTheme.colorScheme.onBackground,
         )
     ClickableText(
         text = wikiAnnotation,
@@ -132,11 +132,12 @@ fun TypewriterTextPreview() {
         duration = 2.seconds,
         easing = EaseInBounce,
         modifier = Modifier.fillMaxWidth().padding(16.dp),
-        characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f",details = Details())),
-        wiki = listOf(
-            Wiki(title = "wiki test", sagaId = 0)
-        ),
+        characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f", details = Details())),
+        wiki =
+            listOf(
+                Wiki(title = "wiki test", sagaId = 0),
+            ),
         mainCharacter = null,
-        genre = Genre.SCI_FI
+        genre = Genre.SCI_FI,
     )
 }

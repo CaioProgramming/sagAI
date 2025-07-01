@@ -56,6 +56,11 @@ enum class SenderType {
     NEW_CHAPTER,
     NEW_CHARACTER,
     CHARACTER,
+    ;
+
+    companion object {
+        fun filterUserInputTypes() = values().filter { it != USER && it != ACTION && it != THOUGHT }
+    }
 }
 
 fun SenderType.isCharacter() = this == SenderType.CHARACTER
@@ -65,7 +70,7 @@ fun SenderType.meaning() =
         SenderType.USER ->
             """
             Represents a message sent by the player.
-            You, as the AI, must NEVER generate a message with this 'senderType'.
+            You, as the AI, must NEVER generate a message with this 'Type'.
             This type is only for input from the player.
             """
         SenderType.CHARACTER ->
@@ -97,9 +102,13 @@ fun SenderType.meaning() =
         SenderType.THOUGHT ->
             """
             Use when Character its thinking and not talking directly with other NPC.
+            You, as the AI, must NEVER generate a message with this 'Type'.
+            This type is only for input from the player.
             """
         SenderType.ACTION ->
             """
-            Use to describe a character action
+            Use to describe a character action.
+            You, as the AI, must NEVER generate a message with this 'Type'.
+            This type is only for input from the player.
             """
     }

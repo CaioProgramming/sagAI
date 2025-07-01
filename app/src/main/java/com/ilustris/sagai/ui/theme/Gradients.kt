@@ -1,13 +1,11 @@
 package com.ilustris.sagai.ui.theme
 
-import ai.atick.material.MaterialColor
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -20,6 +18,8 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.Genre.*
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -43,6 +43,7 @@ enum class GradientType {
                     end = Offset(offsetAnimationValue * 2, offsetAnimationValue * 3),
                     tileMode = TileMode.Clamp,
                 )
+
             VERTICAL ->
                 Brush.verticalGradient(
                     colors = colors,
@@ -50,6 +51,7 @@ enum class GradientType {
                     endY = offsetAnimationValue * 3,
                     tileMode = TileMode.Clamp,
                 )
+
             RADIAL ->
                 Brush.radialGradient(
                     colors = colors,
@@ -57,6 +59,7 @@ enum class GradientType {
                     radius = offsetAnimationValue * 2,
                     tileMode = TileMode.Clamp,
                 )
+
             SWEEP ->
                 Brush.sweepGradient(
                     colors = colors,
@@ -69,7 +72,7 @@ enum class GradientType {
 fun gradientAnimation(
     colors: List<Color> = themeBrushColors(),
     duration: Duration = 3.seconds,
-    targetValue: Float = 100f,
+    targetValue: Float = 1000f,
     gradientType: GradientType = GradientType.LINEAR,
 ): Brush {
     val infiniteTransition = rememberInfiniteTransition()
@@ -115,18 +118,20 @@ fun fadedGradientTopAndBottom(tintColor: Color = MaterialTheme.colorScheme.backg
     )
 
 @Composable
-fun Modifier.gradientFill(brush: Brush, blendMode : BlendMode = BlendMode.SrcAtop) =
-    this
-        .graphicsLayer(alpha = 0.90f)
-        .drawWithCache {
-            onDrawWithContent {
-                drawContent()
-                drawRect(
-                    brush,
-                    blendMode = blendMode,
-                )
-            }
+fun Modifier.gradientFill(
+    brush: Brush,
+    blendMode: BlendMode = BlendMode.SrcAtop,
+) = this
+    .graphicsLayer(alpha = 0.90f)
+    .drawWithCache {
+        onDrawWithContent {
+            drawContent()
+            drawRect(
+                brush,
+                blendMode = blendMode,
+            )
         }
+    }
 
 fun Color.gradientFade() =
     Brush.verticalGradient(
@@ -159,57 +164,22 @@ val holographicGradient =
     )
 
 @Composable
-fun genresGradient(): List<Color> {
-    val colors =
-        Genre.entries.map {
-            it.gradient()
-        }
-
-    return colors.flatten()
-}
+fun genresGradient(): List<Color> =
+    Genre.entries
+        .map {
+            it.colorPalette()
+        }.flatten()
+        .plus(holographicGradient)
 
 @Composable
-fun Genre.gradient(): List<Color> {
-    val isDarkTheme = isSystemInDarkTheme()
-    return List(4) {
-        val indexColorFactor = it / 10f
-        if (isDarkTheme.not()) {
-            this.color.lighter(indexColorFactor)
-        } else {
-            this.color.darker(indexColorFactor)
-        }
-    }
-}
-
-@Composable
-fun Genre.userBubbleGradient(): Brush {
-    val colors = this.gradient()
-    return Brush.linearGradient(
-        colors = colors,
-        start = Offset.Zero,
-        end = Offset(100f, 100f),
-        tileMode = TileMode.Clamp,
-    )
-}
-
-@Composable
-fun Genre.botBubbleGradient(): Brush {
-    val color =
-        when (this) {
-            Genre.FANTASY -> MaterialColor.Orange100
-            Genre.SCI_FI -> MaterialColor.BlueGray700
-            else -> MaterialTheme.colorScheme.secondary
-        }
-    val colors =
-        List(4) {
-            color.darker(it / 10f)
-        }
-    return Brush.linearGradient(
-        colors = colors,
-        start = Offset(100f, 100f),
-        end = Offset.Zero,
-        tileMode = TileMode.Clamp,
-    )
+fun Genre.gradient(
+    animated: Boolean = false,
+    duration: Duration = 5.seconds,
+    targetValue: Float = 500f,
+) = if (animated) {
+    gradientAnimation(this.colorPalette(), duration, targetValue)
+} else {
+    Brush.verticalGradient(this.colorPalette())
 }
 
 enum class FadeDirection {
@@ -223,41 +193,50 @@ enum class FadeDirection {
 fun Modifier.fadeMask(
     fadeDirection: FadeDirection,
     startFadeFraction: Float = 0.0f,
-    endFadeFraction: Float = 0.3f
-): Modifier = this
-    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-    .drawWithCache {
-        val gradientBrush = when (fadeDirection) {
-            FadeDirection.BOTTOM_TO_TOP -> Brush.verticalGradient(
-                colors = listOf(Color.Transparent, Color.Black),
-                startY = size.height * (1f - startFadeFraction),
-                endY = size.height * (1f - endFadeFraction)
-            )
-            FadeDirection.TOP_TO_BOTTOM -> Brush.verticalGradient(
-                colors = listOf(Color.Black, Color.Transparent),
-                startY = size.height * startFadeFraction,
-                endY = size.height * endFadeFraction
-            )
-            FadeDirection.LEFT_TO_RIGHT -> Brush.horizontalGradient(
-                colors = listOf(Color.Black, Color.Transparent),
-                startX = size.width * startFadeFraction,
-                endX = size.width * endFadeFraction
-            )
-            FadeDirection.RIGHT_TO_LEFT -> Brush.horizontalGradient(
-                colors = listOf(Color.Transparent, Color.Black),
-                startX = size.width * (1f - startFadeFraction),
-                endX = size.width * (1f - endFadeFraction)
-            )
-        }
+    endFadeFraction: Float = 0.3f,
+): Modifier =
+    this
+        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+        .drawWithCache {
+            val gradientBrush =
+                when (fadeDirection) {
+                    FadeDirection.BOTTOM_TO_TOP ->
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black),
+                            startY = size.height * (1f - startFadeFraction),
+                            endY = size.height * (1f - endFadeFraction),
+                        )
 
-        onDrawWithContent {
-            // 1. Draw the original content of the Composable this modifier is applied to
-            drawContent()
+                    FadeDirection.TOP_TO_BOTTOM ->
+                        Brush.verticalGradient(
+                            colors = listOf(Color.Black, Color.Transparent),
+                            startY = size.height * startFadeFraction,
+                            endY = size.height * endFadeFraction,
+                        )
 
-            // 2. Draw the gradient mask on top with DstIn blend mode
-            drawRect(
-                brush = gradientBrush,
-                blendMode = BlendMode.DstIn
-            )
+                    FadeDirection.LEFT_TO_RIGHT ->
+                        Brush.horizontalGradient(
+                            colors = listOf(Color.Black, Color.Transparent),
+                            startX = size.width * startFadeFraction,
+                            endX = size.width * endFadeFraction,
+                        )
+
+                    FadeDirection.RIGHT_TO_LEFT ->
+                        Brush.horizontalGradient(
+                            colors = listOf(Color.Transparent, Color.Black),
+                            startX = size.width * (1f - startFadeFraction),
+                            endX = size.width * (1f - endFadeFraction),
+                        )
+                }
+
+            onDrawWithContent {
+                // 1. Draw the original content of the Composable this modifier is applied to
+                drawContent()
+
+                // 2. Draw the gradient mask on top with DstIn blend mode
+                drawRect(
+                    brush = gradientBrush,
+                    blendMode = BlendMode.DstIn,
+                )
+            }
         }
-    }

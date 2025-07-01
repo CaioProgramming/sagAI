@@ -5,22 +5,20 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,10 +45,14 @@ import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.lighter
+import com.ilustris.sagai.ui.theme.saturate
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.rememberHazeState
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -60,6 +62,7 @@ fun ChatBubble(
     genre: Genre,
     characters: List<Character>,
     wiki: List<Wiki>,
+    hazeState: HazeState = rememberHazeState(),
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
     openCharacters: () -> Unit = {},
@@ -72,7 +75,7 @@ fun ChatBubble(
             true
         } else {
             when (sender) {
-                SenderType.USER, SenderType.THOUGHT, SenderType.ACTION -> true
+                SenderType.USER -> true
                 else -> false
             }
         }
@@ -85,20 +88,15 @@ fun ChatBubble(
                 if (isUser) {
                     genre.color
                 } else {
-                    if (isSystemInDarkTheme()) {
-                        genre.color.darker(.7f)
-                    } else {
-                        genre.color.lighter(
-                            .65f,
-                        )
-                    }
+                    genre.color.saturate(0.3f)
                 }
             }
-            SenderType.THOUGHT -> MaterialTheme.colorScheme.background.copy(alpha = .7f)
+
             else -> Color.Transparent
         }
 
-    val textColor = if (sender == SenderType.THOUGHT) MaterialTheme.colorScheme.onBackground else genre.iconColor
+    val textColor =
+        if (sender == SenderType.THOUGHT) MaterialTheme.colorScheme.onBackground else genre.iconColor
 
     val cornerSize = genre.cornerSize()
     val tailAlignment =
@@ -120,21 +118,11 @@ fun ChatBubble(
 
     val isAnimated = isUser.not() && canAnimate
 
-    val isBubbleVisible =
-        remember {
-            mutableStateOf(false)
-        }
-
-    val bubbleAlpha by animateFloatAsState(
-        targetValue = if (isBubbleVisible.value) 1f else 0f,
-        label = "Bubble Alpha Animation",
-    )
-
     val duration =
         when (sender) {
             SenderType.USER -> 0.seconds
             SenderType.CHARACTER -> 5.seconds
-            else -> 7.seconds
+            else -> 5.seconds
         }
     val fontStyle =
         when (sender) {
@@ -160,12 +148,24 @@ fun ChatBubble(
                         if (sender == SenderType.THOUGHT) {
                             this.dashedBorder(
                                 1.dp,
-                                textColor.copy(alpha = .3f),
+                                MaterialTheme.colorScheme.onBackground,
                                 cornerSize,
                             )
                         } else {
                             this.border(0.dp, Color.Transparent, bubbleShape)
                         }
+
+                    @Composable
+                    fun Modifier.bubbleHaze() =
+                        this.hazeEffect(
+                            hazeState,
+                            HazeStyle(
+                                backgroundColor = Color.Transparent,
+                                tint = HazeTint(bubbleColor),
+                                blurRadius = 25.dp,
+                                noiseFactor = 0f,
+                            ),
+                        )
 
                     val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
 
@@ -187,11 +187,17 @@ fun ChatBubble(
                                     .weight(1f)
                                     .align(Alignment.CenterVertically)
                                     .senderBorder()
-                                    .padding(4.dp)
-                                    .background(
-                                        color = bubbleColor,
-                                        bubbleShape,
-                                    ).padding(16.dp),
+                                    .padding(2.dp)
+                                    .clip(
+                                        if (sender != SenderType.THOUGHT) {
+                                            bubbleShape
+                                        } else {
+                                            RoundedCornerShape(
+                                                0.dp,
+                                            )
+                                        },
+                                    ).bubbleHaze()
+                                    .padding(16.dp),
                             style =
                                 MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Normal,
@@ -201,7 +207,6 @@ fun ChatBubble(
                                     textAlign = textAlignment,
                                 ),
                             onTextUpdate = {
-                                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
                             },
                             onAnimationFinished = {
                                 if (alreadyAnimatedMessages.contains(message.id).not()) {
@@ -218,6 +223,8 @@ fun ChatBubble(
                                 CharacterAvatar(
                                     it,
                                     genre = genre,
+                                    softFocusRadius = 0.03f,
+                                    grainRadius = 0.01f,
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
@@ -237,6 +244,8 @@ fun ChatBubble(
                                 CharacterAvatar(
                                     it,
                                     genre = genre,
+                                    softFocusRadius = 0.03f,
+                                    grainRadius = 0.01f,
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
@@ -261,11 +270,18 @@ fun ChatBubble(
                             modifier =
                                 Modifier
                                     .weight(.5f, false)
-                                    .graphicsLayer(bubbleAlpha)
-                                    .background(
-                                        bubbleColor,
-                                        bubbleShape,
-                                    ).padding(16.dp),
+                                    .senderBorder()
+                                    .padding(2.dp)
+                                    .clip(
+                                        if (sender != SenderType.THOUGHT) {
+                                            bubbleShape
+                                        } else {
+                                            RoundedCornerShape(
+                                                0.dp,
+                                            )
+                                        },
+                                    ).bubbleHaze()
+                                    .padding(16.dp),
                             style =
                                 MaterialTheme.typography.bodySmall.copy(
                                     fontWeight = FontWeight.Normal,
@@ -275,7 +291,6 @@ fun ChatBubble(
                                     textAlign = textAlignment,
                                 ),
                             onTextUpdate = {
-                                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
                             },
                             onAnimationFinished = {
                                 if (alreadyAnimatedMessages.contains(message.id).not()) {
@@ -291,6 +306,7 @@ fun ChatBubble(
         SenderType.ACTION -> {
             Box(
                 Modifier
+                    .hazeEffect(hazeState)
                     .padding(16.dp)
                     .fillMaxWidth(),
             ) {
@@ -338,6 +354,8 @@ fun ChatBubble(
                         CharacterAvatar(
                             it,
                             borderSize = 1.dp,
+                            softFocusRadius = 0.03f,
+                            grainRadius = 0.01f,
                             genre = genre,
                             modifier =
                                 Modifier
@@ -363,7 +381,14 @@ fun ChatBubble(
                 wiki = wiki,
                 modifier =
                     Modifier
-                        .padding(16.dp)
+                        .hazeEffect(
+                            hazeState,
+                            HazeStyle(
+                                backgroundColor = Color.Transparent,
+                                tint = null,
+                                noiseFactor = 0f,
+                            ),
+                        ).padding(16.dp)
                         .fillMaxWidth(),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
@@ -387,7 +412,6 @@ fun ChatBubble(
                         wiki,
                         MaterialTheme.colorScheme.onBackground,
                         fontStyle,
-                        isBubbleVisible,
                         isAnimated,
                         openCharacters = openCharacters,
                     )

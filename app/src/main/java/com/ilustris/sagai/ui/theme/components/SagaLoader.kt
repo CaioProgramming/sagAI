@@ -293,7 +293,7 @@ fun SagaLoaderPreview() {
 
             SagaLoader(
                 modifier = Modifier.size(200.dp),
-                brush = gradientAnimation(Genre.FANTASY.gradient(), targetValue = 500f),
+                brush = Genre.FANTASY.gradient(),
                 animationDuration = 10.seconds,
                 scaleDistortion = .8f to .8f,
                 tint = MaterialColor.RedA200.copy(alpha = .4f),

@@ -36,4 +36,6 @@ class CharacterRepositoryImpl
         override suspend fun deleteCharacter(characterId: Int) = characterDao.deleteCharacter(characterId)
 
         override suspend fun getCharacterById(characterId: Int): Character? = characterDao.getCharacterById(characterId)
+
+        override suspend fun getCharacterByName(name: String): Character? = characterDao.getCharacterByName(name)
     }

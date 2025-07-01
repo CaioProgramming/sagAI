@@ -99,7 +99,7 @@ fun ConditionalImagePreview() {
                 )
                 ConditionalImage(
                     testGenre.background,
-                    Brush.verticalGradient(testGenre.gradient()),
+                    testGenre.gradient(),
                     customBlendMode = it.second,
                     Modifier
                         .size(200.dp)

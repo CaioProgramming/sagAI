@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,7 +51,6 @@ fun ChapterContentView(
     wiki: List<Wiki>,
     textColor: Color,
     fontStyle: FontStyle,
-    isBubbleVisible: MutableState<Boolean>,
     isAnimated: Boolean,
     openCharacters: () -> Unit = {},
 ) {
@@ -145,7 +143,7 @@ fun ChapterContentView(
                     letterSpacing = 5.sp,
                     fontFamily = genre.headerFont(),
                     fontStyle = fontStyle,
-                    brush = gradientAnimation(genre.gradient()),
+                    brush = genre.gradient(true),
                     textAlign = TextAlign.Center,
                 ),
         )
@@ -169,7 +167,6 @@ fun ChapterContentView(
                     textAlign = TextAlign.Center,
                 ),
             onTextUpdate = {
-                isBubbleVisible.value = it.isNotEmpty() || isAnimated.not()
             },
             onTextClick = openCharacters,
         )

@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -76,8 +75,10 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
+import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
 import kotlin.time.Duration.Companion.seconds
@@ -109,173 +110,181 @@ fun ChatInputView(
     }
     val inputShape = RoundedCornerShape(50.dp)
 
-    Column(
-        modifier
-            .background(MaterialTheme.colorScheme.background)
-            .fillMaxWidth()
-            .animateContentSize(tween(300, easing = EaseIn))
-            .pointerInput(Unit) {
-                detectVerticalDragGestures(onDragEnd = {}) { change, dragAmount ->
-                    Log.i("inputDrag", "dragAmount: $dragAmount")
-                    if (dragAmount < (DRAG_THRESHOLD).unaryMinus()) {
-                        actionsExpanded = true
-                    } else if (dragAmount > 0.0f) {
-                        actionsExpanded = false
+    BlurredGlowContainer(modifier, gradientBrush = { inputBrush }) {
+        Column(
+            Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxWidth()
+                .animateContentSize(tween(300, easing = EaseIn))
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(onDragEnd = {}) { change, dragAmount ->
+                        Log.i("inputDrag", "dragAmount: $dragAmount")
+                        if (dragAmount < (DRAG_THRESHOLD).unaryMinus()) {
+                            actionsExpanded = true
+                        } else if (dragAmount > 0.0f) {
+                            actionsExpanded = false
+                        }
+                    }
+                }.padding(bottom = 24.dp),
+        ) {
+            if (content.characters.isNotEmpty()) {
+                AnimatedVisibility(charactersExpanded) {
+                    LazyRow(Modifier.padding(12.dp).fillMaxWidth()) {
+                        items(content.characters) {
+                            CharacterHorizontalView(
+                                Modifier.padding(4.dp).wrapContentSize().clickable {
+                                    val startIndex =
+                                        inputField.text.indexOfLast { char -> char == '@' }
+                                    val endIndex = inputField.text.length
+
+                                    val newText = it.name
+                                    val textReplacement =
+                                        inputField.text.replaceRange(
+                                            startIndex,
+                                            endIndex,
+                                            newText,
+                                        )
+
+                                    inputField =
+                                        TextFieldValue(
+                                            textReplacement,
+                                            TextRange(textReplacement.length),
+                                        )
+
+                                    charactersExpanded = false
+                                },
+                                character = it,
+                                imageSize = 24.dp,
+                                genre = content.data.genre,
+                                borderSize = 1.dp,
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                        }
                     }
                 }
-            }.padding(bottom = 24.dp),
-    ) {
-        if (content.characters.isNotEmpty()) {
-            AnimatedVisibility(charactersExpanded) {
-                LazyRow(Modifier.padding(12.dp).fillMaxWidth()) {
-                    items(content.characters) {
-                        CharacterHorizontalView(
-                            Modifier.padding(4.dp).wrapContentSize().clickable {
-                                val startIndex = inputField.text.indexOfLast { char -> char == '@' }
-                                val endIndex = inputField.text.length
+            }
 
-                                val newText = it.name
-                                val textReplacement =
-                                    inputField.text.replaceRange(
-                                        startIndex,
-                                        endIndex,
-                                        newText,
-                                    )
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            ) {
+                content.mainCharacter?.let { character ->
+                    MainCharacterInputButton(content.data, character, action) {
+                        actionsExpanded = actionsExpanded.not()
+                    }
+                }
 
-                                inputField =
-                                    TextFieldValue(
-                                        textReplacement,
-                                        TextRange(textReplacement.length),
-                                    )
+                val textStyle =
+                    MaterialTheme.typography.labelMedium.copy(
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = 12.sp,
+                    )
+                val maxLength = 350
+                val tagBackgroundColor = MaterialTheme.colorScheme.onBackground
 
-                                charactersExpanded = false
-                            },
-                            character = it,
-                            imageSize = 24.dp,
-                            genre = content.data.genre,
-                            borderSize = 1.dp,
-                            style = MaterialTheme.typography.labelSmall,
+                BasicTextField(
+                    inputField,
+                    enabled = isGenerating.not(),
+                    onValueChange = {
+                        if (it.text.length <= maxLength) {
+                            inputField = it
+
+                            charactersExpanded = it.text.isNotEmpty() &&
+                                it.text.last().toString() == "@" &&
+                                it.text.length <= (maxLength - 20)
+                        }
+                    },
+                    textStyle = textStyle,
+                    visualTransformation = {
+                        transformTextWithContent(
+                            content.data.genre,
+                            content.mainCharacter,
+                            content.characters,
+                            content.wikis,
+                            inputField.text,
+                            tagBackgroundColor,
+                        )
+                    },
+                    cursorBrush =
+                        content.data.genre.gradient(),
+                    decorationBox = { innerTextField ->
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            // Or your desired alignment
+                            if (inputField.text.isEmpty()) {
+                                Text(
+                                    action.hint(),
+                                    style = textStyle,
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp).alpha(.4f),
+                                )
+                            } else {
+                                Box(Modifier.padding(16.dp)) {
+                                    innerTextField()
+                                }
+                            }
+                        }
+                    },
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 8.dp)
+                            .weight(1f)
+                            .background(MaterialTheme.colorScheme.surfaceContainer, inputShape),
+                )
+
+                val buttonSize by animateDpAsState(
+                    if (inputField.text.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
+                )
+                val buttonColor = content.data.genre.color
+                AnimatedVisibility(
+                    inputField.text.isNotEmpty(),
+                    enter = fadeIn(),
+                    exit = scaleOut(),
+                ) {
+                    IconButton(
+                        onClick = {
+                            onSendMessage(inputField.text, action)
+                            inputField = TextFieldValue("")
+                        },
+                        modifier =
+                            Modifier
+                                .background(
+                                    buttonColor,
+                                    CircleShape,
+                                ).size(buttonSize),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            contentDescription = "Send Message",
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .fillMaxSize(),
+                            tint = content.data.genre.iconColor,
                         )
                     }
                 }
             }
-        }
 
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            modifier = Modifier.padding(8.dp).fillMaxWidth(),
-        ) {
-            content.mainCharacter?.let { character ->
-                MainCharacterInputButton(content.data, character, action) {
-                    actionsExpanded = actionsExpanded.not()
-                }
-            }
-
-            val textStyle =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-            val maxLength = 350
-            val tagBackgroundColor = MaterialTheme.colorScheme.background
-
-            BasicTextField(
-                inputField,
-                enabled = isGenerating.not(),
-                onValueChange = {
-                    if (it.text.length <= maxLength) {
-                        inputField = it
-
-                        charactersExpanded = it.text.isNotEmpty() &&
-                            it.text.last().toString() == "@" &&
-                            it.text.length <= (maxLength - 20)
-                    }
-                },
-                textStyle = textStyle,
-                visualTransformation = {
-                    transformTextWithContent(
-                        content.data.genre,
-                        content.mainCharacter,
-                        content.characters,
-                        content.wikis,
-                        inputField.text,
-                        tagBackgroundColor,
-                    )
-                },
-                cursorBrush = inputBrush,
-                decorationBox = { innerTextField ->
-                    Box(contentAlignment = Alignment.CenterStart) {
-                        // Or your desired alignment
-                        if (inputField.text.isEmpty()) {
-                            Text(
-                                action.hint(),
-                                style = textStyle,
-                                modifier = Modifier.fillMaxWidth().padding(8.dp).alpha(.4f),
-                            )
-                        } else {
-                            Box(Modifier.padding(8.dp)) {
-                                innerTextField()
-                            }
+            AnimatedVisibility(actionsExpanded) {
+                val actions =
+                    SenderType.entries
+                        .filter {
+                            it != SenderType.CHARACTER &&
+                                it != SenderType.NEW_CHAPTER
                         }
-                    }
-                },
-                modifier =
-                    Modifier
-                        .padding(horizontal = 8.dp)
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape),
-            )
-
-            val buttonSize by animateDpAsState(
-                if (inputField.text.isNotEmpty() && state is ChatState.Success) 32.dp else 0.dp,
-            )
-            val buttonColor = content.data.genre.color
-            AnimatedVisibility(inputField.text.isNotEmpty(), enter = fadeIn(), exit = scaleOut()) {
-                IconButton(
-                    onClick = {
-                        onSendMessage(inputField.text, action)
-                        inputField = TextFieldValue("")
-                    },
-                    modifier =
-                        Modifier
-                            .background(
-                                buttonColor,
-                                CircleShape,
-                            ).size(buttonSize),
+                LazyRow(
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                        contentDescription = "Send Message",
-                        modifier =
-                            Modifier
-                                .padding(4.dp)
-                                .fillMaxSize(),
-                        tint = content.data.genre.iconColor,
-                    )
-                }
-            }
-        }
-
-        AnimatedVisibility(actionsExpanded) {
-            val actions =
-                SenderType.entries
-                    .filter {
-                        it != SenderType.CHARACTER &&
-                            it != SenderType.NEW_CHAPTER
-                    }
-            LazyRow(
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                items(actions) {
-                    it.itemOption(
-                        selectedItem = action,
-                        showText = true,
-                        genre = content.data.genre,
-                        iconSize = 32.dp,
-                    ) { selectedAction ->
-                        actionsExpanded = actionsExpanded.not()
-                        action = selectedAction
+                    items(actions) {
+                        it.itemOption(
+                            selectedItem = action,
+                            showText = true,
+                            genre = content.data.genre,
+                            iconSize = 32.dp,
+                        ) { selectedAction ->
+                            actionsExpanded = actionsExpanded.not()
+                            action = selectedAction
+                        }
                     }
                 }
             }
@@ -315,6 +324,8 @@ private fun MainCharacterInputButton(
                 character,
                 borderSize = 2.dp,
                 genre = saga.genre,
+                softFocusRadius = 0f,
+                grainRadius = 0.01f,
                 modifier =
                     Modifier.clip(CircleShape).fillMaxSize().clickable {
                         onClickAction()
@@ -514,7 +525,7 @@ fun ChatInputViewPreview() {
                 ),
         ),
         state = ChatState.Success,
-        isGenerating = false,
+        isGenerating = true,
     ) { _, _ -> }
 }
 

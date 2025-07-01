@@ -31,6 +31,16 @@ fun Color.adjust(factor: Float): Color {
 
 fun Color.lighter(factor: Float = 0.1f): Color = this.adjust(1f + factor)
 
+fun Color.saturate(saturationFactor: Float): Color {
+    val matrix = ColorMatrix()
+    matrix.setToSaturation(saturationFactor)
+    val r = this.red * matrix[0, 0] + this.green * matrix[0, 1] + this.blue * matrix[0, 2] + this.alpha * matrix[0, 3] + matrix[0, 4]
+    val g = this.red * matrix[1, 0] + this.green * matrix[1, 1] + this.blue * matrix[1, 2] + this.alpha * matrix[1, 3] + matrix[1, 4]
+    val b = this.red * matrix[2, 0] + this.green * matrix[2, 1] + this.blue * matrix[2, 2] + this.alpha * matrix[2, 3] + matrix[2, 4]
+    val a = this.red * matrix[3, 0] + this.green * matrix[3, 1] + this.blue * matrix[3, 2] + this.alpha * matrix[3, 3] + matrix[3, 4]
+    return Color(red = r, green = g, blue = b, alpha = a)
+}
+
 fun Color.darker(factor: Float = 0.1f): Color = this.adjust(1f - factor)
 
 fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {

@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -104,13 +103,18 @@ import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import dev.chrisbanes.haze.rememberHazeState
 import effectForGenre
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -315,6 +319,7 @@ fun ChatContent(
     val saga = content.data
     val wiki = content.wikis
     val listState = rememberLazyListState()
+    val hazeState = rememberHazeState()
 
     LaunchedEffect(messagesList.size) {
         listState.animateScrollToItem(0)
@@ -329,21 +334,13 @@ fun ChatContent(
                     duration = 3.seconds,
                 )
             } else {
-                Brush.verticalGradient(saga.genre.gradient())
+                saga.genre.gradient()
             }
         ConditionalImage(
             saga.genre.background,
             brush,
             customBlendMode = null,
-            Modifier.alpha(.8f).fillMaxSize(),
-        )
-
-        Box(
-            Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
-                .fillMaxHeight(.4f)
-                .background(fadeGradientTop()),
+            Modifier.fillMaxSize().hazeSource(hazeState),
         )
 
         ConstraintLayout(
@@ -351,8 +348,8 @@ fun ChatContent(
                 .padding(top = padding.calculateTopPadding())
                 .fillMaxSize(),
         ) {
-            val brush = gradientAnimation(saga.genre.gradient(), targetValue = 500f)
             val (messages, chatInput, topBar, bottomFade) = createRefs()
+            val hazeList = rememberHazeState()
 
             ChatList(
                 saga = saga,
@@ -360,10 +357,10 @@ fun ChatContent(
                 messages = messagesList,
                 characters = characters,
                 wiki = wiki,
-                isGenerating = isGenerating,
                 listState = listState,
+                hazeState = hazeState,
                 modifier =
-                    Modifier.constrainAs(messages) {
+                    Modifier.hazeSource(hazeList).constrainAs(messages) {
                         top.linkTo(parent.top)
                         bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)
@@ -395,8 +392,7 @@ fun ChatContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .wrapContentHeight()
-                    ,
+                            .wrapContentHeight(),
                     onSendMessage = onSendMessage,
                 )
             }
@@ -495,7 +491,11 @@ fun SagaHeader(
                 Modifier
                     .align(Alignment.Center)
                     .effectForGenre(saga.genre)
-                    .fillMaxSize(),
+                    .selectiveColorHighlight(
+                        SelectiveColorParams(
+                            saga.genre.color,
+                        ),
+                    ).fillMaxSize(),
         )
 
         Box(
@@ -518,7 +518,7 @@ fun ChatList(
     wiki: List<Wiki>,
     modifier: Modifier,
     listState: LazyListState,
-    isGenerating: Boolean = false,
+    hazeState: HazeState,
     openCharacter: () -> Unit = {},
     openSaga: () -> Unit = {},
 ) {
@@ -530,7 +530,7 @@ fun ChatList(
                 Spacer(
                     Modifier
                         .fillMaxWidth()
-                        .height(75.dp),
+                        .height(100.dp),
                 )
             }
 
@@ -541,6 +541,7 @@ fun ChatList(
                     saga.genre,
                     characters = characters,
                     wiki = wiki,
+                    hazeState = hazeState,
                     animatedMessages,
                     canAnimate = message == messages.last(),
                     openCharacters = openCharacter,
@@ -594,12 +595,8 @@ fun ChatList(
                             .background(fadeGradientTop())
                             .fillMaxWidth()
                             .padding(16.dp)
-                            .gradientFill(
-                                gradientAnimation(
-                                    saga.genre.gradient(),
-                                    targetValue = 500f,
-                                ),
-                            ).clickable(
+                            .gradientFill(saga.genre.gradient())
+                            .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                             ) {
