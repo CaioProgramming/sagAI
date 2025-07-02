@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,7 +19,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
+import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -32,7 +37,10 @@ fun TypewriterText(
     duration: Duration = 3.seconds,
     easing: Easing = EaseIn,
     isAnimated: Boolean = true,
+    genre: Genre,
+    mainCharacter: Character?,
     characters: List<Character>,
+    wiki: List<Wiki>,
     onAnimationFinished: () -> Unit = { },
     onTextUpdate: (String) -> Unit = { },
     onTextClick: () -> Unit = { },
@@ -64,11 +72,20 @@ fun TypewriterText(
 
     val annotatedText =
         buildCharactersAnnotatedString(
-            text,
+            currentText,
             characters,
         )
+    val wikiAnnotation =
+        buildWikiAndCharactersAnnotation(
+            annotatedText.text,
+            genre,
+            mainCharacter,
+            characters,
+            wiki,
+            MaterialTheme.colorScheme.onBackground,
+        )
     ClickableText(
-        text = annotatedText,
+        text = wikiAnnotation,
         style = style,
         onClick = { offset ->
             annotatedText
@@ -109,12 +126,18 @@ fun Modifier.zoomAnimation(): Modifier {
 @Preview(showBackground = true)
 @Composable
 fun TypewriterTextPreview() {
-    val text = "Hello Typewritter!"
+    val text = "Hello test bro make a wiki test!"
     TypewriterText(
         text = text,
-        duration = 5.seconds,
+        duration = 2.seconds,
         easing = EaseInBounce,
         modifier = Modifier.fillMaxWidth().padding(16.dp),
-        characters = emptyList(),
+        characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f", details = Details())),
+        wiki =
+            listOf(
+                Wiki(title = "wiki test", sagaId = 0),
+            ),
+        mainCharacter = null,
+        genre = Genre.SCI_FI,
     )
 }

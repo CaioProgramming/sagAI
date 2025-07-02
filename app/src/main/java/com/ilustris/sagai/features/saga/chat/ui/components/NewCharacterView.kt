@@ -1,15 +1,18 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -21,6 +24,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -29,6 +33,9 @@ import com.ilustris.sagai.ui.theme.bodyFont
 fun NewCharacterView(
     messageContent: MessageContent,
     genre: Genre,
+    characters: List<Character> = emptyList(),
+    wiki: List<Wiki> = emptyList(),
+    onSelectCharacter: (Character) -> Unit = {},
 ) {
     messageContent.character?.let {
         Column(
@@ -38,7 +45,11 @@ fun NewCharacterView(
         ) {
             CharacterAvatar(
                 it,
-                modifier = Modifier.size(75.dp),
+                genre = genre,
+                modifier =
+                    Modifier.clip(CircleShape).size(75.dp).clickable {
+                        onSelectCharacter(it)
+                    },
             )
 
             Text(
@@ -49,20 +60,22 @@ fun NewCharacterView(
                         fontWeight = FontWeight.Bold,
                         textAlign = TextAlign.Center,
                     ),
-
                 modifier = Modifier.padding(16.dp),
             )
 
             TypewriterText(
                 text = messageContent.message.text,
                 modifier = Modifier.padding(16.dp),
-                characters = emptyList(),
+                genre = genre,
+                mainCharacter = null,
+                characters = characters,
+                wiki = wiki,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
                         fontWeight = FontWeight.Normal,
                         fontFamily = genre.bodyFont(),
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onBackground
+                        color = MaterialTheme.colorScheme.onBackground,
                     ),
             )
         }

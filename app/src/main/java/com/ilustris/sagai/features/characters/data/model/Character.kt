@@ -30,6 +30,8 @@ data class Character(
     @Embedded
     val details: Details,
     val joinedAt: Long = 0L,
+    @ColumnInfo(defaultValue = "")
+    val status: String = "",
 )
 
 data class Details(
@@ -42,4 +44,22 @@ data class Details(
     val gender: String = "",
     val occupation: String = "",
     val ethnicity: String = "",
+    val facialDetails: String? = "",
+    val clothing: String? = "",
+)
+
+data class Clothing(
+    val body: String = "",
+    val accessories: String = "",
+    val footwear: String = "",
+)
+
+data class FacialFeatures(
+    val hair: String = "",
+    val eyes: String = "",
+    val ears: String = "",
+    val nose: String = "",
+    val mouth: String = "",
+    val eyebrows: String = "",
+    val scars: String = "",
 )

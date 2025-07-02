@@ -13,9 +13,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
@@ -34,15 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -50,35 +55,50 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
-import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.features.saga.chat.ui.components.ChapterContentView
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
+import com.ilustris.sagai.features.timeline.ui.TimeLineCard
+import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
-import com.ilustris.sagai.ui.theme.zoomAnimation
+import effectForGenre
+import kotlin.time.Duration.Companion.seconds
+
+enum class DetailAction {
+    CHARACTERS,
+    DELETE,
+    TIMELINE,
+    CHAPTERS,
+    WIKI,
+    BACK,
+}
 
 @Composable
 fun SagaDetailView(
@@ -91,17 +111,46 @@ fun SagaDetailView(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
 
-    SagaDetailContentView(state, paddingValues, {
-        navHostController.navigateToRoute(
-            Routes.CHARACTER_GALLERY,
-            mapOf("sagaId" to it.toString()),
-        )
-    }, onBack = {
-        navHostController.popBackStack()
-    }, onDelete = { saga ->
-        sagaToDelete = saga
-        showDeleteConfirmation = true
-    })
+    SagaDetailContentView(state, paddingValues) { action, saga, value ->
+        when (action) {
+            DetailAction.CHARACTERS -> {
+                if (value == null) {
+                    navHostController.navigateToRoute(
+                        Routes.CHARACTER_GALLERY,
+                        mapOf("sagaId" to saga.data.id.toString()),
+                    )
+                } else {
+                    navHostController.navigateToRoute(
+                        Routes.CHARACTER_DETAIL,
+                        mapOf(
+                            "sagaId" to saga.data.id.toString(),
+                            "characterId" to value.toString(),
+                        ),
+                    )
+                }
+            }
+
+            DetailAction.DELETE -> {
+                sagaToDelete = saga.data
+                showDeleteConfirmation = true
+            }
+
+            DetailAction.TIMELINE ->
+                navHostController.navigateToRoute(
+                    Routes.TIMELINE,
+                    mapOf("sagaId" to saga.data.id.toString()),
+                )
+
+            DetailAction.CHAPTERS ->
+                navHostController.navigateToRoute(
+                    Routes.SAGA_CHAPTERS,
+                    mapOf("sagaId" to saga.data.id.toString()),
+                )
+
+            DetailAction.WIKI -> TODO()
+            DetailAction.BACK -> navHostController.popBackStack()
+        }
+    }
 
     if (showDeleteConfirmation && sagaToDelete != null) {
         AlertDialog(
@@ -143,19 +192,31 @@ fun SagaDetailView(
 fun SagaDetailContentView(
     state: State,
     paddingValues: PaddingValues,
-    selectCharacter: (Int) -> Unit = {},
-    onBack: () -> Unit = {},
-    onDelete: (SagaData) -> Unit = {},
+    detailAction: (DetailAction, SagaContent, Any?) -> Unit = { _, _, _ -> },
 ) {
+    val columnCount = 2
     val saga = ((state as? State.Success)?.data as? SagaContent)
-    LazyColumn(
-        modifier = Modifier.padding(paddingValues).animateContentSize(),
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columnCount),
+        modifier =
+            Modifier
+                .padding(paddingValues)
+                .animateContentSize(),
     ) {
         if (state is State.Loading) {
-            item {
-                Box(Modifier.fillMaxWidth().padding(8.dp)) {
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                ) {
                     SparkIcon(
-                        Modifier.align(Alignment.Center).size(50.dp),
+                        Modifier
+                            .align(Alignment.Center)
+                            .size(50.dp),
                         brush = gradientAnimation(holographicGradient),
                     )
                 }
@@ -163,12 +224,14 @@ fun SagaDetailContentView(
         }
 
         saga?.let {
-            stickyHeader { position ->
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
                 SagaTopBar(
-                    it.saga.title,
-                    "Desde ${it.saga.createdAt.formatDate()}",
-                    it.saga.genre,
-                    onBackClick = onBack,
+                    it.data.title,
+                    "Criado em ${it.data.createdAt.formatDate()}",
+                    it.data.genre,
+                    onBackClick = { detailAction(DetailAction.BACK, it, null) },
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
@@ -176,7 +239,9 @@ fun SagaDetailContentView(
                             .padding(top = 50.dp, start = 16.dp),
                 )
             }
-            item {
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Box(
                         modifier =
@@ -185,17 +250,21 @@ fun SagaDetailContentView(
                                 .clipToBounds(),
                     ) {
                         AsyncImage(
-                            it.saga.icon,
-                            contentDescription = it.saga.title,
+                            it.data.icon,
+                            contentDescription = it.data.title,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
                                     .height(300.dp)
                                     .background(
-                                        it.saga.genre.color
+                                        it.data.genre.color
                                             .gradientFade(),
-                                    ).clipToBounds()
-                                    .zoomAnimation(),
+                                    ).effectForGenre(saga.data.genre)
+                                    .selectiveColorHighlight(
+                                        SelectiveColorParams(
+                                            it.data.genre.color,
+                                        ),
+                                    ).clipToBounds(),
                             contentScale = ContentScale.Crop,
                         )
 
@@ -209,28 +278,43 @@ fun SagaDetailContentView(
                         it.mainCharacter?.let { mainChar ->
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.align(Alignment.BottomCenter).padding(top = 150.dp),
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(top = 150.dp),
                             ) {
                                 CharacterAvatar(
                                     mainChar,
                                     borderSize = 3.dp,
-                                    modifier = Modifier.padding(8.dp).size(170.dp),
+                                    genre = it.data.genre,
+                                    modifier =
+                                        Modifier
+                                            .padding(8.dp)
+                                            .size(170.dp),
                                 )
                                 Text(
-                                    it.mainCharacter?.name.orEmpty(),
+                                    "A jornada de",
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = it.data.genre.bodyFont(),
+                                            fontWeight = FontWeight.Light,
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                                Text(
+                                    it.mainCharacter.name,
                                     style =
                                         MaterialTheme.typography.displaySmall.copy(
-                                            fontFamily = it.saga.genre.headerFont(),
+                                            fontFamily = it.data.genre.headerFont(),
                                             fontWeight = FontWeight.SemiBold,
                                             textAlign = TextAlign.Center,
                                         ),
                                     modifier =
-                                        Modifier.padding(8.dp).gradientFill(
-                                            gradientAnimation(
-                                                it.saga.genre.gradient(),
-                                                targetValue = 1500f,
+                                        Modifier
+                                            .padding(8.dp)
+                                            .gradientFill(it.data.genre.gradient(true),
                                             ),
-                                        ),
                                 )
                             }
                         }
@@ -238,17 +322,24 @@ fun SagaDetailContentView(
                 }
             }
 
-            item {
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
-                    VerticalLabel(it.chapters.count().toString(), "Capítulos", it.saga.genre)
-                    VerticalLabel(it.characters.count().toString(), "Personagens", it.saga.genre)
+                    VerticalLabel(it.chapters.count().toString(), "Capítulos", it.data.genre)
+                    VerticalLabel(it.characters.count().toString(), "Personagens", it.data.genre)
                 }
             }
 
-            item {
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(16.dp),
@@ -257,18 +348,21 @@ fun SagaDetailContentView(
                         it.messages.count().toString(),
                         style =
                             MaterialTheme.typography.displaySmall.copy(
-                                fontFamily = it.saga.genre.headerFont(),
+                                fontFamily = it.data.genre.headerFont(),
                                 fontWeight = FontWeight.Normal,
                                 textAlign = TextAlign.Center,
                             ),
-                        modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
                     )
 
                     Text(
                         "Mensagens",
                         style =
                             MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = it.saga.genre.bodyFont(),
+                                fontFamily = it.data.genre.bodyFont(),
                                 fontWeight = FontWeight.Light,
                                 textAlign = TextAlign.Center,
                             ),
@@ -276,29 +370,236 @@ fun SagaDetailContentView(
                 }
             }
 
-            item {
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
                 CharacterSection(
                     "Descrição",
-                    it.saga.description,
-                    it.saga.genre,
+                    it.data.description,
+                    it.data.genre,
                 )
             }
 
-            item {
-                Column {
-                    Row(Modifier.padding(16.dp).fillMaxWidth()) {
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
+                Row(
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                ) {
+                    Text(
+                        "Personagens",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Normal,
+                                fontFamily = it.data.genre.headerFont(),
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .weight(1f),
+                    )
+
+                    IconButton(onClick = {
+                        detailAction(DetailAction.CHARACTERS, it, null)
+                    }, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                            contentDescription = "Ver personagens",
+                        )
+                    }
+                }
+            }
+
+            item(span = { GridItemSpan(columnCount) }) {
+                LazyRow {
+                    items(sortCharactersByMessageCount(it.characters, it.messages)) { char ->
+                        Column(
+                            Modifier
+                                .padding(8.dp)
+                                .clip(RoundedCornerShape(it.data.genre.cornerSize()))
+                                .clickable {
+                                    detailAction(DetailAction.CHARACTERS, it, char.id)
+                                },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            CharacterAvatar(
+                                char,
+                                borderSize = 2.dp,
+                                genre = it.data.genre,
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .clip(CircleShape)
+                                        .size(120.dp)
+                                        .padding(8.dp),
+                            )
+
+                            Text(
+                                char.name,
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Light,
+                                        textAlign = TextAlign.Center,
+                                        fontFamily = it.data.genre.bodyFont(),
+                                    ),
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (it.timelines.isNotEmpty()) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Column {
+                        Row(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                        ) {
+                            Text(
+                                "Linha do tempo",
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = it.data.genre.headerFont(),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .weight(1f),
+                            )
+
+                            IconButton(onClick = {
+                                detailAction(
+                                    DetailAction.TIMELINE,
+                                    it,
+                                    null,
+                                )
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                    contentDescription = "Ver Linha do tempo",
+                                )
+                            }
+                        }
+
+                        it.timelines.lastOrNull()?.let { event ->
+                            TimeLineCard(
+                                event,
+                                it.data.genre,
+                                false,
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .clip(RoundedCornerShape(it.data.genre.cornerSize()))
+                                        .clickable {
+                                            detailAction(
+                                                DetailAction.TIMELINE,
+                                                it,
+                                                null,
+                                            )
+                                        }.fillMaxWidth()
+                                        .wrapContentHeight(),
+                            )
+                        } ?: run {
+                            Text(
+                                "Nenhum evento registrado",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+            }
+
+            if (it.wikis.isNotEmpty()) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Column {
+                        Row(
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                        ) {
+                            Text(
+                                "Wiki",
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = it.data.genre.headerFont(),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .weight(1f),
+                            )
+
+                            IconButton(onClick = {
+                                // openTimeLine(it.data.id)
+                            }, modifier = Modifier.size(24.dp)) {
+                                Icon(
+                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                    contentDescription = "Ver wiki",
+                                )
+                            }
+                        }
+
+                        if (it.wikis.isEmpty()) {
+                            Text(
+                                "Nenhuma informação salva",
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+
+                items(it.wikis) { wiki ->
+                    WikiCard(
+                        wiki,
+                        it.data.genre,
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .fillMaxWidth()
+                                .height(270.dp),
+                    )
+                }
+            }
+
+            if (it.chapters.isNotEmpty()) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Row(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                    ) {
                         Text(
-                            "Personagens",
+                            "Capítulos",
                             style =
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Normal,
-                                    fontFamily = it.saga.genre.headerFont(),
+                                    fontFamily = it.data.genre.headerFont(),
                                 ),
-                            modifier = Modifier.padding(8.dp).weight(1f),
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .weight(1f),
                         )
 
                         IconButton(onClick = {
-                            selectCharacter(it.saga.id)
+                            detailAction(
+                                DetailAction.CHAPTERS,
+                                it,
+                                null,
+                            )
                         }, modifier = Modifier.size(24.dp)) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -306,83 +607,46 @@ fun SagaDetailContentView(
                             )
                         }
                     }
+                }
 
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
                     LazyRow {
-                        items(it.characters) { chars ->
-                            val characterColor = Color(chars.hexColor.toColorInt())
-                            Column(
-                                Modifier.padding(8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                CharacterAvatar(
-                                    chars,
-                                    borderSize = 2.dp,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .size(120.dp)
-                                            .padding(8.dp)
-                                            .clickable {
-                                                selectCharacter(it.saga.id)
-                                            },
-                                )
-
-                                Text(
-                                    chars.name,
-                                    style =
-                                        MaterialTheme.typography.bodySmall.copy(
-                                            fontWeight = FontWeight.Light,
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                )
-                            }
+                        items(it.chapters) { chapter ->
+                            ChapterCardView(
+                                chapter,
+                                it.data.genre,
+                                it.characters,
+                                Modifier
+                                    .padding(4.dp)
+                                    .width(300.dp)
+                                    .height(300.dp),
+                            )
                         }
                     }
                 }
             }
 
-            item {
-                Text(
-                    "Capítulos",
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = it.saga.genre.headerFont(),
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            items(it.chapters) { chapter ->
-                ChapterContentView(
-                    it.saga.genre,
-                    chapter,
-                    characters = it.characters,
-                    MaterialTheme.colorScheme.onBackground,
-                    FontStyle.Normal,
-                    remember { mutableStateOf(true) },
-                    false,
-                )
-            }
-
-            item {
-                CharacterSection(
-                    "História",
-                    buildCharactersAnnotatedString(it.saga.lore, it.characters),
-                    it.saga.genre,
-                )
-            }
-
-            item {
+            item(span = {
+                GridItemSpan(columnCount)
+            }) {
                 Button(
                     onClick = {
-                        onDelete(it.saga)
+                        detailAction(
+                            DetailAction.DELETE,
+                            it,
+                            null,
+                        )
                     },
                     colors =
                         ButtonDefaults.textButtonColors(
                             contentColor = MaterialColor.Red400,
                         ),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                 ) {
                     Text("Excluir Saga", textAlign = TextAlign.Center)
                 }
@@ -409,7 +673,7 @@ fun SagaDetailContentViewPreview() {
         val state =
             State.Success(
                 SagaContent(
-                    saga =
+                    data =
                         SagaData(
                             title = "Saga de teste",
                             description = "Descrição da saga de teste",

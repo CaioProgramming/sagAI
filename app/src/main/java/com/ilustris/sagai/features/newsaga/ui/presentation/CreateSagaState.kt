@@ -12,10 +12,6 @@ sealed class CreateSagaState {
         val exception: Exception,
     ) : CreateSagaState()
 
-    data class GeneratedCharacter(
-        val character: Character,
-    ) : CreateSagaState()
-
     data class GeneratedSaga(
         val saga: SagaData,
     ) : CreateSagaState()

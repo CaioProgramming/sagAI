@@ -5,20 +5,22 @@ import androidx.room.Relation
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.wiki.data.model.Wiki // Added import for Wiki
 
 data class SagaContent(
     @Embedded
-    val saga: SagaData,
+    val data: SagaData,
     @Relation(
         parentColumn = "mainCharacterId",
         entityColumn = "id",
     )
-    val mainCharacter: Character?,
+    val mainCharacter: Character? = null,
     @Relation(
         parentColumn = "id",
         entityColumn = "sagaId",
     )
-    val messages: List<Message>,
+    val messages: List<Message> = emptyList(),
     @Relation(
         parentColumn = "id",
         entityColumn = "sagaId",
@@ -29,4 +31,14 @@ data class SagaContent(
         entityColumn = "sagaId",
     )
     val characters: List<Character> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "sagaId",
+    )
+    val wikis: List<Wiki> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "sagaId",
+    )
+    val timelines: List<Timeline> = emptyList(),
 )

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.ui.theme
 
 import ai.atick.material.MaterialColor
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -26,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -36,14 +38,16 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val DarkColorScheme =
     darkColorScheme(
+        onPrimary = Color.White,
         primary = MaterialColor.BlueA400,
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
+        background = MaterialColor.Black,
+        surfaceContainer = MaterialColor.Gray800,
     )
 
 private val LightColorScheme =
@@ -52,6 +56,8 @@ private val LightColorScheme =
         secondary = MaterialColor.Blue800,
         tertiary = MaterialColor.Teal300,
         onPrimary = MaterialColor.White,
+        background = MaterialColor.White,
+        surfaceContainer = MaterialColor.Gray100,
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),
@@ -95,43 +101,46 @@ fun SagAITheme(
 @Composable
 fun SagAIScaffold(
     title: String? = null,
+    showTopBar: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     SagAITheme {
         Scaffold(topBar = {
-            TopAppBar(
-                title = {
-                    title?.let {
-                        Text(
-                            text = it,
-                            textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                        )
-                    } ?: run {
-                        Box(Modifier.fillMaxWidth()) {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                contentDescription = stringResource(R.string.app_name),
+            AnimatedVisibility(showTopBar) {
+                TopAppBar(
+                    title = {
+                        title?.let {
+                            Text(
+                                text = it,
+                                textAlign = TextAlign.Center,
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
                                 modifier =
                                     Modifier
-                                        .align(Alignment.Center)
-                                        .size(50.dp),
+                                        .padding(16.dp)
+                                        .fillMaxWidth(),
                             )
+                        } ?: run {
+                            Box(Modifier.fillMaxWidth()) {
+                                Image(
+                                    painterResource(R.drawable.ic_spark),
+                                    contentDescription = stringResource(R.string.app_name),
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.Center)
+                                            .size(50.dp),
+                                )
+                            }
                         }
-                    }
-                },
-                actions = {
-                    Box(Modifier.size(24.dp))
-                },
-                navigationIcon = {
-                    Box(modifier = Modifier.size(24.dp))
-                },
-            )
+                    },
+                    actions = {
+                        Box(Modifier.size(24.dp))
+                    },
+                    navigationIcon = {
+                        Box(modifier = Modifier.size(24.dp))
+                    },
+                )
+            }
         }) {
             Box(modifier = Modifier.padding(it)) {
                 content()
@@ -199,7 +208,6 @@ fun MorphShape(modifier: Modifier) {
 
 fun Genre.defaultHeaderImage() =
     when (this) {
-        Genre.FANTASY -> "https://i.imgur.com/LjoI5EW.png"
-        Genre.SCI_FI -> "https://i.imgur.com/byyXnNS.png"
-        else -> emptyString()
+        Genre.FANTASY -> "https://i.ibb.co/1JQVxD69/retrato-neoclassico-medieval-de-ilustracao-de-cavaleiro.jpg"
+        Genre.SCI_FI -> "https://i.ibb.co/b5CMmtvg/personagem-de-anime-usando-oculos-de-realidade-virtual-no-metaverso.png"
     }

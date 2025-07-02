@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -22,7 +21,7 @@ import kotlin.time.Duration.Companion.seconds
 class CreateSagaViewModel
     @Inject
     constructor(
-        private val newSagaUseCase: NewSagaUseCase
+        private val newSagaUseCase: NewSagaUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow(SagaForm())
         val sagaData = MutableStateFlow<SagaData?>(null)
@@ -68,9 +67,9 @@ class CreateSagaViewModel
                                 )
                         sagaUpdateOperation
                             .onSuccess {
-                                state.value = CreateSagaState.Success(operationData.first)
+                                state.value = CreateSagaState.Success(it)
                             }.onFailure {
-                                sendErrorState(it)
+                                state.value = CreateSagaState.Success(sagaOperation.success.value.first)
                             }
                     }
                 }

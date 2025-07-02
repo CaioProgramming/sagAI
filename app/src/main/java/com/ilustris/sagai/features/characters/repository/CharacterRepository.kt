@@ -13,4 +13,6 @@ interface CharacterRepository {
     suspend fun deleteCharacter(characterId: Int)
 
     suspend fun getCharacterById(characterId: Int): Character?
+
+    suspend fun getCharacterByName(name: String): Character?
 }

@@ -7,10 +7,11 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
-import com.ilustris.sagai.core.network.body.StableDiffusionRequest
+import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -41,18 +42,14 @@ class CharacterUseCaseImpl
             try {
                 val prompt = CharacterPrompts.generateImage(character, saga)
                 val request =
-                    StableDiffusionRequest(
-                        CharacterPrompts.generateImage(character, saga),
-                        GenrePrompts.negativePrompt(saga.genre),
-                        1920,
-                        1080,
-                    )
-                val image =
-                    imagenClient.generateImage(
+                    FreepikRequest(
                         prompt,
+                        GenrePrompts.negativePrompt(saga.genre),
+                        GenrePrompts.characterStyling(saga.genre),
                     )
-
-                val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
+                val image = imagenClient.generateImage(prompt)!!.data
+                val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
+                // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)
                 RequestResult.Success(newCharacter)
@@ -61,26 +58,31 @@ class CharacterUseCaseImpl
             }
 
         override suspend fun generateCharacter(
-            sagaData: SagaData?,
+            sagaContent: SagaContent,
             description: String,
         ): RequestResult<Exception, Character> =
             try {
                 val newCharacter =
                     textGenClient.generate<Character>(
                         CharacterPrompts.characterGeneration(
-                            sagaData!!,
+                            sagaContent,
                             description,
                         ),
-                    )
+                    )!!
 
-                val characterTransaction = insertCharacter(newCharacter!!.copy(sagaId = sagaData.id))
+                val characterQuery = repository.getCharacterByName(newCharacter.name)
+                if (characterQuery != null) {
+                    throw Exception("Character already exists")
+                }
+                val characterTransaction =
+                    insertCharacter(newCharacter.copy(sagaId = sagaContent.data.id))
                 val iconGen =
                     generateCharacterImage(
                         character = characterTransaction,
-                        saga = sagaData,
+                        saga = sagaContent.data,
                     )
                 if (iconGen is RequestResult.Success) {
-                    RequestResult.Success(characterTransaction)
+                    RequestResult.Success(iconGen.success.value)
                 } else {
                     RequestResult.Success(characterTransaction)
                 }

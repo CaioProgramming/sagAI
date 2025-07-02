@@ -13,7 +13,6 @@ import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 fun NewSagaPagesView(
     pagerState: PagerState,
     currentData: SagaForm,
-    saga: SagaData?,
     modifier: Modifier = Modifier,
     onUpdateData: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
@@ -21,11 +20,9 @@ fun NewSagaPagesView(
         val page = NewSagaPages.entries[it]
         val data =
             when (page) {
-                NewSagaPages.INTRO -> null
                 NewSagaPages.TITLE -> currentData.title
                 NewSagaPages.GENRE -> currentData.genre
                 NewSagaPages.DESCRIPTION -> currentData.description
-                NewSagaPages.RESULT -> saga
                 NewSagaPages.CHARACTER -> currentData.characterDescription
             }
         page.content(
@@ -37,9 +34,6 @@ fun NewSagaPagesView(
 
         LaunchedEffect(page) {
             when (page) {
-                NewSagaPages.RESULT -> {
-                    onUpdateData(page, saga)
-                }
                 NewSagaPages.GENRE -> {
                     onUpdateData(page, currentData.genre)
                 }

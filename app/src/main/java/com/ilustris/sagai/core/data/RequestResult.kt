@@ -9,9 +9,9 @@ sealed class RequestResult<out L, out R> {
         val value: R,
     ) : RequestResult<Nothing, R>()
 
-    fun isSuccess(): Boolean = this is Success
+    val isSuccess = this is Success
 
-    fun isFailure(): Boolean = this is Error
+    val isFailure = this is Error
 
     fun onSuccess(block: (R) -> Unit): RequestResult<L, R> {
         if (this is Success) {

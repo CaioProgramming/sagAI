@@ -27,6 +27,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,12 +45,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import androidx.navigation.navArgument
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.chapter.ui.ChapterView
+import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
 import com.ilustris.sagai.features.characters.ui.CharacterGalleryView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
-import dev.chrisbanes.haze.HazeState
+import com.ilustris.sagai.features.timeline.ui.TimelineView
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
@@ -57,8 +60,8 @@ enum class Routes(
         NavHostController,
         PaddingValues,
         SharedTransitionScope,
-        HazeState,
-    ) -> Unit = { nav, padding, transitionScope, haze ->
+        SnackbarHostState,
+    ) -> Unit = { nav, padding, transitionScope, snackState ->
         Text("Sample View for Route ", modifier = Modifier.padding(16.dp))
     },
     val topBarContent: (@Composable (NavHostController) -> Unit)? = null,
@@ -94,12 +97,11 @@ enum class Routes(
         }
     }),
     CHAT(
-        view = { nav, padding, _, haze ->
+        view = { nav, padding, _, snack ->
             val arguments = nav.currentBackStackEntry?.arguments
             ChatView(
                 navHostController = nav,
                 padding,
-                haze,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
             )
         },
@@ -149,6 +151,51 @@ enum class Routes(
         arguments = listOf("sagaId"),
         deepLink = "saga://saga_detail/{sagaId}",
         showBottomNav = false,
+    ),
+    TIMELINE(
+        view = { nav, padding, _, _ ->
+            val arguments = nav.currentBackStackEntry?.arguments
+            TimelineView(
+                sagaId = arguments?.getString(TIMELINE.arguments.first()) ?: "",
+                navHostController = nav,
+            )
+        },
+        topBarContent = { Box {} },
+        arguments = listOf("sagaId"),
+        deepLink = "saga://timeline/{sagaId}",
+        showBottomNav = false,
+    ),
+    CHARACTER_DETAIL(
+        arguments =
+            listOf(
+                "sagaId",
+                "characterId",
+            ),
+        deepLink = "saga://character_detail/{sagaId}/{characterId}",
+        showBottomNav = false,
+        topBarContent = { Box {} },
+        view = { nav, padding, _, _ ->
+            CharacterDetailsView(
+                navHostController = nav,
+                sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
+                characterId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments[1]),
+            )
+        },
+    ),
+    SAGA_CHAPTERS(
+        arguments =
+            listOf(
+                "sagaId",
+            ),
+        deepLink = "saga://saga_chapters/{sagaId}",
+        showBottomNav = false,
+        topBarContent = { Box {} },
+        view = { nav, padding, _, _ ->
+            ChapterView(
+                nav,
+                sagaId = nav.currentBackStackEntry?.arguments?.getString(SAGA_CHAPTERS.arguments.first()),
+            )
+        },
     ),
 }
 
@@ -208,7 +255,7 @@ fun SagaNavGraph(
     navController: NavHostController,
     padding: PaddingValues,
     transitionScope: SharedTransitionScope,
-    hazeState: HazeState,
+    hazeState: SnackbarHostState,
 ) {
     val graph =
         navController.createGraph(startDestination = Routes.HOME.name) {

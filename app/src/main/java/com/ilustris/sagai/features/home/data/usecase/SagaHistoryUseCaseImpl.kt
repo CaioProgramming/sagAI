@@ -5,11 +5,11 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.Lore
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -28,23 +28,23 @@ class SagaHistoryUseCaseImpl
 
         override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
+        override suspend fun updateSaga(saga: SagaData) = sagaRepository.updateChat(saga)
+
         override suspend fun generateLore(
-            saga: SagaData?,
-            character: Character?,
+            saga: SagaContent,
             loreReference: Int,
             lastMessages: List<String>,
-        ): RequestResult<Exception, String> =
+        ): RequestResult<Exception, LoreGen> =
             try {
-                val newLore =
-                    textGenClient.generate<Lore>(
+                textGenClient
+                    .generate<LoreGen>(
                         SagaPrompts.loreGeneration(
-                            saga!!,
-                            lastMessages,
-                            character!!,
+                            saga,
+                            lastMessages.map { it.toJsonFormat() },
                         ),
-                    )
-                sagaRepository.updateChat(saga.copy(lore = newLore!!.story, lastLoreReference = loreReference))
-                newLore.story.asSuccess()
+                        customSchema = LoreGen.toSchema(),
+                    )!!
+                    .asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }

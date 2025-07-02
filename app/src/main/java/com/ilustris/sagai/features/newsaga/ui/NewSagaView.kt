@@ -6,15 +6,20 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
@@ -28,7 +33,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,19 +42,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages.*
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPagesView
@@ -59,7 +65,6 @@ import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -76,8 +81,7 @@ fun NewSagaView(
 ) {
     val form by createSagaViewModel.saga.collectAsStateWithLifecycle()
     val state by createSagaViewModel.state.collectAsStateWithLifecycle()
-    val saga by createSagaViewModel.sagaData.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState(1) { NewSagaPages.entries.size }
+    val pagerState = rememberPagerState(0) { NewSagaPages.entries.size }
     val coroutineScope = rememberCoroutineScope()
 
     fun animateToPage(
@@ -91,19 +95,20 @@ fun NewSagaView(
     }
 
     Box {
-        val isLoading = state is CreateSagaState.Loading
+        val isLoading =
+            state is CreateSagaState.Loading ||
+                state is CreateSagaState.Success ||
+                state is CreateSagaState.GeneratedSaga
         val blurRadius = animateDpAsState(if (isLoading) 20.dp else 0.dp)
         NewSagaFlow(
             pagerState,
             form,
-            saga,
             Modifier
                 .align(Alignment.Center)
                 .blur(blurRadius.value, edgeTreatment = BlurredEdgeTreatment.Unbounded),
         ) { page, data ->
 
             when (page) {
-                INTRO -> animateToPage(pagerState.currentPage + 1)
                 TITLE -> {
                     createSagaViewModel.updateTitle(data as String)
                     animateToPage(pagerState.currentPage + 1)
@@ -123,11 +128,6 @@ fun NewSagaView(
                     createSagaViewModel.updateCharacterDescription(data as String)
                     animateToPage(pagerState.currentPage + 1)
                 }
-
-                RESULT -> {
-                    saga?.let { createSagaViewModel.saveSaga(it) }
-
-                }
             }
         }
 
@@ -138,36 +138,92 @@ fun NewSagaView(
             modifier = Modifier.align(Alignment.Center),
         ) {
             SparkLoader(
-                brush = gradientAnimation(holographicGradient, targetValue = 500f, duration = 5.seconds),
+                brush =
+                    gradientAnimation(
+                        holographicGradient,
+                        targetValue = 500f,
+                        duration = 5.seconds,
+                    ),
                 modifier = Modifier.size(100.dp),
             )
         }
-    }
 
-    LaunchedEffect(state) {
-        if (state is CreateSagaState.Success) {
-            val saga = (state as CreateSagaState.Success).saga
-            coroutineScope.launch {
-                delay(2.seconds)
-                navHostController.popBackStack()
-                navHostController.navigateToRoute(
-                    Routes.CHAT,
-                    Routes.CHAT.arguments.associateWith { saga.id.toString() },
-                )
+        if (state is CreateSagaState.GeneratedSaga || state is CreateSagaState.Success) {
+            Dialog(onDismissRequest = { createSagaViewModel.resetGeneratedSaga() }) {
+                Column(verticalArrangement = Arrangement.Center) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                    ) {
+                        when (state) {
+                            is CreateSagaState.GeneratedSaga -> {
+                                SagaCard(
+                                    sagaData = (state as CreateSagaState.GeneratedSaga).saga,
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.Center)
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(.5f),
+                                )
+                            }
+
+                            is CreateSagaState.Success -> {
+                                val saga = (state as CreateSagaState.Success).saga
+                                SagaCard(
+                                    sagaData = saga,
+                                    modifier =
+                                        Modifier
+                                            .align(Alignment.Center)
+                                            .fillMaxWidth()
+                                            .fillMaxHeight(.5f),
+                                )
+                            }
+
+                            else -> Box {}
+                        }
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        val saveText = if (state is CreateSagaState.Success) "Continuar" else "Salvar"
+                        AnimatedVisibility(state is CreateSagaState.GeneratedSaga) {
+                            Button(
+                                modifier = Modifier.fillMaxWidth(.5f),
+                                onClick = { createSagaViewModel.resetGeneratedSaga() },
+                                colors = ButtonDefaults.textButtonColors(),
+                            ) {
+                                Text(text = "Fechar")
+                            }
+                        }
+
+                        Button(
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                when (state) {
+                                    is CreateSagaState.GeneratedSaga -> {
+                                        createSagaViewModel.saveSaga((state as CreateSagaState.GeneratedSaga).saga)
+                                    }
+                                    is CreateSagaState.Success -> {
+                                        navHostController.navigateToRoute(
+                                            Routes.CHAT,
+                                            arguments =
+                                                mapOf(
+                                                    Routes.CHAT.arguments.first() to (state as CreateSagaState.Success).saga.id.toString(),
+                                                ),
+                                        )
+                                    }
+                                    else -> doNothing()
+                                }
+                            },
+                        ) {
+                            Text(text = saveText)
+                        }
+                    }
+                }
             }
-        } else if (state is CreateSagaState.GeneratedSaga) {
-            animateToPage(pagerState.currentPage + 1, 5.seconds)
-        }
-    }
-
-    LaunchedEffect(pagerState.currentPage) {
-        val page = NewSagaPages.entries[pagerState.currentPage]
-        when (page) {
-            INTRO -> {
-                animateToPage(pagerState.currentPage + 1)
-            }
-
-            else -> doNothing()
         }
     }
 }
@@ -176,7 +232,6 @@ fun NewSagaView(
 fun NewSagaFlow(
     pagerState: PagerState,
     form: SagaForm,
-    saga: SagaData?,
     modifier: Modifier = Modifier,
     updateContent: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
@@ -184,7 +239,10 @@ fun NewSagaFlow(
     var data by remember {
         mutableStateOf<Any?>(null)
     }
-    Column(modifier = modifier.animateContentSize(), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(
+        modifier = modifier.animateContentSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         currentPage.title?.let {
             Text(
                 stringResource(it),
@@ -207,8 +265,10 @@ fun NewSagaFlow(
         NewSagaPagesView(
             pagerState,
             form,
-            saga,
-            modifier = Modifier.fillMaxWidth().fillMaxHeight(.6f),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
             { page, newValue ->
                 data = newValue
             },
@@ -219,10 +279,55 @@ fun NewSagaFlow(
             when (currentPage) {
                 GENRE -> true
                 TITLE, DESCRIPTION, CHARACTER -> (data as? String)?.isNotEmpty() == true
-                INTRO -> false
-                RESULT -> true
             }
-        AnimatedVisibility(pageEnabled, modifier = Modifier.align(Alignment.CenterHorizontally).fillMaxWidth()) {
+
+        Row(
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .gradientFill(brush),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            NewSagaPages.entries.forEachIndexed { page, index ->
+                val isEnabled = page <= pagerState.currentPage
+                val size =
+                    animateDpAsState(
+                        targetValue = if (isEnabled) 24.dp else 12.dp,
+                        label = "indicatorSize",
+                    )
+                val dividerAlpha by animateFloatAsState(
+                    if (isEnabled) 1f else .1f,
+                    label = "dividerAlpha",
+                )
+                Icon(
+                    painterResource(R.drawable.ic_spark),
+                    null,
+                    tint =
+                        MaterialTheme.colorScheme.onBackground.copy(
+                            alpha = dividerAlpha,
+                        ),
+                    modifier = Modifier.size(size.value),
+                )
+
+                Box(
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = dividerAlpha),
+                                RoundedCornerShape(15.dp),
+                            ).height(1.dp)
+                            .weight(1f),
+                )
+            }
+        }
+
+        AnimatedVisibility(
+            pageEnabled,
+            modifier =
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .fillMaxWidth(),
+        ) {
             Button(
                 onClick = {
                     updateContent(currentPage, data)
@@ -253,7 +358,10 @@ fun NewSagaFlow(
                 Icon(
                     Icons.AutoMirrored.Rounded.ArrowForward,
                     contentDescription = "Next",
-                    modifier = Modifier.gradientFill(brush).size(24.dp),
+                    modifier =
+                        Modifier
+                            .gradientFill(brush)
+                            .size(24.dp),
                     tint = MaterialTheme.colorScheme.background,
                 )
             }
@@ -279,7 +387,6 @@ fun NewSagaFormPreview() {
         NewSagaFlow(
             pagerState,
             form,
-            saga = SagaData(),
             updateContent = { _, data ->
                 form = form.copy(title = data.toString())
                 pagerState.requestScrollToPage(pagerState.currentPage + 1)

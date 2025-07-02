@@ -23,4 +23,25 @@
     <string name="lets_create_saga">Vamos criar sua saga</string>
     <string name="lets_create_saga_subtitle">A IA vai te ajudar a dar vida a tudo, não seja timido com os detalhes da sua jornada.</string>
     <string name="next">Continuar</string>
+    <string name="user_action_title">Falar</string>
+    <string name="sender_type_narrator_title">Narrar</string>
+    <string name="sender_type_thought_title">Pensar</string>
+    <string name="sender_type_action_title">Ação</string>
+    <string name="sender_type_new_character_title">Novo Personagem</string>
+    <string name="sender_type_user_description">Fala do seu personagem, o que ele diz na conversa atual.</string>
+    <string name="sender_type_thought_description">O que seu personagem está pensando, quais seus planos e receios.</string>
+    <string name="sender_type_action_description">Uma ação que seu personagem está fazendo.</string>
+    <string name="sender_type_narrator_description">Complete a história com eventos externos ou acontecimentos no ambiente.</string>
+    <string name="sender_type_new_chapter_description">Inicie um novo capítulo na história, isso irá gerar um novo resumo para sua saga.</string>
+    <string name="sender_type_new_character_description">Adicione um novo personagem a sua história, ele poderá interagir com o personagem principal e demais personagens.</string>
+    <string name="sender_type_character_description">Faça uma pergunta para um personagem específico sobre a história.</string>
+    <string name="sender_type_user_hint">Enviar nova mensagem</string>
+    <string name="sender_type_narrator_hint">Descreva o que acontece em seguida…</string>
+    <string name="sender_type_thought_hint">O que seu personagem está pensando?</string>
+    <string name="sender_type_action_hint">Qual ação seu personagem realiza?</string>
+    <string name="sender_type_new_character_hint">Descreva o novo personagem (nome, aparência, etc.)</string>
+    <string name="sender_type_new_chapter_hint">Isso iniciará um novo capítulo. O que acontece?</string>
+    <string name="sender_type_character_hint">Pergunte algo a um personagem específico…</string>
+    <string name="sender_type_default_hint">Digite sua mensagem…</string>
+
 </resources>

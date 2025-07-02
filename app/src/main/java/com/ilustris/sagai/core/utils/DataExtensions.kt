@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.utils
 
+import android.util.Log
 import com.google.firebase.ai.type.Schema
 import com.google.gson.Gson
 import java.lang.reflect.ParameterizedType
@@ -8,7 +9,7 @@ import java.util.Date
 import java.util.Locale
 import kotlin.toString
 
-fun toJsonSchema(clazz: Class<*>) =
+fun toFirebaseSchema(clazz: Class<*>) =
     Schema.obj(
         properties = clazz.toSchemaMap(),
     )
@@ -18,6 +19,10 @@ fun Class<*>.toSchema(nullable: Boolean): Schema {
         val enumConstants = this.enumConstants?.map { it.toString() } ?: emptyList()
 
         return Schema.enumeration(enumConstants, nullable = nullable)
+    }
+
+    if (this.name.contains(Long::class.simpleName.toString(), true)) {
+        return Schema.long(nullable = true)
     }
 
     return when (this) {
@@ -71,6 +76,7 @@ fun Class<*>.toSchema(nullable: Boolean): Schema {
         }
 
         else -> {
+            Log.i("SAGAI_MAPPER", "toSchema: mapping ${this.name} as object}")
             Schema.obj(properties = this.toSchemaMap(), nullable = nullable) // Default fallback
         }
     }
@@ -139,8 +145,9 @@ fun Class<*>.toJsonString(): String {
 fun toJsonMap(
     clazz: Class<*>,
     filteredFields: List<String> = emptyList(),
+    fieldCustomDescription: Pair<String, String>? = null,
 ): String {
-    val deniedFields = filteredFields.plus("\$stable")
+    val deniedFields = filteredFields.plus("\$stable").plus("Companion")
     val fields =
         clazz
             .declaredFields
@@ -159,9 +166,13 @@ fun toJsonMap(
                         fieldType == Float::class.java -> "0.0f"
                         fieldType == Long::class.java -> "0L"
                         List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
-                        else -> "{}" // For nested objects, represent as empty JSON object
+                        else -> toJsonMap(fieldType)
                     }
-                "  \"$fieldName\": $fieldValue"
+                if (fieldCustomDescription != null && field.name == fieldCustomDescription.first) {
+                    "\"${fieldCustomDescription.first}\": \"${fieldCustomDescription.second}\""
+                } else {
+                    "\"$fieldName\": $fieldValue"
+                }
             }
     return "{\n$fields\n}"
 }
@@ -170,10 +181,8 @@ fun Any.toJsonFormat() = Gson().toJson(this)
 
 fun doNothing() = {}
 
-
-
 fun Long.formatDate(): String {
     val date = Date(this)
-    val format = SimpleDateFormat("dd 'of' MMMM yyyy", Locale.getDefault())
+    val format = SimpleDateFormat("dd 'of' MMMM yyyy 'at' HH:mm", Locale.getDefault())
     return format.format(date)
 }

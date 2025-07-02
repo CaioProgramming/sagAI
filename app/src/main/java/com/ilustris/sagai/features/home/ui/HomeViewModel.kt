@@ -16,8 +16,11 @@ class HomeViewModel
     ) : ViewModel() {
         val sagas =
             sagaHistoryUseCase.getSagas().map {
-                it.map { saga ->
-                    saga.copy(messages = saga.messages.sortedByDescending { m -> m.timestamp })
-                }
+                it
+                    .map { saga ->
+                        saga.copy(messages = saga.messages.sortedByDescending { m -> m.timestamp })
+                    }.sortedByDescending { saga ->
+                        saga.messages.lastOrNull()?.timestamp ?: 0
+                    }
             }
     }

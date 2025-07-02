@@ -28,13 +28,13 @@ class FileHelper(
         return file.takeIf { it.exists() }
     }
 
-    fun saveBase64File(
+    fun saveFile(
         fileName: String,
-        binary: String,
+        data: String,
         path: String? = null,
     ): File? {
-        val decodedBytes = Base64.decode(binary, Base64.DEFAULT)
-        return saveFile(fileName, decodedBytes, path)
+        val decodedBytes = Base64.decode(data, Base64.DEFAULT)
+        return saveFile(fileName, decodedBytes, "sagas/$path")
     }
 
     fun readFile(
@@ -57,4 +57,11 @@ class FileHelper(
             e.printStackTrace()
             null
         }
+
+    fun deletePath(id: Int) {
+        val directory = context.filesDir.resolve("sagas/$id")
+        if (directory.exists()) {
+            directory.deleteRecursively()
+        }
+    }
 }

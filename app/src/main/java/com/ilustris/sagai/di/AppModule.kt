@@ -6,7 +6,7 @@ import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.core.network.CloudflareApiService
+import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
@@ -18,6 +18,8 @@ import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
+import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
@@ -26,6 +28,15 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
+import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
+import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
+import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
+import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
+import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
+import com.ilustris.sagai.features.wiki.data.source.WikiDao
+import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCase
+import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCaseImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -38,8 +49,6 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
-    // TODO: Replace with your actual Cloudflare Base URL
-
     @Provides
     @Singleton
     fun provideSagaDatabase(databaseBuilder: DatabaseBuilder): SagaDatabase = databaseBuilder.buildDataBase()
@@ -56,7 +65,13 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesCloudFlareApiService() = CloudflareApiService()
+    fun providesCloudFlareApiService() = FreePikApiService()
+
+    @Provides
+    @Singleton
+    fun provideWikiDao(appDatabase: SagaDatabase): WikiDao { // New provider
+        return appDatabase.wikiDao()
+    }
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -76,6 +91,15 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesSagaDetailUseCase(sagaDetailUseCaseImpl: SagaDetailUseCaseImpl): SagaDetailUseCase
+
+    @Binds
+    abstract fun providesWikiUseCase(wikiUseCaseImpl: WikiUseCaseImpl): WikiUseCase
+
+    @Binds
+    abstract fun providesSagaContentManager(sagaContentManagerImpl: SagaContentManagerImpl): SagaContentManager
+
+    @Binds
+    abstract fun proviesTimelineUseCase(timelineUseCaseImpl: TimelineUseCaseImpl): TimelineUseCase
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -95,4 +119,10 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsImagenClient(imagenClientImpl: ImagenClientImpl): ImagenClient
+
+    @Binds
+    abstract fun bindsWikiRepository(wikiRepositoryImpl: WikiRepositoryImpl): WikiRepository
+
+    @Binds
+    abstract fun bindsTimelineRepository(timelineRepositoryImpl: TimelineRepositoryImpl): TimelineRepository
 }

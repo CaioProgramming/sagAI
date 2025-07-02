@@ -20,12 +20,17 @@ class MessageRepositoryImpl
         override suspend fun getMessageDetail(id: Int) = messageDao.getMessageDetail(id)
 
         override suspend fun saveMessage(message: Message) =
-            message.copy(
-                id =
-                    messageDao
-                        .saveMessage(message.copy(timestamp = Calendar.getInstance().timeInMillis))
-                        .toInt(),
-            )
+            try {
+                message.copy(
+                    id =
+                        messageDao
+                            .saveMessage(message.copy(id = 0, timestamp = Calendar.getInstance().timeInMillis))!!
+                            .toInt(),
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
 
         override suspend fun deleteMessage(messageId: Long) {
             messageDao.deleteMessage(messageId)

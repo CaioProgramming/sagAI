@@ -3,26 +3,36 @@ package com.ilustris.sagai.core.ai
 enum class CharacterFraming(
     val description: String,
 ) {
-    CLOSE_UP("close-up"),
-    PORTRAIT("Portrait of character in a 3/4 angle from neck-up with a smooth texture background"),
+    PORTRAIT(
+        """
+        Upper body portrait, including head and upper torso.
+        """,
+    ),
     MEDIUM_SHOT(
         """
-            medium shot, showing the character from the waist up,
-            focusing on their upper body and immediate actions or expressions,
-            with relevant background context 
-            visible but not overpowering the subject
-            """,
+        medium shot, showing the character from the waist up,
+        dynamic pose, emphasizing character's primary action or emotion,
+        showcasing key costume details or a held prop,
+        relevant background context that enhances character's role but is not overwhelming,
+        clear and expressive facial features
+        """,
     ),
-
-    FULL_BODY("full body shot"),
+    FULL_BODY(
+        """
+        full body shot, character in a compelling and representative stance,
+        emphasizing their complete design and silhouette,
+        minimal or studio-like background for maximum character visibility,
+        heroic pose or iconic action if applicable
+        """,
+    ),
     EPIC_WIDE_SHOT(
         """
         epic wide shot, cinematic composition,
-        vast landscape,
-        dramatic lights
-        atmospheric perspective creating depth and scale
-        sense of scale and grandeur emphasized by the vastness of the landscape
-        masterpiece, highly detailed.
+        character as the prominent focal point within a vast landscape,
+        dramatic lighting highlighting the character's form,
+        atmospheric perspective creating depth and scale around the subject,
+        sense of scale and grandeur emphasizing character's importance in the vastness,
+        masterpiece, highly detailed, character clearly distinguishable despite the wide shot
         """,
     ),
 }

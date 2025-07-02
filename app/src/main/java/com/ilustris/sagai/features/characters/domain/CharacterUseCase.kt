@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.characters.domain
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import kotlinx.coroutines.flow.Flow
 
@@ -22,7 +23,7 @@ interface CharacterUseCase {
     ): RequestResult<Exception, Character>
 
     suspend fun generateCharacter(
-        sagaData: SagaData?,
+        sagaContent: SagaContent,
         description: String,
     ): RequestResult<Exception, Character>
 }

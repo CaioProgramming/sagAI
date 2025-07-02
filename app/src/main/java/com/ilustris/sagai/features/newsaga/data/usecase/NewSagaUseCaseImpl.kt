@@ -11,6 +11,7 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -41,7 +42,12 @@ class NewSagaUseCaseImpl
                         ),
                     )
 
-                val genCharacter = characterUseCase.generateCharacter(saga, characterDescription).success.value
+                val genCharacter =
+                    characterUseCase
+                        .generateCharacter(
+                            SagaContent(data = saga),
+                            characterDescription,
+                        ).success.value
 
                 val updatedSaga =
                     sagaRepository.updateChat(
@@ -73,9 +79,20 @@ class NewSagaUseCaseImpl
             character: Character,
         ): RequestResult<Exception, SagaData> =
             try {
+                val genre = sagaForm.genre
                 val prompt = generateSagaIconPrompt(sagaForm, character)
+
                 val request = imageGenClient.generateImage(prompt)
-                val image = request!!.data
+               /* val request =
+                    FreepikRequest(
+                        prompt = prompt,
+                        negative_prompt = GenrePrompts.negativePrompt(sagaForm.genre),
+                        style = GenrePrompts.sagaWallpaperStyling(sagaForm.genre),
+                    )*/
+                val image =
+                    imageGenClient
+                        .generateImage(prompt)!!
+                        .data
 
                 val file = fileHelper.saveFile(sagaForm.title, image, path = "${sagaForm.id}")
 
