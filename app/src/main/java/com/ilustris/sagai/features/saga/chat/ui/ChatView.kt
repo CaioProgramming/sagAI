@@ -91,7 +91,6 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -133,7 +132,7 @@ fun ChatView(
     val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
-    val coroutineScope = rememberCoroutineScope()
+
     LaunchedEffect(content) {
         if (content == null) {
             viewModel.initChat(sagaId)
@@ -317,7 +316,6 @@ fun ChatContent(
     openSagaDetails: (SagaData) -> Unit = {},
 ) {
     val saga = content.data
-    val wiki = content.wikis
     val listState = rememberLazyListState()
     val hazeState = rememberHazeState()
 
@@ -352,11 +350,8 @@ fun ChatContent(
             val hazeList = rememberHazeState()
 
             ChatList(
-                saga = saga,
-                mainCharacter = content.mainCharacter,
-                messages = messagesList,
-                characters = characters,
-                wiki = wiki,
+                saga = content,
+                messagesList = messagesList,
                 listState = listState,
                 hazeState = hazeState,
                 modifier =
@@ -511,11 +506,8 @@ fun SagaHeader(
 
 @Composable
 fun ChatList(
-    saga: SagaData?,
-    mainCharacter: Character?,
-    messages: List<MessageContent>,
-    characters: List<Character>,
-    wiki: List<Wiki>,
+    saga: SagaContent,
+    messagesList: List<MessageContent>,
     modifier: Modifier,
     listState: LazyListState,
     hazeState: HazeState,
@@ -523,9 +515,9 @@ fun ChatList(
     openSaga: () -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
-
-    LazyColumn(modifier, state = listState, reverseLayout = messages.isNotEmpty()) {
-        saga?.let {
+    val coroutineScope = rememberCoroutineScope()
+    LazyColumn(modifier, state = listState, reverseLayout = saga.messages.isNotEmpty()) {
+        saga.let {
             item {
                 Spacer(
                     Modifier
@@ -534,18 +526,26 @@ fun ChatList(
                 )
             }
 
-            items(messages.reversed(), key = { it.message.id }) { message ->
-                ChatBubble(
-                    message,
-                    mainCharacter = mainCharacter,
-                    saga.genre,
-                    characters = characters,
-                    wiki = wiki,
-                    hazeState = hazeState,
-                    animatedMessages,
-                    canAnimate = message == messages.last(),
-                    openCharacters = openCharacter,
-                )
+            items(messagesList, key = { it.message.id }) { message ->
+
+                AnimatedVisibility(
+                    visible = true,
+                    enter =
+                        fadeIn(tween(500, delayMillis = 100)) +
+                            slideInVertically(
+                                initialOffsetY = { it },
+                                animationSpec = tween(500, easing = LinearOutSlowInEasing),
+                            ),
+                ) {
+                    ChatBubble(
+                        message,
+                        content = saga,
+                        hazeState = hazeState,
+                        animatedMessages,
+                        canAnimate = message == saga.messages.last(),
+                        openCharacters = openCharacter,
+                    )
+                }
             }
 
             item {
@@ -560,9 +560,9 @@ fun ChatList(
                 )
                 Text(
                     if (isDescriptionExpanded) {
-                        saga.description
+                        saga.data.description
                     } else {
-                        saga.description
+                        saga.data.description
                             .take(200)
                             .plus("...")
                     },
@@ -583,10 +583,10 @@ fun ChatList(
 
             item {
                 Text(
-                    saga.title,
+                    saga.data.title,
                     style =
                         MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = saga.genre.headerFont(),
+                            fontFamily = saga.data.genre.headerFont(),
                         ),
                     fontWeight = FontWeight.Normal,
                     textAlign = TextAlign.Center,
@@ -595,7 +595,7 @@ fun ChatList(
                             .background(fadeGradientTop())
                             .fillMaxWidth()
                             .padding(16.dp)
-                            .gradientFill(saga.genre.gradient())
+                            .gradientFill(saga.data.genre.gradient())
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
@@ -606,7 +606,7 @@ fun ChatList(
             }
 
             item {
-                SagaHeader(saga, messages.isEmpty())
+                SagaHeader(saga.data, saga.messages.isEmpty())
             }
         }
     }

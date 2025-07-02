@@ -1,9 +1,9 @@
 package com.ilustris.sagai.features.saga.chat.domain.usecase
 
-import com.ilustris.sagai.core.ai.ChatPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.introductionPrompt
 import com.ilustris.sagai.core.ai.narratorBreakPrompt
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess

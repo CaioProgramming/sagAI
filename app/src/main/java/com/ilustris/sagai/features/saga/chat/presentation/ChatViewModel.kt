@@ -3,13 +3,13 @@ package com.ilustris.sagai.features.saga.chat.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.features.saga.chat.domain.manager.LORE_UPDATE_THRESHOLD
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
@@ -70,8 +70,9 @@ class ChatViewModel
                 sagaContentManager.content.collect {
                     if (it != null) {
                         content.value = it
-                        loadSagaMessages(it)
+                        messages.value = it.messages.sortedByDescending { messageContent -> messageContent.message.timestamp }
                         characters.value = sortCharactersByMessageCount(it.characters, it.messages)
+                        state.value = ChatState.Success
                     }
                 }
             }
@@ -85,9 +86,7 @@ class ChatViewModel
                     val mappedMessages =
                         sagaContent.messages
                             .sortedByDescending {
-                                it.timestamp
-                            }.map {
-                                messageUseCase.getMessageDetail(it.id)
+                                it.message.timestamp
                             }
                     this@ChatViewModel.messages.value = mappedMessages.reversed()
 
@@ -118,22 +117,25 @@ class ChatViewModel
             saga: SagaData,
             character: Character?,
         ) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 state.value = ChatState.Loading
-                messageUseCase
-                    .generateIntroMessage(saga, character)
-                    .onSuccess {
-                        sendMessage(
-                            it.copy(
-                                senderType = SenderType.NARRATOR,
-                                characterId = character?.id,
-                            ),
-                            true,
-                        )
-                    }.onFailure {
-                        state.value =
-                            ChatState.Error("Failed to generate introduction: ${it.message ?: "Unknown error"}")
+                sagaContentManager.createAct().onSuccess {
+                    launch(context = this.coroutineContext) {
+                        messageUseCase
+                            .generateIntroMessage(saga, character)
+                            .onSuccess {
+                                sendMessage(
+                                    it.copy(
+                                        senderType = SenderType.NARRATOR,
+                                        characterId = character?.id,
+                                    ),
+                                    true,
+                                )
+                            }.onFailure {
+                                sendError(it.message ?: "Unknown error")
+                            }
                     }
+                }
             }
         }
 
@@ -219,14 +221,14 @@ class ChatViewModel
                         messageList.subList(messageList.indexOf(it), messageList.size)
                     } ?: messageList
 
-                if (messageSubList.size >= LORE_UPDATE_THRESHOLD && isGenerating.value.not()) {
+                if (messageSubList.size >= UpdateRules.LORE_UPDATE_LIMIT && isGenerating.value.not()) {
                     isGenerating.value = true
                     sagaContentManager
                         .updateLore(
                             reference = messageList.last().message,
                             messageSubList
                                 .filter { it.message.senderType != SenderType.NEW_CHAPTER }
-                                .takeLast(LORE_UPDATE_THRESHOLD),
+                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT),
                         ).onSuccess {
                             notifyLoreUpdate(it)
                         }.onFailure {

@@ -94,7 +94,7 @@ fun Modifier.effectForGenre(
     // These values will need careful tuning!
     // The values you had for saturation, brightness, contrast will need to be re-evaluated
     // in the context of how the AGSL shader handles them (e.g., 1.0 is neutral for contrast).
-    val fantasyPalette = FantasyColorTones.ETHEREAL_LAVENDER_MOONLIGHT
+    val fantasyPalette = FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
     val uniformValues =
         remember(genre) {
@@ -108,8 +108,8 @@ fun Modifier.effectForGenre(
                         bloomRadius = 4.5f,
                         softFocusRadius = focusRadius ?: 1.25f,
                         saturation = 0.60f, // e.g., slightly desaturated
-                        contrast = 1.50f, // e.g., slightly increased contrast
-                        brightness = 0.05f, // e.g., slightly brighter
+                        contrast = 1.55f, // e.g., slightly increased contrast
+                        brightness = 0f, // e.g., slightly brighter
                         highlightTint = fantasyPalette.highlightTint, // Warm highlights
                         shadowTint = fantasyPalette.shadowTint, // Cool shadows
                         tintStrength = fantasyPalette.defaultTintStrength,
@@ -123,9 +123,9 @@ fun Modifier.effectForGenre(
                         bloomIntensity = 0.15f,
                         bloomRadius = 2.0f,
                         softFocusRadius = focusRadius ?: 0.10f,
-                        saturation = 0.50f, // More desaturated for Sci-Fi
-                        contrast = 1.40f, // Higher contrast
-                        brightness = -0.05f, // Slightly darker
+                        saturation = 0.40f, // More desaturated for Sci-Fi
+                        contrast = 1.50f, // Higher contrast
+                        brightness = -0.10f, // Slightly darker
                         highlightTint = cyberpunkPalette.highlightTint, // Cyan/Cool highlights
                         shadowTint = cyberpunkPalette.shadowTint, // Slightly warm/muted shadows
                         tintStrength = cyberpunkPalette.defaultTintStrength,

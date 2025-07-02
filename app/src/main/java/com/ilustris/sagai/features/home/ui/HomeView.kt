@@ -53,12 +53,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
@@ -248,12 +252,22 @@ fun ChatCard(
 
                 val lastMessageText =
                     if (saga.messages.isNotEmpty()) {
-                        saga.messages.first().text
+                        saga.messages
+                            .first()
+                            .joinMessage(showSender = false)
+                            .formatToString()
                     } else {
                         "Sua saga começa agora!"
                     }
                 Text(
-                    text = lastMessageText,
+                    text =
+                        buildWikiAndCharactersAnnotation(
+                            text = lastMessageText,
+                            genre = saga.data.genre,
+                            mainCharacter = saga.mainCharacter,
+                            characters = saga.characters,
+                            wiki = saga.wikis,
+                        ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
                     maxLines = 2,
@@ -266,7 +280,7 @@ fun ChatCard(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Last Message Time
                 saga.messages.lastOrNull()?.let {
-                    val time = Calendar.getInstance().apply { timeInMillis = it.timestamp }
+                    val time = Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
                     val timeText =
                         String.format(
                             "%02d:%02d",
@@ -275,7 +289,7 @@ fun ChatCard(
                         )
 
                     Text(
-                        text = timeText, // Replace with actual last message time
+                        text = timeText,
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -430,12 +444,14 @@ fun HomeViewPreview() {
                             mainCharacter = null,
                             messages =
                                 List(4) {
-                                    Message(
-                                        id = it,
-                                        text = "Message ${it + 1} in chat ${it + 1}",
-                                        timestamp = Calendar.getInstance().timeInMillis,
-                                        sagaId = 0,
-                                        senderType = (if (it % 2 == 0) SenderType.USER else SenderType.CHARACTER),
+                                    MessageContent(
+                                        Message(
+                                            id = it,
+                                            text = "Message ${it + 1} in chat ${it + 1}",
+                                            timestamp = Calendar.getInstance().timeInMillis,
+                                            sagaId = 0,
+                                            senderType = (if (it % 2 == 0) SenderType.USER else SenderType.CHARACTER),
+                                        ),
                                     )
                                 },
                         )

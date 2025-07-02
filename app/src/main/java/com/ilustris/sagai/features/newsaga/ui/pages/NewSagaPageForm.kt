@@ -16,7 +16,7 @@ fun NewSagaPagesView(
     modifier: Modifier = Modifier,
     onUpdateData: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
-    HorizontalPager(pagerState, modifier = modifier) {
+    HorizontalPager(pagerState, modifier = modifier, userScrollEnabled = false) {
         val page = NewSagaPages.entries[it]
         val data =
             when (page) {

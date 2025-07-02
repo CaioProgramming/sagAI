@@ -8,6 +8,10 @@ import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.features.act.data.repository.ActRepository
+import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
+import com.ilustris.sagai.features.act.domain.usecase.ActUseCase
+import com.ilustris.sagai.features.act.domain.usecase.ActUseCaseImpl
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepositoryImpl
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
@@ -72,6 +76,10 @@ object AppModule {
     fun provideWikiDao(appDatabase: SagaDatabase): WikiDao { // New provider
         return appDatabase.wikiDao()
     }
+
+    @Provides
+    @Singleton
+    fun providesActDao(appDatabase: SagaDatabase) = appDatabase.sagaDao()
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -100,6 +108,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun proviesTimelineUseCase(timelineUseCaseImpl: TimelineUseCaseImpl): TimelineUseCase
+
+    @Binds
+    abstract fun providesActUseCase(actUseCaseImpl: ActUseCaseImpl): ActUseCase
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -125,4 +136,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsTimelineRepository(timelineRepositoryImpl: TimelineRepositoryImpl): TimelineRepository
+
+    @Binds
+    abstract fun bindsActRepository(actRepositoryImpl: ActRepositoryImpl): ActRepository
 }

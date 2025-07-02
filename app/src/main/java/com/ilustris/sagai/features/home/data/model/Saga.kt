@@ -29,6 +29,8 @@ data class SagaData(
     val genre: Genre = Genre.entries.first(),
     @ColumnInfo(index = true)
     val mainCharacterId: Int? = null,
+    @ColumnInfo(index = true)
+    val currentActId: Int? = null,
     @Embedded
     val visuals: IllustrationVisuals = IllustrationVisuals(),
     val lastLoreReference: Int = 0,

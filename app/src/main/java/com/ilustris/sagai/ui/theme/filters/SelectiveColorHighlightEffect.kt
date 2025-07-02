@@ -17,13 +17,33 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import loadShaderFromAssetsOnce
 
-private const val DEFAULT_TOLERANCE = 0.25f
-private const val DEFAULT_SATURATION_THRESHOLD = 0.10f
-private const val DEFAULT_LIGHTNESS_THRESHOLD = 0.20f
-private const val DEFAULT_HIGHLIGHT_SATURATION_BOOST = 1.5f
-private const val DEFAULT_HIGHLIGHT_LIGHTNESS_BOOST = 0.15f
-private const val DEFAULT_DESATURATION_FACTOR_NON_TARGET = 0.05f
+private const val DEFAULT_TOLERANCE = 0.05f
+private const val DEFAULT_SATURATION_THRESHOLD = 0.02f
+private const val DEFAULT_LIGHTNESS_THRESHOLD = 0.05f
+private const val DEFAULT_HIGHLIGHT_SATURATION_BOOST = 1f
+private const val DEFAULT_HIGHLIGHT_LIGHTNESS_BOOST = 0.05f
+private const val DEFAULT_DESATURATION_FACTOR_NON_TARGET = 0f
 
+/**
+ * Data class holding parameters for the selective color highlight effect.
+ * This effect highlights a specific target color and desaturates other colors.
+ *
+ * @param targetColor The primary color to be highlighted. Pixels matching this color (within tolerances) will be boosted.
+ * @param hueTolerance Defines the allowable difference in hue from the [targetColor] for a pixel to still be considered a match.
+ *                     A larger value means a wider range of similar hues will be highlighted. Range typically 0.0 to 1.0.
+ * @param saturationThreshold The minimum saturation a pixel must have to be considered for highlighting, even if its hue matches.
+ *                            Helps to avoid highlighting grayish pixels that happen to match the target hue. Range 0.0 to 1.0.
+ * @param lightnessThreshold The minimum lightness (brightness) a pixel must have to be considered for highlighting.
+ *                           Helps to avoid highlighting very dark pixels. Range 0.0 to 1.0.
+ * @param highlightSaturationBoost Factor by which the saturation of the highlighted [targetColor] pixels is multiplied.
+ *                                 Values greater than 1.0 increase saturation; less than 1.0 decrease it.
+ * @param highlightLightnessBoost Factor by which the lightness (brightness) of the highlighted [targetColor] pixels is adjusted.
+ *                                Can be positive (to brighten) or negative (to darken). Often a small value.
+ * @param desaturationFactorNonTarget Factor controlling how much non-target colors are desaturated.
+ *                                    A value of 0.0 would make non-target areas grayscale.
+ *                                    A value of 1.0 would leave non-target areas unchanged.
+ *                                    Typically a small value like 0.05f to heavily desaturate. Range 0.0 to 1.0.
+ */
 data class SelectiveColorParams(
     val targetColor: Color,
     val hueTolerance: Float = DEFAULT_TOLERANCE,

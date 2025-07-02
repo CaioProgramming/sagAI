@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -11,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 
 interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
+
+    suspend fun createAct(): RequestResult<Exception, Act>
 
     suspend fun loadSaga(sagaId: String)
 

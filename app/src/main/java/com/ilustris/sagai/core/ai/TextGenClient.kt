@@ -16,7 +16,7 @@ class TextGenClient : AIClient() {
         Firebase
             .ai(backend = GenerativeBackend.googleAI())
             .generativeModel(
-                "gemini-2.0-flash",
+                "gemini-1.5-flash",
                 generationConfig = generationConfig,
             )
 

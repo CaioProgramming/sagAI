@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.ai
 
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData

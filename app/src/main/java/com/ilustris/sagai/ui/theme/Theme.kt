@@ -208,6 +208,6 @@ fun MorphShape(modifier: Modifier) {
 
 fun Genre.defaultHeaderImage() =
     when (this) {
-        Genre.FANTASY -> "https://i.ibb.co/1JQVxD69/retrato-neoclassico-medieval-de-ilustracao-de-cavaleiro.jpg"
-        Genre.SCI_FI -> "https://i.ibb.co/b5CMmtvg/personagem-de-anime-usando-oculos-de-realidade-virtual-no-metaverso.png"
+        Genre.FANTASY -> R.drawable.fantasy_card
+        Genre.SCI_FI -> R.drawable.scifi_card
     }

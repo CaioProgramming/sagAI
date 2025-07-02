@@ -68,6 +68,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
@@ -89,7 +90,6 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import effectForGenre
-import kotlin.time.Duration.Companion.seconds
 
 enum class DetailAction {
     CHARACTERS,
@@ -313,8 +313,7 @@ fun SagaDetailContentView(
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
-                                            .gradientFill(it.data.genre.gradient(true),
-                                            ),
+                                            .gradientFill(it.data.genre.gradient(true)),
                                 )
                             }
                         }
@@ -693,12 +692,14 @@ fun SagaDetailContentViewPreview() {
                         ),
                     messages =
                         List(10) {
-                            Message(
-                                id = 0,
-                                sagaId = 0,
-                                text = "Mensagem de teste",
-                                senderType = SenderType.entries.random(),
-                                timestamp = System.currentTimeMillis(),
+                            MessageContent(
+                                Message(
+                                    id = 0,
+                                    sagaId = 0,
+                                    text = "Mensagem de teste",
+                                    senderType = SenderType.entries.random(),
+                                    timestamp = System.currentTimeMillis(),
+                                ),
                             )
                         },
                     chapters =

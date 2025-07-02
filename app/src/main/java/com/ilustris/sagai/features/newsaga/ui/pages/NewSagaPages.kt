@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.newsaga.ui.pages
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -12,9 +13,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -23,15 +23,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -40,7 +43,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.firebase.ai.type.content
+import androidx.compose.ui.util.lerp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaData
@@ -49,6 +52,8 @@ import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.holographicGradient
+import kotlin.math.absoluteValue
+import kotlinx.coroutines.launch
 
 enum class NewSagaPages(
     @StringRes val title: Int? = null,
@@ -68,7 +73,7 @@ enum class NewSagaPages(
         R.string.saga_genre,
         R.string.saga_genre_subtitle,
         content = { onSendData, data ->
-            GenresPageView(data as Genre) {
+            GenresPageView(data as Genre) { // Parameter name is initialGenre in implementation
                 onSendData(it)
             }
         },
@@ -177,7 +182,7 @@ fun TitlePageViewPreview() {
 @Composable
 fun GenresPageViewPreview() {
     SagAIScaffold {
-        GenresPageView(genre = Genre.FANTASY) {
+        GenresPageView(initialGenre = Genre.FANTASY) { // Updated parameter name
         }
     }
 }
@@ -221,37 +226,54 @@ fun SagaCardPreview() {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GenresPageView(
-    genre: Genre,
+    initialGenre: Genre,
     onSelectGenre: (Genre) -> Unit,
 ) {
-    var selection by remember { mutableStateOf(genre) }
     val genres = Genre.entries
+    val pagerState = rememberPagerState(
+        initialPage = genres.indexOf(initialGenre).coerceAtLeast(0),
+        pageCount = { genres.size }
+    )
+    val scope = rememberCoroutineScope()
 
-    LazyVerticalGrid(
-        modifier =
-            Modifier
-                .padding(8.dp)
-                .fillMaxSize(),
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(0.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
-    ) {
-        items(genres) {
-            GenreCard(
-                it,
-                it == selection,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .height(300.dp),
-            ) { genre ->
-                selection = genre
-                onSelectGenre(genre)
+    LaunchedEffect(pagerState.settledPage) {
+        val selectedGenre = genres[pagerState.settledPage]
+        onSelectGenre(selectedGenre)
+    }
+
+    HorizontalPager(
+        state = pagerState,
+        modifier = Modifier
+            .fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 64.dp),
+        pageSpacing = 8.dp
+    ) { pageIndex ->
+        val genre = genres[pageIndex]
+        val pageOffset = pagerState.currentPageOffsetFraction
+
+        GenreCard(
+            genre = genre,
+            isSelected = pagerState.currentPage == pageIndex,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(400.dp)
+                .graphicsLayer {
+                    val scale = lerp(0.80f, 1f, 1f - pageOffset.absoluteValue.coerceIn(0f, 1f))
+                    scaleX = scale
+                    scaleY = scale
+                    alpha = lerp(0.6f, 1f, 1f - pageOffset.absoluteValue.coerceIn(0f, 1f))
+                },
+            onClick = {
+                if (pagerState.currentPage != pageIndex) {
+                    scope.launch {
+                        pagerState.animateScrollToPage(pageIndex)
+                    }
+                }
             }
-        }
+        )
     }
 }
 
@@ -269,7 +291,7 @@ fun DescriptionPageView(
                 .fillMaxWidth(),
     ) {
         var input by remember { mutableStateOf(description) }
-        val isValidTitle = input.isNotEmpty() && input.length <= 300
+        val isValidTitle = input.isNotEmpty() && input.length <= 300 // This seems to be a leftover from TitlePageView, should be description length
         val brush = Brush.linearGradient(holographicGradient)
 
         TextField(
@@ -299,7 +321,7 @@ fun DescriptionPageView(
             keyboardActions =
                 KeyboardActions(
                     onSend = {
-                        if (isValidTitle) onSendDescription(input)
+                        if (isValidTitle) onSendDescription(input) // Same here, isValidTitle check
                     },
                 ),
             placeholder = {

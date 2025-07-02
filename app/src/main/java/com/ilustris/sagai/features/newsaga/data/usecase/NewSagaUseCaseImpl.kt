@@ -3,8 +3,8 @@ package com.ilustris.sagai.features.newsaga.data.usecase
 import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.ImagenClient
-import com.ilustris.sagai.core.ai.SagaPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess

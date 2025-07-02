@@ -1,7 +1,7 @@
 package com.ilustris.sagai.core.utils
 
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 
 fun <T> List<T>.afterLast(predicate: (T) -> Boolean): List<T> {
     val index = indexOfLast(predicate)
@@ -12,12 +12,12 @@ fun List<Any>.formatToJsonArray() = joinToString(separator = ",\n") { it.toJsonF
 
 fun sortCharactersByMessageCount(
     characters: List<Character>,
-    messages: List<Message>,
+    messages: List<MessageContent>,
 ) = characters.sortedByDescending { character ->
     messages
         .count { message ->
 
-            message.characterId == character.id ||
-                message.speakerName.equals(character.name, true)
+            message.character?.id == character.id ||
+                message.message.speakerName.equals(character.name, true)
         }
 }

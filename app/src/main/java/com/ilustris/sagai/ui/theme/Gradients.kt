@@ -182,6 +182,8 @@ fun Genre.gradient(
     Brush.verticalGradient(this.colorPalette())
 }
 
+fun Color.solidGradient() = Brush.verticalGradient(List(2) { this })
+
 enum class FadeDirection {
     TOP_TO_BOTTOM,
     BOTTOM_TO_TOP,

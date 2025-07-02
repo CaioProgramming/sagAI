@@ -151,6 +151,7 @@ fun SenderType.description() =
         NEW_CHAPTER -> stringResource(R.string.sender_type_new_chapter_description)
         NEW_CHARACTER -> stringResource(R.string.sender_type_new_character_description)
         CHARACTER -> stringResource(R.string.sender_type_character_description)
+        else -> emptyString()
     }
 
 @Composable

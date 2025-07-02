@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.home.data.usecase
 
-import com.ilustris.sagai.core.ai.SagaPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -54,12 +54,15 @@ private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
     val mappedSagas =
         content.map { saga ->
             saga.copy(
-                messages = saga.messages.sortedByDescending { it.timestamp },
+                messages = saga.messages.sortedByDescending { it.message.timestamp },
             )
         }
 
     mappedSagas.sortedByDescending { saga ->
-        saga.messages.firstOrNull()?.timestamp ?: 0L
+        saga.messages
+            .firstOrNull()
+            ?.message
+            ?.timestamp ?: 0L
     }
 
     return mappedSagas

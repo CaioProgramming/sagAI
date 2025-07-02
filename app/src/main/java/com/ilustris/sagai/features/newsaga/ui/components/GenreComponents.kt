@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.newsaga.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -13,7 +12,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,17 +44,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.size.Size
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 
@@ -92,7 +91,7 @@ fun GenreAvatar(
     onClick: (Genre) -> Unit,
 ) {
     val backgroundColor by animateColorAsState(
-        if (isSelected) genre.color else Color.Transparent,
+        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer,
     )
 
     val iconTint by animateColorAsState(
@@ -171,17 +170,24 @@ fun GenreCard(
         tween(700, easing = EaseIn),
     )
 
-    val borderColor by animateColorAsState(
-        if (isSelected) genre.color else MaterialTheme.colorScheme.onBackground,
-    )
+    val borderColor =
+        if (isSelected) {
+            genre.gradient(true)
+        } else {
+            MaterialTheme.colorScheme.onBackground.gradientFade()
+        }
+
+    val shape = RoundedCornerShape(genre.cornerSize())
 
     Box(
         modifier
             .scale(scale)
-            .border(1.dp, borderColor.gradientFade(), RoundedCornerShape(genre.cornerSize()))
-            .clip(RoundedCornerShape(genre.cornerSize()))
+            .border(
+                1.dp,
+                borderColor,
+                shape,
+            ).clip(RoundedCornerShape(genre.cornerSize()))
             .clipToBounds()
-            .effectForGenre(genre)
             .grayScale(saturation)
             .clickable {
                 onClick(genre)
@@ -189,53 +195,59 @@ fun GenreCard(
     ) {
         val imageModifier =
             if (isSelected) {
-                Modifier.fillMaxSize().zoomAnimation()
+                Modifier
+                    .fillMaxSize()
+                    .zoomAnimation()
             } else {
                 Modifier.fillMaxSize()
             }
 
         val imageUrl = genre.defaultHeaderImage()
-        val imageRequest =
-            ImageRequest
-                .Builder(LocalPlatformContext.current)
-                .data(imageUrl)
-                .size(Size.ORIGINAL)
-                .build()
 
         val textSize by animateFloatAsState(
-            if (isSelected) 20f else 16f,
+            if (isSelected) 28f else 22f,
             tween(
                 200,
                 easing = EaseIn,
             ),
         )
 
-        AsyncImage(
-            imageRequest,
+        Image(
+            painterResource(imageUrl),
             genre.name,
             contentScale = ContentScale.Crop,
-            modifier = imageModifier.fillMaxSize().clipToBounds(),
-        )
-
-        Box(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().fillMaxHeight(.4f).background(
-                fadeGradientBottom(
-                    tintColor = genre.color,
-                ),
-            ),
+            modifier =
+                imageModifier
+                    .selectiveColorHighlight(
+                        SelectiveColorParams(
+                            genre.color,
+                        ),
+                    ).effectForGenre(genre)
+                    .clipToBounds(),
         )
 
         Text(
             genre.title,
             textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = genre.headerFont(),
-            fontSize = textSize.sp,
-            color = genre.iconColor,
+            style =
+                MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = genre.headerFont(),
+                    fontSize = textSize.sp,
+                    brush =
+                        if (isSelected) {
+                            genre.gradient(true)
+                        } else {
+                            MaterialTheme.colorScheme.background.solidGradient()
+                        },
+                ),
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
+                    .background(
+                        fadeGradientBottom(
+                            Color.Black,
+                        ),
+                    ).fillMaxWidth()
+                    .padding(16.dp)
                     .align(Alignment.BottomCenter),
         )
     }
@@ -261,7 +273,7 @@ fun GenreSelectionCardPreview() {
 fun GenreCardPreview() {
     val selectedGenre =
         remember {
-            mutableStateOf(Genre.FANTASY)
+            mutableStateOf(Genre.SCI_FI)
         }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
@@ -272,12 +284,9 @@ fun GenreCardPreview() {
     ) {
         items(Genre.entries.size) {
             val genre = Genre.entries[it]
-            GenreCard(
-                genre = genre,
-                isSelected = genre == selectedGenre.value,
-                modifier = Modifier.padding(4.dp).fillMaxWidth().height(300.dp),
-                onClick = { selectedGenre.value = genre },
-            )
+            GenreCard(genre, isSelected = selectedGenre.value == genre, modifier = Modifier.fillMaxWidth().height(300.dp).aspectRatio(1f)) {
+                selectedGenre.value = it
+            }
         }
     }
 }

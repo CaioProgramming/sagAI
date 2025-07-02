@@ -186,3 +186,10 @@ fun Long.formatDate(): String {
     val format = SimpleDateFormat("dd 'of' MMMM yyyy 'at' HH:mm", Locale.getDefault())
     return format.format(date)
 }
+
+fun Long.formatHours(): String {
+    val date = Date(this)
+    val format = SimpleDateFormat("HH:mm", Locale.getDefault())
+    return format.format(date)
+}
+

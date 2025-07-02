@@ -4,7 +4,10 @@ import android.util.Log
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.domain.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
@@ -22,9 +25,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 import kotlin.collections.emptyList
 
-const val LORE_UPDATE_THRESHOLD = 20
-const val CHAPTER_UPDATE_THRESHOLD = 5
-
 class SagaContentManagerImpl
     @Inject
     constructor(
@@ -33,8 +33,21 @@ class SagaContentManagerImpl
         private val chapterUseCase: ChapterUseCase,
         private val wikiUseCase: WikiUseCase,
         private val timelineUseCase: TimelineUseCase,
+        private val actUseCase: ActUseCase,
     ) : SagaContentManager {
         override val content = MutableStateFlow<SagaContent?>(null)
+
+        override suspend fun createAct(): RequestResult<Exception, Act> =
+            try {
+                val saga = content.value ?: throw Exception("Saga Not found.")
+                val actTransaction = actUseCase.saveAct(Act(sagaId = saga.data.id))
+
+                sagaHistoryUseCase.updateSaga(saga.data.copy(currentActId = actTransaction.id))
+
+                actTransaction.asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
 
         override suspend fun loadSaga(sagaId: String) =
             sagaHistoryUseCase.getSagaById(sagaId.toInt()).collect { saga ->
@@ -45,7 +58,8 @@ class SagaContentManagerImpl
             val saga = content.value ?: return emptyList()
             val lastChapter = saga.chapters.maxByOrNull { it.id }
             val events = saga.timelines
-            val eventReference = lastChapter?.eventReference?.let { referenceId -> saga.timelines.find { it.id == referenceId } }
+            val eventReference =
+                lastChapter?.eventReference?.let { referenceId -> saga.timelines.find { it.id == referenceId } }
             return eventReference?.let {
                 val referenceIndex = events.indexOf(it)
                 events.subList(referenceIndex, events.size).takeLast(5)
@@ -128,7 +142,7 @@ class SagaContentManagerImpl
         override suspend fun checkForChapter(): RequestResult<Exception, Chapter> {
             val lastEvents = lastEvents()
             return try {
-                if (lastEvents.size >= CHAPTER_UPDATE_THRESHOLD) {
+                if (lastEvents.size >= UpdateRules.CHAPTER_UPDATE_LIMIT) {
                     createNewChapter()!!.asSuccess()
                 } else {
                     RequestResult.Error(Exception("Not enough events to create a new chapter"))
@@ -182,7 +196,10 @@ class SagaContentManagerImpl
                 }
             }
             if (wikis.isEmpty()) {
-                Log.w(javaClass.simpleName, "updateWikis: No wiki updates for the ${events.size} events.")
+                Log.w(
+                    javaClass.simpleName,
+                    "updateWikis: No wiki updates for the ${events.size} events.",
+                )
             }
         }
 
