@@ -13,16 +13,13 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -36,7 +33,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -53,6 +49,7 @@ import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
 import com.ilustris.sagai.features.timeline.ui.TimelineView
+import com.ilustris.sagai.ui.theme.SagaTitle
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
@@ -74,27 +71,12 @@ enum class Routes(
     HOME(icon = R.drawable.ic_spark, view = { nav, padding, _, _ ->
         HomeView(nav, padding)
     }, title = R.string.home_title, topBarContent = {
-        Row(
+        SagaTitle(
             Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(start = 16.dp, end = 16.dp, top = 50.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Icon(
-                painterResource(R.drawable.ic_spark),
-                null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.onBackground,
-            )
-            Text(
-                stringResource(R.string.home_title),
-                style =
-                    MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Black,
-                    ),
-            )
-        }
+        )
     }),
     CHAT(
         view = { nav, padding, _, snack ->

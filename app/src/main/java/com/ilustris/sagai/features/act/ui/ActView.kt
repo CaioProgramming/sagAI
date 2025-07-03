@@ -135,7 +135,7 @@ fun ActComponentPreview() {
     ActComponent(act = act, actCount = actCount, content = content)
 }
 
-private fun Int.toRoman(): String {
+fun Int.toRoman(): String {
     val values = listOf(1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)
     val symbols = listOf("M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I")
     var num = this

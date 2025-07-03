@@ -66,6 +66,7 @@ class MessageUseCaseImpl
             lastEvents: List<Timeline>,
             message: Pair<String, String>,
             lastMessages: List<Pair<String, String>>,
+            directive: String,
         ): RequestResult<Exception, Message> {
             val genText =
                 textGenClient.generate<Message>(
@@ -75,6 +76,7 @@ class MessageUseCaseImpl
                         lastEvents,
                         message,
                         lastMessages,
+                        directive,
                     ),
                     true,
                 )
@@ -128,10 +130,12 @@ private fun generateReplyMessage(
     lastEvents: List<Timeline>,
     message: Pair<String, String>,
     lastMessages: List<Pair<String, String>>,
+    directive: String,
 ) = ChatPrompts.replyMessagePrompt(
     saga = sagaContent,
     message.formatToString(),
     chapter,
     lastEvents,
     lastMessages.map { it.formatToString() },
+    directive,
 )

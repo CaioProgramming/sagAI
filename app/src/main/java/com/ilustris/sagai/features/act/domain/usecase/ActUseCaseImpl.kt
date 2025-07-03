@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.narrative.ActPurpose
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
@@ -34,19 +35,21 @@ class ActUseCaseImpl
 
         override suspend fun generateAct(saga: SagaContent): RequestResult<Exception, Act> =
             try {
-                val titlePrompt = generateActTitlePrompt(saga)
-                val generatedAct = textGenClient.generate<Act>(titlePrompt)
-                saveAct(generatedAct!!).asSuccess()
+                val titlePrompt = generateActPrompt(saga)
+               textGenClient.generate<Act>(titlePrompt)!!.asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }
 
-        private fun generateActTitlePrompt(saga: SagaContent) =
-            when (saga.acts.size) {
-                1 -> ActPrompts.generateFirstAct(saga)
-                2 -> ActPrompts.generateMidAct(saga)
-                else -> ActPrompts.generateFinalAct(saga)
-            }
+        private fun generateActPrompt(saga: SagaContent) = ActPrompts.generateAct(saga,
+            getPurpose(saga.acts.size)
+        )
+
+    private fun getPurpose(actCount: Int) = when (actCount) {
+        0 -> ActPurpose.FIRST_ACT_PURPOSE
+        1 -> ActPurpose.SECOND_ACT_PURPOSE
+        else -> ActPurpose.THIRD_ACT_PURPOSE
+    }
 
         override fun getActContent(actId: Int): Flow<ActContent?> = actRepository.getActContent(actId)
     }

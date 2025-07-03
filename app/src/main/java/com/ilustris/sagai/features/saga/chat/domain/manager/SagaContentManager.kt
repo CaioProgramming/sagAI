@@ -29,4 +29,7 @@ interface SagaContentManager {
     ): RequestResult<Exception, Timeline>
 
     suspend fun generateCharacter(message: Message): RequestResult<Exception, Character>
+
+    fun getDirective(): String
+    suspend fun updateAct() : RequestResult<Exception, Act>
 }

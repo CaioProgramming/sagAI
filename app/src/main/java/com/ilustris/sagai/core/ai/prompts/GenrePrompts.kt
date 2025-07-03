@@ -8,8 +8,7 @@ import com.ilustris.sagai.core.network.body.ImageStyling
 import com.ilustris.sagai.core.network.body.LightningPreset
 import com.ilustris.sagai.core.network.body.StylePreset
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterExpression
-import com.ilustris.sagai.features.characters.data.model.CharacterPose
+import com.ilustris.sagai.features.characters.data.model.PortraitPose
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SCI_FI
@@ -50,45 +49,44 @@ object GenrePrompts {
         mainCharacter: Character,
     ) = when (genre) {
         FANTASY -> {
-            val symbol = symbolOptions.random()
-            val texture = textures.random()
             """
                 ${artStyle(genre)}
                 ${CharacterFraming.PORTRAIT.description} with focus on face with prominent fantasy elements.
-                ${listOf(
-                CharacterPose.LOOKING_HORIZON,
-                CharacterPose.LEANING_CASUALLY,
-                CharacterPose.STANDING_CONFIDENTLY,
-            ).random().description
-            }
-                close-up of a ${mainCharacter.details.race} ${mainCharacter.details.gender}, ${mainCharacter.details.ethnicity}
-                pure, opaque red accents on key character elements (e.g., eyes, a magical artifact, a piece of armor, or a flowing cloak), providing strong color contrast without glow effects or modern softening,
-                dark, minimalist background, with very subtle, dark medieval textures,
-                no gradients, no borders, no text or symbols of any kind,
-                focus on the character's depth and mystique,
-                not black and white (allow for color, even if muted),
+                ${PortraitPose.random().description}
+                close-up of a ${mainCharacter.details.race} ${mainCharacter.details.gender}, ${mainCharacter.details.ethnicity}.
+                ${mainCharacter.details.facialDetails}
+                The character wears: ${mainCharacter.details.clothing}
+                Lighting: ${LightningPreset.DRAMATIC.key}
+                with red details on the clothing and weapons.
+                background in blended tones of deep red,
+                suggesting depth and atmosphere, no sharp gradients,
+                focus on the character's emotional intensity,
+                focus on the character's depth and mystique.
                 """
         }
 
         SCI_FI -> """"
                 ${artStyle(genre)}
                 ${CharacterFraming.PORTRAIT.description} with focus on face with prominent cybernetic implants.
-                ${listOf(
-            CharacterPose.LOOKING_HORIZON,
-            CharacterPose.LEANING_CASUALLY,
-            CharacterPose.STANDING_CONFIDENTLY,
-        ).random().description
-        }
+                ${PortraitPose.random().description}
                 close-up of a ${mainCharacter.details.race} ${mainCharacter.details.gender}, ${mainCharacter.details.ethnicity}
-                face with prominent cybernetic implants and exposed mechanical parts from neck to torso.
-                ${mainCharacter.details.facialDetails} with a ${CharacterExpression.entries.random().description} expression.
+                simple facial features,
+                cynical and thoughtful expression,
+                as if contemplating something while looking towards the horizon,
+                natural skin tones,
+                cyborg humanoid with a partially visible mechanical face,
+                suggesting a subtle fusion of flesh and technology, maintaining a humanoid appearance,
+                with intricate details and visible internal mechanisms only on the face,
+                with subtle cybernetic lines integrated into the skin of her face,
                 fusion of organic and synthetic elements integrated with skin and bone.
-                vibrant cybernetic purple eyes that stand out in the painting. Subtle purple neon accents on implants
-                solid vibrant purple background,
+                dramatic pose, 3/4 angle, camera positioned slightly below eye level,
+                with the character looking off into the distance (to the left of the viewer),
+                conveying determination and focus,
+                large, simple, minimalist anime eyes, **completely purple with a subtle glow**.
+                solid deep purple background,
                 with large, bold, prominent,
                 white Japanese Kanji symbols with a subtle,
-                distressed, or brushstroke-like artistic effect extending across the entire background,
-                no gradients
+                focus on the character's depth and mystique.
                 """
     }.trimIndent()
 
@@ -110,14 +108,14 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-            With a clear landscape background any daytime(eg: moonlight, golden hour, dawn, sunset, pink sky).
+            Dark Fantasy Landscape with ethereal aesthetic.
             """
 
             SCI_FI ->
                 """
                 Cold tones minimalist background with a melancholic city aesthetic.               
                 """
-        }
+        }.trimIndent()
 
     fun negativePrompt(genre: Genre) =
         when (genre) {

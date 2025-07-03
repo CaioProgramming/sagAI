@@ -18,3 +18,23 @@ enum class CharacterPose(
         fun random(): CharacterPose = entries.random()
     }
 }
+
+enum class PortraitPose(
+    val description: String,
+) {
+    FRONT_VIEW("Front view, looking directly at the viewer"),
+    THREE_QUARTER_VIEW("Three-quarter view, face turned slightly to one side"),
+    PROFILE_VIEW("Profile view, side of the face visible"),
+    OVER_THE_SHOULDER("Over the shoulder, looking back at the viewer"),
+    CLOSE_UP("Close-up, focusing on facial features"),
+    DUTCH_ANGLE("Dutch angle, tilted camera for a dynamic feel"),
+    HIGH_ANGLE("High angle, looking down at the subject"),
+    LOW_ANGLE("Low angle, looking up at the subject"),
+    CANDID_SHOT("Candid shot, unposed and natural"),
+    LOOKING_AWAY("Looking away, creating a sense of mystery or contemplation"),
+    ;
+
+    companion object {
+        fun random(): PortraitPose = entries.random()
+    }
+}

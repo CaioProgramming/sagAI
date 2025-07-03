@@ -3,7 +3,6 @@ package com.ilustris.sagai.core.ai
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.network.FreePikApiService
@@ -25,8 +24,8 @@ class ImagenClientImpl
         val service: FreePikApiService,
     ) : ImagenClient {
         val model by lazy {
-            Firebase.ai(backend = GenerativeBackend.vertexAI()).imagenModel(
-                "imagen-3.0-generate-002",
+            Firebase.ai.imagenModel(
+                "imagen-4.0-generate-preview-06-06",
             )
         }
 

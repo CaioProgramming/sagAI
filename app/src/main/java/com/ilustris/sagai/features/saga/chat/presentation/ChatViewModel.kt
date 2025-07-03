@@ -6,6 +6,8 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -70,29 +72,21 @@ class ChatViewModel
                 sagaContentManager.content.collect {
                     if (it != null) {
                         content.value = it
-                        messages.value = it.messages.sortedByDescending { messageContent -> messageContent.message.timestamp }
+                        messages.value =
+                            it.messages.sortedByDescending { messageContent -> messageContent.message.timestamp }
                         characters.value = sortCharactersByMessageCount(it.characters, it.messages)
                         state.value = ChatState.Success
+                        checkSaga(it)
                     }
                 }
             }
         }
 
-        private fun loadSagaMessages(sagaContent: SagaContent) {
-            viewModelScope.launch(Dispatchers.IO) {
-                if (sagaContent.messages.isEmpty()) {
-                    generateIntroduction(sagaContent.data, sagaContent.mainCharacter)
-                } else {
-                    val mappedMessages =
-                        sagaContent.messages
-                            .sortedByDescending {
-                                it.message.timestamp
-                            }
-                    this@ChatViewModel.messages.value = mappedMessages.reversed()
-
-                    if (state.value != ChatState.Success) {
-                        delay(500)
-                        state.value = ChatState.Success
+        private fun checkSaga(content: SagaContent) {
+            viewModelScope.launch {
+                if (content.acts.isEmpty()) {
+                    sagaContentManager.createAct().onSuccess {
+                        generateIntroduction(content.data, content.mainCharacter)
                     }
                 }
             }
@@ -119,23 +113,19 @@ class ChatViewModel
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 state.value = ChatState.Loading
-                sagaContentManager.createAct().onSuccess {
-                    launch(context = this.coroutineContext) {
-                        messageUseCase
-                            .generateIntroMessage(saga, character)
-                            .onSuccess {
-                                sendMessage(
-                                    it.copy(
-                                        senderType = SenderType.NARRATOR,
-                                        characterId = character?.id,
-                                    ),
-                                    true,
-                                )
-                            }.onFailure {
-                                sendError(it.message ?: "Unknown error")
-                            }
+                messageUseCase
+                    .generateIntroMessage(saga, character)
+                    .onSuccess {
+                        sendMessage(
+                            it.copy(
+                                senderType = SenderType.NARRATOR,
+                                characterId = character?.id,
+                            ),
+                            false,
+                        )
+                    }.onFailure {
+                        sendError(it.message ?: "Unknown error")
                     }
-                }
             }
         }
 
@@ -254,10 +244,37 @@ class ChatViewModel
                     .onSuccess {
                         isGenerating.value = true
                         finishSaveChapter(it)
+                        checkForActs()
                     }.onFailure {
-                        // sendError(it.message ?: "Unknown error")
                         isGenerating.value = false
                     }
+            }
+        }
+
+        private fun checkForActs() {
+            val currentSaga = content.value ?: return
+            viewModelScope.launch {
+                val currentAct = currentSaga.currentActInfo
+                if (currentAct?.chapters?.size == 10) {
+                    sagaContentManager.updateAct().onSuccess {
+                        saveActEnd(it)
+                    }
+                }
+            }
+        }
+
+        private fun saveActEnd(act: Act) {
+            viewModelScope.launch {
+                val currentActs = content.value?.acts?.size
+                sendMessage(
+                    Message(
+                        text = "Ato ${(currentActs ?: 1).toRoman()} finalizado.",
+                        actId = act.id,
+                        senderType = SenderType.NEW_ACT,
+                    ),
+                )
+                sagaContentManager.createAct()
+                isGenerating.value = false
             }
         }
 
@@ -302,8 +319,8 @@ class ChatViewModel
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
-                val mainCharacter = content.value!!.mainCharacter ?: return@launch
                 val characters = content.value!!.characters
+                val directive = sagaContentManager.getDirective()
                 val newMessage =
                     MessageContent(
                         message = message,
@@ -316,6 +333,7 @@ class ChatViewModel
                         chapter = content.value?.chapters?.lastOrNull(),
                         message = newMessage.joinMessage(),
                         lastEvents = lastEvents(),
+                        directive = directive,
                         lastMessages =
                             messages.value
                                 .takeLast(25)
@@ -337,6 +355,7 @@ class ChatViewModel
                             genMessage.copy(
                                 characterId = characterReference,
                                 chapterId = null,
+                                actId = null,
                             ),
                         )
                         isGenerating.value = false

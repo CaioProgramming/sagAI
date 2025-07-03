@@ -17,6 +17,7 @@ object ChatPrompts {
         currentChapter: Chapter?,
         currentTimeline: List<Timeline> = emptyList(),
         lastMessages: List<String> = emptyList(),
+        directive: String,
     ) = """
    You are the Saga Master for a text-based RPG called '${saga.data.title}'.
    Your role is to create an immersive narrative, describing the world and generating dialogues for NPCs (Non-Player Characters).
@@ -40,6 +41,12 @@ object ChatPrompts {
     // This section provides the most recent events from the saga's timeline (max 5 events).
     // Use this to understand the immediate plot progression and current situation.
     [ ${currentTimeline.formatToJsonArray()} ]
+    
+    ## SAGA ACT DIRECTIVE
+    // This directive guides the narrative's overall progression and pacing based on the current act.
+    // It dictates the specific tone, focus, and goal for your responses and the evolving plot.
+    $directive
+
 
     CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
     // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : ${saga.mainCharacter?.name} : ").

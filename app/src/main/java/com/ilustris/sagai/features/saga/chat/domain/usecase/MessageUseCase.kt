@@ -32,6 +32,7 @@ interface MessageUseCase {
         lastEvents: List<Timeline>,
         message: Pair<String, String>,
         lastMessages: List<Pair<String, String>>,
+        directive: String,
     ): RequestResult<Exception, Message>
 
     suspend fun generateNarratorBreak(

@@ -7,7 +7,7 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterExpression
-import com.ilustris.sagai.features.characters.data.model.CharacterPose
+import com.ilustris.sagai.features.characters.data.model.PortraitPose
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 
@@ -20,12 +20,15 @@ object CharacterPrompts {
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
         ${GenrePrompts.portraitStyle(saga.genre)}
-        ${CharacterFraming.PORTRAIT.description}  
-        ${appearance(character)}
+        ${CharacterFraming.PORTRAIT.description.trimIndent()}  
+        ${character.details.race},${character.details.gender},${character.details.ethnicity}
+        ${character.details.facialDetails}
+        ${character.details.clothing}
         ${GenrePrompts.thematicVisuals(saga.genre)}
         Expression: ${CharacterExpression.random().description}
-        Pose: ${CharacterPose.random().description}}
+        Pose: ${PortraitPose.random().description}}
         ${character.details.race} character, realistic ${character.details.race} features.
+        ${GenrePrompts.chapterCoverStyling(saga.genre)}
         """.trimIndent()
 
     fun appearance(character: Character) =

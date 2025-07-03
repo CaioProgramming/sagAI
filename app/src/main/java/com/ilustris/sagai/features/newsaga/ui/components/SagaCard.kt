@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -35,6 +36,7 @@ import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -48,22 +50,26 @@ fun SagaCard(
 ) {
     val cornerSize = sagaData.genre.cornerSize()
     var fraction by remember {
-        mutableFloatStateOf(01f)
+        mutableFloatStateOf(0.1f)
     }
 
     val imageSize by animateFloatAsState(
         fraction,
         tween(easing = EaseIn, durationMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS)),
     )
+
+    val backgroundColor by animateColorAsState(
+        if (fraction == 1f) sagaData.genre.color else MaterialTheme.colorScheme.background,
+    )
     Box(
         modifier
             .padding(4.dp)
             .border(
                 2.dp,
-                gradientAnimation(sagaData.genre.color.darkerPalette()),
+                sagaData.genre.gradient(true),
                 RoundedCornerShape(cornerSize),
             ).clip(RoundedCornerShape(cornerSize))
-            .background(sagaData.genre.color)
+            .background(backgroundColor)
             .clipToBounds(),
     ) {
         AsyncImage(
@@ -71,31 +77,26 @@ fun SagaCard(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             onSuccess = {
-                fraction = .5f
+                fraction = 1f
             },
             modifier =
                 Modifier
-                    .background(sagaData.genre.color)
+                    .background(backgroundColor)
                     .fillMaxWidth()
                     .fillMaxHeight(imageSize)
                     .zoomAnimation()
                     .clipToBounds(),
         )
 
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(imageSize)
-                .background(
-                    fadeGradientBottom(),
-                ),
-        )
-
         Column(
             modifier =
-                Modifier.padding(16.dp).align(Alignment.Center).verticalScroll(
-                    rememberScrollState(),
-                ),
+                Modifier
+                    .background(fadeGradientBottom(sagaData.genre.color))
+                    .padding(16.dp)
+                    .align(Alignment.BottomCenter)
+                    .verticalScroll(
+                        rememberScrollState(),
+                    ),
         ) {
             Text(
                 text = sagaData.title,

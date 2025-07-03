@@ -24,7 +24,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -218,10 +217,6 @@ fun ChatView(
                         Modifier
                             .padding(vertical = 75.dp, horizontal = 16.dp)
                             .clip(
-                                RoundedCornerShape(25.dp),
-                            ).border(
-                                1.dp,
-                                MaterialTheme.colorScheme.onBackground,
                                 RoundedCornerShape(25.dp),
                             ).background(
                                 MaterialTheme.colorScheme.background,

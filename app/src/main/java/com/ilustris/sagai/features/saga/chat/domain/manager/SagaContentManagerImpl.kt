@@ -4,6 +4,7 @@ import android.util.Log
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.act.data.model.Act
@@ -22,6 +23,7 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.collections.emptyList
 
@@ -67,7 +69,6 @@ class SagaContentManagerImpl
         }
 
         override suspend fun createNewChapter(): Chapter? {
-            var chapterOperation: Chapter? = null
             return try {
                 val saga = content.value!!
                 val lastEvents = lastEvents()
@@ -88,9 +89,13 @@ class SagaContentManagerImpl
                                     sagaId = saga.data.id,
                                     eventReference = lastEvents().last().id,
                                     messageReference = 0,
+                                    actId =
+                                        content.value
+                                            ?.currentActInfo
+                                            ?.act
+                                            ?.id,
                                 ),
                         )
-                chapterOperation = newChapter
                 val featuredCharacters =
                     genChapter.featuredCharacters.mapNotNull { name ->
                         saga.characters.find { it.name.equals(name, true) }
@@ -103,7 +108,7 @@ class SagaContentManagerImpl
                     ).success.value
             } catch (e: Exception) {
                 e.printStackTrace()
-                return chapterOperation
+                return null
             }
         }
 
@@ -213,4 +218,26 @@ class SagaContentManagerImpl
             } catch (e: Exception) {
                 e.asError()
             }
+
+        override fun getDirective(): String {
+            val currentActs = content.value?.acts
+            return when (currentActs?.size) {
+                1 -> ActDirectives.FIRST_ACT_DIRECTIVES
+                2 -> ActDirectives.SECOND_ACT_DIRECTIVES
+                3 -> ActDirectives.THIRD_ACT_DIRECTIVES
+                else -> ActDirectives.FIRST_ACT_DIRECTIVES
+            }
+        }
+
+    override suspend fun updateAct(): RequestResult<Exception, Act> {
+        val currentSaga = content.value!!
+        val currentAct = currentSaga.currentActInfo!!.act
+        val genAct = actUseCase.generateAct(currentSaga).success.value
+        return actUseCase.updateAct(
+            currentAct.copy(
+                title = genAct.title,
+                content = genAct.content,
+            )
+        ).asSuccess()
     }
+}
