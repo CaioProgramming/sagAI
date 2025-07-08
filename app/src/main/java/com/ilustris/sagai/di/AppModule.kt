@@ -1,8 +1,13 @@
 package com.ilustris.sagai.di
 
 import android.content.Context
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
+import com.ilustris.sagai.core.ai.SummarizationClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
@@ -24,6 +29,8 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManagerImpl
+import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
+import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
@@ -59,7 +66,15 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun bindsTextGenClient() = TextGenClient()
+    fun providesTextGenClient(firebaseRemoteConfig: FirebaseRemoteConfig): TextGenClient {
+        return TextGenClient(firebaseRemoteConfig)
+    }
+
+    @Provides
+    @Singleton
+    fun providesSummarizationClient(firebaseRemoteConfig: FirebaseRemoteConfig): SummarizationClient {
+        return SummarizationClient(firebaseRemoteConfig)
+    }
 
     @Provides
     @Singleton
@@ -73,13 +88,41 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideWikiDao(appDatabase: SagaDatabase): WikiDao { // New provider
+    fun provideWikiDao(appDatabase: SagaDatabase): WikiDao {
         return appDatabase.wikiDao()
     }
 
     @Provides
     @Singleton
     fun providesActDao(appDatabase: SagaDatabase) = appDatabase.sagaDao()
+
+    @Provides
+    @Singleton
+    fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
+        val remoteConfig = Firebase.remoteConfig
+        val configSettings = remoteConfigSettings {
+            minimumFetchIntervalInSeconds = 3600 // Example: 1 hour fetch interval
+        }
+        remoteConfig.setConfigSettingsAsync(configSettings)
+        // Set in-app defaults
+        remoteConfig.setDefaultsAsync(
+            mapOf(
+                TextGenClient.TEXT_GEN_MODEL_FLAG to TextGenClient.DEFAULT_TEXT_GEN_MODEL,
+                ImagenClientImpl.IMAGE_MODEL_FLAG to ImagenClientImpl.DEFAULT_IMAGE_MODEL,
+                SummarizationClient.SUMMARIZATION_MODEL_FLAG to SummarizationClient.DEFAULT_SUMMARIZATION_MODEL
+            )
+        )
+        return remoteConfig
+    }
+
+    @Provides
+    @Singleton
+    fun provideImagenClient(
+        freePikApiService: FreePikApiService,
+        firebaseRemoteConfig: FirebaseRemoteConfig
+    ): ImagenClient {
+        return ImagenClientImpl(freePikApiService, firebaseRemoteConfig)
+    }
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -111,6 +154,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesActUseCase(actUseCaseImpl: ActUseCaseImpl): ActUseCase
+
+    @Binds
+    abstract fun providesGetInputSuggestionsUseCase(getInputSuggestionsUseCaseImpl: GetInputSuggestionsUseCaseImpl): GetInputSuggestionsUseCase
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -127,9 +173,6 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsCharacterRepository(characterRepositoryImpl: CharacterRepositoryImpl): CharacterRepository
-
-    @Binds
-    abstract fun bindsImagenClient(imagenClientImpl: ImagenClientImpl): ImagenClient
 
     @Binds
     abstract fun bindsWikiRepository(wikiRepositoryImpl: WikiRepositoryImpl): WikiRepository

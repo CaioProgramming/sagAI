@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateDpAsState
@@ -55,7 +56,9 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -117,7 +120,7 @@ fun CharacterDetailsContent(
     ) {
         item {
             var fraction by remember {
-                mutableStateOf(2.dp)
+                mutableStateOf(300.dp)
             }
 
             val imageSize by animateDpAsState(
@@ -134,8 +137,8 @@ fun CharacterDetailsContent(
                     character.image,
                     contentDescription = character.name,
                     contentScale = ContentScale.Crop,
-                    onSuccess = {
-                        fraction = 300.dp
+                    onError = {
+                        0.dp
                     },
                     modifier =
                         Modifier
@@ -153,47 +156,22 @@ fun CharacterDetailsContent(
                         ),
                 )
 
-                IconButton(
-                    onClick = {
-                        onBack()
-                    },
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .padding(32.dp)
-                            .size(32.dp)
-                            .background(
-                                MaterialTheme.colorScheme.background.copy(alpha = .3f),
-                                CircleShape,
-                            ).padding(2.dp),
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                        contentDescription = "Voltar",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
             }
         }
 
         stickyHeader {
             val characterColor = Color(character.hexColor.toColorInt())
-            SagaTopBar(
+
+            Text(
                 character.name,
-                subtitle = character.details.occupation,
-                modifier =
-                    Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .fillMaxWidth()
-                        .gradientFill(
-                            gradientAnimation(
-                                characterColor.darkerPalette(),
-                                targetValue = 500f,
-                                gradientType = GradientType.VERTICAL,
-                            ),
-                        ).padding(top = 50.dp, start = 16.dp),
-                genre = genre,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontFamily = genre.headerFont(),
+                    brush = characterColor.gradientFade()
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
+
         }
 
         item { CharacterStats(character = character, genre = genre) }
@@ -237,13 +215,6 @@ fun CharacterDetailsContent(
             )
         }
 
-        item {
-            CharacterSection(
-                title = "Status",
-                content = character.status,
-                genre = genre,
-            )
-        }
 
         item {
             CharacterSection(

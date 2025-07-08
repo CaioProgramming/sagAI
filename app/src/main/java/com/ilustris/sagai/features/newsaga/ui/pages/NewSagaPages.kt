@@ -4,7 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -45,15 +44,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.Clothing
+import com.ilustris.sagai.features.characters.data.model.Details // Ensure Details is imported
+import com.ilustris.sagai.features.characters.data.model.FacialFeatures
+import com.ilustris.sagai.features.characters.ui.CharacterForm
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.holographicGradient
-import kotlin.math.absoluteValue
 import kotlinx.coroutines.launch
+import kotlin.math.absoluteValue
 
 enum class NewSagaPages(
     @StringRes val title: Int? = null,
@@ -73,7 +78,7 @@ enum class NewSagaPages(
         R.string.saga_genre,
         R.string.saga_genre_subtitle,
         content = { onSendData, data ->
-            GenresPageView(data as Genre) { // Parameter name is initialGenre in implementation
+            GenresPageView(data as Genre) {
                 onSendData(it)
             }
         },
@@ -82,7 +87,7 @@ enum class NewSagaPages(
         R.string.saga_description,
         R.string.saga_description_subtitle,
         content = { onSendData, data ->
-            DescriptionPageView(data as String, "Descreva sua saga...") {
+            DescriptionPageView(data as String, stringResource(R.string.saga_description_hint)) {
                 onSendData(it)
             }
         },
@@ -92,8 +97,8 @@ enum class NewSagaPages(
         R.string.saga_character_description,
         R.string.saga_character_description_subtitle,
         content = { onSendData, data ->
-            DescriptionPageView(data as String, "Descreva seu personagem...") {
-                onSendData(it)
+            CharacterForm(sagaForm = data as SagaForm) { character ->
+                onSendData(character)
             }
         },
     ),
@@ -182,7 +187,7 @@ fun TitlePageViewPreview() {
 @Composable
 fun GenresPageViewPreview() {
     SagAIScaffold {
-        GenresPageView(initialGenre = Genre.FANTASY) { // Updated parameter name
+        GenresPageView(initialGenre = Genre.FANTASY) {
         }
     }
 }
@@ -233,23 +238,25 @@ fun GenresPageView(
     onSelectGenre: (Genre) -> Unit,
 ) {
     val genres = Genre.entries
-    val pagerState = rememberPagerState(
-        initialPage = genres.indexOf(initialGenre).coerceAtLeast(0),
-        pageCount = { genres.size }
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = genres.indexOf(initialGenre).coerceAtLeast(0),
+            pageCount = { genres.size },
+        )
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(pagerState.settledPage) {
-        val selectedGenre = genres[pagerState.settledPage]
+    LaunchedEffect(pagerState.currentPage) {
+        val selectedGenre = genres[pagerState.currentPage]
         onSelectGenre(selectedGenre)
     }
 
     HorizontalPager(
         state = pagerState,
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier =
+            Modifier
+                .fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 64.dp),
-        pageSpacing = 8.dp
+        pageSpacing = 8.dp,
     ) { pageIndex ->
         val genre = genres[pageIndex]
         val pageOffset = pagerState.currentPageOffsetFraction
@@ -257,22 +264,23 @@ fun GenresPageView(
         GenreCard(
             genre = genre,
             isSelected = pagerState.currentPage == pageIndex,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(400.dp)
-                .graphicsLayer {
-                    val scale = lerp(0.80f, 1f, 1f - pageOffset.absoluteValue.coerceIn(0f, 1f))
-                    scaleX = scale
-                    scaleY = scale
-                    alpha = lerp(0.6f, 1f, 1f - pageOffset.absoluteValue.coerceIn(0f, 1f))
-                },
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(400.dp)
+                    .graphicsLayer {
+                        val scale = lerp(0.80f, 1f, 1f - pageOffset.absoluteValue.coerceIn(0f, 1f))
+                        scaleX = scale
+                        scaleY = scale
+                        alpha = lerp(0.6f, 1f, 1f - pageOffset.absoluteValue.coerceIn(0f, 1f))
+                    },
             onClick = {
                 if (pagerState.currentPage != pageIndex) {
                     scope.launch {
                         pagerState.animateScrollToPage(pageIndex)
                     }
                 }
-            }
+            },
         )
     }
 }
@@ -283,79 +291,124 @@ fun DescriptionPageView(
     placeHolder: String,
     onSendDescription: (String) -> Unit,
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    var input by remember { mutableStateOf(description) }
+    val isValidDescription = input.isNotEmpty() && input.length <= 300
+    val brush = Brush.linearGradient(holographicGradient)
+
+    LaunchedEffect(description) {
+        if (input != description) {
+            onSendDescription(input)
+        }
+    }
+
+    TextField(
+        value = input,
+        onValueChange = {
+            input = it
+            if (it.length <= 300) {
+                onSendDescription(it)
+            }
+        },
+        colors =
+            TextFieldDefaults.colors(
+                cursorColor = MaterialTheme.colorScheme.primary,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent,
+                disabledContainerColor = Color.Transparent,
+            ),
+        keyboardOptions =
+            KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Done,
+                capitalization = KeyboardCapitalization.Sentences,
+                autoCorrect = true,
+            ),
+        keyboardActions =
+            KeyboardActions(
+                onDone = {
+                    if (isValidDescription) onSendDescription(input)
+                },
+            ),
+        placeholder = {
+            Text(
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        textAlign = TextAlign.Start,
+                        fontWeight = FontWeight.Medium,
+                    ),
+                text = placeHolder,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .alpha(.5f),
+            )
+        },
+        textStyle =
+            MaterialTheme.typography.bodyLarge.copy(
+                fontWeight = FontWeight.Normal,
+                textAlign = TextAlign.Start,
+                brush = brush,
+            ),
         modifier =
             Modifier
-                .padding(24.dp)
-                .fillMaxWidth(),
-    ) {
-        var input by remember { mutableStateOf(description) }
-        val isValidTitle = input.isNotEmpty() && input.length <= 300 // This seems to be a leftover from TitlePageView, should be description length
-        val brush = Brush.linearGradient(holographicGradient)
+                .padding(16.dp)
+                .fillMaxSize()
+                .border(
+                    width = 1.dp,
+                    shape = RoundedCornerShape(12.dp),
+                    brush = Brush.verticalGradient(holographicGradient),
+                ).background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    RoundedCornerShape(12.dp),
+                ).padding(8.dp),
+    )
+}
 
-        TextField(
-            value = input,
-            onValueChange = {
-                input = it
-                onSendDescription(it)
-            },
-            colors =
-                TextFieldDefaults.colors(
-                    cursorColor = MaterialTheme.colorScheme.primary,
-                    focusedIndicatorColor = Color.Transparent,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    disabledIndicatorColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                ),
-            maxLines = 10,
-            keyboardOptions =
-                KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Send,
-                    capitalization = KeyboardCapitalization.Sentences,
-                    autoCorrect = true,
-                ),
-            keyboardActions =
-                KeyboardActions(
-                    onSend = {
-                        if (isValidTitle) onSendDescription(input) // Same here, isValidTitle check
-                    },
-                ),
-            placeholder = {
-                Text(
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            textAlign = TextAlign.Start,
-                            fontWeight = FontWeight.Medium,
-                        ),
-                    text = placeHolder,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .alpha(.5f),
-                )
-            },
-            textStyle =
-                MaterialTheme.typography.bodySmall.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Start,
-                    brush = brush,
-                ),
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .background(
-                        MaterialTheme.colorScheme.surfaceContainer,
-                        RoundedCornerShape(15.dp),
-                    ).border(
-                        width = 2.dp,
-                        shape = RoundedCornerShape(15.dp),
-                        brush = Brush.verticalGradient(holographicGradient),
-                    ),
+@Preview(showBackground = true)
+@Composable
+fun CharacterFormPreview() {
+    val sampleCharacterDetails =
+        Details(
+            appearance = "Slender and agile, with long silver hair often tied back. Her movements are fluid and quiet.",
+            facialDetails = FacialFeatures(),
+            clothing = Clothing(body = "Wears practical, dark leather armor, a hooded cloak for stealth, and soft boots."),
+            occupation = "Forest Warden / Scout",
+            race = "Wood Elf", // Added race to preview
+            weapons = "A finely crafted longbow and a set of daggers. Carries a small satchel with herbs and survival gear.",
+            personality = "Reserved but kind",
+            height = 1.7,
+            weight = 60.0,
+            gender = "Feminine",
+            ethnicity = "Elven",
         )
+
+    val sampleCharacter =
+        Character(
+            id = 0,
+            name = "Elara Moonwhisper",
+            backstory = "Orphaned at a young age, Elara was raised by the reclusive guardians of the Silverwood. She learned the ways of the forest and dedicated her life to protecting its secrets from those who would exploit them. A recent encroaching darkness has forced her to seek allies beyond her homeland.",
+            details = sampleCharacterDetails,
+            sagaId = 0,
+            image = "",
+            hexColor = "#3d98f7",
+            joinedAt = 0L,
+        )
+    val sampleSagaForm =
+        SagaForm(
+            title = "The Silverwood Guardians",
+            genre = Genre.FANTASY,
+            description = "An epic tale of courage and magic.",
+            character = sampleCharacter,
+        )
+
+    SagAIScaffold {
+        CharacterForm(sagaForm = sampleSagaForm) { updatedCharacter ->
+            println(
+                "Character updated in preview: ${updatedCharacter.name}, Gender: ${updatedCharacter.details.gender}, Race: ${updatedCharacter.details.race}",
+            )
+        }
     }
 }

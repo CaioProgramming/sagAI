@@ -16,11 +16,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -69,10 +67,9 @@ fun SenderType.itemOption(
                     .clip(RoundedCornerShape(genre.cornerSize()))
                     .clickable {
                         onSelect(this@itemOption)
-                    }
-                    .padding(4.dp),
+                    }.padding(4.dp),
             horizontalAlignment = alignment,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Image(
                 painter = painterResource(id = it),
@@ -96,9 +93,8 @@ fun SenderType.itemOption(
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Light,
-                   textAlign =  TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -114,7 +110,7 @@ fun SenderTypePreview() {
                 modifier = Modifier.padding(4.dp),
                 selectedItem = THOUGHT,
                 genre = Genre.FANTASY,
-                showText = true
+                showText = true,
             )
         }
     }

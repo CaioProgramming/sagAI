@@ -7,6 +7,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageGen
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.Flow
 
@@ -33,7 +34,7 @@ interface MessageUseCase {
         message: Pair<String, String>,
         lastMessages: List<Pair<String, String>>,
         directive: String,
-    ): RequestResult<Exception, Message>
+    ): RequestResult<Exception, MessageGen>
 
     suspend fun generateNarratorBreak(
         data: SagaData,

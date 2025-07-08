@@ -39,11 +39,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,24 +55,22 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.formatToString
-import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
-import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
@@ -215,9 +215,7 @@ fun ChatCard(
                             .fillMaxSize()
                             .effectForGenre(sagaData.genre, focusRadius = 0f, customGrain = 0.05f)
                             .selectiveColorHighlight(
-                                SelectiveColorParams(
-                                    targetColor = sagaData.genre.color,
-                                ),
+                                sagaData.genre.selectiveHighlight(),
                             ),
                     onSuccess = {
                         imageLoaded.value = true
@@ -243,56 +241,82 @@ fun ChatCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             // Name and Last Message
+            val lastMessage = saga.messages.firstOrNull()
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = sagaData.title, // Replace with actual contact name
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-
-                val lastMessageText =
-                    if (saga.messages.isNotEmpty()) {
-                        saga.messages
-                            .first()
-                            .joinMessage(showSender = false)
-                            .formatToString()
-                    } else {
-                        "Sua saga começa agora!"
-                    }
-                Text(
-                    text =
-                        buildWikiAndCharactersAnnotation(
-                            text = lastMessageText,
-                            genre = saga.data.genre,
-                            mainCharacter = saga.mainCharacter,
-                            characters = saga.characters,
-                            wiki = saga.wikis,
-                        ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                    maxLines = 2,
-                    modifier = Modifier.padding(4.dp),
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Last Message Time
-                saga.messages.lastOrNull()?.let {
-                    val time = Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
-                    val timeText =
-                        String.format(
-                            "%02d:%02d",
-                            time.get(Calendar.HOUR_OF_DAY),
-                            time.get(Calendar.MINUTE),
-                        )
-
+                Row {
                     Text(
-                        text = timeText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = sagaData.title, // Replace with actual contact name
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = saga.data.genre.bodyFont(),
+                        modifier = Modifier.weight(1f),
                     )
+
+                    lastMessage?.let {
+                        val time = Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
+                        val timeText =
+                            String.format(
+                                "%02d:%02d",
+                                time.get(Calendar.HOUR_OF_DAY),
+                                time.get(Calendar.MINUTE),
+                            )
+
+                        Text(
+                            text = timeText,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = saga.data.genre.bodyFont(),
+                                ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Row(Modifier.alpha(.5f)) {
+                    lastMessage?.let {
+                        if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
+                            Text(
+                                text = it.character?.name ?: "Desconhecido".plus(": "),
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = saga.data.genre.bodyFont(),
+                                    ),
+                                maxLines = 2,
+                            )
+
+                            Text(
+                                text = it.message.text,
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = saga.data.genre.bodyFont(),
+                                    ),
+                                maxLines = 2,
+                                modifier = Modifier.weight(1f),
+                            )
+                        } else {
+                            Text(
+                                text = it.message.text,
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontFamily = saga.data.genre.bodyFont(),
+                                        fontStyle = FontStyle.Italic,
+                                    ),
+                                maxLines = 2,
+                                modifier = Modifier.padding(8.dp),
+                            )
+                        }
+                    } ?: run {
+                        Text(
+                            "Sua saga começa agora!",
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = saga.data.genre.bodyFont(),
+                                    fontStyle = FontStyle.Italic,
+                                ),
+                        )
+                    }
                 }
             }
         }

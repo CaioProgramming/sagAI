@@ -5,8 +5,10 @@ package com.ilustris.sagai.features.newsaga.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -46,7 +48,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -55,11 +56,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.narrative.CharacterFormRules
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
@@ -72,9 +76,9 @@ import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SparkLoader
-import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
@@ -124,22 +128,38 @@ fun NewSagaView(
 
                 when (page) {
                     TITLE -> {
-                        createSagaViewModel.updateTitle(data as String)
+                        (data as? String)?.let {
+                            createSagaViewModel.updateTitle(it)
+                        } ?: run {
+                            createSagaViewModel.updateTitle(form.title)
+                        }
                         animateToPage(pagerState.currentPage + 1)
                     }
 
                     GENRE -> {
-                        createSagaViewModel.updateGenre(data as Genre)
+                        (data as? Genre)?.let {
+                            createSagaViewModel.updateGenre(it)
+                        } ?: run {
+                            createSagaViewModel.updateGenre(form.genre)
+                        }
                         animateToPage(pagerState.currentPage + 1)
                     }
 
                     DESCRIPTION -> {
-                        createSagaViewModel.updateDescription(data as String)
+                        (data as? String)?.let {
+                            createSagaViewModel.updateDescription(it)
+                        } ?: run {
+                            createSagaViewModel.updateDescription(form.description)
+                        }
                         animateToPage(pagerState.currentPage + 1)
                     }
 
                     CHARACTER -> {
-                        createSagaViewModel.updateCharacterDescription(data as String)
+                        (data as? Character)?.let {
+                            createSagaViewModel.updateCharacterDescription(it)
+                        } ?: run {
+                            createSagaViewModel.updateCharacterDescription(form.character)
+                        }
                         animateToPage(pagerState.currentPage + 1)
                     }
                 }
@@ -153,16 +173,18 @@ fun NewSagaView(
                     .blur(blurRadius.value, edgeTreatment = BlurredEdgeTreatment.Unbounded),
         )
         if (state.isLoading || state.saga != null) {
-            Dialog(onDismissRequest = { createSagaViewModel.resetGeneratedSaga() }) {
+            Dialog(
+                onDismissRequest = { createSagaViewModel.resetGeneratedSaga() },
+                properties =
+                    DialogProperties(
+                        dismissOnBackPress = false,
+                        dismissOnClickOutside = false,
+                    ),
+            ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     AnimatedVisibility(isLoading && state.saga == null, enter = scaleIn(), exit = scaleOut()) {
                         SparkLoader(
-                            brush =
-                                gradientAnimation(
-                                    holographicGradient,
-                                    targetValue = 500f,
-                                    duration = 5.seconds,
-                                ),
+                            brush = form.genre.gradient(),
                             modifier = Modifier.size(100.dp),
                         )
                     }
@@ -254,18 +276,20 @@ fun NewSagaFlow(
                 Modifier
                     .fillMaxWidth()
                     .weight(1f),
-            { page, newValue ->
-                data = newValue
-            },
-        )
+        ) { page, newValue ->
+            data = newValue
+        }
 
-        val brush = gradientAnimation(holographicGradient, targetValue = 700f)
+        val brush = form.genre.gradient()
+
         val pageEnabled =
             when (currentPage) {
                 GENRE -> true
-                TITLE, DESCRIPTION -> (data as? String)?.isNotEmpty() == true
+                TITLE -> (data as? String)?.isNotEmpty() == true || form.title.isNotEmpty()
+                DESCRIPTION -> (data as? String)?.isNotEmpty() == true || form.description.isNotEmpty()
                 CHARACTER -> {
-                    (data as? String)?.isNotEmpty() == true &&
+                    (data as? Character)
+                        ?.let { CharacterFormRules.validateCharacter(it) } == true &&
                         (form.description.isNotEmpty()) &&
                         form.title.isNotEmpty()
                 }
@@ -288,6 +312,21 @@ fun NewSagaFlow(
                     if (isEnabled) 1f else .1f,
                     label = "dividerAlpha",
                 )
+
+                val indicatorWeight by animateFloatAsState(
+                    if (isEnabled) 1f else .3f,
+                    label = "indicatorWeight",
+                    animationSpec = tween(500, easing = EaseInElastic),
+                )
+
+                val indicatorBrush =
+                    if (isEnabled) {
+                        brush
+                    } else {
+                        MaterialTheme.colorScheme.onBackground
+                            .copy(alpha = .3f)
+                            .solidGradient()
+                    }
                 Icon(
                     painterResource(R.drawable.ic_spark),
                     null,
@@ -302,16 +341,7 @@ fun NewSagaFlow(
                             .clickable(enabled = isEnabled) {
                                 changePage(page)
                             }.gradientFill(
-                                if (isEnabled) {
-                                    brush
-                                } else {
-                                    Brush.linearGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.onBackground,
-                                            MaterialTheme.colorScheme.onBackground,
-                                        ),
-                                    )
-                                },
+                                indicatorBrush,
                             ),
                 )
 
@@ -319,22 +349,10 @@ fun NewSagaFlow(
                     modifier =
                         Modifier
                             .background(
-                                MaterialTheme.colorScheme.onBackground.copy(alpha = dividerAlpha),
-                                RoundedCornerShape(15.dp),
-                            ).height(1.dp)
-                            .weight(1f)
-                            .gradientFill(
-                                if (isEnabled) {
-                                    brush
-                                } else {
-                                    Brush.linearGradient(
-                                        listOf(
-                                            MaterialTheme.colorScheme.onBackground,
-                                            MaterialTheme.colorScheme.onBackground,
-                                        ),
-                                    )
-                                },
-                            ),
+                                indicatorBrush,
+                                RoundedCornerShape(25.dp),
+                            ).height(5.dp)
+                            .weight(indicatorWeight),
                 )
             }
         }

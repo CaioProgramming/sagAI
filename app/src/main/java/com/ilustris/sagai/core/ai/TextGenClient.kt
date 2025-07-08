@@ -8,17 +8,31 @@ import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.ilustris.sagai.core.utils.toFirebaseSchema
 
-class TextGenClient : AIClient() {
-    override fun buildModel(generationConfig: GenerationConfig): GenerativeModel =
-        Firebase
+class TextGenClient(
+    private val firebaseRemoteConfig: FirebaseRemoteConfig,
+) : AIClient() {
+    companion object {
+        const val TEXT_GEN_MODEL_FLAG = "textGenModel"
+        const val DEFAULT_TEXT_GEN_MODEL = "gemini-2.5-flash"
+    }
+
+    override fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
+        val modelName =
+            firebaseRemoteConfig.getString(TEXT_GEN_MODEL_FLAG).let {
+                it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
+            }
+        Log.i("TextGenClient", "Using text model: $modelName from Remote Config (flag: '$TEXT_GEN_MODEL_FLAG')")
+        return Firebase
             .ai(backend = GenerativeBackend.googleAI())
             .generativeModel(
-                "gemini-1.5-flash",
+                modelName = modelName,
                 generationConfig = generationConfig,
             )
+    }
 
     suspend inline fun <reified T> generate(
         prompt: String,

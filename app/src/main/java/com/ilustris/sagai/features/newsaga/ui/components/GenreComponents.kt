@@ -45,6 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -219,9 +220,7 @@ fun GenreCard(
             modifier =
                 imageModifier
                     .selectiveColorHighlight(
-                        SelectiveColorParams(
-                            genre.color,
-                        ),
+                        genre.selectiveHighlight(),
                     ).effectForGenre(genre)
                     .clipToBounds(),
         )

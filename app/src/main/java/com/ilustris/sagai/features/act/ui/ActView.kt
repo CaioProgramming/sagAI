@@ -19,7 +19,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -33,8 +32,8 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import kotlin.time.Duration.Companion.seconds
 
-
 private val DEFAULT_DELAY = 1.seconds
+
 @Composable
 fun ActComponent(
     act: Act,
@@ -107,7 +106,6 @@ fun ActComponent(
         ) {
             TypewriterText(
                 text = act.content,
-
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = content.data.genre.bodyFont(),

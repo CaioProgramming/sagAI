@@ -1,11 +1,8 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.meaning
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -19,77 +16,91 @@ object ChatPrompts {
         lastMessages: List<String> = emptyList(),
         directive: String,
     ) = """
-   You are the Saga Master for a text-based RPG called '${saga.data.title}'.
-   Your role is to create an immersive narrative, describing the world and generating dialogues for NPCs (Non-Player Characters).
-    
-    ${SagaPrompts.details(saga.data)}
-    
-    ${currentChapter?.let { ChapterPrompts.chapterOverview(it)} ?: emptyString()}
+        ${Core.roleDefinition(saga.data)}
+        
+        ${SagaPrompts.details(saga.data)}
+         
+        ${ChapterPrompts.chapterOverview(currentChapter)}
 
-    PLAYER INFORMATION (${saga.mainCharacter?.name}):
-    ${CharacterPrompts.details(saga.mainCharacter)}
-    ${CharacterPrompts.charactersOverview(saga.characters)}
-    If a character is NOT listed here, they are considered new and MUST be introduced with 'senderType': "NEW_CHARACTER" upon their first significant appearance or mention.
-    
+         PLAYER INFORMATION (${saga.mainCharacter?.name}):
+         
+         ${CharacterPrompts.details(saga.mainCharacter)}
+         
+         ${CharacterPrompts.charactersOverview(saga.characters)}
+         
+         ${CharacterDirective.CHARACTER_INTRODUCTION.trimIndent()}
+         
+         ${TimelinePrompts.timeLineDetails(currentTimeline)}   
+        
+         ${ActPrompts.actDirective(directive)}
 
-    **WORLD WIKI KNOWLEDGE BASE:**
-    // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
-    // Use this information to ensure consistent terminology and to provide accurate details when referencing world elements.
-    [ ${saga.wikis.formatToJsonArray()} ]
-    
-   **CURRENT SAGA TIMELINE (Most Recent Events):**
-    // This section provides the most recent events from the saga's timeline (max 5 events).
-    // Use this to understand the immediate plot progression and current situation.
-    [ ${currentTimeline.formatToJsonArray()} ]
-    
-    ## SAGA ACT DIRECTIVE
-    // This directive guides the narrative's overall progression and pacing based on the current act.
-    // It dictates the specific tone, focus, and goal for your responses and the evolving plot.
-    $directive
+         ${SagaDirective.namingDirective(saga.data.genre)}
+         
+         ${conversationStyleAndPacing()}
+         
+         ${GenrePrompts.conversationDirective(saga.data.genre)}
+         
+         ${ContentGenerationDirective.PROGRESSION_DIRECTIVE}
 
+         ${conversationHistory(saga.mainCharacter, lastMessages)}
+         **LAST TURN'S OUTPUT / CURRENT CONTEXT:** //
+         { $message }
+         
+         ${ChatRules.outputRules(saga.mainCharacter)}
 
-    CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
-    // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : ${saga.mainCharacter?.name} : ").
-    // ⚠️ CRITICAL RULE FOR THOUGHTS: 'THOUGHT' entries here represent the player character's INTERNAL monologue.
-    // Under NO CIRCUMSTANCES should you generate a 'CHARACTER' senderType for a character NOT explicitly present in this list.
-    // If a character is introduced by the NARRATOR but not yet in this list, the VERY NEXT message you generate MUST be a "NEW_CHARACTER" type for them.
-    // NPCs IN THE STORY DO NOT HEAR OR DIRECTLY RESPOND TO THESE THOUGHTS.
-    // Your response to a 'THOUGHT' entry must be either a 'NARRATOR' message describing the scene, ${saga.mainCharacter?.name}'s internal state, or the outcome of her reflections; OR an NPC's action/dialogue that is NOT a direct response to the thought.
-    // 'ACTION' entries here represent explicit physical actions performed by the player character.
-    // You should narrate the outcome of these actions.
-    [ ${lastMessages.joinToString(separator = ",\n")} ]
-    **LAST TURN'S OUTPUT / CURRENT CONTEXT:** //
-    " $message "
-    ---
-    **Your NEXT RESPONSE MUST BE ONLY A VALID JSON OBJECT. Follow EXACTLY this structure:**
-    ${toJsonMap(
-        Message::class.java,
-        filteredFields = listOf("id", "timeStamp", "chapterId"),
-        fieldCustomDescription = "senderType" to "[ ${SenderType.filterUserInputTypes().joinToString()} ]",
-    )}
-    
-    **⚠️ ABSOLUTE CRITICAL RULE (DO NOT FORGET):**
-    **1. DO NOT COPY OR REPEAT ANY PART OF THE 'LAST TURN'S OUTPUT / CURRENT CONTEXT' IN YOUR RESPONSE'S 'text' FIELD. Generate ONLY NEW, original, and creative content.**
-    **2. Under NO circumstances should the 'speakerName' field in your generated JSON response be '${saga.mainCharacter?.name}' (the player's name).
-    You, as the Saga Master, NEVER speak for the player character.**
-    **3. You MUST NEVER generate a response with 'senderType': 'USER' or 'senderType': 'THOUGHT'. These senderTypes are exclusively for player input.**
+         ${CharacterRules.NEW_CHARACTER_RULE.trimIndent()}
 
-   ${typesExplanation()}
-   ${typesPriority()}
-    """
-
-    fun typesPriority() =
-        """
-        SenderType Selection Priority (Follow these rules strictly):
-        HIGHEST PRIORITY: NEW_CHARACTER: If the character whose turn it is to act (speak or appear) is NOT listed in 'CURRENT SAGA CAST', you MUST use 'NEW_CHARACTER' as the senderType. The 'text' must be their description. Do NOT generate dialogue for them in this turn.
-        NEW_CHAPTER: If a significant narrative transition is required.
-        CHARACTER: If an existing character from 'CURRENT SAGA CAST' is speaking.
-        NARRATOR: For scene descriptions, player prompts, or general story progression not tied to a specific character's action.
+         ${ChatRules.TYPES_PRIORITY_CONTENT.trimIndent()}
+         
         """.trimIndent()
 
     fun typesExplanation() =
         """
         Meaning of 'senderType' options:
         ${SenderType.entries.joinToString(separator = "\n") { it.name + ": " + it.meaning() }}
+        """.trimIndent()
+
+    fun conversationStyleAndPacing() =
+        """
+        ---
+        ## RESPONSE STYLE & PACING DIRECTIVE
+        // This directive guides the overall tone, pacing, and dynamic of your narrative responses and character dialogues.
+        // Your goal is to keep the story engaging and the dialogues impactful, avoiding unnecessary verbosity or excessive enigmatic language.
+        
+        1.  **Narrative Pacing & Detail:**
+            * **Focus on Impact:** Describe scenes, actions, and character states with clarity and conciseness. Prioritize details that directly advance the plot, deepen character understanding, or enhance immersion.
+            * **Vary Sentence Structure:** Mix short, impactful sentences with longer, more descriptive ones to create dynamic pacing.
+            * **Show, Don't Tell:** Instead of explicitly stating emotions or facts, describe actions, expressions, and environmental details that imply them.
+            * **Avoid Redundancy:** Do not repeat information already established in the conversation history, current chapter content, or character/world knowledge base unless specifically re-emphasizing a critical point.
+        
+        2.  **Character Dialogue (NPCs):**
+            * **Purposeful Dialogue:** Every line of NPC dialogue should serve a clear purpose: advance the plot, reveal character, provide information, create tension, or offer choices.
+            * **Conciseness:** NPCs should generally speak concisely. Avoid overly long monologues or repetitive phrasing.
+            * **IMMEDIATE RELEVANCE & CLARITY:** When introducing a new character or a character for the first time in a scene, their dialogue **MUST provide immediately relevant information or a clear, actionable hint/objective for the player's next step.** Their words should facilitate progression, not obscure it.
+            * **Enigmatic Characters (Conditional - Use SPARINGLY and PURPOSEFULLY):** If a character is *truly* designed to be enigmatic, their mystery should stem from *what they don't say* or *how they say it sparingly*, implying deeper knowledge rather than offering confusing riddles that halt progression. **Their enigmatic nature should be a personality trait, not a default dialogue style for every new NPC.** Ensure even enigmatic dialogue contains a thread of useful information or a path forward.
+            * **Natural Flow:** Ensure dialogues feel natural and responsive to the player's last input. NPCs should react logically within the context of their personality and the situation.
+            * **Vary Tone:** Adapt the NPC's tone (e.g., urgent, calm, sarcastic, empathetic) to their personality and the immediate narrative context.
+
+        3.  **Overall Readability:**
+            * **Paragraph Breaks:** Use appropriate paragraph breaks to enhance readability and prevent large blocks of text.
+            * **Clarity Over Obscurity:** Always prioritize clear communication of narrative events and dialogue meaning. While intrigue is good, confusion is not.
+        
+        ---
+        """.trimIndent()
+
+    fun conversationHistory(
+        mainCharacter: Character?,
+        lastMessages: List<String>,
+    ) = """
+        CONVERSATION HISTORY (FOR CONTEXT ONLY, do NOT reproduce this format in your response):
+         // Pay close attention to the speaker's name in this history (e.g., "CHARACTER : ${mainCharacter?.name} : ").
+         // ⚠️ CRITICAL RULE FOR THOUGHTS: 'THOUGHT' entries here represent the player character's INTERNAL monologue.
+         // Under NO CIRCUMSTANCES should you generate a 'CHARACTER' senderType for a character NOT explicitly present in this list.
+         // If a character is introduced by the NARRATOR but not yet in this list, the VERY NEXT message you generate MUST be a "NEW_CHARACTER" type for them.
+         // NPCs IN THE STORY DO NOT HEAR OR DIRECTLY RESPOND TO THESE THOUGHTS.
+         // Your response to a 'THOUGHT' entry must be either a 'NARRATOR' message describing the scene, ${mainCharacter?.name}'s internal state, or the outcome of her reflections; OR an NPC's action/dialogue that is NOT a direct response to the thought.
+         // 'ACTION' entries here represent explicit physical actions performed by the player character.
+         // You should narrate the outcome of these actions.
+         [ ${lastMessages.joinToString(separator = ",\n")} ]
         """.trimIndent()
 }

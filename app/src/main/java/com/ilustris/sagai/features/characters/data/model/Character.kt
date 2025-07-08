@@ -30,9 +30,38 @@ data class Character(
     @Embedded
     val details: Details,
     val joinedAt: Long = 0L,
-    @ColumnInfo(defaultValue = "")
-    val status: String = "",
 )
+
+fun exampleCharacter() =
+    Character(
+        id = 0,
+        name = "Tess",
+        backstory = "Noble warrior that fought in many battles, seeking redemption.",
+        image = "https://example.com/tess.png",
+        hexColor = "#A0522D",
+        sagaId = 1,
+        details =
+            Details(
+                appearance = "Tall and muscular with long braided brown hair.",
+                personality = "Stoic but kind-hearted, fiercely loyal.",
+                race = "Human",
+                height = 1.8,
+                weight = 75.0,
+                gender = "Female",
+                occupation = "Mercenary",
+                ethnicity = "Nordic",
+                facialDetails =
+                    FacialFeatures(
+                        hair = "Long, braided brown",
+                        eyes = "Piercing blue",
+                        mouth = "Firm, determined",
+                        scars = "A faint scar above the left eyebrow",
+                    ),
+                clothing = Clothing(body = "Leather armor", accessories = "Silver amulet", footwear = "Sturdy boots"),
+                weapons = "Longsword and shield",
+            ),
+        joinedAt = System.currentTimeMillis(),
+    )
 
 data class Details(
     val appearance: String = "",
@@ -40,12 +69,14 @@ data class Details(
     val race: String = "",
     val height: Double = 0.0,
     val weight: Double = 0.0,
-    val style: String = "",
     val gender: String = "",
     val occupation: String = "",
     val ethnicity: String = "",
-    val facialDetails: String? = "",
-    val clothing: String? = "",
+    @Embedded
+    val facialDetails: FacialFeatures = FacialFeatures(),
+    @Embedded
+    val clothing: Clothing = Clothing(),
+    val weapons: String = "",
 )
 
 data class Clothing(
@@ -57,9 +88,6 @@ data class Clothing(
 data class FacialFeatures(
     val hair: String = "",
     val eyes: String = "",
-    val ears: String = "",
-    val nose: String = "",
     val mouth: String = "",
-    val eyebrows: String = "",
     val scars: String = "",
 )

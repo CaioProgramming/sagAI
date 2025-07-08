@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
 import java.io.File
+import java.io.FileOutputStream
 
 class FileHelper(
     private val context: Context,
@@ -25,6 +26,29 @@ class FileHelper(
         }
         val file = directory.resolve(fileName.plus(".png").removeBlankSpace())
         file.writeBytes(data)
+        return file.takeIf { it.exists() }
+    }
+
+    fun saveFile(
+        fileName: String,
+        data: Bitmap?,
+        path: String? = null,
+    ): File? {
+        if (data == null) return null
+        val directory =
+            if (path != null) {
+                context.filesDir.resolve("sagas/$path")
+            } else {
+                context.filesDir
+            }
+        if (!directory.exists()) {
+            directory.mkdirs()
+        }
+        val file = directory.resolve(fileName.plus(".png").removeBlankSpace())
+        val fileOutputStream = FileOutputStream(file)
+        data.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+        fileOutputStream.flush()
+        fileOutputStream.close()
         return file.takeIf { it.exists() }
     }
 

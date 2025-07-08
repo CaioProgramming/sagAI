@@ -3,6 +3,7 @@ package com.ilustris.sagai.ui.theme.components
 import android.content.res.Configuration
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,13 +21,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.invertedColors
@@ -65,7 +64,11 @@ fun ConditionalImage(
     }
 }
 
-@Preview(uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL, showBackground = true)
+@Preview(
+    uiMode = Configuration.UI_MODE_TYPE_NORMAL,
+    showBackground = true,
+    showSystemUi = true,
+)
 @Composable
 fun ConditionalImagePreview() {
     LazyVerticalGrid(columns = GridCells.Fixed(2)) {
@@ -89,13 +92,13 @@ fun ConditionalImagePreview() {
                 "Plus" to BlendMode.Plus,
                 "Overlay" to BlendMode.Overlay,
             )
-        val testGenre = Genre.SCI_FI
+        val testGenre = Genre.FANTASY
         items(blendOptions) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     it.first,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(4.dp),
+                    modifier = Modifier.background(MaterialTheme.colorScheme.background).padding(4.dp),
                 )
                 ConditionalImage(
                     testGenre.background,

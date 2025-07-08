@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageGen
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import javax.inject.Inject
@@ -67,9 +68,9 @@ class MessageUseCaseImpl
             message: Pair<String, String>,
             lastMessages: List<Pair<String, String>>,
             directive: String,
-        ): RequestResult<Exception, Message> {
+        ): RequestResult<Exception, MessageGen> {
             val genText =
-                textGenClient.generate<Message>(
+                textGenClient.generate<MessageGen>(
                     generateReplyMessage(
                         saga,
                         chapter,

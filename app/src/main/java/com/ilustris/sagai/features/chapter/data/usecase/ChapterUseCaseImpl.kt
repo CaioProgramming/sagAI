@@ -83,7 +83,6 @@ class ChapterUseCaseImpl
                 val genCover =
                     imagenClient
                         .generateImage(prompt)!!
-                        .data
                 val coverFile =
                     fileHelper.saveFile(chapter.title, genCover, path = "${saga.id}/chapters/")
                 updateChapter(chapter.copy(coverImage = coverFile!!.absolutePath)).asSuccess()

@@ -1,18 +1,22 @@
 package com.ilustris.sagai.features.characters.domain
 
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.Schema
+import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
+import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -35,19 +39,53 @@ class CharacterUseCaseImpl
 
         override suspend fun getCharacterById(characterId: Int): Character? = repository.getCharacterById(characterId)
 
+        override suspend fun generateCharacterPrompt(
+            character: Character,
+            guidelines: String,
+            genre: Genre,
+        ): RequestResult<Exception, String> =
+            try {
+                textGenClient
+                    .generate<String>(
+                        CharacterPrompts.descriptionTranslationPrompt(
+                            character,
+                            CharacterFraming.PORTRAIT,
+                            genre,
+                        ),
+                        customSchema = Schema.string(),
+                        requireTranslation = false,
+                    )!!
+                    .asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
         override suspend fun generateCharacterImage(
             character: Character,
+            description: String,
             saga: SagaData,
         ): RequestResult<Exception, Character> =
             try {
-                val prompt = CharacterPrompts.generateImage(character, saga)
+                val translatedDescription =
+                    textGenClient.generate<String>(
+                        CharacterPrompts.descriptionTranslationPrompt(
+                            character,
+                            CharacterFraming.PORTRAIT,
+                            saga.genre,
+                        ),
+                        customSchema = Schema.string(),
+                        requireTranslation = false,
+                    )
+                val prompt = CharacterPrompts.generateImage(character, saga, translatedDescription!!)
+
                 val request =
                     FreepikRequest(
                         prompt,
                         GenrePrompts.negativePrompt(saga.genre),
                         GenrePrompts.characterStyling(saga.genre),
                     )
-                val image = imagenClient.generateImage(prompt)!!.data
+
+                val image = imagenClient.generateImage(prompt)!!
                 val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
@@ -70,22 +108,14 @@ class CharacterUseCaseImpl
                         ),
                     )!!
 
-                val characterQuery = repository.getCharacterByName(newCharacter.name)
+                val characterQuery =
+                    repository.getCharacterByName(newCharacter.name, sagaContent.data.id)
                 if (characterQuery != null) {
                     throw Exception("Character already exists")
                 }
                 val characterTransaction =
                     insertCharacter(newCharacter.copy(sagaId = sagaContent.data.id))
-                val iconGen =
-                    generateCharacterImage(
-                        character = characterTransaction,
-                        saga = sagaContent.data,
-                    )
-                if (iconGen is RequestResult.Success) {
-                    RequestResult.Success(iconGen.success.value)
-                } else {
-                    RequestResult.Success(characterTransaction)
-                }
+                characterTransaction.asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }

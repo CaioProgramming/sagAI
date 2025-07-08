@@ -6,6 +6,7 @@ enum class CharacterFraming(
     PORTRAIT(
         """
         Upper body portrait, including head and upper torso.
+        Focus on character face.
         """,
     ),
     MEDIUM_SHOT(

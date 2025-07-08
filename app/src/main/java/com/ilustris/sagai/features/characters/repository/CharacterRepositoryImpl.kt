@@ -37,5 +37,8 @@ class CharacterRepositoryImpl
 
         override suspend fun getCharacterById(characterId: Int): Character? = characterDao.getCharacterById(characterId)
 
-        override suspend fun getCharacterByName(name: String): Character? = characterDao.getCharacterByName(name)
+        override suspend fun getCharacterByName(
+            name: String,
+            sagaId: Int,
+        ): Character? = characterDao.getCharacterByName(name, sagaId)
     }

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.CharacterFraming
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -11,14 +12,18 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ChapterPrompts {
-    fun chapterOverview(chapter: Chapter) =
-        """
+    fun chapterOverview(chapter: Chapter?) =
+        if (chapter == null) {
+            emptyString()
+        } else {
+            """
         Current chapter overview:
         
         Title: ${chapter.title}
         Overview: ${chapter.overview}
 
         """
+        }
 
     fun chapterGeneration(
         sagaContent: SagaContent,

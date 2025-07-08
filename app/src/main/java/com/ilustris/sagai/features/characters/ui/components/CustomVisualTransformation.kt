@@ -16,6 +16,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 import kotlin.text.indexOf
 
@@ -101,7 +102,7 @@ fun buildWikiAndCharactersAnnotation(
             val shadow =
                 Shadow(
                     color = shadowColor,
-                    blurRadius = 3f,
+                    blurRadius = 0f,
                     offset =
                         androidx.compose.ui.geometry
                             .Offset(2f, -2f),
@@ -117,6 +118,7 @@ fun buildWikiAndCharactersAnnotation(
                 } else {
                     SpanStyle(
                         fontWeight = FontWeight.Bold,
+                        fontFamily = genre.bodyFont(),
                         color = characterColor,
                         shadow = shadow,
                     )

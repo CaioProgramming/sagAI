@@ -28,8 +28,11 @@ interface SagaContentManager {
         messageSubList: List<MessageContent>,
     ): RequestResult<Exception, Timeline>
 
-    suspend fun generateCharacter(message: Message): RequestResult<Exception, Character>
+    suspend fun generateCharacter(description: String): RequestResult<Exception, Character>
+
+    suspend fun generateCharacterImage(character: Character): RequestResult<Exception, Character>
 
     fun getDirective(): String
-    suspend fun updateAct() : RequestResult<Exception, Act>
+
+    suspend fun updateAct(): RequestResult<Exception, Act>
 }

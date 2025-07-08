@@ -29,6 +29,12 @@ sealed class RequestResult<out L, out R> {
 
     val success get() = this as Success
     val error get() = this as Error
+
+    fun getSuccess() = try {
+        success.value!!
+    } catch (e: Exception) {
+        null
+    }
 }
 
 fun <R> R.asSuccess() = RequestResult.Success(this)

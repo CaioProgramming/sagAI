@@ -147,7 +147,10 @@ fun toJsonMap(
     filteredFields: List<String> = emptyList(),
     fieldCustomDescription: Pair<String, String>? = null,
 ): String {
-    val deniedFields = filteredFields.plus("\$stable").plus("Companion")
+    val deniedFields =
+        filteredFields
+            .plus("\$stable")
+            .plus("companion")
     val fields =
         clazz
             .declaredFields
@@ -177,7 +180,10 @@ fun toJsonMap(
     return "{\n$fields\n}"
 }
 
-fun Any.toJsonFormat() = Gson().toJson(this)
+fun Any?.toJsonFormat(): String {
+    if (this == null) return emptyString()
+    return Gson().toJson(this)
+}
 
 fun doNothing() = {}
 
@@ -192,4 +198,3 @@ fun Long.formatHours(): String {
     val format = SimpleDateFormat("HH:mm", Locale.getDefault())
     return format.format(date)
 }
-

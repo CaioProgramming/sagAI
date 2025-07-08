@@ -82,6 +82,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.android)
     kapt(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.core.splashscreen) // Added Splash Screen dependency
 
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
@@ -108,6 +109,7 @@ dependencies {
     implementation(libs.chrisbanes.haze.materials)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
+    implementation(libs.firebase.config.ktx) // Added Firebase Remote Config
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

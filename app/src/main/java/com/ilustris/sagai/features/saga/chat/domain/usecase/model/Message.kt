@@ -56,6 +56,18 @@ data class Message(
     val actId: Int? = null,
 )
 
+data class MessageGen(
+    val message: Message,
+    val newCharacter: CharacterInfo? = null,
+    val shouldCreateCharacter: Boolean = false,
+)
+
+data class CharacterInfo(
+    val name: String,
+    val gender: String,
+    val briefDescription: String,
+)
+
 enum class SenderType {
     USER,
     THOUGHT,
@@ -105,8 +117,7 @@ fun SenderType.meaning() =
             """
         SenderType.NEW_CHARACTER ->
             """
-            Use when introducing a brand new, significant NPC for the very first time.
-            The '''text''' field for this type MUST contain a natural language description of this new character (including their name, key physical traits, and initial demeanor).
+            YOU CAN NEVER USE THIS TYPE, ITS WILL BE SEND EXCLUSIVELY LOCALLY ONLY ON THE APP WHEN NEW CHARACTER WILL START ON THE APP.
             """
 
         SenderType.THOUGHT ->

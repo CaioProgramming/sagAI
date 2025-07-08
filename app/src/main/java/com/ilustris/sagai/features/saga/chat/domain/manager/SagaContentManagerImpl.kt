@@ -1,6 +1,8 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
 import android.util.Log
+import com.ilustris.sagai.core.ai.CharacterFraming
+import com.ilustris.sagai.core.ai.prompts.CharacterGuidelines
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -11,6 +13,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.domain.usecase.ActUseCase
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -23,7 +26,6 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.collections.emptyList
 
@@ -64,7 +66,7 @@ class SagaContentManagerImpl
                 lastChapter?.eventReference?.let { referenceId -> saga.timelines.find { it.id == referenceId } }
             return eventReference?.let {
                 val referenceIndex = events.indexOf(it)
-                events.subList(referenceIndex, events.size).takeLast(5)
+                events.subList(referenceIndex, events.size)
             } ?: events
         }
 
@@ -80,7 +82,6 @@ class SagaContentManagerImpl
                             lastAddedEvents = lastEvents,
                         ).success.value
 
-                updateWikis(lastEvents)
                 val newChapter =
                     chapterUseCase
                         .saveChapter(
@@ -138,6 +139,7 @@ class SagaContentManagerImpl
                 )
 
             updateCharacters(newLore, currentSaga)
+            updateWikis(lastEvents())
 
             newTimeLine.asSuccess()
         } catch (e: Exception) {
@@ -168,10 +170,8 @@ class SagaContentManagerImpl
                             character.id == loreCharacter.id
                     }?.let {
                         characterUseCase.updateCharacter(
-                            it.copy(
-                                name = loreCharacter.name,
-                                backstory = loreCharacter.backstory,
-                                status = loreCharacter.status,
+                            loreCharacter.copy(
+                                id = it.id,
                             ),
                         )
                     }
@@ -208,13 +208,31 @@ class SagaContentManagerImpl
             }
         }
 
-        override suspend fun generateCharacter(message: Message) =
+        override suspend fun generateCharacter(description: String) =
             try {
                 characterUseCase
                     .generateCharacter(
                         sagaContent = content.value!!,
-                        description = message.text,
+                        description = description,
                     )
+            } catch (e: Exception) {
+                e.asError()
+            }
+
+        override suspend fun generateCharacterImage(character: Character): RequestResult<Exception, Character> =
+            try {
+                val descriptionGen =
+                    characterUseCase
+                        .generateCharacterPrompt(
+                            character = character,
+                            guidelines =
+                                CharacterGuidelines.imageDescriptionGuideLine(
+                                    CharacterFraming.PORTRAIT,
+                                    content.value!!.data.genre,
+                                ),
+                            genre = content.value!!.data.genre,
+                        ).success.value
+                characterUseCase.generateCharacterImage(character, descriptionGen, content.value!!.data)
             } catch (e: Exception) {
                 e.asError()
             }
@@ -229,15 +247,16 @@ class SagaContentManagerImpl
             }
         }
 
-    override suspend fun updateAct(): RequestResult<Exception, Act> {
-        val currentSaga = content.value!!
-        val currentAct = currentSaga.currentActInfo!!.act
-        val genAct = actUseCase.generateAct(currentSaga).success.value
-        return actUseCase.updateAct(
-            currentAct.copy(
-                title = genAct.title,
-                content = genAct.content,
-            )
-        ).asSuccess()
+        override suspend fun updateAct(): RequestResult<Exception, Act> {
+            val currentSaga = content.value!!
+            val currentAct = currentSaga.currentActInfo!!.act
+            val genAct = actUseCase.generateAct(currentSaga).success.value
+            return actUseCase
+                .updateAct(
+                    currentAct.copy(
+                        title = genAct.title,
+                        content = genAct.content,
+                    ),
+                ).asSuccess()
+        }
     }
-}

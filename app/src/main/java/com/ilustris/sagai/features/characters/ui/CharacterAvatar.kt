@@ -13,12 +13,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -28,6 +28,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.theme.headerFont
 import effectForGenre
 
 @Composable
@@ -66,10 +67,10 @@ fun CharacterAvatar(
             onSuccess = { successState: AsyncImagePainter.State.Success ->
                 isLoaded.value = true
             },
+            contentScale = ContentScale.Crop,
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .clip(CircleShape)
                     .background(characterColor, CircleShape)
                     .effectForGenre(genre, focusRadius = softFocusRadius, customGrain = grainRadius),
         )
@@ -80,7 +81,10 @@ fun CharacterAvatar(
 
         Text(
             character.name.first().uppercase(),
-            style = textStyle,
+            style =
+                textStyle.copy(
+                    fontFamily = genre.headerFont(),
+                ),
             fontWeight = FontWeight.Black,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.align(Alignment.Center).graphicsLayer(textAlpha),

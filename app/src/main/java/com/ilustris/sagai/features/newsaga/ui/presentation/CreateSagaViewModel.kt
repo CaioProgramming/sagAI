@@ -29,8 +29,8 @@ class CreateSagaViewModel
         val state = MutableStateFlow<CreateSagaState>(CreateSagaState())
         val effect = MutableStateFlow<Effect?>(null)
 
-        fun updateCharacterDescription(description: String) {
-            saga.value = saga.value.copy(characterDescription = description)
+        fun updateCharacterDescription(description: Character) {
+            saga.value = saga.value.copy(character = description)
             generateSaga()
         }
 
@@ -53,7 +53,7 @@ class CreateSagaViewModel
                 val saveOperation =
                     newSagaUseCase.saveSaga(
                         sagaData.copy(genre = saga.value.genre),
-                        saga.value.characterDescription,
+                        saga.value.character,
                     )
 
                 when (saveOperation) {
@@ -61,6 +61,7 @@ class CreateSagaViewModel
 
                     is RequestResult.Success<Pair<SagaData, Character>> -> {
                         val operationData = saveOperation.success.value
+                        saga.value = saga.value.copy(character = operationData.second)
                         val sagaUpdateOperation =
                             newSagaUseCase
                                 .generateSagaIcon(
@@ -115,7 +116,7 @@ class CreateSagaViewModel
                         state.value =
                             state.value.copy(
                                 isLoading = false,
-                                saga = saga,
+                                saga = saga.copy(icon = null),
                                 continueAction =
                                     "Salvar" to {
                                         saveSaga(saga)

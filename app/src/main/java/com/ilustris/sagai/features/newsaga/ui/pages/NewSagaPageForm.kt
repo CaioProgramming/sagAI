@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
 @Composable
@@ -23,7 +22,7 @@ fun NewSagaPagesView(
                 NewSagaPages.TITLE -> currentData.title
                 NewSagaPages.GENRE -> currentData.genre
                 NewSagaPages.DESCRIPTION -> currentData.description
-                NewSagaPages.CHARACTER -> currentData.characterDescription
+                NewSagaPages.CHARACTER -> currentData
             }
         page.content(
             { newData ->

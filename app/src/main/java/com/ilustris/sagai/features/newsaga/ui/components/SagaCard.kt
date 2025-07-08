@@ -32,12 +32,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.home.data.model.SagaData
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import kotlin.time.Duration.Companion.seconds
@@ -91,7 +88,7 @@ fun SagaCard(
         Column(
             modifier =
                 Modifier
-                    .background(fadeGradientBottom(sagaData.genre.color))
+                    .background(fadeGradientBottom())
                     .padding(16.dp)
                     .align(Alignment.BottomCenter)
                     .verticalScroll(
@@ -105,11 +102,7 @@ fun SagaCard(
                         fontFamily = sagaData.genre.headerFont(),
                         textAlign = TextAlign.Center,
                         fontWeight = FontWeight.Normal,
-                        brush =
-                            gradientAnimation(
-                                sagaData.genre.color.darkerPalette(),
-                                gradientType = GradientType.VERTICAL,
-                            ),
+                        brush = sagaData.genre.gradient(true),
                     ),
                 modifier =
                     Modifier

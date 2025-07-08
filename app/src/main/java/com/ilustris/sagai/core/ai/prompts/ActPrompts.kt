@@ -6,8 +6,10 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.home.data.model.SagaContent
 
 object ActPrompts {
-    fun generateAct(content: SagaContent, purpose: String) =
-        """
+    fun generateAct(
+        content: SagaContent,
+        purpose: String,
+    ) = """
         You are the "Saga Act Chronicler", an AI specialized in summarizing major narrative arcs for text-based RPGs.
         Your task is to provide a compelling overview of a completed act, based on its constituent chapters and the overall saga timeline.
         ---
@@ -37,4 +39,12 @@ object ActPrompts {
         **OUTPUT FORMAT (JSON):**
         ${toJsonMap(Act::class.java)}
         """
+
+    fun actDirective(directive: String) =
+        """
+         ## SAGA ACT DIRECTIVE
+        // This directive guides the narrative's overall progression and pacing based on the current act.
+        // It dictates the specific tone, focus, and goal for your responses and the evolving plot.
+        $directive
+        """.trimIndent()
 }

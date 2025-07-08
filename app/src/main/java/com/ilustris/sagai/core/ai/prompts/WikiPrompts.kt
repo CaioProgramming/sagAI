@@ -45,4 +45,12 @@ object WikiPrompts {
         Ensure 'FACTION' type is used ONLY for groups or ILLEGAL organizations.**
 
         """
+
+    fun wikiContent(wiki: List<Wiki>) =
+        """
+         **WORLD WIKI KNOWLEDGE BASE:**
+         // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
+         // Use this information to ensure consistent terminology and to provide accurate details when referencing world elements.
+         [ ${wiki.formatToJsonArray()} ]
+        """
 }

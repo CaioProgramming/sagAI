@@ -17,7 +17,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.IntSize
 import loadShaderFromAssetsOnce
 
-private const val DEFAULT_TOLERANCE = 0.05f
+private const val DEFAULT_TOLERANCE = 0.20f
 private const val DEFAULT_SATURATION_THRESHOLD = 0.02f
 private const val DEFAULT_LIGHTNESS_THRESHOLD = 0.05f
 private const val DEFAULT_HIGHLIGHT_SATURATION_BOOST = 1f

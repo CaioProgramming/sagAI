@@ -39,8 +39,8 @@ fun Genre.headerFont(): FontFamily {
 fun Genre.bodyFont(): FontFamily {
     val fontResource =
         when (this) {
-            Genre.FANTASY -> R.font.magical_horizon
-            Genre.SCI_FI -> R.font.mode_nine
+            Genre.FANTASY -> R.font.fondamento_regular
+            Genre.SCI_FI -> R.font.tektur
             else -> null
         }
     return if (fontResource != null) {

@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.Genre.*
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -171,15 +170,17 @@ fun genresGradient(): List<Color> =
         }.flatten()
         .plus(holographicGradient)
 
+
 @Composable
 fun Genre.gradient(
     animated: Boolean = false,
     duration: Duration = 5.seconds,
     targetValue: Float = 500f,
+    gradientType: GradientType = GradientType.VERTICAL,
 ) = if (animated) {
-    gradientAnimation(this.colorPalette(), duration, targetValue)
+    gradientAnimation(this.colorPalette(), duration, targetValue, gradientType)
 } else {
-    Brush.verticalGradient(this.colorPalette())
+    gradientType.toBrush(colors = this.colorPalette(), offsetAnimationValue = targetValue)
 }
 
 fun Color.solidGradient() = Brush.verticalGradient(List(2) { this })

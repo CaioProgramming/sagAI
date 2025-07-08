@@ -9,7 +9,7 @@ import java.io.File
 interface NewSagaUseCase {
     suspend fun saveSaga(
         sagaData: SagaData,
-        characterDescription: String,
+        characterDescription: Character,
     ): RequestResult<Exception, Pair<SagaData, Character>>
 
     suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, SagaData>
