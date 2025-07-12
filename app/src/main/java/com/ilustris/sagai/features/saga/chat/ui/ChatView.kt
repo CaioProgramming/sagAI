@@ -1,4 +1,3 @@
-
 @file:OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class,
@@ -42,13 +41,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.isImeVisible // Added import
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -87,6 +84,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
@@ -95,7 +94,8 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.domain.model.StructuredSuggestion
+import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
@@ -226,8 +226,6 @@ fun ChatView(
                     mutableStateOf(false)
                 }
 
-                val contentColor =
-                    content?.data?.genre?.color ?: MaterialTheme.colorScheme.onPrimary
                 val brush =
                     content?.data?.genre?.gradient() ?: Brush.verticalGradient(holographicGradient)
                 val shape = RoundedCornerShape(content?.data?.genre?.cornerSize() ?: 25.dp)
@@ -239,7 +237,7 @@ fun ChatView(
                         ).border(1.dp, brush, shape)
                         .hazeEffect(state = contentHaze, style = HazeMaterials.thin())
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                         .clickable {
                             isExpanded = isExpanded.not()
                         }.animateContentSize(
@@ -251,16 +249,17 @@ fun ChatView(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center,
                     ) {
-                        SparkIcon(
-                            modifier = Modifier.size(50.dp),
-                            brush = brush,
-                            tint = contentColor,
-                            blurRadius = 5.dp,
-                            duration = 2.seconds,
+                        Icon(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            modifier = Modifier.size(12.dp),
+                            tint =
+                                content?.data?.genre?.color
+                                    ?: MaterialTheme.colorScheme.onBackground,
                         )
                         Text(
                             snackBar.title,
-                            style = MaterialTheme.typography.titleMedium,
+                            style = MaterialTheme.typography.titleSmall,
                             fontFamily = content?.data?.genre?.bodyFont(),
                             textAlign = TextAlign.Start,
                             modifier =
@@ -277,7 +276,7 @@ fun ChatView(
                     ) {
                         Text(
                             snackBar.text,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = MaterialTheme.typography.bodySmall,
                             fontFamily = content?.data?.genre?.bodyFont(),
                             textAlign = TextAlign.Start,
                             modifier =
@@ -293,10 +292,10 @@ fun ChatView(
                                 onClick = {
                                     when (snackBar.redirectAction.first) {
                                         ChatAction.RESEND -> viewModel.dismissSnackBar()
-                                        ChatAction.OPEN_TIMELINE -> {
+                                        else -> {
                                             content?.data?.let { saga ->
                                                 navHostController.navigateToRoute(
-                                                    Routes.TIMELINE,
+                                                    Routes.SAGA_DETAIL,
                                                     mapOf("sagaId" to saga.id.toString()),
                                                 )
                                             }
@@ -330,11 +329,11 @@ fun ChatContent(
     content: SagaContent,
     characters: List<Character> = emptyList(),
     messagesList: List<MessageContent> = emptyList(),
-    suggestions: List<StructuredSuggestion> = emptyList(),
+    suggestions: List<Suggestion> = emptyList(),
     isGenerating: Boolean = false,
     padding: PaddingValues = PaddingValues(),
     onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
-    onCreateCharacter: (Character) -> Unit = {},
+    onCreateCharacter: (CharacterInfo) -> Unit = {},
     onBack: () -> Unit = {},
     openSagaDetails: (SagaData) -> Unit = {},
 ) {
@@ -358,8 +357,7 @@ fun ChatContent(
             customBlendMode = null,
             Modifier
                 .fillMaxSize()
-                .alpha(.6f)
-                .hazeSource(hazeState),
+                .alpha(.7f),
         )
 
         ConstraintLayout(
@@ -410,6 +408,7 @@ fun ChatContent(
                     AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
                         LazyRow(
                             modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Bottom,
                         ) {
                             items(suggestions) {
                                 Row(
@@ -456,20 +455,28 @@ fun ChatContent(
                         }
                     }
 
-                    ChatInputView(
-                        content = content,
-                        state = state,
-                        isGenerating = isGenerating,
-                        modifier =
-                            Modifier
-                                .hazeEffect(
-                                    state = hazeList,
-                                    style = HazeMaterials.regular(),
-                                ).fillMaxWidth()
-                                .wrapContentHeight(),
-                        onSendMessage = onSendMessage,
-                        onCreateNewCharacter = onCreateCharacter,
-                    )
+                    AnimatedVisibility(saga.isEnded.not()) {
+                        ChatInputView(
+                            content = content,
+                            isGenerating = isGenerating,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .wrapContentHeight(),
+                            onSendMessage = onSendMessage,
+                            onCreateNewCharacter = onCreateCharacter,
+                        )
+                    }
+
+                    AnimatedVisibility(saga.isEnded) {
+                        Text(
+                            "Sua saga chegou ao fim em ${saga.endedAt.formatDate()}",
+                            style =
+                                MaterialTheme.typography.bodyLarge.copy(
+                                    brush = saga.genre.gradient(true),
+                                ),
+                        )
+                    }
                 }
             }
 
@@ -767,7 +774,7 @@ fun ChatViewPreview() {
             title = "Byte Legend",
             description = "This is a sample saga for preview purposes.",
             icon = "",
-            genre = Genre.SCI_FI,
+            genre = Genre.FANTASY,
             createdAt = Calendar.getInstance().timeInMillis,
             mainCharacterId = null,
             visuals = IllustrationVisuals(),
@@ -802,7 +809,7 @@ fun ChatViewPreview() {
             ),
             suggestions =
                 List(3) {
-                    StructuredSuggestion(
+                    Suggestion(
                         "This is a sample suggestion number $it.",
                         SenderType.NARRATOR,
                     )

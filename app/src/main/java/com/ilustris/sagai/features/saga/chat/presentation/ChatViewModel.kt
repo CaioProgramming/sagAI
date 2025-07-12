@@ -7,14 +7,11 @@ import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.act.ui.toRoman
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
-import com.ilustris.sagai.features.saga.chat.domain.model.StructuredSuggestion
+import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
@@ -47,21 +44,27 @@ class ChatViewModel
         val isGenerating = MutableStateFlow(false)
         val characters = MutableStateFlow<List<Character>>(emptyList())
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
-        val suggestions = MutableStateFlow<List<StructuredSuggestion>>(emptyList())
+        val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
 
         private fun sendError(errorMessage: String) {
-            snackBarMessage.value =
-                SnackBarState(
-                    title = "Ocorreu um erro inesperado",
-                    text = errorMessage,
-                    redirectAction = Triple(ChatAction.RESEND, "Ok", null),
-                )
-            isGenerating.value = false
+            viewModelScope.launch {
+                snackBarMessage.value =
+                    SnackBarState(
+                        title = "Ocorreu um erro inesperado",
+                        text = errorMessage,
+                        redirectAction = Triple(ChatAction.RESEND, "Ok", null),
+                    )
+                isGenerating.value = false
+                delay(15.seconds)
+                snackBarMessage.value = null
+            }
         }
 
         fun initChat(sagaId: String?) {
             state.value = ChatState.Loading
             observeSaga()
+            observeContentUpdate()
+            observeTrigger()
             viewModelScope.launch(Dispatchers.IO) {
                 sagaId?.let {
                     sagaContentManager.loadSaga(it)
@@ -78,41 +81,44 @@ class ChatViewModel
                 sagaContentManager.content.collect {
                     if (it != null) {
                         content.value = it
-                        if (it.messages.size != messages.value.size) {
+                        if (it.messages.size != messages.value.size && isGenerating.value.not()) {
                             generateSuggestions(it.messages)
                         }
                         messages.value =
                             it.messages.sortedByDescending { messageContent -> messageContent.message.timestamp }
                         characters.value = sortCharactersByMessageCount(it.characters, it.messages)
                         state.value = ChatState.Success
-                        checkSaga(it)
+
+                        if (it.messages.isEmpty() && isGenerating.value.not()) {
+                            generateIntroduction(it.data, it.mainCharacter)
+                        }
                     }
                 }
             }
         }
 
-        private fun checkSaga(content: SagaContent) {
-            viewModelScope.launch {
-                if (content.acts.isEmpty()) {
-                    sagaContentManager.createAct().onSuccess {
-                        generateIntroduction(content.data, content.mainCharacter)
-                    }
-                }
-            }
-        }
-
-        private fun finishSaveChapter(chapter: Chapter) {
+        private fun observeTrigger() {
             viewModelScope.launch(Dispatchers.IO) {
-                messageUseCase
-                    .saveMessage(
-                        Message(
-                            text = "Capitulo '${chapter.title}' iniciado.",
-                            senderType = SenderType.NEW_CHAPTER,
-                            sagaId = content.value!!.data.id,
-                            chapterId = chapter.id,
-                        ),
-                    )
-                isGenerating.value = false
+                sagaContentManager.endTrigger.collect {
+                    if (it) {
+                        content.value?.let { saga ->
+                            messageUseCase
+                                .generateEndingMessage(saga)
+                                .onSuccessAsync { message ->
+                                    sendMessage(message)
+                                    sagaContentManager.endSaga()
+                                }
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun observeContentUpdate() {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.contentUpdateMessages.collect {
+                    sendMessage(it)
+                }
             }
         }
 
@@ -121,6 +127,7 @@ class ChatViewModel
             character: Character?,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
+                isGenerating.value = true
                 state.value = ChatState.Loading
                 messageUseCase
                     .generateIntroMessage(saga, character)
@@ -203,20 +210,17 @@ class ChatViewModel
 
                     else -> doNothing()
                 }
-
-                if (it.senderType == SenderType.NEW_CHARACTER && isFromUser) {
-                    generateCharacter(it.text)
-                }
                 checkLoreUpdate()
             }
         }
 
         private fun generateSuggestions(messagesList: List<MessageContent>) {
+            suggestions.value = emptyList()
             viewModelScope.launch(Dispatchers.IO) {
                 content.value?.data?.let { saga ->
                     suggestionUseCase
                         .invoke(
-                            messagesList.sortedBy { it.message.timestamp }.takeLast(3),
+                            messagesList.sortedBy { it.message.timestamp }.takeLast(10),
                             content.value?.mainCharacter,
                             saga,
                         ).onSuccess {
@@ -283,70 +287,8 @@ class ChatViewModel
                         newEvent.content,
                         redirectAction = Triple(ChatAction.OPEN_TIMELINE, "Ver mais", newEvent.id),
                     )
-                delay(10.seconds)
+                delay(20.seconds)
                 snackBarMessage.value = null
-                sagaContentManager
-                    .checkForChapter()
-                    .onSuccess {
-                        isGenerating.value = true
-                        finishSaveChapter(it)
-                        checkForActs()
-                    }.onFailure {
-                        isGenerating.value = false
-                    }
-            }
-        }
-
-        private fun checkForActs() {
-            val currentSaga = content.value ?: return
-            viewModelScope.launch {
-                val currentAct = currentSaga.currentActInfo
-                if (currentAct?.chapters?.size == 10) {
-                    sagaContentManager.updateAct().onSuccess {
-                        saveActEnd(it)
-                    }
-                }
-            }
-        }
-
-        private fun saveActEnd(act: Act) {
-            viewModelScope.launch {
-                val currentActs = content.value?.acts?.size
-                sendMessage(
-                    Message(
-                        text = "Ato ${(currentActs ?: 1).toRoman()} finalizado.",
-                        actId = act.id,
-                        senderType = SenderType.NEW_ACT,
-                    ),
-                )
-                sagaContentManager.createAct()
-                isGenerating.value = false
-            }
-        }
-
-        private fun generateCharacter(description: String) {
-            viewModelScope.launch(Dispatchers.IO) {
-                isGenerating.value = true
-                sagaContentManager
-                    .generateCharacter(
-                        description,
-                    ).onSuccess {
-                        sendMessage(
-                            Message(
-                                text = "${it.name} Juntou-se.",
-                                senderType = SenderType.NEW_CHARACTER,
-                                characterId = it.id,
-                            ),
-                            false,
-                        )
-                    }
-                isGenerating.value = false
-            }
-        }
-
-        private fun updateMessage(message: Message) {
-            viewModelScope.launch(Dispatchers.IO) {
-                messageUseCase.updateMessage(message)
             }
         }
 
@@ -390,22 +332,28 @@ class ChatViewModel
                                     m.joinMessage()
                                 },
                     ).onSuccess { genMessage ->
-                        viewModelScope.launch(Dispatchers.IO) {
-                            if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
-                                createCharacter(genMessage.newCharacter)
-                            }
-
-                            sendMessage(
-                                genMessage.message.copy(
-                                    chapterId = null,
-                                    actId = null,
-                                ),
-                            )
-                            isGenerating.value = false
+                        sendMessage(
+                            genMessage.message.copy(
+                                chapterId = null,
+                                actId = null,
+                            ),
+                        )
+                        isGenerating.value = false
+                        if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
+                            createCharacter(genMessage.newCharacter)
+                        }
+                        if (genMessage.shouldEndSaga) {
+                            endSaga()
                         }
                     }.onFailure {
                         sendError(it.message ?: "Unknown error")
                     }
+            }
+        }
+
+        private fun endSaga() {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.endSaga()
             }
         }
 
@@ -414,21 +362,19 @@ class ChatViewModel
                 sagaContentManager
                     .generateCharacter(
                         newCharacter.toJsonFormat(),
-                    ).onSuccess {
-                        sendMessage(
-                            Message(
-                                text = "${it.name} Juntou-se.",
-                                senderType = SenderType.NEW_CHARACTER,
-                                characterId = it.id,
-                            ),
-                            false,
+                    ).onSuccessAsync {
+                        snackBarMessage.value =
+                            SnackBarState(
+                                "${it.name} juntou-se a história!",
+                                it.backstory,
+                                redirectAction = Triple(ChatAction.OPEN_CHARACTER, "Ver mais", it.id),
+                            )
+                        sagaContentManager.generateCharacterImage(
+                            it,
                         )
 
-                        viewModelScope.launch(Dispatchers.IO) {
-                            sagaContentManager.generateCharacterImage(
-                                it,
-                            )
-                        }
+                        delay(20.seconds)
+                        snackBarMessage.value = null
                     }.onFailure {
                         sendError("Ocorreu um erro ao criar o personagem.")
                     }
@@ -440,21 +386,19 @@ class ChatViewModel
                 sagaContentManager
                     .generateCharacter(
                         newCharacter.toJsonFormat(),
-                    ).onSuccess {
-                        sendMessage(
-                            Message(
-                                text = "${it.name} Juntou-se.",
-                                senderType = SenderType.NEW_CHARACTER,
-                                characterId = it.id,
-                            ),
-                            false,
+                    ).onSuccessAsync {
+                        snackBarMessage.value =
+                            SnackBarState(
+                                "${it.name} juntou-se a história!",
+                                it.backstory,
+                                redirectAction = Triple(ChatAction.OPEN_CHARACTER, "Ver mais", it.id),
+                            )
+                        sagaContentManager.generateCharacterImage(
+                            it,
                         )
 
-                        viewModelScope.launch(Dispatchers.IO) {
-                            sagaContentManager.generateCharacterImage(
-                                it,
-                            )
-                        }
+                        delay(20.seconds)
+                        snackBarMessage.value = null
                     }.onFailure {
                         sendError("Ocorreu um erro ao criar o personagem.")
                     }

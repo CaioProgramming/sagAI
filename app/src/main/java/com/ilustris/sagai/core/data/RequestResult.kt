@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.data
 
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+
 sealed class RequestResult<out L, out R> {
     data class Error<out L>(
         val value: L,
@@ -20,7 +22,21 @@ sealed class RequestResult<out L, out R> {
         return this
     }
 
+    suspend fun onSuccessAsync(block: suspend (R) -> Unit): RequestResult<L, R> {
+        if (this is Success) {
+            block(value)
+        }
+        return this
+    }
+
     fun onFailure(block: (L) -> Unit): RequestResult<L, R> {
+        if (this is Error) {
+            block(value)
+        }
+        return this
+    }
+
+    suspend fun onFailureAsync(block: suspend (L) -> Unit): RequestResult<L, R> {
         if (this is Error) {
             block(value)
         }
@@ -30,16 +46,19 @@ sealed class RequestResult<out L, out R> {
     val success get() = this as Success
     val error get() = this as Error
 
-    fun getSuccess() = try {
-        success.value!!
-    } catch (e: Exception) {
-        null
-    }
+    fun getSuccess() =
+        try {
+            success.value!!
+        } catch (e: Exception) {
+            null
+        }
 }
 
 fun <R> R.asSuccess() = RequestResult.Success(this)
 
 fun <L : Exception> L.asError(): RequestResult.Error<L> {
     this.printStackTrace()
+    FirebaseCrashlytics.getInstance().recordException(this)
+
     return RequestResult.Error(this)
 }

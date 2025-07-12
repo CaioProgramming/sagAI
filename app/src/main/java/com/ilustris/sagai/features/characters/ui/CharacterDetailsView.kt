@@ -1,11 +1,7 @@
 package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,18 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,23 +38,17 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -119,27 +102,18 @@ fun CharacterDetailsContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item {
-            var fraction by remember {
-                mutableStateOf(300.dp)
-            }
+            val size = if (character.image.isNotEmpty()) 275.dp else 0.dp
 
-            val imageSize by animateDpAsState(
-                fraction,
-                tween(easing = EaseIn, durationMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS)),
-            )
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(imageSize)
+                    .height(size)
                     .clipToBounds(),
             ) {
                 AsyncImage(
                     character.image,
                     contentDescription = character.name,
                     contentScale = ContentScale.Crop,
-                    onError = {
-                        0.dp
-                    },
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -155,7 +129,6 @@ fun CharacterDetailsContent(
                             fadeGradientBottom(),
                         ),
                 )
-
             }
         }
 
@@ -165,13 +138,13 @@ fun CharacterDetailsContent(
             Text(
                 character.name,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.displaySmall.copy(
-                    fontFamily = genre.headerFont(),
-                    brush = characterColor.gradientFade()
-                ),
-                modifier = Modifier.fillMaxWidth()
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = characterColor.gradientFade(),
+                    ),
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
             )
-
         }
 
         item { CharacterStats(character = character, genre = genre) }
@@ -214,7 +187,6 @@ fun CharacterDetailsContent(
                 genre = genre,
             )
         }
-
 
         item {
             CharacterSection(

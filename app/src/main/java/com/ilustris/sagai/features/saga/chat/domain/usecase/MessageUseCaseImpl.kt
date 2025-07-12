@@ -1,9 +1,8 @@
 package com.ilustris.sagai.features.saga.chat.domain.usecase
 
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.introductionPrompt
-import com.ilustris.sagai.core.ai.narratorBreakPrompt
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -61,6 +60,18 @@ class MessageUseCaseImpl
             }
         }
 
+        override suspend fun generateEndingMessage(content: SagaContent): RequestResult<Exception, Message> =
+            try {
+                val genText =
+                    textGenClient.generate<Message>(
+                        SagaPrompts.endingGeneration(content),
+                    )
+
+                genText!!.asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
         override suspend fun generateMessage(
             saga: SagaContent,
             chapter: Chapter?,
@@ -92,21 +103,6 @@ class MessageUseCaseImpl
             }
         }
 
-        override suspend fun generateNarratorBreak(
-            data: SagaData,
-            messages: List<String>,
-        ) = try {
-            RequestResult.Success(
-                textGenClient.generate<Message>(
-                    generateNarratorBreakPrompt(data, messages),
-                    true,
-                )!!,
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            RequestResult.Error(e)
-        }
-
         override suspend fun updateMessage(message: Message): RequestResult<Exception, Unit> =
             try {
                 messageRepository.updateMessage(message).asSuccess()
@@ -118,12 +114,11 @@ class MessageUseCaseImpl
 private fun generateSagaIntroductionPrompt(
     saga: SagaData,
     character: Character?,
-): String = saga.introductionPrompt(character)
-
-private fun generateNarratorBreakPrompt(
-    saga: SagaData,
-    messages: List<String>,
-): String = saga.narratorBreakPrompt(messages)
+): String =
+    SagaPrompts.introductionGeneration(
+        saga,
+        character,
+    )
 
 private fun generateReplyMessage(
     sagaContent: SagaContent,

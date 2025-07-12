@@ -1,12 +1,15 @@
 package com.ilustris.sagai.features.characters.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -123,6 +126,7 @@ fun CharactersGalleryContent(
             onDismissRequest = { showCharacter = null },
             sheetState = newCharacterSheetState,
             containerColor = MaterialTheme.colorScheme.background,
+            dragHandle = { Box {} },
         ) {
             CharacterDetailsContent(
                 saga,
@@ -191,8 +195,20 @@ private fun CharacterVerticalItem(
 fun CharactersGalleryContentPreview() {
     val sagaContent =
         SagaContent(
-            data = SagaData(id = 0, title = "Saga Title", description = "Saga Description", genre = Genre.FANTASY),
-            mainCharacter = Character(id = 1, name = "Main Character", details = Details(), sagaId = 0),
+            data =
+                SagaData(
+                    id = 0,
+                    title = "Saga Title",
+                    description = "Saga Description",
+                    genre = Genre.FANTASY,
+                ),
+            mainCharacter =
+                Character(
+                    id = 1,
+                    name = "Main Character",
+                    details = Details(),
+                    sagaId = 0,
+                ),
             messages = emptyList(),
             chapters = emptyList(),
             characters =
@@ -255,7 +271,12 @@ fun CharacterVerticalItemPreview() {
                 ),
             joinedAt = System.currentTimeMillis(),
         )
-    CharacterVerticalItem(modifier = Modifier, character = character, genre = Genre.FANTASY, imageSize = 100.dp)
+    CharacterVerticalItem(
+        modifier = Modifier,
+        character = character,
+        genre = Genre.FANTASY,
+        imageSize = 100.dp,
+    )
 }
 
 @Preview
@@ -290,36 +311,48 @@ fun CharacterHorizontalView(
     borderColor: Color? = null,
     imageSize: Dp = 50.dp,
 ) {
-    Row(
+    Column(
         modifier =
         modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        CharacterAvatar(
-            character = character,
-            borderColor = borderColor,
-            borderSize = borderSize,
-            textStyle =
-                MaterialTheme.typography.labelLarge.copy(
-                    fontFamily = genre.headerFont(),
-                ),
-            genre = genre,
-            modifier =
-                Modifier
-                    .size(imageSize),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            CharacterAvatar(
+                character = character,
+                borderColor = borderColor,
+                borderSize = borderSize,
+                textStyle =
+                    MaterialTheme.typography.labelLarge.copy(
+                        fontFamily = genre.headerFont(),
+                    ),
+                genre = genre,
+                modifier =
+                    Modifier
+                        .size(imageSize),
+            )
 
-        Text(
-            text = character.name,
-            style =
-                style.copy(
-                    fontFamily = genre.bodyFont(),
-                    fontWeight = FontWeight.W700,
-                    color = Color(character.hexColor.toColorInt()),
-                ),
-            textAlign = TextAlign.Start,
-            modifier = Modifier.align(Alignment.CenterVertically),
+            Text(
+                text = character.name,
+                style =
+                    style.copy(
+                        fontFamily = genre.bodyFont(),
+                        fontWeight = FontWeight.W700,
+                        color = Color(character.hexColor.toColorInt()),
+                    ),
+                textAlign = TextAlign.Start,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Box(
+            Modifier
+                .padding(4.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .05f)),
         )
     }
 }

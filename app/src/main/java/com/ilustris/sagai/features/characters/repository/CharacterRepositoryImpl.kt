@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.characters.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +25,7 @@ class CharacterRepositoryImpl
                             character.copy(
                                 id = 0,
                                 joinedAt = Calendar.getInstance().timeInMillis,
+                                image = emptyString(),
                             ),
                         ).toInt(),
             )

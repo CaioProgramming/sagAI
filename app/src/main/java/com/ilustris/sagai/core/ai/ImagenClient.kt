@@ -22,8 +22,6 @@ interface ImagenClient {
     suspend fun generateImage(prompt: String): Bitmap?
 
     suspend fun generateWithFreePik(request: FreepikRequest): FreePikResponse?
-
-    fun usePremium(): Boolean
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -37,6 +35,8 @@ class ImagenClientImpl
             const val IMAGE_MODEL_FLAG = "imageModelName"
             const val DEFAULT_IMAGE_MODEL = "gemini-2.0-flash-preview-image-generation"
 
+            private const val PREMIUM_FLAG = "premiumEnabled"
+
             private const val TAG = "🖼️ Image Generation"
         }
 
@@ -49,6 +49,13 @@ class ImagenClientImpl
                     Log.i("ImagenClientImpl", "Using default image model: $DEFAULT_IMAGE_MODEL")
                     DEFAULT_IMAGE_MODEL
                 }
+            }
+        }
+
+        private val isPremium by lazy {
+            firebaseRemoteConfig.getBoolean(PREMIUM_FLAG).let {
+                Log.i(TAG, "Premium enabled: $it")
+                it
             }
         }
 
@@ -71,15 +78,15 @@ class ImagenClientImpl
             )
         }
 
-        override fun usePremium(): Boolean = true
-
         override suspend fun generateImage(prompt: String): Bitmap? =
             try {
                 Log.i(javaClass.simpleName, "Generating image with prompt:\n$prompt")
-                if (usePremium().not()) {
+                if (isPremium.not()) {
                     model
                         .generateContent(prompt.trimIndent())
-                        .candidates
+                        .also {
+                            Log.d(TAG, "generateImage: Token count for request: ${it.usageMetadata?.totalTokenCount}")
+                        }.candidates
                         .first()
                         .content.parts
                         .firstNotNullOf { it.asImageOrNull() }

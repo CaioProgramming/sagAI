@@ -18,17 +18,16 @@ fun Genre.colorPalette() =
     when (this) {
         Genre.FANTASY ->
             listOf(
-                MaterialColor.Amber400,
+                MaterialColor.DeepOrange600,
                 MaterialColor.Red700,
                 MaterialColor.RedA400,
-                MaterialColor.Orange900,
                 MaterialColor.Red900,
             )
         Genre.SCI_FI ->
             listOf(
-                MaterialColor.Teal400,
+                MaterialColor.Teal800,
                 MaterialColor.Blue500,
-                MaterialColor.DeepPurple300,
+                MaterialColor.DeepPurple500,
                 MaterialColor.Indigo500,
             )
     }

@@ -58,6 +58,7 @@ object GenrePrompts {
                 $description
                 
                 focus on the character's emotional intensity.
+                ** NO BORDERS, FILL THE IMAGE.**
                 """
         }
 

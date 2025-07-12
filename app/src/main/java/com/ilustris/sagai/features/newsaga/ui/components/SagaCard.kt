@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
@@ -58,63 +60,67 @@ fun SagaCard(
     val backgroundColor by animateColorAsState(
         if (fraction == 1f) sagaData.genre.color else MaterialTheme.colorScheme.background,
     )
-    Box(
-        modifier
-            .padding(4.dp)
-            .border(
-                2.dp,
-                sagaData.genre.gradient(true),
-                RoundedCornerShape(cornerSize),
-            ).clip(RoundedCornerShape(cornerSize))
-            .background(backgroundColor)
-            .clipToBounds(),
+    BlurredGlowContainer(
+        Modifier.padding(16.dp).wrapContentSize(),
+        sagaData.genre.gradient(fraction == 1f),
+        blurSigma = 100f,
+        shape = RoundedCornerShape(sagaData.genre.cornerSize())
     ) {
-        AsyncImage(
-            sagaData.icon,
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            onSuccess = {
-                fraction = 1f
-            },
-            modifier =
-                Modifier
-                    .background(backgroundColor)
-                    .fillMaxWidth()
-                    .fillMaxHeight(imageSize)
-                    .zoomAnimation()
-                    .clipToBounds(),
-        )
-
-        Column(
-            modifier =
-                Modifier
-                    .background(fadeGradientBottom())
-                    .padding(16.dp)
-                    .align(Alignment.BottomCenter)
-                    .verticalScroll(
-                        rememberScrollState(),
-                    ),
+        Box(
+            modifier
+                .padding(4.dp)
+                .clip(RoundedCornerShape(cornerSize))
+                .background(backgroundColor)
+                .clipToBounds(),
         ) {
-            Text(
-                text = sagaData.title,
-                style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        fontFamily = sagaData.genre.headerFont(),
-                        textAlign = TextAlign.Center,
-                        fontWeight = FontWeight.Normal,
-                        brush = sagaData.genre.gradient(true),
-                    ),
+            AsyncImage(
+                sagaData.icon,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                onSuccess = {
+                    fraction = 1f
+                },
                 modifier =
                     Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth(),
+                        .background(backgroundColor)
+                        .fillMaxWidth()
+                        .fillMaxHeight(imageSize)
+                        .zoomAnimation()
+                        .clipToBounds(),
             )
 
-            CharacterSection(
-                title = "",
-                content = sagaData.description,
-                genre = sagaData.genre,
-            )
+            Column(
+                modifier =
+                    Modifier
+                        .background(fadeGradientBottom())
+                        .padding(16.dp)
+                        .align(Alignment.BottomCenter)
+                        .verticalScroll(
+                            rememberScrollState(),
+                        ),
+            ) {
+                Text(
+                    text = sagaData.title,
+                    style =
+                        MaterialTheme.typography.displaySmall.copy(
+                            fontFamily = sagaData.genre.headerFont(),
+                            textAlign = TextAlign.Center,
+                            fontWeight = FontWeight.Normal,
+                            brush = sagaData.genre.gradient(true),
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                )
+
+                CharacterSection(
+                    title = "",
+                    content = sagaData.description,
+                    genre = sagaData.genre,
+                )
+            }
         }
     }
+
 }

@@ -60,12 +60,13 @@ data class MessageGen(
     val message: Message,
     val newCharacter: CharacterInfo? = null,
     val shouldCreateCharacter: Boolean = false,
+    val shouldEndSaga: Boolean = false,
 )
 
 data class CharacterInfo(
-    val name: String,
-    val gender: String,
-    val briefDescription: String,
+    val name: String = "",
+    val gender: String = "",
+    val briefDescription: String = "",
 )
 
 enum class SenderType {

@@ -7,8 +7,12 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +43,7 @@ fun ActComponent(
     act: Act,
     actCount: Int,
     content: SagaContent,
+    modifier: Modifier = Modifier
 ) {
     var titleVisible by remember { mutableStateOf(false) }
     var countVisible by remember { mutableStateOf(false) }
@@ -64,9 +69,9 @@ fun ActComponent(
 
     Column(
         modifier =
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+            modifier
+                .background(MaterialTheme.colorScheme.background)
+                .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -88,7 +93,7 @@ fun ActComponent(
             exit = fadeOut(animationSpec = tween(durationMillis = 500)),
         ) {
             Text(
-                act.title,
+                act.title.ifEmpty { "Ato em curso..." },
                 style =
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = content.data.genre.headerFont(),
@@ -105,7 +110,7 @@ fun ActComponent(
             exit = fadeOut(animationSpec = tween(durationMillis = 500)),
         ) {
             TypewriterText(
-                text = act.content,
+                text = act.content.ifEmpty { "Continue sua saga..." },
                 style =
                     MaterialTheme.typography.bodyMedium.copy(
                         fontFamily = content.data.genre.bodyFont(),
@@ -118,6 +123,8 @@ fun ActComponent(
                 modifier = Modifier.weight(1f),
             )
         }
+
+        Spacer(Modifier.height(50.dp))
     }
 }
 

@@ -67,3 +67,13 @@ object CharacterRules {
         
         """
 }
+
+object OutputRules {
+    fun outputRule(jsonMap: String) =
+        """
+        **CRITICAL RULE** FOLLOW THIS EXACTLY OUTPUT FOR YOUR RESPONSE
+        $jsonMap
+        IT MUST BE A VALID JSON FORMAT
+        RETURN ONLY THE JSON DO NOT PLACE ANY ADDITIONAL TEXT OR MARKDOWN
+        """
+}

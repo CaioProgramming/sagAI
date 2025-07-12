@@ -27,6 +27,8 @@ interface MessageUseCase {
         character: Character?,
     ): RequestResult<Exception, Message>
 
+    suspend fun generateEndingMessage(content: SagaContent): RequestResult<Exception, Message>
+
     suspend fun generateMessage(
         saga: SagaContent,
         chapter: Chapter?,
@@ -35,11 +37,6 @@ interface MessageUseCase {
         lastMessages: List<Pair<String, String>>,
         directive: String,
     ): RequestResult<Exception, MessageGen>
-
-    suspend fun generateNarratorBreak(
-        data: SagaData,
-        messages: List<String>,
-    ): RequestResult<Exception, Message>
 
     suspend fun updateMessage(message: Message): RequestResult<Exception, Unit>
 }

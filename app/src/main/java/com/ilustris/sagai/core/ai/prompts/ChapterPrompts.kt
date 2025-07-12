@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -8,7 +7,6 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ChapterPrompts {
@@ -62,16 +60,6 @@ object ChapterPrompts {
         **Critical rule: YOU CAN ONLY RETURN THE NAME OF CHARACTER, NOT ANY NAME OR OTHER DETAIL.**
 
         """.trimIndent()
-
-    fun chapterCover(
-        saga: SagaData,
-        characters: List<Character>,
-    ) = """
-        ${GenrePrompts.artStyle(saga.genre)}
-        ${CharacterFraming.MEDIUM_SHOT.description}
-        Featuring: ${coverCompositions(characters)}
-        ${GenrePrompts.coverComposition(saga.genre)}
-        """
 
     fun coverCompositions(characters: List<Character>) =
         """

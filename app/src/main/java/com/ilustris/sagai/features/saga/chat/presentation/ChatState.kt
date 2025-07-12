@@ -25,4 +25,5 @@ data class SnackBarState(
 enum class ChatAction {
     RESEND,
     OPEN_TIMELINE,
+    OPEN_CHARACTER,
 }

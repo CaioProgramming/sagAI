@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,8 +29,12 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
@@ -50,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,10 +65,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
+import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.chapter.ui.ChapterContent
@@ -102,6 +111,7 @@ enum class DetailAction {
     TIMELINE,
     CHAPTERS,
     WIKI,
+    ACTS,
     BACK,
     DELETE,
 }
@@ -115,54 +125,96 @@ fun SagaDetailView(
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val saga by viewModel.saga.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
     var section by remember {
         mutableStateOf(
             DetailAction.BACK,
         )
     }
+
+    BackHandler(enabled = true) {
+        if (showDeleteConfirmation) {
+            showDeleteConfirmation = false
+        } else {
+            when (section) {
+                DetailAction.BACK, DetailAction.DELETE -> {
+                    navHostController.popBackStack()
+                }
+
+                else -> {
+                    section = DetailAction.BACK
+                }
+            }
+        }
+    }
+
     SagaDetailContentView(state, section, paddingValues, onChangeSection = {
         section = it
         if (it == DetailAction.DELETE) {
-            sagaToDelete = (state as? State.Success)?.data as? SagaData
+            sagaToDelete = saga?.data
             showDeleteConfirmation = true
         }
-    }) {
+    }, onBackClick = {
         when (it) {
             DetailAction.BACK, DetailAction.DELETE -> navHostController.popBackStack()
             else -> section = DetailAction.BACK
         }
-    }
+    })
 
-    if (showDeleteConfirmation && sagaToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Confirmar Exclusão") },
-            text = { Text("Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        sagaToDelete?.let { viewModel.deleteSaga(it) }
-                        showDeleteConfirmation = false
-                        navHostController.navigateToRoute(Routes.HOME, popUpToRoute = Routes.SAGA_DETAIL)
-                    },
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
-                ) { Text("Excluir") }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showDeleteConfirmation = false },
-                    colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                ) { Text("Cancelar") }
-            },
-        )
+    if (showDeleteConfirmation) {
+        sagaToDelete?.let {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = {
+                    Text(
+                        "Confirmar Exclusão",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = it.genre.bodyFont(),
+                            ),
+                    )
+                },
+                text = {
+                    Text(
+                        "Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = it.genre.bodyFont(),
+                            ),
+                    )
+                },
+                shape = RoundedCornerShape(it.genre.cornerSize()),
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            sagaToDelete?.let { viewModel.deleteSaga(it) }
+                            showDeleteConfirmation = false
+                            navHostController.navigateToRoute(
+                                Routes.HOME,
+                                popUpToRoute = Routes.SAGA_DETAIL,
+                            )
+                        },
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                            ),
+                        shape = RoundedCornerShape(it.genre.cornerSize()),
+                    ) { Text("Excluir") }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { showDeleteConfirmation = false },
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        shape = RoundedCornerShape(it.genre.cornerSize()),
+                    ) { Text("Cancelar") }
+                },
+            )
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -189,6 +241,14 @@ fun SagaDetailContentView(
                     titleAndSub.second,
                     it.data.genre,
                     onBackClick = { onBackClick(currentSection) },
+                    actionContent = {
+                        Icon(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            tint = it.data.genre.color,
+                            modifier = Modifier.padding(horizontal = 8.dp).size(24.dp),
+                        )
+                    },
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
@@ -205,15 +265,19 @@ fun SagaDetailContentView(
                         CharactersGalleryContent(
                             saga,
                         )
+
                     DetailAction.TIMELINE ->
                         TimeLineContent(
                             saga,
                         )
+
                     DetailAction.CHAPTERS ->
                         ChapterContent(
                             saga,
                         )
+
                     DetailAction.WIKI -> WikiContent(saga)
+                    DetailAction.ACTS -> ActContent(saga)
                     DetailAction.BACK, DetailAction.DELETE ->
                         SagaDetailInitialView(
                             saga,
@@ -235,6 +299,7 @@ private fun DetailAction.titleAndSubtitle(content: SagaContent) =
         DetailAction.TIMELINE -> "Eventos" to "${content.timelines.size} eventos"
         DetailAction.CHAPTERS -> "Capítulos" to "${content.chapters.size} capítulos"
         DetailAction.WIKI -> "Wiki" to "${content.wikis.size} itens"
+        DetailAction.ACTS -> "Atos" to "${content.acts.size} atos"
         DetailAction.BACK, DetailAction.DELETE -> content.data.title to "Criado em ${content.data.createdAt.formatDate()}"
     }
 
@@ -256,12 +321,33 @@ fun WikiContent(saga: SagaContent) {
 }
 
 @Composable
+fun ActContent(saga: SagaContent) {
+    VerticalPager(rememberPagerState { saga.acts.size }) {
+        val act = saga.acts[it]
+        ActComponent(
+            act,
+            saga.acts.indexOf(act) + 1,
+            saga,
+            modifier =
+                Modifier.fillMaxSize().verticalScroll(
+                    rememberScrollState(),
+                ),
+        )
+    }
+}
+
+@Composable
 private fun SagaDetailInitialView(
     saga: SagaContent?,
     modifier: Modifier,
     selectSection: (DetailAction) -> Unit = {},
 ) {
     val columnCount = 2
+    val sectionStyle =
+        MaterialTheme.typography.headlineMedium.copy(
+            fontFamily = saga?.data?.genre?.bodyFont(),
+            fontWeight = FontWeight.Bold,
+        )
     LazyVerticalGrid(
         columns = GridCells.Fixed(columnCount),
         modifier = modifier,
@@ -416,11 +502,7 @@ private fun SagaDetailInitialView(
                 ) {
                     Text(
                         "Personagens",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = it.data.genre.headerFont(),
-                            ),
+                        style = sectionStyle,
                         modifier =
                             Modifier
                                 .padding(8.dp)
@@ -488,11 +570,7 @@ private fun SagaDetailInitialView(
                         ) {
                             Text(
                                 "Linha do tempo",
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = it.data.genre.headerFont(),
-                                    ),
+                                style = sectionStyle,
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
@@ -550,11 +628,7 @@ private fun SagaDetailInitialView(
                         ) {
                             Text(
                                 "Wiki",
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = it.data.genre.headerFont(),
-                                    ),
+                                style = sectionStyle,
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
@@ -581,7 +655,7 @@ private fun SagaDetailInitialView(
                     }
                 }
 
-                items(it.wikis.takeLast(5)) { wiki ->
+                items(it.wikis.takeLast(4)) { wiki ->
                     WikiCard(
                         wiki,
                         it.data.genre,
@@ -605,11 +679,7 @@ private fun SagaDetailInitialView(
                     ) {
                         Text(
                             "Capítulos",
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = it.data.genre.headerFont(),
-                                ),
+                            style = sectionStyle,
                             modifier =
                                 Modifier
                                     .padding(8.dp)
@@ -645,6 +715,50 @@ private fun SagaDetailInitialView(
                             )
                         }
                     }
+                }
+            }
+
+            if (it.acts.isNotEmpty()) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Row(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                    ) {
+                        Text(
+                            "Atos",
+                            style = sectionStyle,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .weight(1f),
+                        )
+
+                        IconButton(onClick = {
+                            selectSection(
+                                DetailAction.ACTS,
+                            )
+                        }, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = "Ver personagens",
+                            )
+                        }
+                    }
+                }
+
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    val act = it.acts.last()
+                    ActComponent(
+                        act,
+                        it.acts.indexOf(act) + 1,
+                        it,
+                        Modifier.padding(16.dp).fillMaxWidth(),
+                    )
                 }
             }
 

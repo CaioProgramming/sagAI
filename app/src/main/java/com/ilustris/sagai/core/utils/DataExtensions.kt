@@ -198,3 +198,58 @@ fun Long.formatHours(): String {
     val format = SimpleDateFormat("HH:mm", Locale.getDefault())
     return format.format(date)
 }
+
+fun String?.sanitizeAndExtractJsonString(): String {
+    val logTag = "StringSanitization"
+    if (this.isNullOrBlank()) {
+        Log.w(logTag, "Input string is null or blank, cannot sanitize.")
+        throw IllegalArgumentException("Input string is null or blank.")
+    }
+
+    var cleanedJsonString = this
+    Log.i(logTag, "Sanitizing raw string: $cleanedJsonString")
+
+    // 1. Remove common markdown code block delimiters
+    cleanedJsonString = cleanedJsonString.replace("```json", "").replace("```", "")
+
+    // 2. Trim leading/trailing whitespace
+    cleanedJsonString = cleanedJsonString.trim()
+
+    // 3. If not starting with a JSON char, find the start (basic heuristic)
+    val firstJsonChar = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
+    if (firstJsonChar > 0) {
+        cleanedJsonString = cleanedJsonString.substring(firstJsonChar)
+    } else if (firstJsonChar == -1 && cleanedJsonString.isNotEmpty()) {
+        Log.e(logTag, "No JSON start character '{' or '[' found in response: $cleanedJsonString")
+        throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
+    }
+
+    // 4. Ensure we only take content up to the corresponding last bracket (basic heuristic)
+    if (cleanedJsonString.startsWith("[")) {
+        val lastBracket = cleanedJsonString.lastIndexOf(']')
+        if (lastBracket != -1) {
+            cleanedJsonString = cleanedJsonString.substring(0, lastBracket + 1)
+        } else if (cleanedJsonString.isNotEmpty()) {
+            Log.e(logTag, "JSON array starts with '[' but no closing ']' found: $cleanedJsonString")
+            throw IllegalArgumentException("Malformed JSON array: No closing bracket.")
+        }
+    } else if (cleanedJsonString.startsWith("{")) {
+        val lastBracket = cleanedJsonString.lastIndexOf('}')
+        if (lastBracket != -1) {
+            cleanedJsonString = cleanedJsonString.substring(0, lastBracket + 1)
+        } else if (cleanedJsonString.isNotEmpty()) {
+            Log.e(logTag, "JSON object starts with '{' but no closing '}' found: $cleanedJsonString")
+            throw IllegalArgumentException("Malformed JSON object: No closing bracket.")
+        }
+    }
+
+    // 5. Remove any remaining problematic backticks (final cleanup)
+    cleanedJsonString = cleanedJsonString.replace("`", "")
+
+    Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
+    if (cleanedJsonString.isBlank()) {
+        Log.e(logTag, "Cleaned JSON string is blank after sanitization.")
+        throw IllegalArgumentException("Resulting JSON string is blank after sanitization.")
+    }
+    return cleanedJsonString
+}

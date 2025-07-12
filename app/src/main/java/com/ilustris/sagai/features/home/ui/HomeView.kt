@@ -190,7 +190,7 @@ fun ChatCard(
                     .clip(RoundedCornerShape(15.dp))
                     .clickable {
                         onClick()
-                    }.padding(12.dp),
+                    },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Avatar
@@ -276,7 +276,7 @@ fun ChatCard(
                     lastMessage?.let {
                         if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
                             Text(
-                                text = it.character?.name ?: "Desconhecido".plus(": "),
+                                text = (it.character?.name ?: "Desconhecido").plus(": "),
                                 style =
                                     MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = FontWeight.Bold,
@@ -286,14 +286,14 @@ fun ChatCard(
                             )
 
                             Text(
-                                text = it.message.text,
+                                text = it.message.text.take(200),
                                 style =
                                     MaterialTheme.typography.labelMedium.copy(
                                         fontWeight = FontWeight.Normal,
                                         fontFamily = saga.data.genre.bodyFont(),
                                     ),
                                 maxLines = 2,
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.padding(start = 4.dp).weight(1f),
                             )
                         } else {
                             Text(

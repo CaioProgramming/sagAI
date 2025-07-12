@@ -21,9 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,8 +54,6 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.saturate
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.rememberHazeState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -127,8 +123,7 @@ fun ChatBubble(
                             }
 
                             width = Dimension.fillToConstraints
-                        }
-                        .fillMaxWidth(),
+                        }.fillMaxWidth(),
                 ) {
                     TypewriterText(
                         text = message.text,
@@ -176,12 +171,10 @@ fun ChatBubble(
                             } else {
                                 start.linkTo(parent.start)
                             }
-                        }
-                        .background(
+                        }.background(
                             genre.color.copy(alpha = if (messageContent.character == null) .4f else 0f),
                             CircleShape,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(avatarSize),
                 ) {
                     messageContent.character?.let {
@@ -261,18 +254,11 @@ fun ChatBubble(
                                     1.dp,
                                     MaterialTheme.colorScheme.onBackground,
                                     genre.cornerSize(),
-                                )
-                                .padding(2.dp)
-                                .clip(RoundedCornerShape(genre.cornerSize()))
-                                .hazeEffect(
-                                    hazeState,
-                                    HazeStyle(
-                                        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
-                                        tint = null,
-                                        noiseFactor = 0f,
-                                    ),
-                                )
-                                .padding(16.dp),
+                                ).padding(2.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.background.copy(alpha = .4f),
+                                    RoundedCornerShape(genre.cornerSize()),
+                                ).padding(16.dp),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontStyle = FontStyle.Italic,
@@ -289,14 +275,6 @@ fun ChatBubble(
         SenderType.ACTION -> {
             Box(
                 Modifier
-                    .hazeEffect(
-                        hazeState,
-                        HazeStyle(
-                            backgroundColor = Color.Transparent,
-                            tint = null,
-                            noiseFactor = 0f,
-                        ),
-                    )
                     .fillMaxWidth(),
             ) {
                 Column(
@@ -340,9 +318,9 @@ fun ChatBubble(
                                 textAlign = TextAlign.Center,
                                 fontFamily = genre.bodyFont(),
                                 color = MaterialColor.Amber400,
-                                shadow = Shadow(Color.Black, blurRadius = 0f, offset = Offset(x = 2f, y = 0f)),
+                                background = Color.Black,
                             ),
-                        onTextClick = {  },
+                        onTextClick = { },
                     )
                 }
             }
@@ -359,15 +337,9 @@ fun ChatBubble(
                 wiki = wiki,
                 modifier =
                     Modifier
-                        .hazeEffect(
-                            hazeState,
-                            HazeStyle(
-                                backgroundColor = Color.Transparent,
-                                tint = null,
-                                noiseFactor = 0f,
-                            ),
-                        )
-                        .padding(16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.background.copy(alpha = .4f),
+                        ).padding(16.dp)
                         .fillMaxWidth(),
                 style =
                     MaterialTheme.typography.titleMedium.copy(
@@ -376,7 +348,7 @@ fun ChatBubble(
                         fontFamily = genre.bodyFont(),
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
-                onTextClick = {  },
+                onTextClick = { },
             )
         }
 
@@ -403,7 +375,7 @@ fun ChatBubble(
                             MaterialTheme.colorScheme.onBackground,
                             FontStyle.Normal,
                             isAnimated,
-                            openCharacters = {  },
+                            openCharacters = { },
                         )
                     }
                 }

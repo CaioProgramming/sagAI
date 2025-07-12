@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -76,7 +77,7 @@ class CharacterUseCaseImpl
                         customSchema = Schema.string(),
                         requireTranslation = false,
                     )
-                val prompt = CharacterPrompts.generateImage(character, saga, translatedDescription!!)
+                val prompt = ImagePrompts.generateImage(character, saga, translatedDescription!!)
 
                 val request =
                     FreepikRequest(

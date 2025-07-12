@@ -3,6 +3,10 @@ package com.ilustris.sagai.core.narrative
 import com.ilustris.sagai.features.characters.data.model.Character
 
 object UpdateRules {
+    const val MAX_ACTS_LIMIT = 3
+
+    const val ACT_UPDATE_LIMIT = 3
+
     const val LORE_UPDATE_LIMIT = 20
     const val CHAPTER_UPDATE_LIMIT = 10
 }
@@ -56,10 +60,38 @@ object ActDirectives {
 
     const val THIRD_ACT_DIRECTIVES =
         """
-        "As the Saga Master, your objective now is to significantly escalate the core conflict.
-        Introduce unexpected complications, deepen the ongoing mysteries, and raise the stakes for the player and other characters.
-        Create challenging situations that test their limits and reveal new, more complex layers of the conspiracy.
-        The narrative should become more intense, urgent, and morally ambiguous, pushing towards a critical turning point."
+        // As the Saga Master, your objective in Act 3 is to guide the narrative towards its definitive climax and ultimate resolution.
+        // This is the final stage where all major plotlines converge, and the saga's ultimate goal is to be achieved or definitively concluded.
+        
+        1.  **Intensify and Converge:** Continue to significantly escalate the core conflict, introducing the final, most challenging complications. All mysteries should deepen towards their ultimate unveiling, and the stakes must be at their absolute highest for the player and all involved characters.
+        2.  **Focus on Ultimate Goal & Organic Urgency:** Every development and challenge in this Act MUST now directly push the player towards confronting the main antagonist, unraveling the final layers of the conspiracy, and achieving the **Saga's Ultimate Goal** as defined in the `SAGA CONCLUSION DIRECTIVE`. The narrative, through the **dialogue and demeanor of NPCs, environmental cues, and the unfolding consequences of events**, should organically convey the growing urgency and the dwindling opportunities for diversion. If the player attempts to explore unrelated avenues, the context should subtly, yet persistently, remind them of the paramount, pressing objective. NPCs should express heightened concern, new threats should naturally emerge from the main plotline, or vital information should become accessible only by pursuing the core path. No entirely new, major side plots should be initiated; existing opportunities should naturally lead back to the ultimate objective.
+        3.  **Definitive Choices:** Player actions and choices in this Act will have irreversible and conclusive consequences, leading directly to the saga's final outcome. Emphasize the weight and finality of these decisions.
+        4.  **Clear Trajectory to End:** Maintain a clear narrative momentum that builds towards a resolution. The story should feel like it's naturally reaching its concluding moments, presenting the player with the ultimate challenges needed to bring the saga to its definitive end, while preserving their sense of agency.
+        5.  **Preparation for Conclusion Trigger:** Be highly attuned to the fulfillment of the ultimate goal. Once the player's actions decisively meet the conditions for conclusion, the narrative should transition immediately and definitively into the `SAGA CONCLUSION DIRECTIVE`'s final message.
+        
+        
+        """
+
+    const val CONCLUSION_DIRECTIVE =
+        """
+        ## SAGA CONCLUSION DIRECTIVE
+        // This directive guides the Saga Master on how to bring the saga to a definitive end, adapting to the narrative's evolution.
+        
+        1.  **Dynamic Definition of Saga's Ultimate Goal:** As the Saga Master, you are responsible for defining and continuously refining the **Saga's Ultimate Goal** as the narrative unfolds. This ultimate goal should emerge organically from the core conflicts, mysteries, and stakes you introduce, evolving with the player's discoveries, choices, and the deepening plot. It represents the overarching objective that, once resolved, brings definitive closure to the entire saga.
+        
+        2.  **Trigger for Conclusion:** The saga MUST conclude definitively when the player's actions lead directly to the successful fulfillment of **this dynamically defined ultimate goal**. This means:
+            * The primary conflict of the saga has been resolved.
+            * The central mystery has been unveiled and acted upon in a conclusive manner.
+            * The player has achieved the final, overarching objective that the story has been building towards.
+        
+        3.  **Narrative of Conclusion:** Once the trigger is met, the NARRATOR MUST provide a clear, conclusive, and satisfying narrative message that explicitly states the saga has ended. This message should:
+            * Summarize the outcome of the player's actions in relation to the ultimate goal.
+            * Provide a sense of definitive closure to the main plotline.
+            * Be written in a tone appropriate for the saga's genre (e.g., epic, bittersweet, triumphant, somber).
+        
+        4.  **Finality of Response:** This concluding narrative message MUST be the *final message* of the saga. After this message, the player should understand that no further actions or messages are expected from them within this particular saga. The response should **NOT** prompt further action or dialogue. It should be a definitive "THE END."
+        
+        5.  **Programmatic Signal for End:** When the saga's conclusion is triggered and the final narrative message is generated, you MUST set the `shouldEndSaga` flag in the JSON response to `true`. This provides a clear signal for the application to cease further player input for this saga.    
         """
 }
 

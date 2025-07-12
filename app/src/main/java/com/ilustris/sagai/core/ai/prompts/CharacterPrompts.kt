@@ -8,7 +8,6 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Clothing
 import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 object CharacterPrompts {
@@ -25,20 +24,6 @@ object CharacterPrompts {
         ${character.toJsonFormat()}
         
         """
-
-    fun generateImage(
-        character: Character,
-        saga: SagaData,
-        description: String,
-    ) = """
-        ${GenrePrompts.artStyle(saga.genre)}
-        ${GenrePrompts.portraitStyle(saga.genre)}
-        
-        ${CharacterRules.IMAGE_CRITICAL_RULE}
-        $description
-        ${character.details.race} character, realistic ${character.details.race} features.
-
-        """.trimIndent()
 
     fun facialDescription(facialDetails: FacialFeatures) =
         """

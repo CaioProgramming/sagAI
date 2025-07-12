@@ -54,7 +54,10 @@ class TextGenClient(
                 } else {
                     prompt
                 }
-            val content = model.generateContent(fullPrompt)
+            val content =
+                model.generateContent(fullPrompt).also {
+                    Log.d(javaClass.simpleName, "generateImage: Token count for request: ${it.usageMetadata?.totalTokenCount}")
+                }
             Log.i(javaClass.simpleName, "prompt: $fullPrompt")
             Log.i(javaClass.simpleName, "generated: ${content.text}")
 

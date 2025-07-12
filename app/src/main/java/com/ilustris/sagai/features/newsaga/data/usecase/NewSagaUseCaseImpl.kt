@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
@@ -125,7 +126,7 @@ class NewSagaUseCaseImpl
             sagaData: SagaData,
             mainCharacter: Character,
             description: String,
-        ) = SagaPrompts.wallpaperGeneration(
+        ) = ImagePrompts.wallpaperGeneration(
             sagaData,
             mainCharacter,
             description,

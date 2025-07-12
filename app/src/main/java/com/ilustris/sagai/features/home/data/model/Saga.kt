@@ -34,6 +34,8 @@ data class SagaData(
     @Embedded
     val visuals: IllustrationVisuals = IllustrationVisuals(),
     val lastLoreReference: Int = 0,
+    val isEnded: Boolean = false,
+    val endedAt: Long = 0L,
 )
 
 data class IllustrationVisuals(

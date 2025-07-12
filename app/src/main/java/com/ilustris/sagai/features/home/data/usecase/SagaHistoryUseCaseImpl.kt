@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
+import com.ilustris.sagai.core.ai.prompts.LorePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -38,7 +38,7 @@ class SagaHistoryUseCaseImpl
             try {
                 textGenClient
                     .generate<LoreGen>(
-                        SagaPrompts.loreGeneration(
+                        LorePrompts.loreGeneration(
                             saga,
                             lastMessages.map { it.toJsonFormat() },
                         ),

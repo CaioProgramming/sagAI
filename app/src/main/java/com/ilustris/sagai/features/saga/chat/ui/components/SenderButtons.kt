@@ -6,11 +6,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,16 +43,15 @@ fun SenderType.itemOption(
     modifier: Modifier = Modifier,
     iconSize: Dp = 40.dp,
     selectedItem: SenderType? = null,
-    showText: Boolean = false,
     genre: Genre,
-    alignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     onSelect: (SenderType) -> Unit = {},
 ) {
     val isSelected = this == selectedItem
     val color by animateColorAsState(
         targetValue =
             if (isSelected) {
-                genre.iconColor
+                genre.color
             } else {
                 MaterialTheme.colorScheme.onBackground
             },
@@ -61,43 +62,43 @@ fun SenderType.itemOption(
     )
 
     this@itemOption.icon()?.let {
-        Column(
-            modifier =
-                modifier
-                    .clip(RoundedCornerShape(genre.cornerSize()))
-                    .clickable {
-                        onSelect(this@itemOption)
-                    }.padding(4.dp),
-            horizontalAlignment = alignment,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            Image(
-                painter = painterResource(id = it),
-                contentDescription = this@itemOption.title(),
-                colorFilter =
-                    ColorFilter
-                        .tint(color),
-                modifier =
-                    Modifier
-                        .size(iconSize)
-                        .clip(CircleShape)
-                        .border(1.dp, borderColor, CircleShape)
-                        .background(borderColor, CircleShape)
-                        .padding(8.dp)
-                        .align(alignment),
-                contentScale = ContentScale.Fit,
-            )
-            if (showText) {
+
+        Column(modifier =
+            modifier
+                .clip(RoundedCornerShape(genre.cornerSize()))
+                .clickable {
+                    onSelect(this@itemOption)
+                }.padding(4.dp)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     this@itemOption.title(),
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 10.sp,
-                    fontWeight = FontWeight.Light,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    textAlign = TextAlign.Start,
+                    modifier = Modifier.weight(1f),
                 )
+
+                Image(
+                    painter = painterResource(id = it),
+                    contentDescription = this@itemOption.title(),
+                    colorFilter =
+                        ColorFilter
+                            .tint(MaterialTheme.colorScheme.onBackground),
+                    modifier =
+                        Modifier
+                            .size(iconSize)
+                            .padding(8.dp),
+                    contentScale = ContentScale.Fit,
+                )
+
             }
+
+            Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.onBackground.copy(alpha = .05f)))
         }
+
     }
 }
 
@@ -110,7 +111,6 @@ fun SenderTypePreview() {
                 modifier = Modifier.padding(4.dp),
                 selectedItem = THOUGHT,
                 genre = Genre.FANTASY,
-                showText = true,
             )
         }
     }
