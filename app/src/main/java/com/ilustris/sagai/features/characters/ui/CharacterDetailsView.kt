@@ -2,9 +2,6 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,18 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,21 +38,17 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.DurationUnit
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -116,27 +102,18 @@ fun CharacterDetailsContent(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         item {
-            var fraction by remember {
-                mutableStateOf(2.dp)
-            }
+            val size = if (character.image.isNotEmpty()) 275.dp else 0.dp
 
-            val imageSize by animateDpAsState(
-                fraction,
-                tween(easing = EaseIn, durationMillis = 1.seconds.toInt(DurationUnit.MILLISECONDS)),
-            )
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(imageSize)
+                    .height(size)
                     .clipToBounds(),
             ) {
                 AsyncImage(
                     character.image,
                     contentDescription = character.name,
                     contentScale = ContentScale.Crop,
-                    onSuccess = {
-                        fraction = 300.dp
-                    },
                     modifier =
                         Modifier
                             .fillMaxSize()
@@ -152,47 +129,21 @@ fun CharacterDetailsContent(
                             fadeGradientBottom(),
                         ),
                 )
-
-                IconButton(
-                    onClick = {
-                        onBack()
-                    },
-                    modifier =
-                        Modifier
-                            .align(Alignment.TopStart)
-                            .padding(32.dp)
-                            .size(32.dp)
-                            .background(
-                                MaterialTheme.colorScheme.background.copy(alpha = .3f),
-                                CircleShape,
-                            ).padding(2.dp),
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Rounded.KeyboardArrowLeft,
-                        contentDescription = "Voltar",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                    )
-                }
             }
         }
 
         stickyHeader {
             val characterColor = Color(character.hexColor.toColorInt())
-            SagaTopBar(
+
+            Text(
                 character.name,
-                subtitle = character.details.occupation,
-                modifier =
-                    Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .fillMaxWidth()
-                        .gradientFill(
-                            gradientAnimation(
-                                characterColor.darkerPalette(),
-                                targetValue = 500f,
-                                gradientType = GradientType.VERTICAL,
-                            ),
-                        ).padding(top = 50.dp, start = 16.dp),
-                genre = genre,
+                textAlign = TextAlign.Center,
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = characterColor.gradientFade(),
+                    ),
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
             )
         }
 
@@ -233,14 +184,6 @@ fun CharacterDetailsContent(
             CharacterSection(
                 title = "Backstory",
                 content = character.backstory,
-                genre = genre,
-            )
-        }
-
-        item {
-            CharacterSection(
-                title = "Status",
-                content = character.status,
                 genre = genre,
             )
         }

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.characters.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +25,7 @@ class CharacterRepositoryImpl
                             character.copy(
                                 id = 0,
                                 joinedAt = Calendar.getInstance().timeInMillis,
+                                image = emptyString(),
                             ),
                         ).toInt(),
             )
@@ -37,5 +39,8 @@ class CharacterRepositoryImpl
 
         override suspend fun getCharacterById(characterId: Int): Character? = characterDao.getCharacterById(characterId)
 
-        override suspend fun getCharacterByName(name: String): Character? = characterDao.getCharacterByName(name)
+        override suspend fun getCharacterByName(
+            name: String,
+            sagaId: Int,
+        ): Character? = characterDao.getCharacterByName(name, sagaId)
     }

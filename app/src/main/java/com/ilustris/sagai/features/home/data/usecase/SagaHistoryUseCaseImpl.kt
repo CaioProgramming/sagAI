@@ -1,13 +1,15 @@
 package com.ilustris.sagai.features.home.data.usecase
 
-import com.ilustris.sagai.core.ai.SagaPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.LorePrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import kotlinx.coroutines.flow.Flow
@@ -38,11 +40,37 @@ class SagaHistoryUseCaseImpl
             try {
                 textGenClient
                     .generate<LoreGen>(
-                        SagaPrompts.loreGeneration(
+                        LorePrompts.loreGeneration(
                             saga,
                             lastMessages.map { it.toJsonFormat() },
                         ),
                         customSchema = LoreGen.toSchema(),
+                    )!!
+                    .asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
+        override suspend fun createFakeSaga(): RequestResult<Exception, SagaData> =
+            try {
+                sagaRepository
+                    .saveChat(
+                        SagaData(
+                            title = "Debug Saga",
+                            description = "This saga was created to debug purposes only.",
+                            genre = Genre.entries.random(),
+                            isDebug = true,
+                        ),
+                    ).asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
+        override suspend fun generateEndMessage(saga: SagaContent): RequestResult<Exception, String> =
+            try {
+                textGenClient
+                    .generate<String>(
+                        SagaPrompts.endCredits(saga),
                     )!!
                     .asSuccess()
             } catch (e: Exception) {
@@ -54,12 +82,15 @@ private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
     val mappedSagas =
         content.map { saga ->
             saga.copy(
-                messages = saga.messages.sortedByDescending { it.timestamp },
+                messages = saga.messages.sortedByDescending { it.message.timestamp },
             )
         }
 
     mappedSagas.sortedByDescending { saga ->
-        saga.messages.firstOrNull()?.timestamp ?: 0L
+        saga.messages
+            .firstOrNull()
+            ?.message
+            ?.timestamp ?: 0L
     }
 
     return mappedSagas

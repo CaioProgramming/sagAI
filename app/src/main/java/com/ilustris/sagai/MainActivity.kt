@@ -3,6 +3,7 @@
 package com.ilustris.sagai
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -40,7 +41,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.SagaNavGraph
 import com.ilustris.sagai.ui.navigation.findRoute
@@ -50,7 +53,9 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+        printFirebaseInstallationAuthToken() // Call the function to print the token
         enableEdgeToEdge()
         setContent {
             SagAITheme {
@@ -128,5 +133,22 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun printFirebaseInstallationAuthToken() {
+        FirebaseInstallations
+            .getInstance()
+            .id
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    val token = task.result
+                    Log.d("FirebaseInstallations", "COPY THIS TOKEN (FID Token) ->")
+                    Log.d("FirebaseInstallations", "$token")
+                    Log.d("FirebaseInstallations", "<- END OF TOKEN")
+                    // Copy this token and add it in Firebase Remote Config -> Test on device
+                } else {
+                    Log.e("FirebaseInstallations", "Failed to get Installation Auth Token", task.exception)
+                }
+            }
     }
 }

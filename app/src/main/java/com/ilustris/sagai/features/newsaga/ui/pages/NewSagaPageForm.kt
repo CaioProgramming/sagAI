@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
 @Composable
@@ -16,14 +15,14 @@ fun NewSagaPagesView(
     modifier: Modifier = Modifier,
     onUpdateData: (NewSagaPages, Any?) -> Unit = { _, _ -> },
 ) {
-    HorizontalPager(pagerState, modifier = modifier) {
+    HorizontalPager(pagerState, modifier = modifier, userScrollEnabled = false) {
         val page = NewSagaPages.entries[it]
         val data =
             when (page) {
                 NewSagaPages.TITLE -> currentData.title
                 NewSagaPages.GENRE -> currentData.genre
                 NewSagaPages.DESCRIPTION -> currentData.description
-                NewSagaPages.CHARACTER -> currentData.characterDescription
+                NewSagaPages.CHARACTER -> currentData
             }
         page.content(
             { newData ->

@@ -3,31 +3,19 @@ package com.ilustris.sagai.features.timeline.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInElastic
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.paddingFrom
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.VerticalPager
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,9 +26,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
@@ -58,7 +47,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -124,30 +112,15 @@ fun TimeLineContent(
     content: SagaContent,
     onBack: () -> Unit = {},
 ) {
-    Column {
-        val events = content.timelines
-        SagaTopBar(
-            title = "Linha do tempo",
-            subtitle = "${content.timelines.size} eventos",
-            genre = content.data.genre,
-            modifier =
-                Modifier
-                    .padding(top = 50.dp, start = 16.dp, end = 16.dp)
-                    .fillMaxWidth(),
-            onBackClick = { onBack() },
-        )
-
-        val lazyListState = rememberLazyListState()
-        LazyColumn(state = lazyListState) {
-            items(content.timelines) {
-                TimeLineCard(it, content.data.genre, modifier = Modifier.fillMaxWidth())
-            }
+    val lazyListState = rememberLazyListState()
+    LazyColumn(state = lazyListState) {
+        items(content.timelines) {
+            TimeLineCard(it, content.data.genre, modifier = Modifier.fillMaxWidth())
         }
+    }
 
-        LaunchedEffect(content) {
-            lazyListState.animateScrollToItem(content.timelines.size - 1)
-        }
-
+    LaunchedEffect(content) {
+        lazyListState.animateScrollToItem(content.timelines.size - 1)
     }
 }
 
@@ -156,6 +129,10 @@ fun TimeLineCard(
     event: Timeline,
     genre: Genre,
     isLast: Boolean = false,
+    showText: Boolean = true,
+    showSpark: Boolean = true,
+    titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    contentStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
 ) {
     val color = genre.color
@@ -171,19 +148,22 @@ fun TimeLineCard(
         ),
     )
 
-
     ConstraintLayout(modifier.fillMaxWidth()) {
         val (iconView, titleContent, contentView) = createRefs()
-        Column(modifier = Modifier.constrainAs(iconView) {
-            top.linkTo(parent.top)
-            bottom.linkTo(contentView.bottom)
-            start.linkTo(parent.start)
-            height = Dimension.fillToConstraints
-        }, horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier =
+                Modifier.constrainAs(iconView) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(contentView.bottom)
+                    start.linkTo(parent.start)
+                    height = Dimension.fillToConstraints
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Image(
                 painterResource(R.drawable.ic_spark),
                 null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(if(showSpark) 24.dp else 0.dp),
                 colorFilter = ColorFilter.tint(genre.color),
             )
 
@@ -192,18 +172,19 @@ fun TimeLineCard(
             }
         }
 
-
-        Column(modifier = Modifier.padding(horizontal = 8.dp).constrainAs(titleContent) {
-            top.linkTo(iconView.top)
-            start.linkTo(iconView.end)
-            end.linkTo(parent.end)
-            width = Dimension.fillToConstraints
-
-        }) {
+        Column(
+            modifier =
+                Modifier.padding(horizontal = 8.dp).constrainAs(titleContent) {
+                    top.linkTo(iconView.top)
+                    start.linkTo(iconView.end)
+                    end.linkTo(parent.end)
+                    width = Dimension.fillToConstraints
+                },
+        ) {
             Text(
                 event.title,
                 style =
-                    MaterialTheme.typography.titleMedium.copy(
+                   titleStyle.copy(
                         fontFamily = genre.headerFont(),
                         color = genre.color,
                     ),
@@ -219,23 +200,24 @@ fun TimeLineCard(
             )
         }
 
-        Text(
-            event.content,
-            modifier = Modifier.constrainAs(contentView) {
-                top.linkTo(titleContent.bottom)
-                start.linkTo(titleContent.start)
-                end.linkTo(parent.end)
-                bottom.linkTo(parent.bottom)
-                width = Dimension.fillToConstraints
-            }.padding(8.dp),
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = textColor,
-                    textAlign = TextAlign.Start,
-                ),
-        )
-
+            Text(
+                if (showText) event.content else emptyString(),
+                modifier =
+                    Modifier
+                        .constrainAs(contentView) {
+                            top.linkTo(titleContent.bottom)
+                            start.linkTo(titleContent.start)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(parent.bottom)
+                            width = Dimension.fillToConstraints
+                        }.padding(8.dp),
+                style =
+                    contentStyle.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = textColor,
+                        textAlign = TextAlign.Start,
+                    ),
+            )
     }
 }
 

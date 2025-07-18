@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import com.google.firebase.ai.type.Schema
+import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
 import java.util.Calendar
@@ -48,14 +49,7 @@ data class LoreGen(
                         ),
                     "updatedCharacters" to
                         Schema.array(
-                            items =
-                                Schema.obj(
-                                    mapOf(
-                                        "name" to Schema.string(nullable = false),
-                                        "backstory" to Schema.string(nullable = false),
-                                        "status" to Schema.string(nullable = false),
-                                    ),
-                                ),
+                            items = toFirebaseSchema(Character::class.java),
                         ),
                 ),
             )

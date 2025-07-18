@@ -1,10 +1,11 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.core.ai.ChapterPrompts
-import com.ilustris.sagai.core.ai.GenrePrompts
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -73,17 +74,25 @@ class ChapterUseCaseImpl
                 if (characters.isEmpty()) {
                     Exception("No characters provided").asError()
                 }
-                val prompt = ChapterPrompts.chapterCover(saga, characters)
+                val prompt = ImagePrompts.chapterCover(saga, characters)
                 val freepikRequest =
                     FreepikRequest(
                         prompt = prompt,
                         negative_prompt = GenrePrompts.negativePrompt(saga.genre),
                         GenrePrompts.chapterCoverStyling(saga.genre),
                     )
+                val promptGeneration =
+                    textGenClient.generate<String>(
+                        ChapterPrompts.coverDescription(
+                            saga,
+                            chapter,
+                            characters,
+                        ),
+                        requireTranslation = false,
+                    )
                 val genCover =
                     imagenClient
-                        .generateImage(prompt)!!
-                        .data
+                        .generateImage(ChapterPrompts.coverGeneration(saga, promptGeneration!!))!!
                 val coverFile =
                     fileHelper.saveFile(chapter.title, genCover, path = "${saga.id}/chapters/")
                 updateChapter(chapter.copy(coverImage = coverFile!!.absolutePath)).asSuccess()

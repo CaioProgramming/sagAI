@@ -1,19 +1,15 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
-sealed interface ChatState {
-    data object Loading : ChatState
+sealed class ChatState {
+    data object Loading : ChatState()
 
-    data object Success : ChatState
+    data object Success : ChatState()
 
     data class Error(
         val message: String,
-    ) : ChatState
+    ) : ChatState()
 
-    data class LoreUpdated(
-        val lore: String?,
-    ) : ChatState
-
-    data object Empty : ChatState
+    data object Empty : ChatState()
 }
 
 data class SnackBarState(
@@ -25,4 +21,5 @@ data class SnackBarState(
 enum class ChatAction {
     RESEND,
     OPEN_TIMELINE,
+    OPEN_CHARACTER,
 }

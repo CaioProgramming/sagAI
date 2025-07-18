@@ -18,4 +18,8 @@ interface SagaHistoryUseCase {
         loreReference: Int,
         lastMessages: List<String>,
     ): RequestResult<Exception, LoreGen>
+
+    suspend fun createFakeSaga(): RequestResult<Exception, SagaData>
+
+    suspend fun generateEndMessage(saga: SagaContent): RequestResult<Exception, String>
 }

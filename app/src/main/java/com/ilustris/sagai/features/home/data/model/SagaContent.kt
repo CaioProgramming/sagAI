@@ -2,11 +2,14 @@ package com.ilustris.sagai.features.home.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.wiki.data.model.Wiki // Added import for Wiki
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class SagaContent(
     @Embedded
@@ -17,10 +20,17 @@ data class SagaContent(
     )
     val mainCharacter: Character? = null,
     @Relation(
+        entity = Act::class,
+        parentColumn = "currentActId",
+        entityColumn = "id",
+    )
+    val currentActInfo: ActContent? = null,
+    @Relation(
+        entity = Message::class,
         parentColumn = "id",
         entityColumn = "sagaId",
     )
-    val messages: List<Message> = emptyList(),
+    val messages: List<MessageContent> = emptyList(),
     @Relation(
         parentColumn = "id",
         entityColumn = "sagaId",
@@ -41,4 +51,9 @@ data class SagaContent(
         entityColumn = "sagaId",
     )
     val timelines: List<Timeline> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "sagaId",
+    )
+    val acts: List<Act> = emptyList(),
 )

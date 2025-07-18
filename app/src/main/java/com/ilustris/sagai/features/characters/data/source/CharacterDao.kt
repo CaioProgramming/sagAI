@@ -25,6 +25,9 @@ interface CharacterDao {
     @Query("SELECT * FROM Characters WHERE id = :characterId LIMIT 1")
     suspend fun getCharacterById(characterId: Int): Character?
 
-    @Query("SELECT * FROM Characters WHERE name LIKE :name LIMIT 1")
-    fun getCharacterByName(name: String): Character?
+    @Query("SELECT * FROM Characters WHERE name LIKE :name AND sagaId = :sagaId LIMIT 1")
+    fun getCharacterByName(
+        name: String,
+        sagaId: Int,
+    ): Character?
 }

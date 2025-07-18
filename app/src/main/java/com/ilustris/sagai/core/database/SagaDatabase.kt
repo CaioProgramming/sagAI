@@ -3,6 +3,8 @@ package com.ilustris.sagai.core.database
 import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -13,8 +15,8 @@ import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.source.TimelineDao
-import com.ilustris.sagai.features.wiki.data.model.Wiki // Updated Wiki import
-import com.ilustris.sagai.features.wiki.data.source.WikiDao // Added WikiDao import
+import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.source.WikiDao
 
 @Database(
     entities = [
@@ -24,12 +26,15 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao // Added WikiDao imp
         Character::class,
         Wiki::class,
         Timeline::class,
+        Act::class,
     ],
-    version = 19,
-    exportSchema = true,
+    version = 29,
     autoMigrations = [
-        AutoMigration(from = 18, to = 19),
+        AutoMigration(from = 26, to = 27),
+        AutoMigration(from = 27, to = 28),
+        AutoMigration(from = 28, to = 29),
     ],
+    exportSchema = true,
 )
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
@@ -43,4 +48,6 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun wikiDao(): WikiDao
 
     abstract fun timelineDao(): TimelineDao
+
+    abstract fun actDao(): ActDao
 }

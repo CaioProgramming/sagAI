@@ -2,9 +2,12 @@ package com.ilustris.sagai.features.newsaga.data.usecase
 
 import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.ai.ImagenClient
-import com.ilustris.sagai.core.ai.SagaPrompts
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -30,7 +33,7 @@ class NewSagaUseCaseImpl
     ) : NewSagaUseCase {
         override suspend fun saveSaga(
             sagaData: SagaData,
-            characterDescription: String,
+            characterDescription: Character,
         ): RequestResult<Exception, Pair<SagaData, Character>> =
             try {
                 val saga =
@@ -46,7 +49,7 @@ class NewSagaUseCaseImpl
                     characterUseCase
                         .generateCharacter(
                             SagaContent(data = saga),
-                            characterDescription,
+                            CharacterPrompts.details(characterDescription),
                         ).success.value
 
                 val updatedSaga =
@@ -79,22 +82,38 @@ class NewSagaUseCaseImpl
             character: Character,
         ): RequestResult<Exception, SagaData> =
             try {
-                val genre = sagaForm.genre
-                val prompt = generateSagaIconPrompt(sagaForm, character)
+                val characterGenPrompts =
+                    characterUseCase
+                        .generateCharacterPrompt(
+                            character = character,
+                            guidelines =
+                                CharacterPrompts.descriptionTranslationPrompt(
+                                    character,
+                                    CharacterFraming.PORTRAIT,
+                                    sagaForm.genre,
+                                ),
+                            sagaForm.genre,
+                        ).success.value
 
-                val request = imageGenClient.generateImage(prompt)
-               /* val request =
-                    FreepikRequest(
-                        prompt = prompt,
-                        negative_prompt = GenrePrompts.negativePrompt(sagaForm.genre),
-                        style = GenrePrompts.sagaWallpaperStyling(sagaForm.genre),
-                    )*/
-                val image =
-                    imageGenClient
-                        .generateImage(prompt)!!
-                        .data
+                val prompt =
+                    generateSagaIconPrompt(
+                        sagaData = sagaForm,
+                        mainCharacter = character,
+                        description = characterGenPrompts,
+                    )
 
-                val file = fileHelper.saveFile(sagaForm.title, image, path = "${sagaForm.id}")
+                characterUseCase.generateCharacterImage(
+                    character = character,
+                    description = prompt,
+                    saga = sagaForm,
+                )
+
+                val file =
+                    fileHelper.saveFile(
+                        fileName = sagaForm.title,
+                        data = imageGenClient.generateImage(prompt)!!,
+                        path = "${sagaForm.id}",
+                    )
 
                 sagaRepository
                     .updateChat(sagaForm.copy(icon = file!!.absolutePath))
@@ -106,9 +125,11 @@ class NewSagaUseCaseImpl
         private fun generateSagaIconPrompt(
             sagaData: SagaData,
             mainCharacter: Character,
-        ) = SagaPrompts.wallpaperGeneration(
+            description: String,
+        ) = ImagePrompts.wallpaperGeneration(
             sagaData,
             mainCharacter,
+            description,
         )
 
         private fun generateSagaPrompt(sagaForm: SagaForm): String =

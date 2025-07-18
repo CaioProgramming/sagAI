@@ -43,6 +43,20 @@ fun Color.saturate(saturationFactor: Float): Color {
 
 fun Color.darker(factor: Float = 0.1f): Color = this.adjust(1f - factor)
 
+fun String.hexToColor(): Color? {
+    val hex = this.removePrefix("#")
+    if (!hex.matches(Regex("^[0-9A-Fa-f]{6}$|^[0-9A-Fa-f]{8}$"))) {
+        return null
+    }
+    val color = android.graphics.Color.parseColor("#$hex")
+    return Color(color)
+}
+
+fun String.isValidHexColor(): Boolean {
+    val hex = this.removePrefix("#")
+    return hex.matches(Regex("^[0-9A-Fa-f]{6}$|^[0-9A-Fa-f]{8}$"))
+}
+
 fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {
     val saturationMatrix = ColorMatrix().apply { setToSaturation(saturationFactor) }
     val saturationFilter = ColorFilter.colorMatrix(saturationMatrix)

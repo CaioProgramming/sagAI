@@ -16,7 +16,10 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.lighter
 import kotlin.text.indexOf
 
 data class AnnotationRule(
@@ -92,19 +95,14 @@ fun buildWikiAndCharactersAnnotation(
 ): AnnotatedString {
     val characterRules =
         characters.map { character ->
-            val characterColor =
-                try {
-                    Color(character.hexColor.toColorInt())
-                } catch (e: Exception) {
-                    Color.Gray
-                }
+            val characterColor = character.hexColor.hexToColor() ?: genre.color.lighter(.3f)
             val shadow =
                 Shadow(
                     color = shadowColor,
                     blurRadius = 3f,
                     offset =
                         androidx.compose.ui.geometry
-                            .Offset(2f, -2f),
+                            .Offset(0f, 0f),
                 )
             val span =
                 if (character.id == mainCharacter?.id) {
@@ -117,7 +115,15 @@ fun buildWikiAndCharactersAnnotation(
                 } else {
                     SpanStyle(
                         fontWeight = FontWeight.Bold,
-                        color = characterColor,
+                        fontFamily = genre.bodyFont(),
+                        brush =
+                            Brush.verticalGradient(
+                                listOf(
+                                    characterColor,
+                                    characterColor.copy(alpha = .5f),
+                                    shadowColor,
+                                ),
+                            ),
                         shadow = shadow,
                     )
                 }

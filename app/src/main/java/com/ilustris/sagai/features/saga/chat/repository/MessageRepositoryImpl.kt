@@ -24,7 +24,13 @@ class MessageRepositoryImpl
                 message.copy(
                     id =
                         messageDao
-                            .saveMessage(message.copy(id = 0, timestamp = Calendar.getInstance().timeInMillis))!!
+                            .saveMessage(
+                                message.copy(
+                                    id = 0,
+                                    timestamp = Calendar.getInstance().timeInMillis,
+                                    text = message.text.trimEnd(),
+                                ),
+                            )!!
                             .toInt(),
                 )
             } catch (e: Exception) {

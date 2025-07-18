@@ -5,15 +5,18 @@ package com.ilustris.sagai.features.newsaga.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -24,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -33,6 +37,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -49,26 +56,29 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.narrative.CharacterFormRules
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages.*
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPagesView
-import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaState
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
+import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.components.SparkLoader
-import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
@@ -81,8 +91,22 @@ fun NewSagaView(
 ) {
     val form by createSagaViewModel.saga.collectAsStateWithLifecycle()
     val state by createSagaViewModel.state.collectAsStateWithLifecycle()
+    val effect by createSagaViewModel.effect.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(0) { NewSagaPages.entries.size }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(effect) {
+        when (effect) {
+            is Effect.Navigate -> {
+                navHostController.navigateToRoute(
+                    (effect as Effect.Navigate).route,
+                    arguments = (effect as Effect.Navigate).arguments,
+                    popUpToRoute = Routes.NEW_SAGA,
+                )
+            }
+            else -> doNothing()
+        }
+    }
 
     fun animateToPage(
         page: Int,
@@ -95,92 +119,90 @@ fun NewSagaView(
     }
 
     Box {
-        val isLoading =
-            state is CreateSagaState.Loading ||
-                state is CreateSagaState.Success ||
-                state is CreateSagaState.GeneratedSaga
+        val isLoading = state.isLoading || state.saga != null
         val blurRadius = animateDpAsState(if (isLoading) 20.dp else 0.dp)
         NewSagaFlow(
-            pagerState,
-            form,
-            Modifier
-                .align(Alignment.Center)
-                .blur(blurRadius.value, edgeTreatment = BlurredEdgeTreatment.Unbounded),
-        ) { page, data ->
+            pagerState = pagerState,
+            form = form,
+            updateContent = { page, data ->
 
-            when (page) {
-                TITLE -> {
-                    createSagaViewModel.updateTitle(data as String)
-                    animateToPage(pagerState.currentPage + 1)
+                when (page) {
+                    TITLE -> {
+                        (data as? String)?.let {
+                            createSagaViewModel.updateTitle(it)
+                        } ?: run {
+                            createSagaViewModel.updateTitle(form.title)
+                        }
+                        animateToPage(pagerState.currentPage + 1)
+                    }
+
+                    GENRE -> {
+                        (data as? Genre)?.let {
+                            createSagaViewModel.updateGenre(it)
+                        } ?: run {
+                            createSagaViewModel.updateGenre(form.genre)
+                        }
+                        animateToPage(pagerState.currentPage + 1)
+                    }
+
+                    DESCRIPTION -> {
+                        (data as? String)?.let {
+                            createSagaViewModel.updateDescription(it)
+                        } ?: run {
+                            createSagaViewModel.updateDescription(form.description)
+                        }
+                        animateToPage(pagerState.currentPage + 1)
+                    }
+
+                    CHARACTER -> {
+                        (data as? Character)?.let {
+                            createSagaViewModel.updateCharacterDescription(it)
+                        } ?: run {
+                            createSagaViewModel.updateCharacterDescription(form.character)
+                        }
+                        animateToPage(pagerState.currentPage + 1)
+                    }
                 }
-
-                GENRE -> {
-                    createSagaViewModel.updateGenre(data as Genre)
-                    animateToPage(pagerState.currentPage + 1)
-                }
-
-                DESCRIPTION -> {
-                    createSagaViewModel.updateDescription(data as String)
-                    animateToPage(pagerState.currentPage + 1)
-                }
-
-                CHARACTER -> {
-                    createSagaViewModel.updateCharacterDescription(data as String)
-                    animateToPage(pagerState.currentPage + 1)
-                }
-            }
-        }
-
-        AnimatedVisibility(
-            isLoading,
-            enter = fadeIn() + scaleIn(),
-            exit = scaleOut(),
-            modifier = Modifier.align(Alignment.Center),
-        ) {
-            SparkLoader(
-                brush =
-                    gradientAnimation(
-                        holographicGradient,
-                        targetValue = 500f,
-                        duration = 5.seconds,
+            },
+            changePage = {
+                animateToPage(it)
+            },
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .blur(blurRadius.value, edgeTreatment = BlurredEdgeTreatment.Unbounded),
+        )
+        if (state.isLoading || state.saga != null) {
+            Dialog(
+                onDismissRequest = { createSagaViewModel.resetGeneratedSaga() },
+                properties =
+                    DialogProperties(
+                        dismissOnBackPress = false,
+                        dismissOnClickOutside = false,
                     ),
-                modifier = Modifier.size(100.dp),
-            )
-        }
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    AnimatedVisibility(isLoading && state.saga == null, enter = scaleIn(), exit = scaleOut()) {
+                        SparkLoader(
+                            brush = form.genre.gradient(),
+                            modifier = Modifier.size(100.dp),
+                        )
+                    }
 
-        if (state is CreateSagaState.GeneratedSaga || state is CreateSagaState.Success) {
-            Dialog(onDismissRequest = { createSagaViewModel.resetGeneratedSaga() }) {
-                Column(verticalArrangement = Arrangement.Center) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                    AnimatedVisibility(
+                        state.saga != null,
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        enter = fadeIn() + scaleIn(),
+                        exit = scaleOut() + fadeOut(),
                     ) {
-                        when (state) {
-                            is CreateSagaState.GeneratedSaga -> {
-                                SagaCard(
-                                    sagaData = (state as CreateSagaState.GeneratedSaga).saga,
-                                    modifier =
-                                        Modifier
-                                            .align(Alignment.Center)
-                                            .fillMaxWidth()
-                                            .fillMaxHeight(.5f),
-                                )
-                            }
-
-                            is CreateSagaState.Success -> {
-                                val saga = (state as CreateSagaState.Success).saga
-                                SagaCard(
-                                    sagaData = saga,
-                                    modifier =
-                                        Modifier
-                                            .align(Alignment.Center)
-                                            .fillMaxWidth()
-                                            .fillMaxHeight(.5f),
-                                )
-                            }
-
-                            else -> Box {}
+                        state.saga?.let {
+                            SagaCard(
+                                sagaData = it,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(.5f),
+                            )
                         }
                     }
 
@@ -188,8 +210,7 @@ fun NewSagaView(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        val saveText = if (state is CreateSagaState.Success) "Continuar" else "Salvar"
-                        AnimatedVisibility(state is CreateSagaState.GeneratedSaga) {
+                        state.continueAction?.let { action ->
                             Button(
                                 modifier = Modifier.fillMaxWidth(.5f),
                                 onClick = { createSagaViewModel.resetGeneratedSaga() },
@@ -197,29 +218,14 @@ fun NewSagaView(
                             ) {
                                 Text(text = "Fechar")
                             }
-                        }
-
-                        Button(
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                when (state) {
-                                    is CreateSagaState.GeneratedSaga -> {
-                                        createSagaViewModel.saveSaga((state as CreateSagaState.GeneratedSaga).saga)
-                                    }
-                                    is CreateSagaState.Success -> {
-                                        navHostController.navigateToRoute(
-                                            Routes.CHAT,
-                                            arguments =
-                                                mapOf(
-                                                    Routes.CHAT.arguments.first() to (state as CreateSagaState.Success).saga.id.toString(),
-                                                ),
-                                        )
-                                    }
-                                    else -> doNothing()
-                                }
-                            },
-                        ) {
-                            Text(text = saveText)
+                            Button(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    action.second()
+                                },
+                            ) {
+                                Text(text = action.first)
+                            }
                         }
                     }
                 }
@@ -234,6 +240,7 @@ fun NewSagaFlow(
     form: SagaForm,
     modifier: Modifier = Modifier,
     updateContent: (NewSagaPages, Any?) -> Unit = { _, _ -> },
+    changePage: (Int) -> Unit = { _ -> },
 ) {
     val currentPage = NewSagaPages.entries[pagerState.currentPage]
     var data by remember {
@@ -269,36 +276,57 @@ fun NewSagaFlow(
                 Modifier
                     .fillMaxWidth()
                     .weight(1f),
-            { page, newValue ->
-                data = newValue
-            },
-        )
+        ) { page, newValue ->
+            data = newValue
+        }
 
-        val brush = gradientAnimation(holographicGradient, targetValue = 700f)
+        val brush = form.genre.gradient()
+
         val pageEnabled =
             when (currentPage) {
                 GENRE -> true
-                TITLE, DESCRIPTION, CHARACTER -> (data as? String)?.isNotEmpty() == true
+                TITLE -> (data as? String)?.isNotEmpty() == true || form.title.isNotEmpty()
+                DESCRIPTION -> (data as? String)?.isNotEmpty() == true || form.description.isNotEmpty()
+                CHARACTER -> {
+                    (data as? Character)
+                        ?.let { CharacterFormRules.validateCharacter(it) } == true &&
+                        (form.description.isNotEmpty()) &&
+                        form.title.isNotEmpty()
+                }
             }
 
         Row(
             modifier =
                 Modifier
-                    .padding(16.dp)
-                    .gradientFill(brush),
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             NewSagaPages.entries.forEachIndexed { page, index ->
                 val isEnabled = page <= pagerState.currentPage
                 val size =
                     animateDpAsState(
-                        targetValue = if (isEnabled) 24.dp else 12.dp,
+                        targetValue = if (isEnabled) 32.dp else 12.dp,
                         label = "indicatorSize",
                     )
                 val dividerAlpha by animateFloatAsState(
                     if (isEnabled) 1f else .1f,
                     label = "dividerAlpha",
                 )
+
+                val indicatorWeight by animateFloatAsState(
+                    if (isEnabled) 1f else .3f,
+                    label = "indicatorWeight",
+                    animationSpec = tween(500, easing = EaseInElastic),
+                )
+
+                val indicatorBrush =
+                    if (isEnabled) {
+                        brush
+                    } else {
+                        MaterialTheme.colorScheme.onBackground
+                            .copy(alpha = .3f)
+                            .solidGradient()
+                    }
                 Icon(
                     painterResource(R.drawable.ic_spark),
                     null,
@@ -306,17 +334,25 @@ fun NewSagaFlow(
                         MaterialTheme.colorScheme.onBackground.copy(
                             alpha = dividerAlpha,
                         ),
-                    modifier = Modifier.size(size.value),
+                    modifier =
+                        Modifier
+                            .clip(CircleShape)
+                            .size(size.value)
+                            .clickable(enabled = isEnabled) {
+                                changePage(page)
+                            }.gradientFill(
+                                indicatorBrush,
+                            ),
                 )
 
                 Box(
                     modifier =
                         Modifier
                             .background(
-                                MaterialTheme.colorScheme.onBackground.copy(alpha = dividerAlpha),
-                                RoundedCornerShape(15.dp),
-                            ).height(1.dp)
-                            .weight(1f),
+                                indicatorBrush,
+                                RoundedCornerShape(25.dp),
+                            ).height(5.dp)
+                            .weight(indicatorWeight),
                 )
             }
         }
@@ -340,14 +376,14 @@ fun NewSagaFlow(
                         .border(2.dp, brush, RoundedCornerShape(15.dp)),
                 colors =
                     ButtonDefaults.buttonColors().copy(
-                        containerColor = MaterialTheme.colorScheme.background,
+                        containerColor = Color.Black,
                     ),
             ) {
                 Text(
                     text = stringResource(R.string.next),
                     style =
                         MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.background,
+                            color = Color.White,
                         ),
                     modifier =
                         Modifier
@@ -362,7 +398,7 @@ fun NewSagaFlow(
                         Modifier
                             .gradientFill(brush)
                             .size(24.dp),
-                    tint = MaterialTheme.colorScheme.background,
+                    tint = Color.White,
                 )
             }
         }

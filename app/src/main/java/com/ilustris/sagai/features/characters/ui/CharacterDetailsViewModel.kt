@@ -33,8 +33,8 @@ class CharacterDetailsViewModel
                     character.value = it?.characters?.find { char -> char.id == characterId.toInt() }
                     messageCount.value =
                         it?.messages?.filter { message ->
-                            message.characterId == characterId.toInt() ||
-                                message.speakerName.equals(character.value?.name, true)
+                            message.character?.id == characterId.toInt() ||
+                                message.character?.name.equals(character.value?.name, true)
                         }?.size ?: 0
                 }
             }

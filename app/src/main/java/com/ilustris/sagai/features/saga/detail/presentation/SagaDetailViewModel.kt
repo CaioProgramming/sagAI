@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.saga.detail.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,6 +22,7 @@ class SagaDetailViewModel
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Loading)
         val state: StateFlow<State> = _state.asStateFlow()
+        val saga = MutableStateFlow<SagaContent?>(null)
 
         fun fetchSagaDetails(sagaId: String) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -28,6 +30,7 @@ class SagaDetailViewModel
                 sagaDetailUseCase.fetchSaga(sagaId.toInt()).collect { saga ->
                     saga?.let { data ->
                         _state.value = State.Success(data)
+                        this@SagaDetailViewModel.saga.value = data
                     }
                 }
             }

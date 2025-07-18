@@ -14,5 +14,8 @@ interface CharacterRepository {
 
     suspend fun getCharacterById(characterId: Int): Character?
 
-    suspend fun getCharacterByName(name: String): Character?
+    suspend fun getCharacterByName(
+        name: String,
+        sagaId: Int,
+    ): Character?
 }

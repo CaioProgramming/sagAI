@@ -9,18 +9,19 @@ plugins {
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
     alias(libs.plugins.androidx.room)
+    alias(libs.plugins.firebase.crashlytics) // <-- ADDED CRASHLYTICS PLUGIN
 }
 
 android {
     namespace = "com.ilustris.sagai"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ilustris.sagai"
         minSdk = 27
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
-        versionName = "1.0.1"
+        versionName = "1.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -35,7 +36,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = false // Consider enabling for release builds along with Crashlytics
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -47,6 +48,9 @@ android {
         debug {
             buildConfigField("String", "APIKEY", apikeyProperties.getProperty("CLOUDFLARE_KEY"))
             buildConfigField("String", "ACCOUNTID", apikeyProperties.getProperty("CLOUDFLARE_ID"))
+            // It'''s good practice to disable Crashlytics for debug builds to avoid polluting your dashboard
+            // You can do this via a manifest placeholder or by checking BuildConfig.DEBUG in your Application class
+            // For now, we'''ll keep it simple and add the dependency for all build types.
         }
     }
     compileOptions {
@@ -82,6 +86,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.android)
     kapt(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.core.splashscreen) // Added Splash Screen dependency
 
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
@@ -108,6 +113,10 @@ dependencies {
     implementation(libs.chrisbanes.haze.materials)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
+    implementation(libs.firebase.config.ktx)
+    implementation(libs.firebase.analytics.ktx)
+    implementation(libs.firebase.crashlytics.ktx)
+    implementation(libs.firebase.installations.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

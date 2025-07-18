@@ -9,6 +9,7 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
+import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -25,10 +26,11 @@ class CreateSagaViewModel
     ) : ViewModel() {
         val saga = MutableStateFlow(SagaForm())
         val sagaData = MutableStateFlow<SagaData?>(null)
-        val state = MutableStateFlow<CreateSagaState>(CreateSagaState.Initial)
+        val state = MutableStateFlow<CreateSagaState>(CreateSagaState())
+        val effect = MutableStateFlow<Effect?>(null)
 
-        fun updateCharacterDescription(description: String) {
-            saga.value = saga.value.copy(characterDescription = description)
+        fun updateCharacterDescription(description: Character) {
+            saga.value = saga.value.copy(character = description)
             generateSaga()
         }
 
@@ -45,20 +47,21 @@ class CreateSagaViewModel
         }
 
         fun saveSaga(sagaData: SagaData) {
-            state.value = CreateSagaState.Loading
+            state.value = CreateSagaState(isLoading = true)
 
             viewModelScope.launch(Dispatchers.IO) {
-                val sagaOperation =
+                val saveOperation =
                     newSagaUseCase.saveSaga(
                         sagaData.copy(genre = saga.value.genre),
-                        saga.value.characterDescription,
+                        saga.value.character,
                     )
 
-                when (sagaOperation) {
-                    is RequestResult.Error<Exception> -> sendErrorState(sagaOperation.value)
+                when (saveOperation) {
+                    is RequestResult.Error<Exception> -> sendErrorState(saveOperation.value)
 
                     is RequestResult.Success<Pair<SagaData, Character>> -> {
-                        val operationData = sagaOperation.success.value
+                        val operationData = saveOperation.success.value
+                        saga.value = saga.value.copy(character = operationData.second)
                         val sagaUpdateOperation =
                             newSagaUseCase
                                 .generateSagaIcon(
@@ -67,17 +70,29 @@ class CreateSagaViewModel
                                 )
                         sagaUpdateOperation
                             .onSuccess {
-                                state.value = CreateSagaState.Success(it)
+                                state.value = state.value.copy(isLoading = false, saga = it)
+                                viewModelScope.launch {
+                                    delay(10.seconds)
+                                    navigateToSaga(it)
+                                }
                             }.onFailure {
-                                state.value = CreateSagaState.Success(sagaOperation.success.value.first)
+                                state.value =
+                                    state.value.copy(
+                                        isLoading = false,
+                                        saga = saveOperation.success.value.first,
+                                    )
                             }
                     }
                 }
             }
         }
 
+        private fun navigateToSaga(sagaData: SagaData) {
+            effect.value = Effect.Navigate(Routes.CHAT, mapOf("sagaId" to sagaData.id.toString()))
+        }
+
         private fun sendErrorState(exception: Exception) {
-            state.value = CreateSagaState.Error(exception)
+            state.value = state.value.copy(isLoading = false, errorMessage = exception.message)
             Log.e(javaClass.simpleName, "sendErrorState: Error saving saga ${exception.message}")
         }
 
@@ -89,23 +104,27 @@ class CreateSagaViewModel
         }
 
         fun resetGeneratedSaga() {
-            state.value = CreateSagaState.Initial
+            state.value = CreateSagaState()
         }
 
         fun generateSaga() {
-            state.value = CreateSagaState.Loading
+            state.value = CreateSagaState(isLoading = true)
             viewModelScope.launch(Dispatchers.IO) {
-                val result = newSagaUseCase.generateSaga(saga.value)
-                when (result) {
-                    is RequestResult.Error<Exception> -> {
-                        state.value = CreateSagaState.Error(result.error.value)
+                newSagaUseCase
+                    .generateSaga(saga.value)
+                    .onSuccess { saga ->
+                        state.value =
+                            state.value.copy(
+                                isLoading = false,
+                                saga = saga.copy(icon = null),
+                                continueAction =
+                                    "Salvar" to {
+                                        saveSaga(saga)
+                                    },
+                            )
+                    }.onFailure {
+                        sendErrorState(it)
                     }
-
-                    is RequestResult.Success<*> -> {
-                        state.value = CreateSagaState.GeneratedSaga(result.success.value)
-                        sagaData.value = result.success.value
-                    }
-                }
             }
         }
     }

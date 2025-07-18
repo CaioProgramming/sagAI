@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.wiki.domain.usecase
 
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.WikiPrompts
+import com.ilustris.sagai.core.ai.prompts.WikiPrompts
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -14,7 +14,7 @@ class WikiUseCaseImpl
     @Inject
     constructor(
         private val wikiRepository: WikiRepository,
-        private val textGenClient: TextGenClient,
+        private val aiClient: TextGenClient,
     ) : WikiUseCase {
         override fun getWikisBySaga(sagaId: Int): Flow<List<Wiki>> = wikiRepository.getWikisBySaga(sagaId)
 
@@ -37,14 +37,14 @@ class WikiUseCaseImpl
             events: List<Timeline>,
         ): List<Wiki> =
             try {
-                textGenClient
+                aiClient
                     .generate<WikiGen>(
+                        customSchema = WikiGen.customSchema(),
                         prompt =
                             WikiPrompts.generateWiki(
                                 saga = sagaContent,
                                 events = events,
                             ),
-                        customSchema = WikiGen.customSchema(),
                     )!!
                     .wikis
             } catch (e: Exception) {

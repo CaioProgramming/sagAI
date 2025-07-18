@@ -1,0 +1,110 @@
+<resources>
+    <string name="app_name">sagAI</string>
+    <string name="saga">Saga</string>
+    <string name="start_saga">Pronto para iniciar sua saga?</string>
+    <string name="start_saga_subtitle">Comece com o nome da sua história.</string>
+    <string name="saga_title_hint">Um nome épico que combine com você</string>
+    <string name="saga_genre">Qual o tema da sua Saga?</string>
+    <string name="saga_genre_subtitle">Em qual universo vai se passar sua saga?</string>
+    <string name="saga_genre_hint">Escolha um tema para sua história</string>
+    <string name="saga_description">Por onde começamos?</string>
+    <string name="saga_character_description">Quem você vai ser?</string>
+    <string name="saga_character_description_subtitle">Descreva seu personagem, aparência, personalidade, estilo…</string>
+    <string name="saga_description_subtitle">Vamos definir o início dessa aventura; não se preocupe com os detalhes, vamos melhorando juntos.</string>
+    <string name="saga_description_hint">Descreva sua história…</string>
+    <string name="saga_saving">Hora de construir esse mundo!</string>
+    <string name="saga_saving_subtitle">Deixa comigo; vou construir seu mundo em alguns instantes,</string>
+    <string name="saga_saving_hint"/>
+    <string name="new_saga_title">Nova saga</string>
+    <string name="home_title">Sagas</string>
+    <string name="save_saga">Salvar</string>
+    <string name="character_gallery_title">Personagens</string>
+    <string name="back_button_description">Voltar</string>
+    <string name="lets_create_saga">Vamos criar sua saga</string>
+    <string name="lets_create_saga_subtitle">A IA vai te ajudar a dar vida a tudo; não seja tímido com os detalhes da sua jornada.</string>
+    <string name="next">Continuar</string>
+    <string name="user_action_title">Falar</string>
+    <string name="sender_type_narrator_title">Narrar</string>
+    <string name="sender_type_thought_title">Pensar</string>
+    <string name="sender_type_action_title">Ação</string>
+    <string name="sender_type_new_character_title">Novo Personagem</string>
+    <string name="sender_type_user_description">Fala do seu personagem, o que ele diz na conversa atual.</string>
+    <string name="sender_type_thought_description">O que seu personagem está pensando, quais seus planos e receios.</string>
+    <string name="sender_type_action_description">Uma ação que seu personagem está fazendo.</string>
+    <string name="sender_type_narrator_description">Complete a história com eventos externos ou acontecimentos no ambiente.</string>
+    <string name="sender_type_new_chapter_description">Inicie um novo capítulo na história; isso irá gerar um novo resumo para sua saga.</string>
+    <string name="sender_type_new_character_description">Adicione um novo personagem à sua história; ele poderá interagir com o personagem principal e demais personagens.</string>
+    <string name="sender_type_character_description">Faça uma pergunta para um personagem específico sobre a história.</string>
+    <string name="sender_type_user_hint">Enviar nova mensagem</string>
+    <string name="sender_type_narrator_hint">Descreva o que acontece em seguida…</string>
+    <string name="sender_type_thought_hint">O que seu personagem está pensando?</string>
+    <string name="sender_type_action_hint">Qual ação seu personagem realiza?</string>
+    <string name="sender_type_new_character_hint">Descreva o novo personagem (nome, aparência, etc.)</string>
+    <string name="sender_type_new_chapter_hint">Isso iniciará um novo capítulo. O que acontece?</string>
+    <string name="sender_type_character_hint">Pergunte algo a um personagem específico…</string>
+    <string name="sender_type_default_hint">Digite sua mensagem…</string>
+
+    <!-- CharacterForm: Image Content Description -->
+    <string name="character_form_image_content_description">Silhueta do personagem</string>
+
+    <!-- CharacterForm: Name Field -->
+    <string name="character_form_label_name">Nome</string>
+    <string name="character_form_placeholder_name">Ex: Kaelen, Unidade 734, Sussurro do Vento</string>
+    <string name="character_form_placeholder_name_fantasy">Ex: Elara, Sir Kaelen, Anya Flecha Ligeira</string>
+    <string name="character_form_placeholder_name_scifi">Ex: Unidade 734, Jax Riker, Nova Kylo</string>
+
+    <!-- CharacterForm: Backstory Section -->
+    <string name="character_form_title_backstory">História</string>
+    <string name="character_form_placeholder_backstory">Breve origem, eventos chave da vida, motivações…</string>
+
+    <!-- CharacterForm: Quick Details Section -->
+    <string name="character_form_title_quick_details">Detalhes Rápidos</string>
+    <string name="character_form_label_occupation">Ocupação</string>
+    <string name="character_form_placeholder_occupation">Ocupação</string>
+    <string name="character_form_label_style_vibe">Estilo/Vibe</string>
+    <string name="character_form_placeholder_style_vibe">Estilo/Vibe</string>
+    <string name="character_form_label_weapons_gear">Armas &amp; Equipamentos (opcional)</string>
+    <string name="character_form_placeholder_weapons_gear">Armas &amp; Equipamentos</string>
+
+    <!-- CharacterForm: Appearance Details Section -->
+    <string name="character_form_title_appearance_details">Detalhes da Aparência</string>
+    <string name="character_form_placeholder_appearance_details">Estrutura geral, altura, pele, cabelo, traços físicos distintos…</string>
+
+    <!-- CharacterForm: Facial Features Section -->
+    <string name="character_form_title_facial_features">Traços Faciais</string>
+    <string name="character_form_placeholder_facial_features">Olhos (cor, formato), nariz, boca, maxilar, cicatrizes, tatuagens…</string>
+
+    <!-- CharacterForm: Clothing & Attire Section -->
+    <string name="character_form_title_clothing_attire">Vestuário &amp; Traje</string>
+    <string name="character_form_placeholder_clothing_attire">Roupa típica, armadura, acessórios, estilo de vestimenta…</string>
+    
+    <!-- CharacterForm: Gender Section -->
+    <string name="character_form_title_gender">Gênero</string>
+    <string name="personality_title">Personalidade</string>
+    <string-array name="character_form_gender_options">
+        <item>Masculino</item>
+        <item>Feminino</item>
+    </string-array>
+
+    <!-- New Strings -->
+    <string name="character_form_placeholder_personality">Ex: Estóico, espirituoso, cínico, bondoso</string>
+    <string name="character_form_label_ethnicity">Etnia</string>
+    <string name="character_form_placeholder_ethnicity">Ex: Serrano, Costeiro, Nômade, Urbano</string>
+    <string name="character_form_label_race">Raça / Espécie</string>
+    <string name="character_form_placeholder_race">Ex: Humano, Elfo, Anão, Ciborgue, Ktharr</string>
+    <string name="character_form_label_hair">Descrição do Cabelo</string>
+    <string name="character_form_placeholder_hair">Ex: Longo, esvoaçante, trançado, careca, gavinhas bioluminescentes</string>
+    <string name="character_form_label_eyes">Cor e Detalhes dos Olhos</string>
+    <string name="character_form_placeholder_eyes">Ex: Azul penetrante, heterocromia, vermelho brilhante, multifacetado</string>
+    <string name="character_form_label_mouth">Boca e Lábios</string>
+    <string name="character_form_placeholder_mouth">Ex: Lábios finos, carnudos, frequentemente sorrindo, com presas</string>
+    <string name="character_form_label_scars">Cicatrizes e Marcas</string>
+    <string name="character_form_placeholder_scars">Ex: Uma longa cicatriz sobre o olho esquerdo, tatuagens tribais, implantes cibernéticos</string>
+    <string name="character_form_label_clothing_body">Roupa (Corpo)</string>
+    <string name="character_form_placeholder_clothing_body">Ex: Armadura de couro, vestes, traje ambiental, trapos</string>
+    <string name="character_form_label_clothing_accessories">Acessórios</string>
+    <string name="character_form_placeholder_clothing_accessories">Ex: Manto com capuz, amuleto, cinto de utilidades, máscara de respiração</string>
+    <string name="character_form_label_clothing_footwear">Calçados</string>
+    <string name="character_form_placeholder_clothing_footwear">Ex: Botas resistentes, sandálias, descalço, botas gravitacionais</string>
+
+</resources>

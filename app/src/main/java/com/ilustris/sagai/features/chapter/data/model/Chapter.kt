@@ -19,6 +19,8 @@ data class Chapter(
     @ColumnInfo(defaultValue = "")
     val visualDescription: String = "",
     val createdAt: Long? = 0L,
+    @ColumnInfo(index = true)
+    val actId: Int? = null,
 )
 
 data class ChapterGen(

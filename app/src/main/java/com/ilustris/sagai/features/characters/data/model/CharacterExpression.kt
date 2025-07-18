@@ -5,7 +5,6 @@ enum class CharacterExpression(
 ) {
     NEUTRAL("A neutral, unreadable expression"),
     SMILING_GENTLY("Smiling gently, a hint of warmth"),
-    LAUGHING_HEARTILY("Laughing heartily, full of joy"),
     FROWNING_SLIGHTLY("Frowning slightly, a touch of concern or disapproval"),
     SCOWLING_DEEPLY("Scowling deeply, radiating anger or intense displeasure"),
     SAD_TEARFUL("Looking sad, possibly with tears welling up"),

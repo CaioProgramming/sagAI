@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
+import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaData
@@ -30,6 +31,12 @@ import java.util.Calendar
             childColumns = ["characterId"],
             onDelete = ForeignKey.CASCADE,
         ),
+        ForeignKey(
+            entity = Act::class,
+            parentColumns = ["id"],
+            childColumns = ["actId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
 )
 data class Message(
@@ -45,17 +52,32 @@ data class Message(
     val chapterId: Int? = null,
     @ColumnInfo(index = true)
     val characterId: Int? = null,
+    @ColumnInfo(index = true)
+    val actId: Int? = null,
+)
+
+data class MessageGen(
+    val message: Message,
+    val newCharacter: CharacterInfo? = null,
+    val shouldCreateCharacter: Boolean = false,
+    val shouldEndSaga: Boolean = false,
+)
+
+data class CharacterInfo(
+    val name: String = "",
+    val gender: String = "",
+    val briefDescription: String = "",
 )
 
 enum class SenderType {
     USER,
     THOUGHT,
-
     ACTION,
     NARRATOR,
     NEW_CHAPTER,
     NEW_CHARACTER,
     CHARACTER,
+    NEW_ACT,
     ;
 
     companion object {
@@ -70,13 +92,13 @@ fun SenderType.meaning() =
         SenderType.USER ->
             """
             Represents a message sent by the player.
-            You, as the AI, must NEVER generate a message with this 'Type'.
+            You, as the AI, must NEVER generate a message with this '''Type'''.
             This type is only for input from the player.
             """
         SenderType.CHARACTER ->
             """
             Use for dialogue spoken by an existing NPC (Non-Player Character) 
-            who is already established in the story or listed in 'CURRENT SAGA CAST'.'
+            who is already established in the story or listed in '''CURRENT SAGA CAST'''.'
             """
         SenderType.NARRATOR ->
             """
@@ -84,31 +106,31 @@ fun SenderType.meaning() =
             scene descriptions, or prompting the player for action.
             **CRITICAL RULE: The NARRATOR MUST NEVER include direct or indirect dialogue from any character (NPCs or player).
             Narration should describe actions, environments, and non-verbal reactions only.
-            All character speech must be in a 'CHARACTER' senderType.**
+            All character speech must be in a '''CHARACTER''' senderType.**
             """
         SenderType.NEW_CHAPTER ->
             """
-            Use ONLY when introducing a brand new, significant NPC for the very first time. 
-            If a character is mentioned or appears and is NOT in the Story,
-            you MUST use this type for their first message. 
-            The 'text' field for this type MUST contain a natural language description of this new character (including their name, key physical traits, and initial demeanor). 
+           YOU CAN NEVER USE THIS TYPE, ITS WILL BE SEND EXCLUSIVELY LOCALLY ONLY ON THE APP WHEN NEW CHAPTER WILL START ON THE APP.    
+            """
+        SenderType.NEW_ACT ->
+            """
+            YOU CAN NEVER USE THIS TYPE, ITS WILL BE SEND EXCLUSIVELY LOCALLY ONLY ON THE APP WHEN NEW ACT WILL START ON THE APP.    
             """
         SenderType.NEW_CHARACTER ->
             """
-            Use when introducing a brand new, significant NPC for the very first time.
-            The 'text' field for this type MUST contain a natural language description of this new character (including their name, key physical traits, and initial demeanor).
+            YOU CAN NEVER USE THIS TYPE, ITS WILL BE SEND EXCLUSIVELY LOCALLY ONLY ON THE APP WHEN NEW CHARACTER WILL START ON THE APP.
             """
 
         SenderType.THOUGHT ->
             """
             Use when Character its thinking and not talking directly with other NPC.
-            You, as the AI, must NEVER generate a message with this 'Type'.
+            You, as the AI, must NEVER generate a message with this '''Type'''.
             This type is only for input from the player.
             """
         SenderType.ACTION ->
             """
             Use to describe a character action.
-            You, as the AI, must NEVER generate a message with this 'Type'.
+            You, as the AI, must NEVER generate a message with this '''Type'''.
             This type is only for input from the player.
             """
     }

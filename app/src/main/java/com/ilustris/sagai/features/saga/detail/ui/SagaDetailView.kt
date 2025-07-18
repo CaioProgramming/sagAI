@@ -1,103 +1,144 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
+import android.content.res.Configuration
+import android.graphics.fonts.FontStyle
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.core.utils.getEventsForChapter
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
+import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.ui.ActComponent
+import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
+import com.ilustris.sagai.features.chapter.ui.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
+import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
+import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
+import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
-import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.holographicGradient
 import effectForGenre
-import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.launch
 
 enum class DetailAction {
     CHARACTERS,
-    DELETE,
     TIMELINE,
     CHAPTERS,
     WIKI,
+    ACTS,
     BACK,
+    DELETE,
 }
 
 @Composable
@@ -109,78 +150,96 @@ fun SagaDetailView(
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val saga by viewModel.saga.collectAsStateWithLifecycle()
     var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
+    var section by remember {
+        mutableStateOf(
+            DetailAction.BACK,
+        )
+    }
 
-    SagaDetailContentView(state, paddingValues) { action, saga, value ->
-        when (action) {
-            DetailAction.CHARACTERS -> {
-                if (value == null) {
-                    navHostController.navigateToRoute(
-                        Routes.CHARACTER_GALLERY,
-                        mapOf("sagaId" to saga.data.id.toString()),
-                    )
-                } else {
-                    navHostController.navigateToRoute(
-                        Routes.CHARACTER_DETAIL,
-                        mapOf(
-                            "sagaId" to saga.data.id.toString(),
-                            "characterId" to value.toString(),
-                        ),
-                    )
+    BackHandler(enabled = true) {
+        if (showDeleteConfirmation) {
+            showDeleteConfirmation = false
+        } else {
+            when (section) {
+                DetailAction.BACK, DetailAction.DELETE -> {
+                    navHostController.popBackStack()
+                }
+
+                else -> {
+                    section = DetailAction.BACK
                 }
             }
-
-            DetailAction.DELETE -> {
-                sagaToDelete = saga.data
-                showDeleteConfirmation = true
-            }
-
-            DetailAction.TIMELINE ->
-                navHostController.navigateToRoute(
-                    Routes.TIMELINE,
-                    mapOf("sagaId" to saga.data.id.toString()),
-                )
-
-            DetailAction.CHAPTERS ->
-                navHostController.navigateToRoute(
-                    Routes.SAGA_CHAPTERS,
-                    mapOf("sagaId" to saga.data.id.toString()),
-                )
-
-            DetailAction.WIKI -> TODO()
-            DetailAction.BACK -> navHostController.popBackStack()
         }
     }
 
-    if (showDeleteConfirmation && sagaToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Confirmar Exclusão") },
-            text = { Text("Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.") },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        sagaToDelete?.let { viewModel.deleteSaga(it) }
-                        showDeleteConfirmation = false
-                        navHostController.navigateToRoute(Routes.HOME)
-                    },
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError,
-                        ),
-                ) { Text("Excluir") }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { showDeleteConfirmation = false },
-                    colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface,
-                        ),
-                ) { Text("Cancelar") }
-            },
-        )
+    SagaDetailContentView(state, section, paddingValues, onChangeSection = {
+        section = it
+        if (it == DetailAction.DELETE) {
+            sagaToDelete = saga?.data
+            showDeleteConfirmation = true
+        }
+    }, onBackClick = {
+        when (it) {
+            DetailAction.BACK, DetailAction.DELETE -> navHostController.popBackStack()
+            else -> section = DetailAction.BACK
+        }
+    })
+
+    if (showDeleteConfirmation) {
+        sagaToDelete?.let {
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirmation = false },
+                title = {
+                    Text(
+                        "Confirmar Exclusão",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = it.genre.bodyFont(),
+                            ),
+                    )
+                },
+                text = {
+                    Text(
+                        "Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = it.genre.bodyFont(),
+                            ),
+                    )
+                },
+                shape = RoundedCornerShape(it.genre.cornerSize()),
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            sagaToDelete?.let { viewModel.deleteSaga(it) }
+                            showDeleteConfirmation = false
+                            navHostController.navigateToRoute(
+                                Routes.HOME,
+                                popUpToRoute = Routes.SAGA_DETAIL,
+                            )
+                        },
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                            ),
+                        shape = RoundedCornerShape(it.genre.cornerSize()),
+                    ) { Text("Excluir") }
+                },
+                dismissButton = {
+                    OutlinedButton(
+                        onClick = { showDeleteConfirmation = false },
+                        colors =
+                            ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                            ),
+                        shape = RoundedCornerShape(it.genre.cornerSize()),
+                    ) { Text("Cancelar") }
+                },
+            )
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -188,57 +247,344 @@ fun SagaDetailView(
     }
 }
 
-@Composable
-fun SagaDetailContentView(
-    state: State,
-    paddingValues: PaddingValues,
-    detailAction: (DetailAction, SagaContent, Any?) -> Unit = { _, _, _ -> },
-) {
-    val columnCount = 2
-    val saga = ((state as? State.Success)?.data as? SagaContent)
+fun LazyListScope.SagaDrawerContent(content: SagaContent) {
+    with(this) {
+        items(content.acts) {
+            val index = content.acts.indexOf(it)
+            val brush =
+                content.data.genre.gradient(
+                    content.currentActInfo?.act?.id == it.id,
+                    gradientType = GradientType.LINEAR,
+                    targetValue = 200f,
+                )
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(columnCount),
-        modifier =
-            Modifier
-                .padding(paddingValues)
-                .animateContentSize(),
-    ) {
-        if (state is State.Loading) {
-            item(span = {
-                GridItemSpan(columnCount)
-            }) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                ) {
-                    SparkIcon(
-                        Modifier
-                            .align(Alignment.Center)
-                            .size(50.dp),
-                        brush = gradientAnimation(holographicGradient),
-                    )
+            val chaptersInAct = content.chapters.filter { chapter -> chapter.actId == it.id }
+            val shape = RoundedCornerShape(content.data.genre.cornerSize())
+
+            Column(
+                Modifier
+                    .padding(16.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                        shape,
+                    ).background(
+                        MaterialTheme.colorScheme.background,
+                        shape,
+                    ).padding(4.dp)
+                    .animateContentSize(
+                        animationSpec = tween(500, easing = EaseIn),
+                    ),
+            ) {
+                Text(
+                    "Ato ${(index + 1).toRoman()}",
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = content.data.genre.headerFont(),
+                        ),
+                    modifier = Modifier.padding(8.dp),
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(4.dp))
+
+                if (chaptersInAct.isNotEmpty()) {
+                    chaptersInAct.forEachIndexed { chapterIndex, chapter ->
+                        val eventsInChapter =
+                            content.timelines.getEventsForChapter(
+                                chapter,
+                                previousChapter = chaptersInAct.getOrNull(chapterIndex - 1),
+                            )
+
+                        var expandedEvents by remember {
+                            mutableStateOf(false)
+                        }
+                        Row(
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .clip(shape)
+                                    .clickable {
+                                        expandedEvents = !expandedEvents
+                                    }.fillMaxWidth(),
+                        ) {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                null,
+                                Modifier.size(24.dp),
+                            )
+                            Text(
+                                "${chapter.title} - ${eventsInChapter.size} eventos",
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                            )
+                        }
+
+                        if (expandedEvents) {
+                            eventsInChapter.forEach { event ->
+                                TimeLineCard(
+                                    event,
+                                    content.data.genre,
+                                    titleStyle = MaterialTheme.typography.bodyMedium,
+                                    showText = false,
+                                    showSpark = false,
+                                    isLast = eventsInChapter.indexOf(event) == eventsInChapter.lastIndex,
+                                    modifier =
+                                        Modifier
+                                            .padding(horizontal = 16.dp)
+                                            .alpha(.7f),
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
 
-        saga?.let {
-            item(span = {
-                GridItemSpan(columnCount)
-            }) {
-                SagaTopBar(
-                    it.data.title,
-                    "Criado em ${it.data.createdAt.formatDate()}",
-                    it.data.genre,
-                    onBackClick = { detailAction(DetailAction.BACK, it, null) },
-                    modifier =
-                        Modifier
-                            .background(MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
-                            .padding(top = 50.dp, start = 16.dp),
-                )
+    if (content.timelines.isNotEmpty()) {
+        item {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        }
+
+        item {
+            val eventReference =
+                if (content.chapters.isNotEmpty()) {
+                    content.timelines.find { it.id == content.chapters.last().eventReference }
+                } else {
+                    content.timelines.last()
+                }
+
+            val eventIndex =
+                if (content.timelines.indexOf(eventReference) == -1) {
+                    0
+                } else {
+                    content.timelines.indexOf(eventReference)
+                }
+
+            val eventSublist = content.timelines.subList(eventIndex, content.timelines.size)
+
+            val remainEvents = (UpdateRules.CHAPTER_UPDATE_LIMIT - eventSublist.size).unaryPlus()
+
+            Text(
+                "${eventSublist.size} eventos desde o último capitulo.",
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        fontFamily = content.data.genre.bodyFont(),
+                        textAlign = TextAlign.Center,
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .alpha(.5f),
+            )
+        }
+    }
+}
+
+@Composable
+fun SagaDetailContentView(
+    state: State,
+    currentSection: DetailAction = DetailAction.BACK,
+    paddingValues: PaddingValues,
+    onChangeSection: (DetailAction) -> Unit = {},
+    onBackClick: (DetailAction) -> Unit = {},
+) {
+    val saga = ((state as? State.Success)?.data as? SagaContent)
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    saga?.let { sagaContent ->
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        ModalDrawerSheet(
+                            drawerShape =
+                                RoundedCornerShape(0.dp),
+                            drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        ) {
+                            LazyColumn(
+                                Modifier
+                                    .fillMaxWidth(.8f)
+                                    .fillMaxHeight(),
+                            ) {
+                                item {
+                                    Text(
+                                        "Progresso",
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(16.dp),
+                                        style =
+                                            MaterialTheme.typography.titleLarge.copy(
+                                                fontFamily = sagaContent.data.genre.headerFont(),
+                                                textAlign = TextAlign.Center,
+                                            ),
+                                    )
+                                }
+
+                                SagaDrawerContent(sagaContent)
+                            }
+                        }
+                    }
+                },
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Scaffold { _ ->
+                        Column {
+                            val titleAndSubtitle = currentSection.titleAndSubtitle(sagaContent)
+                            AnimatedContent(titleAndSubtitle) { titleAndSub ->
+                                SagaTopBar(
+                                    titleAndSub.first,
+                                    titleAndSub.second,
+                                    sagaContent.data.genre,
+                                    onBackClick = { onBackClick(currentSection) },
+                                    actionContent = {
+                                        Icon(
+                                            painterResource(R.drawable.ic_spark),
+                                            null,
+                                            tint = sagaContent.data.genre.color,
+                                            modifier =
+                                                Modifier
+                                                    .clickable {
+                                                        scope.launch {
+                                                            if (drawerState.isClosed) {
+                                                                drawerState.open()
+                                                            } else {
+                                                                drawerState.close()
+                                                            }
+                                                        }
+                                                    }.padding(horizontal = 8.dp)
+                                                    .size(24.dp),
+                                        )
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .background(MaterialTheme.colorScheme.background)
+                                            .fillMaxWidth()
+                                            .padding(top = 50.dp, start = 16.dp),
+                                )
+                            }
+
+                            AnimatedContent(currentSection, transitionSpec = {
+                                fadeIn(tween(500)) + slideInVertically() togetherWith
+                                    fadeOut(
+                                        tween(
+                                            400,
+                                        ),
+                                    )
+                            }) { section ->
+                                when (section) {
+                                    DetailAction.CHARACTERS ->
+                                        CharactersGalleryContent(
+                                            sagaContent,
+                                        )
+
+                                    DetailAction.TIMELINE ->
+                                        TimeLineContent(
+                                            sagaContent,
+                                        )
+
+                                    DetailAction.CHAPTERS ->
+                                        ChapterContent(
+                                            sagaContent,
+                                        )
+
+                                    DetailAction.WIKI -> WikiContent(sagaContent)
+                                    DetailAction.ACTS -> ActContent(sagaContent)
+                                    DetailAction.BACK, DetailAction.DELETE ->
+                                        SagaDetailInitialView(
+                                            sagaContent,
+                                            Modifier
+                                                .padding(paddingValues)
+                                                .animateContentSize(),
+                                        ) { action ->
+                                            onChangeSection(action)
+                                        }
+                                }
+                            }
+                        }
+                    }
+                }
             }
+        }
+    }
+}
+
+private fun DetailAction.titleAndSubtitle(content: SagaContent) =
+    when (this) {
+        DetailAction.CHARACTERS -> "Personagens" to "${content.characters.size} personagens"
+        DetailAction.TIMELINE -> "Eventos" to "${content.timelines.size} eventos"
+        DetailAction.CHAPTERS -> "Capítulos" to "${content.chapters.size} capítulos"
+        DetailAction.WIKI -> "Wiki" to "${content.wikis.size} itens"
+        DetailAction.ACTS -> "Atos" to "${content.acts.size} atos"
+        DetailAction.BACK, DetailAction.DELETE -> {
+            if (content.data.isEnded) {
+                content.data.title to "Finalizado em ${content.data.endedAt.formatDate()}"
+            } else {
+                content.data.title to "Criado em ${content.data.createdAt.formatDate()}"
+            }
+        }
+    }
+
+@Composable
+fun WikiContent(saga: SagaContent) {
+    LazyVerticalGrid(columns = GridCells.Fixed(2)) {
+        items(saga.wikis) { wiki ->
+            WikiCard(
+                wiki,
+                saga.data.genre,
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .height(300.dp),
+            )
+        }
+    }
+}
+
+@Composable
+fun ActContent(saga: SagaContent) {
+    VerticalPager(rememberPagerState { saga.acts.size }) {
+        val act = saga.acts[it]
+        ActComponent(
+            act,
+            saga.acts.indexOf(act) + 1,
+            saga,
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(
+                        rememberScrollState(),
+                    ),
+        )
+    }
+}
+
+@Composable
+private fun SagaDetailInitialView(
+    saga: SagaContent?,
+    modifier: Modifier,
+    selectSection: (DetailAction) -> Unit = {},
+) {
+    val columnCount = 2
+    val sectionStyle =
+        MaterialTheme.typography.headlineMedium.copy(
+            fontFamily = saga?.data?.genre?.bodyFont(),
+            fontWeight = FontWeight.Bold,
+        )
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(columnCount),
+        modifier = modifier,
+    ) {
+        saga?.let {
             item(span = {
                 GridItemSpan(columnCount)
             }) {
@@ -261,9 +607,7 @@ fun SagaDetailContentView(
                                             .gradientFade(),
                                     ).effectForGenre(saga.data.genre)
                                     .selectiveColorHighlight(
-                                        SelectiveColorParams(
-                                            it.data.genre.color,
-                                        ),
+                                        saga.data.genre.selectiveHighlight(),
                                     ).clipToBounds(),
                             contentScale = ContentScale.Crop,
                         )
@@ -287,6 +631,7 @@ fun SagaDetailContentView(
                                     mainChar,
                                     borderSize = 3.dp,
                                     genre = it.data.genre,
+                                    textStyle = MaterialTheme.typography.displayMedium,
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
@@ -313,8 +658,7 @@ fun SagaDetailContentView(
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
-                                            .gradientFill(it.data.genre.gradient(true),
-                                            ),
+                                            .gradientFill(it.data.genre.gradient(true)),
                                 )
                             }
                         }
@@ -387,14 +731,11 @@ fun SagaDetailContentView(
                     Modifier
                         .padding(16.dp)
                         .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         "Personagens",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Normal,
-                                fontFamily = it.data.genre.headerFont(),
-                            ),
+                        style = sectionStyle,
                         modifier =
                             Modifier
                                 .padding(8.dp)
@@ -402,7 +743,7 @@ fun SagaDetailContentView(
                     )
 
                     IconButton(onClick = {
-                        detailAction(DetailAction.CHARACTERS, it, null)
+                        selectSection(DetailAction.CHARACTERS)
                     }, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -420,7 +761,7 @@ fun SagaDetailContentView(
                                 .padding(8.dp)
                                 .clip(RoundedCornerShape(it.data.genre.cornerSize()))
                                 .clickable {
-                                    detailAction(DetailAction.CHARACTERS, it, char.id)
+                                    selectSection(DetailAction.CHARACTERS)
                                 },
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
@@ -459,14 +800,11 @@ fun SagaDetailContentView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 "Linha do tempo",
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = it.data.genre.headerFont(),
-                                    ),
+                                style = sectionStyle,
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
@@ -474,10 +812,8 @@ fun SagaDetailContentView(
                             )
 
                             IconButton(onClick = {
-                                detailAction(
+                                selectSection(
                                     DetailAction.TIMELINE,
-                                    it,
-                                    null,
                                 )
                             }, modifier = Modifier.size(24.dp)) {
                                 Icon(
@@ -497,10 +833,8 @@ fun SagaDetailContentView(
                                         .padding(16.dp)
                                         .clip(RoundedCornerShape(it.data.genre.cornerSize()))
                                         .clickable {
-                                            detailAction(
+                                            selectSection(
                                                 DetailAction.TIMELINE,
-                                                it,
-                                                null,
                                             )
                                         }.fillMaxWidth()
                                         .wrapContentHeight(),
@@ -525,14 +859,11 @@ fun SagaDetailContentView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 "Wiki",
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = it.data.genre.headerFont(),
-                                    ),
+                                style = sectionStyle,
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
@@ -540,7 +871,7 @@ fun SagaDetailContentView(
                             )
 
                             IconButton(onClick = {
-                                // openTimeLine(it.data.id)
+                                selectSection(DetailAction.WIKI)
                             }, modifier = Modifier.size(24.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -559,7 +890,7 @@ fun SagaDetailContentView(
                     }
                 }
 
-                items(it.wikis) { wiki ->
+                items(it.wikis.takeLast(4)) { wiki ->
                     WikiCard(
                         wiki,
                         it.data.genre,
@@ -580,14 +911,11 @@ fun SagaDetailContentView(
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             "Capítulos",
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Normal,
-                                    fontFamily = it.data.genre.headerFont(),
-                                ),
+                            style = sectionStyle,
                             modifier =
                                 Modifier
                                     .padding(8.dp)
@@ -595,10 +923,8 @@ fun SagaDetailContentView(
                         )
 
                         IconButton(onClick = {
-                            detailAction(
+                            selectSection(
                                 DetailAction.CHAPTERS,
-                                it,
-                                null,
                             )
                         }, modifier = Modifier.size(24.dp)) {
                             Icon(
@@ -628,15 +954,77 @@ fun SagaDetailContentView(
                 }
             }
 
+            if (it.acts.isNotEmpty()) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Row(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "Atos",
+                            style = sectionStyle,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .weight(1f),
+                        )
+
+                        IconButton(onClick = {
+                            selectSection(
+                                DetailAction.ACTS,
+                            )
+                        }, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = "Ver personagens",
+                            )
+                        }
+                    }
+                }
+
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    val act = it.acts.last()
+                    ActComponent(
+                        act,
+                        it.acts.indexOf(act) + 1,
+                        it,
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                    )
+                }
+            }
+
+            if (it.data.endMessage.isNotEmpty()) {
+
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Text(
+                        it.data.endMessage,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = it.data.genre.bodyFont(),
+                                fontWeight = FontWeight.Light,
+                                textAlign = TextAlign.Center,
+                                brush = it.data.genre.gradient()
+                            ))
+                }
+            }
+
             item(span = {
                 GridItemSpan(columnCount)
             }) {
                 Button(
                     onClick = {
-                        detailAction(
+                        selectSection(
                             DetailAction.DELETE,
-                            it,
-                            null,
                         )
                     },
                     colors =
@@ -666,7 +1054,11 @@ fun SagaDetailContentViewLoadingPreview() {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(
+    showBackground = true,
+    showSystemUi = true,
+    uiMode = Configuration.UI_MODE_TYPE_NORMAL,
+)
 @Composable
 fun SagaDetailContentViewPreview() {
     SagAIScaffold {
@@ -683,6 +1075,10 @@ fun SagaDetailContentViewPreview() {
                             mainCharacterId = null,
                             visuals = IllustrationVisuals(),
                         ),
+                    acts =
+                        List(3) {
+                            Act()
+                        },
                     mainCharacter =
                         Character(
                             name = "Personagem de teste",
@@ -693,12 +1089,14 @@ fun SagaDetailContentViewPreview() {
                         ),
                     messages =
                         List(10) {
-                            Message(
-                                id = 0,
-                                sagaId = 0,
-                                text = "Mensagem de teste",
-                                senderType = SenderType.entries.random(),
-                                timestamp = System.currentTimeMillis(),
+                            MessageContent(
+                                Message(
+                                    id = 0,
+                                    sagaId = 0,
+                                    text = "Mensagem de teste",
+                                    senderType = SenderType.entries.random(),
+                                    timestamp = System.currentTimeMillis(),
+                                ),
                             )
                         },
                     chapters =
@@ -709,6 +1107,7 @@ fun SagaDetailContentViewPreview() {
                                 overview = "Texto do capítulo de teste",
                                 messageReference = 0,
                                 coverImage = emptyString(),
+                                actId = it,
                             )
                         },
                     characters =

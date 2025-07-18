@@ -1,0 +1,28 @@
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:ordering="together">
+
+    <objectAnimator
+        android:propertyName="fillColor"
+        android:duration="2500"
+        android:valueFrom="@color/white"
+        android:valueTo="@color/splash_icon_blue"
+        android:valueType="colorType"
+        android:interpolator="@android:interpolator/fast_out_slow_in"/>
+
+    <objectAnimator
+        android:propertyName="scaleX"
+        android:duration="2500"
+        android:valueFrom="0.7"
+        android:valueTo="1.0"
+        android:valueType="floatType"
+        android:interpolator="@android:interpolator/overshoot"/>
+
+    <objectAnimator
+        android:propertyName="scaleY"
+        android:duration="2500"
+        android:valueFrom="0.7"
+        android:valueTo="1.0"
+        android:valueType="floatType"
+        android:interpolator="@android:interpolator/overshoot"/>
+
+</set>

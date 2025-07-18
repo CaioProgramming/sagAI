@@ -34,16 +34,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,16 +62,18 @@ import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
-import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
@@ -86,33 +93,100 @@ fun HomeView(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
-
+    val showDebugButton by viewModel.showDebugButton.collectAsStateWithLifecycle()
+    val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
     ChatList(
-        sagas = sagas,
-        padding,
+        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
+        padding = padding,
+        showDebugButton = showDebugButton,
         onCreateNewChat = {
             navController.navigateToRoute(Routes.NEW_SAGA)
         },
-        onSelectSaga = { sagaId ->
+        onSelectSaga = { sagaData ->
             navController.navigateToRoute(
                 Routes.CHAT,
-                Routes.CHAT.arguments.associateWith { sagaId.id.toString() },
+                mapOf(
+                    "sagaId" to sagaData.id.toString(),
+                    "isDebug" to sagaData.isDebug.toString(),
+                ),
             )
         },
+        createFakeSaga = {
+            viewModel.createFakeSaga()
+        },
     )
+    LaunchedEffect(startFakeSaga) {
+        startFakeSaga?.let {
+            navController.navigateToRoute(
+                Routes.CHAT,
+                mapOf(
+                    "sagaId" to it.id.toString(),
+                    "isDebug" to "true",
+                ),
+            )
+        }
+    }
 }
 
 @Composable
 private fun ChatList(
     sagas: List<SagaContent>,
     padding: PaddingValues = PaddingValues(0.dp),
+    showDebugButton: Boolean,
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (SagaData) -> Unit = {},
+    createFakeSaga: () -> Unit = {},
 ) {
     LazyColumn(
         modifier =
             Modifier.padding(padding),
     ) {
+        if (showDebugButton) { // Condition updated
+            item {
+                val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .gradientFill(debugBrush)
+                            .clip(RoundedCornerShape(15.dp))
+                            .clickable {
+                                createFakeSaga()
+                            }.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_bug),
+                        contentDescription = "Debug Session",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .size(32.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "Start Debug Session",
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White,
+                                ),
+                        )
+
+                        Text(
+                            "Test with fake messages.",
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Light,
+                                    color = Color.White.copy(alpha = 0.8f),
+                                ),
+                        )
+                    }
+                }
+            }
+        }
         item {
             val brush =
                 gradientAnimation(
@@ -130,6 +204,7 @@ private fun ChatList(
                         .clickable {
                             onCreateNewChat()
                         }.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
                     brush = Brush.verticalGradient(holographicGradient),
@@ -140,7 +215,7 @@ private fun ChatList(
                             .padding(4.dp)
                             .size(32.dp),
                 )
-
+                Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Text(
                         "Criar nova saga",
@@ -164,7 +239,7 @@ private fun ChatList(
         }
 
         items(sagas) {
-            ChatCard(it) {
+            ChatCard(it, isEnabled = showDebugButton) {
                 onSelectSaga(it.data)
             }
         }
@@ -174,6 +249,7 @@ private fun ChatList(
 @Composable
 fun ChatCard(
     saga: SagaContent,
+    isEnabled: Boolean = false,
     onClick: () -> Unit = {},
 ) {
     val sagaData = saga.data
@@ -182,11 +258,15 @@ fun ChatCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
                     .clip(RoundedCornerShape(15.dp))
+                    .padding(16.dp)
                     .clickable {
-                        onClick()
-                    }.padding(12.dp),
+                        if (saga.data.isDebug && isEnabled) {
+                            onClick()
+                        } else {
+                            onClick()
+                        }
+                    },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Avatar
@@ -203,29 +283,51 @@ fun ChatCard(
                         .clip(CircleShape)
                         .background(sagaData.genre.color, CircleShape),
             ) {
-                AsyncImage(
-                    sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
-                    contentDescription = sagaData.title,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .effectForGenre(sagaData.genre, focusRadius = 0f, customGrain = 0.05f)
-                            .selectiveColorHighlight(
-                                SelectiveColorParams(
-                                    targetColor = sagaData.genre.color,
+                if (saga.data.isDebug.not()) {
+                    AsyncImage(
+                        sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
+                        contentDescription = sagaData.title,
+                        contentScale = ContentScale.Crop,
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .effectForGenre(sagaData.genre, focusRadius = 0f, customGrain = 0.05f)
+                                .selectiveColorHighlight(
+                                    sagaData.genre.selectiveHighlight(),
                                 ),
+                        onSuccess = {
+                            imageLoaded.value = true
+                        },
+                    )
+                } else {
+                    Image(
+                        painterResource(R.drawable.ic_bug),
+                        contentDescription = null,
+                        colorFilter =
+                            ColorFilter.tint(
+                                sagaData.genre.iconColor,
                             ),
-                    onSuccess = {
+                        contentScale = ContentScale.Fit,
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .fillMaxSize(),
+                    )
+
+                    LaunchedEffect(Unit) {
                         imageLoaded.value = true
-                    },
-                )
+                    }
+                }
 
                 this@Row.AnimatedVisibility(
                     imageLoaded.value.not(),
                     modifier = Modifier.align(Alignment.Center),
                 ) {
                     Text(
-                        sagaData.title.first().uppercase(),
+                        sagaData.title
+                            .firstOrNull()
+                            ?.uppercaseChar()
+                            ?.toString() ?: "S",
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = sagaData.genre.headerFont(),
@@ -238,47 +340,97 @@ fun ChatCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Name and Last Message
+            val lastMessage = saga.messages.firstOrNull()
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = sagaData.title, // Replace with actual contact name
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                )
-
-                val lastMessageText =
-                    if (saga.messages.isNotEmpty()) {
-                        saga.messages.first().text
-                    } else {
-                        "Sua saga começa agora!"
-                    }
-                Text(
-                    text = lastMessageText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
-                    maxLines = 2,
-                    modifier = Modifier.padding(4.dp),
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                // Last Message Time
-                saga.messages.lastOrNull()?.let {
-                    val time = Calendar.getInstance().apply { timeInMillis = it.timestamp }
-                    val timeText =
-                        String.format(
-                            "%02d:%02d",
-                            time.get(Calendar.HOUR_OF_DAY),
-                            time.get(Calendar.MINUTE),
-                        )
-
+                Row {
                     Text(
-                        text = timeText, // Replace with actual last message time
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = sagaData.title, // Replace with actual contact name
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = saga.data.genre.bodyFont(),
+                        modifier = Modifier.weight(1f),
                     )
+
+                    lastMessage?.let {
+                        val time = Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
+                        val timeText =
+                            String.format(
+                                "%02d:%02d",
+                                time.get(Calendar.HOUR_OF_DAY),
+                                time.get(Calendar.MINUTE),
+                            )
+
+                        Text(
+                            text = timeText,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = saga.data.genre.bodyFont(),
+                                ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                Row(Modifier.alpha(.5f)) {
+                    if (sagaData.isEnded.not()) {
+                        lastMessage?.let {
+                            if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
+                                Text(
+                                    text = (it.character?.name ?: "Desconhecido").plus(": "),
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                        ),
+                                    maxLines = 2,
+                                )
+
+                                Text(
+                                    text = it.message.text.take(200),
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.Normal,
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                        ),
+                                    maxLines = 2,
+                                    modifier =
+                                        Modifier
+                                            .padding(start = 4.dp)
+                                            .weight(1f),
+                                )
+                            } else {
+                                Text(
+                                    text = it.message.text,
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                            fontStyle = FontStyle.Italic,
+                                        ),
+                                    maxLines = 2,
+                                    modifier = Modifier.padding(8.dp),
+                                )
+                            }
+                        } ?: run {
+                            Text(
+                                "Sua saga começa agora!",
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontFamily = saga.data.genre.bodyFont(),
+                                        fontStyle = FontStyle.Italic,
+                                    ),
+                            )
+                        }
+                    } else {
+                        Text(
+                            "Sua saga chegou ao fim!",
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = saga.data.genre.bodyFont(),
+                                    fontStyle = FontStyle.Italic,
+                                    brush = saga.data.genre.gradient(gradientType = GradientType.LINEAR, targetValue = 150f),
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -430,18 +582,21 @@ fun HomeViewPreview() {
                             mainCharacter = null,
                             messages =
                                 List(4) {
-                                    Message(
-                                        id = it,
-                                        text = "Message ${it + 1} in chat ${it + 1}",
-                                        timestamp = Calendar.getInstance().timeInMillis,
-                                        sagaId = 0,
-                                        senderType = (if (it % 2 == 0) SenderType.USER else SenderType.CHARACTER),
+                                    MessageContent(
+                                        Message(
+                                            id = it,
+                                            text = "Message ${it + 1} in chat ${it + 1}",
+                                            timestamp = Calendar.getInstance().timeInMillis,
+                                            sagaId = 0,
+                                            senderType = (if (it % 2 == 0) SenderType.USER else SenderType.CHARACTER),
+                                        ),
                                     )
                                 },
                         )
                     }
                 ChatList(
-                    previewChats,
+                    sagas = previewChats,
+                    showDebugButton = true, // Example for preview
                 )
             }
         }

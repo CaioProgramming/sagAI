@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.characters.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +9,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,11 +18,16 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,7 +41,6 @@ import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
@@ -45,12 +50,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.holographicGradient
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,85 +69,70 @@ fun CharacterGalleryView(
         }
     }
 
-    CharactersGalleryContent(
-        saga,
-        characters,
-        state,
-        onSelectCharacter = { charId, sagId ->
-            navController.navigateToRoute(
-                Routes.CHARACTER_DETAIL,
-                arguments =
-                    mapOf(
-                        "sagaId" to sagId.toString(),
-                        "characterId" to charId.toString(),
-                    ),
-            )
-        },
-        onBackClick = {
-            navController.popBackStack()
-        },
-    )
+    saga?.let {
+        CharactersGalleryContent(
+            it,
+            onSelectCharacter = { charId, sagId ->
+                navController.navigateToRoute(
+                    Routes.CHARACTER_DETAIL,
+                    arguments =
+                        mapOf(
+                            "sagaId" to sagId.toString(),
+                            "characterId" to charId.toString(),
+                        ),
+                )
+            },
+        )
+    }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CharactersGalleryContent(
-    content: SagaContent?,
-    characters: List<Character> = emptyList<Character>(),
-    state: State,
+    saga: SagaContent,
     onSelectCharacter: (Int, Int) -> Unit = { _, _ -> },
-    onBackClick: () -> Unit = {},
 ) {
-    AnimatedContent(state) {
-        when (it) {
-            is State.Success -> {
-                content?.let { saga ->
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        contentPadding = PaddingValues(8.dp),
-                    ) {
-                        stickyHeader {
-                            SagaTopBar(
-                                "Elenco de ${saga.data.title}",
-                                "${saga.characters.size} Personagens",
-                                saga.data.genre,
-                                onBackClick = onBackClick,
-                                modifier =
-                                    Modifier
-                                        .background(MaterialTheme.colorScheme.background)
-                                        .padding(top = 25.dp),
-                            )
-                        }
-                        items(characters, key = { character -> character.id }) { character ->
-                            CharacterYearbookItem(
-                                character = character,
-                                character.id == saga.mainCharacter?.id,
-                                saga.data.genre,
-                                modifier =
-                                    Modifier.clickable {
-                                        onSelectCharacter(character.id, saga.data.id)
-                                    },
-                            )
-                        }
-                    }
-                }
-            }
+    var showCharacter by remember {
+        mutableStateOf<Character?>(null)
+    }
 
-            else ->
-                Box {
-                    SparkIcon(
-                        brush = content?.data?.genre?.gradient() ?: gradientAnimation(holographicGradient),
-                        modifier =
-                            Modifier
-                                .size(50.dp)
-                                .align(Alignment.Center),
-                    )
-                }
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier =
+            Modifier
+                .fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(8.dp),
+    ) {
+        items(saga.characters, key = { character -> character.id }) { character ->
+            CharacterYearbookItem(
+                character = character,
+                character.id == saga.mainCharacter?.id,
+                saga.data.genre,
+                modifier =
+                    Modifier.clickable {
+                        showCharacter = character
+                    },
+            )
+        }
+    }
+
+    val newCharacterSheetState =
+        rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    showCharacter?.let { character ->
+        ModalBottomSheet(
+            onDismissRequest = { showCharacter = null },
+            sheetState = newCharacterSheetState,
+            containerColor = MaterialTheme.colorScheme.background,
+            dragHandle = { Box {} },
+        ) {
+            CharacterDetailsContent(
+                saga,
+                character,
+                saga.messages.count { it.character?.id == character.id || it.message.speakerName == character.name },
+            )
         }
     }
 }
@@ -210,8 +195,20 @@ private fun CharacterVerticalItem(
 fun CharactersGalleryContentPreview() {
     val sagaContent =
         SagaContent(
-            data = SagaData(id = 0, title = "Saga Title", description = "Saga Description", genre = Genre.FANTASY),
-            mainCharacter = Character(id = 1, name = "Main Character", details = Details(), sagaId = 0),
+            data =
+                SagaData(
+                    id = 0,
+                    title = "Saga Title",
+                    description = "Saga Description",
+                    genre = Genre.FANTASY,
+                ),
+            mainCharacter =
+                Character(
+                    id = 1,
+                    name = "Main Character",
+                    details = Details(),
+                    sagaId = 0,
+                ),
             messages = emptyList(),
             chapters = emptyList(),
             characters =
@@ -220,7 +217,7 @@ fun CharactersGalleryContentPreview() {
                     Character(id = 2, name = "Character 2", details = Details(), sagaId = 0),
                 ),
         )
-    CharactersGalleryContent(content = sagaContent, state = State.Success(sagaContent))
+    CharactersGalleryContent(saga = sagaContent)
 }
 
 @Preview
@@ -241,7 +238,6 @@ fun CharacterYearbookItemPreview() {
                     race = "Race",
                     height = 1.80,
                     weight = 70.0,
-                    style = "Style",
                     gender = "Gender",
                     occupation = "Occupation",
                     ethnicity = "Ethnicity",
@@ -269,14 +265,18 @@ fun CharacterVerticalItemPreview() {
                     race = "Race",
                     height = 1.80,
                     weight = 70.0,
-                    style = "Style",
                     gender = "Gender",
                     occupation = "Occupation",
                     ethnicity = "Ethnicity",
                 ),
             joinedAt = System.currentTimeMillis(),
         )
-    CharacterVerticalItem(modifier = Modifier, character = character, genre = Genre.FANTASY, imageSize = 100.dp)
+    CharacterVerticalItem(
+        modifier = Modifier,
+        character = character,
+        genre = Genre.FANTASY,
+        imageSize = 100.dp,
+    )
 }
 
 @Preview
@@ -311,36 +311,48 @@ fun CharacterHorizontalView(
     borderColor: Color? = null,
     imageSize: Dp = 50.dp,
 ) {
-    Row(
+    Column(
         modifier =
         modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        CharacterAvatar(
-            character = character,
-            borderColor = borderColor,
-            borderSize = borderSize,
-            textStyle =
-                MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = genre.headerFont(),
-                ),
-            genre = genre,
-            modifier =
-                Modifier
-                    .size(imageSize),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            CharacterAvatar(
+                character = character,
+                borderColor = borderColor,
+                borderSize = borderSize,
+                textStyle =
+                    MaterialTheme.typography.labelLarge.copy(
+                        fontFamily = genre.headerFont(),
+                    ),
+                genre = genre,
+                modifier =
+                    Modifier
+                        .size(imageSize),
+            )
 
-        Text(
-            text = character.name,
-            style =
-                style.copy(
-                    fontFamily = genre.bodyFont(),
-                    fontWeight = FontWeight.W700,
-                    color = Color(character.hexColor.toColorInt()),
-                ),
-            textAlign = TextAlign.Start,
-            modifier = Modifier.align(Alignment.CenterVertically),
+            Text(
+                text = character.name,
+                style =
+                    style.copy(
+                        fontFamily = genre.bodyFont(),
+                        fontWeight = FontWeight.W700,
+                        color = Color(character.hexColor.toColorInt()),
+                    ),
+                textAlign = TextAlign.Start,
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Box(
+            Modifier
+                .padding(4.dp)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .05f)),
         )
     }
 }
