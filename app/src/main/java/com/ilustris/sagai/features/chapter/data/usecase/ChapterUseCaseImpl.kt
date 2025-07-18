@@ -81,9 +81,18 @@ class ChapterUseCaseImpl
                         negative_prompt = GenrePrompts.negativePrompt(saga.genre),
                         GenrePrompts.chapterCoverStyling(saga.genre),
                     )
+                val promptGeneration =
+                    textGenClient.generate<String>(
+                        ChapterPrompts.coverDescription(
+                            saga,
+                            chapter,
+                            characters,
+                        ),
+                        requireTranslation = false,
+                    )
                 val genCover =
                     imagenClient
-                        .generateImage(prompt)!!
+                        .generateImage(ChapterPrompts.coverGeneration(saga, promptGeneration!!))!!
                 val coverFile =
                     fileHelper.saveFile(chapter.title, genCover, path = "${saga.id}/chapters/")
                 updateChapter(chapter.copy(coverImage = coverFile!!.absolutePath)).asSuccess()

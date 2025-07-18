@@ -85,11 +85,12 @@ enum class Routes(
                 navHostController = nav,
                 padding,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
+                isDebug = arguments?.getString(CHAT.arguments.last()) == "true",
             )
         },
         topBarContent = { Box {} },
-        arguments = listOf("sagaId"),
-        deepLink = "saga://chat/{sagaId}",
+        arguments = listOf("sagaId", "isDebug"),
+        deepLink = "saga://chat/{sagaId}/{isDebug}",
         showBottomNav = false,
     ),
     PROFILE,
@@ -276,6 +277,7 @@ fun NavHostController.navigateToRoute(
     }
     val newLink = link.replace("{", "").replace("}", "")
 
+    Log.d(javaClass.simpleName, "navigateToRoute: Navigating to $newLink")
     if (popUpToRoute != null) {
         navigate(newLink) {
             popUpTo(popUpToRoute.name) {

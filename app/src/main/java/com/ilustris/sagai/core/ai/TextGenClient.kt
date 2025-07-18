@@ -20,16 +20,17 @@ class TextGenClient(
         const val DEFAULT_TEXT_GEN_MODEL = "gemini-2.5-flash"
     }
 
+    fun modelName() =
+        firebaseRemoteConfig.getString(TEXT_GEN_MODEL_FLAG).let {
+            it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
+        }
+
     override fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
-        val modelName =
-            firebaseRemoteConfig.getString(TEXT_GEN_MODEL_FLAG).let {
-                it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
-            }
-        Log.i("TextGenClient", "Using text model: $modelName from Remote Config (flag: '$TEXT_GEN_MODEL_FLAG')")
+        Log.i("TextGenClient", "Using text model: ${modelName()} from Remote Config (flag: '$TEXT_GEN_MODEL_FLAG')")
         return Firebase
             .ai(backend = GenerativeBackend.googleAI())
             .generativeModel(
-                modelName = modelName,
+                modelName = modelName(),
                 generationConfig = generationConfig,
             )
     }
@@ -40,14 +41,22 @@ class TextGenClient(
         customSchema: Schema? = null,
     ): T? {
         try {
-            val schema = customSchema ?: toFirebaseSchema(T::class.java)
             val model =
-                buildModel(
-                    generationConfig {
-                        responseMimeType = "application/json"
-                        responseSchema = schema
-                    },
-                )
+                if (T::class.java == String::class.java) {
+                    buildModel(
+                        generationConfig {
+                            responseMimeType = "text/plain"
+                        },
+                    )
+                } else {
+                    val schema = customSchema ?: toFirebaseSchema(T::class.java)
+                    buildModel(
+                        generationConfig {
+                            responseMimeType = "application/json"
+                            responseSchema = schema
+                        },
+                    )
+                }
             val fullPrompt =
                 if (requireTranslation) {
                     "$prompt ${modelLanguage()}"
@@ -56,13 +65,16 @@ class TextGenClient(
                 }
             val content =
                 model.generateContent(fullPrompt).also {
-                    Log.d(javaClass.simpleName, "generateImage: Token count for request: ${it.usageMetadata?.totalTokenCount}")
+                    Log.d(javaClass.simpleName, "Token count for request: ${it.usageMetadata?.totalTokenCount}")
                 }
             Log.i(javaClass.simpleName, "prompt: $fullPrompt")
-            Log.i(javaClass.simpleName, "generated: ${content.text}")
-
-            val contentData = Gson().fromJson(content.text, T::class.java)
-
+            Log.i(javaClass.simpleName, "generated(${modelName()}): ${content.text}")
+            val contentData =
+                if (T::class.java == String::class.java) {
+                    content.text as? T
+                } else {
+                    Gson().fromJson(content.text, T::class.java)
+                }
             return contentData
         } catch (e: Exception) {
             e.printStackTrace()

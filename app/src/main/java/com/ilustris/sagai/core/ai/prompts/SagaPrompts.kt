@@ -100,24 +100,44 @@ object SagaPrompts {
                 * Provide a sense of closure to the immediate situation, even if grand mysteries remain unsolved.
                 * The message should be concise and conclusive.
             4.  **Finality:** This message MUST NOT ask any questions or prompt any further player input or actions. It is a definitive "The End."
-            
-        **Example JSON Output (Remember to fill `message.text` with your generated content):**
-        ```json
-        {
-          "message": {
-            "actId": [REPLACE_WITH_CURRENT_ACT_ID],
-            "chapterId": [REPLACE_WITH_CURRENT_CHAPTER_ID],
-            "characterId": [REPLACE_WITH_PLAYER_CHARACTER_ID],
-            "id": [REPLACE_WITH_NEXT_MESSAGE_ID],
-            "sagaId": [REPLACE_WITH_CURRENT_SAGA_ID],
-            "senderType": "NARRATOR",
-            "speakerName": null,
-            "text": "As the echoes of your latest actions settle, a profound stillness descends upon your path. The intricate threads of this saga, woven through countless decisions, now find their fated resting place. Though mysteries may linger in the whispers of the wind, your journey through [mention recent location/conflict] has reached its undeniable end. The story you've lived here is now complete. Thank you for your courage. The End.",
-            "timestamp": [REPLACE_WITH_CURRENT_TIMESTAMP]
-          },
-          "newCharacter": null,
-          "shouldCreateCharacter": false,
-          "shouldEndSaga": true
-        }
         """
+
+    fun endCredits(saga: SagaContent) =
+        """
+        You are the Saga Master for the saga "${saga.data.title}" The saga has concluded.
+        and your final task is to generate a deeply personal, appreciative, and retrospective **text (a plain string)** directly for the user.
+        This text will serve as the "credits" or "thank you" message for their journey through the saga.
+        It should be entirely focused on the player's overall experience, separate from the in-story narrative.
+
+        **CONTEXT FOR GENERATING THE CREDIT TEXT:**
+        
+        1.  **Player Information:**
+            ${saga.mainCharacter.toJsonFormat()}
+        
+        2.  **Key Saga Summaries for Synthesis:**
+            Below are the crucial summarized moments from the saga, structured by Act and Chapter.
+            **You will not receive pre-defined "highlights" or "pivotal moments";
+            your task is to synthesize them from these summaries.
+            ** Use this context to **infer the ultimate goal of the saga** that was achieved, and to **identify and celebrate** the player's most significant deeds, their overarching playstyle, and personality throughout the entire saga.
+        
+            ${ActPrompts.actSummaries(saga)}
+  
+            *(Ensure all summaries are concise and directly relevant to the player's journey, making sure the total input fits within the token budget. The goal is signal, not exhaustive detail.)*
+        
+        **INSTRUCTIONS FOR GENERATING THE FINAL OUTPUT (PLAIN TEXT STRING):**
+        
+        1.  **Output Format:** Your entire response MUST be **ONLY the plain text string** of the credit message. Do NOT include any JSON, special formatting like Markdown headers or bullet points, or anything else besides the text itself.
+        2.  **Content Tone & Focus:**
+            * Adopt a personal, warm, and highly congratulatory tone, speaking directly to the user (breaking the fourth wall).
+            * **Infer and briefly mention the ultimate goal that was achieved** based on the provided Act and Chapter summaries and the saga's resolution.
+            * **Synthesize and celebrate** 3-5 of the player's most significant actions, choices, or achievements throughout the *entire* saga, drawing directly from the provided Act and Chapter summaries. These "highlights" should reflect the player's impact and key decisions.
+            * **Reflect on** the player's overall playstyle and personality traits as observed through their character's actions during the saga.
+            * Conclude with a heartfelt message of thanks for their dedication and for bringing the saga to life.
+        3.  **Finality:** The generated text MUST NOT ask any questions or prompt further user input. It should end definitively.
+        
+        **Example of Expected Plain Text Output (Your actual output will be longer):**
+        
+        "Ah, [Nome do Jogador]! Que jornada incrível foi essa em Data.seek. Sua aventura culminou na [mencionar objetivo final inferido], um feito e tanto! Lembro-me claramente de quando você [mencionar ação pivotal 1 - inferida de um resumo de Ato/Capítulo], e a forma como você [mencionar ação pivotal 2 - inferida de outro resumo] mudou tudo. Sua [mencionar estilo de jogo] e sua [mencionar personalidade] foram a verdadeira força motriz desta saga. Foi uma honra vivenciar essa história com você. Muito obrigado por jogar. A lenda de Data.seek, moldada por suas mãos, agora é completa. O FIM."
+        
+                """
 }

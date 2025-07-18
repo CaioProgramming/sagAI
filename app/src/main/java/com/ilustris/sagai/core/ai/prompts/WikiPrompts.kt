@@ -28,13 +28,15 @@ object WikiPrompts {
         // Use this list to understand existing entities and their structure,
         and to avoid creating duplicate entries for information already known or to update existing entries with new details.
         [ ${saga.wikis.formatToJsonArray()} ]
-        Always follow that structure for items in the array: 
-        ${toJsonMap(Wiki::class.java)}
+        Always follow that structure: 
+        [ 
+         ${toJsonMap(Wiki::class.java)}
+        ]
         // **REMINDER:** FOR 'FACTIONS' TYPE, ONLY INCLUDE GROUPS OR ORGANIZATIONS, NOT SINGLE INDIVIDUALS.
         // **REMINDER:** WRITE SHORT TITLES.
         // - For 'EVENT' type entries, only include significant, world-building events (e.g., city festivals, major incidents affecting the public, a new city-wide policy).
         DO NOT include specific character actions (e.g., "Julie sabotaged the server") or direct plot progression points that are already detailed in the timeline.
-
+        
         **RECENT STORY EVENTS FOR WIKI EXTRACTION:**
         // This is a list of the most recent events that occurred in the story.
         // Extract all relevant NEW entities (locations, items, technologies, organizations, plot points, concepts, events)
@@ -52,5 +54,6 @@ object WikiPrompts {
          // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
          // Use this information to ensure consistent terminology and to provide accurate details when referencing world elements.
          [ ${wiki.formatToJsonArray()} ]
+         
         """
 }

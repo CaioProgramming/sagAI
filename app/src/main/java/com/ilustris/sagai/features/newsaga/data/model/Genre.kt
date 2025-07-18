@@ -36,7 +36,7 @@ fun Genre.getNamePlaceholderResId(): Int =
     when (this) {
         Genre.FANTASY -> R.string.character_form_placeholder_name_fantasy
         Genre.SCI_FI -> R.string.character_form_placeholder_name_scifi
-        else -> R.string.character_form_placeholder_name // Default placeholder
+        else -> R.string.character_form_placeholder_name
     }
 
 fun Genre.selectiveHighlight(): SelectiveColorParams =
@@ -51,11 +51,11 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.SCI_FI ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .15f,
-                saturationThreshold = .10f,
-                lightnessThreshold = .05f,
-                highlightSaturationBoost = 1.5f,
-                highlightLightnessBoost = .05f,
-                desaturationFactorNonTarget = .15f,
+                hueTolerance = .10f,
+                saturationThreshold = .20f,
+                lightnessThreshold = .10f,
+                highlightSaturationBoost = 2.5f,
+                highlightLightnessBoost = .10f,
+                desaturationFactorNonTarget = .9f,
             )
     }

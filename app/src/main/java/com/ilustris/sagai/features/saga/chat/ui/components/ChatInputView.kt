@@ -6,7 +6,10 @@ import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInElastic
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -73,7 +76,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
@@ -136,9 +138,7 @@ fun ChatInputView(
 
     Column(
         modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth()
-            .padding(bottom = 24.dp),
+            .fillMaxWidth(),
     ) {
         AnimatedVisibility(charactersExpanded && content.characters.isNotEmpty()) {
             LazyColumn(
@@ -186,7 +186,7 @@ fun ChatInputView(
         }
 
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             BlurredGlowContainer(
@@ -201,29 +201,20 @@ fun ChatInputView(
                     modifier =
                         Modifier
                             .padding(2.dp)
-                            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .3f), inputShape)
-                            .background(MaterialTheme.colorScheme.background, inputShape)
+                            .border(1.dp, inputBrush, inputShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                 ) {
                     content.mainCharacter?.let { character ->
-                        val isImeVisible = WindowInsets.isImeVisible
-
-                        AnimatedVisibility(
-                            inputField.text.isEmpty() && isImeVisible.not() && isGenerating.not(),
-                            enter = scaleIn(),
-                            exit = fadeOut(),
-                        ) {
-                            MainCharacterInputButton(content.data, character, action) {
-                                actionsExpanded = actionsExpanded.not()
-                            }
+                        MainCharacterInputButton(content.data, character, action) {
+                            actionsExpanded = actionsExpanded.not()
                         }
                     }
 
                     val textStyle =
-                        MaterialTheme.typography.labelMedium.copy(
+                        MaterialTheme.typography.labelLarge.copy(
                             color = MaterialTheme.colorScheme.onBackground,
-                            fontSize = 12.sp,
                             fontFamily = content.data.genre.bodyFont(),
                         )
                     val maxLength = 350
@@ -275,7 +266,7 @@ fun ChatInputView(
                                 }
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).animateContentSize(),
                     )
 
                     IconButton(
@@ -293,7 +284,7 @@ fun ChatInputView(
                         )
                         Icon(
                             Icons.Rounded.Add,
-                            contentDescription = stringResource(R.string.sender_type_new_character_title),
+                            contentDescription = null,
                             tint = MaterialTheme.colorScheme.onBackground,
                             modifier =
                                 Modifier
@@ -305,7 +296,9 @@ fun ChatInputView(
                         DropdownMenu(
                             actionsExpanded,
                             onDismissRequest = { actionsExpanded = false },
-                            offset = DpOffset(0.dp, (-15).dp),
+                            offset = DpOffset(0.dp, (-10).dp),
+                            shape = RoundedCornerShape(content.data.genre.cornerSize()),
+                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
                         ) {
                             SenderType.entries.forEach {
                                 it.itemOption(
@@ -328,8 +321,8 @@ fun ChatInputView(
             }
             AnimatedVisibility(
                 inputField.text.isNotEmpty(),
-                enter = scaleIn() + fadeIn(tween(300)),
-                exit = scaleOut(animationSpec = tween(500, delayMillis = 100, easing = EaseIn)),
+                enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
+                exit = scaleOut(animationSpec = tween(easing = EaseIn)),
             ) {
                 val buttonColor by animateColorAsState(
                     if (isGenerating.not()) {

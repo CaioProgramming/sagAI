@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -7,6 +8,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterExpression
 import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ChapterPrompts {
@@ -76,4 +78,55 @@ object ChapterPrompts {
             }
         }
         """
+
+    fun coverGeneration(
+        data: SagaData,
+        description: String,
+    ) = """
+        ${GenrePrompts.artStyle(data.genre)}
+        ${CharacterFraming.FULL_BODY.description}
+        $description
+        """.trimIndent()
+
+    fun coverDescription(
+        data: SagaData,
+        chapter: Chapter,
+        characters: List<Character>,
+    ): String =
+        """
+        Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Chapter Covers** for the saga "${data.title}" (Genre: ${data.genre.title}).
+        You will receive a chapter's title, its detailed summary, and a list of main characters involved.
+        Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
+        This description will be directly used as a part of a larger prompt for an AI image generation model.
+
+        **Crucially, this description MUST be formulated to be compatible with a 'Chapter Cover' framing,
+        conveying the essence and mood of the chapter in a single, impactful image.
+        Adhere strictly to the provided 'Story Theme' (${data.genre.title}).**
+        
+        **Chapter Context:**
+        
+        1.  **Chapter Title:** ${chapter.title}
+        2.  **Chapter Summary/Description: ${chapter.overview}
+        3.  **Main Characters Involved:** [ ${characters.formatToJsonArray()} ]
+        
+        **Guidelines for Conversion and Expansion:**
+        
+        1.  **Translate Accurately:** Translate all Portuguese values from the input fields into precise English.
+        2.  **Infer Visuals from Summary:** **This is critical.** From the `Chapter Summary/Description`, infer and elaborate on:
+            * **Primary Setting/Environment:** Describe the main location(s) with vivid detail (e.g., "dense, ancient forest with gnarled trees and ethereal mist," "swampy terrain with eerie bioluminescent flora," "crumbling stone altar overgrown with vines").
+            * **Dominant Mood/Atmosphere:** Translate the chapter's tone into visual cues (e.g., "ominous and mysterious," "tense and adventurous," "peaceful yet ancient").
+            * **Key Actions/Moments:** Identify the most visually impactful actions or climactic moments described and suggest how they could be represented (e.g., "Mila navigating through murky water," "a standoff with the guardian," "light emanating from an ancient artifact").
+            * **Important Objects/Elements:** Include any significant items, creatures, or symbols mentioned that would enhance the cover's narrative (e.g., "glowing elven artifact," "shadowy figures among the trees," "ancient runes on the altar").
+        3.  **Integrate Main Characters:** If characters are listed, integrate them visually into the scene, ensuring their appearance (if previously established) and their role/action in the chapter are subtly or prominently displayed as appropriate for a cover.
+        4.  **Composition for Cover/Banner:** Formulate the prompt to suggest a **dynamic, wide-angle or cinematic composition** suitable for a book cover or poster. Think of elements that draw the eye, perhaps a central figure or object framed by the environment. The image should encapsulate the chapter's essence at a glance.
+            * **Suggested terms to use:** "wide shot," "cinematic perspective," "epic scale," "dynamic composition," "foreground, midground, background elements," "strong visual narrative," "suitable for title overlay at the top/bottom."
+        5.  **Thematic Consistency (${data.genre.title}):** Ensure all generated visual descriptions align with the ${data.genre} genre of "${data.title}".
+        6.  **Art Style Consistency:** Maintain the specified artistic style: ${GenrePrompts.artStyle(data.genre)}
+        7.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.
+        
+        **Example of Expected English Text Output (single paragraph, ready for image model):**
+        
+        "A wide shot, classical oil painting of a lone figure, Mila, navigating a treacherous, mist-shrouded ancient forest. Gnarled, moss-covered trees loom overhead, their branches forming eerie silhouettes against a moonlit sky. A faint, unsettling bioluminescent glow emanates from hidden flora within a murky swamp in the foreground. The air is thick with a sense of ancient mystery and subtle danger. Mila, wearing practical mercenary gear, moves cautiously, her silhouette hinting at determination and resilience. In the midground, faint, glowing runes are visible on crumbling stone ruins partially consumed by vines, hinting at an elven altar. Strong chiaroscuro lighting emphasizes the depths of the forest, with pockets of natural light cutting through the canopy, creating a tense, adventurous atmosphere. Rich impasto texture and visible brushstrokes. Harmonious colors, authentic painterly grain. No borders, no text, no words, no typography, no letters, no UI elements."
+        
+                """
 }

@@ -39,4 +39,7 @@ interface MessageUseCase {
     ): RequestResult<Exception, MessageGen>
 
     suspend fun updateMessage(message: Message): RequestResult<Exception, Unit>
+
+    fun setDebugMode(enabled: Boolean)
+    fun isInDebugMode(): Boolean
 }

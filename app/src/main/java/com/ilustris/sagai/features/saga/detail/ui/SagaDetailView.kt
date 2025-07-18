@@ -1,21 +1,27 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
+import android.content.res.Configuration
+import android.graphics.fonts.FontStyle
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +29,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -40,26 +48,37 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -67,10 +86,14 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.core.utils.getEventsForChapter
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
+import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.ui.ActComponent
+import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.chapter.ui.ChapterContent
@@ -94,6 +117,7 @@ import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
+import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
@@ -105,6 +129,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import effectForGenre
+import kotlinx.coroutines.launch
 
 enum class DetailAction {
     CHARACTERS,
@@ -222,6 +247,145 @@ fun SagaDetailView(
     }
 }
 
+fun LazyListScope.SagaDrawerContent(content: SagaContent) {
+    with(this) {
+        items(content.acts) {
+            val index = content.acts.indexOf(it)
+            val brush =
+                content.data.genre.gradient(
+                    content.currentActInfo?.act?.id == it.id,
+                    gradientType = GradientType.LINEAR,
+                    targetValue = 200f,
+                )
+
+            val chaptersInAct = content.chapters.filter { chapter -> chapter.actId == it.id }
+            val shape = RoundedCornerShape(content.data.genre.cornerSize())
+
+            Column(
+                Modifier
+                    .padding(16.dp)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                        shape,
+                    ).background(
+                        MaterialTheme.colorScheme.background,
+                        shape,
+                    ).padding(4.dp)
+                    .animateContentSize(
+                        animationSpec = tween(500, easing = EaseIn),
+                    ),
+            ) {
+                Text(
+                    "Ato ${(index + 1).toRoman()}",
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = content.data.genre.headerFont(),
+                        ),
+                    modifier = Modifier.padding(8.dp),
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(4.dp))
+
+                if (chaptersInAct.isNotEmpty()) {
+                    chaptersInAct.forEachIndexed { chapterIndex, chapter ->
+                        val eventsInChapter =
+                            content.timelines.getEventsForChapter(
+                                chapter,
+                                previousChapter = chaptersInAct.getOrNull(chapterIndex - 1),
+                            )
+
+                        var expandedEvents by remember {
+                            mutableStateOf(false)
+                        }
+                        Row(
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .clip(shape)
+                                    .clickable {
+                                        expandedEvents = !expandedEvents
+                                    }.fillMaxWidth(),
+                        ) {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                null,
+                                Modifier.size(24.dp),
+                            )
+                            Text(
+                                "${chapter.title} - ${eventsInChapter.size} eventos",
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                            )
+                        }
+
+                        if (expandedEvents) {
+                            eventsInChapter.forEach { event ->
+                                TimeLineCard(
+                                    event,
+                                    content.data.genre,
+                                    titleStyle = MaterialTheme.typography.bodyMedium,
+                                    showText = false,
+                                    showSpark = false,
+                                    isLast = eventsInChapter.indexOf(event) == eventsInChapter.lastIndex,
+                                    modifier =
+                                        Modifier
+                                            .padding(horizontal = 16.dp)
+                                            .alpha(.7f),
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (content.timelines.isNotEmpty()) {
+        item {
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        }
+
+        item {
+            val eventReference =
+                if (content.chapters.isNotEmpty()) {
+                    content.timelines.find { it.id == content.chapters.last().eventReference }
+                } else {
+                    content.timelines.last()
+                }
+
+            val eventIndex =
+                if (content.timelines.indexOf(eventReference) == -1) {
+                    0
+                } else {
+                    content.timelines.indexOf(eventReference)
+                }
+
+            val eventSublist = content.timelines.subList(eventIndex, content.timelines.size)
+
+            val remainEvents = (UpdateRules.CHAPTER_UPDATE_LIMIT - eventSublist.size).unaryPlus()
+
+            Text(
+                "${eventSublist.size} eventos desde o último capitulo.",
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                        fontFamily = content.data.genre.bodyFont(),
+                        textAlign = TextAlign.Center,
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                        .alpha(.5f),
+            )
+        }
+    }
+}
+
 @Composable
 fun SagaDetailContentView(
     state: State,
@@ -231,62 +395,122 @@ fun SagaDetailContentView(
     onBackClick: (DetailAction) -> Unit = {},
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
 
-    saga?.let {
-        Column {
-            val titleAndSubtitle = currentSection.titleAndSubtitle(it)
-            AnimatedContent(titleAndSubtitle) { titleAndSub ->
-                SagaTopBar(
-                    titleAndSub.first,
-                    titleAndSub.second,
-                    it.data.genre,
-                    onBackClick = { onBackClick(currentSection) },
-                    actionContent = {
-                        Icon(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            tint = it.data.genre.color,
-                            modifier = Modifier.padding(horizontal = 8.dp).size(24.dp),
-                        )
-                    },
-                    modifier =
-                        Modifier
-                            .background(MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
-                            .padding(top = 50.dp, start = 16.dp),
-                )
-            }
+    saga?.let { sagaContent ->
+        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        ModalDrawerSheet(
+                            drawerShape =
+                                RoundedCornerShape(0.dp),
+                            drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        ) {
+                            LazyColumn(
+                                Modifier
+                                    .fillMaxWidth(.8f)
+                                    .fillMaxHeight(),
+                            ) {
+                                item {
+                                    Text(
+                                        "Progresso",
+                                        modifier =
+                                            Modifier
+                                                .align(Alignment.CenterHorizontally)
+                                                .padding(16.dp),
+                                        style =
+                                            MaterialTheme.typography.titleLarge.copy(
+                                                fontFamily = sagaContent.data.genre.headerFont(),
+                                                textAlign = TextAlign.Center,
+                                            ),
+                                    )
+                                }
 
-            AnimatedContent(currentSection, transitionSpec = {
-                fadeIn(tween(500)) + slideInVertically() togetherWith fadeOut(tween(400))
-            }) { section ->
-                when (section) {
-                    DetailAction.CHARACTERS ->
-                        CharactersGalleryContent(
-                            saga,
-                        )
-
-                    DetailAction.TIMELINE ->
-                        TimeLineContent(
-                            saga,
-                        )
-
-                    DetailAction.CHAPTERS ->
-                        ChapterContent(
-                            saga,
-                        )
-
-                    DetailAction.WIKI -> WikiContent(saga)
-                    DetailAction.ACTS -> ActContent(saga)
-                    DetailAction.BACK, DetailAction.DELETE ->
-                        SagaDetailInitialView(
-                            saga,
-                            Modifier
-                                .padding(paddingValues)
-                                .animateContentSize(),
-                        ) { action ->
-                            onChangeSection(action)
+                                SagaDrawerContent(sagaContent)
+                            }
                         }
+                    }
+                },
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    Scaffold { _ ->
+                        Column {
+                            val titleAndSubtitle = currentSection.titleAndSubtitle(sagaContent)
+                            AnimatedContent(titleAndSubtitle) { titleAndSub ->
+                                SagaTopBar(
+                                    titleAndSub.first,
+                                    titleAndSub.second,
+                                    sagaContent.data.genre,
+                                    onBackClick = { onBackClick(currentSection) },
+                                    actionContent = {
+                                        Icon(
+                                            painterResource(R.drawable.ic_spark),
+                                            null,
+                                            tint = sagaContent.data.genre.color,
+                                            modifier =
+                                                Modifier
+                                                    .clickable {
+                                                        scope.launch {
+                                                            if (drawerState.isClosed) {
+                                                                drawerState.open()
+                                                            } else {
+                                                                drawerState.close()
+                                                            }
+                                                        }
+                                                    }.padding(horizontal = 8.dp)
+                                                    .size(24.dp),
+                                        )
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .background(MaterialTheme.colorScheme.background)
+                                            .fillMaxWidth()
+                                            .padding(top = 50.dp, start = 16.dp),
+                                )
+                            }
+
+                            AnimatedContent(currentSection, transitionSpec = {
+                                fadeIn(tween(500)) + slideInVertically() togetherWith
+                                    fadeOut(
+                                        tween(
+                                            400,
+                                        ),
+                                    )
+                            }) { section ->
+                                when (section) {
+                                    DetailAction.CHARACTERS ->
+                                        CharactersGalleryContent(
+                                            sagaContent,
+                                        )
+
+                                    DetailAction.TIMELINE ->
+                                        TimeLineContent(
+                                            sagaContent,
+                                        )
+
+                                    DetailAction.CHAPTERS ->
+                                        ChapterContent(
+                                            sagaContent,
+                                        )
+
+                                    DetailAction.WIKI -> WikiContent(sagaContent)
+                                    DetailAction.ACTS -> ActContent(sagaContent)
+                                    DetailAction.BACK, DetailAction.DELETE ->
+                                        SagaDetailInitialView(
+                                            sagaContent,
+                                            Modifier
+                                                .padding(paddingValues)
+                                                .animateContentSize(),
+                                        ) { action ->
+                                            onChangeSection(action)
+                                        }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -300,7 +524,13 @@ private fun DetailAction.titleAndSubtitle(content: SagaContent) =
         DetailAction.CHAPTERS -> "Capítulos" to "${content.chapters.size} capítulos"
         DetailAction.WIKI -> "Wiki" to "${content.wikis.size} itens"
         DetailAction.ACTS -> "Atos" to "${content.acts.size} atos"
-        DetailAction.BACK, DetailAction.DELETE -> content.data.title to "Criado em ${content.data.createdAt.formatDate()}"
+        DetailAction.BACK, DetailAction.DELETE -> {
+            if (content.data.isEnded) {
+                content.data.title to "Finalizado em ${content.data.endedAt.formatDate()}"
+            } else {
+                content.data.title to "Criado em ${content.data.createdAt.formatDate()}"
+            }
+        }
     }
 
 @Composable
@@ -329,9 +559,11 @@ fun ActContent(saga: SagaContent) {
             saga.acts.indexOf(act) + 1,
             saga,
             modifier =
-                Modifier.fillMaxSize().verticalScroll(
-                    rememberScrollState(),
-                ),
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(
+                        rememberScrollState(),
+                    ),
         )
     }
 }
@@ -499,6 +731,7 @@ private fun SagaDetailInitialView(
                     Modifier
                         .padding(16.dp)
                         .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         "Personagens",
@@ -567,6 +800,7 @@ private fun SagaDetailInitialView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 "Linha do tempo",
@@ -625,6 +859,7 @@ private fun SagaDetailInitialView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 "Wiki",
@@ -676,6 +911,7 @@ private fun SagaDetailInitialView(
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             "Capítulos",
@@ -726,6 +962,7 @@ private fun SagaDetailInitialView(
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             "Atos",
@@ -757,8 +994,27 @@ private fun SagaDetailInitialView(
                         act,
                         it.acts.indexOf(act) + 1,
                         it,
-                        Modifier.padding(16.dp).fillMaxWidth(),
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                     )
+                }
+            }
+
+            if (it.data.endMessage.isNotEmpty()) {
+
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Text(
+                        it.data.endMessage,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = it.data.genre.bodyFont(),
+                                fontWeight = FontWeight.Light,
+                                textAlign = TextAlign.Center,
+                                brush = it.data.genre.gradient()
+                            ))
                 }
             }
 
@@ -798,7 +1054,11 @@ fun SagaDetailContentViewLoadingPreview() {
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(
+    showBackground = true,
+    showSystemUi = true,
+    uiMode = Configuration.UI_MODE_TYPE_NORMAL,
+)
 @Composable
 fun SagaDetailContentViewPreview() {
     SagAIScaffold {
@@ -815,6 +1075,10 @@ fun SagaDetailContentViewPreview() {
                             mainCharacterId = null,
                             visuals = IllustrationVisuals(),
                         ),
+                    acts =
+                        List(3) {
+                            Act()
+                        },
                     mainCharacter =
                         Character(
                             name = "Personagem de teste",
@@ -843,6 +1107,7 @@ fun SagaDetailContentViewPreview() {
                                 overview = "Texto do capítulo de teste",
                                 messageReference = 0,
                                 coverImage = emptyString(),
+                                actId = it,
                             )
                         },
                     characters =

@@ -49,30 +49,38 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -109,6 +117,7 @@ import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.components.ConditionalImage
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -139,6 +148,7 @@ fun ChatView(
     navHostController: NavHostController,
     padding: PaddingValues = PaddingValues(0.dp),
     sagaId: String? = null,
+    isDebug: Boolean = false, // Added isDebug parameter
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -149,10 +159,9 @@ fun ChatView(
     val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
     val contentHaze = rememberHazeState()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
-    LaunchedEffect(content) {
-        if (content == null) {
-            viewModel.initChat(sagaId)
-        }
+
+    LaunchedEffect(sagaId, isDebug) {
+        viewModel.initChat(sagaId, isDebug)
     }
 
     Box {
@@ -180,21 +189,26 @@ fun ChatView(
                 is ChatState.Success -> {
                     content?.let { cont ->
                         ChatContent(
-                            state.value,
-                            cont,
-                            characters,
-                            messages,
-                            suggestions,
-                            isGenerating,
-                            padding,
-                            viewModel::sendInput,
-                            viewModel::createCharacter,
-                            navHostController::popBackStack,
+                            state = state.value,
+                            content = cont,
+                            characters = characters,
+                            messagesList = messages,
+                            suggestions = suggestions,
+                            isGenerating = isGenerating,
+                            padding = padding,
+                            isDebug = isDebug, // Pass isDebug to ChatContent
+                            onSendMessage = viewModel::sendInput,
+                            onCreateCharacter = viewModel::createCharacter,
+                            onBack = navHostController::popBackStack,
                             openSagaDetails = {
                                 navHostController.navigateToRoute(
                                     Routes.SAGA_DETAIL,
                                     mapOf("sagaId" to cont.data.id.toString()),
                                 )
+                            },
+                            // Pass the fake message injector function
+                            onInjectFakeMessages = { count ->
+                                viewModel.sendFakeUserMessages(count)
                             },
                         )
                     }
@@ -332,17 +346,21 @@ fun ChatContent(
     suggestions: List<Suggestion> = emptyList(),
     isGenerating: Boolean = false,
     padding: PaddingValues = PaddingValues(),
+    isDebug: Boolean = false,
     onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
     onCreateCharacter: (CharacterInfo) -> Unit = {},
     onBack: () -> Unit = {},
     openSagaDetails: (SagaData) -> Unit = {},
+    onInjectFakeMessages: (Int) -> Unit = {},
 ) {
     val saga = content.data
     val listState = rememberLazyListState()
     val hazeState = rememberHazeState()
 
     LaunchedEffect(messagesList.size) {
-        listState.animateScrollToItem(0)
+        if (messagesList.isNotEmpty()) {
+            listState.animateScrollToItem(0)
+        }
     }
 
     val bottomSheetState = rememberModalBottomSheetState()
@@ -357,15 +375,16 @@ fun ChatContent(
             customBlendMode = null,
             Modifier
                 .fillMaxSize()
-                .alpha(.7f),
+                .alpha(.5f),
         )
 
         ConstraintLayout(
             Modifier
-                .padding(top = padding.calculateTopPadding())
+                .padding(top = padding.calculateTopPadding()) // Keep overall padding
                 .fillMaxSize(),
         ) {
-            val (messages, chatInput, topBar, bottomFade) = createRefs()
+            // Order of refs matters for layout, debug UI will be on top
+            val (debugControls, messages, chatInput, topBar, bottomFade) = createRefs()
             val hazeList = rememberHazeState()
 
             ChatList(
@@ -377,7 +396,7 @@ fun ChatContent(
                     Modifier
                         .hazeSource(hazeList)
                         .constrainAs(messages) {
-                            top.linkTo(parent.top)
+                            top.linkTo(topBar.bottom)
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
@@ -391,7 +410,7 @@ fun ChatContent(
             )
 
             AnimatedVisibility(
-                state !is ChatState.Loading,
+                state !is ChatState.Loading && saga.isDebug.not(),
                 modifier =
                     Modifier
                         .constrainAs(chatInput) {
@@ -399,63 +418,75 @@ fun ChatContent(
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                             width = Dimension.fillToConstraints
-                        },
+                        }.animateContentSize(),
                 enter = slideInVertically(),
                 exit = fadeOut(),
             ) {
-                Column {
-                    val isImeVisible = WindowInsets.isImeVisible
-                    AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
-                        LazyRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Bottom,
-                        ) {
-                            items(suggestions) {
-                                Row(
-                                    modifier =
-                                        Modifier
-                                            .widthIn(max = 200.dp)
-                                            .padding(8.dp)
-                                            .clip(RoundedCornerShape(saga.genre.cornerSize()))
-                                            .border(
-                                                1.dp,
-                                                saga.genre.color.copy(alpha = .3f),
-                                                RoundedCornerShape(saga.genre.cornerSize()),
-                                            ).hazeEffect(hazeList, HazeMaterials.regular())
-                                            .padding(4.dp)
-                                            .animateContentSize()
-                                            .clickable {
-                                                onSendMessage(it.text, it.type)
-                                            },
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    it.type.icon()?.let { icon ->
-                                        Icon(
-                                            painterResource(icon),
-                                            null,
-                                            tint = saga.genre.color,
-                                            modifier =
-                                                Modifier
-                                                    .padding(end = 4.dp)
-                                                    .size(12.dp),
+                if (saga.isEnded) {
+                    Text(
+                        "Sua saga chegou ao fim em ${saga.endedAt.formatDate()}",
+                        style =
+                            MaterialTheme.typography.labelLarge.copy(
+                                brush = saga.genre.gradient(true, targetValue = 200f),
+                                fontStyle = FontStyle.Italic,
+                                fontFamily = saga.genre.bodyFont(),
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                } else {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        val isImeVisible = WindowInsets.isImeVisible
+                        AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
+                            LazyRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Bottom,
+                            ) {
+                                items(suggestions) {
+                                    Row(
+                                        modifier =
+                                            Modifier
+                                                .widthIn(max = 200.dp)
+                                                .padding(8.dp)
+                                                .clip(RoundedCornerShape(saga.genre.cornerSize()))
+                                                .border(
+                                                    1.dp,
+                                                    saga.genre.color.copy(alpha = .3f),
+                                                    RoundedCornerShape(saga.genre.cornerSize()),
+                                                ).hazeEffect(hazeList, HazeMaterials.regular())
+                                                .padding(4.dp)
+                                                .animateContentSize()
+                                                .clickable {
+                                                    onSendMessage(it.text, it.type)
+                                                },
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        it.type.icon()?.let { icon ->
+                                            Icon(
+                                                painterResource(icon),
+                                                null,
+                                                tint = saga.genre.color,
+                                                modifier =
+                                                    Modifier
+                                                        .padding(end = 4.dp)
+                                                        .size(12.dp),
+                                            )
+                                        }
+
+                                        Text(
+                                            it.text,
+                                            style =
+                                                MaterialTheme.typography.labelMedium.copy(
+                                                    fontFamily = saga.genre.bodyFont(),
+                                                    color = saga.genre.color,
+                                                    textAlign = TextAlign.Center,
+                                                ),
                                         )
                                     }
-
-                                    Text(
-                                        it.text,
-                                        style =
-                                            MaterialTheme.typography.labelMedium.copy(
-                                                fontFamily = saga.genre.bodyFont(),
-                                                color = saga.genre.color,
-                                                textAlign = TextAlign.Center,
-                                            ),
-                                    )
                                 }
                             }
                         }
-                    }
 
-                    AnimatedVisibility(saga.isEnded.not()) {
                         ChatInputView(
                             content = content,
                             isGenerating = isGenerating,
@@ -465,16 +496,6 @@ fun ChatContent(
                                     .wrapContentHeight(),
                             onSendMessage = onSendMessage,
                             onCreateNewCharacter = onCreateCharacter,
-                        )
-                    }
-
-                    AnimatedVisibility(saga.isEnded) {
-                        Text(
-                            "Sua saga chegou ao fim em ${saga.endedAt.formatDate()}",
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    brush = saga.genre.gradient(true),
-                                ),
                         )
                     }
                 }
@@ -510,6 +531,89 @@ fun ChatContent(
                     }
                 },
             )
+
+            if (isDebug && saga.isEnded.not()) {
+                var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
+                val blurRadius by animateFloatAsState(
+                    if (isGenerating) 40f else 0f,
+                )
+                val shape = RoundedCornerShape(content.data.genre.cornerSize())
+                BlurredGlowContainer(
+                    Modifier
+                        .padding(16.dp)
+                        .constrainAs(debugControls) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            width = Dimension.fillToConstraints
+                            height = Dimension.wrapContent
+                        },
+                    content.data.genre.gradient(isGenerating),
+                    shape = shape,
+                    blurSigma = blurRadius,
+                ) {
+                    val textStyle =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = content.data.genre.bodyFont(),
+                        )
+                    TextField(
+                        value = fakeMessageCountText,
+                        textStyle = textStyle,
+                        onValueChange = { fakeMessageCountText = it },
+                        label = {
+                            Text(
+                                "Debug controls",
+                                style = textStyle,
+                                modifier = Modifier.scale(.9f),
+                            )
+                        },
+                        placeholder = {
+                            Text(
+                                "Number of Fake Messages",
+                                style = textStyle,
+                                modifier = Modifier.alpha(.7f),
+                            )
+                        },
+                        shape = shape,
+                        modifier =
+                            Modifier
+                                .padding(2.dp)
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    shape,
+                                ).fillMaxWidth(),
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val count = fakeMessageCountText.toIntOrNull() ?: 0
+                                    if (count > 0) {
+                                        onInjectFakeMessages(count)
+                                    }
+                                },
+                                modifier =
+                                    Modifier
+                                        .background(
+                                            content.data.genre.color,
+                                            CircleShape,
+                                        ).size(32.dp)
+                                        .padding(4.dp),
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_inject),
+                                    null,
+                                    tint = content.data.genre.iconColor,
+                                )
+                            }
+                        },
+                        colors =
+                            TextFieldDefaults.colors().copy(
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent,
+                            ),
+                    )
+                }
+            }
         }
     }
 
@@ -618,13 +722,14 @@ fun ChatList(
     openSaga: () -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
-    LazyColumn(modifier, state = listState, reverseLayout = saga.messages.isNotEmpty()) {
+    LazyColumn(modifier, state = listState, reverseLayout = messagesList.isNotEmpty()) {
+        // Changed saga.messages to messagesList
         saga.let {
             item {
                 Spacer(
                     Modifier
                         .fillMaxWidth()
-                        .height(100.dp),
+                        .height(75.dp),
                 )
             }
 
@@ -644,7 +749,7 @@ fun ChatList(
                         content = saga,
                         hazeState = hazeState,
                         animatedMessages,
-                        canAnimate = message == saga.messages.last(),
+                        canAnimate = message == messagesList.lastOrNull(), // Changed saga.messages to messagesList
                         openCharacters = { openCharacter(it) },
                     )
                 }
@@ -708,7 +813,10 @@ fun ChatList(
             }
 
             item {
-                SagaHeader(saga.data, saga.messages.isEmpty())
+                SagaHeader(
+                    saga.data,
+                    messagesList.isEmpty(),
+                ) // Changed saga.messages to messagesList
             }
         }
     }
@@ -800,13 +908,14 @@ fun ChatViewPreview() {
     val successState = ChatState.Empty
     SagAIScaffold {
         ChatContent(
-            successState,
-            SagaContent(
-                saga,
-                characters = emptyList(),
-                wikis = emptyList(),
-                mainCharacter = null,
-            ),
+            state = successState,
+            content =
+                SagaContent(
+                    saga,
+                    characters = emptyList(),
+                    wikis = emptyList(),
+                    mainCharacter = null,
+                ),
             suggestions =
                 List(3) {
                     Suggestion(
@@ -814,6 +923,8 @@ fun ChatViewPreview() {
                         SenderType.NARRATOR,
                     )
                 },
+            isDebug = true, // Enable debug UI for preview
+            onInjectFakeMessages = {},
         )
     }
 }

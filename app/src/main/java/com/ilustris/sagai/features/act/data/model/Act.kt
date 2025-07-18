@@ -12,5 +12,5 @@ data class Act(
     val title: String = emptyString(),
     val content: String = emptyString(),
     @ColumnInfo(index = true)
-    val sagaId: Int,
+    val sagaId: Int? = null,
 )

@@ -69,13 +69,15 @@ fun SenderType.itemOption(
                 .clickable {
                     onSelect(this@itemOption)
                 }.padding(4.dp)) {
+
+            Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.onBackground.copy(alpha = .05f)))
+
             Row(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     this@itemOption.title(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp,
+                    style = MaterialTheme.typography.bodySmall,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                     textAlign = TextAlign.Start,
                     modifier = Modifier.weight(1f),
@@ -96,7 +98,6 @@ fun SenderType.itemOption(
 
             }
 
-            Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.onBackground.copy(alpha = .05f)))
         }
 
     }

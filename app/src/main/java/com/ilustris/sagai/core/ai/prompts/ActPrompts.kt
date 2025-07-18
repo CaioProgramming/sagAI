@@ -47,4 +47,21 @@ object ActPrompts {
         // It dictates the specific tone, focus, and goal for your responses and the evolving plot.
         $directive
         """.trimIndent()
+
+    fun actSummaries(saga: SagaContent): String =
+        saga.acts
+            .map { act ->
+                val actIndex = saga.acts.indexOf(act) + 1
+                val chapters = saga.chapters.filter { chapter -> chapter.actId == act.id }
+                """
+                - Act $actIndex ${act.title}: ${act.content}
+                Chapters Summary:
+                ${chapters.map { chapter ->
+                    val chapterIndex = chapters.indexOf(chapter) + 1
+                    """
+                - Chapter $chapterIndex ${chapter.title}: ${chapter.overview}    
+                """
+                }.joinToString(separator = "\n") { it }}
+                """.trimIndent()
+            }.joinToString(separator = "\n") { it }
 }

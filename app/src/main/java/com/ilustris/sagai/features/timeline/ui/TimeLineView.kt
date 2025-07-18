@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,6 +39,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
@@ -45,7 +47,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -111,19 +112,16 @@ fun TimeLineContent(
     content: SagaContent,
     onBack: () -> Unit = {},
 ) {
-
-
-        val lazyListState = rememberLazyListState()
-        LazyColumn(state = lazyListState) {
-            items(content.timelines) {
-                TimeLineCard(it, content.data.genre, modifier = Modifier.fillMaxWidth())
-            }
+    val lazyListState = rememberLazyListState()
+    LazyColumn(state = lazyListState) {
+        items(content.timelines) {
+            TimeLineCard(it, content.data.genre, modifier = Modifier.fillMaxWidth())
         }
+    }
 
-        LaunchedEffect(content) {
-            lazyListState.animateScrollToItem(content.timelines.size - 1)
-        }
-
+    LaunchedEffect(content) {
+        lazyListState.animateScrollToItem(content.timelines.size - 1)
+    }
 }
 
 @Composable
@@ -131,6 +129,10 @@ fun TimeLineCard(
     event: Timeline,
     genre: Genre,
     isLast: Boolean = false,
+    showText: Boolean = true,
+    showSpark: Boolean = true,
+    titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
+    contentStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
 ) {
     val color = genre.color
@@ -161,7 +163,7 @@ fun TimeLineCard(
             Image(
                 painterResource(R.drawable.ic_spark),
                 null,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(if(showSpark) 24.dp else 0.dp),
                 colorFilter = ColorFilter.tint(genre.color),
             )
 
@@ -182,7 +184,7 @@ fun TimeLineCard(
             Text(
                 event.title,
                 style =
-                    MaterialTheme.typography.titleMedium.copy(
+                   titleStyle.copy(
                         fontFamily = genre.headerFont(),
                         color = genre.color,
                     ),
@@ -198,24 +200,24 @@ fun TimeLineCard(
             )
         }
 
-        Text(
-            event.content,
-            modifier =
-                Modifier
-                    .constrainAs(contentView) {
-                        top.linkTo(titleContent.bottom)
-                        start.linkTo(titleContent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
-                        width = Dimension.fillToConstraints
-                    }.padding(8.dp),
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = textColor,
-                    textAlign = TextAlign.Start,
-                ),
-        )
+            Text(
+                if (showText) event.content else emptyString(),
+                modifier =
+                    Modifier
+                        .constrainAs(contentView) {
+                            top.linkTo(titleContent.bottom)
+                            start.linkTo(titleContent.start)
+                            end.linkTo(parent.end)
+                            bottom.linkTo(parent.bottom)
+                            width = Dimension.fillToConstraints
+                        }.padding(8.dp),
+                style =
+                    contentStyle.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = textColor,
+                        textAlign = TextAlign.Start,
+                    ),
+            )
     }
 }
 

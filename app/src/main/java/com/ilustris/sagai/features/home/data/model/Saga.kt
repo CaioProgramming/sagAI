@@ -36,6 +36,10 @@ data class SagaData(
     val lastLoreReference: Int = 0,
     val isEnded: Boolean = false,
     val endedAt: Long = 0L,
+    @ColumnInfo(defaultValue = "false")
+    val isDebug: Boolean = false,
+    @ColumnInfo(defaultValue = "")
+    val endMessage: String = "",
 )
 
 data class IllustrationVisuals(

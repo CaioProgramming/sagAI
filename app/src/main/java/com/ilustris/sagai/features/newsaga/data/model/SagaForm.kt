@@ -25,8 +25,8 @@ fun Genre.colorPalette() =
             )
         Genre.SCI_FI ->
             listOf(
-                MaterialColor.Teal800,
-                MaterialColor.Blue500,
+                MaterialColor.DeepPurple100,
+                MaterialColor.Purple900,
                 MaterialColor.DeepPurple500,
                 MaterialColor.Indigo500,
             )

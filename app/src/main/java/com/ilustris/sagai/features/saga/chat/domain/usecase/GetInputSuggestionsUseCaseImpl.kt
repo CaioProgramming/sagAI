@@ -1,6 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.domain.usecase
 
-import com.ilustris.sagai.core.ai.SummarizationClient
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
@@ -14,7 +14,7 @@ import javax.inject.Inject
 class GetInputSuggestionsUseCaseImpl
     @Inject
     constructor(
-        private val summarizationClient: SummarizationClient,
+        private val gemmaClient: GemmaClient,
     ) : GetInputSuggestionsUseCase {
         override suspend fun invoke(
             chatMessages: List<MessageContent>,
@@ -31,7 +31,7 @@ class GetInputSuggestionsUseCaseImpl
                     )
 
                 val suggestions =
-                    summarizationClient.generate<List<Suggestion>>(
+                    gemmaClient.generate<List<Suggestion>>(
                         prompt = prompt,
                         requireTranslation = true,
                     )

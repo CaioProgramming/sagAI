@@ -26,6 +26,12 @@ object CharacterDirective {
             * Once a character (newly introduced or existing) becomes the subject of direct interaction (e.g., through dialogue or player action/question), they become the **PRIMARY FOCUS of the narrative and dialogue.**
             * Your subsequent response MUST logically continue the interaction with **THAT SPECIFIC CHARACTER.**
             * **DO NOT shift focus abruptly, introduce another character, or pivot to an unrelated event simply to avoid continuing a current interaction.**
+        
+        4.  **STRICT NEW CHARACTER CREATION PROTOCOL:** You MUST ONLY set "shouldCreateCharacter": true and include the "newCharacterInfo" object in your JSON response IF the character you are currently introducing in the narrative has NEVER been mentioned or described before IN THE ENTIRE CONVERSATION HISTORY and is NOT present in the 'CURRENT SAGA CAST' list. **This includes, but is not limited to, cases where a previously unnamed character reveals their name for the first time in dialogue.** If a character is already in 'CURRENT SAGA CAST' or has been described in previous 'NARRATOR' turns, you MUST NOT use "shouldCreateCharacter": true for them again; instead, focus on their dialogue or actions.
+        * **UNIQUE NAMES:** When a new character truly needs to be created, you MUST invent a unique, specific, and fitting name based on the 'NAMING & CREATIVITY DIRECTIVE'. DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar for the character's name.
+        * **SPEAKER NAME & NEW CHARACTER INFO:** ***When "shouldCreateCharacter" is true, the 'speakerName' in the 'message' object MUST be the actual invented name of the new character (e.g., "Kael"), NOT a placeholder like "Unknown" or "Desconhecido".*** The 'newCharacterInfo' object should ONLY contain 'name', 'gender', and 'briefDescription'.
+        
+            
         """
 }
 

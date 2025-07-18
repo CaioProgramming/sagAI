@@ -19,6 +19,7 @@ coreSplashScreen = "1.0.1"
 firebaseCrashlyticsPlugin = "3.0.1"
 
 [libraries]
+firebase-installations-ktx = { module = "com.google.firebase:firebase-installations-ktx" }
 kotlin-reflection = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "reflection" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

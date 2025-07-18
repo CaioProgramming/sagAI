@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
     val contentUpdateMessages: MutableSharedFlow<Message>
-    val endTrigger: MutableSharedFlow<Boolean>
+    val endMessage: MutableSharedFlow<String?>
 
     suspend fun loadSaga(sagaId: String)
 
@@ -29,4 +29,9 @@ interface SagaContentManager {
 
     suspend fun endSaga()
 
+    fun setDebugMode(enabled: Boolean)
+
+    fun isInDebugMode(): Boolean
+
+    fun setProcessing(bool: Boolean)
 }

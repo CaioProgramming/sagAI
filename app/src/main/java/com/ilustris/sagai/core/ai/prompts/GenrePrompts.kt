@@ -59,6 +59,7 @@ object GenrePrompts {
                 
                 focus on the character's emotional intensity.
                 ** NO BORDERS, FILL THE IMAGE.**
+                --ar 3:2
                 """
         }
 
@@ -66,11 +67,14 @@ object GenrePrompts {
                 ${artStyle(genre)}
                 ${CharacterFraming.PORTRAIT.description} with focus on face with prominent cybernetic implants.
                 ${PortraitPose.random().description}
-                **Dramatic lighting, intense purple light creating strong highlights and casting deep, pronounced shadows, focusing attention on the character.
+                **Dramatic lighting, intense neon purple creating strong highlights and casting deep, pronounced shadows, focusing attention on the character.
                 The lighting emphasizes the character's form and creates a moody, intense, and atmospheric visual.**
 
                 $description
                 
+                focus on the character's emotional intensity.
+                ** NO BORDERS, FILL THE IMAGE.**
+                --ar 3:2
                 """
     }.trimIndent()
 

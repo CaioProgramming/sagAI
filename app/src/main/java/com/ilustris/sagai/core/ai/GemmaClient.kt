@@ -14,7 +14,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class SummarizationClient
+class GemmaClient
     @Inject
     constructor(
         private val firebaseRemoteConfig: FirebaseRemoteConfig,
@@ -25,25 +25,26 @@ class SummarizationClient
             const val DEFAULT_SUMMARIZATION_MODEL = "gemma-3n-e4b-it"
         }
 
-        override fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
-            val modelName =
-                firebaseRemoteConfig.getString(SUMMARIZATION_MODEL_FLAG).let {
-                    it.ifEmpty {
-                        Log.e(
-                            javaClass.simpleName,
-                            "buildModel: Firebase flag $SUMMARIZATION_MODEL_FLAG value not retrieved",
-                        )
-                        DEFAULT_SUMMARIZATION_MODEL
-                    }
+        fun modelName() =
+            firebaseRemoteConfig.getString(SUMMARIZATION_MODEL_FLAG).let {
+                it.ifEmpty {
+                    Log.e(
+                        javaClass.simpleName,
+                        "buildModel: Firebase flag $SUMMARIZATION_MODEL_FLAG value not retrieved",
+                    )
+                    DEFAULT_SUMMARIZATION_MODEL
                 }
+            }
+
+        override fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
             Log.i(
                 this::class.java.simpleName,
-                "Using summarization model: $modelName",
+                "Using summarization model: ${modelName()}",
             )
             return Firebase
                 .ai
                 .generativeModel(
-                    modelName = modelName,
+                    modelName = modelName(),
                     generationConfig = generationConfig,
                 )
         }
@@ -56,7 +57,7 @@ class SummarizationClient
                 val model =
                     buildModel(
                         generationConfig {
-                            responseMimeType = "text/plain" // Model will output raw text
+                            responseMimeType = "text/plain"
                         },
                     )
 
@@ -71,15 +72,19 @@ class SummarizationClient
                     "Token count for request: ${content.usageMetadata?.totalTokenCount}",
                 )
 
-                // Use the extension function to sanitize the string
+                if (T::class == String::class) {
+                    val model = buildModel(generationConfig { responseMimeType = "text/plain" })
+                    val response = model.generateContent(if (requireTranslation) "$prompt ${modelLanguage()}" else prompt).text
+                    return response as? T
+                }
+
                 val cleanedJsonString = content.text.sanitizeAndExtractJsonString()
                 Log.i(this::class.java.simpleName, "Using cleaned JSON for parsing: $cleanedJsonString")
 
                 val typeToken = object : TypeToken<T>() {}
                 return Gson().fromJson(cleanedJsonString, typeToken.type)
             } catch (e: Exception) {
-                // This will catch exceptions from sanitizeAndExtractJsonString or Gson parsing
-                Log.e(this::class.java.simpleName, "Error in summarization generate: ${e.message}", e)
+                Log.e(this::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)
                 return null
             }
         }

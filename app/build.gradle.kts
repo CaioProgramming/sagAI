@@ -14,14 +14,14 @@ plugins {
 
 android {
     namespace = "com.ilustris.sagai"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ilustris.sagai"
         minSdk = 27
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
-        versionName = "1.1.1"
+        versionName = "1.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -113,9 +113,10 @@ dependencies {
     implementation(libs.chrisbanes.haze.materials)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
-    implementation(libs.firebase.config.ktx) // Added Firebase Remote Config
-    implementation(libs.firebase.analytics.ktx) // <-- ADDED FIREBASE ANALYTICS
-    implementation(libs.firebase.crashlytics.ktx) // <-- ADDED FIREBASE CRASHLYTICS
+    implementation(libs.firebase.config.ktx)
+    implementation(libs.firebase.analytics.ktx)
+    implementation(libs.firebase.crashlytics.ktx)
+    implementation(libs.firebase.installations.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

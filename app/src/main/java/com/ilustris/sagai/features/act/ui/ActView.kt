@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.act.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -8,11 +9,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +25,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -43,7 +42,7 @@ fun ActComponent(
     act: Act,
     actCount: Int,
     content: SagaContent,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var titleVisible by remember { mutableStateOf(false) }
     var countVisible by remember { mutableStateOf(false) }
@@ -71,7 +70,8 @@ fun ActComponent(
         modifier =
             modifier
                 .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
+                .padding(16.dp)
+                .animateContentSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -91,7 +91,7 @@ fun ActComponent(
             visible = titleVisible,
             enter = fadeIn(animationSpec = tween(durationMillis = 500)),
             exit = fadeOut(animationSpec = tween(durationMillis = 500)),
-        ) {
+            ) {
             Text(
                 act.title.ifEmpty { "Ato em curso..." },
                 style =
@@ -108,19 +108,18 @@ fun ActComponent(
             visible = contentVisible,
             enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 400)),
             exit = fadeOut(animationSpec = tween(durationMillis = 500)),
+            modifier = Modifier.padding(vertical = 8.dp)
         ) {
-            TypewriterText(
-                text = act.content.ifEmpty { "Continue sua saga..." },
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = content.data.genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                    ),
-                genre = content.data.genre,
-                mainCharacter = content.mainCharacter,
-                characters = content.characters,
-                wiki = content.wikis,
-                modifier = Modifier.weight(1f),
+            Text(
+                buildWikiAndCharactersAnnotation(
+                    act.content,
+                    content.data.genre,
+                    content.mainCharacter,
+                    content.characters,
+                    content.wikis
+                ),
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = content.data.genre.bodyFont()),
+                textAlign = TextAlign.Center,
             )
         }
 

@@ -281,7 +281,7 @@ fun ChatBubble(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier =
                         Modifier.align(
-                            Alignment.CenterEnd,
+                            Alignment.Center,
                         ),
                 ) {
                     messageContent.character?.let {
@@ -310,7 +310,8 @@ fun ChatBubble(
                         wiki = wiki,
                         modifier =
                             Modifier
-                                .fillMaxWidth()
+                                .align(Alignment.CenterHorizontally)
+                                .background(Color.Black)
                                 .padding(16.dp),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
@@ -318,7 +319,6 @@ fun ChatBubble(
                                 textAlign = TextAlign.Center,
                                 fontFamily = genre.bodyFont(),
                                 color = MaterialColor.Amber400,
-                                background = Color.Black,
                             ),
                         onTextClick = { },
                     )
@@ -403,10 +403,21 @@ fun ChatBubble(
 
         SenderType.NEW_ACT ->
             messageContent.act?.let {
+                Text(
+                    messageContent.message.text,
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = genre.bodyFont(),
+                            brush = genre.gradient(),
+                            fontStyle = FontStyle.Italic,
+                        ),
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
                 ActComponent(
                     it,
-                    content.acts.size,
+                    content.acts.indexOf(it) + 1,
                     content,
+                    modifier = Modifier.wrapContentHeight().fillMaxWidth(),
                 )
             }
     }

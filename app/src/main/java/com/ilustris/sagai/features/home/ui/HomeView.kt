@@ -34,6 +34,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +44,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
@@ -90,33 +93,100 @@ fun HomeView(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
-
+    val showDebugButton by viewModel.showDebugButton.collectAsStateWithLifecycle()
+    val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
     ChatList(
-        sagas = sagas,
-        padding,
+        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
+        padding = padding,
+        showDebugButton = showDebugButton,
         onCreateNewChat = {
             navController.navigateToRoute(Routes.NEW_SAGA)
         },
-        onSelectSaga = { sagaId ->
+        onSelectSaga = { sagaData ->
             navController.navigateToRoute(
                 Routes.CHAT,
-                Routes.CHAT.arguments.associateWith { sagaId.id.toString() },
+                mapOf(
+                    "sagaId" to sagaData.id.toString(),
+                    "isDebug" to sagaData.isDebug.toString(),
+                ),
             )
         },
+        createFakeSaga = {
+            viewModel.createFakeSaga()
+        },
     )
+    LaunchedEffect(startFakeSaga) {
+        startFakeSaga?.let {
+            navController.navigateToRoute(
+                Routes.CHAT,
+                mapOf(
+                    "sagaId" to it.id.toString(),
+                    "isDebug" to "true",
+                ),
+            )
+        }
+    }
 }
 
 @Composable
 private fun ChatList(
     sagas: List<SagaContent>,
     padding: PaddingValues = PaddingValues(0.dp),
+    showDebugButton: Boolean,
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (SagaData) -> Unit = {},
+    createFakeSaga: () -> Unit = {},
 ) {
     LazyColumn(
         modifier =
             Modifier.padding(padding),
     ) {
+        if (showDebugButton) { // Condition updated
+            item {
+                val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .gradientFill(debugBrush)
+                            .clip(RoundedCornerShape(15.dp))
+                            .clickable {
+                                createFakeSaga()
+                            }.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_bug),
+                        contentDescription = "Debug Session",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .size(32.dp),
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            "Start Debug Session",
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White,
+                                ),
+                        )
+
+                        Text(
+                            "Test with fake messages.",
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Light,
+                                    color = Color.White.copy(alpha = 0.8f),
+                                ),
+                        )
+                    }
+                }
+            }
+        }
         item {
             val brush =
                 gradientAnimation(
@@ -134,6 +204,7 @@ private fun ChatList(
                         .clickable {
                             onCreateNewChat()
                         }.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
                     brush = Brush.verticalGradient(holographicGradient),
@@ -144,7 +215,7 @@ private fun ChatList(
                             .padding(4.dp)
                             .size(32.dp),
                 )
-
+                Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Text(
                         "Criar nova saga",
@@ -168,7 +239,7 @@ private fun ChatList(
         }
 
         items(sagas) {
-            ChatCard(it) {
+            ChatCard(it, isEnabled = showDebugButton) {
                 onSelectSaga(it.data)
             }
         }
@@ -178,6 +249,7 @@ private fun ChatList(
 @Composable
 fun ChatCard(
     saga: SagaContent,
+    isEnabled: Boolean = false,
     onClick: () -> Unit = {},
 ) {
     val sagaData = saga.data
@@ -186,10 +258,14 @@ fun ChatCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
                     .clip(RoundedCornerShape(15.dp))
+                    .padding(16.dp)
                     .clickable {
-                        onClick()
+                        if (saga.data.isDebug && isEnabled) {
+                            onClick()
+                        } else {
+                            onClick()
+                        }
                     },
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -207,27 +283,51 @@ fun ChatCard(
                         .clip(CircleShape)
                         .background(sagaData.genre.color, CircleShape),
             ) {
-                AsyncImage(
-                    sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
-                    contentDescription = sagaData.title,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .effectForGenre(sagaData.genre, focusRadius = 0f, customGrain = 0.05f)
-                            .selectiveColorHighlight(
-                                sagaData.genre.selectiveHighlight(),
+                if (saga.data.isDebug.not()) {
+                    AsyncImage(
+                        sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
+                        contentDescription = sagaData.title,
+                        contentScale = ContentScale.Crop,
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .effectForGenre(sagaData.genre, focusRadius = 0f, customGrain = 0.05f)
+                                .selectiveColorHighlight(
+                                    sagaData.genre.selectiveHighlight(),
+                                ),
+                        onSuccess = {
+                            imageLoaded.value = true
+                        },
+                    )
+                } else {
+                    Image(
+                        painterResource(R.drawable.ic_bug),
+                        contentDescription = null,
+                        colorFilter =
+                            ColorFilter.tint(
+                                sagaData.genre.iconColor,
                             ),
-                    onSuccess = {
+                        contentScale = ContentScale.Fit,
+                        modifier =
+                            Modifier
+                                .padding(4.dp)
+                                .fillMaxSize(),
+                    )
+
+                    LaunchedEffect(Unit) {
                         imageLoaded.value = true
-                    },
-                )
+                    }
+                }
 
                 this@Row.AnimatedVisibility(
                     imageLoaded.value.not(),
                     modifier = Modifier.align(Alignment.Center),
                 ) {
                     Text(
-                        sagaData.title.first().uppercase(),
+                        sagaData.title
+                            .firstOrNull()
+                            ?.uppercaseChar()
+                            ?.toString() ?: "S",
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = sagaData.genre.headerFont(),
@@ -240,7 +340,6 @@ fun ChatCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            // Name and Last Message
             val lastMessage = saga.messages.firstOrNull()
             Column(modifier = Modifier.weight(1f)) {
                 Row {
@@ -273,47 +372,62 @@ fun ChatCard(
                 }
 
                 Row(Modifier.alpha(.5f)) {
-                    lastMessage?.let {
-                        if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
-                            Text(
-                                text = (it.character?.name ?: "Desconhecido").plus(": "),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = saga.data.genre.bodyFont(),
-                                    ),
-                                maxLines = 2,
-                            )
+                    if (sagaData.isEnded.not()) {
+                        lastMessage?.let {
+                            if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
+                                Text(
+                                    text = (it.character?.name ?: "Desconhecido").plus(": "),
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                        ),
+                                    maxLines = 2,
+                                )
 
+                                Text(
+                                    text = it.message.text.take(200),
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.Normal,
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                        ),
+                                    maxLines = 2,
+                                    modifier =
+                                        Modifier
+                                            .padding(start = 4.dp)
+                                            .weight(1f),
+                                )
+                            } else {
+                                Text(
+                                    text = it.message.text,
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                            fontStyle = FontStyle.Italic,
+                                        ),
+                                    maxLines = 2,
+                                    modifier = Modifier.padding(8.dp),
+                                )
+                            }
+                        } ?: run {
                             Text(
-                                text = it.message.text.take(200),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Normal,
-                                        fontFamily = saga.data.genre.bodyFont(),
-                                    ),
-                                maxLines = 2,
-                                modifier = Modifier.padding(start = 4.dp).weight(1f),
-                            )
-                        } else {
-                            Text(
-                                text = it.message.text,
+                                "Sua saga começa agora!",
                                 style =
                                     MaterialTheme.typography.labelMedium.copy(
                                         fontFamily = saga.data.genre.bodyFont(),
                                         fontStyle = FontStyle.Italic,
                                     ),
-                                maxLines = 2,
-                                modifier = Modifier.padding(8.dp),
                             )
                         }
-                    } ?: run {
+                    } else {
                         Text(
-                            "Sua saga começa agora!",
+                            "Sua saga chegou ao fim!",
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
                                     fontFamily = saga.data.genre.bodyFont(),
                                     fontStyle = FontStyle.Italic,
+                                    brush = saga.data.genre.gradient(gradientType = GradientType.LINEAR, targetValue = 150f),
                                 ),
                         )
                     }
@@ -481,7 +595,8 @@ fun HomeViewPreview() {
                         )
                     }
                 ChatList(
-                    previewChats,
+                    sagas = previewChats,
+                    showDebugButton = true, // Example for preview
                 )
             }
         }

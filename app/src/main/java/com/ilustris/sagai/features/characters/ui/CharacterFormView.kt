@@ -676,7 +676,6 @@ fun SimpleCharacterForm(
 
     fun syncCharacterState(updatedChar: CharacterInfo) {
         currentCharacter = updatedChar
-        onCreateCharacter(updatedChar)
     }
 
     val brush = genre.gradient()
