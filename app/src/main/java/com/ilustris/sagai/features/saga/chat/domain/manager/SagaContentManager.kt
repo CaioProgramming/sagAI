@@ -8,11 +8,14 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow // Added import
+import java.io.File // Added import
 
 interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val endMessage: MutableSharedFlow<String?>
+    val ambientMusicFile: StateFlow<File?> // New property for the cached music file
 
     suspend fun loadSaga(sagaId: String)
 

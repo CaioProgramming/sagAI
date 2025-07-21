@@ -3,11 +3,11 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts.coverCompositions
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 
 object ImagePrompts {
     fun wallpaperGeneration(
-        saga: SagaData,
+        saga: Saga,
         mainCharacter: Character,
         description: String,
     ) = GenrePrompts
@@ -18,7 +18,7 @@ object ImagePrompts {
         ).trimIndent()
 
     fun chapterCover(
-        saga: SagaData,
+        saga: Saga,
         characters: List<Character>,
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
@@ -29,7 +29,7 @@ object ImagePrompts {
 
     fun generateImage(
         character: Character,
-        saga: SagaData,
+        saga: Saga,
         description: String,
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}

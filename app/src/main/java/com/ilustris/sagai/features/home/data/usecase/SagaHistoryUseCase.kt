@@ -1,8 +1,8 @@
 package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import kotlinx.coroutines.flow.Flow
 
@@ -11,7 +11,7 @@ interface SagaHistoryUseCase {
 
     suspend fun getSagaById(sagaId: Int): Flow<SagaContent?>
 
-    suspend fun updateSaga(saga: SagaData): SagaData
+    suspend fun updateSaga(saga: Saga): Saga
 
     suspend fun generateLore(
         saga: SagaContent,
@@ -19,7 +19,7 @@ interface SagaHistoryUseCase {
         lastMessages: List<String>,
     ): RequestResult<Exception, LoreGen>
 
-    suspend fun createFakeSaga(): RequestResult<Exception, SagaData>
+    suspend fun createFakeSaga(): RequestResult<Exception, Saga>
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<Exception, String>
 }

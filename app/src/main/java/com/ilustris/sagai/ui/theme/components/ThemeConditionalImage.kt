@@ -41,10 +41,11 @@ fun ConditionalImage(
     val resource = painterResource(resource)
 
     Box(
-        modifier.gradientFill(
-            brush = brush,
-            blendMode = blendMode,
-        ),
+        modifier
+            .gradientFill(
+                brush = brush,
+                blendMode = blendMode,
+            ),
     ) {
         Image(
             resource,

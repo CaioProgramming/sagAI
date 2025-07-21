@@ -63,6 +63,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -89,6 +90,7 @@ import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
@@ -97,9 +99,8 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
-import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
@@ -148,7 +149,7 @@ fun ChatView(
     navHostController: NavHostController,
     padding: PaddingValues = PaddingValues(0.dp),
     sagaId: String? = null,
-    isDebug: Boolean = false, // Added isDebug parameter
+    isDebug: Boolean = false,
     viewModel: ChatViewModel = hiltViewModel(),
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
@@ -156,12 +157,22 @@ fun ChatView(
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
     val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
     val contentHaze = rememberHazeState()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
 
     LaunchedEffect(sagaId, isDebug) {
         viewModel.initChat(sagaId, isDebug)
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner, viewModel) {
+        lifecycleOwner.lifecycle.addObserver(viewModel)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(viewModel)
+        }
     }
 
     Box {
@@ -196,7 +207,8 @@ fun ChatView(
                             suggestions = suggestions,
                             isGenerating = isGenerating,
                             padding = padding,
-                            isDebug = isDebug, // Pass isDebug to ChatContent
+                            isDebug = isDebug,
+                            isPlaying = isPlaying,
                             onSendMessage = viewModel::sendInput,
                             onCreateCharacter = viewModel::createCharacter,
                             onBack = navHostController::popBackStack,
@@ -347,10 +359,11 @@ fun ChatContent(
     isGenerating: Boolean = false,
     padding: PaddingValues = PaddingValues(),
     isDebug: Boolean = false,
+    isPlaying: Boolean = false,
     onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
     onCreateCharacter: (CharacterInfo) -> Unit = {},
     onBack: () -> Unit = {},
-    openSagaDetails: (SagaData) -> Unit = {},
+    openSagaDetails: (Saga) -> Unit = {},
     onInjectFakeMessages: (Int) -> Unit = {},
 ) {
     val saga = content.data
@@ -371,20 +384,26 @@ fun ChatContent(
     Box {
         ConditionalImage(
             saga.genre.background,
-            saga.genre.gradient(),
-            customBlendMode = null,
-            Modifier
-                .fillMaxSize()
-                .alpha(.5f),
+            saga.genre.gradient(
+                isPlaying,
+                targetValue = 1000f,
+                duration = 10.seconds,
+            ),
+            modifier =
+                Modifier
+                    .alpha(.7f)
+                    .fillMaxSize(),
         )
 
         ConstraintLayout(
             Modifier
-                .padding(top = padding.calculateTopPadding()) // Keep overall padding
-                .fillMaxSize(),
+                .padding(
+                    top = padding.calculateTopPadding(),
+                    bottom = padding.calculateBottomPadding(),
+                ).fillMaxSize(),
         ) {
             // Order of refs matters for layout, debug UI will be on top
-            val (debugControls, messages, chatInput, topBar, bottomFade) = createRefs()
+            val (debugControls, messages, chatInput, topBar, bottomFade, topFade) = createRefs()
             val hazeList = rememberHazeState()
 
             ChatList(
@@ -396,7 +415,7 @@ fun ChatContent(
                     Modifier
                         .hazeSource(hazeList)
                         .constrainAs(messages) {
-                            top.linkTo(topBar.bottom)
+                            top.linkTo(parent.top)
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
@@ -407,6 +426,17 @@ fun ChatContent(
                     showCharacter = it
                 },
                 openSaga = { openSagaDetails(saga) },
+            )
+
+            Box(
+                Modifier
+                    .constrainAs(bottomFade) {
+                        bottom.linkTo(chatInput.bottom)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    }.fillMaxWidth()
+                    .height(100.dp)
+                    .background(fadeGradientBottom()),
             )
 
             AnimatedVisibility(
@@ -435,7 +465,12 @@ fun ChatContent(
                         modifier = Modifier.padding(16.dp),
                     )
                 } else {
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                    Column(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                    ) {
                         val isImeVisible = WindowInsets.isImeVisible
                         AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
                             LazyRow(
@@ -505,6 +540,18 @@ fun ChatContent(
                 if (listState.canScrollForward.not()) 0f else 1f,
                 animationSpec = tween(450, easing = EaseIn),
             )
+
+            Box(
+                Modifier
+                    .constrainAs(topFade) {
+                        top.linkTo(topBar.top)
+                        start.linkTo(parent.start)
+                        end.linkTo(parent.end)
+                    }.alpha(alpha)
+                    .fillMaxWidth()
+                    .height(100.dp)
+                    .background(fadeGradientTop()),
+            ) {}
             SagaTopBar(
                 saga.title,
                 "${messagesList.size} mensagens",
@@ -666,7 +713,7 @@ private fun EmptyMessagesView(
 
 @Composable
 fun SagaHeader(
-    saga: SagaData,
+    saga: Saga,
     isEmpty: Boolean,
 ) {
     var size by remember {
@@ -776,6 +823,7 @@ fun ChatList(
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             color = textColor,
+                            fontFamily = saga.data.genre.bodyFont(),
                         ),
                     textAlign = TextAlign.Center,
                     modifier =
@@ -826,7 +874,7 @@ fun ChatList(
 private fun CharactersTopIcons(
     characters: List<Character>,
     onCharacterSelected: (Int) -> Unit,
-    data: SagaData,
+    data: Saga,
 ) {
     val overlapAmount = (-10).dp
     val density = LocalDensity.current
@@ -877,7 +925,7 @@ private fun CharactersTopIcons(
 @Composable
 fun ChatViewPreview() {
     val saga =
-        SagaData(
+        Saga(
             id = 1,
             title = "Byte Legend",
             description = "This is a sample saga for preview purposes.",
@@ -885,7 +933,6 @@ fun ChatViewPreview() {
             genre = Genre.FANTASY,
             createdAt = Calendar.getInstance().timeInMillis,
             mainCharacterId = null,
-            visuals = IllustrationVisuals(),
         )
     val messages =
         List(17) {
@@ -905,7 +952,7 @@ fun ChatViewPreview() {
                 sagaId = saga.id,
             ),
         ).reversed()
-    val successState = ChatState.Empty
+    val successState = ChatState.Success
     SagAIScaffold {
         ChatContent(
             state = successState,
@@ -923,7 +970,9 @@ fun ChatViewPreview() {
                         SenderType.NARRATOR,
                     )
                 },
-            isDebug = true, // Enable debug UI for preview
+            isDebug = false,
+            isPlaying = true,
+            isGenerating = true,
             onInjectFakeMessages = {},
         )
     }

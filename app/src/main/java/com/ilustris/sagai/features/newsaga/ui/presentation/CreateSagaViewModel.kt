@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
@@ -25,7 +25,7 @@ class CreateSagaViewModel
         private val newSagaUseCase: NewSagaUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow(SagaForm())
-        val sagaData = MutableStateFlow<SagaData?>(null)
+        val sagaData = MutableStateFlow<Saga?>(null)
         val state = MutableStateFlow<CreateSagaState>(CreateSagaState())
         val effect = MutableStateFlow<Effect?>(null)
 
@@ -46,22 +46,22 @@ class CreateSagaViewModel
             saga.value = saga.value.copy(genre = genre)
         }
 
-        fun saveSaga(sagaData: SagaData) {
+        fun saveSaga(saga: Saga) {
             state.value = CreateSagaState(isLoading = true)
 
             viewModelScope.launch(Dispatchers.IO) {
                 val saveOperation =
                     newSagaUseCase.saveSaga(
-                        sagaData.copy(genre = saga.value.genre),
-                        saga.value.character,
+                        saga.copy(genre = this@CreateSagaViewModel.saga.value.genre),
+                        this@CreateSagaViewModel.saga.value.character,
                     )
 
                 when (saveOperation) {
                     is RequestResult.Error<Exception> -> sendErrorState(saveOperation.value)
 
-                    is RequestResult.Success<Pair<SagaData, Character>> -> {
+                    is RequestResult.Success<Pair<Saga, Character>> -> {
                         val operationData = saveOperation.success.value
-                        saga.value = saga.value.copy(character = operationData.second)
+                        this@CreateSagaViewModel.saga.value = this@CreateSagaViewModel.saga.value.copy(character = operationData.second)
                         val sagaUpdateOperation =
                             newSagaUseCase
                                 .generateSagaIcon(
@@ -69,11 +69,11 @@ class CreateSagaViewModel
                                     operationData.second,
                                 )
                         sagaUpdateOperation
-                            .onSuccess {
-                                state.value = state.value.copy(isLoading = false, saga = it)
+                            .onSuccess { newSaga ->
+                                state.value = state.value.copy(isLoading = false, saga = newSaga)
                                 viewModelScope.launch {
                                     delay(10.seconds)
-                                    navigateToSaga(it)
+                                    navigateToSaga(newSaga)
                                 }
                             }.onFailure {
                                 state.value =
@@ -87,8 +87,15 @@ class CreateSagaViewModel
             }
         }
 
-        private fun navigateToSaga(sagaData: SagaData) {
-            effect.value = Effect.Navigate(Routes.CHAT, mapOf("sagaId" to sagaData.id.toString()))
+        private fun navigateToSaga(saga: Saga) {
+            effect.value =
+                Effect.Navigate(
+                    Routes.CHAT,
+                    mapOf(
+                        "sagaId" to saga.id.toString(),
+                        "isDebug" to saga.isDebug.toString(),
+                    ),
+                )
         }
 
         private fun sendErrorState(exception: Exception) {

@@ -26,10 +26,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
@@ -91,7 +90,7 @@ fun ActComponent(
             visible = titleVisible,
             enter = fadeIn(animationSpec = tween(durationMillis = 500)),
             exit = fadeOut(animationSpec = tween(durationMillis = 500)),
-            ) {
+        ) {
             Text(
                 act.title.ifEmpty { "Ato em curso..." },
                 style =
@@ -108,7 +107,7 @@ fun ActComponent(
             visible = contentVisible,
             enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 400)),
             exit = fadeOut(animationSpec = tween(durationMillis = 500)),
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 8.dp),
         ) {
             Text(
                 buildWikiAndCharactersAnnotation(
@@ -116,7 +115,7 @@ fun ActComponent(
                     content.data.genre,
                     content.mainCharacter,
                     content.characters,
-                    content.wikis
+                    content.wikis,
                 ),
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = content.data.genre.bodyFont()),
                 textAlign = TextAlign.Center,
@@ -133,9 +132,9 @@ fun ActComponentPreview() {
     val act =
         Act(title = "The First Act", content = "This is the content of the first act.", sagaId = 1)
     val actCount = 1
-    val sagaData =
-        SagaData(title = "My Saga", description = "This is a great saga.", genre = Genre.FANTASY)
-    val content = SagaContent(data = sagaData)
+    val saga =
+        Saga(title = "My Saga", description = "This is a great saga.", genre = Genre.FANTASY)
+    val content = SagaContent(data = saga)
     ActComponent(act = act, actCount = actCount, content = content)
 }
 

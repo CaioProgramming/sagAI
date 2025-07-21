@@ -41,8 +41,8 @@ import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
@@ -163,7 +163,7 @@ fun TimeLineCard(
             Image(
                 painterResource(R.drawable.ic_spark),
                 null,
-                modifier = Modifier.size(if(showSpark) 24.dp else 0.dp),
+                modifier = Modifier.size(if (showSpark) 24.dp else 0.dp),
                 colorFilter = ColorFilter.tint(genre.color),
             )
 
@@ -184,7 +184,7 @@ fun TimeLineCard(
             Text(
                 event.title,
                 style =
-                   titleStyle.copy(
+                    titleStyle.copy(
                         fontFamily = genre.headerFont(),
                         color = genre.color,
                     ),
@@ -200,24 +200,24 @@ fun TimeLineCard(
             )
         }
 
-            Text(
-                if (showText) event.content else emptyString(),
-                modifier =
-                    Modifier
-                        .constrainAs(contentView) {
-                            top.linkTo(titleContent.bottom)
-                            start.linkTo(titleContent.start)
-                            end.linkTo(parent.end)
-                            bottom.linkTo(parent.bottom)
-                            width = Dimension.fillToConstraints
-                        }.padding(8.dp),
-                style =
-                    contentStyle.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = textColor,
-                        textAlign = TextAlign.Start,
-                    ),
-            )
+        Text(
+            if (showText) event.content else emptyString(),
+            modifier =
+                Modifier
+                    .constrainAs(contentView) {
+                        top.linkTo(titleContent.bottom)
+                        start.linkTo(titleContent.start)
+                        end.linkTo(parent.end)
+                        bottom.linkTo(parent.bottom)
+                        width = Dimension.fillToConstraints
+                    }.padding(8.dp),
+            style =
+                contentStyle.copy(
+                    fontFamily = genre.bodyFont(),
+                    color = textColor,
+                    textAlign = TextAlign.Start,
+                ),
+        )
     }
 }
 
@@ -227,7 +227,7 @@ fun TimeLineContentPreview() {
     val content =
         SagaContent(
             data =
-                SagaData(
+                Saga(
                     title = "My Awesome Saga",
                     description = "A saga about adventure and stuff.",
                     genre = Genre.FANTASY,

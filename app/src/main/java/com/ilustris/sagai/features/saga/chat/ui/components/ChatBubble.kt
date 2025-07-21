@@ -34,8 +34,8 @@ import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
@@ -337,14 +337,16 @@ fun ChatBubble(
                 wiki = wiki,
                 modifier =
                     Modifier
+                        .padding(16.dp)
                         .background(
-                            MaterialTheme.colorScheme.background.copy(alpha = .4f),
-                        ).padding(16.dp)
+                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
+                            shape = RoundedCornerShape(genre.cornerSize()),
+                        ).padding(8.dp)
                         .fillMaxWidth(),
                 style =
-                    MaterialTheme.typography.titleMedium.copy(
+                    MaterialTheme.typography.bodyMedium.copy(
                         fontStyle = FontStyle.Italic,
-                        textAlign = TextAlign.Center,
+                        textAlign = TextAlign.Justify,
                         fontFamily = genre.bodyFont(),
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
@@ -460,7 +462,7 @@ fun ChatBubblePreview() {
                             ),
                         SagaContent(
                             data =
-                                SagaData(
+                                Saga(
                                     title = "Test",
                                     description = "Test",
                                     genre = genre,

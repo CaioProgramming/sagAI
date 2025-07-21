@@ -15,8 +15,8 @@ import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -64,7 +64,7 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacterImage(
             character: Character,
             description: String,
-            saga: SagaData,
+            saga: Saga,
         ): RequestResult<Exception, Character> =
             try {
                 val translatedDescription =

@@ -8,7 +8,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -26,12 +25,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -73,7 +70,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
@@ -83,9 +79,8 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
 import com.ilustris.sagai.features.characters.ui.SimpleCharacterForm
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
-import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
@@ -118,7 +113,8 @@ fun ChatInputView(
                 duration = 2.seconds,
             )
         } else {
-            Color.Transparent
+            MaterialTheme.colorScheme.onBackground
+                .copy(alpha = .5f)
                 .solidGradient()
         }
 
@@ -129,6 +125,9 @@ fun ChatInputView(
     var actionsExpanded by remember {
         mutableStateOf(false)
     }
+    val glowRadius by animateFloatAsState(
+        if (isGenerating.not()) 0f else 40f,
+    )
     val inputShape = RoundedCornerShape(content.data.genre.cornerSize())
 
     var showNewCharacterSheet by remember { mutableStateOf(false) }
@@ -186,12 +185,62 @@ fun ChatInputView(
         }
 
         Row(
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
+            IconButton(
+                onClick = {
+                    actionsExpanded = true
+                },
+                enabled = isGenerating.not(),
+                modifier =
+                    Modifier
+                        .padding(horizontal = 2.dp)
+                        .background(MaterialTheme.colorScheme.surfaceContainer, CircleShape)
+                        .size(32.dp),
+            ) {
+                val iconRotation by animateFloatAsState(
+                    if (actionsExpanded) 45f else 0f,
+                )
+                Icon(
+                    Icons.Rounded.Add,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier =
+                        Modifier
+                            .rotate(iconRotation)
+                            .padding(2.dp)
+                            .fillMaxSize(),
+                )
+
+                DropdownMenu(
+                    actionsExpanded,
+                    onDismissRequest = { actionsExpanded = false },
+                    shape = RoundedCornerShape(content.data.genre.cornerSize()),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    modifier = Modifier.fillMaxWidth(.6f),
+                ) {
+                    SenderType.entries.forEach {
+                        it.itemOption(
+                            selectedItem = action,
+                            genre = content.data.genre,
+                            iconSize = 32.dp,
+                        ) { selectedAction ->
+                            actionsExpanded = actionsExpanded.not()
+                            if (selectedAction != SenderType.NEW_CHARACTER) {
+                                action = selectedAction
+                            } else {
+                                showNewCharacterSheet = true
+                            }
+                        }
+                    }
+                }
+            }
+
             BlurredGlowContainer(
                 brush = inputBrush,
                 shape = inputShape,
+                blurSigma = glowRadius,
                 modifier =
                     Modifier
                         .weight(1f),
@@ -200,18 +249,11 @@ fun ChatInputView(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
-                            .padding(2.dp)
                             .border(1.dp, inputBrush, inputShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
+                            .background(MaterialTheme.colorScheme.background, inputShape)
                             .fillMaxWidth()
                             .padding(horizontal = 8.dp),
                 ) {
-                    content.mainCharacter?.let { character ->
-                        MainCharacterInputButton(content.data, character, action) {
-                            actionsExpanded = actionsExpanded.not()
-                        }
-                    }
-
                     val textStyle =
                         MaterialTheme.typography.labelLarge.copy(
                             color = MaterialTheme.colorScheme.onBackground,
@@ -269,93 +311,45 @@ fun ChatInputView(
                         modifier = Modifier.weight(1f).animateContentSize(),
                     )
 
-                    IconButton(
-                        onClick = {
-                            actionsExpanded = true
-                        },
-                        enabled = isGenerating.not(),
-                        modifier =
-                            Modifier
-                                .border(1.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
-                                .size(24.dp),
+                    AnimatedVisibility(
+                        inputField.text.isNotEmpty(),
+                        enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
+                        exit = scaleOut(animationSpec = tween(easing = EaseIn)),
                     ) {
-                        val iconRotation by animateFloatAsState(
-                            if (actionsExpanded) 45f else 0f,
+                        val buttonColor by animateColorAsState(
+                            if (isGenerating.not()) {
+                                content.data.genre.color
+                            } else {
+                                Color.Transparent
+                            },
                         )
-                        Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onBackground,
+                        IconButton(
+                            onClick = {
+                                if (isGenerating) return@IconButton
+                                onSendMessage(inputField.text, action)
+                                inputField = TextFieldValue("")
+                                actionsExpanded = false
+                                charactersExpanded = false
+                            },
                             modifier =
                                 Modifier
-                                    .rotate(iconRotation)
-                                    .padding(2.dp)
-                                    .fillMaxSize(),
-                        )
-
-                        DropdownMenu(
-                            actionsExpanded,
-                            onDismissRequest = { actionsExpanded = false },
-                            offset = DpOffset(0.dp, (-10).dp),
-                            shape = RoundedCornerShape(content.data.genre.cornerSize()),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                                    .background(
+                                        buttonColor,
+                                        CircleShape,
+                                    ).size(32.dp),
                         ) {
-                            SenderType.entries.forEach {
-                                it.itemOption(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    selectedItem = action,
-                                    genre = content.data.genre,
-                                    iconSize = 32.dp,
-                                ) { selectedAction ->
-                                    actionsExpanded = actionsExpanded.not()
-                                    if (selectedAction != SenderType.NEW_CHARACTER) {
-                                        action = selectedAction
-                                    } else {
-                                        showNewCharacterSheet = true
-                                    }
-                                }
-                            }
+                            val icon = R.drawable.ic_arrow_up
+                            Icon(
+                                painterResource(icon),
+                                contentDescription = "Send Message",
+                                modifier =
+                                    Modifier
+                                        .padding(4.dp)
+                                        .fillMaxSize(),
+                                tint = content.data.genre.iconColor,
+                            )
                         }
                     }
-                }
-            }
-            AnimatedVisibility(
-                inputField.text.isNotEmpty(),
-                enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
-                exit = scaleOut(animationSpec = tween(easing = EaseIn)),
-            ) {
-                val buttonColor by animateColorAsState(
-                    if (isGenerating.not()) {
-                        content.data.genre.color
-                    } else {
-                        Color.Transparent
-                    },
-                )
-                IconButton(
-                    onClick = {
-                        if (isGenerating) return@IconButton
-                        onSendMessage(inputField.text, action)
-                        inputField = TextFieldValue("")
-                        actionsExpanded = false
-                        charactersExpanded = false
-                    },
-                    modifier =
-                        Modifier
-                            .background(
-                                buttonColor,
-                                CircleShape,
-                            ).size(32.dp),
-                ) {
-                    val icon = R.drawable.ic_arrow_up
-                    Icon(
-                        painterResource(icon),
-                        contentDescription = "Send Message",
-                        modifier =
-                            Modifier
-                                .padding(4.dp)
-                                .fillMaxSize(),
-                        tint = content.data.genre.iconColor,
-                    )
                 }
             }
         }
@@ -405,7 +399,7 @@ fun ChatInputView(
 
 @Composable
 private fun MainCharacterInputButton(
-    saga: SagaData,
+    saga: Saga,
     character: Character,
     currentAction: SenderType,
     onClickAction: () -> Unit = {},
@@ -549,7 +543,7 @@ fun ChatInputViewPreview() {
                             },
                         ),
                     data =
-                        SagaData(
+                        Saga(
                             id = 0,
                             title = "Saga Title",
                             description = "Saga description",
@@ -557,11 +551,9 @@ fun ChatInputViewPreview() {
                             createdAt = System.currentTimeMillis(),
                             genre = Genre.SCI_FI,
                             mainCharacterId = 0,
-                            visuals = IllustrationVisuals(),
-                            lastLoreReference = 0,
                         ),
                 ),
-                isGenerating = true,
+                isGenerating = false,
                 onSendMessage = { _, _ -> },
                 onCreateNewCharacter = {},
                 modifier = Modifier.align(Alignment.BottomCenter),
@@ -569,46 +561,3 @@ fun ChatInputViewPreview() {
         }
     }
 }
-
-@Preview
-@Composable
-fun MainCharacterInputButtonPreview() {
-    MainCharacterInputButton(
-        currentAction = SenderType.USER,
-        saga =
-            SagaData(
-                id = 0,
-                title = "Saga Title",
-                description = "Saga description",
-                icon = "icon_url",
-                createdAt = System.currentTimeMillis(),
-                genre = Genre.FANTASY,
-                mainCharacterId = 0,
-                visuals = IllustrationVisuals(),
-                lastLoreReference = 0,
-            ),
-        character =
-            Character(
-                id = 0,
-                name = "Character Name",
-                backstory = "Character backstory",
-                image = "image_url",
-                hexColor = "#FF0000",
-                sagaId = 0,
-                details =
-                    Details(
-                        appearance = "Appearance",
-                        personality = "Personality",
-                        race = "Race",
-                        height = 1.80,
-                        weight = 70.0,
-                        gender = "Gender",
-                        occupation = "Occupation",
-                        ethnicity = "Ethnicity",
-                    ),
-                joinedAt = System.currentTimeMillis(),
-            ),
-    ) {}
-}
-
-private const val DRAG_THRESHOLD = -50f

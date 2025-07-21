@@ -58,9 +58,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
@@ -134,7 +133,7 @@ private fun ChatList(
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
     onCreateNewChat: () -> Unit = {},
-    onSelectSaga: (SagaData) -> Unit = {},
+    onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
 ) {
     LazyColumn(
@@ -570,14 +569,13 @@ fun HomeViewPreview() {
                 val previewChats =
                     List(10) {
                         SagaContent(
-                            SagaData(
+                            Saga(
                                 title = "Chat ${it + 1}",
                                 description = "The journey of our lifes",
                                 genre = Genre.FANTASY,
                                 icon = "",
                                 createdAt = Calendar.getInstance().timeInMillis,
                                 mainCharacterId = null,
-                                visuals = IllustrationVisuals(),
                             ),
                             mainCharacter = null,
                             messages =

@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
-import android.graphics.fonts.FontStyle
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
@@ -49,16 +48,19 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -103,9 +105,8 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
-import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
@@ -151,7 +152,7 @@ fun SagaDetailView(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val saga by viewModel.saga.collectAsStateWithLifecycle()
-    var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
+    var sagaToDelete by remember { mutableStateOf<Saga?>(null) }
     var section by remember {
         mutableStateOf(
             DetailAction.BACK,
@@ -247,8 +248,25 @@ fun SagaDetailView(
     }
 }
 
-fun LazyListScope.SagaDrawerContent(content: SagaContent) {
+fun LazyListScope.SagaDrawerContent(content: SagaContent, openReview: () -> Unit = {}) {
     with(this) {
+        item {
+            Column(Modifier.fillMaxWidth()) {
+                Image(
+                    painterResource(R.drawable.ic_spark),
+                    null,
+                    Modifier
+                        .clip(CircleShape)
+                        .padding(4.dp)
+                        .size(32.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .gradientFill(content.data.genre.gradient(targetValue = 1f))
+                        .clickable {
+                            openReview()
+                        },
+                )
+            }
+        }
         items(content.acts) {
             val index = content.acts.indexOf(it)
             val brush =
@@ -386,6 +404,7 @@ fun LazyListScope.SagaDrawerContent(content: SagaContent) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SagaDetailContentView(
     state: State,
@@ -397,6 +416,9 @@ fun SagaDetailContentView(
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showReview by remember { mutableStateOf(false) }
+
+
 
     saga?.let { sagaContent ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -428,8 +450,10 @@ fun SagaDetailContentView(
                                             ),
                                     )
                                 }
+                                SagaDrawerContent(sagaContent) {
+                                    showReview = true
 
-                                SagaDrawerContent(sagaContent)
+                                }
                             }
                         }
                     }
@@ -508,6 +532,25 @@ fun SagaDetailContentView(
                                             onChangeSection(action)
                                         }
                                 }
+                            }
+                        }
+
+                        if (showReview) {
+                            ModalBottomSheet(
+                                onDismissRequest = {
+                                    showReview = false
+                                },
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(),
+                                dragHandle = {
+                                    Box {}
+                                },
+                                contentColor = MaterialTheme.colorScheme.onSurface,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                            ) {
+                                SagaReview(content = sagaContent)
                             }
                         }
                     }
@@ -1002,7 +1045,6 @@ private fun SagaDetailInitialView(
             }
 
             if (it.data.endMessage.isNotEmpty()) {
-
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
@@ -1013,8 +1055,9 @@ private fun SagaDetailInitialView(
                                 fontFamily = it.data.genre.bodyFont(),
                                 fontWeight = FontWeight.Light,
                                 textAlign = TextAlign.Center,
-                                brush = it.data.genre.gradient()
-                            ))
+                                brush = it.data.genre.gradient(),
+                            ),
+                    )
                 }
             }
 
@@ -1066,14 +1109,13 @@ fun SagaDetailContentViewPreview() {
             State.Success(
                 SagaContent(
                     data =
-                        SagaData(
+                        Saga(
                             title = "Saga de teste",
                             description = "Descrição da saga de teste",
                             icon = null,
                             createdAt = System.currentTimeMillis(),
                             genre = Genre.SCI_FI,
                             mainCharacterId = null,
-                            visuals = IllustrationVisuals(),
                         ),
                     acts =
                         List(3) {

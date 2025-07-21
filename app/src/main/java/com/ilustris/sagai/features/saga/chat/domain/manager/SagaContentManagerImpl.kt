@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.domain.manager
 
 import android.icu.util.Calendar
 import android.util.Log
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.ai.prompts.CharacterGuidelines
 import com.ilustris.sagai.core.data.RequestResult
@@ -9,6 +10,7 @@ import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.Act
@@ -35,6 +37,7 @@ import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
@@ -47,15 +50,20 @@ class SagaContentManagerImpl
         private val wikiUseCase: WikiUseCase,
         private val timelineUseCase: TimelineUseCase,
         private val actUseCase: ActUseCase,
+        private val fileCacheService: FileCacheService,
+        private val remoteConfig: FirebaseRemoteConfig,
     ) : SagaContentManager {
         override val content = MutableStateFlow<SagaContent?>(null)
-        override val endMessage = MutableStateFlow<String?>(null)
+        override val endMessage = MutableStateFlow<String?>(null) // Mismatch with interface (SharedFlow), kept as StateFlow from existing code
         override val contentUpdateMessages: MutableSharedFlow<Message> =
             MutableSharedFlow(
                 replay = 0,
                 extraBufferCapacity = 1,
                 onBufferOverflow = BufferOverflow.DROP_OLDEST,
             )
+
+        // This was likely from a previous attempt, it aligns with the interface now.
+        override val ambientMusicFile = MutableStateFlow<File?>(null)
         private val isProcessingNarrative = AtomicBoolean(false)
 
         private var isDebugModeEnabled: Boolean = false
@@ -95,10 +103,31 @@ class SagaContentManagerImpl
                         return@collect
                     }
                     checkNarrativeProgression(saga)
+
+                    saga?.let { getAmbienceMusic(it) }
                 }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
                 content.value = null
+            }
+        }
+
+        private suspend fun getAmbienceMusic(saga: SagaContent) {
+            val genre = saga.data.genre
+            val fileUrl = remoteConfig.getString(genre.ambientMusicConfigKey)
+
+            if (fileUrl.isNullOrEmpty()) {
+                Log.e(javaClass.simpleName, "getAmbienceMusic: Invalid URL for ${genre.name}")
+                return
+            }
+
+            withContext(Dispatchers.IO) {
+                val newMusicFile = fileCacheService.getFile(fileUrl)
+                if (newMusicFile?.absolutePath != ambientMusicFile.value?.absolutePath) {
+                    ambientMusicFile.emit(newMusicFile)
+                } else if (newMusicFile == null && ambientMusicFile.value != null) {
+                    ambientMusicFile.emit(null)
+                }
             }
         }
 
@@ -310,6 +339,7 @@ class SagaContentManagerImpl
         private suspend fun checkNarrativeProgression(saga: SagaContent?) {
             Log.d(javaClass.simpleName, "Starting narrative progression check")
             progressionCounter++
+
             if (saga == null) {
                 Log.e(
                     javaClass.simpleName,

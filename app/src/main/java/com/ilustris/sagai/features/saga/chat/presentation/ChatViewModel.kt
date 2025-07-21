@@ -1,6 +1,11 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
+import android.content.Context
+import android.media.MediaPlayer
 import android.util.Log
+import androidx.core.net.toUri
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -9,8 +14,8 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
@@ -22,10 +27,13 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -34,18 +42,23 @@ import kotlin.time.Duration.Companion.seconds
 class ChatViewModel
     @Inject
     constructor(
+        @ApplicationContext private val context: Context,
         private val messageUseCase: MessageUseCase,
         private val sagaContentManager: SagaContentManager,
         private val suggestionUseCase: GetInputSuggestionsUseCase,
-    ) : ViewModel() {
+    ) : ViewModel(),
+        DefaultLifecycleObserver {
         val state = MutableStateFlow<ChatState>(ChatState.Empty)
 
         val content = MutableStateFlow<SagaContent?>(null)
         val messages = MutableStateFlow<List<MessageContent>>(emptyList())
         val isGenerating = MutableStateFlow(false)
         val characters = MutableStateFlow<List<Character>>(emptyList())
+        val isPlaying = MutableStateFlow(false)
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
+        private var mediaPlayer: MediaPlayer? = null
+        private var lastKnownMusicFile: File? = null
 
         private fun sendError(errorMessage: String) {
             viewModelScope.launch {
@@ -74,6 +87,7 @@ class ChatViewModel
             observeSaga()
             observeContentUpdate()
             observeEnding()
+            observeAmbientMusic()
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
             }
@@ -126,6 +140,102 @@ class ChatViewModel
             }
         }
 
+        private fun observeAmbientMusic() {
+            viewModelScope.launch {
+                sagaContentManager.ambientMusicFile.collectLatest { musicFile ->
+                    lastKnownMusicFile = musicFile
+                    if (musicFile != null) {
+                        initializeMediaPlayer(musicFile)
+                    } else {
+                        stopAmbientMusic()
+                    }
+                }
+            }
+        }
+
+        private fun initializeMediaPlayer(file: File) {
+            try {
+                stopAmbientMusic()
+                mediaPlayer =
+                    MediaPlayer().apply {
+                        setDataSource(context, file.toUri())
+                        isLooping = true
+                        setVolume(.3f, .3f)
+                        prepareAsync()
+                        setOnPreparedListener {
+                            start()
+                            Log.i("ChatViewModel", "MediaPlayer prepared and started for: ${file.name}")
+                            this@ChatViewModel.isPlaying.value = true
+                        }
+                        setOnErrorListener { _, what, extra ->
+                            Log.e(
+                                "ChatViewModel",
+                                "MediaPlayer Error: what: $what, extra: $extra for file: ${file.name}",
+                            )
+                            stopAmbientMusic()
+                            true
+                        }
+                    }
+                lastKnownMusicFile = file
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error initializing MediaPlayer for file: ${file.name}", e)
+                stopAmbientMusic()
+            }
+        }
+
+        fun pauseAmbientMusic() {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.pause()
+                Log.d("ChatViewModel", "MediaPlayer paused.")
+                this@ChatViewModel.isPlaying.value = false
+            }
+        }
+
+        fun resumeAmbientMusic() {
+            if (mediaPlayer?.isPlaying == false) {
+                mediaPlayer?.start()
+                Log.d("ChatViewModel", "MediaPlayer resumed from paused state.")
+            } else if (mediaPlayer == null && lastKnownMusicFile != null) {
+                Log.d(
+                    "ChatViewModel",
+                    "MediaPlayer is null, re-initializing with last known file: ${lastKnownMusicFile!!.name}",
+                )
+                initializeMediaPlayer(lastKnownMusicFile!!)
+            } else {
+                Log.d(
+                    "ChatViewModel",
+                    "MediaPlayer not resumed. isPlaying: ${mediaPlayer?.isPlaying}, mediaPlayer null: ${mediaPlayer == null}, lastKnownFile null: ${lastKnownMusicFile == null}",
+                )
+            }
+        }
+
+        private fun stopAmbientMusic() {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+            mediaPlayer = null
+            lastKnownMusicFile = null
+            Log.d("ChatViewModel", "MediaPlayer stopped and released. Last known file cleared.")
+            this@ChatViewModel.isPlaying.value = false
+        }
+
+        override fun onResume(owner: LifecycleOwner) {
+            super.onResume(owner)
+            Log.d("ChatViewModel", "Lifecycle: onResume called, resuming music.")
+            resumeAmbientMusic()
+        }
+
+        override fun onPause(owner: LifecycleOwner) {
+            super.onPause(owner)
+            Log.d("ChatViewModel", "Lifecycle: onPause called, pausing music.")
+            pauseAmbientMusic()
+        }
+
+        override fun onCleared() {
+            super.onCleared()
+            stopAmbientMusic()
+            Log.d("ChatViewModel", "onCleared called, MediaPlayer released.")
+        }
+
         private suspend fun validateCharacterMessageUpdates(content1: SagaContent) {
             val updatableMessages =
                 content1.messages.filter { messageContent ->
@@ -166,7 +276,7 @@ class ChatViewModel
         }
 
         private fun generateIntroduction(
-            saga: SagaData,
+            saga: Saga,
             character: Character?,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -247,12 +357,16 @@ class ChatViewModel
                         else -> characterReference?.id
                     }
                 if (message.senderType == SenderType.NEW_CHAPTER || message.senderType == SenderType.NEW_ACT) {
-                    val lastMessage = content.value?.messages?.getOrNull(content.value!!.messages.size - 2)
+                    val lastMessage =
+                        content.value?.messages?.getOrNull(content.value!!.messages.size - 2)
                     if (lastMessage != null &&
                         lastMessage.message.senderType == SenderType.NEW_CHAPTER ||
                         lastMessage?.message?.senderType == SenderType.NEW_ACT
                     ) {
-                        Log.w(javaClass.simpleName, "sendMessage: Not saving message, almost saved duplicate.")
+                        Log.w(
+                            javaClass.simpleName,
+                            "sendMessage: Not saving message, almost saved duplicate.",
+                        )
                         return@launch
                     }
                 }

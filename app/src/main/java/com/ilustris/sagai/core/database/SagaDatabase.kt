@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.database
 
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.ilustris.sagai.features.act.data.model.Act
@@ -9,7 +8,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.datasource.SagaDao
@@ -20,7 +19,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
 
 @Database(
     entities = [
-        SagaData::class,
+        Saga::class,
         Message::class,
         Chapter::class,
         Character::class,
@@ -28,12 +27,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Timeline::class,
         Act::class,
     ],
-    version = 29,
-    autoMigrations = [
-        AutoMigration(from = 26, to = 27),
-        AutoMigration(from = 27, to = 28),
-        AutoMigration(from = 28, to = 29),
-    ],
+    version = 31,
     exportSchema = true,
 )
 abstract class SagaDatabase : RoomDatabase() {

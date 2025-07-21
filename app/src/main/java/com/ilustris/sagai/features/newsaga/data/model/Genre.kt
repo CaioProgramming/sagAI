@@ -7,13 +7,15 @@ import androidx.compose.ui.graphics.Color
 import com.ilustris.sagai.R
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 
-enum class Genre(
+enum class
+Genre(
     val title: String,
     val icon: Int,
     val color: Color,
     val iconColor: Color,
     @DrawableRes
     val background: Int,
+    val ambientMusicConfigKey: String // New field for Remote Config key
 ) {
     FANTASY(
         "Fantasia",
@@ -21,6 +23,7 @@ enum class Genre(
         MaterialColor.Red800,
         Color.Companion.White,
         R.drawable.fantasy,
+        "fantasy_ambient_music_url" // Example key
     ),
     SCI_FI(
         "Cyberpunk",
@@ -28,6 +31,7 @@ enum class Genre(
         MaterialColor.DeepPurpleA200,
         Color.Companion.White,
         R.drawable.scifi,
+        "scifi_ambient_music_url" // Example key
     ),
 }
 
@@ -44,18 +48,19 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.FANTASY ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .02f,
-                saturationThreshold = .05f,
+                hueTolerance = .05f,
+                saturationThreshold = .1f,
+                highlightSaturationBoost = 1.2f,
             )
 
         Genre.SCI_FI ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .10f,
-                saturationThreshold = .20f,
-                lightnessThreshold = .10f,
-                highlightSaturationBoost = 2.5f,
-                highlightLightnessBoost = .10f,
-                desaturationFactorNonTarget = .9f,
+                hueTolerance = .2f,
+                saturationThreshold = .1f,
+                lightnessThreshold = .2f,
+                highlightSaturationBoost = 2f,
+                highlightLightnessBoost = .1f,
+                desaturationFactorNonTarget = .3f,
             )
     }

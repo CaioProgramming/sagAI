@@ -49,8 +49,7 @@ import com.ilustris.sagai.features.characters.data.model.Clothing
 import com.ilustris.sagai.features.characters.data.model.Details // Ensure Details is imported
 import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.characters.ui.CharacterForm
-import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
@@ -215,8 +214,8 @@ fun SagaCardPreview() {
                         .padding(16.dp)
                         .fillMaxWidth()
                         .fillMaxHeight(.8f),
-                sagaData =
-                    SagaData(
+                saga =
+                    Saga(
                         0,
                         "My Awesome Saga",
                         "This is a great saga about a hero.",
@@ -224,7 +223,6 @@ fun SagaCardPreview() {
                         0L,
                         Genre.FANTASY,
                         mainCharacterId = 0,
-                        visuals = IllustrationVisuals(),
                     ),
             )
         }

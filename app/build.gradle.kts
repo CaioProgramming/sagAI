@@ -117,6 +117,8 @@ dependencies {
     implementation(libs.firebase.analytics.ktx)
     implementation(libs.firebase.crashlytics.ktx)
     implementation(libs.firebase.installations.ktx)
+    implementation(libs.hypnoticcanvas)
+    implementation(libs.hypnoticcanvas.shaders)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -58,11 +58,12 @@ fun SagaTopBar(
             Text(
                 title,
                 style =
-                    MaterialTheme.typography.titleLarge.copy(
+                    MaterialTheme.typography.titleMedium.copy(
                         fontFamily = genre.headerFont(),
                         color = genre.color,
                         textAlign = TextAlign.Center,
                     ),
+                modifier = Modifier.fillMaxWidth(),
             )
 
             Text(

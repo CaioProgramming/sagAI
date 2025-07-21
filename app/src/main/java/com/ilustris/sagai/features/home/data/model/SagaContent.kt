@@ -13,7 +13,7 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class SagaContent(
     @Embedded
-    val data: SagaData,
+    val data: Saga,
     @Relation(
         parentColumn = "mainCharacterId",
         entityColumn = "id",

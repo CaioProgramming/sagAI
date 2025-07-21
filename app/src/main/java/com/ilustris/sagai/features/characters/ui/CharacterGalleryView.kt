@@ -44,8 +44,8 @@ import androidx.navigation.NavHostController
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
@@ -196,7 +196,7 @@ fun CharactersGalleryContentPreview() {
     val sagaContent =
         SagaContent(
             data =
-                SagaData(
+                Saga(
                     id = 0,
                     title = "Saga Title",
                     description = "Saga Description",

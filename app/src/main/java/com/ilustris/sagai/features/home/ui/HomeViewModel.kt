@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -40,7 +40,7 @@ class HomeViewModel
         private val _showDebugButton = MutableStateFlow(false)
         val showDebugButton: StateFlow<Boolean> = _showDebugButton.asStateFlow()
 
-        val startDebugSaga = MutableStateFlow<SagaData?>(null)
+        val startDebugSaga = MutableStateFlow<Saga?>(null)
 
         init {
             loadRemoteConfigFlag()

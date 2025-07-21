@@ -3,15 +3,15 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 
 object SagaPrompts {
-    fun details(saga: SagaData) = saga.storyDetails()
+    fun details(saga: Saga) = saga.storyDetails()
 
-    fun SagaData.storyDetails() =
+    fun Saga.storyDetails() =
         """
         Title: $title
         Description: ${description.trimEnd()}
@@ -48,7 +48,7 @@ object SagaPrompts {
         """.trimIndent()
 
     fun introductionGeneration(
-        saga: SagaData,
+        saga: Saga,
         character: Character?,
     ) = """
         Write a introduction text for the story,

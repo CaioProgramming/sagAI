@@ -197,7 +197,7 @@ fun NewSagaView(
                     ) {
                         state.saga?.let {
                             SagaCard(
-                                sagaData = it,
+                                saga = it,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()

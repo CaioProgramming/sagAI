@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.theme
 
+import android.util.Log
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -67,6 +68,7 @@ fun TypewriterText(
     val currentText = if (isAnimated) text.substring(0, charIndex) else text
 
     LaunchedEffect(charIndex) {
+        Log.d("TypeWritter", "TypewriterText: updating text")
         onTextUpdate(text.substring(0, charIndex))
     }
 
@@ -120,7 +122,8 @@ fun Modifier.zoomAnimation(): Modifier {
             scaleX = scale,
             scaleY = scale,
             transformOrigin = TransformOrigin.Center,
-        ).clipToBounds()
+        )
+        .clipToBounds()
 }
 
 @Preview(showBackground = true)
@@ -131,7 +134,9 @@ fun TypewriterTextPreview() {
         text = text,
         duration = 2.seconds,
         easing = EaseInBounce,
-        modifier = Modifier.fillMaxWidth().padding(16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
         characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f", details = Details())),
         wiki =
             listOf(

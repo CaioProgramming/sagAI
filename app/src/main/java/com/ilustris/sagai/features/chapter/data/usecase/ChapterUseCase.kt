@@ -4,8 +4,8 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterGen
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.Flow
 
@@ -29,7 +29,7 @@ interface ChapterUseCase {
 
     suspend fun generateChapterCover(
         chapter: Chapter,
-        saga: SagaData,
+        saga: Saga,
         characters: List<Character>,
     ): RequestResult<Exception, Chapter>
 

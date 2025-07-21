@@ -7,14 +7,14 @@ import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import java.util.Calendar
 
 @Entity(
     tableName = "messages",
     foreignKeys = [
         ForeignKey(
-            entity = SagaData::class,
+            entity = Saga::class,
             parentColumns = ["id"],
             childColumns = ["sagaId"],
             onDelete = ForeignKey.CASCADE,

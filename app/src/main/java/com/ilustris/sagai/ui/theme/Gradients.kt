@@ -1,6 +1,7 @@
 package com.ilustris.sagai.ui.theme
 
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -74,7 +75,7 @@ fun gradientAnimation(
     targetValue: Float = 1000f,
     gradientType: GradientType = GradientType.LINEAR,
 ): Brush {
-    val infiniteTransition = rememberInfiniteTransition()
+    val infiniteTransition = rememberInfiniteTransition(label = "gradientTransition")
     val offsetAnimation =
         infiniteTransition.animateFloat(
             initialValue = 0f,
@@ -243,3 +244,41 @@ fun Modifier.fadeMask(
                 )
             }
         }
+
+@Composable
+fun Modifier.reactiveShimmer(
+    isPlaying: Boolean,
+    shimmerColors: List<Color> = listOf(
+        Color.White.copy(alpha = 0.0f),
+        Color.White.copy(alpha = 0.3f),
+        Color.White.copy(alpha = 0.0f),
+    ),
+    duration: Duration = 2.seconds,
+    gradientWidthFactor: Float = 0.3f // Percentage of the composable width
+): Modifier {
+    if (!isPlaying) {
+        return this
+    }
+
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmerTransition")
+    val translateAnim = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f + (gradientWidthFactor * 2), // Ensure gradient sweeps fully across
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "shimmerTranslate"
+    )
+
+    return this.drawWithCache {
+        val brush = Brush.horizontalGradient(
+            colors = shimmerColors,
+            startX = size.width * (translateAnim.value - gradientWidthFactor),
+            endX = size.width * translateAnim.value
+        )
+        onDrawBehind { // Changed from onDrawWithContent to onDrawBehind to draw shimmer under content
+            drawRect(brush = brush)
+        }
+    }
+}

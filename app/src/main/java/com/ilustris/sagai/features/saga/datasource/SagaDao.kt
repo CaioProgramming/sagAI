@@ -7,26 +7,26 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SagaDao {
     @Query("SELECT * FROM sagas")
-    fun getAllSagas(): Flow<List<SagaData>>
+    fun getAllSagas(): Flow<List<Saga>>
 
     @Query("SELECT * FROM sagas WHERE id = :sagaId")
-    fun getSaga(sagaId: Int): Flow<SagaData?>
+    fun getSaga(sagaId: Int): Flow<Saga?>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun saveSagaData(sagaData: SagaData): Long
+    suspend fun saveSagaData(saga: Saga): Long
 
     @Update
-    suspend fun updateSaga(sagaData: SagaData)
+    suspend fun updateSaga(saga: Saga)
 
     @Delete
-    suspend fun deleteSagaData(sagaData: SagaData)
+    suspend fun deleteSagaData(saga: Saga)
 
     @Query("DELETE FROM sagas WHERE id = :sagaId")
     suspend fun deleteSagaData(sagaId: String)

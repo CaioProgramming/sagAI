@@ -12,6 +12,7 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.network.FreePikApiService
+import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
@@ -77,6 +78,12 @@ object AppModule {
     fun bindsFileHelper(
         @ApplicationContext context: Context,
     ) = FileHelper(context)
+
+    @Provides
+    @Singleton
+    fun bindsFileCacheService(
+        @ApplicationContext context: Context,
+    ) = FileCacheService(context)
 
     @Provides
     @Singleton

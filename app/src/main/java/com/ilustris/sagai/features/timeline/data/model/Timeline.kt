@@ -7,14 +7,14 @@ import androidx.room.PrimaryKey
 import com.google.firebase.ai.type.Schema
 import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import java.util.Calendar
 
 @Entity(
     tableName = "timelines",
     foreignKeys = [
         ForeignKey(
-            entity = SagaData::class,
+            entity = Saga::class,
             parentColumns = ["id"],
             childColumns = ["sagaId"],
             onDelete = ForeignKey.Companion.CASCADE,
