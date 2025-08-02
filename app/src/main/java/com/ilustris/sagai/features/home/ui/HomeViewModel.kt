@@ -31,7 +31,7 @@ class HomeViewModel
                         saga.copy(messages = saga.messages.sortedByDescending { m -> m.message.timestamp })
                     }.sortedByDescending { saga ->
                         saga.messages
-                            .lastOrNull()
+                            .firstOrNull()
                             ?.message
                             ?.timestamp ?: 0
                     }

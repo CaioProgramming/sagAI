@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -49,12 +50,12 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.saturate
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.rememberHazeState
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -62,9 +63,9 @@ import kotlin.time.Duration.Companion.seconds
 fun ChatBubble(
     messageContent: MessageContent,
     content: SagaContent,
-    hazeState: HazeState = rememberHazeState(),
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
+    scope: LazyItemScope,
     openCharacters: (Character?) -> Unit = {},
 ) {
     val message = messageContent.message
@@ -103,6 +104,7 @@ fun ChatBubble(
             ConstraintLayout(
                 modifier =
                     Modifier
+                        .padding(8.dp)
                         .fillMaxWidth()
                         .animateContentSize(),
             ) {
@@ -163,7 +165,6 @@ fun ChatBubble(
 
                 Box(
                     Modifier
-                        .padding(4.dp)
                         .constrainAs(characterAvatar) {
                             bottom.linkTo(messageText.bottom)
                             if (isUser) {
@@ -171,7 +172,8 @@ fun ChatBubble(
                             } else {
                                 start.linkTo(parent.start)
                             }
-                        }.background(
+                        }.padding(8.dp)
+                        .background(
                             genre.color.copy(alpha = if (messageContent.character == null) .4f else 0f),
                             CircleShape,
                         ).clip(CircleShape)
@@ -181,8 +183,9 @@ fun ChatBubble(
                         CharacterAvatar(
                             it,
                             genre = genre,
+                            borderSize = 2.dp,
                             softFocusRadius = 0.03f,
-                            grainRadius = 0.01f,
+                            grainRadius = 0.05f,
                             modifier =
                                 Modifier
                                     .fillMaxSize()
@@ -196,7 +199,7 @@ fun ChatBubble(
                     message.timestamp.formatHours(),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .4f),
+                            color = MaterialTheme.colorScheme.onBackground,
                         ),
                     modifier =
                         Modifier.constrainAs(messageTime) {
@@ -227,7 +230,7 @@ fun ChatBubble(
                     messageContent.character?.let {
                         CharacterAvatar(
                             it,
-                            borderSize = 1.dp,
+                            borderSize = 2.dp,
                             softFocusRadius = 0.03f,
                             grainRadius = 0.01f,
                             genre = genre,
@@ -275,6 +278,7 @@ fun ChatBubble(
         SenderType.ACTION -> {
             Box(
                 Modifier
+                    .padding(16.dp)
                     .fillMaxWidth(),
             ) {
                 Column(
@@ -287,7 +291,7 @@ fun ChatBubble(
                     messageContent.character?.let {
                         CharacterAvatar(
                             it,
-                            borderSize = 1.dp,
+                            borderSize = 2.dp,
                             softFocusRadius = 0.03f,
                             grainRadius = 0.01f,
                             genre = genre,
@@ -311,8 +315,10 @@ fun ChatBubble(
                         modifier =
                             Modifier
                                 .align(Alignment.CenterHorizontally)
-                                .background(Color.Black)
-                                .padding(16.dp),
+                                .background(
+                                    Color.Black,
+                                    shape = RoundedCornerShape(genre.cornerSize()),
+                                ).padding(16.dp),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontStyle = FontStyle.Italic,
@@ -327,31 +333,33 @@ fun ChatBubble(
         }
 
         SenderType.NARRATOR -> {
-            TypewriterText(
-                text = message.text,
-                isAnimated = isAnimated,
-                duration = duration,
-                genre = genre,
-                mainCharacter = mainCharacter,
-                characters = characters,
-                wiki = wiki,
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
-                            shape = RoundedCornerShape(genre.cornerSize()),
-                        ).padding(8.dp)
-                        .fillMaxWidth(),
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontStyle = FontStyle.Italic,
-                        textAlign = TextAlign.Justify,
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    ),
-                onTextClick = { },
-            )
+            Column {
+                TypewriterText(
+                    text = message.text,
+                    isAnimated = isAnimated,
+                    duration = duration,
+                    genre = genre,
+                    mainCharacter = mainCharacter,
+                    characters = characters,
+                    wiki = wiki,
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.background.copy(
+                                    alpha = .7f,
+                                ),
+                            ).padding(16.dp)
+                            .fillMaxWidth(),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            textAlign = TextAlign.Justify,
+                            fontFamily = genre.bodyFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                        ),
+                    onTextClick = { },
+                )
+            }
         }
 
         SenderType.NEW_CHAPTER -> {
@@ -369,15 +377,10 @@ fun ChatBubble(
                 AnimatedVisibility(messageContent.chapter != null) {
                     messageContent.chapter?.let {
                         ChapterContentView(
-                            genre,
                             it,
-                            mainCharacter,
-                            characters,
-                            wiki,
-                            MaterialTheme.colorScheme.onBackground,
-                            FontStyle.Normal,
-                            isAnimated,
-                            openCharacters = { },
+                            content = content,
+                            openCharacters = {
+                            },
                         )
                     }
                 }
@@ -405,22 +408,27 @@ fun ChatBubble(
 
         SenderType.NEW_ACT ->
             messageContent.act?.let {
-                Text(
-                    messageContent.message.text,
-                    style =
-                        MaterialTheme.typography.titleSmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            brush = genre.gradient(),
-                            fontStyle = FontStyle.Italic,
-                        ),
-                    modifier = Modifier.padding(vertical = 4.dp),
-                )
-                ActComponent(
-                    it,
-                    content.acts.indexOf(it) + 1,
-                    content,
-                    modifier = Modifier.wrapContentHeight().fillMaxWidth(),
-                )
+                with(scope) {
+                    Column(
+                        Modifier
+                            .fillParentMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Spacer(Modifier.fillMaxWidth().height(50.dp).background(fadeGradientBottom()))
+                        ActComponent(
+                            it,
+                            content.acts.indexOf(it) + 1,
+                            content,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .align(Alignment.CenterHorizontally),
+                        )
+                        Spacer(Modifier.fillMaxWidth().height(50.dp).background(fadeGradientTop()))
+                    }
+                }
             }
     }
 }
@@ -460,15 +468,17 @@ fun ChatBubblePreview() {
                                     sagaId = 0,
                                 ),
                             ),
-                        SagaContent(
-                            data =
-                                Saga(
-                                    title = "Test",
-                                    description = "Test",
-                                    genre = genre,
-                                ),
-                            mainCharacter = null,
-                        ),
+                        scope = this,
+                        content =
+                            SagaContent(
+                                data =
+                                    Saga(
+                                        title = "Test",
+                                        description = "Test",
+                                        genre = genre,
+                                    ),
+                                mainCharacter = null,
+                            ),
                     )
                 }
             }

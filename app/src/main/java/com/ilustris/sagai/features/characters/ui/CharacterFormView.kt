@@ -843,10 +843,12 @@ fun SimpleCharacterForm(
                             1.dp,
                             genre.gradient(),
                             RoundedCornerShape(genre.cornerSize()),
-                        ).background(
+                        )
+                        .background(
                             genre.color,
                             RoundedCornerShape(genre.cornerSize()),
-                        ).fillMaxWidth(),
+                        )
+                        .fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.save_saga)) // Using "Save" as a general create/save action
             }

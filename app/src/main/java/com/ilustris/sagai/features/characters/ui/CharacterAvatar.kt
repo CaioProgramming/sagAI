@@ -54,8 +54,8 @@ fun CharacterAvatar(
                 borderSize,
                 borderColor ?: characterColor,
                 CircleShape,
-            ).padding(innerPadding)
-            .clip(CircleShape)
+            ).clip(CircleShape)
+            .padding(innerPadding)
             .background(
                 characterColor,
                 CircleShape,
@@ -70,6 +70,7 @@ fun CharacterAvatar(
             contentScale = ContentScale.Crop,
             modifier =
                 Modifier
+                    .clip(CircleShape)
                     .fillMaxSize()
                     .background(characterColor, CircleShape)
                     .effectForGenre(genre, focusRadius = softFocusRadius, customGrain = grainRadius),

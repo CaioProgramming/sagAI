@@ -15,7 +15,8 @@ interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
     val contentUpdateMessages: MutableSharedFlow<Message>
     val endMessage: MutableSharedFlow<String?>
-    val ambientMusicFile: StateFlow<File?> // New property for the cached music file
+    val ambientMusicFile: StateFlow<File?>
+    val narrativeProcessingUiState: StateFlow<Boolean>
 
     suspend fun loadSaga(sagaId: String)
 

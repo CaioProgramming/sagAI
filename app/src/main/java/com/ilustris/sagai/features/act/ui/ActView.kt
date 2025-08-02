@@ -2,15 +2,17 @@ package com.ilustris.sagai.features.act.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,18 +23,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 private val DEFAULT_DELAY = 1.seconds
 
@@ -68,23 +72,23 @@ fun ActComponent(
     Column(
         modifier =
             modifier
-                .background(MaterialTheme.colorScheme.background)
                 .padding(16.dp)
-                .animateContentSize(),
+                .animateContentSize()
+                .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        AnimatedVisibility(
-            visible = countVisible,
-            enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 200)),
-            exit = fadeOut(animationSpec = tween(durationMillis = 500)),
-        ) {
-            Text(
-                actCount.toRoman(),
-                style = MaterialTheme.typography.labelMedium,
-                textAlign = TextAlign.Center,
-            )
-        }
+        val countAnimation by animateFloatAsState(
+            targetValue = if (countVisible) 1f else 0f,
+            animationSpec = tween(1.seconds.toInt(DurationUnit.MILLISECONDS)),
+            label = "Count Animation",
+        )
+        Text(
+            actCount.toRoman(),
+            style = MaterialTheme.typography.labelMedium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.alpha(countAnimation),
+        )
 
         AnimatedVisibility(
             visible = titleVisible,
@@ -96,33 +100,32 @@ fun ActComponent(
                 style =
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = content.data.genre.headerFont(),
-                        brush = content.data.genre.gradient(),
+                        brush = content.data.genre.gradient(true),
                     ),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
         }
 
-        AnimatedVisibility(
-            visible = contentVisible,
-            enter = fadeIn(animationSpec = tween(durationMillis = 500, delayMillis = 400)),
-            exit = fadeOut(animationSpec = tween(durationMillis = 500)),
-            modifier = Modifier.padding(vertical = 8.dp),
-        ) {
-            Text(
-                buildWikiAndCharactersAnnotation(
-                    act.content,
-                    content.data.genre,
-                    content.mainCharacter,
-                    content.characters,
-                    content.wikis,
-                ),
-                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = content.data.genre.bodyFont()),
-                textAlign = TextAlign.Center,
+        if (contentVisible) {
+            TypewriterText(
+                act.content,
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = content.data.genre.bodyFont(),
+                        textAlign = TextAlign.Justify,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    ),
+                duration = 10.seconds,
+                isAnimated = true,
+                genre = content.data.genre,
+                mainCharacter = content.mainCharacter,
+                characters = content.characters,
+                wiki = content.wikis,
+                modifier = Modifier.padding(bottom = 16.dp),
             )
         }
 
-        Spacer(Modifier.height(50.dp))
     }
 }
 

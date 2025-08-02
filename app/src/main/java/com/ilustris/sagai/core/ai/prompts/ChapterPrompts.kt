@@ -89,44 +89,31 @@ object ChapterPrompts {
         """.trimIndent()
 
     fun coverDescription(
-        data: Saga,
+        content: SagaContent,
         chapter: Chapter,
         characters: List<Character>,
     ): String =
         """
-        Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Chapter Covers** for the saga "${data.title}" (Genre: ${data.genre.title}).
-You will receive a chapter's title, its detailed summary, and a list of main characters involved.
-Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
-This description will be directly used as a part of a larger prompt for an AI image generation model.
+        Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Chapter Covers** for the saga "${content.data.title}" (Genre: ${content.data.genre.title}).
+        You will receive a chapter's title, its detailed summary, and a list of main characters involved.
+        Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
+        This description will be directly used as a part of a larger prompt for an AI image generation model.
+        
+        **Crucially, this description MUST be formulated to be compatible with a 'Chapter Cover' framing,
+        conveying the essence and mood of the chapter in a single, impactful image.
+        Adhere strictly to the provided 'Story Theme' (${content.data.genre.title}).**
 
-**Crucially, this description MUST be formulated to be compatible with a 'Chapter Cover' framing,
-conveying the essence and mood of the chapter in a single, impactful image.
-Adhere strictly to the provided 'Story Theme' (${data.genre.title}).**
 
-**Chapter Context:**
+        
+        **Chapter Context:**
+        
+        1.  **Chapter Title:** ${chapter.title}
+        2.  **Chapter Summary/Description: ${chapter.overview}
+        3.  **Main Characters Involved:** [ ${characters.formatToJsonArray()} ]
+            
+        **Guidelines for Conversion and Expansion:**
 
-1.  **Chapter Title:** ${chapter.title}
-2.  **Chapter Summary/Description: ${chapter.overview}
-3.  **Main Characters Involved:** [ ${characters.formatToJsonArray()} ]
+        ${GenrePrompts.chapterCoverGuideline(content.data.genre)}    
 
-**Guidelines for Conversion and Expansion:**
-
-1.  **Translate Accurately:** Translate all Portuguese values from the input fields into precise English.
-2.  **Infer Visuals from Summary:** **This is critical.** From the `Chapter Summary/Description`, infer and elaborate on:
-    * **Primary Setting/Environment:** Describe the main location(s) with vivid detail (e.g., "dense, ancient forest with gnarled trees and ethereal mist," "swampy terrain with eerie bioluminescent flora," "crumbling stone altar overgrown with vines").
-    * **Dominant Mood/Atmosphere & Lighting Theme:** Translate the chapter's tone into visual cues, explicitly incorporating a **dramatic red and black color palette with high contrast lighting.** (e.g., "ominous and mysterious, bathed in a deep red glow with stark shadows," "tense and adventurous, illuminated by crimson light," "peaceful yet ancient, with unsettling hints of dark red light").
-    * **Key Actions/Moments:** Identify the most visually impactful actions or climactic moments described and suggest how they could be represented (e.g., "Mila navigating through murky water, silhouetted against a crimson sky," "a standoff with the guardian, bathed in a blood-red spotlight," "light emanating from an ancient artifact, casting long, dark red shadows").
-    * **Important Objects/Elements:** Include any significant items, creatures, or symbols mentioned that would enhance the cover's narrative (e.g., "glowing elven artifact pulsing with dark red energy," "shadowy figures among the trees illuminated by a sinister red backlight," "ancient runes on the altar glowing with an infernal red hue").
-3.  **Integrate Main Characters (Central Focus):** If characters are listed, integrate them visually into the scene. **The main character(s) MUST be prominently in focus and centrally positioned, even in wide shots, drawing the viewer's eye. Their appearance (if previously established) and their role/action in the chapter should be powerfully displayed.** Use terms to emphasize their presence.
-4.  **Composition for Cover/Banner (Dramatic & Wide):** Formulate the prompt to suggest a **dynamic, wide-angle or cinematic composition, suitable for a book cover or poster. The scene should be visually striking with a powerful narrative.** Think of elements that draw the eye, with the main character(s) as the primary focal point.
-    * **Suggested terms to use:** "wide shot," "cinematic perspective," "epic scale," "dynamic composition," "foreground, midground, background elements," "strong visual narrative," "suitable for title overlay at the top/bottom," **"dramatic red and black color scheme," "intense crimson lighting," "deep, contrasting shadows."**
-5.  **Thematic Consistency (${data.genre.title}):** Ensure all generated visual descriptions align with the ${data.genre} genre of "${data.title}".
-6.  **Art Style Consistency:** Maintain the specified artistic style: ${GenrePrompts.artStyle(data.genre)}
-7.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.
-
-**Example of Expected English Text Output (single paragraph, ready for image model):**
-
-"A wide shot, classical oil painting of a lone figure, Mila, prominently positioned and in clear focus, navigating a treacherous, mist-shrouded ancient forest. Gnarled, moss-covered trees loom overhead, their branches forming eerie silhouettes against a crimson sky. A faint, unsettling bioluminescent glow, tinged with red, emanates from hidden flora within a murky swamp in the foreground. The air is thick with a sense of ancient mystery and subtle danger, all bathed in a dramatic red and black color scheme. Mila, wearing practical mercenary gear, moves cautiously, her silhouette powerfully defined against the intense red lighting, hinting at determination and resilience. In the midground, faint, glowing runes, pulsing with an infernal red hue, are visible on crumbling stone ruins partially consumed by vines, hinting at an elven altar. Strong chiaroscuro lighting emphasizes the depths of the forest, with pockets of dramatic crimson light cutting through the canopy, creating a tense, adventurous atmosphere. Rich impasto texture and visible brushstrokes. Harmonious colors, authentic painterly grain. No borders, no text, no words, no typography, no letters, no UI elements."
-
-"""
+        """.trimIndent()
 }

@@ -8,12 +8,10 @@ import com.ilustris.sagai.features.home.data.model.Saga
 object ImagePrompts {
     fun wallpaperGeneration(
         saga: Saga,
-        mainCharacter: Character,
         description: String,
     ) = GenrePrompts
         .iconPrompt(
             genre = saga.genre,
-            mainCharacter = mainCharacter,
             description = description,
         ).trimIndent()
 
@@ -38,6 +36,6 @@ object ImagePrompts {
         ${CharacterRules.IMAGE_CRITICAL_RULE}
         $description
         ${character.details.race} character, realistic ${character.details.race} features.
-
+        --ar 3:2
         """.trimIndent()
 }

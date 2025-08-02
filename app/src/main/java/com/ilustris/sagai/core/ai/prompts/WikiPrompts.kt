@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.data.model.WikiType
 
 object WikiPrompts {
     fun generateWiki(
@@ -34,18 +35,18 @@ object WikiPrompts {
         ]
         // **REMINDER:** FOR 'FACTIONS' TYPE, ONLY INCLUDE GROUPS OR ORGANIZATIONS, NOT SINGLE INDIVIDUALS.
         // **REMINDER:** WRITE SHORT TITLES.
+        // **IMPORTANT:** TYPE FIELD MUST BE A STRING WITH ONE OF THIS OPTIONS: ${WikiType.entries.joinToString { it.name }}.
         // - For 'EVENT' type entries, only include significant, world-building events (e.g., city festivals, major incidents affecting the public, a new city-wide policy).
         DO NOT include specific character actions (e.g., "Julie sabotaged the server") or direct plot progression points that are already detailed in the timeline.
         
         **RECENT STORY EVENTS FOR WIKI EXTRACTION:**
-        // This is a list of the most recent events that occurred in the story.
+        // This is the most recent event that occurred in the story.
         // Extract all relevant NEW entities (locations, items, technologies, organizations, plot points, concepts, events)
         or significant UPDATES to existing entities from these events.
         // **CRITICAL:** DO NOT EXTRACT OR INCLUDE ANY INDIVIDUAL CHARACTERS IN THE WIKI OUTPUT.
         [ ${events.formatToJsonArray()} ]
         **FINAL AND CRITICAL RULE:** **DO NOT GENERATE WIKI ENTRIES FOR INDIVIDUAL CHARACTERS.
         Ensure 'FACTION' type is used ONLY for groups or ILLEGAL organizations.**
-
         """
 
     fun wikiContent(wiki: List<Wiki>) =

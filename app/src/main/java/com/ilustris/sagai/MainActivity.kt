@@ -9,8 +9,12 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
+// import androidx.compose.animation.slideInVertically // No longer used after removing loading screen
+// import androidx.compose.animation.slideOutVertically // No longer used after removing loading screen
+// import androidx.compose.animation.with // No longer used after removing loading screen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,7 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3Api // Already present
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,7 +37,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment // Used in TopAppBar
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
@@ -50,12 +54,13 @@ import com.ilustris.sagai.ui.navigation.findRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 
+@OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
-        printFirebaseInstallationAuthToken() // Call the function to print the token
+        printFirebaseInstallationAuthToken()
         enableEdgeToEdge()
         setContent {
             SagAITheme {
@@ -145,7 +150,6 @@ class MainActivity : ComponentActivity() {
                     Log.d("FirebaseInstallations", "COPY THIS TOKEN (FID Token) ->")
                     Log.d("FirebaseInstallations", "$token")
                     Log.d("FirebaseInstallations", "<- END OF TOKEN")
-                    // Copy this token and add it in Firebase Remote Config -> Test on device
                 } else {
                     Log.e("FirebaseInstallations", "Failed to get Installation Auth Token", task.exception)
                 }

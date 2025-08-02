@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
@@ -105,7 +107,7 @@ fun CharactersGalleryContent(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(8.dp),
     ) {
-        items(saga.characters, key = { character -> character.id }) { character ->
+        items(sortCharactersByMessageCount(saga.characters, saga.messages), key = { character -> character.id }) { character ->
             CharacterYearbookItem(
                 character = character,
                 character.id == saga.mainCharacter?.id,
@@ -310,6 +312,7 @@ fun CharacterHorizontalView(
     borderSize: Dp = 2.dp,
     borderColor: Color? = null,
     imageSize: Dp = 50.dp,
+    isLast: Boolean = false,
 ) {
     Column(
         modifier =
@@ -347,12 +350,15 @@ fun CharacterHorizontalView(
             )
         }
 
-        Box(
-            Modifier
-                .padding(4.dp)
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .05f)),
-        )
+        if (!isLast) {
+            HorizontalDivider(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
+            )
+        }
     }
 }

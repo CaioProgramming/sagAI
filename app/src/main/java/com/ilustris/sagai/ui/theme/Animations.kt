@@ -1,11 +1,11 @@
 package com.ilustris.sagai.ui.theme
 
-import android.util.Log
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,7 +68,6 @@ fun TypewriterText(
     val currentText = if (isAnimated) text.substring(0, charIndex) else text
 
     LaunchedEffect(charIndex) {
-        Log.d("TypeWritter", "TypewriterText: updating text")
         onTextUpdate(text.substring(0, charIndex))
     }
 
@@ -103,6 +102,51 @@ fun TypewriterText(
     )
 }
 
+
+@Composable
+fun SimpleTypewriterText(
+    text: String,
+    style: TextStyle = TextStyle.Default,
+    modifier: Modifier = Modifier,
+    duration: Duration = 3.seconds,
+    easing: Easing = EaseIn,
+    isAnimated: Boolean = true,
+    onAnimationFinished: () -> Unit = { },
+    onTextUpdate: (String) -> Unit = { },
+) {
+    var textTarget by remember { mutableIntStateOf(0) }
+    val charIndex by animateIntAsState(
+        targetValue = textTarget,
+        animationSpec =
+            tween(
+                duration.toInt(DurationUnit.MILLISECONDS),
+                easing = easing,
+            ),
+        finishedListener = { onAnimationFinished() },
+    )
+
+    LaunchedEffect(Unit) {
+        if (textTarget == 0 && isAnimated) {
+            textTarget = text.length
+        } else {
+            textTarget = text.length
+            onTextUpdate(text)
+        }
+    }
+    val currentText = if (isAnimated) text.substring(0, charIndex) else text
+
+    LaunchedEffect(charIndex) {
+        onTextUpdate(text.substring(0, charIndex))
+    }
+
+
+    Text(
+        text = currentText,
+        style = style,
+        modifier = modifier,
+    )
+}
+
 @Composable
 fun Modifier.zoomAnimation(): Modifier {
     val infiniteTransition = rememberInfiniteTransition(label = "infinite zoom")
@@ -122,8 +166,7 @@ fun Modifier.zoomAnimation(): Modifier {
             scaleX = scale,
             scaleY = scale,
             transformOrigin = TransformOrigin.Center,
-        )
-        .clipToBounds()
+        ).clipToBounds()
 }
 
 @Preview(showBackground = true)
@@ -134,9 +177,10 @@ fun TypewriterTextPreview() {
         text = text,
         duration = 2.seconds,
         easing = EaseInBounce,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
         characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f", details = Details())),
         wiki =
             listOf(

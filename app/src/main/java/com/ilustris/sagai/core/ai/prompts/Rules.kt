@@ -20,7 +20,9 @@ object ChatRules {
 
         **LOWEST PRIORITY (NEVER GENERATE THESE):**
         * **USER, THOUGHT, ACTION:** These are exclusively for player input. You MUST NEVER generate these.
-        * **NEW_CHAPTER, NEW_CHARACTER, NEW_ACT:** These types are EXCLUSIVELY for the application's internal use for significant transitions. You CANNOT and MUST NOT generate these senderTypes."""
+        * **NEW_CHAPTER, NEW_CHARACTER, NEW_ACT:**
+        These types are EXCLUSIVELY for the application's internal use for significant transitions.
+        You CANNOT and MUST NOT generate these senderTypes."""
 
     fun outputRules(mainCharacter: Character?) =
         """
@@ -43,6 +45,11 @@ object ChatRules {
         **4. STRICT NEW CHARACTER CREATION PROTOCOL:** You MUST ONLY set "shouldCreateCharacter": true and include the "newCharacterInfo" object in your JSON response IF the character you are currently introducing in the narrative has NEVER been mentioned or described before IN THE ENTIRE CONVERSATION HISTORY and is NOT present in the 'CURRENT SAGA CAST' list. If a character is already in 'CURRENT SAGA CAST' or has been described in previous 'NARRATOR' turns, you MUST NOT use "shouldCreateCharacter": true for them again; instead, focus on their dialogue or actions.
         * **UNIQUE NAMES:** When a new character truly needs to be created, you MUST invent a unique, specific, and fitting name based on the 'NAMING & CREATIVITY DIRECTIVE'. DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar for the character's name. The 'newCharacterInfo' object should ONLY contain 'name', 'gender', and 'briefDescription'.
 
+        **5. NEVER GENERATE VALUES FOR THE FOLLOWING FIELDS:**
+        ID, TIMESTAMP, SAGAID
+        USE 0 AS THEIR DEFAULT VALUES. 
+         ** FOR THE FIELDS**:
+         CHAPTERID, CHARACTERID, ACTID RETURN NULL
         """
 }
 

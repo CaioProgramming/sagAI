@@ -49,6 +49,7 @@ import com.ilustris.sagai.features.characters.data.model.Clothing
 import com.ilustris.sagai.features.characters.data.model.Details // Ensure Details is imported
 import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.characters.ui.CharacterForm
+import com.ilustris.sagai.features.characters.ui.CharacterHudForm
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -96,9 +97,10 @@ enum class NewSagaPages(
         R.string.saga_character_description,
         R.string.saga_character_description_subtitle,
         content = { onSendData, data ->
-            CharacterForm(sagaForm = data as SagaForm) { character ->
+            val form = data as SagaForm
+            CharacterHudForm(character = form.character, form.genre , onCharacterChange = { character ->
                 onSendData(character)
-            }
+            })
         },
     ),
 }
@@ -403,7 +405,10 @@ fun CharacterFormPreview() {
         )
 
     SagAIScaffold {
-        CharacterForm(sagaForm = sampleSagaForm) { updatedCharacter ->
+        CharacterHudForm(
+            sampleSagaForm.character,
+            sampleSagaForm.genre,
+        ) { updatedCharacter ->
             println(
                 "Character updated in preview: ${updatedCharacter.name}, Gender: ${updatedCharacter.details.gender}, Race: ${updatedCharacter.details.race}",
             )

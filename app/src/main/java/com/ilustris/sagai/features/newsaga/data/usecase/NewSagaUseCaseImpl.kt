@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.newsaga.data.usecase
 
 import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.core.ai.CharacterFraming
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
@@ -29,6 +29,7 @@ class NewSagaUseCaseImpl
         private val imageGenClient: ImagenClient,
         private val sagaRepository: SagaRepository,
         private val characterUseCase: CharacterUseCase,
+        private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
     ) : NewSagaUseCase {
         override suspend fun saveSaga(
@@ -40,7 +41,6 @@ class NewSagaUseCaseImpl
                     sagaRepository.saveChat(
                         sagaData.copy(
                             id = 0,
-                            createdAt = Calendar.getInstance().timeInMillis,
                             mainCharacterId = null,
                         ),
                     )
@@ -82,36 +82,30 @@ class NewSagaUseCaseImpl
             character: Character,
         ): RequestResult<Exception, Saga> =
             try {
-                val characterGenPrompts =
-                    characterUseCase
-                        .generateCharacterPrompt(
-                            character = character,
-                            guidelines =
-                                CharacterPrompts.descriptionTranslationPrompt(
-                                    character,
-                                    CharacterFraming.PORTRAIT,
-                                    sagaForm.genre,
-                                ),
-                            sagaForm.genre,
-                        ).success.value
-
-                val prompt =
+                val metaPromptCover =
+                    gemmaClient.generate<String>(
+                        SagaPrompts.iconDescription(
+                            sagaForm,
+                            character,
+                        ),
+                        requireTranslation = false,
+                    )
+                val sagaIconPrompt =
                     generateSagaIconPrompt(
                         saga = sagaForm,
                         mainCharacter = character,
-                        description = characterGenPrompts,
+                        description = metaPromptCover!!,
                     )
 
                 characterUseCase.generateCharacterImage(
                     character = character,
-                    description = prompt,
                     saga = sagaForm,
                 )
 
                 val file =
                     fileHelper.saveFile(
                         fileName = sagaForm.title,
-                        data = imageGenClient.generateImage(prompt)!!,
+                        data = imageGenClient.generateImage(sagaIconPrompt)!!,
                         path = "${sagaForm.id}",
                     )
 
@@ -128,7 +122,6 @@ class NewSagaUseCaseImpl
             description: String,
         ) = ImagePrompts.wallpaperGeneration(
             saga,
-            mainCharacter,
             description,
         )
 

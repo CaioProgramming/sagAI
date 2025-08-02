@@ -10,22 +10,3 @@ data class SagaForm(
     val genre: Genre = Genre.entries.first(),
     val character: Character = Character(details = Details()),
 )
-
-fun Genre.colorPalette() =
-    when (this) {
-        Genre.FANTASY ->
-            listOf(
-                MaterialColor.RedA200,
-                MaterialColor.Red900,
-                MaterialColor.DeepOrange600,
-                MaterialColor.Red500,
-            )
-        Genre.SCI_FI ->
-            listOf(
-                MaterialColor.DeepPurpleA400,
-                MaterialColor.IndigoA700,
-                MaterialColor.DeepPurple500,
-                MaterialColor.DeepPurple400,
-                MaterialColor.Indigo500,
-            )
-    }

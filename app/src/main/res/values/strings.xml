@@ -64,11 +64,11 @@
     <string name="character_form_placeholder_occupation">Occupation</string>
     <string name="character_form_label_style_vibe">Style/Vibe</string>
     <string name="character_form_placeholder_style_vibe">Style/Vibe</string>
-    <string name="character_form_label_weapons_gear">Weapons &amp; Gear (optional)</string>
+    <string name="character_form_label_weapons_gear">Weapons &amp; Gear</string>
     <string name="character_form_placeholder_weapons_gear">Weapons &amp; Gear</string>
 
     <!-- CharacterForm: Appearance Details Section -->
-    <string name="character_form_title_appearance_details">Appearance Details</string>
+    <string name="character_form_title_appearance_details">Wearing Details</string>
     <string name="character_form_placeholder_appearance_details">Overall build, height, skin, hair, distinct physical traits…</string>
 
     <!-- CharacterForm: Facial Features Section -->
@@ -93,7 +93,7 @@
     <string name="character_form_placeholder_race">e.g., Human, Elf, Dwarf, Cyborg, KTharr</string>
     <string name="character_form_label_hair">Hair Description</string>
     <string name="character_form_placeholder_hair">e.g., Long, flowing, braided, bald, bio-luminescent tendrils</string>
-    <string name="character_form_label_eyes">Eye Color &amp; Details</string>
+    <string name="character_form_label_eyes">Eye Details</string>
     <string name="character_form_placeholder_eyes">e.g., Piercing blue, heterochromia, glowing red, multifaceted</string>
     <string name="character_form_label_mouth">Mouth &amp; Lips</string>
     <string name="character_form_placeholder_mouth">e.g., Thin-lipped, full, often smiling, fanged</string>
@@ -105,5 +105,26 @@
     <string name="character_form_placeholder_clothing_accessories">e.g., Hooded cloak, amulet, utility belt, breathing mask</string>
     <string name="character_form_label_clothing_footwear">Footwear</string>
     <string name="character_form_placeholder_clothing_footwear">e.g., Sturdy boots, sandals, barefoot, grav-boots</string>
+
+    <string-array name="loading_quotes">
+        <item>Forging ancient runes...</item>
+        <item>Consulting with wise dragons...</item>
+        <item>Gathering stardust...</item>
+        <item>Decoding ancient scrolls...</item>
+        <item>Warming up the AI\'s imagination...</item>
+        <item>Plotting epic adventures...</item>
+    </string-array>
+
+    <string-array name="loading_quotes_fantasy">
+        <item>Sharpening legendary blades...</item>
+        <item>Brewing potent elixirs...</item>
+        <item>Summoning mythical beasts...</item>
+    </string-array>
+
+    <string-array name="loading_quotes_scifi">
+        <item>Calibrating warp drives...</item>
+        <item>Engaging cybernetic enhancements...</item>
+        <item>Navigating asteroid fields...</item>
+    </string-array>
 
 </resources>

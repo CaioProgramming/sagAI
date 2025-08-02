@@ -1,8 +1,10 @@
 package com.ilustris.sagai.features.characters.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,10 +18,12 @@ class CharacterDetailsViewModel
     @Inject
     constructor(
         private val sagaHistoryUseCase: SagaHistoryUseCase,
+        private val characterUseCase: CharacterUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
         val character = MutableStateFlow<Character?>(null)
         val messageCount = MutableStateFlow(0)
+        val isGenerating = MutableStateFlow(false)
 
         fun loadSagaAndCharacter(
             sagaId: String?,
@@ -32,11 +36,29 @@ class CharacterDetailsViewModel
                     saga.value = it
                     character.value = it?.characters?.find { char -> char.id == characterId.toInt() }
                     messageCount.value =
-                        it?.messages?.filter { message ->
-                            message.character?.id == characterId.toInt() ||
-                                message.character?.name.equals(character.value?.name, true)
-                        }?.size ?: 0
+                        it
+                            ?.messages
+                            ?.filter { message ->
+                                message.character?.id == characterId.toInt() ||
+                                    message.character?.name.equals(character.value?.name, true)
+                            }?.size ?: 0
                 }
+            }
+        }
+
+        fun regenerate(
+            sagaContent: SagaContent,
+            selectedCharacter: Character,
+        ) {
+            Log.i(javaClass.simpleName, "regenerate: Regenerating character icon")
+
+            isGenerating.value = true
+            viewModelScope.launch(Dispatchers.IO) {
+                characterUseCase.generateCharacterImage(
+                    selectedCharacter,
+                    sagaContent.data,
+                )
+                isGenerating.value = false
             }
         }
     }

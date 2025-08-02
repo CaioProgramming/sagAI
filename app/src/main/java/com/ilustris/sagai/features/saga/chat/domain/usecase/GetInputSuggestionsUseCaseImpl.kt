@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.domain.usecase
 
+import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SuggestionPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -9,6 +10,8 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
 class GetInputSuggestionsUseCaseImpl
@@ -16,13 +19,14 @@ class GetInputSuggestionsUseCaseImpl
     constructor(
         private val gemmaClient: GemmaClient,
     ) : GetInputSuggestionsUseCase {
+
         override suspend fun invoke(
             chatMessages: List<MessageContent>,
             currentUserCharacter: Character?,
             saga: Saga,
         ): RequestResult<Exception, List<Suggestion>> =
-            // Updated return type
             try {
+
                 val prompt =
                     SuggestionPrompts.generateSuggestionsPrompt(
                         saga = saga,
@@ -30,14 +34,14 @@ class GetInputSuggestionsUseCaseImpl
                         chatHistory = chatMessages,
                     )
 
-                val suggestions =
-                    gemmaClient.generate<List<Suggestion>>(
-                        prompt = prompt,
-                        requireTranslation = true,
-                    )
-
-                suggestions!!.asSuccess()
+                Log.d("GetInputSuggestions", "Sending prompt to GemmaClient for suggestions.")
+                gemmaClient.generate<List<Suggestion>>(prompt)!!.asSuccess()
             } catch (e: Exception) {
+                Log.e(
+                    "GetInputSuggestions",
+                    "Error generating input suggestions: ${e.message}",
+                    e,
+                )
                 e.asError()
             }
     }

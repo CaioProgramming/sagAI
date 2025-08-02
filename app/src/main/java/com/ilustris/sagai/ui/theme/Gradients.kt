@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.theme
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -7,8 +8,15 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -74,6 +82,7 @@ fun gradientAnimation(
     duration: Duration = 3.seconds,
     targetValue: Float = 1000f,
     gradientType: GradientType = GradientType.LINEAR,
+    isAnimating: Boolean = false,
 ): Brush {
     val infiniteTransition = rememberInfiniteTransition(label = "gradientTransition")
     val offsetAnimation =
@@ -90,7 +99,7 @@ fun gradientAnimation(
                 ),
             label = "Gradient Offset Animation",
         )
-    return gradientType.toBrush(colors = colors, offsetAnimationValue = offsetAnimation.value)
+    return gradientType.toBrush(colors = colors, offsetAnimationValue = if (isAnimating) offsetAnimation.value else targetValue)
 }
 
 @Composable
@@ -171,7 +180,6 @@ fun genresGradient(): List<Color> =
         }.flatten()
         .plus(holographicGradient)
 
-
 @Composable
 fun Genre.gradient(
     animated: Boolean = false,
@@ -248,37 +256,87 @@ fun Modifier.fadeMask(
 @Composable
 fun Modifier.reactiveShimmer(
     isPlaying: Boolean,
-    shimmerColors: List<Color> = listOf(
-        Color.White.copy(alpha = 0.0f),
-        Color.White.copy(alpha = 0.3f),
-        Color.White.copy(alpha = 0.0f),
-    ),
+    shimmerColors: List<Color> =
+        listOf(
+            Color.White.copy(alpha = 0.0f),
+            Color.White.copy(alpha = 0.3f),
+            Color.White.copy(alpha = 0.0f),
+        ),
     duration: Duration = 2.seconds,
-    gradientWidthFactor: Float = 0.3f // Percentage of the composable width
 ): Modifier {
-    if (!isPlaying) {
-        return this
+    val infiniteTransition = rememberInfiniteTransition()
+    val offsetAnimation =
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 500f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+        )
+
+    val brush =
+        Brush.linearGradient(
+            shimmerColors.plus(Color.Transparent),
+            start = if (isPlaying) Offset(offsetAnimation.value, offsetAnimation.value) else Offset.Zero,
+            end = if (isPlaying) Offset(x = offsetAnimation.value * 5, y = offsetAnimation.value * 3) else Offset.Infinite,
+        )
+    return this
+        .graphicsLayer(alpha = 0.99f)
+        .drawWithCache {
+            onDrawWithContent {
+                drawContent()
+                drawRect(brush, blendMode = BlendMode.SrcAtop)
+            }
+        }
+}
+
+/**
+ * Creates and remembers a Brush that animates its gradient colors
+ * by shuffling the provided colorPalette whenever the PagerState's current page changes.
+ *
+ * @param pagerState The PagerState to observe for page changes.
+ * @param colorPalette The list of colors to be used in the gradient. This list itself will be shuffled.
+ * @param animationDurationMillis The duration for the color transition animation.
+ * @param createGradient A lambda to create the Brush from the list of animated colors.
+ *                       Defaults to a vertical gradient.
+ * @return An animated Brush.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+fun rememberAnimatedShuffledGradientBrush(
+    pagerState: PagerState,
+    colorPalette: List<Color>, // The direct palette to be shuffled
+    animationDurationMillis: Int = 1000,
+    createGradient: (List<Color>) -> Brush = { colors -> Brush.verticalGradient(colors) },
+): Brush {
+    // Ensure the palette is not empty to avoid issues
+    val safeColorPalette =
+        remember(colorPalette) {
+            if (colorPalette.isEmpty()) listOf(Color.Transparent, Color.Transparent) else colorPalette
+        }
+
+    var currentGradientColors by remember {
+        mutableStateOf(safeColorPalette)
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "shimmerTransition")
-    val translateAnim = infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f + (gradientWidthFactor * 2), // Ensure gradient sweeps fully across
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "shimmerTranslate"
-    )
+    LaunchedEffect(pagerState.currentPage, safeColorPalette) {
+        // Shuffle the current palette to get a new order
+        currentGradientColors = safeColorPalette.shuffled()
+    }
 
-    return this.drawWithCache {
-        val brush = Brush.horizontalGradient(
-            colors = shimmerColors,
-            startX = size.width * (translateAnim.value - gradientWidthFactor),
-            endX = size.width * translateAnim.value
-        )
-        onDrawBehind { // Changed from onDrawWithContent to onDrawBehind to draw shimmer under content
-            drawRect(brush = brush)
+    val animatedColors =
+        currentGradientColors.mapIndexed { index, targetColor ->
+            animateColorAsState(
+                targetValue = targetColor,
+                animationSpec = tween(durationMillis = animationDurationMillis),
+                label = "gradientColorAnimation_$index",
+            ).value
         }
+
+    // Create the gradient using the provided lambda
+    return remember(animatedColors, createGradient) {
+        createGradient(animatedColors)
     }
 }

@@ -26,9 +26,8 @@ interface CharacterUseCase {
 
     suspend fun generateCharacterImage(
         character: Character,
-        description: String,
         saga: Saga,
-    ): RequestResult<Exception, Character>
+    ): RequestResult<Exception, Pair<Character, String>>
 
     suspend fun generateCharacter(
         sagaContent: SagaContent,

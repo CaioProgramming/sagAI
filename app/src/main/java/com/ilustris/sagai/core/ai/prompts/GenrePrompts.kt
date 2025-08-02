@@ -1,14 +1,11 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.network.body.ColorPreset
 import com.ilustris.sagai.core.network.body.Effects
 import com.ilustris.sagai.core.network.body.FramingPreset
 import com.ilustris.sagai.core.network.body.ImageStyling
 import com.ilustris.sagai.core.network.body.LightningPreset
 import com.ilustris.sagai.core.network.body.StylePreset
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.PortraitPose
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SCI_FI
@@ -30,51 +27,38 @@ object GenrePrompts {
 
             SCI_FI ->
                 """
-                masterpiece retro 80s 90s anime illustration,
+                masterpiece retro 90s anime illustration,
                 classic anime style, distinct cel shading,
                 limited color palette,
-                vintage grainy texture,
                 iconic anime character design,
                 classic anime facial proportions,
                 large,
                 simplified expressive anime eyes
                 with minimal detail (focus on shape and vibrant color, not individual lashes or multiple reflections).
-                dystopian aesthetic, gritty and dark atmosphere,
+                dark cyberpunk aesthetic.
                 """
         }
 
     fun iconPrompt(
         genre: Genre,
-        mainCharacter: Character,
         description: String,
     ) = when (genre) {
         FANTASY -> {
             """
                 ${artStyle(genre)}
-                ${CharacterFraming.PORTRAIT.description} with focus on face with prominent fantasy elements.
-                ${PortraitPose.random().description}
-                **Dramatic lighting, intense red light creating strong highlights and casting deep, pronounced shadows, focusing attention on the character. The background is dimly lit with subtle, dark tones, providing a sense of depth and separation, allowing the character to stand out vividly. The lighting emphasizes the character's form and creates a moody, intense, and atmospheric visual.**
-
                 $description
-                
-                focus on the character's emotional intensity.
                 ** NO BORDERS, FILL THE IMAGE.**
-                --ar 3:2
+                35 mm portrait.
                 """
         }
 
         SCI_FI -> """"
                 ${artStyle(genre)}
-                ${CharacterFraming.PORTRAIT.description} with focus on face with prominent cybernetic implants.
-                ${PortraitPose.random().description}
-                **Dramatic lighting, intense neon purple creating strong highlights and casting deep, pronounced shadows, focusing attention on the character.
-                The lighting emphasizes the character's form and creates a moody, intense, and atmospheric visual.**
-
+                
                 $description
                 
-                focus on the character's emotional intensity.
                 ** NO BORDERS, FILL THE IMAGE.**
-                --ar 3:2
+                35 mm portrait.
                 """
     }.trimIndent()
 
@@ -164,24 +148,6 @@ object GenrePrompts {
                 )
         }
 
-    fun thematicVisuals(genre: Genre) =
-        when (genre) {
-            FANTASY ->
-                """
-                wearing period-appropriate attire (e.g., worn leather, chainmail, simple tunic, flowing robes),
-                adorned with subtle fantasy elements (e.g., elven ear tips, runic tattoos, a magical glow in the eyes),
-                """
-
-            SCI_FI ->
-                """
-                prominent cybernetic implants,
-                intricate details of wires, circuits,
-                and metallic components integrated with skin and bone,
-                subtle neon accents on implants, cybernetic details primarily on cheeks and below,
-                minimal to no cybernetics in hair.
-                """
-        }.trimIndent()
-
     fun nameDirectives(genre: Genre) =
         when (genre) {
             FANTASY ->
@@ -243,4 +209,57 @@ object GenrePrompts {
                 * Maintain an edgy, sometimes detached, perspective.
                 """
         }.trimIndent()
+
+    fun chapterCoverGuideline(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+                1.  **Translate Accurately:** Translate all Portuguese values from the input fields into precise English.
+                2.  **Infer Visuals from Summary:** **This is critical.** From the `Chapter Summary/Description`, infer and elaborate on:
+                    * **Primary Setting/Environment:** Describe the main location(s) with vivid detail (e.g., "dense, ancient forest with gnarled trees and ethereal mist," "swampy terrain with eerie bioluminescent flora," "crumbling stone altar overgrown with vines").
+                    * **Dominant Mood/Atmosphere & Lighting Theme:** Translate the chapter's tone into visual cues, explicitly incorporating a **dramatic red and black color palette with high contrast lighting, emphasizing stark silhouettes.** (e.g., "ominous and mysterious, bathed in a deep red glow with stark black silhouettes," "tense and adventurous, illuminated by crimson light, casting long, dark shadows," "peaceful yet ancient, with unsettling hints of dark red light outlining figures").
+                    * **Key Actions/Moments:** Identify the most visually impactful actions or climactic moments described and suggest how they could be represented (e.g., "Mila navigating through murky water, a dark silhouette against a crimson sky," "a standoff with the guardian, figures reduced to stark black shapes against a blood-red light," "light emanating from an ancient artifact, casting long, dark red shadows that engulf characters").
+                    * **Important Objects/Elements:** Include any significant items, creatures, or symbols mentioned that would enhance the cover's narrative (e.g., "glowing elven artifact pulsing with dark red energy," "shadowy figures among the trees illuminated by a sinister red backlight," "ancient runes on the altar glowing with an infernal red hue").
+                3.  **Integrate Main Characters (Central Focus & Silhouette):** If characters are listed, integrate them visually into the scene. **The main character(s) MUST be prominently in focus and centrally positioned, drawing the viewer's eye, rendered as bold, dark silhouettes against the dramatic lighting. Their appearance (if previously established) and their role/action in the chapter should be powerfully displayed through their form and pose, with minimal internal detail.** Use terms to emphasize their powerful, silhouetted presence.
+                4.  **Composition for Cover/Banner (Dramatic & Wide - Silhouette Focus):** Formulate the prompt to suggest a **dynamic, wide-angle or cinematic composition, suitable for a book cover or poster. The scene should be visually striking with a powerful narrative, dominated by strong silhouettes.** Think of elements that draw the eye, with the main character(s) as the primary focal point, rendered as impactful dark shapes.
+                    * **Suggested terms to use:** "wide shot," "cinematic perspective," "epic scale," "dynamic composition," "foreground, midground, background elements," "strong visual narrative," "suitable for title overlay at the top/bottom," **"dramatic red and black color scheme," "intense crimson lighting," "deep, contrasting shadows," "stark silhouettes," "minimal detail on figures," "graphic novel style," "stylized illustration."**
+                5.  **Thematic Consistency (${genre.title}):** Ensure all generated visual descriptions align with the ${genre.title}.
+                6.  **Art Style Consistency:** Maintain the specified artistic style: **stylized illustration, graphic novel aesthetic, bold shapes, high contrast, minimal internal detail, emphasizing strong silhouettes.**
+                7.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.
+                """
+
+            SCI_FI ->
+                """
+                1.  **Translate Accurately:** Translate all Portuguese values from the input fields into precise English.
+                2.  **Infer Visuals from Summary:** **This is critical.** From the `Chapter Summary/Description`, infer and elaborate on:
+                    * **Primary Setting/Environment:** Describe the background as **a completely plain, solid color field (deep purple or dark blue), with absolutely no environmental details, cityscapes, textures, patterns, or other elements whatsoever.** The setting's mood should be conveyed by lighting and character, not detailed background.
+                    * **Dominant Mood/Atmosphere & Lighting Theme:** Translate the chapter's tone into visual cues, explicitly incorporating a **vibrant purple and neon blue lighting, high contrast, strong rim lighting.** (e.g., "futuristic and intense, bathed in purple and neon blue light with sharp shadows," "mysterious and technological, illuminated by vibrant purple hues, creating stark outlines").
+                    * **Key Actions/Moments:** Identify the most visually impactful actions or climactic moments described and suggest how they could be represented by the character's pose and expression (e.g., "character in a determined stance," "a confrontation suggested by a tense posture," "a technological device held prominently").
+                    * **Important Objects/Elements:** Include any significant items, creatures, or symbols mentioned that would enhance the cover's narrative (e.g., "glowing cybernetic implants," "advanced weaponry with purple energy effects," "holographic displays with blue projections").
+                3.  **Integrate Main Characters (Central Focus & Prominent View):** If characters are listed, integrate them visually into the scene. **The main character(s) MUST be the absolute central and dominant focus, framed tightly (waist-up or full body, but very close), with their face fully visible and expressive. Their appearance (if previously established) and their role/action in the chapter should be powerfully displayed through their pose, expression, and minimal, key props.**
+                4.  **Composition for Cover/Banner (Dynamic, Tight, Manga Style):** Formulate the prompt to suggest a **clean, dynamic, tight-shot composition, directly inspired by minimalist manga volume covers.** The scene should be visually striking, with the central character filling a significant portion of the frame.
+                    * **Suggested terms to use:** "dynamic character posing," "graphic novel aesthetic," "vibrant purple and neon blue color scheme," "high contrast lighting," "strong backlighting," "character prominently centered," "suitable for title overlay at the top/bottom."
+                5.  **Thematic Consistency (${genre.title}):** Ensure all generated visual descriptions align with the ${genre.title} genre".
+                6.  **Art Style Consistency:** Maintain the specified artistic style: **${artStyle(genre)}**
+                7.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.
+                """
+        }.trimIndent()
+
+    fun moodDescription(genre: Genre) =
+        when (genre) {
+            FANTASY ->
+                """
+                   ** Translate the character's mood/situation into visual cues, emphasizing a **dark and moody atmosphere with stark,
+                   dramatic lighting that strongly highlights the central character and key red details.
+                   ** The lighting should create significant contrast and shadows (e.g., "powerful and dramatic, with strong contrasts and selective crimson highlights,"
+                   "mysterious and intense, where red details pierce through deep shadows") 
+                   """
+            SCI_FI ->
+                """
+                Translate the character's mood/situation into visual cues,
+                explicitly incorporating a **limited color palette dominated by artistic shades of deep purple
+                and contrasting highlights of a lighter, almost neon purple.** Emphasize **strong,
+                directional lighting creating dramatic shadows and silhouettes**
+                """
+        }
 }

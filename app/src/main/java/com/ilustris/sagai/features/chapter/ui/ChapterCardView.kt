@@ -47,6 +47,7 @@ import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
+import effectForGenre
 
 @Composable
 fun ChapterCardView(
@@ -85,7 +86,9 @@ fun ChapterCardView(
             AsyncImage(
                 chapter.coverImage,
                 contentDescription = chapter.title,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().effectForGenre(
+                    genre,
+                ),
                 contentScale = ContentScale.Crop,
             )
         }

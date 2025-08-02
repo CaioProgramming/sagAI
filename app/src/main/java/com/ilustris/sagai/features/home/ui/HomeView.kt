@@ -146,12 +146,12 @@ private fun ChatList(
                 Row(
                     modifier =
                         Modifier
-                            .padding(16.dp)
-                            .gradientFill(debugBrush)
-                            .clip(RoundedCornerShape(15.dp))
                             .clickable {
                                 createFakeSaga()
-                            }.fillMaxWidth(),
+                            }.padding(16.dp)
+                            .gradientFill(debugBrush)
+                            .clip(RoundedCornerShape(15.dp))
+                            .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
@@ -256,16 +256,15 @@ fun ChatCard(
         Row(
             modifier =
                 Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(15.dp))
-                    .padding(16.dp)
                     .clickable {
                         if (saga.data.isDebug && isEnabled) {
                             onClick()
                         } else {
                             onClick()
                         }
-                    },
+                    }.fillMaxWidth()
+                    .clip(RoundedCornerShape(15.dp))
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // Avatar
@@ -370,7 +369,7 @@ fun ChatCard(
                     }
                 }
 
-                Row(Modifier.alpha(.5f)) {
+                Row(Modifier.alpha(.5f).padding(vertical = 4.dp)) {
                     if (sagaData.isEnded.not()) {
                         lastMessage?.let {
                             if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
@@ -406,7 +405,6 @@ fun ChatCard(
                                             fontStyle = FontStyle.Italic,
                                         ),
                                     maxLines = 2,
-                                    modifier = Modifier.padding(8.dp),
                                 )
                             }
                         } ?: run {

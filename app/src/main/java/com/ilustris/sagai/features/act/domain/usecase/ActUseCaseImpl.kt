@@ -36,20 +36,23 @@ class ActUseCaseImpl
         override suspend fun generateAct(saga: SagaContent): RequestResult<Exception, Act> =
             try {
                 val titlePrompt = generateActPrompt(saga)
-               textGenClient.generate<Act>(titlePrompt)!!.asSuccess()
+                textGenClient.generate<Act>(titlePrompt)!!.asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }
 
-        private fun generateActPrompt(saga: SagaContent) = ActPrompts.generateAct(saga,
-            getPurpose(saga.acts.size)
-        )
+        private fun generateActPrompt(saga: SagaContent) =
+            ActPrompts.generateAct(
+                saga,
+                getPurpose(saga.acts.size),
+            )
 
-    private fun getPurpose(actCount: Int) = when (actCount) {
-        0 -> ActPurpose.FIRST_ACT_PURPOSE
-        1 -> ActPurpose.SECOND_ACT_PURPOSE
-        else -> ActPurpose.THIRD_ACT_PURPOSE
-    }
+        private fun getPurpose(actCount: Int) =
+            when (actCount) {
+                1 -> ActPurpose.FIRST_ACT_PURPOSE
+                2 -> ActPurpose.SECOND_ACT_PURPOSE
+                else -> ActPurpose.THIRD_ACT_PURPOSE
+            }
 
         override fun getActContent(actId: Int): Flow<ActContent?> = actRepository.getActContent(actId)
     }

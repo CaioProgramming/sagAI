@@ -1,7 +1,10 @@
 package com.ilustris.sagai.core.database
 
 import androidx.room.Database
+import androidx.room.RenameColumn // Ensure this import is present
 import androidx.room.RoomDatabase
+import androidx.room.migration.AutoMigrationSpec
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -17,6 +20,20 @@ import com.ilustris.sagai.features.timeline.data.source.TimelineDao
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.source.WikiDao
 
+// Spec class for renaming chaptersInsight to actsInsight in the Saga table
+@RenameColumn( // Applied directly to the class
+    tableName = "Saga",
+    fromColumnName = "chaptersInsight",
+    toColumnName = "actsInsight",
+)
+class RenameChaptersInsightToActsInsightSpec : AutoMigrationSpec {
+    override fun onPostMigrate(db: SupportSQLiteDatabase) {
+        // This is called after the migration.
+        // You can add verification logic here if needed.
+        super.onPostMigrate(db)
+    }
+}
+
 @Database(
     entities = [
         Saga::class,
@@ -27,7 +44,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Timeline::class,
         Act::class,
     ],
-    version = 31,
+    version = 34,
     exportSchema = true,
 )
 abstract class SagaDatabase : RoomDatabase() {

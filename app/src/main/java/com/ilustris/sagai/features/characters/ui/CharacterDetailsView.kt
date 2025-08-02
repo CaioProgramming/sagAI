@@ -2,9 +2,12 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,15 +24,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
@@ -40,9 +47,13 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -60,6 +71,8 @@ fun CharacterDetailsView(
     val saga by viewModel.saga.collectAsStateWithLifecycle()
     val character by viewModel.character.collectAsStateWithLifecycle()
     val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
+    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+
     LaunchedEffect(saga) {
         if (saga == null) {
             viewModel.loadSagaAndCharacter(sagaId, characterId)
@@ -73,9 +86,7 @@ fun CharacterDetailsView(
                     it,
                     char,
                     messageCount,
-                ) {
-                    navHostController.popBackStack()
-                }
+                )
             }
         } else {
             SparkIcon(
@@ -85,6 +96,7 @@ fun CharacterDetailsView(
             )
         }
     }
+
 }
 
 @Composable
@@ -92,48 +104,76 @@ fun CharacterDetailsContent(
     sagaContent: SagaContent,
     character: Character,
     messageCount: Int,
-    onBack: () -> Unit = {},
+    viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
+    val characterColor = Color(character.hexColor.toColorInt())
+    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     LazyColumn(
         modifier =
             Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        item {
-            val size = if (character.image.isNotEmpty()) 275.dp else 0.dp
-
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(size)
-                    .clipToBounds(),
-            ) {
-                AsyncImage(
-                    character.image,
-                    contentDescription = character.name,
-                    contentScale = ContentScale.Crop,
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .zoomAnimation()
-                            .clipToBounds()
-                            .effectForGenre(genre),
-                )
+        if (character.image.isNotEmpty()) {
+            item {
+                val size = if (character.image.isNotEmpty()) 350.dp else 100.dp
 
                 Box(
                     Modifier
-                        .fillMaxSize()
-                        .background(
-                            fadeGradientBottom(),
-                        ),
+                        .fillMaxWidth()
+                        .height(size)
+                        .clipToBounds(),
+                ) {
+                    AsyncImage(
+                        character.image,
+                        contentDescription = character.name,
+                        contentScale = ContentScale.Crop,
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .zoomAnimation()
+                                .clipToBounds()
+                                .effectForGenre(genre),
+                    )
+
+                    Box(
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .background(
+                                fadeGradientTop(),
+                            ).height(size * .5f)
+                            .fillMaxWidth(),
+                    )
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .fillMaxHeight(.05f)
+                            .background(
+                                fadeGradientBottom(),
+                            ),
+                    )
+                }
+            }
+        } else {
+            item {
+                Image(
+                    painterResource(R.drawable.ic_spark),
+                    null,
+                    Modifier
+                        .clickable {
+                            viewModel.regenerate(
+                                sagaContent,
+                                character
+                            )
+                        }.padding(16.dp)
+                        .size(100.dp)
+                        .gradientFill(characterColor.gradientFade()),
                 )
             }
         }
 
         stickyHeader {
-            val characterColor = Color(character.hexColor.toColorInt())
-
             Text(
                 character.name,
                 textAlign = TextAlign.Center,
@@ -142,7 +182,11 @@ fun CharacterDetailsContent(
                         fontFamily = genre.headerFont(),
                         brush = characterColor.gradientFade(),
                     ),
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(vertical = 24.dp)
+                        .fillMaxWidth(),
             )
         }
 
@@ -203,6 +247,25 @@ fun CharacterDetailsContent(
             )
         }
     }
+
+    if (isGenerating) {
+        Dialog(
+            onDismissRequest = { },
+            properties =
+                DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false,
+                ),
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                SparkLoader(
+                    brush = gradientAnimation(genresGradient(), duration = 2.seconds),
+                    modifier = Modifier.size(100.dp),
+                )
+            }
+        }
+    }
+
 }
 
 @Preview

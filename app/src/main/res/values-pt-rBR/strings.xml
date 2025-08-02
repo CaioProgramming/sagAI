@@ -67,7 +67,7 @@
     <string name="character_form_placeholder_weapons_gear">Armas &amp; Equipamentos</string>
 
     <!-- CharacterForm: Appearance Details Section -->
-    <string name="character_form_title_appearance_details">Detalhes da Aparência</string>
+    <string name="character_form_title_appearance_details">Detalhes de vestimenta</string>
     <string name="character_form_placeholder_appearance_details">Estrutura geral, altura, pele, cabelo, traços físicos distintos…</string>
 
     <!-- CharacterForm: Facial Features Section -->

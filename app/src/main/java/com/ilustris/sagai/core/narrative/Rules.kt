@@ -7,7 +7,7 @@ object UpdateRules {
 
     const val ACT_UPDATE_LIMIT = 3
 
-    const val LORE_UPDATE_LIMIT = 20
+    const val LORE_UPDATE_LIMIT = 10
     const val CHAPTER_UPDATE_LIMIT = 5
 }
 

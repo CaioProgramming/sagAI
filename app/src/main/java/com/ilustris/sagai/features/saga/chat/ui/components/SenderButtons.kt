@@ -51,7 +51,7 @@ fun SenderType.itemOption(
     val isSelected = this == selectedItem
     val backgroundColor by animateColorAsState(
         if (isSelected.not()) MaterialTheme.colorScheme.surfaceContainer else
-            MaterialTheme.colorScheme.surfaceContainer.darker(.1f)
+            MaterialTheme.colorScheme.surfaceContainer.darker(.2f)
     )
 
     this@itemOption.icon()?.let {
@@ -116,7 +116,7 @@ fun SenderType.icon() =
         THOUGHT -> R.drawable.think_icon
         ACTION -> R.drawable.action_icon
         NEW_CHARACTER -> R.drawable.character_icon
-        else -> null
+        else -> R.drawable.ic_spark
     }
 
 @Composable
@@ -127,7 +127,9 @@ fun SenderType.title() =
         THOUGHT -> stringResource(R.string.sender_type_thought_title)
         ACTION -> stringResource(R.string.sender_type_action_title)
         NEW_CHARACTER -> stringResource(R.string.sender_type_new_character_title)
-        else -> emptyString()
+        CHARACTER -> "Personagem"
+        NEW_CHAPTER -> "Novo Capítulo"
+        NEW_ACT -> "Novo Ato"
     }
 
 @Composable

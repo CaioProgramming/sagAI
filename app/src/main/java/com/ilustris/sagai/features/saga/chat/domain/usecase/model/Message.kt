@@ -4,6 +4,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -81,19 +82,49 @@ enum class SenderType {
     ;
 
     companion object {
-        fun filterUserInputTypes() = values().filter { it != USER && it != ACTION && it != THOUGHT }
+        fun filterUserInputTypes() =
+            SenderType.entries.filter {
+                it == USER ||
+                    it == THOUGHT ||
+                    it == ACTION ||
+                    it == NEW_CHARACTER ||
+                    it == NARRATOR
+            }
     }
 }
 
 fun SenderType.isCharacter() = this == SenderType.CHARACTER
+
+fun SenderType.rules() =
+    when (this) {
+        SenderType.ACTION -> emptyString()
+        SenderType.NARRATOR ->
+            """
+        **CRITICAL RULE: The NARRATOR MUST NEVER include direct or indirect dialogue from any character (NPCs or player).
+            Narration should describe actions, environments, and non-verbal reactions only.
+            All character speech must be in a '''CHARACTER''' senderType.**
+        """
+        SenderType.NEW_CHAPTER,
+        SenderType.NEW_ACT,
+        SenderType.NEW_CHARACTER,
+        SenderType.THOUGHT,
+        SenderType.USER,
+        ->
+            """
+        You, as the AI, must NEVER generate a message with this '''Type'''.
+        NEVER USE THIS TYPE, IT WILL BE SEND EXCLUSIVELY LOCALLY ONLYON THE APP.    
+        """
+        SenderType.CHARACTER ->
+            """
+        Use for characters(NPCS) who is already established in the story or listed in '''CURRENT SAGA CAST'''.'
+        """
+    }
 
 fun SenderType.meaning() =
     when (this) {
         SenderType.USER ->
             """
             Represents a message sent by the player.
-            You, as the AI, must NEVER generate a message with this '''Type'''.
-            This type is only for input from the player.
             """
         SenderType.CHARACTER ->
             """
@@ -104,21 +135,19 @@ fun SenderType.meaning() =
             """
             Use for general story narration,
             scene descriptions, or prompting the player for action.
-            **CRITICAL RULE: The NARRATOR MUST NEVER include direct or indirect dialogue from any character (NPCs or player).
-            Narration should describe actions, environments, and non-verbal reactions only.
-            All character speech must be in a '''CHARACTER''' senderType.**
+            
             """
         SenderType.NEW_CHAPTER ->
             """
-           YOU CAN NEVER USE THIS TYPE, ITS WILL BE SEND EXCLUSIVELY LOCALLY ONLY ON THE APP WHEN NEW CHAPTER WILL START ON THE APP.    
+            Use for ending a chapter on the story.           
             """
         SenderType.NEW_ACT ->
             """
-            YOU CAN NEVER USE THIS TYPE, ITS WILL BE SEND EXCLUSIVELY LOCALLY ONLY ON THE APP WHEN NEW ACT WILL START ON THE APP.    
+            Use for ending a Act on the story.
             """
         SenderType.NEW_CHARACTER ->
             """
-            YOU CAN NEVER USE THIS TYPE, ITS WILL BE SEND EXCLUSIVELY LOCALLY ONLY ON THE APP WHEN NEW CHARACTER WILL START ON THE APP.
+            Use for creating a new character on the story.    
             """
 
         SenderType.THOUGHT ->
