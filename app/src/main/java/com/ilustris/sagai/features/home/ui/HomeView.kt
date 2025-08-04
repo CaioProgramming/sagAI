@@ -62,6 +62,7 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
@@ -100,10 +101,12 @@ fun HomeView(
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
     val showDebugButton by viewModel.showDebugButton.collectAsStateWithLifecycle()
     val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
+    val dynamicNewSagaTexts by viewModel.dynamicNewSagaTexts.collectAsStateWithLifecycle()
     ChatList(
         sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
         padding = padding,
         showDebugButton = showDebugButton,
+        dynamicNewSagaTexts = dynamicNewSagaTexts,
         onCreateNewChat = {
             navController.navigateToRoute(Routes.NEW_SAGA)
         },
@@ -138,6 +141,7 @@ private fun ChatList(
     sagas: List<SagaContent>,
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
+    dynamicNewSagaTexts: DynamicSagaPrompt?,
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
@@ -223,7 +227,7 @@ private fun ChatList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Text(
-                        stringResource(R.string.home_create_new_saga_title),
+                        text = dynamicNewSagaTexts?.title ?: stringResource(R.string.home_create_new_saga_title),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
@@ -232,7 +236,7 @@ private fun ChatList(
                     )
 
                     Text(
-                        stringResource(R.string.home_create_new_saga_subtitle),
+                        text = dynamicNewSagaTexts?.subtitle ?: stringResource(R.string.home_create_new_saga_subtitle),
                         style =
                             MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Light,
@@ -630,6 +634,7 @@ fun HomeViewPreview() {
                 ChatList(
                     sagas = previewChats,
                     showDebugButton = true, // Example for preview
+                    dynamicNewSagaTexts = DynamicSagaPrompt("Dynamic Title Preview", "Dynamic Subtitle Preview") // Example for preview
                 )
             }
         }

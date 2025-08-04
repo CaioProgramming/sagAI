@@ -28,6 +28,8 @@ import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.characters.domain.CharacterUseCaseImpl
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
+import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
+import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
@@ -114,11 +116,8 @@ object AppModule {
     fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
         val remoteConfig = Firebase.remoteConfig
         val configSettings =
-            remoteConfigSettings {
-                minimumFetchIntervalInSeconds = 3600 // Example: 1 hour fetch interval
-            }
+            remoteConfigSettings { minimumFetchIntervalInSeconds = 3600 }
         remoteConfig.setConfigSettingsAsync(configSettings)
-        // Set in-app defaults
         remoteConfig.setDefaultsAsync(
             mapOf(
                 TextGenClient.TEXT_GEN_MODEL_FLAG to TextGenClient.DEFAULT_TEXT_GEN_MODEL,
@@ -142,6 +141,9 @@ object AppModule {
 abstract class UseCaseModule {
     @Binds
     abstract fun providesSagaHistoryUseCase(sagaHistoryUseCaseImpl: SagaHistoryUseCaseImpl): SagaHistoryUseCase
+
+    @Binds
+    abstract fun providesHomeUseCase(homeUseCaseImpl: HomeUseCaseImpl): HomeUseCase
 
     @Binds
     abstract fun providesMessageUseCase(messageUseCaseImpl: MessageUseCaseImpl): MessageUseCase
