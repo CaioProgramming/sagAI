@@ -8,7 +8,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -17,6 +16,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,13 +37,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material3.DropdownMenu
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,6 +53,7 @@ import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
@@ -65,15 +66,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
@@ -83,10 +84,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
 import com.ilustris.sagai.features.characters.ui.SimpleCharacterForm
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
-import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.ui.theme.GradientType
@@ -95,6 +96,7 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -104,6 +106,7 @@ import kotlin.time.Duration.Companion.seconds
 fun ChatInputView(
     content: SagaContent,
     isGenerating: Boolean,
+    suggestions: List<Suggestion>,
     modifier: Modifier = Modifier,
     onSendMessage: (String, SenderType) -> Unit,
     onCreateNewCharacter: (CharacterInfo) -> Unit, // Added callback
@@ -118,8 +121,7 @@ fun ChatInputView(
                 duration = 2.seconds,
             )
         } else {
-            Color.Transparent
-                .solidGradient()
+            Color.Transparent.solidGradient()
         }
 
     var charactersExpanded by remember {
@@ -129,12 +131,24 @@ fun ChatInputView(
     var actionsExpanded by remember {
         mutableStateOf(false)
     }
+    val glowRadius by animateFloatAsState(
+        if (isGenerating.not()) 0f else 30f,
+    )
     val inputShape = RoundedCornerShape(content.data.genre.cornerSize())
 
     var showNewCharacterSheet by remember { mutableStateOf(false) }
     val newCharacterSheetState =
         rememberModalBottomSheetState(skipPartiallyExpanded = false) // Consider skipping partial expansion
     val scope = rememberCoroutineScope()
+
+    fun sendMessage(
+        text: String,
+        action: SenderType,
+    ) {
+        onSendMessage(text, action)
+        inputField = TextFieldValue("")
+        charactersExpanded = false
+    }
 
     Column(
         modifier
@@ -143,16 +157,16 @@ fun ChatInputView(
         AnimatedVisibility(charactersExpanded && content.characters.isNotEmpty()) {
             LazyColumn(
                 Modifier
-                    .padding(8.dp)
-                    .background(MaterialTheme.colorScheme.background, RoundedCornerShape(10.dp))
+                    .padding(vertical = 8.dp)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(10.dp))
                     .heightIn(max = 300.dp)
                     .fillMaxWidth()
-                    .padding(12.dp),
+                    .padding(16.dp),
             ) {
                 items(content.characters) {
                     CharacterHorizontalView(
                         Modifier
-                            .padding(4.dp)
+                            .padding(vertical = 4.dp)
                             .wrapContentSize()
                             .clickable {
                                 val startIndex =
@@ -176,6 +190,7 @@ fun ChatInputView(
                                 charactersExpanded = false
                             },
                         character = it,
+                        isLast = it == content.characters.last(),
                         imageSize = 24.dp,
                         genre = content.data.genre,
                         borderSize = 1.dp,
@@ -185,177 +200,203 @@ fun ChatInputView(
             }
         }
 
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            BlurredGlowContainer(
-                brush = inputBrush,
-                shape = inputShape,
+        val isImeVisible = WindowInsets.isImeVisible
+        AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
+            LazyRow(
                 modifier =
                     Modifier
-                        .weight(1f),
+                        .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .padding(2.dp)
-                            .border(1.dp, inputBrush, inputShape)
-                            .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                ) {
-                    content.mainCharacter?.let { character ->
-                        MainCharacterInputButton(content.data, character, action) {
-                            actionsExpanded = actionsExpanded.not()
-                        }
-                    }
-
-                    val textStyle =
-                        MaterialTheme.typography.labelLarge.copy(
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontFamily = content.data.genre.bodyFont(),
-                        )
-                    val maxLength = 350
-                    val tagBackgroundColor = MaterialTheme.colorScheme.onBackground
-
-                    BasicTextField(
-                        inputField,
-                        enabled = isGenerating.not(),
-                        onValueChange = {
-                            if (it.text.length <= maxLength) {
-                                inputField = it
-
-                                charactersExpanded = it.text.isNotEmpty() &&
-                                    it.text.last().toString() == "@" &&
-                                    it.text.length <= (maxLength - 20)
-                            }
-                        },
-                        textStyle = textStyle,
-                        visualTransformation = {
-                            transformTextWithContent(
-                                content.data.genre,
-                                content.mainCharacter,
-                                content.characters,
-                                content.wikis,
-                                inputField.text,
-                                tagBackgroundColor,
-                            )
-                        },
-                        cursorBrush =
-                            content.data.genre.gradient(),
-                        decorationBox = { innerTextField ->
-                            val boxPadding = 12.dp
-                            Box(contentAlignment = Alignment.CenterStart) {
-                                // Or your desired alignment
-                                if (inputField.text.isEmpty()) {
-                                    Text(
-                                        action.hint(),
-                                        style = textStyle,
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .padding(boxPadding)
-                                                .alpha(.4f),
-                                    )
-                                } else {
-                                    Box(Modifier.padding(boxPadding)) {
-                                        innerTextField()
-                                    }
-                                }
-                            }
-                        },
-                        modifier = Modifier.weight(1f).animateContentSize(),
-                    )
-
-                    IconButton(
-                        onClick = {
-                            actionsExpanded = true
-                        },
-                        enabled = isGenerating.not(),
-                        modifier =
-                            Modifier
-                                .border(1.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
-                                .size(24.dp),
-                    ) {
-                        val iconRotation by animateFloatAsState(
-                            if (actionsExpanded) 45f else 0f,
-                        )
-                        Icon(
-                            Icons.Rounded.Add,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onBackground,
+                items(suggestions) {
+                    val brush = content.data.genre.gradient(true)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                    ){
+                        Text(
+                            it.text,
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = content.data.genre.bodyFont(),
+                                    textAlign = TextAlign.Center,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                ),
+                            maxLines = 4,
                             modifier =
-                                Modifier
-                                    .rotate(iconRotation)
-                                    .padding(2.dp)
-                                    .fillMaxSize(),
+                                Modifier.padding(8.dp).clickable {
+                                    sendMessage(it.text, it.type)
+                                },
                         )
 
-                        DropdownMenu(
-                            actionsExpanded,
-                            onDismissRequest = { actionsExpanded = false },
-                            offset = DpOffset(0.dp, (-10).dp),
-                            shape = RoundedCornerShape(content.data.genre.cornerSize()),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        ) {
-                            SenderType.entries.forEach {
-                                it.itemOption(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    selectedItem = action,
-                                    genre = content.data.genre,
-                                    iconSize = 32.dp,
-                                ) { selectedAction ->
-                                    actionsExpanded = actionsExpanded.not()
-                                    if (selectedAction != SenderType.NEW_CHARACTER) {
-                                        action = selectedAction
-                                    } else {
-                                        showNewCharacterSheet = true
-                                    }
-                                }
-                            }
-                        }
+                        VerticalDivider(
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .4f),
+                            thickness = 1.dp,
+                            modifier = Modifier.padding(horizontal = 8.dp).height(12.dp)
+
+                        )
                     }
                 }
             }
-            AnimatedVisibility(
-                inputField.text.isNotEmpty(),
-                enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
-                exit = scaleOut(animationSpec = tween(easing = EaseIn)),
+        }
+
+        BlurredGlowContainer(
+            brush = inputBrush,
+            blurSigma = glowRadius,
+            shape = inputShape,
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(2.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, inputBrush, inputShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape),
             ) {
-                val buttonColor by animateColorAsState(
-                    if (isGenerating.not()) {
-                        content.data.genre.color
-                    } else {
-                        Color.Transparent
+                val textStyle =
+                    MaterialTheme.typography.labelLarge.copy(
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontFamily = content.data.genre.bodyFont(),
+                    )
+                val maxLength = 400
+                val tagBackgroundColor = MaterialTheme.colorScheme.onBackground
+
+                BasicTextField(
+                    inputField,
+                    enabled = isGenerating.not(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions =
+                        KeyboardActions(onSend = {
+                            if (isGenerating.not() && inputField.text.isNotEmpty()) {
+                                sendMessage(
+                                    inputField.text,
+                                    action,
+                                )
+                            }
+                        }),
+                    onValueChange = {
+                        if (it.text.length <= maxLength) {
+                            inputField = it
+
+                            charactersExpanded = it.text.isNotEmpty() &&
+                                it.text.last().toString() == "@" &&
+                                it.text.length <= (maxLength - 20)
+                        }
                     },
+                    textStyle = textStyle,
+                    visualTransformation = {
+                        transformTextWithContent(
+                            content.data.genre,
+                            content.mainCharacter,
+                            content.characters,
+                            content.wikis,
+                            inputField.text,
+                            tagBackgroundColor,
+                        )
+                    },
+                    cursorBrush =
+                        content.data.genre.gradient(),
+                    decorationBox = { innerTextField ->
+                        val boxPadding = 12.dp
+                        Box(contentAlignment = Alignment.CenterStart) {
+                            if (inputField.text.isEmpty()) {
+                                Text(
+                                    action.hint(),
+                                    style = textStyle,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(boxPadding)
+                                            .alpha(.4f),
+                                )
+                            } else {
+                                Box(Modifier.padding(boxPadding)) {
+                                    innerTextField()
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.weight(1f).animateContentSize(),
                 )
-                IconButton(
-                    onClick = {
-                        if (isGenerating) return@IconButton
-                        onSendMessage(inputField.text, action)
-                        inputField = TextFieldValue("")
-                        actionsExpanded = false
-                        charactersExpanded = false
-                    },
-                    modifier =
-                        Modifier
-                            .background(
-                                buttonColor,
-                                CircleShape,
-                            ).size(32.dp),
+
+                AnimatedVisibility(
+                    inputField.text.isNotEmpty(),
+                    enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
+                    exit = scaleOut(animationSpec = tween(easing = EaseIn)),
                 ) {
-                    val icon = R.drawable.ic_arrow_up
-                    Icon(
-                        painterResource(icon),
-                        contentDescription = "Send Message",
+                    val buttonColor by animateColorAsState(
+                        if (isGenerating.not()) {
+                            content.data.genre.color
+                        } else {
+                            Color.Transparent
+                        },
+                    )
+                    IconButton(
+                        onClick = {
+                            if (isGenerating) return@IconButton
+                            onSendMessage(inputField.text, action)
+                            inputField = TextFieldValue("")
+                            charactersExpanded = false
+                        },
                         modifier =
                             Modifier
                                 .padding(4.dp)
-                                .fillMaxSize(),
-                        tint = content.data.genre.iconColor,
-                    )
+                                .background(
+                                    buttonColor,
+                                    CircleShape,
+                                ).size(32.dp),
+                    ) {
+                        val icon = R.drawable.ic_arrow_up
+                        Icon(
+                            painterResource(icon),
+                            contentDescription = "Send Message",
+                            modifier =
+                                Modifier
+                                    .padding(2.dp)
+                                    .fillMaxSize(),
+                            tint = content.data.genre.iconColor,
+                        )
+                    }
+                }
+            }
+        }
+
+        AnimatedVisibility(isImeVisible) {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val inputs = SenderType.filterUserInputTypes()
+                items(inputs) {
+                    it.icon()?.let { icon ->
+                        IconButton(
+                            onClick = {
+                                if (it != SenderType.NEW_CHARACTER) {
+                                    action = it
+                                } else {
+                                    showNewCharacterSheet = true
+                                }
+                            },
+                            modifier = Modifier.padding(4.dp).size(24.dp),
+                        ) {
+                            val color by animateColorAsState(
+                                if (action == it) {
+                                    content.data.genre.color
+                                } else {
+                                    MaterialTheme.colorScheme.onBackground.copy(alpha = .4f)
+                                },
+                            )
+                            Icon(
+                                painterResource(icon),
+                                contentDescription = it.description(),
+                                tint = color,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -405,7 +446,7 @@ fun ChatInputView(
 
 @Composable
 private fun MainCharacterInputButton(
-    saga: SagaData,
+    saga: Saga,
     character: Character,
     currentAction: SenderType,
     onClickAction: () -> Unit = {},
@@ -549,7 +590,7 @@ fun ChatInputViewPreview() {
                             },
                         ),
                     data =
-                        SagaData(
+                        Saga(
                             id = 0,
                             title = "Saga Title",
                             description = "Saga description",
@@ -557,58 +598,16 @@ fun ChatInputViewPreview() {
                             createdAt = System.currentTimeMillis(),
                             genre = Genre.SCI_FI,
                             mainCharacterId = 0,
-                            visuals = IllustrationVisuals(),
-                            lastLoreReference = 0,
                         ),
                 ),
-                isGenerating = true,
+                isGenerating = false,
                 onSendMessage = { _, _ -> },
                 onCreateNewCharacter = {},
+                suggestions = List(3) {
+                    Suggestion("Test suggestion", type = SenderType.USER)
+                },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
     }
 }
-
-@Preview
-@Composable
-fun MainCharacterInputButtonPreview() {
-    MainCharacterInputButton(
-        currentAction = SenderType.USER,
-        saga =
-            SagaData(
-                id = 0,
-                title = "Saga Title",
-                description = "Saga description",
-                icon = "icon_url",
-                createdAt = System.currentTimeMillis(),
-                genre = Genre.FANTASY,
-                mainCharacterId = 0,
-                visuals = IllustrationVisuals(),
-                lastLoreReference = 0,
-            ),
-        character =
-            Character(
-                id = 0,
-                name = "Character Name",
-                backstory = "Character backstory",
-                image = "image_url",
-                hexColor = "#FF0000",
-                sagaId = 0,
-                details =
-                    Details(
-                        appearance = "Appearance",
-                        personality = "Personality",
-                        race = "Race",
-                        height = 1.80,
-                        weight = 70.0,
-                        gender = "Gender",
-                        occupation = "Occupation",
-                        ethnicity = "Ethnicity",
-                    ),
-                joinedAt = System.currentTimeMillis(),
-            ),
-    ) {}
-}
-
-private const val DRAG_THRESHOLD = -50f

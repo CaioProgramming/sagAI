@@ -2,14 +2,14 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.domain.model.SuggestionsReponse
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
 
 object SuggestionPrompts {
     fun generateSuggestionsPrompt(
-        sagaData: SagaData,
+        saga: Saga,
         character: Character,
         chatHistory: List<MessageContent>, // ViewModel will send the last 2-3 relevant messages
     ): String {
@@ -28,8 +28,8 @@ object SuggestionPrompts {
             who is currently embodying '${character.name}'.
 
             Saga Context:
-            - Title: ${sagaData.title}
-            - Summary: ${sagaData.description.take(300)}
+            - Title: ${saga.title}
+            - Summary: ${saga.description.take(300)}
 
             Character in Focus (${character.name}):
             - Backstory Snippet: ${character.backstory.take(200)}

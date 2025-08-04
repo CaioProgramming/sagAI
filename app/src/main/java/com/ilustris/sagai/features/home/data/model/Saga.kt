@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.detail.data.model.Review
 
 @Entity(
     tableName = "sagas",
@@ -19,7 +20,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
         ),
     ],
 )
-data class SagaData(
+data class Saga(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val title: String = "",
@@ -31,24 +32,12 @@ data class SagaData(
     val mainCharacterId: Int? = null,
     @ColumnInfo(index = true)
     val currentActId: Int? = null,
-    @Embedded
-    val visuals: IllustrationVisuals = IllustrationVisuals(),
-    val lastLoreReference: Int = 0,
     val isEnded: Boolean = false,
     val endedAt: Long = 0L,
     @ColumnInfo(defaultValue = "false")
     val isDebug: Boolean = false,
     @ColumnInfo(defaultValue = "")
     val endMessage: String = "",
-)
-
-data class IllustrationVisuals(
-    val characterPose: String = "",
-    val characterExpression: String = "",
-    val environmentDetails: String = "",
-    val lightingDetails: String = "",
-    val colorPalette: String = "",
-    val foregroundElements: String? = "",
-    val backgroundElements: String? = "",
-    val overallMood: String = "",
+    @Embedded
+    val review: Review? = null,
 )

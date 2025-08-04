@@ -11,8 +11,8 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageGen
@@ -28,7 +28,6 @@ class MessageUseCaseImpl
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
     ) : MessageUseCase {
-
         private var isDebugModeEnabled: Boolean = false
 
         override fun setDebugMode(enabled: Boolean) {
@@ -36,9 +35,7 @@ class MessageUseCaseImpl
             Log.i("MessageUseCaseImpl", "Debug mode set to: $enabled")
         }
 
-        override fun isInDebugMode(): Boolean {
-            return isDebugModeEnabled
-        }
+        override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
         override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
 
@@ -60,16 +57,17 @@ class MessageUseCaseImpl
         override suspend fun getLastMessage(sagaId: Int): Message? = messageRepository.getLastMessage(sagaId)
 
         override suspend fun generateIntroMessage(
-            saga: SagaData,
+            saga: Saga,
             character: Character?,
         ): RequestResult<Exception, Message> {
             if (isDebugModeEnabled) {
                 Log.d("MessageUseCaseImpl", "[DEBUG MODE] Generating fake intro message for saga: ${saga.title}")
-                val fakeIntroMessage = Message(
-                    text = "Welcome to the debug chronicles of '${saga.title}'! Adventure awaits... or does it?",
-                    senderType = SenderType.NARRATOR,
-                    sagaId = saga.id
-                )
+                val fakeIntroMessage =
+                    Message(
+                        text = "Welcome to the debug chronicles of '${saga.title}'! Adventure awaits... or does it?",
+                        senderType = SenderType.NARRATOR,
+                        sagaId = saga.id,
+                    )
                 return RequestResult.Success(fakeIntroMessage)
             }
             val genText =
@@ -88,11 +86,12 @@ class MessageUseCaseImpl
         override suspend fun generateEndingMessage(content: SagaContent): RequestResult<Exception, Message> {
             if (isDebugModeEnabled) {
                 Log.d("MessageUseCaseImpl", "[DEBUG MODE] Generating fake ending message for saga: ${content.data.title}")
-                val fakeEndingMessage = Message(
-                    text = "And so, the debug saga of '${content.data.title}' concludes. Or has it just begun?",
-                    senderType = SenderType.NARRATOR,
-                    sagaId = content.data.id
-                )
+                val fakeEndingMessage =
+                    Message(
+                        text = "And so, the debug saga of '${content.data.title}' concludes. Or has it just begun?",
+                        senderType = SenderType.NARRATOR,
+                        sagaId = content.data.id,
+                    )
                 return RequestResult.Success(fakeEndingMessage)
             }
             try {
@@ -117,17 +116,19 @@ class MessageUseCaseImpl
         ): RequestResult<Exception, MessageGen> {
             if (isDebugModeEnabled) {
                 Log.d("MessageUseCaseImpl", "[DEBUG MODE] Generating fake reply for message: ${message.second}")
-                val fakeReply = Message(
-                    text = "[Debug AI]: I see you said '${message.second}'. That's... interesting.",
-                    senderType = SenderType.CHARACTER, // Or could be NARRATOR or a specific character if needed
-                    sagaId = saga.data.id,
-                )
-                val fakeMessageGen = MessageGen(
-                    message = fakeReply,
-                    shouldCreateCharacter = false,
-                    newCharacter = null,
-                    shouldEndSaga = false
-                )
+                val fakeReply =
+                    Message(
+                        text = "[Debug AI]: I see you said '${message.second}'. That's... interesting.",
+                        senderType = SenderType.CHARACTER, // Or could be NARRATOR or a specific character if needed
+                        sagaId = saga.data.id,
+                    )
+                val fakeMessageGen =
+                    MessageGen(
+                        message = fakeReply,
+                        shouldCreateCharacter = false,
+                        newCharacter = null,
+                        shouldEndSaga = false,
+                    )
                 return RequestResult.Success(fakeMessageGen)
             }
 
@@ -162,7 +163,7 @@ class MessageUseCaseImpl
     }
 
 private fun generateSagaIntroductionPrompt(
-    saga: SagaData,
+    saga: Saga,
     character: Character?,
 ): String =
     SagaPrompts.introductionGeneration(

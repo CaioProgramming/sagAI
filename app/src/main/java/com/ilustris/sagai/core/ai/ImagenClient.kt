@@ -32,7 +32,7 @@ class ImagenClientImpl
         private val firebaseRemoteConfig: FirebaseRemoteConfig,
     ) : ImagenClient {
         companion object {
-            const val IMAGE_MODEL_FLAG = "imageModelName"
+            const val IMAGE_MODEL_FLAG = "imageGenModel"
             const val DEFAULT_IMAGE_MODEL = "gemini-2.0-flash-preview-image-generation"
 
             private const val PREMIUM_FLAG = "premiumEnabled"
@@ -74,7 +74,7 @@ class ImagenClientImpl
 
         val premiumModel by lazy {
             Firebase.ai(backend = GenerativeBackend.googleAI()).imagenModel(
-                modelName = "imagen-4.0-generate-preview-06-06",
+                modelName = "imagen-3.0-generate-002",
             )
         }
 

@@ -1,10 +1,12 @@
 package com.ilustris.sagai.di
 
 import android.content.Context
+import androidx.work.WorkManager
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
+import com.google.gson.Gson
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
@@ -12,6 +14,7 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.network.FreePikApiService
+import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
@@ -62,6 +65,16 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
+    fun provideWorkManager(
+        @ApplicationContext context: Context,
+    ): WorkManager = WorkManager.getInstance(context)
+
+    @Provides
+    @Singleton
+    fun provideGson(): Gson = Gson()
+
+    @Provides
+    @Singleton
     fun provideSagaDatabase(databaseBuilder: DatabaseBuilder): SagaDatabase = databaseBuilder.buildDataBase()
 
     @Provides
@@ -77,6 +90,12 @@ object AppModule {
     fun bindsFileHelper(
         @ApplicationContext context: Context,
     ) = FileHelper(context)
+
+    @Provides
+    @Singleton
+    fun bindsFileCacheService(
+        @ApplicationContext context: Context,
+    ) = FileCacheService(context)
 
     @Provides
     @Singleton

@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 import com.google.firebase.ai.type.Schema
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.toFirebaseSchema
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.WikiType.*
 import java.util.Calendar
@@ -16,7 +16,7 @@ import java.util.Calendar
     tableName = "wikis",
     foreignKeys = [
         ForeignKey(
-            entity = SagaData::class,
+            entity = Saga::class,
             parentColumns = ["id"],
             childColumns = ["sagaId"],
             onDelete = ForeignKey.CASCADE,
@@ -81,4 +81,3 @@ fun WikiType.iconForType(genre: Genre) =
         MAGIC -> R.drawable.ic_crow
         OTHER -> R.drawable.spark_round
     }
-

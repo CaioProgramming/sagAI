@@ -23,6 +23,7 @@ object CharacterPrompts {
         Now, process the following JSON input:
         ${character.toJsonFormat()}
         
+       
         """
 
     fun facialDescription(facialDetails: FacialFeatures) =

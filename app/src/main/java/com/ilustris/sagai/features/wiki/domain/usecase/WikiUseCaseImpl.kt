@@ -1,11 +1,10 @@
 package com.ilustris.sagai.features.wiki.domain.usecase
 
-import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.GemmaClient // Changed
 import com.ilustris.sagai.core.ai.prompts.WikiPrompts
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.features.wiki.data.model.WikiGen
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -14,7 +13,7 @@ class WikiUseCaseImpl
     @Inject
     constructor(
         private val wikiRepository: WikiRepository,
-        private val aiClient: TextGenClient,
+        private val gemmaClient: GemmaClient, // Changed
     ) : WikiUseCase {
         override fun getWikisBySaga(sagaId: Int): Flow<List<Wiki>> = wikiRepository.getWikisBySaga(sagaId)
 
@@ -34,19 +33,17 @@ class WikiUseCaseImpl
 
         override suspend fun generateWiki(
             sagaContent: SagaContent,
-            events: List<Timeline>,
+            newEvent: List<Timeline>,
         ): List<Wiki> =
             try {
-                aiClient
-                    .generate<WikiGen>(
-                        customSchema = WikiGen.customSchema(),
+                gemmaClient
+                    .generate<List<Wiki>>(
                         prompt =
                             WikiPrompts.generateWiki(
                                 saga = sagaContent,
-                                events = events,
+                                events = newEvent,
                             ),
                     )!!
-                    .wikis
             } catch (e: Exception) {
                 e.printStackTrace()
                 emptyList()

@@ -13,12 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -26,8 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import effectForGenre
 
@@ -43,10 +48,6 @@ fun CharacterAvatar(
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
 ) {
-    val isLoaded =
-        remember {
-            mutableStateOf(false)
-        }
     val characterColor = Color(character.hexColor.toColorInt())
     Box(
         modifier
@@ -54,40 +55,48 @@ fun CharacterAvatar(
                 borderSize,
                 borderColor ?: characterColor,
                 CircleShape,
-            ).padding(innerPadding)
-            .clip(CircleShape)
+            ).clip(CircleShape)
+            .padding(innerPadding)
             .background(
                 characterColor,
                 CircleShape,
             ),
     ) {
+        var painterState by remember {
+            mutableStateOf<AsyncImagePainter.State>(AsyncImagePainter.State.Empty)
+        }
         AsyncImage(
             model = character.image,
             contentDescription = character.name,
-            onSuccess = { successState: AsyncImagePainter.State.Success ->
-                isLoaded.value = true
-            },
             contentScale = ContentScale.Crop,
+            placeholder = painterResource(R.drawable.ic_spark),
+            error = null,
+            onError = {
+                painterState = it
+            },
             modifier =
                 Modifier
+                    .clip(CircleShape)
                     .fillMaxSize()
                     .background(characterColor, CircleShape)
-                    .effectForGenre(genre, focusRadius = softFocusRadius, customGrain = grainRadius),
+                    .effectForGenre(
+                        genre,
+                        focusRadius = softFocusRadius,
+                        customGrain = grainRadius,
+                    ),
         )
 
-        val textAlpha by animateFloatAsState(
-            if (isLoaded.value.not()) 1f else 0f,
-        )
-
-        Text(
-            character.name.first().uppercase(),
-            style =
-                textStyle.copy(
-                    fontFamily = genre.headerFont(),
-                ),
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.align(Alignment.Center).graphicsLayer(textAlpha),
-        )
+        if (painterState is AsyncImagePainter.State.Error) {
+            Text(
+                character.name.first().uppercase(),
+                style =
+                    textStyle.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = characterColor.darker().gradientFade(),
+                    ),
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
     }
 }

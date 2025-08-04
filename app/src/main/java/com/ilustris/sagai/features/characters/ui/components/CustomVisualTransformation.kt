@@ -99,10 +99,10 @@ fun buildWikiAndCharactersAnnotation(
             val shadow =
                 Shadow(
                     color = shadowColor,
-                    blurRadius = 3f,
+                    blurRadius = 5f,
                     offset =
                         androidx.compose.ui.geometry
-                            .Offset(0f, 0f),
+                            .Offset(1f, -1f),
                 )
             val span =
                 if (character.id == mainCharacter?.id) {

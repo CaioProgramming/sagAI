@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.newsaga.data.usecase
 
 import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.core.ai.CharacterFraming
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
@@ -14,8 +14,8 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import java.util.Calendar
@@ -29,18 +29,18 @@ class NewSagaUseCaseImpl
         private val imageGenClient: ImagenClient,
         private val sagaRepository: SagaRepository,
         private val characterUseCase: CharacterUseCase,
+        private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
     ) : NewSagaUseCase {
         override suspend fun saveSaga(
-            sagaData: SagaData,
+            sagaData: Saga,
             characterDescription: Character,
-        ): RequestResult<Exception, Pair<SagaData, Character>> =
+        ): RequestResult<Exception, Pair<Saga, Character>> =
             try {
                 val saga =
                     sagaRepository.saveChat(
                         sagaData.copy(
                             id = 0,
-                            createdAt = Calendar.getInstance().timeInMillis,
                             mainCharacterId = null,
                         ),
                     )
@@ -65,10 +65,10 @@ class NewSagaUseCaseImpl
                 e.asError()
             }
 
-        override suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, SagaData> =
+        override suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, Saga> =
             try {
                 val saga =
-                    textGenClient.generate<SagaData>(
+                    textGenClient.generate<Saga>(
                         generateSagaPrompt(sagaForm),
                         true,
                     )
@@ -78,40 +78,34 @@ class NewSagaUseCaseImpl
             }
 
         override suspend fun generateSagaIcon(
-            sagaForm: SagaData,
+            sagaForm: Saga,
             character: Character,
-        ): RequestResult<Exception, SagaData> =
+        ): RequestResult<Exception, Saga> =
             try {
-                val characterGenPrompts =
-                    characterUseCase
-                        .generateCharacterPrompt(
-                            character = character,
-                            guidelines =
-                                CharacterPrompts.descriptionTranslationPrompt(
-                                    character,
-                                    CharacterFraming.PORTRAIT,
-                                    sagaForm.genre,
-                                ),
-                            sagaForm.genre,
-                        ).success.value
-
-                val prompt =
+                val metaPromptCover =
+                    gemmaClient.generate<String>(
+                        SagaPrompts.iconDescription(
+                            sagaForm,
+                            character,
+                        ),
+                        requireTranslation = false,
+                    )
+                val sagaIconPrompt =
                     generateSagaIconPrompt(
-                        sagaData = sagaForm,
+                        saga = sagaForm,
                         mainCharacter = character,
-                        description = characterGenPrompts,
+                        description = metaPromptCover!!,
                     )
 
                 characterUseCase.generateCharacterImage(
                     character = character,
-                    description = prompt,
                     saga = sagaForm,
                 )
 
                 val file =
                     fileHelper.saveFile(
                         fileName = sagaForm.title,
-                        data = imageGenClient.generateImage(prompt)!!,
+                        data = imageGenClient.generateImage(sagaIconPrompt)!!,
                         path = "${sagaForm.id}",
                     )
 
@@ -123,12 +117,11 @@ class NewSagaUseCaseImpl
             }
 
         private fun generateSagaIconPrompt(
-            sagaData: SagaData,
+            saga: Saga,
             mainCharacter: Character,
             description: String,
         ) = ImagePrompts.wallpaperGeneration(
-            sagaData,
-            mainCharacter,
+            saga,
             description,
         )
 

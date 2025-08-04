@@ -52,7 +52,7 @@ private val DarkColorScheme =
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
         background = MaterialColor.Black,
-        surfaceContainer = MaterialColor.Gray800,
+        surfaceContainer = MaterialColor.Gray900,
     )
 
 private val LightColorScheme =

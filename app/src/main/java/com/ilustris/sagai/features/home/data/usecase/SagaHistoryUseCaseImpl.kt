@@ -7,8 +7,8 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
@@ -30,7 +30,7 @@ class SagaHistoryUseCaseImpl
 
         override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
-        override suspend fun updateSaga(saga: SagaData) = sagaRepository.updateChat(saga)
+        override suspend fun updateSaga(saga: Saga) = sagaRepository.updateChat(saga)
 
         override suspend fun generateLore(
             saga: SagaContent,
@@ -51,11 +51,11 @@ class SagaHistoryUseCaseImpl
                 e.asError()
             }
 
-        override suspend fun createFakeSaga(): RequestResult<Exception, SagaData> =
+        override suspend fun createFakeSaga(): RequestResult<Exception, Saga> =
             try {
                 sagaRepository
                     .saveChat(
-                        SagaData(
+                        Saga(
                             title = "Debug Saga",
                             description = "This saga was created to debug purposes only.",
                             genre = Genre.entries.random(),

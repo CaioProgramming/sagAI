@@ -5,13 +5,13 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.PrimaryKey
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 
 @Entity(
     tableName = "Characters",
     foreignKeys = [
         androidx.room.ForeignKey(
-            entity = SagaData::class,
+            entity = Saga::class,
             parentColumns = ["id"],
             childColumns = ["sagaId"],
             onDelete = CASCADE,

@@ -22,4 +22,5 @@ enum class ChatAction {
     RESEND,
     OPEN_TIMELINE,
     OPEN_CHARACTER,
+    RETRY_AI_RESPONSE,
 }

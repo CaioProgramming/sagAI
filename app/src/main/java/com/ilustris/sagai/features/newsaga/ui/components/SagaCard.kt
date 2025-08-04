@@ -5,7 +5,6 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -32,7 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -44,10 +43,10 @@ import kotlin.time.DurationUnit
 
 @Composable
 fun SagaCard(
-    sagaData: SagaData,
+    saga: Saga,
     modifier: Modifier,
 ) {
-    val cornerSize = sagaData.genre.cornerSize()
+    val cornerSize = saga.genre.cornerSize()
     var fraction by remember {
         mutableFloatStateOf(0.1f)
     }
@@ -58,13 +57,13 @@ fun SagaCard(
     )
 
     val backgroundColor by animateColorAsState(
-        if (fraction == 1f) sagaData.genre.color else MaterialTheme.colorScheme.background,
+        if (fraction == 1f) saga.genre.color else MaterialTheme.colorScheme.background,
     )
     BlurredGlowContainer(
         Modifier.padding(16.dp).wrapContentSize(),
-        sagaData.genre.gradient(fraction == 1f),
+        saga.genre.gradient(fraction == 1f),
         blurSigma = 100f,
-        shape = RoundedCornerShape(sagaData.genre.cornerSize())
+        shape = RoundedCornerShape(saga.genre.cornerSize()),
     ) {
         Box(
             modifier
@@ -74,7 +73,7 @@ fun SagaCard(
                 .clipToBounds(),
         ) {
             AsyncImage(
-                sagaData.icon,
+                saga.icon,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 onSuccess = {
@@ -100,13 +99,13 @@ fun SagaCard(
                         ),
             ) {
                 Text(
-                    text = sagaData.title,
+                    text = saga.title,
                     style =
                         MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = sagaData.genre.headerFont(),
+                            fontFamily = saga.genre.headerFont(),
                             textAlign = TextAlign.Center,
                             fontWeight = FontWeight.Normal,
-                            brush = sagaData.genre.gradient(true),
+                            brush = saga.genre.gradient(true),
                         ),
                     modifier =
                         Modifier
@@ -116,11 +115,10 @@ fun SagaCard(
 
                 CharacterSection(
                     title = "",
-                    content = sagaData.description,
-                    genre = sagaData.genre,
+                    content = saga.description,
+                    genre = saga.genre,
                 )
             }
         }
     }
-
 }

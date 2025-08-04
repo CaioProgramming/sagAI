@@ -21,7 +21,7 @@ android {
         minSdk = 27
         targetSdk = 36
         versionCode = 1
-        versionName = "1.1.2"
+        versionName = "1.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,21 +36,16 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false // Consider enabling for release builds along with Crashlytics
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("CLOUDFLARE_KEY"))
-            buildConfigField("String", "ACCOUNTID", apikeyProperties.getProperty("CLOUDFLARE_ID"))
+            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("GEMINI_KEY"))
         }
 
         debug {
-            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("CLOUDFLARE_KEY"))
-            buildConfigField("String", "ACCOUNTID", apikeyProperties.getProperty("CLOUDFLARE_ID"))
-            // It'''s good practice to disable Crashlytics for debug builds to avoid polluting your dashboard
-            // You can do this via a manifest placeholder or by checking BuildConfig.DEBUG in your Application class
-            // For now, we'''ll keep it simple and add the dependency for all build types.
+            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("GEMINI_KEY"))
         }
     }
     compileOptions {
@@ -83,6 +78,12 @@ dependencies {
     implementation(libs.androidx.shapes)
     implementation(libs.androidx.animations)
     implementation(libs.androidx.palette.ktx)
+
+    // WorkManager & Hilt Integration for WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    // kapt("androidx.hilt:hilt-compiler:1.2.0") // Covered by libs.androidx.hilt.compiler
+
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.android)
     kapt(libs.androidx.hilt.compiler)
@@ -117,6 +118,11 @@ dependencies {
     implementation(libs.firebase.analytics.ktx)
     implementation(libs.firebase.crashlytics.ktx)
     implementation(libs.firebase.installations.ktx)
+    implementation(libs.hypnoticcanvas)
+    implementation(libs.hypnoticcanvas.shaders)
+    implementation(libs.google.generativeai)
+
+    implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

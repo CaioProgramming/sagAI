@@ -2,9 +2,9 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
-import android.graphics.fonts.FontStyle
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -49,19 +50,23 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -75,11 +80,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -103,10 +111,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
-import com.ilustris.sagai.features.home.data.model.IllustrationVisuals
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
@@ -121,15 +129,20 @@ import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import effectForGenre
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 enum class DetailAction {
     CHARACTERS,
@@ -139,6 +152,7 @@ enum class DetailAction {
     ACTS,
     BACK,
     DELETE,
+    REGENERATE,
 }
 
 @Composable
@@ -151,12 +165,13 @@ fun SagaDetailView(
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val saga by viewModel.saga.collectAsStateWithLifecycle()
-    var sagaToDelete by remember { mutableStateOf<SagaData?>(null) }
+    var sagaToDelete by remember { mutableStateOf<Saga?>(null) }
     var section by remember {
         mutableStateOf(
             DetailAction.BACK,
         )
     }
+    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
 
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
@@ -180,11 +195,19 @@ fun SagaDetailView(
             sagaToDelete = saga?.data
             showDeleteConfirmation = true
         }
+
+        if (it == DetailAction.REGENERATE) {
+            viewModel.regenerateIcon()
+        }
     }, onBackClick = {
         when (it) {
             DetailAction.BACK, DetailAction.DELETE -> navHostController.popBackStack()
             else -> section = DetailAction.BACK
         }
+    }, createReview = {
+        viewModel.createReview()
+    }, openReview = {
+        viewModel.resetReview()
     })
 
     if (showDeleteConfirmation) {
@@ -193,7 +216,7 @@ fun SagaDetailView(
                 onDismissRequest = { showDeleteConfirmation = false },
                 title = {
                     Text(
-                        "Confirmar Exclusão",
+                        stringResource(R.string.saga_detail_delete_confirmation_title),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = it.genre.bodyFont(),
@@ -202,7 +225,7 @@ fun SagaDetailView(
                 },
                 text = {
                     Text(
-                        "Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.",
+                        stringResource(R.string.saga_detail_delete_confirmation_message),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = it.genre.bodyFont(),
@@ -226,7 +249,7 @@ fun SagaDetailView(
                                 contentColor = MaterialTheme.colorScheme.onError,
                             ),
                         shape = RoundedCornerShape(it.genre.cornerSize()),
-                    ) { Text("Excluir") }
+                    ) { Text(stringResource(R.string.saga_detail_delete_button)) }
                 },
                 dismissButton = {
                     OutlinedButton(
@@ -236,9 +259,27 @@ fun SagaDetailView(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                             ),
                         shape = RoundedCornerShape(it.genre.cornerSize()),
-                    ) { Text("Cancelar") }
+                    ) { Text(stringResource(R.string.saga_detail_cancel_button)) }
                 },
             )
+        }
+    }
+
+    if (isGenerating) {
+        Dialog(
+            onDismissRequest = { },
+            properties =
+                DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false,
+                ),
+        ) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                SparkLoader(
+                    brush = gradientAnimation(genresGradient(), duration = 2.seconds),
+                    modifier = Modifier.size(100.dp),
+                )
+            }
         }
     }
 
@@ -247,8 +288,32 @@ fun SagaDetailView(
     }
 }
 
-fun LazyListScope.SagaDrawerContent(content: SagaContent) {
+fun LazyListScope.SagaDrawerContent(
+    content: SagaContent,
+    openReview: () -> Unit = {},
+) {
     with(this) {
+        item {
+            Column(Modifier.fillMaxWidth()) {
+                Image(
+                    painterResource(R.drawable.ic_spark),
+                    null,
+                    Modifier
+                        .clip(CircleShape)
+                        .padding(4.dp)
+                        .size(50.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .gradientFill(
+                            content.data.genre.gradient(
+                                animated = true,
+                                duration = 2.seconds,
+                            ),
+                        ).clickable {
+                            openReview()
+                        },
+                )
+            }
+        }
         items(content.acts) {
             val index = content.acts.indexOf(it)
             val brush =
@@ -277,12 +342,13 @@ fun LazyListScope.SagaDrawerContent(content: SagaContent) {
                     ),
             ) {
                 Text(
-                    "Ato ${(index + 1).toRoman()}",
+                    stringResource(R.string.saga_drawer_act_prefix) + (index + 1).toRoman(),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = content.data.genre.headerFont(),
+                            fontFamily = content.data.genre.bodyFont(),
+                            fontWeight = FontWeight.Bold,
                         ),
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier.padding(16.dp),
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(4.dp))
@@ -313,7 +379,7 @@ fun LazyListScope.SagaDrawerContent(content: SagaContent) {
                                 Modifier.size(24.dp),
                             )
                             Text(
-                                "${chapter.title} - ${eventsInChapter.size} eventos",
+                                stringResource(R.string.saga_drawer_chapter_events_count, chapter.title, eventsInChapter.size),
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -368,35 +434,42 @@ fun LazyListScope.SagaDrawerContent(content: SagaContent) {
 
             val remainEvents = (UpdateRules.CHAPTER_UPDATE_LIMIT - eventSublist.size).unaryPlus()
 
-            Text(
-                "${eventSublist.size} eventos desde o último capitulo.",
-                style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                        fontFamily = content.data.genre.bodyFont(),
-                        textAlign = TextAlign.Center,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                        .alpha(.5f),
-            )
+            AnimatedVisibility(content.data.isEnded.not()) {
+                Text(
+                    stringResource(R.string.saga_drawer_events_since_last_chapter, eventSublist.size),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                            fontFamily = content.data.genre.bodyFont(),
+                            textAlign = TextAlign.Center,
+                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .alpha(.5f),
+                )
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SagaDetailContentView(
     state: State,
     currentSection: DetailAction = DetailAction.BACK,
     paddingValues: PaddingValues,
+    generatingReview: Boolean = false,
     onChangeSection: (DetailAction) -> Unit = {},
     onBackClick: (DetailAction) -> Unit = {},
+    createReview: () -> Unit,
+    openReview: () -> Unit,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
+    var showReview by remember { mutableStateOf(false) }
 
     saga?.let { sagaContent ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -416,7 +489,7 @@ fun SagaDetailContentView(
                             ) {
                                 item {
                                     Text(
-                                        "Progresso",
+                                        stringResource(R.string.saga_detail_progress_title),
                                         modifier =
                                             Modifier
                                                 .align(Alignment.CenterHorizontally)
@@ -428,86 +501,117 @@ fun SagaDetailContentView(
                                             ),
                                     )
                                 }
-
-                                SagaDrawerContent(sagaContent)
+                                SagaDrawerContent(sagaContent) {
+                                    if (sagaContent.data.review == null) {
+                                        createReview.invoke()
+                                    } else {
+                                        showReview = true
+                                    }
+                                }
                             }
                         }
                     }
                 },
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    Scaffold { _ ->
-                        Column {
-                            val titleAndSubtitle = currentSection.titleAndSubtitle(sagaContent)
-                            AnimatedContent(titleAndSubtitle) { titleAndSub ->
-                                SagaTopBar(
-                                    titleAndSub.first,
-                                    titleAndSub.second,
-                                    sagaContent.data.genre,
-                                    onBackClick = { onBackClick(currentSection) },
-                                    actionContent = {
-                                        Icon(
-                                            painterResource(R.drawable.ic_spark),
-                                            null,
-                                            tint = sagaContent.data.genre.color,
-                                            modifier =
-                                                Modifier
-                                                    .clickable {
-                                                        scope.launch {
-                                                            if (drawerState.isClosed) {
-                                                                drawerState.open()
-                                                            } else {
-                                                                drawerState.close()
-                                                            }
-                                                        }
-                                                    }.padding(horizontal = 8.dp)
-                                                    .size(24.dp),
-                                        )
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .background(MaterialTheme.colorScheme.background)
-                                            .fillMaxWidth()
-                                            .padding(top = 50.dp, start = 16.dp),
-                                )
-                            }
+                    Scaffold(topBar = {
+                        val titleAndSubtitle = currentSection.titleAndSubtitle(sagaContent)
 
-                            AnimatedContent(currentSection, transitionSpec = {
-                                fadeIn(tween(500)) + slideInVertically() togetherWith
-                                    fadeOut(
-                                        tween(
-                                            400,
-                                        ),
-                                    )
-                            }) { section ->
-                                when (section) {
-                                    DetailAction.CHARACTERS ->
-                                        CharactersGalleryContent(
-                                            sagaContent,
-                                        )
-
-                                    DetailAction.TIMELINE ->
-                                        TimeLineContent(
-                                            sagaContent,
-                                        )
-
-                                    DetailAction.CHAPTERS ->
-                                        ChapterContent(
-                                            sagaContent,
-                                        )
-
-                                    DetailAction.WIKI -> WikiContent(sagaContent)
-                                    DetailAction.ACTS -> ActContent(sagaContent)
-                                    DetailAction.BACK, DetailAction.DELETE ->
-                                        SagaDetailInitialView(
-                                            sagaContent,
+                        AnimatedContent(titleAndSubtitle) { titleAndSub ->
+                            SagaTopBar(
+                                titleAndSub.first,
+                                titleAndSub.second,
+                                sagaContent.data.genre,
+                                onBackClick = { onBackClick(currentSection) },
+                                actionContent = {
+                                    Icon(
+                                        painterResource(R.drawable.ic_spark),
+                                        null,
+                                        tint = sagaContent.data.genre.color,
+                                        modifier =
                                             Modifier
-                                                .padding(paddingValues)
-                                                .animateContentSize(),
-                                        ) { action ->
+                                                .clickable {
+                                                    scope.launch {
+                                                        if (drawerState.isClosed) {
+                                                            drawerState.open()
+                                                        } else {
+                                                            drawerState.close()
+                                                        }
+                                                    }
+                                                }.padding(horizontal = 8.dp)
+                                                .size(24.dp),
+                                    )
+                                },
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.background)
+                                        .fillMaxWidth()
+                                        .padding(top = 50.dp, start = 16.dp),
+                            )
+                        }
+                    }) { _ ->
+
+                        AnimatedContent(currentSection, transitionSpec = {
+                            fadeIn(tween(500)) + slideInVertically() togetherWith
+                                fadeOut(
+                                    tween(
+                                        400,
+                                    ),
+                                )
+                        }, modifier = Modifier.fillMaxSize().padding(top = 100.dp)) { section ->
+                            when (section) {
+                                DetailAction.CHARACTERS ->
+                                    CharactersGalleryContent(
+                                        sagaContent,
+                                    )
+
+                                DetailAction.TIMELINE ->
+                                    TimeLineContent(
+                                        sagaContent,
+                                    )
+
+                                DetailAction.CHAPTERS ->
+                                    ChapterContent(
+                                        sagaContent,
+                                    )
+
+                                DetailAction.WIKI -> WikiContent(sagaContent)
+                                DetailAction.ACTS -> ActContent(sagaContent)
+                                else ->
+                                    SagaDetailInitialView(
+                                        sagaContent,
+                                        Modifier
+                                            .animateContentSize(),
+                                        selectSection = { action ->
                                             onChangeSection(action)
-                                        }
-                                }
+                                        },
+                                        openReview = {
+                                            if (sagaContent.data.review != null) {
+                                                showReview = true
+                                            } else {
+                                                createReview()
+                                            }
+                                        },
+                                    )
+                            }
+                        }
+
+                        if (showReview) {
+                            ModalBottomSheet(
+                                onDismissRequest = {
+                                    showReview = false
+                                },
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(),
+                                dragHandle = {
+                                    Box {}
+                                },
+                                containerColor = MaterialTheme.colorScheme.background,
+                            ) {
+                                SagaReview(content = sagaContent, generatingReview)
                             }
                         }
                     }
@@ -517,21 +621,23 @@ fun SagaDetailContentView(
     }
 }
 
-private fun DetailAction.titleAndSubtitle(content: SagaContent) =
-    when (this) {
-        DetailAction.CHARACTERS -> "Personagens" to "${content.characters.size} personagens"
-        DetailAction.TIMELINE -> "Eventos" to "${content.timelines.size} eventos"
-        DetailAction.CHAPTERS -> "Capítulos" to "${content.chapters.size} capítulos"
-        DetailAction.WIKI -> "Wiki" to "${content.wikis.size} itens"
-        DetailAction.ACTS -> "Atos" to "${content.acts.size} atos"
-        DetailAction.BACK, DetailAction.DELETE -> {
+@Composable
+private fun DetailAction.titleAndSubtitle(content: SagaContent): Pair<String, String> {
+    return when (this) {
+        DetailAction.CHARACTERS -> stringResource(R.string.saga_detail_section_title_characters) to stringResource(R.string.saga_detail_section_subtitle_characters, content.characters.size)
+        DetailAction.TIMELINE -> stringResource(R.string.saga_detail_section_title_timeline) to stringResource(R.string.saga_detail_section_subtitle_timeline, content.timelines.size)
+        DetailAction.CHAPTERS -> stringResource(R.string.saga_detail_section_title_chapters) to stringResource(R.string.saga_detail_section_subtitle_chapters, content.chapters.size)
+        DetailAction.WIKI -> stringResource(R.string.saga_detail_section_title_wiki) to stringResource(R.string.saga_detail_section_subtitle_wiki, content.wikis.size)
+        DetailAction.ACTS -> stringResource(R.string.saga_detail_section_title_acts) to stringResource(R.string.saga_detail_section_subtitle_acts, content.acts.size)
+        else -> {
             if (content.data.isEnded) {
-                content.data.title to "Finalizado em ${content.data.endedAt.formatDate()}"
+                content.data.title to stringResource(R.string.saga_detail_status_ended, content.data.endedAt.formatDate())
             } else {
-                content.data.title to "Criado em ${content.data.createdAt.formatDate()}"
+                content.data.title to stringResource(R.string.saga_detail_status_created, content.data.createdAt.formatDate())
             }
         }
     }
+}
 
 @Composable
 fun WikiContent(saga: SagaContent) {
@@ -552,7 +658,10 @@ fun WikiContent(saga: SagaContent) {
 
 @Composable
 fun ActContent(saga: SagaContent) {
-    VerticalPager(rememberPagerState { saga.acts.size }) {
+    VerticalPager(
+        modifier = Modifier.fillMaxSize(),
+        state = rememberPagerState { saga.acts.size },
+    ) {
         val act = saga.acts[it]
         ActComponent(
             act,
@@ -560,10 +669,7 @@ fun ActContent(saga: SagaContent) {
             saga,
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .verticalScroll(
-                        rememberScrollState(),
-                    ),
+                    .fillMaxSize(),
         )
     }
 }
@@ -572,7 +678,9 @@ fun ActContent(saga: SagaContent) {
 private fun SagaDetailInitialView(
     saga: SagaContent?,
     modifier: Modifier,
+    onReachTop: () -> Unit = {},
     selectSection: (DetailAction) -> Unit = {},
+    openReview: () -> Unit = {},
 ) {
     val columnCount = 2
     val sectionStyle =
@@ -580,9 +688,18 @@ private fun SagaDetailInitialView(
             fontFamily = saga?.data?.genre?.bodyFont(),
             fontWeight = FontWeight.Bold,
         )
+    val gridState = rememberLazyGridState()
+
+    LaunchedEffect(remember { derivedStateOf { gridState.firstVisibleItemIndex } }) {
+        if (gridState.firstVisibleItemIndex == 0) {
+            onReachTop()
+        }
+    }
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(columnCount),
         modifier = modifier,
+        state = gridState,
     ) {
         saga?.let {
             item(span = {
@@ -595,22 +712,45 @@ private fun SagaDetailInitialView(
                                 .fillMaxWidth()
                                 .clipToBounds(),
                     ) {
-                        AsyncImage(
-                            it.data.icon,
-                            contentDescription = it.data.title,
-                            modifier =
+                        if (it.data.icon
+                                .isNullOrEmpty()
+                                .not()
+                        ) {
+                            AsyncImage(
+                                it.data.icon,
+                                contentDescription = it.data.title,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(300.dp)
+                                        .background(
+                                            it.data.genre.color
+                                                .gradientFade(),
+                                        ).effectForGenre(saga.data.genre)
+                                        .selectiveColorHighlight(
+                                            saga.data.genre.selectiveHighlight(),
+                                        ).clipToBounds(),
+                                contentScale = ContentScale.Crop,
+                            )
+                        } else {
+                            Box(
                                 Modifier
-                                    .fillMaxWidth()
+                                    .clickable {
+                                        selectSection(DetailAction.REGENERATE)
+                                    }.fillMaxWidth()
                                     .height(300.dp)
-                                    .background(
-                                        it.data.genre.color
-                                            .gradientFade(),
-                                    ).effectForGenre(saga.data.genre)
-                                    .selectiveColorHighlight(
-                                        saga.data.genre.selectiveHighlight(),
-                                    ).clipToBounds(),
-                            contentScale = ContentScale.Crop,
-                        )
+                                    .background(MaterialTheme.colorScheme.surfaceContainer),
+                            ) {
+                                Image(
+                                    painterResource(R.drawable.ic_spark),
+                                    null,
+                                    modifier =
+                                        Modifier.align(Alignment.Center).gradientFill(
+                                            it.data.genre.gradient(),
+                                        ),
+                                )
+                            }
+                        }
 
                         Box(
                             Modifier
@@ -638,7 +778,7 @@ private fun SagaDetailInitialView(
                                             .size(170.dp),
                                 )
                                 Text(
-                                    "A jornada de",
+                                    stringResource(R.string.saga_detail_journey_of),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
                                             fontFamily = it.data.genre.bodyFont(),
@@ -676,8 +816,8 @@ private fun SagaDetailInitialView(
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
-                    VerticalLabel(it.chapters.count().toString(), "Capítulos", it.data.genre)
-                    VerticalLabel(it.characters.count().toString(), "Personagens", it.data.genre)
+                    VerticalLabel(it.chapters.count().toString(), stringResource(R.string.saga_detail_section_title_chapters), it.data.genre)
+                    VerticalLabel(it.characters.count().toString(), stringResource(R.string.saga_detail_section_title_characters), it.data.genre)
                 }
             }
 
@@ -703,7 +843,7 @@ private fun SagaDetailInitialView(
                     )
 
                     Text(
-                        "Mensagens",
+                        stringResource(R.string.saga_detail_messages_label),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = it.data.genre.bodyFont(),
@@ -714,11 +854,46 @@ private fun SagaDetailInitialView(
                 }
             }
 
+            if (it.data.isEnded) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Column(
+                        modifier =
+                            Modifier.padding(16.dp).fillMaxWidth().clickable {
+                                openReview.invoke()
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            stringResource(R.string.saga_detail_see_your_now),
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.alpha(.4f),
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            stringResource(R.string.saga_detail_recap_button),
+                            style =
+                                MaterialTheme.typography.displaySmall.copy(
+                                    fontFamily = it.data.genre.headerFont(),
+                                    fontWeight = FontWeight.Bold,
+                                    brush = it.data.genre.gradient(),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier.reactiveShimmer(
+                                    true,
+                                ),
+                        )
+                    }
+                }
+            }
+
             item(span = {
                 GridItemSpan(columnCount)
             }) {
                 CharacterSection(
-                    "Descrição",
+                    stringResource(R.string.saga_detail_description_section_title),
                     it.data.description,
                     it.data.genre,
                 )
@@ -734,7 +909,7 @@ private fun SagaDetailInitialView(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "Personagens",
+                        stringResource(R.string.saga_detail_section_title_characters),
                         style = sectionStyle,
                         modifier =
                             Modifier
@@ -747,7 +922,7 @@ private fun SagaDetailInitialView(
                     }, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                            contentDescription = "Ver personagens",
+                            contentDescription = stringResource(R.string.saga_detail_view_characters_action),
                         )
                     }
                 }
@@ -803,7 +978,7 @@ private fun SagaDetailInitialView(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "Linha do tempo",
+                                stringResource(R.string.saga_detail_timeline_section_title),
                                 style = sectionStyle,
                                 modifier =
                                     Modifier
@@ -818,7 +993,7 @@ private fun SagaDetailInitialView(
                             }, modifier = Modifier.size(24.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                    contentDescription = "Ver Linha do tempo",
+                                    contentDescription = stringResource(R.string.saga_detail_view_timeline_action),
                                 )
                             }
                         }
@@ -841,7 +1016,7 @@ private fun SagaDetailInitialView(
                             )
                         } ?: run {
                             Text(
-                                "Nenhum evento registrado",
+                                stringResource(R.string.saga_detail_no_events_placeholder),
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -862,7 +1037,7 @@ private fun SagaDetailInitialView(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "Wiki",
+                                stringResource(R.string.saga_detail_section_title_wiki),
                                 style = sectionStyle,
                                 modifier =
                                     Modifier
@@ -875,14 +1050,14 @@ private fun SagaDetailInitialView(
                             }, modifier = Modifier.size(24.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                    contentDescription = "Ver wiki",
+                                    contentDescription = stringResource(R.string.saga_detail_view_wiki_action),
                                 )
                             }
                         }
 
                         if (it.wikis.isEmpty()) {
                             Text(
-                                "Nenhuma informação salva",
+                                stringResource(R.string.saga_detail_no_wiki_info_placeholder),
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -914,7 +1089,7 @@ private fun SagaDetailInitialView(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Capítulos",
+                            stringResource(R.string.saga_detail_section_title_chapters),
                             style = sectionStyle,
                             modifier =
                                 Modifier
@@ -929,7 +1104,7 @@ private fun SagaDetailInitialView(
                         }, modifier = Modifier.size(24.dp)) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Ver personagens",
+                                contentDescription = stringResource(R.string.saga_detail_view_chapters_action),
                             )
                         }
                     }
@@ -965,7 +1140,7 @@ private fun SagaDetailInitialView(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Atos",
+                            stringResource(R.string.saga_detail_section_title_acts),
                             style = sectionStyle,
                             modifier =
                                 Modifier
@@ -980,7 +1155,7 @@ private fun SagaDetailInitialView(
                         }, modifier = Modifier.size(24.dp)) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Ver personagens",
+                                contentDescription = stringResource(R.string.saga_detail_view_acts_action),
                             )
                         }
                     }
@@ -996,13 +1171,13 @@ private fun SagaDetailInitialView(
                         it,
                         Modifier
                             .padding(16.dp)
-                            .fillMaxWidth(),
+                            .fillMaxWidth()
+                            .height(300.dp),
                     )
                 }
             }
 
-            if (it.data.endMessage.isNotEmpty()) {
-
+            if (it.data.isEnded) {
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
@@ -1013,8 +1188,9 @@ private fun SagaDetailInitialView(
                                 fontFamily = it.data.genre.bodyFont(),
                                 fontWeight = FontWeight.Light,
                                 textAlign = TextAlign.Center,
-                                brush = it.data.genre.gradient()
-                            ))
+                                brush = it.data.genre.gradient(),
+                            ),
+                    )
                 }
             }
 
@@ -1036,7 +1212,7 @@ private fun SagaDetailInitialView(
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
-                    Text("Excluir Saga", textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.saga_detail_delete_saga_button), textAlign = TextAlign.Center)
                 }
             }
         }
@@ -1050,6 +1226,8 @@ fun SagaDetailContentViewLoadingPreview() {
         SagaDetailContentView(
             state = State.Loading,
             paddingValues = PaddingValues(0.dp),
+            createReview = {},
+            openReview = {},
         )
     }
 }
@@ -1066,14 +1244,13 @@ fun SagaDetailContentViewPreview() {
             State.Success(
                 SagaContent(
                     data =
-                        SagaData(
+                        Saga(
                             title = "Saga de teste",
                             description = "Descrição da saga de teste",
                             icon = null,
                             createdAt = System.currentTimeMillis(),
                             genre = Genre.SCI_FI,
                             mainCharacterId = null,
-                            visuals = IllustrationVisuals(),
                         ),
                     acts =
                         List(3) {
@@ -1125,6 +1302,8 @@ fun SagaDetailContentViewPreview() {
         SagaDetailContentView(
             state = state,
             paddingValues = PaddingValues(0.dp),
+            createReview = {},
+            openReview = {},
         )
     }
 }

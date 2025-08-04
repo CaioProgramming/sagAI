@@ -1,7 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import kotlinx.coroutines.flow.Flow
 
 interface SagaRepository {
@@ -9,11 +9,11 @@ interface SagaRepository {
 
     fun getSagaById(id: Int): Flow<SagaContent?>
 
-    suspend fun saveChat(sagaData: SagaData): SagaData
+    suspend fun saveChat(saga: Saga): Saga
 
-    suspend fun updateChat(sagaData: SagaData) : SagaData
+    suspend fun updateChat(saga: Saga): Saga
 
-    suspend fun deleteChat(sagaData: SagaData)
+    suspend fun deleteChat(saga: Saga)
 
     suspend fun deleteChatById(id: String)
 

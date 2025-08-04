@@ -64,4 +64,5 @@ object ActPrompts {
                 }.joinToString(separator = "\n") { it }}
                 """.trimIndent()
             }.joinToString(separator = "\n") { it }
+            .trimIndent()
 }

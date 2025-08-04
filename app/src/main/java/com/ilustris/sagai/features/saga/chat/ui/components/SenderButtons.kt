@@ -37,6 +37,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType.*
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darker
 
 @Composable
 fun SenderType.itemOption(
@@ -48,37 +49,29 @@ fun SenderType.itemOption(
     onSelect: (SenderType) -> Unit = {},
 ) {
     val isSelected = this == selectedItem
-    val color by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                genre.color
-            } else {
-                MaterialTheme.colorScheme.onBackground
-            },
-    )
-
-    val borderColor by animateColorAsState(
-        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
+    val backgroundColor by animateColorAsState(
+        if (isSelected.not()) MaterialTheme.colorScheme.surfaceContainer else
+            MaterialTheme.colorScheme.surfaceContainer.darker(.2f)
     )
 
     this@itemOption.icon()?.let {
 
         Column(modifier =
             modifier
-                .clip(RoundedCornerShape(genre.cornerSize()))
+                .background(backgroundColor)
                 .clickable {
                     onSelect(this@itemOption)
-                }.padding(4.dp)) {
+                }) {
 
-            Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.onBackground.copy(alpha = .05f)))
+            Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f)))
 
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(8.dp)
             ) {
                 Text(
                     this@itemOption.title(),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Start,
                     modifier = Modifier.weight(1f),
                 )
@@ -109,7 +102,6 @@ fun SenderTypePreview() {
     Column {
         SenderType.entries.forEach {
             it.itemOption(
-                modifier = Modifier.padding(4.dp),
                 selectedItem = THOUGHT,
                 genre = Genre.FANTASY,
             )
@@ -124,7 +116,7 @@ fun SenderType.icon() =
         THOUGHT -> R.drawable.think_icon
         ACTION -> R.drawable.action_icon
         NEW_CHARACTER -> R.drawable.character_icon
-        else -> null
+        else -> R.drawable.ic_spark
     }
 
 @Composable
@@ -135,7 +127,9 @@ fun SenderType.title() =
         THOUGHT -> stringResource(R.string.sender_type_thought_title)
         ACTION -> stringResource(R.string.sender_type_action_title)
         NEW_CHARACTER -> stringResource(R.string.sender_type_new_character_title)
-        else -> emptyString()
+        CHARACTER -> "Personagem"
+        NEW_CHAPTER -> "Novo Capítulo"
+        NEW_ACT -> "Novo Ato"
     }
 
 @Composable

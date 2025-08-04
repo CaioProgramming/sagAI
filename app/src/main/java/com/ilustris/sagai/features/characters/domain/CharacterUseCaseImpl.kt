@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.characters.domain
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Schema
 import com.ilustris.sagai.core.ai.CharacterFraming
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
@@ -15,8 +16,8 @@ import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.SagaData
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -28,6 +29,7 @@ class CharacterUseCaseImpl
         private val repository: CharacterRepository,
         private val imagenClient: ImagenClient,
         private val textGenClient: TextGenClient,
+        private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
@@ -63,18 +65,16 @@ class CharacterUseCaseImpl
 
         override suspend fun generateCharacterImage(
             character: Character,
-            description: String,
-            saga: SagaData,
-        ): RequestResult<Exception, Character> =
+            saga: Saga,
+        ): RequestResult<Exception, Pair<Character, String>> =
             try {
                 val translatedDescription =
-                    textGenClient.generate<String>(
+                    gemmaClient.generate<String>(
                         CharacterPrompts.descriptionTranslationPrompt(
                             character,
                             CharacterFraming.PORTRAIT,
                             saga.genre,
                         ),
-                        customSchema = Schema.string(),
                         requireTranslation = false,
                     )
                 val prompt = ImagePrompts.generateImage(character, saga, translatedDescription!!)
@@ -91,7 +91,7 @@ class CharacterUseCaseImpl
                 // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)
-                RequestResult.Success(newCharacter)
+                RequestResult.Success(newCharacter to prompt)
             } catch (e: Exception) {
                 e.asError()
             }

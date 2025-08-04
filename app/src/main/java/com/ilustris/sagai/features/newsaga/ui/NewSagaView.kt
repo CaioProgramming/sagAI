@@ -5,7 +5,7 @@ package com.ilustris.sagai.features.newsaga.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.EaseInElastic
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -197,7 +197,7 @@ fun NewSagaView(
                     ) {
                         state.saga?.let {
                             SagaCard(
-                                sagaData = it,
+                                saga = it,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -316,7 +316,7 @@ fun NewSagaFlow(
                 val indicatorWeight by animateFloatAsState(
                     if (isEnabled) 1f else .3f,
                     label = "indicatorWeight",
-                    animationSpec = tween(500, easing = EaseInElastic),
+                    animationSpec = tween(500, easing = EaseIn),
                 )
 
                 val indicatorBrush =

@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.meaning
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rules
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ChatPrompts {
@@ -57,7 +58,7 @@ object ChatPrompts {
     fun typesExplanation() =
         """
         Meaning of 'senderType' options:
-        ${SenderType.entries.joinToString(separator = "\n") { it.name + ": " + it.meaning() }}
+        ${SenderType.entries.joinToString(separator = "\n") { it.name + ": " + it.meaning() + "\n" + it.rules() }}
         """.trimIndent()
 
     fun conversationStyleAndPacing() =

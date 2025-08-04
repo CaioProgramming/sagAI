@@ -1,15 +1,17 @@
 package com.ilustris.sagai.core.database
 
-import androidx.room.AutoMigration
 import androidx.room.Database
+import androidx.room.RenameColumn // Ensure this import is present
 import androidx.room.RoomDatabase
+import androidx.room.migration.AutoMigrationSpec
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.datasource.SagaDao
@@ -18,9 +20,23 @@ import com.ilustris.sagai.features.timeline.data.source.TimelineDao
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.source.WikiDao
 
+// Spec class for renaming chaptersInsight to actsInsight in the Saga table
+@RenameColumn( // Applied directly to the class
+    tableName = "Saga",
+    fromColumnName = "chaptersInsight",
+    toColumnName = "actsInsight",
+)
+class RenameChaptersInsightToActsInsightSpec : AutoMigrationSpec {
+    override fun onPostMigrate(db: SupportSQLiteDatabase) {
+        // This is called after the migration.
+        // You can add verification logic here if needed.
+        super.onPostMigrate(db)
+    }
+}
+
 @Database(
     entities = [
-        SagaData::class,
+        Saga::class,
         Message::class,
         Chapter::class,
         Character::class,
@@ -28,12 +44,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Timeline::class,
         Act::class,
     ],
-    version = 29,
-    autoMigrations = [
-        AutoMigration(from = 26, to = 27),
-        AutoMigration(from = 27, to = 28),
-        AutoMigration(from = 28, to = 29),
-    ],
+    version = 34,
     exportSchema = true,
 )
 abstract class SagaDatabase : RoomDatabase() {

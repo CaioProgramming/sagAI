@@ -28,17 +28,6 @@ data class MessageContent(
     val act: Act? = null,
 )
 
-fun MessageContent.joinMessage(showSender: Boolean = true): Pair<String, String> =
-    when (message.senderType) {
-        SenderType.USER -> "${character?.name}(${message.senderType})" to message.text
-        SenderType.CHARACTER -> "${(character?.name) ?: "Unknown"} ${senderDescription(message.senderType, showSender)}" to message.text
-        SenderType.THOUGHT,
-        SenderType.ACTION,
-        ->
-            ("${character?.name}${senderDescription(message.senderType, showSender)}") to message.text
-        else -> message.senderType.name to message.text
-    }
-
 fun senderDescription(
     senderType: SenderType,
     showSender: Boolean,
@@ -46,11 +35,4 @@ fun senderDescription(
     "(${senderType.name})"
 } else {
     emptyString()
-}
-
-fun MessageContent.isUser(mainCharacter: Character?) : Boolean {
-    if (message.senderType == SenderType.CHARACTER) return false
-   return message.senderType == SenderType.USER ||
-            message.characterId == mainCharacter?.id ||
-            message.speakerName.equals(mainCharacter?.name, true)
 }
