@@ -162,7 +162,7 @@ private fun ChatList(
                 ) {
                     Icon(
                         painterResource(R.drawable.ic_bug),
-                        contentDescription = "Debug Session",
+                        contentDescription = stringResource(R.string.home_debug_session_icon_desc),
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier =
                             Modifier
@@ -172,7 +172,7 @@ private fun ChatList(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            "Start Debug Session",
+                            stringResource(R.string.home_start_debug_session_title),
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.SemiBold,
@@ -181,7 +181,7 @@ private fun ChatList(
                         )
 
                         Text(
-                            "Test with fake messages.",
+                            stringResource(R.string.home_test_with_fake_messages_subtitle),
                             style =
                                 MaterialTheme.typography.labelSmall.copy(
                                     fontWeight = FontWeight.Light,
@@ -223,7 +223,7 @@ private fun ChatList(
                 Spacer(modifier = Modifier.width(8.dp))
                 Column {
                     Text(
-                        "Criar nova saga",
+                        stringResource(R.string.home_create_new_saga_title),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
@@ -232,7 +232,7 @@ private fun ChatList(
                     )
 
                     Text(
-                        "Crie uma nova aventura e descubra o que o futuro reserva para você.",
+                        stringResource(R.string.home_create_new_saga_subtitle),
                         style =
                             MaterialTheme.typography.labelSmall.copy(
                                 fontWeight = FontWeight.Light,
@@ -405,7 +405,7 @@ fun ChatCard(
                         lastMessage?.let {
                             if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
                                 Text(
-                                    text = (it.character?.name ?: "Desconhecido").plus(": "),
+                                    text = (it.character?.name ?: stringResource(id = R.string.chat_card_unknown_character)).plus(": "),
                                     style =
                                         MaterialTheme.typography.labelMedium.copy(
                                             fontWeight = FontWeight.Bold,
@@ -440,7 +440,7 @@ fun ChatCard(
                             }
                         } ?: run {
                             Text(
-                                "Sua saga começa agora!",
+                                stringResource(R.string.chat_card_saga_begins),
                                 style =
                                     MaterialTheme.typography.labelMedium.copy(
                                         fontFamily = saga.data.genre.bodyFont(),
@@ -450,7 +450,7 @@ fun ChatCard(
                         }
                     } else {
                         Text(
-                            "Sua saga chegou ao fim!",
+                            stringResource(R.string.chat_card_saga_ended),
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     fontFamily = saga.data.genre.bodyFont(),
@@ -503,7 +503,7 @@ private fun NewChatCard(
             )
 
             Text(
-                "A jornada começa aqui",
+                stringResource(R.string.home_new_chat_journey_begins_title),
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Start,
                 style =
@@ -514,7 +514,7 @@ private fun NewChatCard(
             )
 
             Text(
-                "Crie sua nova aventura e descubra o que o futuro reserva para você.",
+                stringResource(R.string.home_create_new_saga_subtitle),
                 modifier = Modifier.fillMaxWidth(),
                 style = MaterialTheme.typography.titleMedium,
             )
@@ -533,7 +533,7 @@ private fun NewChatCard(
                 shape = RoundedCornerShape(15.dp),
             ) {
                 Text(
-                    "Começar",
+                    stringResource(R.string.home_new_chat_start_button),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onPrimary,
