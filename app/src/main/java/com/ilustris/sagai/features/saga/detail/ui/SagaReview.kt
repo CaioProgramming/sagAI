@@ -118,6 +118,7 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rankTopCharact
 import com.ilustris.sagai.features.saga.chat.ui.components.icon
 import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
 import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
@@ -920,138 +921,6 @@ fun MentionsPage(content: SagaContent) {
                     Spacer(Modifier.height(50.dp))
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun CharactersItem(
-    pair: Pair<Character, Int>,
-    genre: Genre,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        val character = pair.first
-
-        CharacterAvatar(
-            character,
-            genre = genre,
-            modifier = Modifier.size(50.dp),
-        )
-        Column {
-            Text(
-                pair.first.name,
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                        fontWeight = FontWeight.Bold,
-                    ),
-            )
-
-            Text(
-                "${pair.second} mensagens",
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                        fontWeight = FontWeight.Normal,
-                    ),
-                modifier = Modifier.alpha(.5f),
-            )
-        }
-    }
-}
-
-@Composable
-private fun AnimatedChapterGridBackground(
-    sagaIcon: String?,
-    chapters: List<Chapter>,
-    genre: Genre,
-) {
-    if (chapters.isEmpty()) {
-        return
-    }
-
-    val lazyGridState = rememberLazyGridState()
-    val itemHeight = LocalConfiguration.current.screenHeightDp.dp / 2
-
-    var scrollTarget by remember { mutableFloatStateOf(0f) }
-    var maxOffset by remember { mutableFloatStateOf(0f) }
-
-    LaunchedEffect(Unit) {
-        scrollTarget =
-            lazyGridState.layoutInfo.visibleItemsInfo
-                .last()
-                .offset.y
-                .toFloat()
-    }
-
-    LaunchedEffect(scrollTarget) {
-        Log.d("AnimatedGrid", "Scrolling to -> $scrollTarget ")
-        Log.d(
-            "AnimatedGrid",
-            "current offset end -> ${lazyGridState.layoutInfo.visibleItemsInfo.lastOrNull()?.offset?.y?.toFloat()}",
-        )
-        lazyGridState.animateScrollBy(
-            scrollTarget,
-            animationSpec =
-                tween(
-                    10.seconds.toInt(DurationUnit.MILLISECONDS),
-                    easing = EaseIn,
-                ),
-        )
-
-        if (lazyGridState.canScrollForward) {
-            if (maxOffset != 0f) {
-                scrollTarget = maxOffset
-            } else {
-                scrollTarget +=
-                    lazyGridState.layoutInfo.visibleItemsInfo
-                        .last()
-                        .offset.y
-                        .toFloat()
-            }
-        } else {
-            maxOffset = scrollTarget
-            scrollTarget = scrollTarget.unaryMinus()
-        }
-    }
-
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        state = lazyGridState,
-        modifier = Modifier.fillMaxSize(),
-        userScrollEnabled = false,
-    ) {
-        item {
-            AsyncImage(
-                model = sagaIcon,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource(id = R.drawable.ic_spark),
-                error = painterResource(id = R.drawable.ic_spark),
-                modifier =
-                    Modifier
-                        .effectForGenre(genre)
-                        .fillMaxWidth()
-                        .height(itemHeight),
-            )
-        }
-
-        items(chapters, key = { it.id }) { chapter ->
-            AsyncImage(
-                model = chapter.coverImage,
-                contentDescription = chapter.title,
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource(id = R.drawable.ic_spark),
-                error = painterResource(id = R.drawable.ic_spark),
-                modifier =
-                    Modifier
-                        .effectForGenre(genre, useFallBack = true)
-                        .fillMaxWidth()
-                        .height(itemHeight),
-            )
         }
     }
 }
