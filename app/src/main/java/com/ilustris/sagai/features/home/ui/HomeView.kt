@@ -2,6 +2,7 @@
 
 package com.ilustris.sagai.features.home.ui
 
+import ai.atick.material.MaterialColor
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -61,6 +63,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
@@ -72,14 +75,17 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import effectForGenre
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -267,7 +273,6 @@ fun ChatCard(
                     .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Avatar
             val imageLoaded =
                 remember {
                     mutableStateOf(false)
@@ -275,11 +280,8 @@ fun ChatCard(
             Box(
                 modifier =
                     Modifier
-                        .size(50.dp)
-                        .border(2.dp, sagaData.genre.gradient(), CircleShape)
-                        .padding(4.dp)
-                        .clip(CircleShape)
-                        .background(sagaData.genre.color, CircleShape),
+                        .size(64.dp)
+                        .clip(CircleShape),
             ) {
                 if (saga.data.isDebug.not()) {
                     AsyncImage(
@@ -288,9 +290,22 @@ fun ChatCard(
                         contentScale = ContentScale.Crop,
                         modifier =
                             Modifier
+                                .padding(8.dp)
+                                .border(
+                                    2.dp,
+                                    sagaData.genre.color,
+                                    CircleShape,
+                                ).padding(4.dp)
+                                .background(
+                                    sagaData.genre.color,
+                                    CircleShape,
+                                ).clip(CircleShape)
                                 .fillMaxSize()
-                                .effectForGenre(sagaData.genre, focusRadius = 0f, customGrain = 0.05f)
-                                .selectiveColorHighlight(
+                                .effectForGenre(
+                                    sagaData.genre,
+                                    focusRadius = 0f,
+                                    customGrain = 0.05f,
+                                ).selectiveColorHighlight(
                                     sagaData.genre.selectiveHighlight(),
                                 ),
                         onSuccess = {
@@ -308,8 +323,9 @@ fun ChatCard(
                         contentScale = ContentScale.Fit,
                         modifier =
                             Modifier
-                                .padding(4.dp)
-                                .fillMaxSize(),
+                                .fillMaxSize()
+                                .border(2.dp, sagaData.genre.gradient(), CircleShape)
+                                .padding(4.dp),
                     )
 
                     LaunchedEffect(Unit) {
@@ -323,14 +339,29 @@ fun ChatCard(
                 ) {
                     Text(
                         sagaData.title
-                            .firstOrNull()
-                            ?.uppercaseChar()
-                            ?.toString() ?: "S",
+                            .first()
+                            .uppercaseChar()
+                            .toString(),
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = sagaData.genre.headerFont(),
                                 color = sagaData.genre.iconColor,
                                 textAlign = TextAlign.Center,
+                            ),
+                    )
+                }
+
+                if (saga.data.isEnded) {
+                    Image(
+                        painterResource(R.drawable.ic_spark),
+                        contentDescription = null,
+                        colorFilter =
+                            ColorFilter.tint(
+                                sagaData.genre.color,
+                            ),
+                        modifier =
+                            Modifier.offset(y = 6.dp).size(24.dp).align(
+                                Alignment.BottomCenter,
                             ),
                     )
                 }
@@ -344,13 +375,13 @@ fun ChatCard(
                     Text(
                         text = sagaData.title, // Replace with actual contact name
                         style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = saga.data.genre.bodyFont(),
+                        fontFamily = saga.data.genre.headerFont(),
                         modifier = Modifier.weight(1f),
                     )
 
                     lastMessage?.let {
-                        val time = Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
+                        val time =
+                            Calendar.getInstance().apply { timeInMillis = it.message.timestamp }
                         val timeText =
                             String.format(
                                 "%02d:%02d",
@@ -369,7 +400,7 @@ fun ChatCard(
                     }
                 }
 
-                Row(Modifier.alpha(.5f).padding(vertical = 4.dp)) {
+                Row(Modifier.alpha(.8f).padding(vertical = 4.dp)) {
                     if (sagaData.isEnded.not()) {
                         lastMessage?.let {
                             if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
@@ -421,11 +452,16 @@ fun ChatCard(
                         Text(
                             "Sua saga chegou ao fim!",
                             style =
-                                MaterialTheme.typography.labelMedium.copy(
+                                MaterialTheme.typography.bodyMedium.copy(
                                     fontFamily = saga.data.genre.bodyFont(),
-                                    fontStyle = FontStyle.Italic,
-                                    brush = saga.data.genre.gradient(gradientType = GradientType.LINEAR, targetValue = 150f),
+                                    color = sagaData.genre.color,
                                 ),
+                            modifier =
+                                Modifier
+                                    .reactiveShimmer(
+                                        isPlaying = true,
+                                        duration = 5.seconds,
+                                    ).weight(1f),
                         )
                     }
                 }
@@ -572,6 +608,7 @@ fun HomeViewPreview() {
                                 description = "The journey of our lifes",
                                 genre = Genre.FANTASY,
                                 icon = "",
+                                isEnded = true,
                                 createdAt = Calendar.getInstance().timeInMillis,
                                 mainCharacterId = null,
                             ),

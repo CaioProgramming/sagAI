@@ -55,10 +55,11 @@ fun Modifier.effectForGenre(
     genre: Genre,
     focusRadius: Float? = null,
     customGrain: Float? = null,
+    useFallBack: Boolean = false,
 ): Modifier {
     // Check if the current Android version is below 33 (Android 13)
     // If it is, return a fallback effect as RenderEffect and RuntimeShader are not available.
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || useFallBack) {
         return this.fallbackEffect(genre)
     }
 

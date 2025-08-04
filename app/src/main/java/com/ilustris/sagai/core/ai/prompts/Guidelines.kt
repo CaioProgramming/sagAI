@@ -13,6 +13,7 @@ object CharacterGuidelines {
         Your task is to act as an AI image prompt engineer. You will receive character details in JSON format. Your goal is to convert this structured JSON data into a single, highly detailed, unambiguous, and visually rich English text description. This description will be directly used as a part of a larger prompt for an AI image generation model, so precision and visual specificity are paramount.
         **Crucially, this description MUST be formulated to be compatible with the specified 'CharacterFraming' and adhere strictly to the provided 'StoryTheme'.
         All details should be described as they would appear and be impactful within that specific framing and thematic context.**
+        YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
 
         **Guidelines for Conversion and Expansion:**
         

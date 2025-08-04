@@ -180,7 +180,6 @@ class ChatViewModel
                     MediaPlayer().apply {
                         setDataSource(context, file.toUri())
                         isLooping = true
-                        setVolume(.5f, .5f)
                         prepareAsync()
                         setOnPreparedListener {
                             start()

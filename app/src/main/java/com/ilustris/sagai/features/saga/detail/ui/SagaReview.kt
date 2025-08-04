@@ -1,37 +1,60 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
+import android.annotation.SuppressLint
+import android.util.Log
+import android.widget.Space
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.animateOffsetAsState
+import androidx.compose.animation.core.animateSizeAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -45,6 +68,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,20 +80,29 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.chapter.data.model.Chapter // Assuming path for Chapter model
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.HudCard
@@ -85,6 +118,7 @@ import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rankTopCharact
 import com.ilustris.sagai.features.saga.chat.ui.components.icon
 import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.TypewriterText
@@ -96,6 +130,8 @@ import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.rememberAnimatedShuffledGradientBrush
 import com.ilustris.sagai.ui.theme.shaderBackground
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -103,6 +139,9 @@ import com.mikepenz.hypnoticcanvas.shaderBackground
 import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.collections.get
+import kotlin.math.roundToInt
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -125,7 +164,6 @@ fun SagaReview(
     val pagerState = rememberPagerState { ReviewPages.entries.size }
     val genre = content.data.genre
 
-    // Get the animated gradient brush
     val animatedGradientBrush =
         rememberAnimatedShuffledGradientBrush(
             pagerState = pagerState,
@@ -152,16 +190,10 @@ fun SagaReview(
             }
         }
     }
-    /*LaunchedEffect(animatedProgress) {
-        if (isPlaying && animatedProgress == 1f && pagerState.currentPage < ReviewPages.entries.size - 1) {
-            delay(200)
-            pagerState.animateScrollToPage(pagerState.currentPage + 1, animationSpec = tween(500))
-        }
-    }*/
 
     Box(
         Modifier
-            .background(MaterialTheme.colorScheme.background)
+            .background(animatedGradientBrush)
             .fillMaxSize(),
     ) {
         if (content.data.isEnded.not() || generatingReview) {
@@ -186,7 +218,7 @@ fun SagaReview(
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.bodyFont(),
-                            color = genre.iconColor,
+                            color = MaterialTheme.colorScheme.onBackground,
                             textAlign = TextAlign.Center,
                         ),
                 )
@@ -219,7 +251,9 @@ fun SagaReview(
                         },
                 ) {
                     val page = ReviewPages.entries[it]
-                    AnimatedContent(pagerState.currentPage) { index ->
+                    AnimatedContent(pagerState.currentPage, transitionSpec = {
+                        fadeIn() togetherWith fadeOut()
+                    }, modifier = Modifier.fillMaxSize()) { index ->
                         if (index == it) {
                             when (page) {
                                 ReviewPages.INTRO ->
@@ -236,20 +270,13 @@ fun SagaReview(
                                 ReviewPages.CHARACTERS ->
                                     MentionsPage(
                                         content,
-                                        pagerState.currentPage == it,
                                     )
 
                                 ReviewPages.CHAPTERS ->
-                                    ReviewIntroduction(
-                                        content,
-                                        content.data.review?.actsInsight,
-                                    )
+                                    ActsInsightPage(content)
 
                                 ReviewPages.CONCLUSION ->
-                                    ReviewIntroduction(
-                                        content,
-                                        content.data.review?.conclusion,
-                                    )
+                                    ConclusionPage(content)
                             }
                         } else {
                             Box {}
@@ -264,7 +291,7 @@ fun SagaReview(
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         }.fillMaxWidth()
-                        .fillMaxHeight(.35f)
+                        .fillMaxHeight(.3f)
                         .background(fadeGradientTop()),
                 )
 
@@ -275,7 +302,7 @@ fun SagaReview(
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         }.fillMaxWidth()
-                        .fillMaxHeight(.35f)
+                        .fillMaxHeight(.3f)
                         .background(fadeGradientBottom()),
                 )
 
@@ -304,13 +331,7 @@ fun SagaReview(
                             Box(
                                 modifier =
                                     Modifier
-                                        .weight(1f)
-                                        .padding(horizontal = 2.dp)
-                                        .height(3.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = progress),
-                                            shape = RoundedCornerShape(content.data.genre.cornerSize()),
-                                        ).clickable {
+                                        .clickable {
                                             if (pagerState.currentPage != index) {
                                                 coroutineScope.launch {
                                                     pagerState.animateScrollToPage(
@@ -319,7 +340,16 @@ fun SagaReview(
                                                     )
                                                 }
                                             }
-                                        },
+                                        }.weight(1f)
+                                        .padding(horizontal = 2.dp)
+                                        .height(3.dp)
+                                        .background(
+                                            color =
+                                                MaterialTheme.colorScheme.onBackground.copy(
+                                                    alpha = progress,
+                                                ),
+                                            shape = RoundedCornerShape(content.data.genre.cornerSize()),
+                                        ),
                             )
                         }
                     }
@@ -337,7 +367,7 @@ fun SagaReview(
                             contentDescription = null,
                             modifier =
                                 Modifier.size(24.dp),
-                            colorFilter = ColorFilter.tint(genre.iconColor),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground),
                         )
 
                         Text(
@@ -345,7 +375,7 @@ fun SagaReview(
                             style =
                                 MaterialTheme.typography.titleSmall.copy(
                                     fontFamily = genre.headerFont(),
-                                    color = genre.iconColor,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                 ),
                         )
                     }
@@ -375,6 +405,7 @@ fun SagaReviewPreview() {
                                 conclusion = "As the saga reaches its climactic conclusion, prepare for an unforgettable finale that will tie together all the threads of this epic adventure. The fate of the world hangs in the balance.",
                             ),
                     ),
+                chapters = emptyList(), // Added for preview consistency
             )
         SagaReview(content, false)
     }
@@ -391,9 +422,8 @@ fun ReviewIntroduction(
                 .padding()
                 .fillMaxSize(),
     ) {
-        val coroutineScope = rememberCoroutineScope()
         var imageFraction by remember {
-            mutableStateOf(1f)
+            mutableFloatStateOf(1f)
         }
         val genre = content.data.genre
         val imageAnim by animateFloatAsState(
@@ -409,17 +439,18 @@ fun ReviewIntroduction(
             model = content.data.icon,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            colorFilter =
-                ColorFilter.tint(
-                    Color.Black.copy(alpha = imageAnim),
-                    blendMode = BlendMode.SrcOver,
-                ),
             modifier =
                 Modifier
                     .fillMaxSize()
                     .effectForGenre(genre)
                     .selectiveColorHighlight(genre.selectiveHighlight())
                     .zoomAnimation(),
+        )
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = imageAnim)),
         )
 
         Column(
@@ -454,10 +485,11 @@ fun ReviewIntroduction(
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),
                             color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Bold,
                         ),
                     onAnimationFinished = {
                         showText = true
-                        imageFraction = .4f
+                        imageFraction = .6f
                     },
                     modifier =
                         Modifier
@@ -510,7 +542,7 @@ fun PlayStylePage(content: SagaContent) {
                 .verticalScroll(rememberScrollState())
                 .animateContentSize(
                     animationSpec = tween(500, easing = EaseIn),
-                ).padding(bottom = 50.dp),
+                ),
     ) {
         Text(
             countAnimation.toString(),
@@ -526,84 +558,97 @@ fun PlayStylePage(content: SagaContent) {
         Text(
             "Mensagens",
             style =
-                MaterialTheme.typography.labelMedium.copy(
+                MaterialTheme.typography.labelSmall.copy(
                     fontFamily = genre.bodyFont(),
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Justify,
                 ),
         )
 
-        AnimatedVisibility(showText) {
-            content.data.review?.playstyle?.let {
-                SimpleTypewriterText(
-                    it,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    onAnimationFinished = {
-                        coroutineScope.launch {
-                            delay(500)
-                            showCards = true
-                        }
-                    },
-                    modifier =
-                        Modifier
-                            .padding(8.dp),
-                )
+        val cardAlpha by animateFloatAsState(
+            if (showCards) 1f else 0f,
+            animationSpec = tween(500, easing = EaseIn),
+            label = "cardAlphaAnimation",
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .background(
+                        MaterialTheme.colorScheme.background.copy(alpha = cardAlpha),
+                    ).animateContentSize()
+                    .padding(16.dp),
+        ) {
+            val messagesRanking = content.messages.rankMessageTypes().filter { it.second > 0 }
+
+            AnimatedVisibility(showText, enter = fadeIn() + slideInVertically(), exit = fadeOut()) {
+                content.data.review?.playstyle?.let {
+                    SimpleTypewriterText(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                            ),
+                        onAnimationFinished = {
+                            coroutineScope.launch {
+                                delay(500)
+                                showCards = true
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .padding(vertical = 8.dp),
+                    )
+                }
             }
-        }
 
-        AnimatedVisibility(showCards, enter = fadeIn() + slideInVertically(), exit = fadeOut()) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .padding(vertical = 8.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
-                            RoundedCornerShape(genre.cornerSize()),
-                        ).padding(16.dp),
-            ) {
-                val messagesRanking = content.messages.rankMessageTypes().filter { it.second > 0 }
-                Text(
-                    "Mensagens mais enviadas",
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontWeight = FontWeight.Black,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                )
+            AnimatedVisibility(showCards) {
+                Column {
+                    Text(
+                        "Rank de mensagens",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.headerFont(),
+                                color = genre.color,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(vertical = 8.dp)
+                                .fillMaxWidth(),
+                    )
 
-                messagesRanking.forEach {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            it.first.title(),
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                        )
+                    messagesRanking.forEach {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val position = messagesRanking.indexOf(it)
 
-                        Text(
-                            it.second.toString(),
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    fontWeight = FontWeight.Normal,
-                                ),
-                            modifier = Modifier.alpha(.5f),
-                        )
+                            Text(
+                                "${position + 1}. ${it.first.title()}",
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                            )
+
+                            Text(
+                                it.second.toString(),
+                                style =
+                                    MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        fontWeight = FontWeight.Normal,
+                                    ),
+                                modifier = Modifier.alpha(.5f),
+                            )
+                        }
                     }
+
+                    Spacer(Modifier.height(50.dp))
                 }
             }
         }
@@ -611,10 +656,7 @@ fun PlayStylePage(content: SagaContent) {
 }
 
 @Composable
-fun MentionsPage(
-    content: SagaContent,
-    isPageVisible: Boolean,
-) {
+fun MentionsPage(content: SagaContent) {
     val genre = content.data.genre
 
     val coroutineScope = rememberCoroutineScope()
@@ -669,43 +711,8 @@ fun MentionsPage(
             Modifier
                 .padding(top = 100.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .animateContentSize(
-                    animationSpec = tween(500, easing = EaseIn),
-                ).padding(16.dp),
+                .verticalScroll(rememberScrollState()),
     ) {
-        val charactersAnim by animateFloatAsState(
-            if (countAnimation > 0) 1f else 0f,
-            tween(500, easing = LinearOutSlowInEasing),
-        )
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(16.dp).alpha(charactersAnim),
-        ) {
-            val topCharacters = ranking.take(3)
-
-            if (topCharacters.size == 3) {
-                CharacterAvatar(
-                    topCharacters.last().first,
-                    genre = genre,
-                    modifier = Modifier.size(80.dp),
-                )
-
-                CharacterAvatar(
-                    topCharacters.first().first,
-                    genre = genre,
-                    modifier = Modifier.size(100.dp),
-                )
-
-                CharacterAvatar(
-                    topCharacters[1].first,
-                    genre = genre,
-                    modifier = Modifier.size(80.dp),
-                )
-            }
-        }
-
         Text(
             countAnimation.toString(),
             style =
@@ -714,102 +721,203 @@ fun MentionsPage(
                     color = MaterialTheme.colorScheme.onBackground,
                     fontWeight = FontWeight.Black,
                 ),
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(4.dp),
         )
 
         Text(
             "Mencões a personagens",
             style =
-                MaterialTheme.typography.labelMedium.copy(
+                MaterialTheme.typography.labelSmall.copy(
                     fontFamily = genre.bodyFont(),
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Justify,
                 ),
-            modifier = Modifier.alpha(charactersAnim),
         )
 
-        AnimatedVisibility(showText, enter = fadeIn() + slideInVertically(), exit = scaleOut()) {
-            content.data.review?.topCharacters?.let {
-                SimpleTypewriterText(
-                    it,
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Justify,
-                        ),
-                    onAnimationFinished = {
-                        coroutineScope.launch {
-                            delay(500)
-                            showCards = true
-                        }
-                    },
-                    modifier =
-                        Modifier.padding(8.dp),
-                )
-            }
-        }
-
-        AnimatedVisibility(showCards) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .padding(vertical = 8.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
-                            RoundedCornerShape(genre.cornerSize()),
-                        ).padding(16.dp),
+        val cardAlpha by animateFloatAsState(
+            if (showCards) 1f else 0f,
+            animationSpec = tween(500, easing = EaseIn),
+            label = "cardAlphaAnimation",
+        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        MaterialTheme.colorScheme.background.copy(cardAlpha),
+                    ).padding(16.dp)
+                    .animateContentSize(
+                        animationSpec = tween(1000, easing = EaseIn),
+                    ),
+        ) {
+            AnimatedVisibility(
+                showText,
+                enter = fadeIn(),
+                exit = scaleOut(),
             ) {
-                Text(
-                    "Personagens mais presentes",
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontWeight = FontWeight.Black,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                )
-
-                ranking.forEach {
-                    CharactersItem(it, genre)
+                content.data.review?.topCharacters?.let {
+                    SimpleTypewriterText(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Justify,
+                            ),
+                        onAnimationFinished = {
+                            coroutineScope.launch {
+                                delay(500)
+                                showCards = true
+                            }
+                        },
+                        modifier =
+                            Modifier.padding(vertical = 8.dp),
+                    )
                 }
             }
-        }
 
-        AnimatedVisibility(showCards) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier =
-                    Modifier
-                        .padding(vertical = 8.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
-                            RoundedCornerShape(genre.cornerSize()),
-                        ).padding(16.dp),
+            AnimatedVisibility(
+                showCards,
+                enter = fadeIn(),
+                exit = fadeOut(),
             ) {
-                val messagesRanking =
-                    content.messages
-                        .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
-                        .filter { it.second > 0 }
-                Text(
-                    "Personagens mais mencionados",
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontWeight = FontWeight.Black,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                )
+                Column {
+                    Text(
+                        "Rank de personagens",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = genre.headerFont(),
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        modifier = Modifier.padding(vertical = 8.dp),
+                    )
 
-                messagesRanking.forEach {
-                    CharactersItem(it, genre)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier =
+                            Modifier
+                                .padding(16.dp),
+                    ) {
+                        val topCharacters = ranking.take(3)
+
+                        if (topCharacters.size == 3) {
+                            CharacterAvatar(
+                                topCharacters.last().first,
+                                genre = genre,
+                                modifier = Modifier.size(80.dp),
+                            )
+
+                            CharacterAvatar(
+                                topCharacters.first().first,
+                                genre = genre,
+                                modifier = Modifier.size(100.dp),
+                            )
+
+                            CharacterAvatar(
+                                topCharacters[1].first,
+                                genre = genre,
+                                modifier = Modifier.size(80.dp),
+                            )
+                        }
+                    }
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(Modifier.fillMaxWidth(.5f)) {
+                            Text(
+                                "Mais presentes",
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = genre.headerFont(),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(vertical = 8.dp)
+                                        .fillMaxWidth(),
+                            )
+                            ranking.forEach {
+                                val position = ranking.indexOf(it)
+                                Text(
+                                    "${position + 1}. ${it.first.name}",
+                                    style =
+                                        MaterialTheme.typography.bodyLarge.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color =
+                                                it.first.hexColor.hexToColor()
+                                                    ?: MaterialTheme.colorScheme.onBackground,
+                                        ),
+                                )
+                            }
+
+                            Column(Modifier.weight(1f)) {
+                                val messagesRanking =
+                                    content.messages
+                                        .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
+                                        .filter { it.second > 0 }
+                                Text(
+                                    "Mais mencionados",
+                                    style =
+                                        MaterialTheme.typography.titleSmall.copy(
+                                            fontFamily = genre.headerFont(),
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .padding(vertical = 8.dp)
+                                            .fillMaxWidth(),
+                                )
+
+                                messagesRanking.forEach {
+                                    val position = messagesRanking.indexOf(it)
+                                    Text(
+                                        "${position + 1}. ${it.first.name}",
+                                        style =
+                                            MaterialTheme.typography.bodyLarge.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                color =
+                                                    it.first.hexColor.hexToColor()
+                                                        ?: MaterialTheme.colorScheme.onBackground,
+                                            ),
+                                    )
+                                }
+                            }
+                        }
+                        Column(Modifier.weight(1f)) {
+                            val messagesRanking =
+                                content.messages
+                                    .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
+                                    .filter { it.second > 0 }
+                            Text(
+                                "Mais mencionados",
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = genre.headerFont(),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(vertical = 8.dp)
+                                        .fillMaxWidth(),
+                            )
+
+                            messagesRanking.forEach {
+                                val position = messagesRanking.indexOf(it)
+                                Text(
+                                    "${position + 1}. ${it.first.name}",
+                                    style =
+                                        MaterialTheme.typography.bodyLarge.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color =
+                                                it.first.hexColor.hexToColor()
+                                                    ?: MaterialTheme.colorScheme.onBackground,
+                                        ),
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(Modifier.height(50.dp))
                 }
             }
         }
@@ -851,6 +959,268 @@ private fun CharactersItem(
                     ),
                 modifier = Modifier.alpha(.5f),
             )
+        }
+    }
+}
+
+@Composable
+private fun AnimatedChapterGridBackground(
+    sagaIcon: String?,
+    chapters: List<Chapter>,
+    genre: Genre,
+) {
+    if (chapters.isEmpty()) {
+        return
+    }
+
+    val lazyGridState = rememberLazyGridState()
+    val itemHeight = LocalConfiguration.current.screenHeightDp.dp / 2
+
+    var scrollTarget by remember { mutableFloatStateOf(0f) }
+    var maxOffset by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        scrollTarget =
+            lazyGridState.layoutInfo.visibleItemsInfo
+                .last()
+                .offset.y
+                .toFloat()
+    }
+
+    LaunchedEffect(scrollTarget) {
+        Log.d("AnimatedGrid", "Scrolling to -> $scrollTarget ")
+        Log.d(
+            "AnimatedGrid",
+            "current offset end -> ${lazyGridState.layoutInfo.visibleItemsInfo.lastOrNull()?.offset?.y?.toFloat()}",
+        )
+        lazyGridState.animateScrollBy(
+            scrollTarget,
+            animationSpec =
+                tween(
+                    10.seconds.toInt(DurationUnit.MILLISECONDS),
+                    easing = EaseIn,
+                ),
+        )
+
+        if (lazyGridState.canScrollForward) {
+            if (maxOffset != 0f) {
+                scrollTarget = maxOffset
+            } else {
+                scrollTarget +=
+                    lazyGridState.layoutInfo.visibleItemsInfo
+                        .last()
+                        .offset.y
+                        .toFloat()
+            }
+        } else {
+            maxOffset = scrollTarget
+            scrollTarget = scrollTarget.unaryMinus()
+        }
+    }
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        state = lazyGridState,
+        modifier = Modifier.fillMaxSize(),
+        userScrollEnabled = false,
+    ) {
+        item {
+            AsyncImage(
+                model = sagaIcon,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_spark),
+                error = painterResource(id = R.drawable.ic_spark),
+                modifier =
+                    Modifier
+                        .effectForGenre(genre)
+                        .fillMaxWidth()
+                        .height(itemHeight),
+            )
+        }
+
+        items(chapters, key = { it.id }) { chapter ->
+            AsyncImage(
+                model = chapter.coverImage,
+                contentDescription = chapter.title,
+                contentScale = ContentScale.Crop,
+                placeholder = painterResource(id = R.drawable.ic_spark),
+                error = painterResource(id = R.drawable.ic_spark),
+                modifier =
+                    Modifier
+                        .effectForGenre(genre, useFallBack = true)
+                        .fillMaxWidth()
+                        .height(itemHeight),
+            )
+        }
+    }
+}
+
+@Composable
+fun ActsInsightPage(content: SagaContent) {
+    val genre = content.data.genre
+    val chapters = content.chapters
+
+    var showText by remember {
+        mutableStateOf(false)
+    }
+
+    LaunchedEffect(Unit) {
+        delay(3.seconds)
+        showText = true
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        AnimatedChapterGridBackground(
+            sagaIcon = content.data.icon,
+            chapters = chapters,
+            genre = genre,
+        )
+
+        val overlayAlpha by animateFloatAsState(
+            targetValue = if (showText) .7f else 0f,
+            animationSpec = tween(1500),
+            label = "backgroundOverlayAlpha",
+        )
+
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = overlayAlpha)),
+        )
+
+        val coroutineScope = rememberCoroutineScope()
+        val columnScroll = rememberScrollState()
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier =
+                Modifier
+                    .padding(top = 100.dp)
+                    .fillMaxSize()
+                    .verticalScroll(columnScroll)
+                    .padding(horizontal = 16.dp, vertical = 32.dp)
+                    .animateContentSize(),
+        ) {
+            Text(
+                "Sua jornada",
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = genre.gradient(),
+                        textAlign = TextAlign.Center,
+                    ),
+                modifier = Modifier.padding(vertical = 8.dp).reactiveShimmer(true),
+            )
+            content.data.review?.actsInsight?.let {
+                if (showText) {
+                    SimpleTypewriterText(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Justify,
+                            ),
+                        duration = 10.seconds,
+                        easing = EaseIn,
+                    )
+                }
+            }
+
+            Spacer(Modifier.fillMaxWidth().height(50.dp))
+        }
+    }
+}
+
+@Composable
+fun ConclusionPage(content: SagaContent) {
+    val genre = content.data.genre
+    val charactersToDisplay =
+        remember(content.characters) {
+            content.characters.filter { it.image.isBlank().not() }.ifEmpty {
+                content.mainCharacter?.let {
+                    listOf(
+                        it,
+                    )
+                } ?: emptyList()
+            }
+        }
+    var showTextParts by remember { mutableStateOf(false) }
+
+    PoppingAvatarsBackground(
+        characters = charactersToDisplay,
+        genre = content.data.genre,
+        avatarSize = 150.dp,
+        popDuration = 2.seconds.toLong(DurationUnit.MILLISECONDS),
+        moveDuration = 10.seconds.toInt(DurationUnit.MILLISECONDS),
+        onCharacterPopped = {
+            if (it >= charactersToDisplay.size / 2) {
+                showTextParts = true
+            }
+        },
+    )
+
+    val overlayAlpha by animateFloatAsState(
+        targetValue = if (showTextParts) .7f else 0f,
+        animationSpec = tween(1500),
+        label = "backgroundOverlayAlpha",
+    )
+
+    Box( // Overlay
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = overlayAlpha)),
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = "Thank you",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onBackground,
+            )
+
+            Text(
+                text = "FOR PLAYING",
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        brush = genre.gradient(true, duration = 3.seconds),
+                        textAlign = TextAlign.Center,
+                        fontFamily = genre.headerFont(),
+                    ),
+                modifier = Modifier.reactiveShimmer(true),
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            content.data.review?.conclusion?.let { conclusionText ->
+
+                AnimatedVisibility(showTextParts) {
+                    SimpleTypewriterText(
+                        text = conclusionText,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Justify,
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(50.dp))
         }
     }
 }

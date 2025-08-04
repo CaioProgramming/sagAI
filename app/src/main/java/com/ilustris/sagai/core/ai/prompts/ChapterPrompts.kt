@@ -98,7 +98,8 @@ object ChapterPrompts {
         You will receive a chapter's title, its detailed summary, and a list of main characters involved.
         Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
         This description will be directly used as a part of a larger prompt for an AI image generation model.
-        
+        YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
+
         **Crucially, this description MUST be formulated to be compatible with a 'Chapter Cover' framing,
         conveying the essence and mood of the chapter in a single, impactful image.
         Adhere strictly to the provided 'Story Theme' (${content.data.genre.title}).**
@@ -109,7 +110,7 @@ object ChapterPrompts {
         
         1.  **Chapter Title:** ${chapter.title}
         2.  **Chapter Summary/Description: ${chapter.overview}
-        3.  **Main Characters Involved:** [ ${characters.formatToJsonArray()} ]
+        3.  **Characters Involved:** [ ${characters.formatToJsonArray()} ]
             
         **Guidelines for Conversion and Expansion:**
 

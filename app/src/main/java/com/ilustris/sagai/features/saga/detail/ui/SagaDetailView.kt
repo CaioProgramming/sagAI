@@ -608,7 +608,6 @@ fun SagaDetailContentView(
                                 dragHandle = {
                                     Box {}
                                 },
-                                contentColor = MaterialTheme.colorScheme.onBackground,
                                 containerColor = MaterialTheme.colorScheme.background,
                             ) {
                                 SagaReview(content = sagaContent, generatingReview)
@@ -852,33 +851,38 @@ private fun SagaDetailInitialView(
                 }
             }
 
-            item(span = {
-                GridItemSpan(columnCount)
-            }) {
-                Column(
-                    modifier =
-                        Modifier.padding(16.dp).fillMaxWidth().clickable {
-                            openReview.invoke()
-                        },
-                ) {
-                    Text(
-                        "Veja Agora seu",
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.alpha(.4f),
-                    )
-                    Text(
-                        "Recap",
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = it.data.genre.headerFont(),
-                                fontWeight = FontWeight.Bold,
-                                brush = it.data.genre.gradient(),
-                            ),
+            if (it.data.isEnded) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Column(
                         modifier =
-                            Modifier.reactiveShimmer(
-                                true,
-                            ),
-                    )
+                            Modifier.padding(16.dp).fillMaxWidth().clickable {
+                                openReview.invoke()
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "Veja Agora seu",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.alpha(.4f),
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            "Recap",
+                            style =
+                                MaterialTheme.typography.displaySmall.copy(
+                                    fontFamily = it.data.genre.headerFont(),
+                                    fontWeight = FontWeight.Bold,
+                                    brush = it.data.genre.gradient(),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier.reactiveShimmer(
+                                    true,
+                                ),
+                        )
+                    }
                 }
             }
 

@@ -130,6 +130,7 @@ import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -449,7 +450,7 @@ fun ChatContent(
             )
 
             AnimatedVisibility(
-                state !is ChatState.Loading && saga.isDebug.not(),
+                state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not(),
                 modifier =
                     Modifier
                         .background(MaterialTheme.colorScheme.background)
@@ -463,36 +464,22 @@ fun ChatContent(
                 enter = slideInVertically(),
                 exit = fadeOut(),
             ) {
-                if (saga.isEnded) {
-                    Text(
-                        "Sua saga chegou ao fim em ${saga.endedAt.formatDate()}",
-                        style =
-                            MaterialTheme.typography.labelLarge.copy(
-                                brush = saga.genre.gradient(true, targetValue = 200f),
-                                fontStyle = FontStyle.Italic,
-                                fontFamily = saga.genre.bodyFont(),
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier = Modifier.padding(16.dp),
-                    )
-                } else {
-                    Column(
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth(),
+                ) {
+                    ChatInputView(
+                        content = content,
+                        isGenerating = isGenerating,
                         modifier =
                             Modifier
-                                .fillMaxWidth(),
-                    ) {
-                        ChatInputView(
-                            content = content,
-                            isGenerating = isGenerating,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(),
-                            onSendMessage = onSendMessage,
-                            onCreateNewCharacter = onCreateCharacter,
-                            suggestions = suggestions,
-                        )
-                    }
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                        onSendMessage = onSendMessage,
+                        onCreateNewCharacter = onCreateCharacter,
+                        suggestions = suggestions,
+                    )
                 }
             }
 
@@ -755,7 +742,6 @@ fun ChatList(
     val animatedMessages = remember { mutableSetOf<Int>() }
     val coroutineScope = rememberCoroutineScope()
     LazyColumn(modifier, state = listState, reverseLayout = messagesList.isNotEmpty()) {
-        // Changed saga.messages to messagesList
         saga.let {
             item {
                 Spacer(
@@ -763,6 +749,67 @@ fun ChatList(
                         .fillMaxWidth()
                         .height(75.dp),
                 )
+            }
+
+            if (it.data.isEnded) {
+                item {
+                    Column(
+                        modifier =
+                            Modifier.padding(16.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "O fim",
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    color =
+                                        it.data.genre.color,
+                                    fontFamily = it.data.genre.headerFont(),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth()
+                                    .reactiveShimmer(true)
+                                    .padding(16.dp),
+                        )
+
+                        Text(
+                            it.data.endMessage,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = it.data.genre.bodyFont(),
+                                    textAlign = TextAlign.Justify,
+                                ),
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+
+                        Text(
+                            "Veja Agora seu",
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier = Modifier.alpha(.4f),
+                            textAlign = TextAlign.Center,
+                        )
+                        Text(
+                            "Recap",
+                            style =
+                                MaterialTheme.typography.displaySmall.copy(
+                                    fontFamily = it.data.genre.headerFont(),
+                                    fontWeight = FontWeight.Bold,
+                                    brush = it.data.genre.gradient(true),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .clickable {
+                                        openSaga()
+                                    }.reactiveShimmer(
+                                        true,
+                                    ),
+                        )
+                    }
+                }
             }
 
             items(messagesList, key = { it.message.id }) { message ->

@@ -742,17 +742,7 @@ class SagaContentManagerImpl
                     javaClass.simpleName,
                     "Generating image for character ${character.name} in saga ${currentSaga.data.id}",
                 )
-                val descriptionGen =
-                    characterUseCase
-                        .generateCharacterPrompt(
-                            character = character,
-                            guidelines =
-                                CharacterGuidelines.imageDescriptionGuideLine(
-                                    CharacterFraming.PORTRAIT,
-                                    currentSaga.data.genre,
-                                ),
-                            genre = currentSaga.data.genre,
-                        ).success.value
+
                 return characterUseCase
                     .generateCharacterImage(
                         character,

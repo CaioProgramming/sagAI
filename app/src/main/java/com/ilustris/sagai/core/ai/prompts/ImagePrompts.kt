@@ -31,11 +31,9 @@ object ImagePrompts {
         description: String,
     ) = """
         ${GenrePrompts.artStyle(saga.genre)}
-        ${GenrePrompts.portraitStyle(saga.genre)}
-        
         ${CharacterRules.IMAGE_CRITICAL_RULE}
         $description
-        ${character.details.race} character, realistic ${character.details.race} features.
-        --ar 3:2
+        
+        --ar 3:4 --focal-length 85mm --shot-type headshot --depth-of-field shallow --style raw
         """.trimIndent()
 }

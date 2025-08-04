@@ -225,10 +225,13 @@ object SagaPrompts {
         saga: Saga,
         character: Character,
     ) = """
+        
         Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Dramatic Character Portraits** for the saga "${saga.title}" (Genre: ${saga.genre.title}).
         You will receive a character's description and a brief context for their current mood or situation.
         Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
         This description will be directly used as a part of a larger prompt for an AI image generation model.
+        
+        YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
         
         **Crucially, this description MUST be formulated to be compatible with a 'Dramatic Portrait' framing,
         conveying the essence and mood of the character in a single, impactful image.
@@ -250,8 +253,6 @@ object SagaPrompts {
         4.  **Integrate Character (Dominant Central Focus, Artistic Lighting & Subtle Cybernetics - Tight Framing):** The primary character **MUST be the absolute central and dominant focus**, **framed tightly as a close-up portrait (from the chest or shoulders up), filling a significant portion of the frame.** Emphasize **strong, artistic lighting in shades of purple that defines their form and creates dramatic shadows**, similar to the use of red in your example. Their expression should be clearly visible and convey the mood. **Crucially, incorporate subtle cybernetic implants and enhancements as elements of fusion between human and machine.** These details should be visible on the **face, neck, eyes (e.g., glowing pupils or integrated displays), and lips (e.g., metallic sheen or subtle integrated tech)**, adding to the cyberpunk aesthetic without overwhelming the character's humanity, as seen in the provided example.
         5.  **Composition for Dramatic Portrait (Tight & Centralized Focal Distance):** Formulate the prompt to suggest a **tight, portrait-oriented composition with the main character centrally and dominantly positioned, capturing a headshot or upper-body shot.** Utilize strong, focused lighting to emphasize the character, their expression, and their key elements.
         * **Suggested terms to use:** "tight shot," "close-up portrait," "headshot," "upper body shot," "from the chest up," "shoulders up," "central composition," "minimalist background (deep purple and black)," "artistic use of purple tones," "high contrast lighting," "dramatic shadows," "single light source (purple)," "rim lighting (lighter purple)," "stylized," "graphic," "character-focused," "futuristic portrait."
-        6.  **Art Style Consistency:** Maintain the specified artistic style: ${GenrePrompts.artStyle(saga.genre)}
-        (Consider specifying a style that lends itself well to portraiture and strong focal points, such as "classical oil painting" if desired).
-        7.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.    
+        6.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.    
         """
 }

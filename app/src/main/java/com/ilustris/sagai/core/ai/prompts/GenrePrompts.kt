@@ -48,7 +48,7 @@ object GenrePrompts {
                 ${artStyle(genre)}
                 $description
                 ** NO BORDERS, FILL THE IMAGE.**
-                35 mm portrait.
+                --ar 3:4 --focal-length 85mm --shot-type headshot --depth-of-field shallow --style raw
                 """
         }
 
@@ -58,7 +58,7 @@ object GenrePrompts {
                 $description
                 
                 ** NO BORDERS, FILL THE IMAGE.**
-                35 mm portrait.
+                --ar 3:4 --focal-length 85mm --shot-type headshot --depth-of-field shallow --style raw
                 """
     }.trimIndent()
 
