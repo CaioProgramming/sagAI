@@ -127,4 +127,63 @@
         <item>Navigating asteroid fields...</item>
     </string-array>
 
+    <!-- SagaReview.kt Strings -->
+    <string name="review_page_surprise_awaits">A surprise awaits you...</string>
+    <string name="review_page_messages_label">Messages</string>
+    <string name="review_page_messages_rank_title">Message Rank</string>
+    <string name="review_page_character_mentions_label">Character Mentions</string>
+    <string name="review_page_characters_rank_title">Character Rank</string>
+    <string name="review_page_most_present_title">Most Present</string>
+    <string name="review_page_most_mentioned_title">Most Mentioned</string>
+    <string name="review_page_your_journey_title">Your Journey</string>
+    <string name="review_page_thank_you">Thank you</string>
+    <string name="review_page_for_playing">FOR PLAYING</string>
+
+    <!-- SagaDetailView.kt Strings -->
+    <string name="saga_detail_delete_confirmation_title">Confirm Deletion</string>
+    <string name="saga_detail_delete_confirmation_message">Are you sure you want to delete this saga? This action cannot be undone.</string>
+    <string name="saga_detail_delete_button">Delete</string>
+    <string name="saga_detail_cancel_button">Cancel</string>
+    <string name="saga_drawer_act_prefix">Act </string>
+    <string name="saga_drawer_chapter_events_count">%1$s - %2$d events</string>
+    <string name="saga_drawer_events_since_last_chapter">%1$d events since the last chapter.</string>
+    <string name="saga_detail_progress_title">Progress</string>
+    <string name="saga_detail_section_title_characters">Characters</string>
+    <string name="saga_detail_section_subtitle_characters">%1$d characters</string>
+    <string name="saga_detail_section_title_timeline">Events</string>
+    <string name="saga_detail_section_subtitle_timeline">%1$d events</string>
+    <string name="saga_detail_section_title_chapters">Chapters</string>
+    <string name="saga_detail_section_subtitle_chapters">%1$d chapters</string>
+    <string name="saga_detail_section_title_wiki">Wiki</string>
+    <string name="saga_detail_section_subtitle_wiki">%1$d items</string>
+    <string name="saga_detail_section_title_acts">Acts</string>
+    <string name="saga_detail_section_subtitle_acts">%1$d acts</string>
+    <string name="saga_detail_status_ended">Finished on %1$s</string>
+    <string name="saga_detail_status_created">Created on %1$s</string>
+    <string name="saga_detail_journey_of">The journey of</string>
+    <string name="saga_detail_messages_label">Messages</string>
+    <string name="saga_detail_see_your_now">See your now</string>
+    <string name="saga_detail_recap_button">Recap</string>
+    <string name="saga_detail_description_section_title">Description</string>
+    <string name="saga_detail_timeline_section_title">Timeline</string>
+    <string name="saga_detail_view_characters_action">View characters</string>
+    <string name="saga_detail_view_timeline_action">View Timeline</string>
+    <string name="saga_detail_view_wiki_action">View wiki</string>
+    <string name="saga_detail_view_chapters_action">View chapters</string>
+    <string name="saga_detail_view_acts_action">View acts</string>
+    <string name="saga_detail_no_events_placeholder">No events recorded</string>
+    <string name="saga_detail_no_wiki_info_placeholder">No information saved</string>
+    <string name="saga_detail_delete_saga_button">Delete Saga</string>
+
+    <!-- HomeView.kt Strings -->
+    <string name="home_debug_session_icon_desc">Debug Session</string>
+    <string name="home_start_debug_session_title">Start Debug Session</string>
+    <string name="home_test_with_fake_messages_subtitle">Test with fake messages.</string>
+    <string name="home_create_new_saga_title">Create new saga</string>
+    <string name="home_create_new_saga_subtitle">Create a new adventure and discover what the future holds for you.</string>
+    <string name="chat_card_unknown_character">Unknown</string>
+    <string name="chat_card_saga_begins">Your saga begins now!</string>
+    <string name="chat_card_saga_ended">Your saga has come to an end!</string>
+    <string name="home_new_chat_journey_begins_title">The journey starts here</string>
+    <string name="home_new_chat_start_button">Start</string>
 </resources>

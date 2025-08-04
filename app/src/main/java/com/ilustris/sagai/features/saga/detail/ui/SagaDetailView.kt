@@ -80,6 +80,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -215,7 +216,7 @@ fun SagaDetailView(
                 onDismissRequest = { showDeleteConfirmation = false },
                 title = {
                     Text(
-                        "Confirmar Exclusão",
+                        stringResource(R.string.saga_detail_delete_confirmation_title),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = it.genre.bodyFont(),
@@ -224,7 +225,7 @@ fun SagaDetailView(
                 },
                 text = {
                     Text(
-                        "Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.",
+                        stringResource(R.string.saga_detail_delete_confirmation_message),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = it.genre.bodyFont(),
@@ -248,7 +249,7 @@ fun SagaDetailView(
                                 contentColor = MaterialTheme.colorScheme.onError,
                             ),
                         shape = RoundedCornerShape(it.genre.cornerSize()),
-                    ) { Text("Excluir") }
+                    ) { Text(stringResource(R.string.saga_detail_delete_button)) }
                 },
                 dismissButton = {
                     OutlinedButton(
@@ -258,7 +259,7 @@ fun SagaDetailView(
                                 contentColor = MaterialTheme.colorScheme.onSurface,
                             ),
                         shape = RoundedCornerShape(it.genre.cornerSize()),
-                    ) { Text("Cancelar") }
+                    ) { Text(stringResource(R.string.saga_detail_cancel_button)) }
                 },
             )
         }
@@ -341,7 +342,7 @@ fun LazyListScope.SagaDrawerContent(
                     ),
             ) {
                 Text(
-                    "Ato ${(index + 1).toRoman()}",
+                    stringResource(R.string.saga_drawer_act_prefix) + (index + 1).toRoman(),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = content.data.genre.bodyFont(),
@@ -378,7 +379,7 @@ fun LazyListScope.SagaDrawerContent(
                                 Modifier.size(24.dp),
                             )
                             Text(
-                                "${chapter.title} - ${eventsInChapter.size} eventos",
+                                stringResource(R.string.saga_drawer_chapter_events_count, chapter.title, eventsInChapter.size),
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -435,7 +436,7 @@ fun LazyListScope.SagaDrawerContent(
 
             AnimatedVisibility(content.data.isEnded.not()) {
                 Text(
-                    "${eventSublist.size} eventos desde o último capitulo.",
+                    stringResource(R.string.saga_drawer_events_since_last_chapter, eventSublist.size),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
@@ -488,7 +489,7 @@ fun SagaDetailContentView(
                             ) {
                                 item {
                                     Text(
-                                        "Progresso",
+                                        stringResource(R.string.saga_detail_progress_title),
                                         modifier =
                                             Modifier
                                                 .align(Alignment.CenterHorizontally)
@@ -620,21 +621,23 @@ fun SagaDetailContentView(
     }
 }
 
-private fun DetailAction.titleAndSubtitle(content: SagaContent) =
-    when (this) {
-        DetailAction.CHARACTERS -> "Personagens" to "${content.characters.size} personagens"
-        DetailAction.TIMELINE -> "Eventos" to "${content.timelines.size} eventos"
-        DetailAction.CHAPTERS -> "Capítulos" to "${content.chapters.size} capítulos"
-        DetailAction.WIKI -> "Wiki" to "${content.wikis.size} itens"
-        DetailAction.ACTS -> "Atos" to "${content.acts.size} atos"
+@Composable
+private fun DetailAction.titleAndSubtitle(content: SagaContent): Pair<String, String> {
+    return when (this) {
+        DetailAction.CHARACTERS -> stringResource(R.string.saga_detail_section_title_characters) to stringResource(R.string.saga_detail_section_subtitle_characters, content.characters.size)
+        DetailAction.TIMELINE -> stringResource(R.string.saga_detail_section_title_timeline) to stringResource(R.string.saga_detail_section_subtitle_timeline, content.timelines.size)
+        DetailAction.CHAPTERS -> stringResource(R.string.saga_detail_section_title_chapters) to stringResource(R.string.saga_detail_section_subtitle_chapters, content.chapters.size)
+        DetailAction.WIKI -> stringResource(R.string.saga_detail_section_title_wiki) to stringResource(R.string.saga_detail_section_subtitle_wiki, content.wikis.size)
+        DetailAction.ACTS -> stringResource(R.string.saga_detail_section_title_acts) to stringResource(R.string.saga_detail_section_subtitle_acts, content.acts.size)
         else -> {
             if (content.data.isEnded) {
-                content.data.title to "Finalizado em ${content.data.endedAt.formatDate()}"
+                content.data.title to stringResource(R.string.saga_detail_status_ended, content.data.endedAt.formatDate())
             } else {
-                content.data.title to "Criado em ${content.data.createdAt.formatDate()}"
+                content.data.title to stringResource(R.string.saga_detail_status_created, content.data.createdAt.formatDate())
             }
         }
     }
+}
 
 @Composable
 fun WikiContent(saga: SagaContent) {
@@ -775,7 +778,7 @@ private fun SagaDetailInitialView(
                                             .size(170.dp),
                                 )
                                 Text(
-                                    "A jornada de",
+                                    stringResource(R.string.saga_detail_journey_of),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
                                             fontFamily = it.data.genre.bodyFont(),
@@ -813,8 +816,8 @@ private fun SagaDetailInitialView(
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
-                    VerticalLabel(it.chapters.count().toString(), "Capítulos", it.data.genre)
-                    VerticalLabel(it.characters.count().toString(), "Personagens", it.data.genre)
+                    VerticalLabel(it.chapters.count().toString(), stringResource(R.string.saga_detail_section_title_chapters), it.data.genre)
+                    VerticalLabel(it.characters.count().toString(), stringResource(R.string.saga_detail_section_title_characters), it.data.genre)
                 }
             }
 
@@ -840,7 +843,7 @@ private fun SagaDetailInitialView(
                     )
 
                     Text(
-                        "Mensagens",
+                        stringResource(R.string.saga_detail_messages_label),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = it.data.genre.bodyFont(),
@@ -863,13 +866,13 @@ private fun SagaDetailInitialView(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            "Veja Agora seu",
+                            stringResource(R.string.saga_detail_see_your_now),
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.alpha(.4f),
                             textAlign = TextAlign.Center,
                         )
                         Text(
-                            "Recap",
+                            stringResource(R.string.saga_detail_recap_button),
                             style =
                                 MaterialTheme.typography.displaySmall.copy(
                                     fontFamily = it.data.genre.headerFont(),
@@ -890,7 +893,7 @@ private fun SagaDetailInitialView(
                 GridItemSpan(columnCount)
             }) {
                 CharacterSection(
-                    "Descrição",
+                    stringResource(R.string.saga_detail_description_section_title),
                     it.data.description,
                     it.data.genre,
                 )
@@ -906,7 +909,7 @@ private fun SagaDetailInitialView(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
-                        "Personagens",
+                        stringResource(R.string.saga_detail_section_title_characters),
                         style = sectionStyle,
                         modifier =
                             Modifier
@@ -919,7 +922,7 @@ private fun SagaDetailInitialView(
                     }, modifier = Modifier.size(24.dp)) {
                         Icon(
                             Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                            contentDescription = "Ver personagens",
+                            contentDescription = stringResource(R.string.saga_detail_view_characters_action),
                         )
                     }
                 }
@@ -975,7 +978,7 @@ private fun SagaDetailInitialView(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "Linha do tempo",
+                                stringResource(R.string.saga_detail_timeline_section_title),
                                 style = sectionStyle,
                                 modifier =
                                     Modifier
@@ -990,7 +993,7 @@ private fun SagaDetailInitialView(
                             }, modifier = Modifier.size(24.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                    contentDescription = "Ver Linha do tempo",
+                                    contentDescription = stringResource(R.string.saga_detail_view_timeline_action),
                                 )
                             }
                         }
@@ -1013,7 +1016,7 @@ private fun SagaDetailInitialView(
                             )
                         } ?: run {
                             Text(
-                                "Nenhum evento registrado",
+                                stringResource(R.string.saga_detail_no_events_placeholder),
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -1034,7 +1037,7 @@ private fun SagaDetailInitialView(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
-                                "Wiki",
+                                stringResource(R.string.saga_detail_section_title_wiki),
                                 style = sectionStyle,
                                 modifier =
                                     Modifier
@@ -1047,14 +1050,14 @@ private fun SagaDetailInitialView(
                             }, modifier = Modifier.size(24.dp)) {
                                 Icon(
                                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                    contentDescription = "Ver wiki",
+                                    contentDescription = stringResource(R.string.saga_detail_view_wiki_action),
                                 )
                             }
                         }
 
                         if (it.wikis.isEmpty()) {
                             Text(
-                                "Nenhuma informação salva",
+                                stringResource(R.string.saga_detail_no_wiki_info_placeholder),
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
                             )
@@ -1086,7 +1089,7 @@ private fun SagaDetailInitialView(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Capítulos",
+                            stringResource(R.string.saga_detail_section_title_chapters),
                             style = sectionStyle,
                             modifier =
                                 Modifier
@@ -1101,7 +1104,7 @@ private fun SagaDetailInitialView(
                         }, modifier = Modifier.size(24.dp)) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Ver personagens",
+                                contentDescription = stringResource(R.string.saga_detail_view_chapters_action),
                             )
                         }
                     }
@@ -1137,7 +1140,7 @@ private fun SagaDetailInitialView(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            "Atos",
+                            stringResource(R.string.saga_detail_section_title_acts),
                             style = sectionStyle,
                             modifier =
                                 Modifier
@@ -1152,7 +1155,7 @@ private fun SagaDetailInitialView(
                         }, modifier = Modifier.size(24.dp)) {
                             Icon(
                                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = "Ver personagens",
+                                contentDescription = stringResource(R.string.saga_detail_view_acts_action),
                             )
                         }
                     }
@@ -1209,7 +1212,7 @@ private fun SagaDetailInitialView(
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
-                    Text("Excluir Saga", textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.saga_detail_delete_saga_button), textAlign = TextAlign.Center)
                 }
             }
         }

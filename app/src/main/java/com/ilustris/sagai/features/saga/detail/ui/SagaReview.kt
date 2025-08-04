@@ -1,26 +1,12 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
-import android.annotation.SuppressLint
-import android.util.Log
-import android.widget.Space
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInBounce
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.animateOffsetAsState
-import androidx.compose.animation.core.animateSizeAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -30,37 +16,24 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,7 +41,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -76,53 +48,34 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.chapter.data.model.Chapter // Assuming path for Chapter model
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
-import com.ilustris.sagai.features.characters.ui.HudCard
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.filterCharacterMessages
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rankMentions
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rankMessageTypes
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rankTopCharacters
-import com.ilustris.sagai.features.saga.chat.ui.components.icon
 import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
 import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -134,15 +87,10 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.rememberAnimatedShuffledGradientBrush
-import com.ilustris.sagai.ui.theme.shaderBackground
 import com.ilustris.sagai.ui.theme.zoomAnimation
-import com.mikepenz.hypnoticcanvas.shaderBackground
 import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.collections.get
-import kotlin.math.roundToInt
-import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -215,7 +163,7 @@ fun SagaReview(
                 )
 
                 Text(
-                    "Uma supresa lhe aguarda...",
+                    stringResource(R.string.review_page_surprise_awaits),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.bodyFont(),
@@ -557,7 +505,7 @@ fun PlayStylePage(content: SagaContent) {
         )
 
         Text(
-            "Mensagens",
+            stringResource(R.string.review_page_messages_label),
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     fontFamily = genre.bodyFont(),
@@ -609,7 +557,7 @@ fun PlayStylePage(content: SagaContent) {
             AnimatedVisibility(showCards) {
                 Column {
                     Text(
-                        "Rank de mensagens",
+                        stringResource(R.string.review_page_messages_rank_title),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = genre.headerFont(),
@@ -726,7 +674,7 @@ fun MentionsPage(content: SagaContent) {
         )
 
         Text(
-            "Mencões a personagens",
+            stringResource(R.string.review_page_character_mentions_label),
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     fontFamily = genre.bodyFont(),
@@ -785,7 +733,7 @@ fun MentionsPage(content: SagaContent) {
             ) {
                 Column {
                     Text(
-                        "Rank de personagens",
+                        stringResource(R.string.review_page_characters_rank_title),
                         style =
                             MaterialTheme.typography.titleMedium.copy(
                                 fontFamily = genre.headerFont(),
@@ -829,7 +777,7 @@ fun MentionsPage(content: SagaContent) {
                     ) {
                         Column(Modifier.fillMaxWidth(.5f)) {
                             Text(
-                                "Mais presentes",
+                                stringResource(R.string.review_page_most_present_title),
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = genre.headerFont(),
@@ -859,7 +807,7 @@ fun MentionsPage(content: SagaContent) {
                                         .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
                                         .filter { it.second > 0 }
                                 Text(
-                                    "Mais mencionados",
+                                    stringResource(R.string.review_page_most_mentioned_title),
                                     style =
                                         MaterialTheme.typography.titleSmall.copy(
                                             fontFamily = genre.headerFont(),
@@ -891,7 +839,7 @@ fun MentionsPage(content: SagaContent) {
                                     .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
                                     .filter { it.second > 0 }
                             Text(
-                                "Mais mencionados",
+                                stringResource(R.string.review_page_most_mentioned_title),
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = genre.headerFont(),
@@ -974,7 +922,7 @@ fun ActsInsightPage(content: SagaContent) {
                     .animateContentSize(),
         ) {
             Text(
-                "Sua jornada",
+                stringResource(R.string.review_page_your_journey_title),
                 style =
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = genre.headerFont(),
@@ -1057,13 +1005,13 @@ fun ConclusionPage(content: SagaContent) {
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
-                text = "Thank you",
+                text = stringResource(R.string.review_page_thank_you),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onBackground,
             )
 
             Text(
-                text = "FOR PLAYING",
+                text = stringResource(R.string.review_page_for_playing),
                 style =
                     MaterialTheme.typography.displaySmall.copy(
                         brush = genre.gradient(true, duration = 3.seconds),

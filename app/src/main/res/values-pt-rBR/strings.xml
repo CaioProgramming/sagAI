@@ -107,4 +107,63 @@
     <string name="character_form_label_clothing_footwear">Calçados</string>
     <string name="character_form_placeholder_clothing_footwear">Ex: Botas resistentes, sandálias, descalço, botas gravitacionais</string>
 
+    <!-- SagaReview.kt Strings -->
+    <string name="review_page_surprise_awaits">Uma supresa lhe aguarda...</string>
+    <string name="review_page_messages_label">Mensagens</string>
+    <string name="review_page_messages_rank_title">Rank de mensagens</string>
+    <string name="review_page_character_mentions_label">Mencões a personagens</string>
+    <string name="review_page_characters_rank_title">Rank de personagens</string>
+    <string name="review_page_most_present_title">Mais presentes</string>
+    <string name="review_page_most_mentioned_title">Mais mencionados</string>
+    <string name="review_page_your_journey_title">Sua jornada</string>
+    <string name="review_page_thank_you">Obrigado</string>
+    <string name="review_page_for_playing">POR JOGAR</string>
+
+    <!-- SagaDetailView.kt Strings -->
+    <string name="saga_detail_delete_confirmation_title">Confirmar Exclusão</string>
+    <string name="saga_detail_delete_confirmation_message">Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.</string>
+    <string name="saga_detail_delete_button">Excluir</string>
+    <string name="saga_detail_cancel_button">Cancelar</string>
+    <string name="saga_drawer_act_prefix">Ato </string>
+    <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
+    <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
+    <string name="saga_detail_progress_title">Progresso</string>
+    <string name="saga_detail_section_title_characters">Personagens</string>
+    <string name="saga_detail_section_subtitle_characters">%1$d personagens</string>
+    <string name="saga_detail_section_title_timeline">Eventos</string>
+    <string name="saga_detail_section_subtitle_timeline">%1$d eventos</string>
+    <string name="saga_detail_section_title_chapters">Capítulos</string>
+    <string name="saga_detail_section_subtitle_chapters">%1$d capítulos</string>
+    <string name="saga_detail_section_title_wiki">Wiki</string>
+    <string name="saga_detail_section_subtitle_wiki">%1$d itens</string>
+    <string name="saga_detail_section_title_acts">Atos</string>
+    <string name="saga_detail_section_subtitle_acts">%1$d atos</string>
+    <string name="saga_detail_status_ended">Finalizado em %1$s</string>
+    <string name="saga_detail_status_created">Criado em %1$s</string>
+    <string name="saga_detail_journey_of">A jornada de</string>
+    <string name="saga_detail_messages_label">Mensagens</string>
+    <string name="saga_detail_see_your_now">Veja Agora seu</string>
+    <string name="saga_detail_recap_button">Recap</string>
+    <string name="saga_detail_description_section_title">Descrição</string>
+    <string name="saga_detail_timeline_section_title">Linha do tempo</string>
+    <string name="saga_detail_view_characters_action">Ver personagens</string>
+    <string name="saga_detail_view_timeline_action">Ver Linha do tempo</string>
+    <string name="saga_detail_view_wiki_action">Ver wiki</string>
+    <string name="saga_detail_view_chapters_action">Ver capítulos</string>
+    <string name="saga_detail_view_acts_action">Ver atos</string>
+    <string name="saga_detail_no_events_placeholder">Nenhum evento registrado</string>
+    <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
+    <string name="saga_detail_delete_saga_button">Excluir Saga</string>
+
+    <!-- HomeView.kt Strings -->
+    <string name="home_debug_session_icon_desc">Sessão de Depuração</string>
+    <string name="home_start_debug_session_title">Iniciar Sessão de Depuração</string>
+    <string name="home_test_with_fake_messages_subtitle">Testar com mensagens falsas.</string>
+    <string name="home_create_new_saga_title">Criar nova saga</string>
+    <string name="home_create_new_saga_subtitle">Crie uma nova aventura e descubra o que o futuro reserva para você.</string>
+    <string name="chat_card_unknown_character">Desconhecido</string>
+    <string name="chat_card_saga_begins">Sua saga começa agora!</string>
+    <string name="chat_card_saga_ended">Sua saga chegou ao fim!</string>
+    <string name="home_new_chat_journey_begins_title">A jornada começa aqui</string>
+    <string name="home_new_chat_start_button">Começar</string>
 </resources>
