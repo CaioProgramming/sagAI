@@ -145,7 +145,7 @@ fun Class<*>.toJsonString(): String {
 fun toJsonMap(
     clazz: Class<*>,
     filteredFields: List<String> = emptyList(),
-    fieldCustomDescription: Pair<String, String>? = null,
+    fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
     val deniedFields =
         filteredFields
@@ -161,7 +161,7 @@ fun toJsonMap(
                 val fieldType = field.type
                 val fieldValue =
                     when {
-                        fieldType.isEnum -> "[ ${fieldType.enumConstants?.joinToString { it.toString() }} ]"
+                        fieldType.isEnum -> "${fieldType.enumConstants?.joinToString(" | ") { it.toString() }}"
                         fieldType == String::class.java -> "\"\""
                         fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
                         fieldType == Boolean::class.java -> "false"
@@ -171,8 +171,10 @@ fun toJsonMap(
                         List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
                         else -> toJsonMap(fieldType)
                     }
-                if (fieldCustomDescription != null && field.name == fieldCustomDescription.first) {
-                    "\"${fieldCustomDescription.first}\": \"${fieldCustomDescription.second}\""
+                val customDescription =
+                    fieldCustomDescriptions.find { it.first == field.name }
+                if (customDescription != null) {
+                    "\"${customDescription.first}\": \"${customDescription.second}\""
                 } else {
                     "\"$fieldName\": $fieldValue"
                 }

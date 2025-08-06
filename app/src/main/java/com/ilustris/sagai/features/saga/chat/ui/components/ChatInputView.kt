@@ -98,6 +98,7 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.solidGradient
+import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -476,8 +477,6 @@ private fun MainCharacterInputButton(
                 character,
                 borderSize = 1.dp,
                 genre = saga.genre,
-                softFocusRadius = 0f,
-                grainRadius = 0.01f,
                 innerPadding = 0.dp,
                 modifier =
                     Modifier
@@ -485,7 +484,12 @@ private fun MainCharacterInputButton(
                         .fillMaxSize()
                         .clickable {
                             onClickAction()
-                        },
+                        }
+                        .effectForGenre(
+                            saga.genre,
+                            focusRadius = .3f,
+                            customGrain = .2f
+                        ),
             )
 
             AnimatedContent(

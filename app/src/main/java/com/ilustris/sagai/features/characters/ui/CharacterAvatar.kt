@@ -31,7 +31,9 @@ import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import effectForGenre
@@ -47,6 +49,7 @@ fun CharacterAvatar(
     modifier: Modifier = Modifier,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
+    pixelation: Float? = null
 ) {
     val characterColor = Color(character.hexColor.toColorInt())
     Box(
@@ -83,7 +86,8 @@ fun CharacterAvatar(
                         genre,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
-                    ),
+                        pixelSize = pixelation
+                    ).selectiveColorHighlight(genre.selectiveHighlight()),
         )
 
         if (painterState is AsyncImagePainter.State.Error) {

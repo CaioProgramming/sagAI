@@ -141,6 +141,7 @@ fun Genre.bubbleTextColors(sender: SenderType) =
     when (this) {
         FANTASY -> if (sender.isCharacter()) Color.Black else Color.White
         SCI_FI -> Color.White
+        HORROR -> Color.White
     }
 
 fun Modifier.contrast(contrastFactor: Float): Modifier {

@@ -63,6 +63,7 @@ object FantasyColorTones {
             ETHEREAL_WHITE_GOLD_DIVINITY,
             CLASSIC_WARM_SUNLIT_FANTASY,
             MYSTICAL_FOREST_TWILIGHT,
+            DREAM_LIKE_HAZE,
             // Add other predefined palettes here
         )
 }
@@ -90,3 +91,27 @@ object SciFiColorTones { // Or add to your existing tones object
 
     // ... any other variations ...
 }
+
+object HorrorColorTones {
+    val MOONLIGHT_MYSTIQUE =
+        ColorTonePalette(
+            name = "Moonlight Mystique",
+            highlightTint = Triple(0.85f, 0.92f, 1.0f), // Pale, cool, slightly cyan/blueish white
+            shadowTint = Triple(0.1f, 0.15f, 0.25f), // Very dark, desaturated indigo/deep blue
+            defaultTintStrength = 0.4f,
+        )
+
+    val allTones =
+        listOf(
+            MOONLIGHT_MYSTIQUE,
+        )
+}
+
+// You might also want a data class if not already defined elsewhere,
+// or ensure it's imported if it exists in another file.
+// data class ColorTonePalette(
+//     val name: String,
+//     val highlightTint: Triple<Float, Float, Float>, // R, G, B (0.0 to 1.0)
+//     val shadowTint: Triple<Float, Float, Float>,    // R, G, B (0.0 to 1.0)
+//     val defaultTintStrength: Float                 // 0.0 (no tint) to 1.0 (full tint)
+// )

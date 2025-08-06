@@ -19,7 +19,7 @@ fun Genre.shaderBackground() =
         Genre.FANTASY -> Heat(
             .3f
         )
-        Genre.SCI_FI -> PurpleLiquid
+       else -> PurpleLiquid
     }
 
 @Preview(showBackground = true, widthDp = 300, heightDp = 500)

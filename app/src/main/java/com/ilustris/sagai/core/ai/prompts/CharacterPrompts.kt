@@ -18,10 +18,19 @@ object CharacterPrompts {
         framing: CharacterFraming,
         genre: Genre,
     ) = """
-        ${CharacterGuidelines.imageDescriptionGuideLine(framing, genre)}
+        Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Dramatic Character Portraits**.
+        You will receive a character's description and a brief context for their current mood or situation.
+        Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
+        This description will be directly used as a part of a larger prompt for an AI image generation model.
+        YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
         
-        Now, process the following JSON input:
+        **Crucially, this description MUST be formulated to be compatible with a 'Dramatic Portrait' framing,
+        conveying the essence and mood of the character in a single, impactful image.
+        Adhere strictly to the theme (${genre.title}).**
+         ${ImagePrompts.conversionGuidelines(genre)}
+        **Character Context:**
         ${character.toJsonFormat()}
+        With a pose and expression that matches the genre(${genre.title}) mood and character's persosnality.
         
        
         """

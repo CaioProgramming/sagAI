@@ -240,6 +240,7 @@ fun Genre.cornerSize() =
     when (this) {
         Genre.FANTASY -> 20.dp
         Genre.SCI_FI -> 10.dp
+        Genre.HORROR -> 7.dp
         else -> 0.dp
     }
 

@@ -206,12 +206,6 @@ fun MorphShape(modifier: Modifier) {
     )
 }
 
-fun Genre.defaultHeaderImage() =
-    when (this) {
-        Genre.FANTASY -> R.drawable.fantasy_card
-        Genre.SCI_FI -> R.drawable.scifi_card
-    }
-
 @Composable
 fun SagaTitle(modifier: Modifier = Modifier) {
     val appName = stringResource(R.string.home_title).uppercase()

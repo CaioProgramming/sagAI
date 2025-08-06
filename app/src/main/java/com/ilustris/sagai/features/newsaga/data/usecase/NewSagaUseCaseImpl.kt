@@ -7,17 +7,24 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
+import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -34,7 +41,7 @@ class NewSagaUseCaseImpl
     ) : NewSagaUseCase {
         override suspend fun saveSaga(
             sagaData: Saga,
-            characterDescription: Character,
+            characterDescription: CharacterInfo?,
         ): RequestResult<Exception, Pair<Saga, Character>> =
             try {
                 val saga =
@@ -49,7 +56,7 @@ class NewSagaUseCaseImpl
                     characterUseCase
                         .generateCharacter(
                             SagaContent(data = saga),
-                            CharacterPrompts.details(characterDescription),
+                            characterDescription.toJsonFormat(),
                         ).success.value
 
                 val updatedSaga =
@@ -97,10 +104,12 @@ class NewSagaUseCaseImpl
                         description = metaPromptCover!!,
                     )
 
-                characterUseCase.generateCharacterImage(
-                    character = character,
-                    saga = sagaForm,
-                )
+                withContext(Dispatchers.IO) {
+                    characterUseCase.generateCharacterImage(
+                        character = character,
+                        saga = sagaForm,
+                    )
+                }
 
                 val file =
                     fileHelper.saveFile(
@@ -112,6 +121,71 @@ class NewSagaUseCaseImpl
                 sagaRepository
                     .updateChat(sagaForm.copy(icon = file!!.absolutePath))
                     .asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
+        override suspend fun replyAiForm(
+            currentMessages: List<ChatMessage>,
+            currentFormData: SagaForm,
+        ): RequestResult<Exception, SagaCreationGen> =
+            try {
+                val prompt =
+                    NewSagaPrompts.formReplyPrompt(
+                        currentFormData,
+                        currentMessages.map {
+                            if (it.isUser) {
+                                "USER" to it.text
+                            } else {
+                                "AI" to it.text
+                            }
+                        },
+                    )
+
+                val aiRequest =
+                    gemmaClient.generate<SagaCreationGen>(
+                        prompt,
+                        requireTranslation = true,
+                    )
+
+                aiRequest!!.asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
+        override suspend fun generateIntroduction(): RequestResult<Exception, SagaCreationGen> =
+            try {
+                val prompt = NewSagaPrompts.formIntroductionPrompt()
+
+                val aiRequest =
+                    gemmaClient.generate<SagaCreationGen>(
+                        prompt,
+                        requireTranslation = true,
+                    )
+
+                aiRequest!!.asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
+        override suspend fun generateCharacterSavedMark(
+            character: Character,
+            saga: Saga,
+        ): RequestResult<Exception, String> =
+            try {
+                val prompt =
+                    NewSagaPrompts.characterCreatedPrompt(
+                        character,
+                        saga,
+                    )
+
+                val aiRequest =
+                    gemmaClient.generate<String>(
+                        prompt,
+                        requireTranslation = true,
+                    )
+
+                aiRequest!!.asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }

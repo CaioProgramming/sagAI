@@ -754,19 +754,34 @@ fun MentionsPage(content: SagaContent) {
                             CharacterAvatar(
                                 topCharacters.last().first,
                                 genre = genre,
-                                modifier = Modifier.size(80.dp),
+                                modifier =
+                                    Modifier
+                                        .size(80.dp)
+                                        .effectForGenre(
+                                            genre,
+                                        ),
                             )
 
                             CharacterAvatar(
                                 topCharacters.first().first,
                                 genre = genre,
-                                modifier = Modifier.size(100.dp),
+                                modifier =
+                                    Modifier
+                                        .size(100.dp)
+                                        .effectForGenre(
+                                            genre,
+                                        ),
                             )
 
                             CharacterAvatar(
                                 topCharacters[1].first,
                                 genre = genre,
-                                modifier = Modifier.size(80.dp),
+                                modifier =
+                                    Modifier
+                                        .size(80.dp)
+                                        .effectForGenre(
+                                            genre,
+                                        ),
                             )
                         }
                     }

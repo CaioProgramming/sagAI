@@ -6,14 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.usecase.HomeUseCase // Changed import
+import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-// Removed saga processing map from here, as it's now in HomeUseCaseImpl
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -22,11 +21,9 @@ import kotlin.time.Duration.Companion.seconds
 class HomeViewModel
     @Inject
     constructor(
-        private val homeUseCase: HomeUseCase, // Changed to HomeUseCase
+        private val homeUseCase: HomeUseCase,
         private val remoteConfig: FirebaseRemoteConfig,
     ) : ViewModel() {
-
-        // sagas Flow will now directly use the processed list from homeUseCase.getSagas()
         val sagas = homeUseCase.getSagas()
 
         private val _showDebugButton = MutableStateFlow(false)
@@ -36,6 +33,9 @@ class HomeViewModel
 
         private val _dynamicNewSagaTexts = MutableStateFlow<DynamicSagaPrompt?>(null)
         val dynamicNewSagaTexts: StateFlow<DynamicSagaPrompt?> = _dynamicNewSagaTexts.asStateFlow()
+
+        private val _isLoadingDynamicPrompts = MutableStateFlow(false)
+        val isLoadingDynamicPrompts: StateFlow<Boolean> = _isLoadingDynamicPrompts.asStateFlow()
 
         init {
             loadRemoteConfigFlag()
@@ -54,7 +54,7 @@ class HomeViewModel
 
         fun createFakeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
-                homeUseCase.createFakeSaga().onSuccessAsync { // Changed to homeUseCase
+                homeUseCase.createFakeSaga().onSuccessAsync {
                     startDebugSaga.emit(it)
                     delay(3.seconds)
                     startDebugSaga.emit(null)
@@ -68,18 +68,12 @@ class HomeViewModel
                 return
             }
             viewModelScope.launch(Dispatchers.IO) {
+                _isLoadingDynamicPrompts.value = true
                 Log.d("HomeViewModel", "Fetching new dynamic saga texts...")
-                try {
-                    val result = homeUseCase.fetchDynamicNewSagaTexts() // Changed to homeUseCase
-                    _dynamicNewSagaTexts.value = result
-                    if (result == null) {
-                        Log.e("HomeViewModel", "HomeUseCase returned null for dynamic saga texts.")
-                    } else {
-                        Log.d("HomeViewModel", "Dynamic texts received: ${result.title}")
-                    }
-                } catch (e: Exception) {
-                    Log.e("HomeViewModel", "Error fetching dynamic saga texts: ${e.message}", e)
+                homeUseCase.fetchDynamicNewSagaTexts().onSuccess {
+                    _dynamicNewSagaTexts.value = it
                 }
+                _isLoadingDynamicPrompts.value = false
             }
         }
     }

@@ -155,7 +155,6 @@
     <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
     <string name="saga_detail_delete_saga_button">Excluir Saga</string>
 
-    <!-- HomeView.kt Strings -->
     <string name="home_debug_session_icon_desc">Sessão de Depuração</string>
     <string name="home_start_debug_session_title">Iniciar Sessão de Depuração</string>
     <string name="home_test_with_fake_messages_subtitle">Testar com mensagens falsas.</string>
@@ -166,4 +165,7 @@
     <string name="chat_card_saga_ended">Sua saga chegou ao fim!</string>
     <string name="home_new_chat_journey_begins_title">A jornada começa aqui</string>
     <string name="home_new_chat_start_button">Começar</string>
+    <string name="no_internet_connection_title">Sem conexão à Internet</string>
+    <string name="no_internet_connection_message">Por favor, verifique suas configurações de rede e tente novamente.</string>
+
 </resources>

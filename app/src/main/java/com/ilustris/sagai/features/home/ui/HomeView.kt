@@ -2,8 +2,15 @@
 
 package com.ilustris.sagai.features.home.ui
 
-import ai.atick.material.MaterialColor
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -60,15 +67,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.GradientType
@@ -76,13 +84,10 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
-import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -92,6 +97,7 @@ import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
 @Suppress("ktlint:standard:function-naming")
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun HomeView(
     navController: NavHostController,
@@ -102,11 +108,13 @@ fun HomeView(
     val showDebugButton by viewModel.showDebugButton.collectAsStateWithLifecycle()
     val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
     val dynamicNewSagaTexts by viewModel.dynamicNewSagaTexts.collectAsStateWithLifecycle()
+    val isLoadingDynamicPrompts by viewModel.isLoadingDynamicPrompts.collectAsStateWithLifecycle()
     ChatList(
         sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
         padding = padding,
         showDebugButton = showDebugButton,
         dynamicNewSagaTexts = dynamicNewSagaTexts,
+        isLoadingDynamicPrompts = isLoadingDynamicPrompts,
         onCreateNewChat = {
             navController.navigateToRoute(Routes.NEW_SAGA)
         },
@@ -136,12 +144,14 @@ fun HomeView(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun ChatList(
     sagas: List<SagaContent>,
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
     dynamicNewSagaTexts: DynamicSagaPrompt?,
+    isLoadingDynamicPrompts: Boolean,
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
@@ -208,7 +218,7 @@ private fun ChatList(
                 modifier =
                     Modifier
                         .padding(16.dp)
-                        .gradientFill(brush)
+                        .reactiveShimmer(true)
                         .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
@@ -216,7 +226,7 @@ private fun ChatList(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
-                    brush = Brush.verticalGradient(holographicGradient),
+                    brush = Brush.verticalGradient(genresGradient()),
                     strokeSize = 2.dp,
                     modifier =
                         Modifier
@@ -225,24 +235,62 @@ private fun ChatList(
                             .size(32.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(
-                        text = dynamicNewSagaTexts?.title ?: stringResource(R.string.home_create_new_saga_title),
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                brush = Brush.verticalGradient(holographicGradient),
-                            ),
-                    )
+                AnimatedContent(
+                    targetState = isLoadingDynamicPrompts,
+                    transitionSpec = {
+                        (slideInVertically { height -> height } + fadeIn()).togetherWith(
+                            slideOutVertically { height -> -height } + fadeOut(),
+                        ) using
+                            SizeTransform(
+                                clip = false,
+                            )
+                    },
+                    label = "AnimatedDynamicTexts",
+                    modifier = Modifier.weight(1f),
+                ) { isLoading ->
+                    Column(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .gradientFill(Brush.verticalGradient(holographicGradient)),
+                    ) {
+                        if (isLoading) {
+                            StarryTextPlaceholder(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(MaterialTheme.typography.bodyMedium.lineHeight.value.dp),
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            StarryTextPlaceholder(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth(0.7f)
+                                        .height(MaterialTheme.typography.labelSmall.lineHeight.value.dp),
+                            )
+                        } else {
+                            Text(
+                                text =
+                                    dynamicNewSagaTexts?.title
+                                        ?: stringResource(R.string.home_create_new_saga_title),
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                            )
 
-                    Text(
-                        text = dynamicNewSagaTexts?.subtitle ?: stringResource(R.string.home_create_new_saga_subtitle),
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontWeight = FontWeight.Light,
-                                brush = Brush.verticalGradient(holographicGradient),
-                            ),
-                    )
+                            Text(
+                                text =
+                                    dynamicNewSagaTexts?.subtitle
+                                        ?: stringResource(R.string.home_create_new_saga_subtitle),
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontWeight = FontWeight.Light,
+                                        brush = Brush.verticalGradient(holographicGradient),
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -267,9 +315,8 @@ fun ChatCard(
             modifier =
                 Modifier
                     .clickable {
-                        if (saga.data.isDebug && isEnabled) {
-                            onClick()
-                        } else {
+                        // Saga can be clicked if it's not a debug saga OR if showDebugButton is enabled
+                        if (!saga.data.isDebug || isEnabled) {
                             onClick()
                         }
                     }.fillMaxWidth()
@@ -307,8 +354,7 @@ fun ChatCard(
                                 .fillMaxSize()
                                 .effectForGenre(
                                     sagaData.genre,
-                                    focusRadius = 0f,
-                                    customGrain = 0.05f,
+                                    pixelSize = 1.3f,
                                 ).selectiveColorHighlight(
                                     sagaData.genre.selectiveHighlight(),
                                 ),
@@ -409,7 +455,13 @@ fun ChatCard(
                         lastMessage?.let {
                             if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
                                 Text(
-                                    text = (it.character?.name ?: stringResource(id = R.string.chat_card_unknown_character)).plus(": "),
+                                    text =
+                                        (
+                                            it.character?.name
+                                                ?: stringResource(id = R.string.chat_card_unknown_character)
+                                        ).plus(
+                                            ": ",
+                                        ),
                                     style =
                                         MaterialTheme.typography.labelMedium.copy(
                                             fontWeight = FontWeight.Bold,
@@ -634,7 +686,13 @@ fun HomeViewPreview() {
                 ChatList(
                     sagas = previewChats,
                     showDebugButton = true, // Example for preview
-                    dynamicNewSagaTexts = DynamicSagaPrompt("Dynamic Title Preview", "Dynamic Subtitle Preview") // Example for preview
+                    dynamicNewSagaTexts =
+                        DynamicSagaPrompt(
+                            "Dynamic Title Preview",
+                            "Dynamic Subtitle Preview",
+                        ),
+                    // Example for preview
+                    isLoadingDynamicPrompts = false, // Example for preview
                 )
             }
         }

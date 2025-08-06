@@ -287,7 +287,9 @@ fun Modifier.reactiveShimmer(
         .drawWithCache {
             onDrawWithContent {
                 drawContent()
-                drawRect(brush, blendMode = BlendMode.SrcAtop)
+                if (isPlaying) {
+                    drawRect(brush, blendMode = BlendMode.SrcAtop)
+                }
             }
         }
 }

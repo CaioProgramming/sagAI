@@ -770,6 +770,7 @@ private fun SagaDetailInitialView(
                                 CharacterAvatar(
                                     mainChar,
                                     borderSize = 3.dp,
+                                    borderColor = it.data.genre.color,
                                     genre = it.data.genre,
                                     textStyle = MaterialTheme.typography.displayMedium,
                                     modifier =

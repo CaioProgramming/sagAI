@@ -186,4 +186,6 @@
     <string name="chat_card_saga_ended">Your saga has come to an end!</string>
     <string name="home_new_chat_journey_begins_title">The journey starts here</string>
     <string name="home_new_chat_start_button">Start</string>
+    <string name="no_internet_connection_title">No Internet Connection</string>
+    <string name="no_internet_connection_message">Please check your network settings and try again.</string>
 </resources>

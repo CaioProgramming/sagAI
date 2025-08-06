@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.characters.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -98,45 +99,48 @@ fun CharactersGalleryContent(
         mutableStateOf<Character?>(null)
     }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier =
-            Modifier
-                .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(8.dp),
-    ) {
-        items(sortCharactersByMessageCount(saga.characters, saga.messages), key = { character -> character.id }) { character ->
-            CharacterYearbookItem(
-                character = character,
-                character.id == saga.mainCharacter?.id,
-                saga.data.genre,
-                modifier =
-                    Modifier.clickable {
-                        showCharacter = character
-                    },
-            )
-        }
-    }
-
-    val newCharacterSheetState =
-        rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    showCharacter?.let { character ->
-        ModalBottomSheet(
-            onDismissRequest = { showCharacter = null },
-            sheetState = newCharacterSheetState,
-            containerColor = MaterialTheme.colorScheme.background,
-            dragHandle = { Box {} },
+    AnimatedContent(saga.characters) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp),
         ) {
-            CharacterDetailsContent(
-                saga,
-                character,
-                saga.messages.count { it.character?.id == character.id || it.message.speakerName == character.name },
-            )
+            items(sortCharactersByMessageCount(it, saga.messages), key = { character -> character.id }) { character ->
+                CharacterYearbookItem(
+                    character = character,
+                    character.id == saga.mainCharacter?.id,
+                    saga.data.genre,
+                    modifier =
+                        Modifier.clickable {
+                            showCharacter = character
+                        },
+                )
+            }
+        }
+
+        val newCharacterSheetState =
+            rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+        showCharacter?.let { character ->
+            ModalBottomSheet(
+                onDismissRequest = { showCharacter = null },
+                sheetState = newCharacterSheetState,
+                containerColor = MaterialTheme.colorScheme.background,
+                dragHandle = { Box {} },
+            ) {
+                CharacterDetailsContent(
+                    saga,
+                    character,
+                    saga.messages.count { it.character?.id == character.id || it.message.speakerName == character.name },
+                )
+            }
         }
     }
+
 }
 
 @Composable

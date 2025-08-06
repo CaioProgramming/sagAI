@@ -1,9 +1,9 @@
 package com.ilustris.sagai.features.home.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt // Added import
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt // Added import
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import kotlinx.coroutines.flow.Flow
 
@@ -23,6 +23,4 @@ interface SagaHistoryUseCase {
     suspend fun createFakeSaga(): RequestResult<Exception, Saga>
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<Exception, String>
-
-    suspend fun fetchDynamicNewSagaTexts(): DynamicSagaPrompt? // Added function
 }

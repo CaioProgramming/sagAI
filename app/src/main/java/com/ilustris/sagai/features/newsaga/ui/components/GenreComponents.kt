@@ -45,9 +45,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.defaultHeaderImage
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -58,6 +58,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun GenreSelectionCard(
@@ -171,83 +172,51 @@ fun GenreCard(
         tween(700, easing = EaseIn),
     )
 
-    val borderColor =
-        if (isSelected) {
-            genre.gradient(true)
-        } else {
-            MaterialTheme.colorScheme.onBackground.gradientFade()
-        }
+    val borderColor = genre.gradient()
 
     val shape = RoundedCornerShape(genre.cornerSize())
 
     Box(
         modifier
-            .scale(scale)
             .border(
-                1.dp,
+                2.dp,
                 borderColor,
                 shape,
             ).clip(RoundedCornerShape(genre.cornerSize()))
             .clipToBounds()
-            .grayScale(saturation)
             .clickable {
                 onClick(genre)
             },
     ) {
-        val imageModifier =
-            if (isSelected) {
-                Modifier
-                    .fillMaxSize()
-                    .zoomAnimation()
-            } else {
-                Modifier.fillMaxSize()
-            }
-
         val imageUrl = genre.defaultHeaderImage()
-
-        val textSize by animateFloatAsState(
-            if (isSelected) 28f else 22f,
-            tween(
-                200,
-                easing = EaseIn,
-            ),
-        )
 
         Image(
             painterResource(imageUrl),
             genre.name,
             contentScale = ContentScale.Crop,
             modifier =
-                imageModifier
+                Modifier
+                    .fillMaxSize()
+                    .effectForGenre(genre)
                     .selectiveColorHighlight(
                         genre.selectiveHighlight(),
-                    ).effectForGenre(genre)
-                    .clipToBounds(),
+                    ).clipToBounds(),
         )
+
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
 
         Text(
             genre.title,
             textAlign = TextAlign.Center,
             style =
-                MaterialTheme.typography.titleLarge.copy(
+                MaterialTheme.typography.titleMedium.copy(
                     fontFamily = genre.headerFont(),
-                    fontSize = textSize.sp,
-                    brush =
-                        if (isSelected) {
-                            genre.gradient(true)
-                        } else {
-                            MaterialTheme.colorScheme.background.solidGradient()
-                        },
+                    brush = genre.gradient(true, 1.seconds, 300f),
                 ),
             modifier =
-                Modifier
-                    .background(
-                        fadeGradientBottom(
-                            Color.Black,
-                        ),
-                    ).fillMaxWidth()
-                    .padding(16.dp)
-                    .align(Alignment.BottomCenter),
+                Modifier.fillMaxWidth()
+                    .padding(2.dp)
+                    .align(Alignment.Center),
         )
     }
 }
@@ -277,13 +246,13 @@ fun GenreCardPreview() {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(0.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(0.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
         items(Genre.entries.size) {
             val genre = Genre.entries[it]
-            GenreCard(genre, isSelected = selectedGenre.value == genre, modifier = Modifier.fillMaxWidth().height(300.dp).aspectRatio(1f)) {
+            GenreCard(genre, isSelected = true, modifier = Modifier.fillMaxWidth().size(300.dp)) {
                 selectedGenre.value = it
             }
         }

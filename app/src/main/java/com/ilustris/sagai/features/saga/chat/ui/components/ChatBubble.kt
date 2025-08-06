@@ -56,6 +56,7 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.saturate
+import effectForGenre
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -184,8 +185,6 @@ fun ChatBubble(
                             it,
                             genre = genre,
                             borderSize = 2.dp,
-                            softFocusRadius = 0.03f,
-                            grainRadius = 0.05f,
                             modifier =
                                 Modifier
                                     .fillMaxSize()
@@ -231,8 +230,6 @@ fun ChatBubble(
                         CharacterAvatar(
                             it,
                             borderSize = 2.dp,
-                            softFocusRadius = 0.03f,
-                            grainRadius = 0.01f,
                             genre = genre,
                             modifier =
                                 Modifier
@@ -292,8 +289,6 @@ fun ChatBubble(
                         CharacterAvatar(
                             it,
                             borderSize = 2.dp,
-                            softFocusRadius = 0.03f,
-                            grainRadius = 0.01f,
                             genre = genre,
                             modifier =
                                 Modifier

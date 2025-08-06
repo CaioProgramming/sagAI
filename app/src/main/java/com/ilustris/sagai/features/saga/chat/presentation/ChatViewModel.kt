@@ -144,12 +144,6 @@ class ChatViewModel
 
                         if (it.messages.isEmpty() && isGenerating.value.not()) {
                             generateIntroduction(it.data, it.mainCharacter)
-                            sendSnackbarMessage(
-                                SnackBarState(
-                                    "Gerando introdução",
-                                    "",
-                                ),
-                            )
                         }
 
                         validateCharacterMessageUpdates(it)

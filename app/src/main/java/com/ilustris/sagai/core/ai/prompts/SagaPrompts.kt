@@ -25,14 +25,6 @@ object SagaPrompts {
         Genre: $genre
         """.trimIndent()
 
-    fun SagaForm.storyDetails() =
-        """
-        Adventure Details:
-        Title: $title
-        Description: $description
-        Genre: $genre
-        """.trimIndent()
-
     fun sagaGeneration(saga: SagaForm) =
         """
         Develop a synopsis that engage the player to joins the adventure.
@@ -41,10 +33,10 @@ object SagaPrompts {
         Do not include specific characters or plot points,
         but rather focus on the overarching narrative and the world in which the adventure takes place.
         
-        ${saga.storyDetails()}
+        ${saga.toJsonFormat()}
         
         Starring:
-        ${CharacterPrompts.details(saga.character)}
+        ${saga.character.toJsonFormat()}
         
         The synopsis should include:
         1.  An engaging hook that sets the scene.
@@ -230,29 +222,19 @@ object SagaPrompts {
         You will receive a character's description and a brief context for their current mood or situation.
         Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
         This description will be directly used as a part of a larger prompt for an AI image generation model.
-        
         YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
         
         **Crucially, this description MUST be formulated to be compatible with a 'Dramatic Portrait' framing,
         conveying the essence and mood of the character in a single, impactful image.
-        Adhere strictly to the provided 'Story Theme' (${saga.genre.title}).**
+        Adhere strictly to the theme (${saga.genre.title}).**
+       
+        ${ImagePrompts.conversionGuidelines(saga.genre)}
         
         **Character Context:**
         ${character.toJsonFormat()}
-        3.  **Current Mood/Situation (for dramatic pose/expression):** ${CharacterPose.random().description}
+        With a pose and expression that matches the genre(${saga.genre.title}) mood and character's persosnality.
         
-        **Guidelines for Conversion and Expansion:**
         
-        1.  **Translate Accurately:** Translate all Portuguese values from the input fields into precise English.
-        2.  **Infer Visuals from Context:** **This is critical.** From the `Character Description` and `Current Mood/Situation`, infer and elaborate on:
-            * **Primary Setting/Environment (for background):** The background should be **extremely minimalist and somber**, serving only to enhance the character's presence. Consider a **plain, dark solid color (deep grey, black, or a muted dark tone)** or a **subtle, dark gradient**. Any implied environment should be heavily out of focus or suggested through minimal abstract shapes and dark tones. The focus *must* remain entirely on the character's portrait.
-            * **Dominant Mood/Atmosphere & Lighting Theme: ${GenrePrompts.moodDescription(saga.genre)}.
-            * **Key Pose/Expression:** Based on `Current Mood/Situation`, generate a **dynamic, expressive, and dramatic pose/facial expression** that captures the character's essence in a portrait.
-            * **Important Objects/Elements:** Include any significant items, or symbols mentioned in the description, ensuring they are either held by or directly related to the central character and are potential candidates for the vivid highlights.
-        3.  **Integrate Character (Dominant Central Focus & Red Accents):** The primary character **MUST be the absolute central and dominant focus of the image, filling a significant portion of the frame.** Frame the character as a **close-up portrait** (e.g., headshot to waist-up, or very close full body if the pose demands it, but always prioritizing the character's face/expression). **Incorporate vivid red details on or around the character that are thematically relevant**, ensuring they are the immediate focal points against the somber background.
-        4.  **Integrate Character (Dominant Central Focus, Artistic Lighting & Subtle Cybernetics - Tight Framing):** The primary character **MUST be the absolute central and dominant focus**, **framed tightly as a close-up portrait (from the chest or shoulders up), filling a significant portion of the frame.** Emphasize **strong, artistic lighting in shades of purple that defines their form and creates dramatic shadows**, similar to the use of red in your example. Their expression should be clearly visible and convey the mood. **Crucially, incorporate subtle cybernetic implants and enhancements as elements of fusion between human and machine.** These details should be visible on the **face, neck, eyes (e.g., glowing pupils or integrated displays), and lips (e.g., metallic sheen or subtle integrated tech)**, adding to the cyberpunk aesthetic without overwhelming the character's humanity, as seen in the provided example.
-        5.  **Composition for Dramatic Portrait (Tight & Centralized Focal Distance):** Formulate the prompt to suggest a **tight, portrait-oriented composition with the main character centrally and dominantly positioned, capturing a headshot or upper-body shot.** Utilize strong, focused lighting to emphasize the character, their expression, and their key elements.
-        * **Suggested terms to use:** "tight shot," "close-up portrait," "headshot," "upper body shot," "from the chest up," "shoulders up," "central composition," "minimalist background (deep purple and black)," "artistic use of purple tones," "high contrast lighting," "dramatic shadows," "single light source (purple)," "rim lighting (lighter purple)," "stylized," "graphic," "character-focused," "futuristic portrait."
-        6.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.    
+       
         """
 }
