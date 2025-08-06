@@ -15,7 +15,7 @@
     <string name="saga_description_hint">Describe your story…</string>
     <string name="saga_saving">Time to build this world!</string>
     <string name="saga_saving_subtitle">Leave it to me; I\'ll build your world in a few moments,</string>
-    <string name="saga_saving_hint" />
+    <string name="saga_saving_hint" >Saving saga</string>
     <string name="new_saga_title">New saga</string>
     <string name="home_title">Sagas</string>
     <string name="save_saga">Save</string>
@@ -188,4 +188,9 @@
     <string name="home_new_chat_start_button">Start</string>
     <string name="no_internet_connection_title">No Internet Connection</string>
     <string name="no_internet_connection_message">Please check your network settings and try again.</string>
+    <string name="dialog_exit_title_new_saga">Exit Creation?</string>
+    <string name="dialog_exit_message_new_saga">The AI is currently working. Are you sure you want to leave? Your progress might be lost.</string>
+    <string name="dialog_exit_confirm_button_new_saga">Leave</string>
+    <string name="dialog_exit_dismiss_button_new_saga">Stay</string>
+
 </resources>

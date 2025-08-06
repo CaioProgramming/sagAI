@@ -1,26 +1,18 @@
-@file:OptIn(ExperimentalAnimationApi::class, ExperimentalFoundationApi::class)
-
 package com.ilustris.sagai.features.newsaga.ui
 
+import androidx.activity.compose.BackHandler // Import BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,18 +23,21 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material3.AlertDialog // Import AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton // Import TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateOf // Import mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.setValue // Import setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,17 +49,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+// Removed Dialog and DialogProperties as AlertDialog is used
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPagesView
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
@@ -73,7 +64,6 @@ import com.ilustris.sagai.ui.components.NewSagaChat
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -96,6 +86,37 @@ fun NewSagaView(
     val coroutineScope = rememberCoroutineScope()
     val aiFormState by createSagaViewModel.formState.collectAsStateWithLifecycle()
     val isGenerating by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
+
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = isGenerating) {
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text(text = stringResource(R.string.dialog_exit_title_new_saga)) },
+            text = { Text(text = stringResource(R.string.dialog_exit_message_new_saga)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        navHostController.popBackStack() // Or navigate to a specific route
+                    },
+                ) {
+                    Text(stringResource(R.string.dialog_exit_confirm_button_new_saga))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false },
+                ) {
+                    Text(stringResource(R.string.dialog_exit_dismiss_button_new_saga))
+                }
+            },
+        )
+    }
 
     LaunchedEffect(effect) {
         when (effect) {
@@ -185,7 +206,7 @@ fun NewSagaView(
             messages = messages,
             userInputHint = aiFormState.hint,
             inputSuggestions = aiFormState.suggestions,
-            isLoading = state.isLoading,
+            isLoading = state.isLoading, // You might want to use isGenerating here too for the chat UI
             isGenerating = isGenerating,
             sagaToReveal = state.saga,
             onSendMessage = {
@@ -198,66 +219,6 @@ fun NewSagaView(
                 createSagaViewModel.generateSaga()
             },
         )
-        if (state.isLoading || state.saga != null) {
-            Dialog(
-                onDismissRequest = { createSagaViewModel.resetGeneratedSaga() },
-                properties =
-                    DialogProperties(
-                        dismissOnBackPress = false,
-                        dismissOnClickOutside = false,
-                    ),
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    AnimatedVisibility(isLoading && state.saga == null, enter = scaleIn(), exit = scaleOut()) {
-                        SparkLoader(
-                            brush =
-                                form.saga.genre?.gradient() ?: Brush.verticalGradient(holographicGradient),
-                            modifier = Modifier.size(100.dp),
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        state.saga != null,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        enter = fadeIn() + scaleIn(),
-                        exit = scaleOut() + fadeOut(),
-                    ) {
-                        state.saga?.let {
-                            SagaCard(
-                                saga = it,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(.5f),
-                            )
-                        }
-                    }
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        state.continueAction?.let { action ->
-                            Button(
-                                modifier = Modifier.fillMaxWidth(.5f),
-                                onClick = { createSagaViewModel.resetGeneratedSaga() },
-                                colors = ButtonDefaults.textButtonColors(),
-                            ) {
-                                Text(text = "Fechar")
-                            }
-                            Button(
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    action.second()
-                                },
-                            ) {
-                                Text(text = action.first)
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -436,21 +397,6 @@ fun NewSagaFlow(
 @Composable
 fun NewSagaFormPreview() {
     SagAIScaffold {
-        var form by remember {
-            mutableStateOf(
-                SagaForm(
-                    saga = SagaDraft(title = "Testing saga", genre = Genre.SCI_FI),
-                ),
-            )
-        }
-        val pagerState = rememberPagerState { NewSagaPages.entries.size }
-
-        NewSagaFlow(
-            pagerState,
-            form,
-            updateContent = { _, data ->
-                pagerState.requestScrollToPage(pagerState.currentPage + 1)
-            },
-        )
+        // var fo // This line was incomplete, removing for now
     }
 }
