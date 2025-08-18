@@ -10,9 +10,7 @@ interface TimelineUseCase {
 
     suspend fun saveTimeline(timeline: Timeline): Timeline
 
-    suspend fun updateTimeline(timeline: Timeline)
+    suspend fun updateTimeline(timeline: Timeline): Timeline
 
     suspend fun deleteTimeline(timeline: Timeline)
-
-    suspend fun getTimelineForSaga(sagaId: String): Flow<List<Timeline>>
 }

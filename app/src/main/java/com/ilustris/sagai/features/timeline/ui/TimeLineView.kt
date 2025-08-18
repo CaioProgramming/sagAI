@@ -41,6 +41,7 @@ import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -49,6 +50,7 @@ import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -114,13 +116,71 @@ fun TimeLineContent(
 ) {
     val lazyListState = rememberLazyListState()
     LazyColumn(state = lazyListState) {
-        items(content.timelines) {
-            TimeLineCard(it, content.data.genre, modifier = Modifier.fillMaxWidth())
+        val acts = content.acts
+        content.acts.forEach { actContent ->
+            stickyHeader {
+                Text(
+                    actContent.data.title.ifEmpty { "Ato ${(acts.indexOf(actContent) + 1).toRoman()}" },
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = content.data.genre.headerFont(),
+                        brush  = content.data.genre.gradient(true),
+                    ),
+                    modifier = Modifier.fillMaxWidth().background(
+                        MaterialTheme.colorScheme.background
+                    ).padding(16.dp),
+                )
+            }
+            actContent.chapters.forEach { chapter ->
+                stickyHeader {
+                    Text(
+                        chapter.data.title.ifEmpty {
+                            "Capítulo ${
+                                (actContent.chapters.indexOf(
+                                    chapter
+                                ) + 1).toRoman()
+                            }"
+                        },
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontFamily = content.data.genre.headerFont(),
+                            color  = content.data.genre.color,
+                        ),
+                        modifier = Modifier.fillMaxWidth().background(
+                            MaterialTheme.colorScheme.background
+                        ).padding(16.dp),
+                    )
+
+                }
+
+                items(chapter.events) {
+                    TimeLineCard(it.timeline, content.data.genre, showSpark = true)
+                }
+
+                if (chapter.isComplete()) {
+                    item {
+                        Text(
+                            "Fim do capítulo ${chapter.data.title}",
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(8.dp),
+                        )
+
+                    }
+                }
+            }
+            if (actContent.isComplete()) {
+                item {
+                    Text(
+                        "Fim do Ato ${actContent.data.title}",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(8.dp),
+                    )
+                }
+            }
         }
     }
 
     LaunchedEffect(content) {
-        lazyListState.animateScrollToItem(content.timelines.size - 1)
+        val lastIndex = lazyListState.layoutInfo.totalItemsCount - 1
+        lazyListState.animateScrollToItem(lastIndex)
     }
 }
 
@@ -232,19 +292,7 @@ fun TimeLineContentPreview() {
                     description = "A saga about adventure and stuff.",
                     genre = Genre.FANTASY,
                 ),
-            timelines =
-                listOf(
-                    Timeline(
-                        title = "Event 1",
-                        content = "Something happened",
-                        createdAt = Calendar.getInstance().timeInMillis,
-                    ),
-                    Timeline(
-                        title = "Event 2",
-                        content = "Something else happened",
-                        createdAt = Calendar.getInstance().timeInMillis + 100000,
-                    ),
-                ),
+
         )
     TimeLineContent(content)
 }
@@ -257,6 +305,7 @@ fun TimeLineCardPreview() {
             title = "The Great Battle",
             content = "A fierce battle took place, changing the course of history.",
             createdAt = Calendar.getInstance().timeInMillis,
+            chapterId = 0
         )
     val genre = Genre.FANTASY
     TimeLineCard(

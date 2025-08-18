@@ -10,6 +10,7 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
+import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toFirebaseSchema
 
 class TextGenClient(
@@ -73,7 +74,7 @@ class TextGenClient(
                 if (T::class.java == String::class.java) {
                     content.text as? T
                 } else {
-                    Gson().fromJson(content.text, T::class.java)
+                    Gson().fromJson(content.text.sanitizeAndExtractJsonString(), T::class.java)
                 }
             return contentData
         } catch (e: Exception) {

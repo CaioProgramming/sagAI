@@ -236,7 +236,7 @@ fun Modifier.dashedBorder(
     },
 )
 
-fun Genre.cornerSize() =
+fun Genre?.cornerSize() =
     when (this) {
         Genre.FANTASY -> 20.dp
         Genre.SCI_FI -> 10.dp

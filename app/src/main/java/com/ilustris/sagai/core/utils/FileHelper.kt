@@ -3,7 +3,9 @@ package com.ilustris.sagai.core.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.icu.util.Calendar
 import android.util.Base64
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
 
@@ -44,12 +46,16 @@ class FileHelper(
         if (!directory.exists()) {
             directory.mkdirs()
         }
-        val file = directory.resolve(fileName.plus(".png").removeBlankSpace())
+        val currentDateTime = Calendar.getInstance().timeInMillis
+        val file = directory.resolve(fileName.plus(currentDateTime).plus(".png").removeBlankSpace())
         val fileOutputStream = FileOutputStream(file)
         data.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
         fileOutputStream.flush()
         fileOutputStream.close()
-        return file.takeIf { it.exists() }
+        return file.takeIf {
+            Log.d(javaClass.simpleName, "saveFile: File saved at ${file.absolutePath}")
+            it.exists()
+        }
     }
 
     fun saveFile(
@@ -59,6 +65,16 @@ class FileHelper(
     ): File? {
         val decodedBytes = Base64.decode(data, Base64.DEFAULT)
         return saveFile(fileName, decodedBytes, "sagas/$path")
+    }
+
+    fun readFile(path: String?): Bitmap? {
+        if (path == null) return null
+        val file = File(path)
+        return if (file.exists()) {
+            BitmapFactory.decodeFile(file.absolutePath)
+        } else {
+            null
+        }
     }
 
     fun readFile(

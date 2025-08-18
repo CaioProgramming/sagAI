@@ -29,6 +29,7 @@ data class Wiki(
     val title: String = "",
     val content: String = "",
     val type: WikiType = WikiType.OTHER,
+    val emojiTag: String? = null,
     val createdAt: Long = Calendar.getInstance().timeInMillis,
     @ColumnInfo(index = true)
     val sagaId: Int,

@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
@@ -53,14 +54,9 @@ class HomeUseCaseImpl
             }
 
         private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
-            val mappedSagas =
-                content.map { saga ->
-                    saga.copy(
-                        messages = saga.messages.sortedByDescending { it.message.timestamp },
-                    )
-                }
-            return mappedSagas.sortedByDescending { saga ->
-                saga.messages
+
+            return content.sortedByDescending { saga ->
+                saga.flatMessages()
                     .firstOrNull()
                     ?.message
                     ?.timestamp ?: 0L

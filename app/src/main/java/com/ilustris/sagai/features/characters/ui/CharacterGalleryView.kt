@@ -49,6 +49,7 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
@@ -95,11 +96,15 @@ fun CharactersGalleryContent(
     saga: SagaContent,
     onSelectCharacter: (Int, Int) -> Unit = { _, _ -> },
 ) {
+
     var showCharacter by remember {
         mutableStateOf<Character?>(null)
     }
 
     AnimatedContent(saga.characters) {
+        val characters = remember {
+            sortCharactersByMessageCount(it, saga.flatMessages())
+        }
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier =
@@ -109,7 +114,7 @@ fun CharactersGalleryContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(8.dp),
         ) {
-            items(sortCharactersByMessageCount(it, saga.messages), key = { character -> character.id }) { character ->
+            items(characters, key = { character -> character.id }) { character ->
                 CharacterYearbookItem(
                     character = character,
                     character.id == saga.mainCharacter?.id,
@@ -134,8 +139,7 @@ fun CharactersGalleryContent(
             ) {
                 CharacterDetailsContent(
                     saga,
-                    character,
-                    saga.messages.count { it.character?.id == character.id || it.message.speakerName == character.name },
+                    character
                 )
             }
         }
@@ -201,6 +205,7 @@ private fun CharacterVerticalItem(
 fun CharactersGalleryContentPreview() {
     val sagaContent =
         SagaContent(
+            acts = emptyList(),
             data =
                 Saga(
                     id = 0,
@@ -215,8 +220,6 @@ fun CharactersGalleryContentPreview() {
                     details = Details(),
                     sagaId = 0,
                 ),
-            messages = emptyList(),
-            chapters = emptyList(),
             characters =
                 listOf(
                     Character(id = 1, name = "Character 1", details = Details(), sagaId = 0),

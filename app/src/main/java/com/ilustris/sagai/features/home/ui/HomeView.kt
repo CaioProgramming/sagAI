@@ -60,6 +60,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -67,15 +68,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
@@ -84,10 +90,12 @@ import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
+import com.ilustris.sagai.ui.theme.fadeColors
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -315,7 +323,6 @@ fun ChatCard(
             modifier =
                 Modifier
                     .clickable {
-                        // Saga can be clicked if it's not a debug saga OR if showDebugButton is enabled
                         if (!saga.data.isDebug || isEnabled) {
                             onClick()
                         }
@@ -419,12 +426,20 @@ fun ChatCard(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            val lastMessage = saga.messages.firstOrNull()
-            Column(modifier = Modifier.weight(1f)) {
+            val lastMessage = saga.flatMessages().lastOrNull()
+            Column(
+                modifier =
+                    Modifier.weight(1f).reactiveShimmer(
+                        sagaData.isEnded,
+                        shimmerColors = sagaData.genre.color.fadeColors(),
+                        targetValue = 1000f,
+                        duration = 5.seconds,
+                    ),
+            ) {
                 Row {
                     Text(
-                        text = sagaData.title, // Replace with actual contact name
-                        style = MaterialTheme.typography.titleSmall,
+                        text = sagaData.title,
+                        style = MaterialTheme.typography.titleMedium,
                         fontFamily = saga.data.genre.headerFont(),
                         modifier = Modifier.weight(1f),
                     )
@@ -450,77 +465,28 @@ fun ChatCard(
                     }
                 }
 
-                Row(Modifier.alpha(.8f).padding(vertical = 4.dp)) {
-                    if (sagaData.isEnded.not()) {
-                        lastMessage?.let {
-                            if (it.message.senderType == SenderType.USER || it.message.senderType == SenderType.CHARACTER) {
-                                Text(
-                                    text =
-                                        (
-                                            it.character?.name
-                                                ?: stringResource(id = R.string.chat_card_unknown_character)
-                                        ).plus(
-                                            ": ",
-                                        ),
-                                    style =
-                                        MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = saga.data.genre.bodyFont(),
-                                        ),
-                                    maxLines = 2,
-                                )
-
-                                Text(
-                                    text = it.message.text.take(200),
-                                    style =
-                                        MaterialTheme.typography.labelMedium.copy(
-                                            fontWeight = FontWeight.Normal,
-                                            fontFamily = saga.data.genre.bodyFont(),
-                                        ),
-                                    maxLines = 2,
-                                    modifier =
-                                        Modifier
-                                            .padding(start = 4.dp)
-                                            .weight(1f),
-                                )
-                            } else {
-                                Text(
-                                    text = it.message.text,
-                                    style =
-                                        MaterialTheme.typography.labelMedium.copy(
-                                            fontFamily = saga.data.genre.bodyFont(),
-                                            fontStyle = FontStyle.Italic,
-                                        ),
-                                    maxLines = 2,
-                                )
-                            }
-                        } ?: run {
-                            Text(
-                                stringResource(R.string.chat_card_saga_begins),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontFamily = saga.data.genre.bodyFont(),
-                                        fontStyle = FontStyle.Italic,
-                                    ),
-                            )
-                        }
+                val message =
+                    if (sagaData.isEnded) {
+                        stringResource(R.string.chat_card_saga_ended)
                     } else {
-                        Text(
-                            stringResource(R.string.chat_card_saga_ended),
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = saga.data.genre.bodyFont(),
-                                    color = sagaData.genre.color,
-                                ),
-                            modifier =
-                                Modifier
-                                    .reactiveShimmer(
-                                        isPlaying = true,
-                                        duration = 5.seconds,
-                                    ).weight(1f),
-                        )
+                        if (saga.messagesSize() == 0) {
+                            stringResource(R.string.chat_card_saga_begins)
+                        } else {
+                            lastMessage?.joinMessage(false)?.formatToString()
+                        }
                     }
-                }
+                Text(
+                    text = message ?: emptyString(),
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Normal,
+                            fontFamily = saga.data.genre.bodyFont(),
+                            textAlign = TextAlign.Start,
+                        ),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth().alpha(.8f),
+                )
             }
         }
 
@@ -669,18 +635,7 @@ fun HomeViewPreview() {
                                 mainCharacterId = null,
                             ),
                             mainCharacter = null,
-                            messages =
-                                List(4) {
-                                    MessageContent(
-                                        Message(
-                                            id = it,
-                                            text = "Message ${it + 1} in chat ${it + 1}",
-                                            timestamp = Calendar.getInstance().timeInMillis,
-                                            sagaId = 0,
-                                            senderType = (if (it % 2 == 0) SenderType.USER else SenderType.CHARACTER),
-                                        ),
-                                    )
-                                },
+                            acts = emptyList(),
                         )
                     }
                 ChatList(

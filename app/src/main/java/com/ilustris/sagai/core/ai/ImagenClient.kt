@@ -33,6 +33,7 @@ class ImagenClientImpl
     ) : ImagenClient {
         companion object {
             const val IMAGE_MODEL_FLAG = "imageGenModel"
+            const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
             const val DEFAULT_IMAGE_MODEL = "gemini-2.0-flash-preview-image-generation"
 
             private const val PREMIUM_FLAG = "premiumEnabled"
@@ -40,65 +41,52 @@ class ImagenClientImpl
             private const val TAG = "🖼️ Image Generation"
         }
 
-        private val imageModelToUse by lazy {
-            firebaseRemoteConfig.getString(IMAGE_MODEL_FLAG).let {
-                if (it.isNotEmpty()) {
-                    Log.i("ImagenClientImpl", "Using image model from Remote Config: $it")
-                    it
-                } else {
-                    Log.i("ImagenClientImpl", "Using default image model: $DEFAULT_IMAGE_MODEL")
-                    DEFAULT_IMAGE_MODEL
-                }
-            }
-        }
-
         private val isPremium by lazy {
+            firebaseRemoteConfig.fetchAndActivate()
             firebaseRemoteConfig.getBoolean(PREMIUM_FLAG).let {
                 Log.i(TAG, "Premium enabled: $it")
                 it
             }
         }
 
+        val modelName by lazy {
+            val defaultModel = firebaseRemoteConfig.getString(IMAGE_MODEL_FLAG)
+            val premiumModel = firebaseRemoteConfig.getString(IMAGE_PREMIUM_MODEL_FLAG)
+
+            if (isPremium) {
+                premiumModel
+            } else {
+                defaultModel
+            }
+        }
+
         val model by lazy {
             Log.i(
                 TAG,
-                "Initializing Imagen model with: $imageModelToUse (flag: '$IMAGE_MODEL_FLAG')",
+                "Initializing Imagen model with: $modelName (flag: '$IMAGE_MODEL_FLAG')",
             )
             Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
-                modelName = imageModelToUse,
+                modelName = modelName,
                 generationConfig {
                     responseModalities = listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
                 },
             )
         }
 
-        val premiumModel by lazy {
-            Firebase.ai(backend = GenerativeBackend.googleAI()).imagenModel(
-                modelName = "imagen-3.0-generate-002",
-            )
-        }
-
         override suspend fun generateImage(prompt: String): Bitmap? =
             try {
                 Log.i(javaClass.simpleName, "Generating image with prompt:\n$prompt")
-                if (isPremium.not()) {
-                    model
-                        .generateContent(prompt.trimIndent())
-                        .also {
-                            Log.d(TAG, "generateImage: Token count for request: ${it.usageMetadata?.totalTokenCount}")
-                        }.candidates
-                        .first()
-                        .content.parts
-                        .firstNotNullOf { it.asImageOrNull() }
-                } else {
-                    premiumModel
-                        .generateImages(prompt.trimIndent())
-                        .images
-                        .first()
-                        .data
-                        .decodeToImageBitmap()
-                        .asAndroidBitmap()
-                }
+                val imageModel =
+                    Firebase.ai(backend = GenerativeBackend.vertexAI()).imagenModel(
+                        modelName = modelName,
+                    )
+                imageModel
+                    .generateImages(prompt.trimIndent())
+                    .images
+                    .first()
+                    .data
+                    .decodeToImageBitmap()
+                    .asAndroidBitmap()
             } catch (e: Exception) {
                 e.printStackTrace()
                 null

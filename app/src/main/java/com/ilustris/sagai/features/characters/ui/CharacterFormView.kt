@@ -1,19 +1,13 @@
 package com.ilustris.sagai.features.characters.ui
 
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
@@ -31,7 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,21 +39,12 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.narrative.CharacterFormRules
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.Clothing
-import com.ilustris.sagai.features.characters.data.model.Details
-import com.ilustris.sagai.features.characters.data.model.FacialFeatures
-import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.getNamePlaceholderResId
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
@@ -82,8 +66,6 @@ fun FormSection(
         content()
     }
 }
-
-
 
 @Composable
 fun SimpleCharacterForm(
@@ -262,17 +244,13 @@ fun SimpleCharacterForm(
                             1.dp,
                             genre.gradient(),
                             RoundedCornerShape(genre.cornerSize()),
-                        )
-                        .background(
+                        ).background(
                             genre.color,
                             RoundedCornerShape(genre.cornerSize()),
-                        )
-                        .fillMaxWidth(),
+                        ).fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.save_saga)) // Using "Save" as a general create/save action
             }
         }
     }
 }
-
-

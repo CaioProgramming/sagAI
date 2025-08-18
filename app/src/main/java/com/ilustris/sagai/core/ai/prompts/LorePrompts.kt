@@ -2,14 +2,19 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts.details
 import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
+import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 object LorePrompts {
     fun loreGeneration(
         sagaContent: SagaContent,
-        messages: List<String>,
+        currentTimeline: TimelineContent,
     ) = """
         "
          You are the Saga Chronicler, an AI specialized in maintaining the long-term memory and knowledge base of the '${sagaContent.data.title}' RPG.
@@ -27,14 +32,14 @@ object LorePrompts {
          // Use this list to understand the saga's current historical state and to ensure new events are not duplicates.
          // Your task is to identify truly NEW and important events from 'CONVERSATION HISTORY TO SUMMARIZE' that are NOT already covered here.
          [
-          ${sagaContent.timelines.formatToJsonArray()}
+          ${sagaContent.flatEvents().formatToJsonArray()}
          ]
          
          CONVERSATION HISTORY TO SUMMARIZE (New Segment - e.g., last 20 messages):
          // This is the new chunk of messages that needs to be analyzed for new lore events and character updates.
          // Focus on extracting the most significant and lasting events from this segment.
          [
-          ${messages.joinToString(",\n")}
+          ${currentTimeline.messages.joinToString(";\n") { it.joinMessage(true).formatToString() }}
          ]
          
          EXISTING WORLD WIKI ENTRIES (For reference):

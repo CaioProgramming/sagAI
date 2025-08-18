@@ -15,13 +15,12 @@ class TimelineUseCaseImpl
 
         override suspend fun saveTimeline(timeline: Timeline) = timelineRepository.saveTimeline(timeline)
 
-        override suspend fun updateTimeline(timeline: Timeline) {
+        override suspend fun updateTimeline(timeline: Timeline): Timeline {
             timelineRepository.updateTimeline(timeline)
+            return timeline
         }
 
         override suspend fun deleteTimeline(timeline: Timeline) {
             timelineRepository.deleteTimeline(timeline)
         }
-
-        override suspend fun getTimelineForSaga(sagaId: String) = timelineRepository.getTimelineForSaga(sagaId)
     }

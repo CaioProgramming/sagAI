@@ -20,9 +20,6 @@ interface TimelineDao {
     @Query("SELECT * FROM timelines")
     fun getAllTimelines(): Flow<List<Timeline>>
 
-    @Query("SELECT * FROM timelines WHERE sagaId = :sagaId")
-    fun getTimelineForSaga(sagaId: String): Flow<List<Timeline>>
-
     @Delete
     suspend fun deleteTimeline(timeline: Timeline)
 

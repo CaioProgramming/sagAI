@@ -38,10 +38,10 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.isUser
+import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.model.isUser
 import com.ilustris.sagai.ui.theme.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -56,7 +56,6 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.saturate
-import effectForGenre
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -185,6 +184,7 @@ fun ChatBubble(
                             it,
                             genre = genre,
                             borderSize = 2.dp,
+                            pixelation = 0f,
                             modifier =
                                 Modifier
                                     .fillMaxSize()
@@ -231,6 +231,7 @@ fun ChatBubble(
                             it,
                             borderSize = 2.dp,
                             genre = genre,
+                            pixelation = 0f,
                             modifier =
                                 Modifier
                                     .clip(CircleShape)
@@ -290,6 +291,7 @@ fun ChatBubble(
                             it,
                             borderSize = 2.dp,
                             genre = genre,
+                            pixelation = 0f,
                             modifier =
                                 Modifier
                                     .clip(CircleShape)
@@ -357,30 +359,6 @@ fun ChatBubble(
             }
         }
 
-        SenderType.NEW_CHAPTER -> {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                AnimatedVisibility(
-                    messageContent.chapter == null,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                ) {
-                    SparkIcon(
-                        Modifier.size(75.dp),
-                        brush = genre.gradient(),
-                        rotationTarget = 90f,
-                    )
-                }
-                AnimatedVisibility(messageContent.chapter != null) {
-                    messageContent.chapter?.let {
-                        ChapterContentView(
-                            it,
-                            content = content,
-                            openCharacters = {
-                            },
-                        )
-                    }
-                }
-            }
-        }
 
         SenderType.NEW_CHARACTER -> {
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -401,30 +379,6 @@ fun ChatBubble(
             }
         }
 
-        SenderType.NEW_ACT ->
-            messageContent.act?.let {
-                with(scope) {
-                    Column(
-                        Modifier
-                            .fillParentMaxSize(),
-                        verticalArrangement = Arrangement.Center,
-                    ) {
-                        Spacer(Modifier.fillMaxWidth().height(50.dp).background(fadeGradientBottom()))
-                        ActComponent(
-                            it,
-                            content.acts.indexOf(it) + 1,
-                            content,
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .weight(1f)
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .align(Alignment.CenterHorizontally),
-                        )
-                        Spacer(Modifier.fillMaxWidth().height(50.dp).background(fadeGradientTop()))
-                    }
-                }
-            }
     }
 }
 
@@ -461,6 +415,7 @@ fun ChatBubblePreview() {
                                     senderType = it,
                                     timestamp = System.currentTimeMillis(),
                                     sagaId = 0,
+                                    timelineId = 0
                                 ),
                             ),
                         scope = this,

@@ -5,7 +5,11 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <!-- Add this permission for Android 14+ media playback -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".SagaApp"
@@ -18,19 +22,25 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SagAI"
         android:windowSoftInputMode="adjustResize"
-        tools:targetApi="31">
+        tools:targetApi="36">
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
+            android:launchMode="singleTop"
             android:theme="@style/Theme.App.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- MediaPlayerService Declaration -->
+        <service
+            android:name=".core.media.MediaPlayerService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <!-- Explicitly declare WorkManager's SystemForegroundService with the required type -->
         <service

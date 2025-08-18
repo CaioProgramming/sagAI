@@ -1,6 +1,6 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 
 data class SagaForm(
     val saga: SagaDraft = SagaDraft(),

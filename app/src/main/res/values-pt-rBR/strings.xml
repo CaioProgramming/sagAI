@@ -173,4 +173,8 @@
     <string name="home_new_chat_start_button">Começar</string>
     <string name="no_internet_connection_title">Sem conexão de internet</string>
     <string name="chat_card_unknown_character">Desconhecido</string>
+    <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
+    <string name="continue_text">continuar</string>
+    <string name="notification_title">Nova mensagem em %1$s</string>
+    <string name="notification_playing_act">Jogando ato %1$s</string>
 </resources>

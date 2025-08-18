@@ -32,7 +32,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton // Import TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf // Import mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,11 +55,12 @@ import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.ui.components.NewSagaAIForm
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPagesView
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
-import com.ilustris.sagai.ui.components.NewSagaChat
+import com.ilustris.sagai.features.newsaga.ui.components.NewSagaChat
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -131,10 +131,8 @@ fun NewSagaView(
         }
     }
 
-    LaunchedEffect(messages) {
-        if (messages.isEmpty()) {
-            createSagaViewModel.startChat()
-        }
+    LaunchedEffect(Unit) {
+        createSagaViewModel.startChat()
     }
 
     fun animateToPage(
@@ -148,8 +146,18 @@ fun NewSagaView(
     }
 
     Box {
-        val isLoading = state.isLoading || state.saga != null
-        val blurRadius = animateDpAsState(if (isLoading) 20.dp else 0.dp)
+        NewSagaAIForm(
+            form,
+            isLoading = isGenerating,
+            aiState = aiFormState,
+            sendDescription = {
+                if (it.isEmpty()) return@NewSagaAIForm
+                createSagaViewModel.sendChatMessage(it)
+            },
+            onSave = {
+                createSagaViewModel.generateSaga()
+            }
+        )
         /*NewSagaFlow(
             pagerState = pagerState,
             form = form,
@@ -200,7 +208,7 @@ fun NewSagaView(
                 Modifier
                     .align(Alignment.Center)
                     .blur(blurRadius.value, edgeTreatment = BlurredEdgeTreatment.Unbounded),
-        )*/
+        )
         NewSagaChat(
             currentForm = form,
             messages = messages,
@@ -218,7 +226,7 @@ fun NewSagaView(
             saveSaga = {
                 createSagaViewModel.generateSaga()
             },
-        )
+        )*/
     }
 }
 

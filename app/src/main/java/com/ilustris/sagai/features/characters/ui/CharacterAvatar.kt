@@ -49,7 +49,7 @@ fun CharacterAvatar(
     modifier: Modifier = Modifier,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
-    pixelation: Float? = null
+    pixelation: Float? = null,
 ) {
     val characterColor = Color(character.hexColor.toColorInt())
     Box(
@@ -61,7 +61,7 @@ fun CharacterAvatar(
             ).clip(CircleShape)
             .padding(innerPadding)
             .background(
-                characterColor,
+                characterColor.darker(.3f),
                 CircleShape,
             ),
     ) {
@@ -81,13 +81,13 @@ fun CharacterAvatar(
                 Modifier
                     .clip(CircleShape)
                     .fillMaxSize()
-                    .background(characterColor, CircleShape)
+                    .background(characterColor.darker(.3f), CircleShape)
                     .effectForGenre(
                         genre,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
-                        pixelSize = pixelation
-                    ).selectiveColorHighlight(genre.selectiveHighlight()),
+                        pixelSize = pixelation,
+                    ),
         )
 
         if (painterState is AsyncImagePainter.State.Error) {

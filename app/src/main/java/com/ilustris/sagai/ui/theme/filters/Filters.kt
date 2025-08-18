@@ -94,7 +94,7 @@ fun Modifier.effectForGenre(
 
     // Define shader parameters based on Genre
     val fantasyPalette = FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
-    val cyberpunkPalette = SciFiColorTones.CYBERPUNK_MAGENTA_GLOW
+    val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
     val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
 
     val uniformValues =
@@ -104,54 +104,54 @@ fun Modifier.effectForGenre(
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: 0.15f,
-                        bloomThreshold = 0.30f,
-                        bloomIntensity = 0.20f,
-                        bloomRadius = 4.5f,
-                        softFocusRadius = focusRadius ?: 1.25f,
-                        saturation = 0.60f,
-                        contrast = 1.55f,
-                        brightness = 0f,
+                        grainIntensity = customGrain ?: .1f,
+                        bloomThreshold = .2f,
+                        bloomIntensity = .3f,
+                        bloomRadius = 1f,
+                        softFocusRadius = focusRadius ?: .6f,
+                        saturation = .5f,
+                        contrast = 1.5f,
+                        brightness = -.01f,
                         highlightTint = fantasyPalette.highlightTint,
                         shadowTint = fantasyPalette.shadowTint,
                         tintStrength = fantasyPalette.defaultTintStrength,
                         vignetteStrength = 0.2f,
                         vignetteSoftness = 0.7f,
                         pixelationBlockSize = 0f,
-                        colorTemperature = 0.1f, // Slightly warm for Fantasy
+                        colorTemperature = .15f, // Slightly warm for Fantasy
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: 0.15f,
-                        bloomThreshold = 0.3f,
-                        bloomIntensity = 0.2f,
-                        bloomRadius = 1.2f,
-                        softFocusRadius = focusRadius ?: 0.4f,
-                        saturation = 0.4f,
-                        contrast = 1.6f,
-                        brightness = -0.05f,
+                        grainIntensity = customGrain ?: .15f,
+                        bloomThreshold = .3f,
+                        bloomIntensity = .2f,
+                        bloomRadius = 1.3f,
+                        softFocusRadius = focusRadius ?: .5f,
+                        saturation = .2f,
+                        contrast = 1.5f,
+                        brightness = -.1f,
                         highlightTint = cyberpunkPalette.highlightTint,
                         shadowTint = cyberpunkPalette.shadowTint,
                         tintStrength = cyberpunkPalette.defaultTintStrength,
-                        vignetteStrength = 0.15f,
-                        vignetteSoftness = 0.6f,
+                        vignetteStrength = .2f,
+                        vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = -0.2f, // Slightly cool for Sci-Fi
+                        colorTemperature = -.1f, // Slightly cool for Sci-Fi
                     )
                 Genre.HORROR ->
                     ShaderParams(
-                        grainIntensity = .05f,
+                        grainIntensity = .1f,
                         bloomThreshold = 0.4f, // Less bloom for horror
                         bloomIntensity = 0.1f,
                         bloomRadius = 1.0f,
                         softFocusRadius = 0f, // Subtle soft focus
                         saturation = .5f, // Very desaturated
-                        contrast = 1.2f, // High contrast
+                        contrast = 1.5f, // High contrast
                         brightness = .1f.unaryMinus(), // Darker mood
                         highlightTint = horrorPalette.highlightTint, // From MOONLIGHT_MYSTIQUE
                         shadowTint = horrorPalette.shadowTint, // From MOONLIGHT_MYSTIQUE
                         tintStrength = horrorPalette.defaultTintStrength, // From MOONLIGHT_MYSTIQUE
-                        vignetteStrength = 0.5f, // Stronger vignette
+                        vignetteStrength = 1f, // Stronger vignette
                         vignetteSoftness = 0.8f,
                         pixelationBlockSize = pixelSize ?: 3.5f,
                         colorTemperature = .3f.unaryMinus(),

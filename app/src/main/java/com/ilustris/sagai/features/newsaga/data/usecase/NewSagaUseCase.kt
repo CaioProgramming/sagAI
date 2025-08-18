@@ -1,12 +1,13 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
+import SagaGen
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
 
 interface NewSagaUseCase {
     suspend fun saveSaga(
@@ -14,7 +15,10 @@ interface NewSagaUseCase {
         characterDescription: CharacterInfo?,
     ): RequestResult<Exception, Pair<Saga, Character>>
 
-    suspend fun generateSaga(sagaForm: SagaForm): RequestResult<Exception, Saga>
+    suspend fun generateSaga(
+        sagaForm: SagaForm,
+        miniChatContent: List<ChatMessage>,
+    ): RequestResult<Exception, SagaGen>
 
     suspend fun generateSagaIcon(
         sagaForm: Saga,

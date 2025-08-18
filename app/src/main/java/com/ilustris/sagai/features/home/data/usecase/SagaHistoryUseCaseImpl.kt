@@ -6,12 +6,17 @@ import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
+import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -22,27 +27,20 @@ class SagaHistoryUseCaseImpl
         private val sagaRepository: SagaRepository,
         private val textGenClient: TextGenClient,
     ) : SagaHistoryUseCase {
-        override fun getSagas(): Flow<List<SagaContent>> =
-            sagaRepository.getChats().map { content ->
-
-                processSagaContent(content)
-            }
-
         override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
         override suspend fun updateSaga(saga: Saga) = sagaRepository.updateChat(saga)
 
         override suspend fun generateLore(
             saga: SagaContent,
-            loreReference: Int,
-            lastMessages: List<String>,
+            currentTimeline: TimelineContent,
         ): RequestResult<Exception, LoreGen> =
             try {
                 textGenClient
                     .generate<LoreGen>(
                         LorePrompts.loreGeneration(
                             saga,
-                            lastMessages.map { it.toJsonFormat() },
+                            currentTimeline,
                         ),
                         customSchema = LoreGen.toSchema(),
                     )!!
@@ -77,21 +75,3 @@ class SagaHistoryUseCaseImpl
                 e.asError()
             }
     }
-
-private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
-    val mappedSagas =
-        content.map { saga ->
-            saga.copy(
-                messages = saga.messages.sortedByDescending { it.message.timestamp },
-            )
-        }
-
-    mappedSagas.sortedByDescending { saga ->
-        saga.messages
-            .firstOrNull()
-            ?.message
-            ?.timestamp ?: 0L
-    }
-
-    return mappedSagas
-}

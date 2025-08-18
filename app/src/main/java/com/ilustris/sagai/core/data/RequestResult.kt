@@ -56,9 +56,11 @@ sealed class RequestResult<out L, out R> {
 
 fun <R> R.asSuccess() = RequestResult.Success(this)
 
-fun <L : Exception> L.asError(): RequestResult.Error<L> {
+fun <L : Exception> L.asError(sendToCrashlytics: Boolean = true): RequestResult.Error<L> {
     this.printStackTrace()
-    FirebaseCrashlytics.getInstance().recordException(this)
+    if (sendToCrashlytics) {
+        FirebaseCrashlytics.getInstance().recordException(this)
+    }
 
     return RequestResult.Error(this)
 }

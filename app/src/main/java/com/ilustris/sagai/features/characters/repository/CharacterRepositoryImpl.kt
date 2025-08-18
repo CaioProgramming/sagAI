@@ -22,11 +22,7 @@ class CharacterRepositoryImpl
                 id =
                     characterDao
                         .insertCharacter(
-                            character.copy(
-                                id = 0,
-                                joinedAt = Calendar.getInstance().timeInMillis,
-                                image = emptyString(),
-                            ),
+                            character,
                         ).toInt(),
             )
 

@@ -43,7 +43,9 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -85,7 +87,6 @@ fun CharacterDetailsView(
                 CharacterDetailsContent(
                     it,
                     char,
-                    messageCount,
                 )
             }
         } else {
@@ -103,12 +104,12 @@ fun CharacterDetailsView(
 fun CharacterDetailsContent(
     sagaContent: SagaContent,
     character: Character,
-    messageCount: Int,
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
     val characterColor = Color(character.hexColor.toColorInt())
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
     LazyColumn(
         modifier =
             Modifier.fillMaxSize(),
@@ -289,12 +290,10 @@ fun CharacterDetailsDialogPreview() {
                         genre = genre,
                     ),
                 mainCharacter = character,
-                messages = emptyList(),
-                chapters = emptyList(),
+                acts = emptyList(),
                 characters = emptyList(),
             ),
             character,
-            0,
         )
     }
 }

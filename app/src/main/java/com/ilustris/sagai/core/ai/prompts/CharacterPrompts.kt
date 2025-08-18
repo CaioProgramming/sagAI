@@ -1,12 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.CharacterFraming
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.Clothing
-import com.ilustris.sagai.features.characters.data.model.FacialFeatures
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
@@ -15,43 +12,38 @@ object CharacterPrompts {
 
     fun descriptionTranslationPrompt(
         character: Character,
-        framing: CharacterFraming,
         genre: Genre,
     ) = """
         Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Dramatic Character Portraits**.
-        You will receive a character's description and a brief context for their current mood or situation.
-        Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
-        This description will be directly used as a part of a larger prompt for an AI image generation model.
+        The final image generation model WILL HAVE ACCESS to two direct image inputs alongside the text prompt you generate: a **Style Reference Image** and a **Composition Reference Image**.
+        Your goal is to convert the character's description and context below into a single, highly detailed, unambiguous, and visually rich English text description. This text description will be used by an AI image generation model, IN CONJUNCTION with the aforementioned image references.
+
         YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
-        
-        **Crucially, this description MUST be formulated to be compatible with a 'Dramatic Portrait' framing,
-        conveying the essence and mood of the character in a single, impactful image.
-        Adhere strictly to the theme (${genre.title}).**
-         ${ImagePrompts.conversionGuidelines(genre)}
+
+        **Key Instructions for your generated text prompt:**
+
+        1.  **Extract, Describe, and Adapt from Visual References**:
+            Your primary role is to act as an expert art director observing the provided **Style Reference Image** and **Composition Reference Image** (which the final image model will also receive as Bitmaps). Your generated text prompt MUST:
+            *   **From the Style Reference Image**: Identify and verbally articulate its key artistic elements (e.g., 'impressionistic oil painting style', 'vibrant cel-shaded anime aesthetic', 'gritty photorealistic textures', 'specific color palettes', 'lighting techniques').
+            *   **From the Composition Reference Image**: Identify and verbally articulate its core compositional features (e.g., 'is it a close-up, medium shot, or full body?', 'what is the camera angle?', 'how is the subject framed or posed?', 'what is the depth of field like?'). If the Composition Reference Image's overall framing isn't a direct portrait (e.g., it's a wider scene), your description must explain how its compositional essence can be effectively **translated and adapted into a compelling Dramatic Character Portrait**.
+            Your goal is to translate the *vibe, style, and compositional cues* of BOTH reference images into a rich textual description. Do not just say 'replicate the references'; instead, *describe WHAT defining characteristics to replicate and adapt* in vivid textual detail.
+
+        2.  **Character Fidelity**: The character's own details (name, backstory, personality, race, gender, specific appearance details, clothing, weapons from the `Character Context` below) define *WHO* or *WHAT* is being depicted. This is the primary subject.
+
+        3.  **Synthesis**: The character's details should be seamlessly integrated with the style derived from the Style Reference Image and the composition derived (and adapted, if necessary) from the Composition Reference Image.
+
+        4.  **Dramatic Portrait Framing**: The final image should still be a 'Dramatic Portrait,' conveying the character's essence and mood. This is the overall goal, even when adapting a non-portrait composition reference.
+
+        5.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}). ${ImagePrompts.conversionGuidelines(genre)}
+
+        **Image Generation Model Inputs Overview (for your awareness when crafting the text prompt):**
+        *   **Text Prompt:** (The string you will generate)
+        *   **Style Reference Image:** (Direct Bitmap input to the image model)
+        *   **Composition Reference Image:** (Direct Bitmap input to the image model)
+
         **Character Context:**
         ${character.toJsonFormat()}
-        With a pose and expression that matches the genre(${genre.title}) mood and character's persosnality.
-        
-       
-        """
-
-    fun facialDescription(facialDetails: FacialFeatures) =
-        """
-        Facial Features:
-        **Follow this precisely**
-        Eyes: ${facialDetails.eyes}
-        Hair: ${facialDetails.hair}
-        Mouth: ${facialDetails.mouth}
-        Scars: ${facialDetails.mouth}
-        """
-
-    fun clothingDescription(clothing: Clothing) =
-        """
-        **Attire - ESSENTIAL: GENERATE WITH ABSOLUTE FIDELITY:**
-        Body: ${clothing.body}
-        Footwear: ${clothing.footwear}
-        Accessories: ${clothing.accessories}
-        """
+        """.trimIndent()
 
     fun appearance(character: Character) =
         """
@@ -61,58 +53,40 @@ object CharacterPrompts {
         """.trimIndent()
 
     fun charactersOverview(characters: List<Character>): String =
+
         """
         CURRENT SAGA CAST:
-        [${characters.formatToJsonArray()}]
+        [ 
+        ${
+            characters.joinToString(",\n") {
+                it.toJsonFormatExcludingFields(
+                    listOf(
+                        "id",
+                        "image",
+                        "sagaId",
+                        "joinedAt",
+                        "details",
+                    ),
+                )
+            }
+        }
+        ]
         """.trimIndent()
 
     fun characterGeneration(
         saga: SagaContent,
         description: String,
-    ) = """
-         Write a character description for a new character in the story.
-         ${SagaPrompts.details(saga.data)}
-         **CHARACTER DETAILS REFERENCE (STRICT ADHERENCE REQUIRED):**
-         // The following message is the **ABSOLUTE AND UNALTERABLE SOURCE** for the character's core identity.
-         // From this reference message, you **MUST EXTRACT AND USE EXACTLY** the character's:
-         // 1.  **NAME**:
-         //     -   If a name is explicitly mentioned (e.g., "John", "Seraphina") in the input, you **MUST USE IT EXACTLY**.
-         //     -   **If NO name is mentioned** in this message (e.g., "a mysterious stranger", "an old woman"), you **MUST INVENT a new, unique, and fitting name** for the character. The invented name must make sense within the saga's genre and context.
-         //     -   **DO NOT USE "Unknown", "Desconhecido", "Stranger", or similar generic terms for the character's name.** Always provide a proper, specific name.
-         // 2.  **GENDER**: Derive from explicit mentions or strong implications (e.g., "jovem guerreira" (young warrior) or "cavaleiro" (knight)). If gender is not explicitly stated or clearly implied, you may invent it.
-         A highly precise, objective, and detailed description of the character's physical appearance and typical attire.
-         // 4.  **Personality hints**: Use ALL hints provided in this message you can also improve using the context of the message and saga.
-         // 5. **RACE**: 
-          - Use ALL details provided in this message.
-          - **If no race is specified assume that its a human**
-         // 6. **Ethnicity**: Use ALL details provided in this message.
-            - Use ALL details provided in this message.
-            - **If no ethnicity is specified use a random etnicity(caucasian, black, asian, latin)**
-         // **Instructions for 'details.facialDetails':**
-         // - This field must contain a highly specific and objective description of the character's **face and head, including hair**.
-         // - It should focus on all visual elements from the neck up.
-         // - This field must contain a **highly specific, objective, and concise** description of the character's face and head, including hair.
-         // - **Avoid excessive or unnecessary embellishments.** Focus on unique, defining traits.
-         // - Include precise details on:
-         //   - **Hair:** (e.g., "long, braided, silver-grey hair tied back in a complex knot," "short, spiky, electric blue hair with shaved sides," "balding with short black stubble around the ears"). Mention style, length, color, and texture.
-         //   - **Skin Tone & Complexion:** (e.g., "pale, almost translucent skin with a faint blue tint," "deep, warm brown skin with tribal markings around the eyes").
-         //   - **Eyes:** (e.g., "piercing, emerald-green eyes with dilated pupils," "deep-set, dark brown eyes with subtle glowing cybernetic enhancements around the iris," "one blind, milky white eye and one sharp, grey eye"). Mention color, shape, and any unique features.
-         //   - **Facial Features:** (e.g., "sharp jawline and prominent cheekbones," "thin, downturned lips," "aquiline nose," "a distinct scar running from his left eyebrow to his jaw").
-         //   - **Distinctive Facial Marks/Augmentations:** (e.g., "facial piercings – small silver hoop above left eyebrow and a subtle chin stud," "intricate circuit-like tattoo over the left temple").
-         // - **Example for facialDetails:** "Pale, almost greyish white skin contrasted by short, spiky, dark purple hair. Eyes are bright, synthetic yellow orbs with a faint internal glow. A series of intricate circuit-like tattoos coil around his neck and right side of his face."
-         // **Instructions for 'details':**
-         The descriptions in this field is CRITICAL and should be a consistent visual and optimized representation for high-fidelity image generation.
-         // **Instructions for 'details.clothing':**
-         // - This field must contain a highly specific and objective description SOLELY of the character's typical attire and accessories.
-         // - Focus on their signature clothing style, key items of clothing, predominant colors, materials, and any unique features or accessories.
-         // - Mention how the clothing fits their role in the theme.
-         // - **Avoid excessive or unnecessary embellishments.** Focus on unique, defining elements of their typical outfit.
-         // - **Example for clothing:** "A dark, form-fitting tactical suit with reinforced knee pads and glowing crimson accents on the shoulders.
-         It features numerous utility pouches on the belt and concealed pockets. Often accompanied by a low-profile rebreather mask worn around his neck."
-         Instructions for hexColor:
-         ** USE ONLY SOLID VIBRANT COLORS AVOID BLACK OR WHITE.
-          **Instructions for APPEARANCE** Summarize all provided details from details field creating a concise description.
-         // **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE THEME ${saga.data.genre.title}.
-        ' $description '
-        """.trimIndent()
+    ) = buildString {
+        appendLine("Write a character description for a new character in the story.")
+        appendLine("Saga Context:")
+        appendLine(saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions)) // Assuming ChatPrompts.sagaExclusions is defined
+        appendLine("/ 🚨🚨🚨 NEW CHARACTER CREATION SOURCE MATERIAL (CRITICAL) 🚨🚨🚨")
+        appendLine("// The following JSON object is the **ABSOLUTE AND UNALTERABLE SOURCE** for the new character's core identity.")
+        appendLine("// You MUST extract all character details exclusively from this object.")
+        appendLine("// IGNORE ALL OTHER character descriptions in the prompt, including the saga's main description.")
+        appendLine("// This is the ONLY source for the character to be created.")
+        appendLine(description)
+        appendLine(CharacterGuidelines.creationGuideline) // Assuming CharacterGuidelines.creationGuideline is defined
+        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE THEME ${saga.data.genre.title}.")
+    }.trimIndent()
 }

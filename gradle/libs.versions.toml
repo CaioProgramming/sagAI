@@ -1,5 +1,6 @@
 [versions]
 agp = "8.10.1"
+faceDetection = "16.1.7"
 generativeai = "0.9.0"
 googleGenai = "1.10.0"
 hiltWork = "1.2.0"
@@ -7,6 +8,7 @@ hypnoticcanvas = "0.4.1"
 hypnoticcanvasShaders = "0.4.1"
 kotlin = "2.0.21"
 kotlinxCoroutinesPlayServices = "1.10.2"
+media = "1.7.0"
 mediapipeTasksText = "0.10.12"
 reflection = "2.1.21"
 coreKtx = "1.16.0"
@@ -24,14 +26,18 @@ okhttp = "4.12.0"
 palette = "1.0.0"
 coreSplashScreen = "1.0.1"
 firebaseCrashlyticsPlugin = "3.0.1"
+ksp="2.0.21-1.0.27"
 smartReply = "17.0.4"
 tasksGenai = "0.10.25"
 translate = "17.0.3"
 workRuntimeKtx = "2.10.2"
+lifecycleProcess = "2.9.2"
 
 [libraries]
+androidx-media = { module = "androidx.media:media", version.ref = "media" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+face-detection = { module = "com.google.mlkit:face-detection", version.ref = "faceDetection" }
 firebase-installations-ktx = { module = "com.google.firebase:firebase-installations-ktx" }
 google-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
 hypnoticcanvas = { module = "com.mikepenz.hypnoticcanvas:hypnoticcanvas", version.ref = "hypnoticcanvas" }
@@ -92,6 +98,7 @@ retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.r
 retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
 okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -102,3 +109,4 @@ hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
 androidx-room = { id = "androidx.room", version= "2.7.1"}
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
+google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

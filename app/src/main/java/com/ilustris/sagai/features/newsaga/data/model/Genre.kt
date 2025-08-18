@@ -86,20 +86,22 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.FANTASY ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .05f,
-                saturationThreshold = .1f,
-                highlightSaturationBoost = 1.2f,
+                hueTolerance = 1f,
+                saturationThreshold = .6f,
+                lightnessThreshold = .15f,
+                highlightSaturationBoost = 2f,
+                desaturationFactorNonTarget = .3f,
             )
 
         Genre.SCI_FI ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .2f,
+                hueTolerance = .15f,
                 saturationThreshold = .3f,
-                lightnessThreshold = .5f,
-                highlightSaturationBoost = 1.5f,
+                lightnessThreshold = .17f,
+                highlightSaturationBoost = 2f,
                 highlightLightnessBoost = .05f,
-                desaturationFactorNonTarget = .5f,
+                desaturationFactorNonTarget = .8f,
             )
 
         Genre.HORROR ->
@@ -131,9 +133,9 @@ fun Genre.colorPalette() =
         Genre.SCI_FI ->
             listOf(
                 MaterialColor.Purple500,
-                MaterialColor.Indigo600,
+                MaterialColor.Teal800,
                 MaterialColor.DeepPurple800,
-                MaterialColor.DeepPurpleA100,
+                MaterialColor.PinkA100,
             )
         Genre.HORROR ->
             listOf(

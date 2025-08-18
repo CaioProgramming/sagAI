@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.characters.domain
 
+import android.content.Context
+import android.graphics.BitmapFactory
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Schema
 import com.ilustris.sagai.core.ai.CharacterFraming
@@ -14,27 +16,42 @@ import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.core.utils.GenreReferenceHelper
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
+import java.util.Calendar
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 class CharacterUseCaseImpl
     @Inject
     constructor(
+        @ApplicationContext
+        private val context: Context,
         private val repository: CharacterRepository,
         private val imagenClient: ImagenClient,
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
+        private val genreReferenceHelper: GenreReferenceHelper,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
 
-        override suspend fun insertCharacter(character: Character) = repository.insertCharacter(character)
+        override suspend fun insertCharacter(character: Character) =
+            repository.insertCharacter(
+                character.copy(
+                    id = 0,
+                    joinedAt = Calendar.getInstance().timeInMillis,
+                    image = emptyString(),
+                ),
+            )
 
         override suspend fun updateCharacter(character: Character) = repository.updateCharacter(character)
 
@@ -52,7 +69,6 @@ class CharacterUseCaseImpl
                     .generate<String>(
                         CharacterPrompts.descriptionTranslationPrompt(
                             character,
-                            CharacterFraming.PORTRAIT,
                             genre,
                         ),
                         customSchema = Schema.string(),
@@ -68,16 +84,26 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Exception, Pair<Character, String>> =
             try {
+                val styleReferenceBitmap =
+                    BitmapFactory.decodeResource(
+                        context.resources,
+                        saga.genre.defaultHeaderImage(),
+                    )
+                val portraitReference = genreReferenceHelper.getPortraitReference().getSuccess()
                 val translatedDescription =
                     gemmaClient.generate<String>(
                         CharacterPrompts.descriptionTranslationPrompt(
                             character,
-                            CharacterFraming.PORTRAIT,
                             saga.genre,
                         ),
+                        references =
+                            listOf(
+                                styleReferenceBitmap,
+                                portraitReference,
+                            ),
                         requireTranslation = false,
                     )
-                val prompt = ImagePrompts.generateImage(character, saga, translatedDescription!!)
+                val prompt = ImagePrompts.generateImage(translatedDescription!!)
 
                 val request =
                     FreepikRequest(
@@ -109,13 +135,17 @@ class CharacterUseCaseImpl
                         ),
                     )!!
 
-                val characterQuery =
-                    repository.getCharacterByName(newCharacter.name, sagaContent.data.id)
-                if (characterQuery != null) {
+                val character = sagaContent.characters.find { it.name.equals(newCharacter.name, true) }
+                if (character != null) {
                     throw Exception("Character already exists")
                 }
                 val characterTransaction =
-                    insertCharacter(newCharacter.copy(sagaId = sagaContent.data.id))
+                    insertCharacter(
+                        newCharacter.copy(
+                            sagaId = sagaContent.data.id,
+                            joinedAt = System.currentTimeMillis(),
+                        ),
+                    )
                 characterTransaction.asSuccess()
             } catch (e: Exception) {
                 e.asError()

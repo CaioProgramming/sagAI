@@ -6,8 +6,8 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -15,10 +15,6 @@ interface MessageDao {
     @Transaction
     @Query("SELECT * FROM messages WHERE sagaId = :sagaId ORDER BY timestamp ASC")
     fun getMessages(sagaId: Int): Flow<List<MessageContent>>
-
-    @Transaction
-    @Query("SELECT * FROM messages WHERE id = :id")
-    suspend fun getMessageDetail(id: Int): MessageContent
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveMessage(message: Message): Long?

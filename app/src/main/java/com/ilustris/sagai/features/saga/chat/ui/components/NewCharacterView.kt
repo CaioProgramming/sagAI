@@ -21,9 +21,9 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
@@ -82,30 +82,3 @@ fun NewCharacterView(
     }
 }
 
-@Preview
-@Composable
-fun NewCharacterPreview() {
-    SagAIScaffold {
-        Column(Modifier.fillMaxWidth()) {
-            NewCharacterView(
-                messageContent =
-                    MessageContent(
-                        character =
-                            Character(
-                                name = "Alex",
-                                details = Details(),
-                            ),
-                        message =
-                            Message(
-                                text = "Alex joined the story.",
-                                id = 0,
-                                senderType = SenderType.NEW_CHARACTER,
-                                timestamp = 0L,
-                                sagaId = 0,
-                            ),
-                    ),
-                genre = Genre.FANTASY,
-            )
-        }
-    }
-}

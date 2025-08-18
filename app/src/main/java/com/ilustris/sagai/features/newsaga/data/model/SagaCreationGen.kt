@@ -1,10 +1,10 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
 data class SagaCreationGen(
-    val message: ChatMessage,
+    val message: String,
     val inputHint: String,
-    val inputSuggestions: List<String>,
-    val callbackData: CallbackContent?,
+    val suggestions: List<String>,
+    val callback: CallbackContent?,
 )
 
 data class CallbackContent(

@@ -1,8 +1,13 @@
 package com.ilustris.sagai.features.wiki.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +25,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
@@ -30,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
@@ -38,60 +48,61 @@ import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.Typography
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.gradientFade
 
 @Composable
 fun WikiCard(
     wiki: Wiki,
     genre: Genre,
     modifier: Modifier,
+    expanded: Boolean = false,
 ) {
-    Box(
+    var isExpanded by remember { mutableStateOf(expanded) }
+    Column(
         modifier =
             modifier
-
-                .background(MaterialTheme.colorScheme.surfaceContainer,  shape =
-                    RoundedCornerShape(
-                        genre.cornerSize(),
-                    ))
+                .clip(RoundedCornerShape(genre.cornerSize()))
                 .border(
                     width = 1.dp,
-                    color = genre.color.copy(alpha = .4f),
+                    brush = genre.color.gradientFade(),
                     shape =
                         RoundedCornerShape(
                             genre.cornerSize(),
                         ),
-                ).clip(RoundedCornerShape(genre.cornerSize())),
+                )
+                .clickable { isExpanded = !isExpanded }
+                .padding(16.dp)
+                .animateContentSize(
+                    tween(800, easing = EaseIn)
+                )
     ) {
-        Image(
-            painterResource(wiki.type.iconForType(genre)),
-            null,
-            contentScale = ContentScale.Fit,
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f)),
-            modifier = Modifier.fillMaxSize().scale(1.4f).offset(x = (-50).dp, y = (60).dp),
-        )
-        Column(
-            modifier = Modifier.padding(12.dp).verticalScroll(rememberScrollState()),
-        ) {
+
+
+            val tag = wiki.emojiTag ?: emptyString()
+
+
             Text(
-                text = wiki.title,
+                text = "${tag.plus(" ")}${wiki.title}",
                 style =
                     Typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
+                        fontWeight = FontWeight.SemiBold,
                         fontFamily = genre.bodyFont(),
                     ),
                 color = MaterialTheme.colorScheme.onBackground,
             )
-            Text(
-                text = wiki.content,
-                style =
-                    Typography.bodySmall.copy(
-                        fontFamily = genre.bodyFont(),
-                    ),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+            AnimatedVisibility(isExpanded) {
+                Text(
+                    text = wiki.content,
+                    style =
+                        Typography.bodySmall.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+
         }
-    }
 }
 
 @Preview(showBackground = true)
@@ -113,7 +124,9 @@ fun WikiCardPreview() {
                             type = type,
                         ),
                         genre = it,
-                        modifier = Modifier.fillMaxWidth().height(300.dp).padding(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
                     )
                 }
             }

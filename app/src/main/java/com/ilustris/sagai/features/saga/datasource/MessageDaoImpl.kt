@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.saga.datasource
 
 import android.util.Log
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import javax.inject.Inject
 
 class MessageDaoImpl
@@ -15,8 +15,6 @@ class MessageDaoImpl
         }
 
         override fun getMessages(sagaId: Int) = messageDao.getMessages(sagaId)
-
-        override suspend fun getMessageDetail(id: Int) = messageDao.getMessageDetail(id)
 
         override suspend fun saveMessage(message: Message) =
             try {

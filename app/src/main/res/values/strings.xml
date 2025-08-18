@@ -146,7 +146,7 @@
     <string name="saga_detail_cancel_button">Cancel</string>
     <string name="saga_drawer_act_prefix">Act </string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d events</string>
-    <string name="saga_drawer_events_since_last_chapter">%1$d events since the last chapter.</string>
+    <string name="saga_drawer_events_since_last_chapter">%1$d events in chapter.</string>
     <string name="saga_detail_progress_title">Progress</string>
     <string name="saga_detail_section_title_characters">Characters</string>
     <string name="saga_detail_section_subtitle_characters">%1$d characters</string>
@@ -162,7 +162,7 @@
     <string name="saga_detail_status_created">Created on %1$s</string>
     <string name="saga_detail_journey_of">The journey of</string>
     <string name="saga_detail_messages_label">Messages</string>
-    <string name="saga_detail_see_your_now">See your now</string>
+    <string name="saga_detail_see_your_now">See your</string>
     <string name="saga_detail_recap_button">Recap</string>
     <string name="saga_detail_description_section_title">Description</string>
     <string name="saga_detail_timeline_section_title">Timeline</string>
@@ -192,5 +192,11 @@
     <string name="dialog_exit_message_new_saga">The AI is currently working. Are you sure you want to leave? Your progress might be lost.</string>
     <string name="dialog_exit_confirm_button_new_saga">Leave</string>
     <string name="dialog_exit_dismiss_button_new_saga">Stay</string>
+    <string name="notification_explanation">To notify you about new messages in your saga when you\'re not in the app, please allow notification permission.</string>
+    <string name="continue_text">continue</string>
+    <string name="notification_title">New message on %1$s</string>
+    <string name="notification_playing_act">Playing act %1$s</string>
+    <string name="notification_action_pause">Pause</string>
+    <string name="notification_action_play">Play</string>
 
 </resources>

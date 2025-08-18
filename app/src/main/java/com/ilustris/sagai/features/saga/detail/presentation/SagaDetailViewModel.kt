@@ -49,6 +49,10 @@ class SagaDetailViewModel
                 return
             }
             val currentSaga = saga.value ?: return
+            if (currentSaga.data.isEnded.not()) {
+                isGenerating.value = false
+                return
+            }
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase

@@ -10,41 +10,13 @@ import com.ilustris.sagai.core.utils.toFirebaseSchema
 data class Chapter(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val sagaId: Int,
-    val title: String,
-    val overview: String,
-    val messageReference: Int,
-    val eventReference: Int? = null,
-    val coverImage: String,
+    val title: String = "",
+    val overview: String = "",
+    val currentEventId: Int? = null,
+    val coverImage: String = "",
     @ColumnInfo(defaultValue = "")
-    val visualDescription: String = "",
     val createdAt: Long? = 0L,
     @ColumnInfo(index = true)
-    val actId: Int? = null,
+    val actId: Int,
+    val featuredCharacters: List<Int> = emptyList(),
 )
-
-data class ChapterGen(
-    val chapter: Chapter,
-    val featuredCharacters: List<String> = emptyList(),
-) {
-    companion object {
-        fun toSchema() =
-            Schema.obj(
-                mapOf(
-                    "chapter" to toFirebaseSchema(Chapter::class.java),
-                    "featuredCharacters" to
-                        Schema.array(
-                            items =
-                                Schema.string(
-                                    description = "Character name",
-                                ),
-                            description = """
-                                Maximum 3 characters featured in the chapter +
-                                It must be the name of the character
-                                and the character needs be TOO MUCH RELEVANT TO Current Chapter",
-                        """,
-                        ),
-                ),
-            )
-    }
-}

@@ -1,7 +1,11 @@
 package com.ilustris.sagai.di
 
+import android.app.NotificationManager
 import android.content.Context
 import androidx.work.WorkManager
+import coil3.ImageLoader
+import coil3.PlatformContext
+import coil3.request.crossfade
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.ktx.remoteConfig
@@ -13,6 +17,10 @@ import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.media.MediaPlayerManager
+import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
+import com.ilustris.sagai.core.media.notification.MediaNotificationManager
+import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.FileHelper
@@ -32,6 +40,8 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
+import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManagerImpl
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
@@ -65,6 +75,28 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
+    @Provides
+    @Singleton
+    fun provideImageLoader(
+        @ApplicationContext context: Context,
+    ): ImageLoader =
+        ImageLoader
+            .Builder(context)
+            .crossfade(true)
+            .build()
+
+    @Provides
+    @Singleton
+    fun providesReferenceHelper(
+        @ApplicationContext context: Context,
+        firebaseRemoteConfig: FirebaseRemoteConfig,
+        imageLoader: ImageLoader,
+    ) = com.ilustris.sagai.core.utils.GenreReferenceHelper(
+        context,
+        firebaseRemoteConfig,
+        imageLoader,
+    )
+
     @Provides
     @Singleton
     fun provideWorkManager(
@@ -118,13 +150,7 @@ object AppModule {
         val configSettings =
             remoteConfigSettings { minimumFetchIntervalInSeconds = 3600 }
         remoteConfig.setConfigSettingsAsync(configSettings)
-        remoteConfig.setDefaultsAsync(
-            mapOf(
-                TextGenClient.TEXT_GEN_MODEL_FLAG to TextGenClient.DEFAULT_TEXT_GEN_MODEL,
-                ImagenClientImpl.IMAGE_MODEL_FLAG to ImagenClientImpl.DEFAULT_IMAGE_MODEL,
-                GemmaClient.SUMMARIZATION_MODEL_FLAG to GemmaClient.DEFAULT_SUMMARIZATION_MODEL,
-            ),
-        )
+        remoteConfig.fetchAndActivate()
         return remoteConfig
     }
 
@@ -134,11 +160,20 @@ object AppModule {
         freePikApiService: FreePikApiService,
         firebaseRemoteConfig: FirebaseRemoteConfig,
     ): ImagenClient = ImagenClientImpl(freePikApiService, firebaseRemoteConfig)
+
+    @Provides
+    @Singleton
+    fun provideMediaPlayerManager(
+        @ApplicationContext context: Context,
+    ): MediaPlayerManager = MediaPlayerManagerImpl(context)
 }
 
 @InstallIn(ViewModelComponent::class)
 @Module
 abstract class UseCaseModule {
+    @Binds
+    abstract fun providesNotificationManager(notificationManagerImpl: ChatNotificationManagerImpl): ChatNotificationManager
+
     @Binds
     abstract fun providesSagaHistoryUseCase(sagaHistoryUseCaseImpl: SagaHistoryUseCaseImpl): SagaHistoryUseCase
 
@@ -198,4 +233,12 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsActRepository(actRepositoryImpl: ActRepositoryImpl): ActRepository
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class NotificationModule {
+    @Binds
+    @Singleton
+    abstract fun bindMediaNotificationManager(mediaNotificationManagerImpl: MediaNotificationManagerImpl): MediaNotificationManager
 }

@@ -66,10 +66,12 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rankMentions
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.rankMessageTypes
+import com.ilustris.sagai.features.saga.chat.domain.model.rankMentions
+import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
 import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
@@ -354,7 +356,7 @@ fun SagaReviewPreview() {
                                 conclusion = "As the saga reaches its climactic conclusion, prepare for an unforgettable finale that will tie together all the threads of this epic adventure. The fate of the world hangs in the balance.",
                             ),
                     ),
-                chapters = emptyList(), // Added for preview consistency
+                acts = emptyList()
             )
         SagaReview(content, false)
     }
@@ -478,7 +480,7 @@ fun PlayStylePage(content: SagaContent) {
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             delay(1000)
-            counting = content.messages.size
+            counting = content.flatMessages().size
         }
     }
     Column(
@@ -530,7 +532,7 @@ fun PlayStylePage(content: SagaContent) {
                     ).animateContentSize()
                     .padding(16.dp),
         ) {
-            val messagesRanking = content.messages.rankMessageTypes().filter { it.second > 0 }
+            val messagesRanking = content.flatMessages().rankMessageTypes().filter { it.second > 0 }
 
             AnimatedVisibility(showText, enter = fadeIn() + slideInVertically(), exit = fadeOut()) {
                 content.data.review?.playstyle?.let {
@@ -644,7 +646,7 @@ fun MentionsPage(content: SagaContent) {
             delay(1000)
 
             val rankingList =
-                content.messages
+                content.flatMessages()
                     .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
             ranking = rankingList
             counting =
@@ -818,7 +820,7 @@ fun MentionsPage(content: SagaContent) {
 
                             Column(Modifier.weight(1f)) {
                                 val messagesRanking =
-                                    content.messages
+                                    content.flatMessages()
                                         .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
                                         .filter { it.second > 0 }
                                 Text(
@@ -850,7 +852,7 @@ fun MentionsPage(content: SagaContent) {
                         }
                         Column(Modifier.weight(1f)) {
                             val messagesRanking =
-                                content.messages
+                                content.flatMessages()
                                     .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
                                     .filter { it.second > 0 }
                             Text(
@@ -891,7 +893,7 @@ fun MentionsPage(content: SagaContent) {
 @Composable
 fun ActsInsightPage(content: SagaContent) {
     val genre = content.data.genre
-    val chapters = content.chapters
+    val chapters = content.flatChapters()
 
     var showText by remember {
         mutableStateOf(false)
@@ -907,7 +909,7 @@ fun ActsInsightPage(content: SagaContent) {
     ) {
         AnimatedChapterGridBackground(
             sagaIcon = content.data.icon,
-            chapters = chapters,
+            chapters = chapters.map { it.data },
             genre = genre,
         )
 
