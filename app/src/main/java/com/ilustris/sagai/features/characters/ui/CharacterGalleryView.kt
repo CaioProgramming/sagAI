@@ -55,6 +55,7 @@ import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,15 +97,15 @@ fun CharactersGalleryContent(
     saga: SagaContent,
     onSelectCharacter: (Int, Int) -> Unit = { _, _ -> },
 ) {
-
     var showCharacter by remember {
         mutableStateOf<Character?>(null)
     }
 
     AnimatedContent(saga.characters) {
-        val characters = remember {
-            sortCharactersByMessageCount(it, saga.flatMessages())
-        }
+        val characters =
+            remember {
+                sortCharactersByMessageCount(it, saga.flatMessages())
+            }
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
             modifier =
@@ -139,12 +140,11 @@ fun CharactersGalleryContent(
             ) {
                 CharacterDetailsContent(
                     saga,
-                    character
+                    character,
                 )
             }
         }
     }
-
 }
 
 @Composable
@@ -350,7 +350,7 @@ fun CharacterHorizontalView(
                     style.copy(
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.W700,
-                        color = Color(character.hexColor.toColorInt()),
+                        color = character.hexColor.hexToColor() ?: genre.color,
                     ),
                 textAlign = TextAlign.Start,
                 modifier = Modifier.weight(1f),

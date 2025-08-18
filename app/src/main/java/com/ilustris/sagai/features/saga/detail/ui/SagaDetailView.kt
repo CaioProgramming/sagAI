@@ -407,7 +407,7 @@ fun LazyListScope.SagaDrawerContent(
 
                         if (chapter.isComplete().not()) {
                             Text(
-                                "${eventsInChapter.size} of ${UpdateRules.LORE_UPDATE_LIMIT} events",
+                                "${eventsInChapter.size} of ${UpdateRules.CHAPTER_UPDATE_LIMIT} events",
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
@@ -713,9 +713,8 @@ fun WikiContent(saga: SagaContent) {
                 saga.data.genre,
                 modifier =
                     Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .height(300.dp),
+                        .padding(16.dp)
+                        .fillMaxWidth(),
             )
         }
     }
@@ -1223,9 +1222,8 @@ private fun SagaDetailInitialView(
                         it.data.genre,
                         modifier =
                             Modifier
-                                .padding(4.dp)
-                                .fillMaxWidth()
-                                .height(270.dp),
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }

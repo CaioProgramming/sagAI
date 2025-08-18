@@ -56,10 +56,10 @@ object ChatRules {
         // All character speech, whether direct or indirect, MUST be outputted in a separate message with 'senderType: "CHARACTER"'.
 
         **5. NEVER GENERATE VALUES FOR THE FOLLOWING FIELDS:**
-        ID, TIMESTAMP, SAGAID
+        ID, TIMESTAMP, SAGAID,ID
         USE 0 AS THEIR DEFAULT VALUES. 
-         ** FOR THE FIELDS**:
-         CHAPTERID, CHARACTERID, ACTID RETURN NULL
+        ** FOR THE FIELDS**:
+        CHAPTERID, CHARACTERID, ACTID RETURN NULL
         """
 }
 

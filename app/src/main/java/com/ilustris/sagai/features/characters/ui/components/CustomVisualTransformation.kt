@@ -61,7 +61,7 @@ fun buildCharactersAnnotatedString(
     append(text)
     characters.forEach { character ->
         val characterName = character.name
-        val characterColor = Color(character.hexColor.toColorInt())
+        val characterColor = character.hexColor.hexToColor() ?: Color.LightGray
         var startIndex = text.indexOf(characterName)
         while (startIndex != -1) {
             val endIndex = startIndex + characterName.length

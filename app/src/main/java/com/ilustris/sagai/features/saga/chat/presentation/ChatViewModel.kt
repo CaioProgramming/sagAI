@@ -434,7 +434,6 @@ class ChatViewModel
                 val speakerId =
                     when (sendType) {
                         SenderType.NARRATOR -> message.characterId
-                        SenderType.NEW_CHARACTER,
                         SenderType.USER,
                         -> mainCharacter?.id
                         else -> characterReference?.id
@@ -459,7 +458,7 @@ class ChatViewModel
             isFromUser: Boolean,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
-                when (isFromUser && it.senderType != SenderType.NEW_CHARACTER) {
+                when (isFromUser) {
                     true -> {
                         if (sagaContentManager.isInDebugMode().not()) {
                             replyMessage(it)
@@ -520,7 +519,9 @@ class ChatViewModel
                             genMessage.message.copy(
                                 chapterId = null,
                                 actId = null,
+                                characterId = null,
                                 timelineId = timeline.timeline.id,
+                                id = 0,
                             ),
                         )
                     }.onFailure {

@@ -2,9 +2,15 @@ package com.ilustris.sagai.features.saga.chat.ui.components
 
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -14,6 +20,10 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +31,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
@@ -65,8 +76,8 @@ fun ChatBubble(
     content: SagaContent,
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
-    scope: LazyItemScope,
     openCharacters: (Character?) -> Unit = {},
+    openWiki: () -> Unit = {},
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -179,27 +190,27 @@ fun ChatBubble(
                         ).clip(CircleShape)
                         .size(avatarSize),
                 ) {
-                    messageContent.character?.let {
-                        CharacterAvatar(
-                            it,
-                            genre = genre,
-                            borderSize = 2.dp,
-                            pixelation = 0f,
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .clickable {
-                                        openCharacters(it)
-                                    },
-                        )
+                    messageContent.character?.let { character ->
+                        AnimatedContent(character, transitionSpec = {
+                            fadeIn() + scaleIn() togetherWith scaleOut()
+                        }) {
+                            CharacterAvatar(
+                                it,
+                                genre = genre,
+                                borderSize = 2.dp,
+                                pixelation = 0f,
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .clickable {
+                                            openCharacters(it)
+                                        },
+                            )
+                        }
                     }
                 }
-                Text(
-                    message.timestamp.formatHours(),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
+
+                Row(
                     modifier =
                         Modifier.constrainAs(messageTime) {
                             top.linkTo(messageText.bottom)
@@ -209,7 +220,41 @@ fun ChatBubble(
                                 start.linkTo(messageText.start, margin = 16.dp)
                             }
                         },
-                )
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val containsWiki = wiki.any {
+                        message.text.contains(it.title, true) ||
+                        message.text.contains(it.content, true)
+
+                    }
+
+                    Text(
+                        message.timestamp.formatHours(),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
+                            ),
+                    )
+
+                    AnimatedVisibility(
+                        containsWiki,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier.alpha(.4f),
+                    ) {
+                        IconButton(onClick = {
+                            openWiki()
+                        }, modifier = Modifier.size(12.dp)) {
+                            Icon(
+                                Icons.Rounded.Info,
+                                contentDescription = null,
+                                tint = genre.iconColor,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+                    }
+                }
             }
         }
 
@@ -359,26 +404,7 @@ fun ChatBubble(
             }
         }
 
-
-        SenderType.NEW_CHARACTER -> {
-            Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                AnimatedVisibility(messageContent.character == null) {
-                    SparkIcon(
-                        Modifier
-                            .size(50.dp)
-                            .align(Alignment.CenterHorizontally),
-                        brush = MaterialTheme.colorScheme.onBackground.gradientFade(),
-                        tint = genre.color,
-                        blurRadius = 3.dp,
-                        rotationTarget = 90f,
-                    )
-                }
-                NewCharacterView(messageContent, genre, characters, wiki) {
-                    openCharacters(it)
-                }
-            }
-        }
-
+        else -> Box {}
     }
 }
 
@@ -415,10 +441,9 @@ fun ChatBubblePreview() {
                                     senderType = it,
                                     timestamp = System.currentTimeMillis(),
                                     sagaId = 0,
-                                    timelineId = 0
+                                    timelineId = 0,
                                 ),
                             ),
-                        scope = this,
                         content =
                             SagaContent(
                                 data =

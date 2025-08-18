@@ -49,6 +49,10 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -57,16 +61,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -138,6 +146,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -160,6 +169,7 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.rememberHazeState
 import effectForGenre
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -436,7 +446,10 @@ fun ChatListPreview() {
     ChatList(
         saga = saga,
         actList = actList,
-        modifier = Modifier.fillMaxSize().padding(bottom = 64.dp),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(bottom = 64.dp),
         listState = rememberLazyListState(),
     )
 }
@@ -476,357 +489,398 @@ fun ChatContent(
         mutableStateOf<Character?>(null)
     }
 
-    Box(Modifier.background(MaterialTheme.colorScheme.background)) {
-        Image(
-            painterResource(saga.genre.background),
-            null,
-            colorFilter =
-                ColorFilter.tint(
-                    saga.genre.color,
-                ),
-            modifier =
-                Modifier
-                    .align(Alignment.Center)
-                    .reactiveShimmer(
-                        isPlaying,
-                        shimmerColors = saga.genre.colorPalette(),
-                        duration = 10.seconds,
-                    ).fillMaxSize(.5f)
-                    .alpha(.6f),
-        )
-
-        ConstraintLayout(
-            Modifier
-                .padding(
-                    top = padding.calculateTopPadding(),
-                ).fillMaxSize(),
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    ModalNavigationDrawer(drawerContent = {
+        ModalDrawerSheet(
+            drawerShape =
+                RoundedCornerShape(0.dp),
+            drawerContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         ) {
-            val (debugControls, messages, chatInput, topBar, bottomFade, topFade, loreProgress) = createRefs()
+            LazyVerticalGrid(columns = GridCells.Fixed(2)) {
+                item(span = { GridItemSpan(2) }) {
+                    Text(
+                        "Wiki",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = saga.genre.headerFont(),
+                                color = saga.genre.color,
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
+                }
 
-            ChatList(
-                saga = content,
-                actList = messagesList,
-                listState = listState,
+                items(content.wikis) {
+                    WikiCard(
+                        it,
+                        saga.genre,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
+        }
+    }, drawerState = drawerState) {
+        Box(Modifier.background(MaterialTheme.colorScheme.background)) {
+            Image(
+                painterResource(saga.genre.background),
+                null,
+                colorFilter =
+                    ColorFilter.tint(
+                        saga.genre.color,
+                    ),
                 modifier =
                     Modifier
-                        .constrainAs(messages) {
-                            top.linkTo(parent.top)
-                            bottom.linkTo(parent.bottom, 50.dp)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            width = Dimension.fillToConstraints
-                            height = Dimension.fillToConstraints
-                        },
-                openCharacter = {
-                    showCharacter = it
-                },
-                openSaga = { openSagaDetails(saga) },
+                        .align(Alignment.Center)
+                        .reactiveShimmer(
+                            isPlaying,
+                            shimmerColors = saga.genre.colorPalette(),
+                            duration = 10.seconds,
+                        ).fillMaxSize(.5f)
+                        .alpha(.6f),
             )
 
-            Column(
+            ConstraintLayout(
                 Modifier
-                    .constrainAs(bottomFade) {
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                    }.fillMaxWidth()
-                    .fillMaxHeight(.2f),
+                    .padding(
+                        top = padding.calculateTopPadding(),
+                    ).fillMaxSize(),
             ) {
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(.3f)
-                        .background(fadeGradientBottom()),
-                )
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.background),
-                )
-            }
+                val coroutineScope = rememberCoroutineScope()
+                val (debugControls, messages, chatInput, topBar, bottomFade, topFade, loreProgress) = createRefs()
 
-            AnimatedVisibility(
-                state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not(),
-                modifier =
+                ChatList(
+                    saga = content,
+                    actList = messagesList,
+                    listState = listState,
+                    modifier =
+                        Modifier
+                            .constrainAs(messages) {
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom, 50.dp)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                width = Dimension.fillToConstraints
+                                height = Dimension.fillToConstraints
+                            },
+                    openCharacter = {
+                        showCharacter = it
+                    },
+                    openSaga = { openSagaDetails(saga) },
+                    openWiki = {
+                        coroutineScope.launch {
+                            drawerState.open()
+                        }
+                    },
+                )
+
+                Column(
                     Modifier
-                        .constrainAs(chatInput) {
+                        .constrainAs(bottomFade) {
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
-                            width = Dimension.fillToConstraints
-                        }.padding(vertical = padding.calculateBottomPadding())
-                        .animateContentSize(),
-                enter = slideInVertically(),
-                exit = fadeOut(),
-            ) {
-                ChatInputView(
-                    content = content,
-                    isGenerating = isGenerating,
-                    modifier =
+                        }.fillMaxWidth()
+                        .fillMaxHeight(.2f),
+                ) {
+                    Box(
                         Modifier
                             .fillMaxWidth()
-                            .wrapContentHeight(),
-                    onSendMessage = onSendMessage,
-                    onCreateNewCharacter = onCreateCharacter,
-                    suggestions = suggestions,
+                            .fillMaxHeight(.3f)
+                            .background(fadeGradientBottom()),
+                    )
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                            .background(MaterialTheme.colorScheme.background),
+                    )
+                }
+
+                AnimatedVisibility(
+                    state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not(),
+                    modifier =
+                        Modifier
+                            .constrainAs(chatInput) {
+                                bottom.linkTo(parent.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                width = Dimension.fillToConstraints
+                            }.padding(vertical = padding.calculateBottomPadding())
+                            .animateContentSize(),
+                    enter = slideInVertically(),
+                    exit = fadeOut(),
+                ) {
+                    ChatInputView(
+                        content = content,
+                        isGenerating = isGenerating,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                        onSendMessage = onSendMessage,
+                        onCreateNewCharacter = onCreateCharacter,
+                        suggestions = suggestions,
+                    )
+                }
+
+                val alpha by animateFloatAsState(
+                    if (listState.canScrollForward.not()) 0f else 1f,
+                    animationSpec = tween(450, easing = EaseIn),
                 )
-            }
 
-            val alpha by animateFloatAsState(
-                if (listState.canScrollForward.not()) 0f else 1f,
-                animationSpec = tween(450, easing = EaseIn),
-            )
-
-            Box(
-                Modifier
-                    .constrainAs(topFade) {
-                        top.linkTo(parent.top)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                    }.alpha(alpha)
-                    .fillMaxWidth()
-                    .fillMaxHeight(.4f)
-                    .background(fadeGradientTop()),
-            ) {}
-            SagaTopBar(
-                saga.title,
-                "${content.flatMessages().size} mensagens",
-                saga.genre,
-                onBackClick = onBack,
-                modifier =
+                Box(
                     Modifier
-                        .graphicsLayer(alpha = alpha)
-                        .constrainAs(topBar) {
+                        .constrainAs(topFade) {
                             top.linkTo(parent.top)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
-                        }.background(MaterialTheme.colorScheme.background)
-                        .padding(top = 50.dp, start = 16.dp, end = 16.dp)
+                        }.alpha(alpha)
                         .fillMaxWidth()
-                        .clickable {
-                            openSagaDetails(saga)
-                        }.reactiveShimmer(isGenerating),
-                actionContent = {
-                    AnimatedContent(characters, transitionSpec = {
-                        slideInVertically() + fadeIn() with fadeOut()
-                    }) { chars ->
-                        CharactersTopIcons(chars, { openSagaDetails(saga) }, saga)
-                    }
-                },
-            )
-
-            val progress by animateFloatAsState(
-                if (content.data.isEnded.not()) updateProgress else 1f,
-            )
-            val backgroundColor by animateColorAsState(
-                if (snackBar != null) saga.genre.color else Color.Transparent,
-            )
-            val progressColor by animateColorAsState(
-                if (snackBar == null) saga.genre.color else content.data.genre.iconColor,
-            )
-
-            Column(
-                Modifier
-                    .background(
-                        backgroundColor,
-                    ).constrainAs(loreProgress) {
-                        top.linkTo(topBar.bottom)
-                        start.linkTo(topBar.start)
-                        end.linkTo(topBar.end)
-                        width = Dimension.fillToConstraints
-                    },
-            ) {
-                LinearProgressIndicator(
+                        .fillMaxHeight(.4f)
+                        .background(fadeGradientTop()),
+                ) {}
+                SagaTopBar(
+                    saga.title,
+                    "${content.flatMessages().size} mensagens",
+                    saga.genre,
+                    onBackClick = onBack,
                     modifier =
                         Modifier
-                            .alpha(alpha)
-                            .height(2.dp)
-                            .fillMaxWidth(),
-                    progress = { progress },
-                    drawStopIndicator = {
+                            .graphicsLayer(alpha = alpha)
+                            .constrainAs(topBar) {
+                                top.linkTo(parent.top)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                            }.background(MaterialTheme.colorScheme.background)
+                            .padding(top = 50.dp, start = 16.dp, end = 16.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                openSagaDetails(saga)
+                            }.reactiveShimmer(isGenerating),
+                    actionContent = {
+                        AnimatedContent(characters, transitionSpec = {
+                            slideInVertically() + fadeIn() with fadeOut()
+                        }) { chars ->
+                            CharactersTopIcons(chars, { openSagaDetails(saga) }, saga)
+                        }
                     },
-                    color = progressColor,
-                    trackColor = Color.Transparent,
                 )
 
-                AnimatedVisibility(
-                    snackBar != null,
-                    modifier = Modifier.fillMaxWidth(),
-                    enter = slideInVertically { +it } + fadeIn(),
-                    exit = fadeOut() + slideOutVertically { it },
+                val progress by animateFloatAsState(
+                    if (content.data.isEnded.not()) updateProgress else 1f,
+                )
+                val backgroundColor by animateColorAsState(
+                    if (snackBar != null) saga.genre.color else Color.Transparent,
+                )
+                val progressColor by animateColorAsState(
+                    if (snackBar == null) saga.genre.color else content.data.genre.iconColor,
+                )
+
+                Column(
+                    Modifier
+                        .background(
+                            backgroundColor,
+                        ).constrainAs(loreProgress) {
+                            top.linkTo(topBar.bottom)
+                            start.linkTo(topBar.start)
+                            end.linkTo(topBar.end)
+                            width = Dimension.fillToConstraints
+                        },
                 ) {
-                    snackBar?.let { snackBar ->
-                        var isExpanded by remember {
-                            mutableStateOf(false)
-                        }
-
-                        val shape = RoundedCornerShape(content.data.genre.cornerSize())
-                        Column(
+                    LinearProgressIndicator(
+                        modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .animateContentSize(
-                                    animationSpec = tween(200, easing = EaseIn),
-                                ),
-                        ) {
-                            Button(
-                                onClick = {
-                                    isExpanded = isExpanded.not()
-                                },
-                                colors =
-                                    ButtonDefaults.textButtonColors().copy(
-                                        contentColor = content.data.genre.iconColor,
+                                .alpha(alpha)
+                                .height(2.dp)
+                                .fillMaxWidth(),
+                        progress = { progress },
+                        drawStopIndicator = {
+                        },
+                        color = progressColor,
+                        trackColor = Color.Transparent,
+                    )
+
+                    AnimatedVisibility(
+                        snackBar != null,
+                        modifier = Modifier.fillMaxWidth(),
+                        enter = slideInVertically { +it } + fadeIn(),
+                        exit = fadeOut() + slideOutVertically { it },
+                    ) {
+                        snackBar?.let { snackBar ->
+                            var isExpanded by remember {
+                                mutableStateOf(false)
+                            }
+
+                            val shape = RoundedCornerShape(content.data.genre.cornerSize())
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .animateContentSize(
+                                        animationSpec = tween(200, easing = EaseIn),
                                     ),
-                                shape = shape,
-                                modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_spark),
-                                    null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = content.data.genre.iconColor,
-                                )
-                                Text(
-                                    snackBar.title,
-                                    style =
-
-                                        MaterialTheme.typography.bodySmall.copy(
-                                            color = content.data.genre.iconColor,
+                                Button(
+                                    onClick = {
+                                        isExpanded = isExpanded.not()
+                                    },
+                                    colors =
+                                        ButtonDefaults.textButtonColors().copy(
+                                            contentColor = content.data.genre.iconColor,
                                         ),
-                                    fontFamily = content.data.genre.headerFont(),
-                                    textAlign = TextAlign.Start,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .weight(1f),
-                                )
-                            }
+                                    shape = shape,
+                                    modifier = Modifier.fillMaxWidth(),
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_spark),
+                                        null,
+                                        modifier = Modifier.size(12.dp),
+                                        tint = content.data.genre.iconColor,
+                                    )
+                                    Text(
+                                        snackBar.title,
+                                        style =
 
-                            AnimatedVisibility(
-                                visible = isExpanded,
-                                enter = fadeIn(),
-                                exit = fadeOut(),
-                            ) {
-                                Text(
-                                    snackBar.text,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = content.data.genre.bodyFont(),
-                                    textAlign = TextAlign.Justify,
-                                    color = content.data.genre.iconColor,
-                                    modifier =
-                                        Modifier
-                                            .padding(horizontal = 16.dp)
-                                            .fillMaxWidth(),
-                                )
-                            }
-
-                            AnimatedVisibility(isExpanded) {
-                                if (snackBar.redirectAction != null) {
-                                    Button(
-                                        onClick = {
-                                            onSnackAction(snackBar.redirectAction)
-                                        },
-                                        colors =
-                                            ButtonDefaults.textButtonColors(
-                                                contentColor = content.data.genre.iconColor,
+                                            MaterialTheme.typography.bodySmall.copy(
+                                                color = content.data.genre.iconColor,
                                             ),
+                                        fontFamily = content.data.genre.headerFont(),
+                                        textAlign = TextAlign.Start,
                                         modifier =
                                             Modifier
+                                                .padding(8.dp)
+                                                .weight(1f),
+                                    )
+                                }
+
+                                AnimatedVisibility(
+                                    visible = isExpanded,
+                                    enter = fadeIn(),
+                                    exit = fadeOut(),
+                                ) {
+                                    Text(
+                                        snackBar.text,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        textAlign = TextAlign.Justify,
+                                        color = content.data.genre.iconColor,
+                                        modifier =
+                                            Modifier
+                                                .padding(horizontal = 16.dp)
                                                 .fillMaxWidth(),
-                                    ) {
-                                        Text(
-                                            snackBar.redirectAction.second,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontFamily = content.data.genre.bodyFont(),
-                                        )
+                                    )
+                                }
+
+                                AnimatedVisibility(isExpanded) {
+                                    if (snackBar.redirectAction != null) {
+                                        Button(
+                                            onClick = {
+                                                onSnackAction(snackBar.redirectAction)
+                                            },
+                                            colors =
+                                                ButtonDefaults.textButtonColors(
+                                                    contentColor = content.data.genre.iconColor,
+                                                ),
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth(),
+                                        ) {
+                                            Text(
+                                                snackBar.redirectAction.second,
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontFamily = content.data.genre.bodyFont(),
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            if (isDebug && saga.isEnded.not()) {
-                var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
-                val blurRadius by animateFloatAsState(
-                    if (isGenerating) 40f else 0f,
-                )
-                val shape = RoundedCornerShape(content.data.genre.cornerSize())
-                BlurredGlowContainer(
-                    Modifier
-                        .padding(16.dp)
-                        .constrainAs(debugControls) {
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                            width = Dimension.fillToConstraints
-                            height = Dimension.wrapContent
-                        },
-                    content.data.genre.gradient(isGenerating),
-                    shape = shape,
-                    blurSigma = blurRadius,
-                ) {
-                    val textStyle =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = content.data.genre.bodyFont(),
-                        )
-                    TextField(
-                        value = fakeMessageCountText,
-                        textStyle = textStyle,
-                        onValueChange = { fakeMessageCountText = it },
-                        label = {
-                            Text(
-                                "Debug controls",
-                                style = textStyle,
-                                modifier = Modifier.scale(.9f),
-                            )
-                        },
-                        placeholder = {
-                            Text(
-                                "Number of Fake Messages",
-                                style = textStyle,
-                                modifier = Modifier.alpha(.7f),
-                            )
-                        },
-                        shape = shape,
-                        modifier =
-                            Modifier
-                                .padding(2.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    shape,
-                                ).fillMaxWidth(),
-                        trailingIcon = {
-                            IconButton(
-                                onClick = {
-                                    val count = fakeMessageCountText.toIntOrNull() ?: 0
-                                    if (count > 0) {
-                                        onInjectFakeMessages(count)
-                                    }
-                                },
-                                modifier =
-                                    Modifier
-                                        .background(
-                                            content.data.genre.color,
-                                            CircleShape,
-                                        ).size(32.dp)
-                                        .padding(4.dp),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_inject),
-                                    null,
-                                    tint = content.data.genre.iconColor,
-                                )
-                            }
-                        },
-                        colors =
-                            TextFieldDefaults.colors().copy(
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent,
-                            ),
+                if (isDebug && saga.isEnded.not()) {
+                    var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
+                    val blurRadius by animateFloatAsState(
+                        if (isGenerating) 40f else 0f,
                     )
+                    val shape = RoundedCornerShape(content.data.genre.cornerSize())
+                    BlurredGlowContainer(
+                        Modifier
+                            .padding(16.dp)
+                            .constrainAs(debugControls) {
+                                bottom.linkTo(parent.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                width = Dimension.fillToConstraints
+                                height = Dimension.wrapContent
+                            },
+                        content.data.genre.gradient(isGenerating),
+                        shape = shape,
+                        blurSigma = blurRadius,
+                    ) {
+                        val textStyle =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = content.data.genre.bodyFont(),
+                            )
+                        TextField(
+                            value = fakeMessageCountText,
+                            textStyle = textStyle,
+                            onValueChange = { fakeMessageCountText = it },
+                            label = {
+                                Text(
+                                    "Debug controls",
+                                    style = textStyle,
+                                    modifier = Modifier.scale(.9f),
+                                )
+                            },
+                            placeholder = {
+                                Text(
+                                    "Number of Fake Messages",
+                                    style = textStyle,
+                                    modifier = Modifier.alpha(.7f),
+                                )
+                            },
+                            shape = shape,
+                            modifier =
+                                Modifier
+                                    .padding(2.dp)
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceContainer,
+                                        shape,
+                                    ).fillMaxWidth(),
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        val count = fakeMessageCountText.toIntOrNull() ?: 0
+                                        if (count > 0) {
+                                            onInjectFakeMessages(count)
+                                        }
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .background(
+                                                content.data.genre.color,
+                                                CircleShape,
+                                            ).size(32.dp)
+                                            .padding(4.dp),
+                                ) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_inject),
+                                        null,
+                                        tint = content.data.genre.iconColor,
+                                    )
+                                }
+                            },
+                            colors =
+                                TextFieldDefaults.colors().copy(
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    disabledIndicatorColor = Color.Transparent,
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -989,6 +1043,7 @@ fun ChatList(
     listState: LazyListState,
     openCharacter: (Character?) -> Unit = {},
     openSaga: () -> Unit = {},
+    openWiki: () -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
@@ -1009,9 +1064,12 @@ fun ChatList(
             item {
                 Column(
                     modifier =
-                        Modifier.padding(16.dp).fillMaxWidth().clickable {
-                            openSaga()
-                        },
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                openSaga()
+                            },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
@@ -1048,7 +1106,10 @@ fun ChatList(
                             textAlign = TextAlign.Justify,
                             fontFamily = saga.data.genre.bodyFont(),
                         ),
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                 )
             }
 
@@ -1170,16 +1231,14 @@ fun ChatList(
                     }
 
                     items(timeline.messages.reversed(), key = { it.message.id }) {
-                        AnimatedContent(it) {
-                            ChatBubble(
-                                it,
-                                content = saga,
-                                alreadyAnimatedMessages = animatedMessages,
-                                scope = this@items,
-                                canAnimate = timeline.messages.lastOrNull() == it,
-                                openCharacters = { char -> openCharacter(char) },
-                            )
-                        }
+                        ChatBubble(
+                            it,
+                            content = saga,
+                            alreadyAnimatedMessages = animatedMessages,
+                            canAnimate = timeline.messages.lastOrNull() == it,
+                            openCharacters = { char -> openCharacter(char) },
+                            openWiki = { openWiki() },
+                        )
                     }
                 }
 

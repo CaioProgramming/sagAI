@@ -57,6 +57,7 @@ import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
@@ -97,7 +98,6 @@ fun CharacterDetailsView(
             )
         }
     }
-
 }
 
 @Composable
@@ -107,7 +107,7 @@ fun CharacterDetailsContent(
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
-    val characterColor = Color(character.hexColor.toColorInt())
+    val characterColor = character.hexColor.hexToColor() ?: genre.color
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
     LazyColumn(
@@ -165,7 +165,7 @@ fun CharacterDetailsContent(
                         .clickable {
                             viewModel.regenerate(
                                 sagaContent,
-                                character
+                                character,
                             )
                         }.padding(16.dp)
                         .size(100.dp)
@@ -266,7 +266,6 @@ fun CharacterDetailsContent(
             }
         }
     }
-
 }
 
 @Preview

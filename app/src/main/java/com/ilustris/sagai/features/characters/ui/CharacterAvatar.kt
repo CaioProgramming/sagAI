@@ -36,6 +36,7 @@ import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 import effectForGenre
 
 @Composable
@@ -51,7 +52,7 @@ fun CharacterAvatar(
     grainRadius: Float? = null,
     pixelation: Float? = null,
 ) {
-    val characterColor = Color(character.hexColor.toColorInt())
+    val characterColor = character.hexColor.hexToColor() ?: genre.color
     Box(
         modifier
             .border(
