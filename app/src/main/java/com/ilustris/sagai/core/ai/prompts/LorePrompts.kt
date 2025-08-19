@@ -39,7 +39,7 @@ object LorePrompts {
          // This is the new chunk of messages that needs to be analyzed for new lore events and character updates.
          // Focus on extracting the most significant and lasting events from this segment.
          [
-          ${currentTimeline.messages.joinToString(";\n") { it.joinMessage(true).formatToString() }}
+          ${currentTimeline.messages.joinToString(";\n") { it.joinMessage().formatToString() }}
          ]
          
          EXISTING WORLD WIKI ENTRIES (For reference):

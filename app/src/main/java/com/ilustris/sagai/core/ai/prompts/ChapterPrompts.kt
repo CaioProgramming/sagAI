@@ -139,6 +139,9 @@ object ChapterPrompts {
                 "image",
                 "hexColor",
                 "backstory",
+                "featuredCharacters",
+                "createdAt",
+                "coverImage",
             )
         val coverContextJson = coverContext.toJsonFormatExcludingFields(fieldsToExcludeForCover)
 

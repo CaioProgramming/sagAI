@@ -78,13 +78,17 @@ fun Class<*>.toSchema(
                     ?.firstOrNull() as? Class<*>
 
             Schema.array(
-                itemType?.toSchema(nullable = nullable, excludeFields = excludeFields) ?: Schema.string(nullable = nullable),
+                itemType?.toSchema(nullable = nullable, excludeFields = excludeFields)
+                    ?: Schema.string(nullable = nullable),
             ) // Default to string array for lists/arrays
         }
 
         else -> {
             Log.i("SAGAI_MAPPER", "toSchema: mapping ${this.name} as object}")
-            Schema.obj(properties = this.toSchemaMap(excludeFields), nullable = nullable) // Default fallback
+            Schema.obj(
+                properties = this.toSchemaMap(excludeFields),
+                nullable = nullable,
+            ) // Default fallback
         }
     }
 }
@@ -124,7 +128,8 @@ fun String.removePackagePrefix(): String =
         .substringAfterLast(".")
         .replace(".", "")
 
-fun Pair<String, String>.formatToString() = """${this.first} : "${this.second}" """
+fun Pair<String, String>.formatToString(showSender: Boolean = true) =
+    "${if (showSender) this.first.plus(":").plus(emptyString()) else emptyString()} ${this.second}"
 
 fun Class<*>.toJsonString(): String {
     val fields =
@@ -142,7 +147,12 @@ fun Class<*>.toJsonString(): String {
                         fieldType == Double::class.java -> "0.0"
                         fieldType == Float::class.java -> "0.0f"
                         fieldType == Long::class.java -> "0L"
-                        List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
+                        List::class.java.isAssignableFrom(fieldType) ||
+                            Array::class.java.isAssignableFrom(
+                                fieldType,
+                            )
+                        -> "[]"
+
                         else -> "{}" // For nested objects, represent as empty JSON object
                     }
                 "  \"$fieldName\": $fieldValue"
@@ -176,7 +186,12 @@ fun toJsonMap(
                         fieldType == Double::class.java -> "0.0"
                         fieldType == Float::class.java -> "0.0f"
                         fieldType == Long::class.java -> "0L"
-                        List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
+                        List::class.java.isAssignableFrom(fieldType) ||
+                            Array::class.java.isAssignableFrom(
+                                fieldType,
+                            )
+                        -> "[]"
+
                         else -> toJsonMap(fieldType)
                     }
                 val customDescription =
@@ -270,7 +285,10 @@ fun String?.sanitizeAndExtractJsonString(): String {
         if (lastBracket != -1) {
             cleanedJsonString = cleanedJsonString.substring(0, lastBracket + 1)
         } else if (cleanedJsonString.isNotEmpty()) {
-            Log.e(logTag, "JSON object starts with '{' but no closing '}' found: $cleanedJsonString")
+            Log.e(
+                logTag,
+                "JSON object starts with '{' but no closing '}' found: $cleanedJsonString",
+            )
             throw IllegalArgumentException("Malformed JSON object: No closing bracket.")
         }
     }

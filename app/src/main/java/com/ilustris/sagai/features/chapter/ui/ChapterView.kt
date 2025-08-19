@@ -65,7 +65,7 @@ fun ChapterContent(
 ) {
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     LazyColumn {
-        items(saga.flatChapters()) {
+        items(saga.flatChapters().filter { it.isComplete() }) {
             ChapterContentView(
                 it.data,
                 saga,

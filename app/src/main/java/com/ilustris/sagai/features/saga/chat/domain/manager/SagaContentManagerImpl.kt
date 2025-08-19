@@ -187,7 +187,7 @@ class SagaContentManagerImpl
                     chapter
                         .fetchChapterMessages()
                         .rankTopCharacters(saga.characters)
-                        .takeLast(3)
+                        .take(3)
                         .map { it.first.id }
 
                 chapterUseCase

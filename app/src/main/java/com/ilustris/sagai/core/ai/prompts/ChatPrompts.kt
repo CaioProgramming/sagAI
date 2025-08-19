@@ -107,6 +107,8 @@ object ChatPrompts {
          // Your response to a 'THOUGHT' entry must be either a 'NARRATOR' message describing the scene, ${mainCharacter?.name}'s internal state, or the outcome of her reflections; OR an NPC's action/dialogue that is NOT a direct response to the thought.
          // 'ACTION' entries here represent explicit physical actions performed by the player character.
          // You should narrate the outcome of these actions.
-         [ ${lastMessages.joinToString(separator = ";\n")} ]
+         [
+            ${lastMessages.joinToString(separator = ";\n")}
+         ]
         """.trimIndent()
 }

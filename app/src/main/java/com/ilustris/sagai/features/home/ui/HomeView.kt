@@ -472,7 +472,7 @@ fun ChatCard(
                         if (saga.messagesSize() == 0) {
                             stringResource(R.string.chat_card_saga_begins)
                         } else {
-                            lastMessage?.joinMessage(false)?.formatToString()
+                            lastMessage?.joinMessage()?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
                         }
                     }
                 Text(
