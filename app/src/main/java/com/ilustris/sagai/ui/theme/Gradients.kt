@@ -142,6 +142,13 @@ fun Modifier.gradientFill(
         }
     }
 
+fun Color.fadeColors() = listOf(
+    this,
+    this.copy(alpha = 0.5f),
+    this.copy(alpha = 0.2f),
+    Color.Transparent,
+)
+
 fun Color.gradientFade() =
     Brush.verticalGradient(
         listOf(
@@ -183,7 +190,7 @@ fun genresGradient(): List<Color> =
 @Composable
 fun Genre.gradient(
     animated: Boolean = false,
-    duration: Duration = 5.seconds,
+    duration: Duration = 3.seconds,
     targetValue: Float = 500f,
     gradientType: GradientType = GradientType.VERTICAL,
 ) = if (animated) {
@@ -259,16 +266,19 @@ fun Modifier.reactiveShimmer(
     shimmerColors: List<Color> =
         listOf(
             Color.White.copy(alpha = 0.0f),
-            Color.White.copy(alpha = 0.3f),
+            Color.White.copy(alpha = 0.5f),
+            Color.White.copy(alpha = 0.2f),
+            Color.White.copy(alpha = 0.1f),
             Color.White.copy(alpha = 0.0f),
         ),
     duration: Duration = 2.seconds,
+    targetValue: Float = 500f
 ): Modifier {
     val infiniteTransition = rememberInfiniteTransition()
     val offsetAnimation =
         infiniteTransition.animateFloat(
             initialValue = 0f,
-            targetValue = 500f,
+            targetValue = targetValue,
             animationSpec =
                 infiniteRepeatable(
                     tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
@@ -287,7 +297,9 @@ fun Modifier.reactiveShimmer(
         .drawWithCache {
             onDrawWithContent {
                 drawContent()
-                drawRect(brush, blendMode = BlendMode.SrcAtop)
+                if (isPlaying) {
+                    drawRect(brush, blendMode = BlendMode.SrcAtop)
+                }
             }
         }
 }

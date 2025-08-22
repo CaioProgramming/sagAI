@@ -31,9 +31,12 @@ import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 import effectForGenre
 
 @Composable
@@ -47,8 +50,9 @@ fun CharacterAvatar(
     modifier: Modifier = Modifier,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
+    pixelation: Float? = null,
 ) {
-    val characterColor = Color(character.hexColor.toColorInt())
+    val characterColor = character.hexColor.hexToColor() ?: genre.color
     Box(
         modifier
             .border(
@@ -58,7 +62,7 @@ fun CharacterAvatar(
             ).clip(CircleShape)
             .padding(innerPadding)
             .background(
-                characterColor,
+                characterColor.darker(.3f),
                 CircleShape,
             ),
     ) {
@@ -78,11 +82,12 @@ fun CharacterAvatar(
                 Modifier
                     .clip(CircleShape)
                     .fillMaxSize()
-                    .background(characterColor, CircleShape)
+                    .background(characterColor.darker(.3f), CircleShape)
                     .effectForGenre(
                         genre,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
+                        pixelSize = pixelation,
                     ),
         )
 

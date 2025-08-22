@@ -2,19 +2,26 @@ package com.ilustris.sagai.core.utils
 
 import android.util.Log
 import com.google.firebase.ai.type.Schema
-import com.google.gson.Gson
+import com.google.gson.ExclusionStrategy
+import com.google.gson.FieldAttributes
+import com.google.gson.GsonBuilder
 import java.lang.reflect.ParameterizedType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.toString
 
-fun toFirebaseSchema(clazz: Class<*>) =
-    Schema.obj(
-        properties = clazz.toSchemaMap(),
-    )
+fun toFirebaseSchema(
+    clazz: Class<*>,
+    excludeFields: List<String> = emptyList(),
+) = Schema.obj(
+    properties = clazz.toSchemaMap(excludeFields),
+)
 
-fun Class<*>.toSchema(nullable: Boolean): Schema {
+fun Class<*>.toSchema(
+    nullable: Boolean,
+    excludeFields: List<String>,
+): Schema {
     if (this.isEnum) {
         val enumConstants = this.enumConstants?.map { it.toString() } ?: emptyList()
 
@@ -71,28 +78,33 @@ fun Class<*>.toSchema(nullable: Boolean): Schema {
                     ?.firstOrNull() as? Class<*>
 
             Schema.array(
-                itemType?.toSchema(nullable = nullable) ?: Schema.string(nullable = nullable),
+                itemType?.toSchema(nullable = nullable, excludeFields = excludeFields)
+                    ?: Schema.string(nullable = nullable),
             ) // Default to string array for lists/arrays
         }
 
         else -> {
             Log.i("SAGAI_MAPPER", "toSchema: mapping ${this.name} as object}")
-            Schema.obj(properties = this.toSchemaMap(), nullable = nullable) // Default fallback
+            Schema.obj(
+                properties = this.toSchemaMap(excludeFields),
+                nullable = nullable,
+            ) // Default fallback
         }
     }
 }
 
-fun Class<*>.toSchemaMap(): Map<String, Schema> =
+fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String, Schema> =
     declaredFields
-        .filter { it.name != "\$stable" }
-        .associate {
+        .filter {
+            excludeFields.plus("\$stable").contains(it.name).not()
+        }.associate {
             val memberIsNullable =
                 this
                     .kotlin.members
                     .find { member -> member.name == it.name }
                     ?.returnType
                     ?.isMarkedNullable
-            it.name to it.type.toSchema(memberIsNullable == true)
+            it.name to it.type.toSchema(memberIsNullable == true, excludeFields)
         }
 
 fun joinDeclaredFields(
@@ -116,7 +128,8 @@ fun String.removePackagePrefix(): String =
         .substringAfterLast(".")
         .replace(".", "")
 
-fun Pair<String, String>.formatToString() = """ ${this.first} : "${this.second}" """
+fun Pair<String, String>.formatToString(showSender: Boolean = true) =
+    "${if (showSender) this.first.plus(":").plus(emptyString()) else emptyString()} ${this.second}"
 
 fun Class<*>.toJsonString(): String {
     val fields =
@@ -134,7 +147,12 @@ fun Class<*>.toJsonString(): String {
                         fieldType == Double::class.java -> "0.0"
                         fieldType == Float::class.java -> "0.0f"
                         fieldType == Long::class.java -> "0L"
-                        List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
+                        List::class.java.isAssignableFrom(fieldType) ||
+                            Array::class.java.isAssignableFrom(
+                                fieldType,
+                            )
+                        -> "[]"
+
                         else -> "{}" // For nested objects, represent as empty JSON object
                     }
                 "  \"$fieldName\": $fieldValue"
@@ -145,7 +163,7 @@ fun Class<*>.toJsonString(): String {
 fun toJsonMap(
     clazz: Class<*>,
     filteredFields: List<String> = emptyList(),
-    fieldCustomDescription: Pair<String, String>? = null,
+    fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
     val deniedFields =
         filteredFields
@@ -161,18 +179,25 @@ fun toJsonMap(
                 val fieldType = field.type
                 val fieldValue =
                     when {
-                        fieldType.isEnum -> "[ ${fieldType.enumConstants?.joinToString { it.toString() }} ]"
+                        fieldType.isEnum -> "${fieldType.enumConstants?.joinToString(" | ") { it.toString() }}"
                         fieldType == String::class.java -> "\"\""
                         fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
                         fieldType == Boolean::class.java -> "false"
                         fieldType == Double::class.java -> "0.0"
                         fieldType == Float::class.java -> "0.0f"
                         fieldType == Long::class.java -> "0L"
-                        List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
+                        List::class.java.isAssignableFrom(fieldType) ||
+                            Array::class.java.isAssignableFrom(
+                                fieldType,
+                            )
+                        -> "[]"
+
                         else -> toJsonMap(fieldType)
                     }
-                if (fieldCustomDescription != null && field.name == fieldCustomDescription.first) {
-                    "\"${fieldCustomDescription.first}\": \"${fieldCustomDescription.second}\""
+                val customDescription =
+                    fieldCustomDescriptions.find { it.first == field.name }
+                if (customDescription != null) {
+                    "\"${customDescription.first}\": \"${customDescription.second}\""
                 } else {
                     "\"$fieldName\": $fieldValue"
                 }
@@ -182,7 +207,29 @@ fun toJsonMap(
 
 fun Any?.toJsonFormat(): String {
     if (this == null) return emptyString()
-    return Gson().toJson(this)
+    return GsonBuilder()
+        .setPrettyPrinting()
+        .create()
+        .toJson(this)
+}
+
+fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
+    if (this == null) return emptyString()
+
+    val exclusionStrategy =
+        object : ExclusionStrategy {
+            override fun shouldSkipField(f: FieldAttributes): Boolean = fieldsToExclude.contains(f.name)
+
+            override fun shouldSkipClass(clazz: Class<*>): Boolean = false
+        }
+
+    val gson =
+        GsonBuilder()
+            .addSerializationExclusionStrategy(exclusionStrategy)
+            .setPrettyPrinting()
+            .create()
+
+    return gson.toJson(this)
 }
 
 fun doNothing() = {}
@@ -238,7 +285,10 @@ fun String?.sanitizeAndExtractJsonString(): String {
         if (lastBracket != -1) {
             cleanedJsonString = cleanedJsonString.substring(0, lastBracket + 1)
         } else if (cleanedJsonString.isNotEmpty()) {
-            Log.e(logTag, "JSON object starts with '{' but no closing '}' found: $cleanedJsonString")
+            Log.e(
+                logTag,
+                "JSON object starts with '{' but no closing '}' found: $cleanedJsonString",
+            )
             throw IllegalArgumentException("Malformed JSON object: No closing bracket.")
         }
     }

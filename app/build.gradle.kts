@@ -5,11 +5,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.google.services)
     alias(libs.plugins.androidx.room)
-    alias(libs.plugins.firebase.crashlytics) // <-- ADDED CRASHLYTICS PLUGIN
+    alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.google.ksp)
 }
 
 android {
@@ -78,22 +78,22 @@ dependencies {
     implementation(libs.androidx.shapes)
     implementation(libs.androidx.animations)
     implementation(libs.androidx.palette.ktx)
+    implementation(libs.androidx.media)
 
-    // WorkManager & Hilt Integration for WorkManager
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
-    // kapt("androidx.hilt:hilt-compiler:1.2.0") // Covered by libs.androidx.hilt.compiler
 
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.android)
-    kapt(libs.androidx.hilt.compiler)
-    implementation(libs.androidx.core.splashscreen) // Added Splash Screen dependency
+    implementation(libs.androidx.lifecycle.process)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.core.splashscreen)
 
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.guava)
     implementation(libs.androidx.room.testing)
-    kapt(libs.androidx.room.compiler)
+    ksp(libs.androidx.room.compiler)
 
     // Retrofit & OkHttp
     implementation(libs.retrofit.core)
@@ -121,6 +121,7 @@ dependencies {
     implementation(libs.hypnoticcanvas)
     implementation(libs.hypnoticcanvas.shaders)
     implementation(libs.google.generativeai)
+    implementation(libs.face.detection)
 
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)

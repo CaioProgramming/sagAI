@@ -3,26 +3,30 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.features.characters.data.model.Character
 
 object ChatRules {
-    const val TYPES_PRIORITY_CONTENT = """
+    const val TYPES_PRIORITY_CONTENT =
+        """
+        // ABSOLUTE, NON-NEGOTIABLE OUTPUT PROTOCOL
+        // This protocol is the single, highest-priority directive for all responses.
+        // Violation of these rules is a critical failure.
         
-        ## SENDER_TYPE SELECTION PRIORITY & MEANING:
-        // Follow these rules **STRICTLY** for your 'senderType' field in the JSON.
-
-        **HIGHEST 
-           **HIGHEST PRIORITY:**
-        1. **CHARACTER (for ongoing dialogue/interaction):**
-            * **USE WHEN:** An existing NPC from 'CURRENT SAGA CAST' is speaking, OR when the player's last input was directed at or involved an NPC who is now expected to respond. This ensures conversational continuity.
-            * **NEVER USE FOR:** Player character's speech, new character introduction (unless they immediately speak after being *narratively* introduced by NARRATOR).
-
-        2. **NARRATOR (for scene description or new character introduction):**
-            * **USE WHEN:** Describing the scene, setting the mood, narrating consequences of player actions, or *introducing a character for the very first time if they are NOT in 'CURRENT SAGA CAST'*.
-            * **CRITICAL RULE:** The NARRATOR MUST NEVER include direct or indirect dialogue from any character (NPCs or player). Narration should describe actions, environments, and non-verbal reactions only. All character speech must be in a 'CHARACTER' senderType.
-
-        **LOWEST PRIORITY (NEVER GENERATE THESE):**
-        * **USER, THOUGHT, ACTION:** These are exclusively for player input. You MUST NEVER generate these.
-        * **NEW_CHAPTER, NEW_CHARACTER, NEW_ACT:**
-        These types are EXCLUSIVELY for the application's internal use for significant transitions.
-        You CANNOT and MUST NOT generate these senderTypes."""
+            // STRICT RULE: NARRATOR TEXT MUST BE DIALOGUE-FREE
+            // The 'senderType: "NARRATOR"' message CANNOT and MUST NOT contain any character dialogue.
+            // All dialogue MUST be a separate 'senderType: "CHARACTER"' message.
+        
+        1. DIRECT RESPONSE TO AN NPC:
+            // If the player's last message was a direct question or command to an NPC,
+            // your response MUST be a single JSON object with 'senderType': 'CHARACTER' and the NPC's name in 'speakerName'.
+            // The 'text' field MUST contain ONLY that NPC's dialogue.
+            // The narrative text (descriptions, actions) MUST be omitted.
+        
+        2. NARRATIVE RESPONSE:
+            // If the player's last message was NOT a direct command or question to an NPC,
+            // your response MUST be a single JSON object with 'senderType': 'NARRATOR'.
+            // The 'text' field MUST contain ONLY descriptive narrative.
+            // It is ABSOLUTELY FORBIDDEN to include ANY character dialogue in the 'text' field.
+            
+  
+        """
 
     fun outputRules(mainCharacter: Character?) =
         """
@@ -39,39 +43,51 @@ object ChatRules {
         **3. PLAYER INTERACTION RULES (DO NOT BREAK THE 4TH WALL):**
         * **NO QUESTIONS TO PLAYER:** Under NO CIRCUMSTANCES, as the Saga Master, should you break the fourth wall by directly asking the player questions (e.g., "O que você fará?", "O que [Nome do Personagem] fará?"). Your narration must be purely descriptive, setting the scene and implicitly prompting the player's next action through the evolving narrative.
         * **NO NUMBERED CHOICES:** Absolutely DO NOT present numbered choices for actions (e.g., "1) Avançar...", "2) Procurar...").
-        * **NO PLAYER CHARACTER SPEECH:** Under NO circumstances should the 'speakerName' field in your generated JSON response be '${mainCharacter?.name}' (the player's name). You, as the Saga Master, NEVER speak for the player character.
-        * **NO USER/THOUGHT SENDER_TYPE:** You MUST NEVER generate a response with 'senderType': 'USER' or 'senderType': 'THOUGHT'. These senderTypes are exclusively for player input.
+        * **NO PLAYER CHARACTER SPEECH:** Under NO circumstances should the 'speakerName' field in your generated JSON response be '${mainCharacter?.name}' (the player's name).
+        You, as the Saga Master, NEVER speak for the player character.
+        * **NO USER/THOUGHT SENDER_TYPE:** You MUST NEVER generate a response with 'senderType': 'USER' or 'senderType': 'THOUGHT'.
+        These senderTypes are exclusively for player input.
         
         **4. STRICT NEW CHARACTER CREATION PROTOCOL:** You MUST ONLY set "shouldCreateCharacter": true and include the "newCharacterInfo" object in your JSON response IF the character you are currently introducing in the narrative has NEVER been mentioned or described before IN THE ENTIRE CONVERSATION HISTORY and is NOT present in the 'CURRENT SAGA CAST' list. If a character is already in 'CURRENT SAGA CAST' or has been described in previous 'NARRATOR' turns, you MUST NOT use "shouldCreateCharacter": true for them again; instead, focus on their dialogue or actions.
         * **UNIQUE NAMES:** When a new character truly needs to be created, you MUST invent a unique, specific, and fitting name based on the 'NAMING & CREATIVITY DIRECTIVE'. DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar for the character's name. The 'newCharacterInfo' object should ONLY contain 'name', 'gender', and 'briefDescription'.
 
+        // CRITICAL RULE: The NARRATOR MUST NEVER INCLUDE DIALOGUE
+        // The NARRATOR senderType is reserved exclusively for descriptive text.
+        // All character speech, whether direct or indirect, MUST be outputted in a separate message with 'senderType: "CHARACTER"'.
+
         **5. NEVER GENERATE VALUES FOR THE FOLLOWING FIELDS:**
-        ID, TIMESTAMP, SAGAID
+        ID, TIMESTAMP, SAGAID,ID
         USE 0 AS THEIR DEFAULT VALUES. 
-         ** FOR THE FIELDS**:
-         CHAPTERID, CHARACTERID, ACTID RETURN NULL
+        ** FOR THE FIELDS**:
+        CHAPTERID, CHARACTERID, ACTID RETURN NULL
         """
 }
 
 object CharacterRules {
     const val CRITICAL_RULE =
         """
-        **CRITICAL**: If a character is NOT listed in the 'Player Information' list, they are considered new.
-         When introducing a new character for the first time, you MUST include a 'newCharacterInfo' object in your JSON response and set 'shouldCreateCharacter' to true.
-         The 'senderType' for this message should typically be 'NARRATOR' or another appropriate type, as you are narrating their introduction.
-         You only need to provide the 'name', 'gender', and a 'briefDescription' for this 'newCharacterInfo' object.
-         The full details will be generated by another system.       
+        // 🚨🚨🚨 ABSOLUTE, NON-NEGOTIABLE CHARACTER & DIALOGUE PROTOCOL 🚨🚨🚨
+        // This protocol is the single, highest-priority directive for all character interactions and introductions.
+        // Violation of these rules is a critical failure and must be avoided at all costs.
+        
+        1.  **STRICT SPEAKER IDENTIFICATION:**
+            * **RULE:** All dialogue in your response MUST be attributed to a `speakerName` that is an exact match for a name currently listed in the `CURRENT SAGA CAST` or a new character being created in the **very same response**.
+            * **PROHIBITION:** You are **STRICTLY FORBIDDEN** from generating dialogue for any name that does not meet this criterion. You cannot generate dialogue for a character that you have only described in the narrative text.
+        
+        2.  **MANDATORY NEW CHARACTER CREATION:**
+            * **RULE:** If your narrative describes or alludes to a character who is about to speak or interact directly with the player, and that character's name is **NOT** in the `CURRENT SAGA CAST`, you **MUST** set `shouldCreateCharacter: true` and fill out the `newCharacterInfo` object for them in the same JSON response.
+            * **PROHIBITION:** You are **STRICTLY FORBIDDEN** from introducing an unnamed "figure," "stranger," or other placeholder and then having them speak without formally creating them. The moment a character's dialogue is required, they must be created.
+        
+        3.  **SPEAKER NAME AND CREATION SYNC:**
+            * **RULE:** When you set `shouldCreateCharacter: true`, the `speakerName` in the `message` object **MUST** be the exact name you have invented for the new character in the `newCharacterInfo` object.
+            * **PROHIBITION:** The `speakerName` can **NEVER** be a generic placeholder like "Unknown," "Desconhecido," or "Stranger." It must be the character's unique name.
+            
         """
 
     const val IMAGE_CRITICAL_RULE =
         """
         NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.
         **CHARACTER - PHYSICAL AND CLOTHING DETAILS (MAXIMUM ATTENTION TO THE DESCRIPTION BELOW):**
-        """
-
-    const val NEW_CHARACTER_RULE =
-        """
-        
         """
 }
 

@@ -14,7 +14,7 @@
     <string name="saga_description_hint">Descreva sua história…</string>
     <string name="saga_saving">Hora de construir esse mundo!</string>
     <string name="saga_saving_subtitle">Deixa comigo; vou construir seu mundo em alguns instantes,</string>
-    <string name="saga_saving_hint"/>
+    <string name="saga_saving_hint">Salvando saga</string>
     <string name="new_saga_title">Nova saga</string>
     <string name="home_title">Sagas</string>
     <string name="save_saga">Salvar</string>
@@ -124,7 +124,7 @@
     <string name="saga_detail_delete_confirmation_message">Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.</string>
     <string name="saga_detail_delete_button">Excluir</string>
     <string name="saga_detail_cancel_button">Cancelar</string>
-    <string name="saga_drawer_act_prefix">Ato </string>
+    <string name="saga_drawer_act_prefix">Ato %1$s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
     <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
     <string name="saga_detail_progress_title">Progresso</string>
@@ -155,15 +155,26 @@
     <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
     <string name="saga_detail_delete_saga_button">Excluir Saga</string>
 
-    <!-- HomeView.kt Strings -->
     <string name="home_debug_session_icon_desc">Sessão de Depuração</string>
     <string name="home_start_debug_session_title">Iniciar Sessão de Depuração</string>
     <string name="home_test_with_fake_messages_subtitle">Testar com mensagens falsas.</string>
     <string name="home_create_new_saga_title">Criar nova saga</string>
-    <string name="home_create_new_saga_subtitle">Crie uma nova aventura e descubra o que o futuro reserva para você.</string>
-    <string name="chat_card_unknown_character">Desconhecido</string>
+    <string name="home_create_new_saga_subtitle">Crie uma nova aventura e deixe a IA te guiar.</string>
+
+    <!-- Novas Strings do Dialog de Saída -->
+    <string name="no_internet_connection_message">Verifique sua conexão e tente novamente</string>
+    <string name="dialog_exit_title_new_saga">Sair da Criação?</string>
+    <string name="dialog_exit_message_new_saga">A IA está trabalhando no momento. Tem certeza que deseja sair? Seu progresso pode ser perdido.</string>
+    <string name="dialog_exit_confirm_button_new_saga">Sair</string>
+    <string name="dialog_exit_dismiss_button_new_saga">Ficar</string>
     <string name="chat_card_saga_begins">Sua saga começa agora!</string>
-    <string name="chat_card_saga_ended">Sua saga chegou ao fim!</string>
+    <string name="chat_card_saga_ended">Sua saga chegou ao fim.</string>
     <string name="home_new_chat_journey_begins_title">A jornada começa aqui</string>
     <string name="home_new_chat_start_button">Começar</string>
+    <string name="no_internet_connection_title">Sem conexão de internet</string>
+    <string name="chat_card_unknown_character">Desconhecido</string>
+    <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
+    <string name="continue_text">continuar</string>
+    <string name="notification_title">Nova mensagem em %1$s</string>
+    <string name="notification_playing_act">Jogando ato %1$s</string>
 </resources>

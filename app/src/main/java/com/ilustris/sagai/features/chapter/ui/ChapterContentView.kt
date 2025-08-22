@@ -53,11 +53,13 @@ import kotlin.time.Duration.Companion.seconds
 fun ChapterContentView(
     chapter: Chapter,
     content: SagaContent,
+    modifier: Modifier,
+    isLast: Boolean = false,
     openCharacters: () -> Unit = {},
     regenerateCover: (Chapter) -> Unit = {},
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val genre = content.data.genre
@@ -75,9 +77,16 @@ fun ChapterContentView(
             )
         }
 
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .background(fadeGradientBottom()),
+        )
+
         Row(
             Modifier
-                .background(fadeGradientBottom())
+                .background(MaterialTheme.colorScheme.background)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -114,7 +123,7 @@ fun ChapterContentView(
 
         var imageSize by remember {
             mutableFloatStateOf(
-                .5f,
+                .35f,
             )
         }
 
@@ -145,8 +154,18 @@ fun ChapterContentView(
 
             Box(
                 Modifier
-                    .fillMaxSize()
-                    .background(fadedGradientTopAndBottom()),
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .background(fadeGradientTop())
+                    .align(Alignment.TopCenter),
+            )
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
+                    .background(fadeGradientBottom())
+                    .align(Alignment.BottomCenter),
             )
         }
 
@@ -192,8 +211,10 @@ fun ChapterContentView(
             onTextClick = openCharacters,
         )
 
-        Box(
-            Modifier.background(fadeGradientTop()).fillMaxWidth().height(50.dp),
-        )
+        if (isLast) {
+            Box(
+                Modifier.background(fadeGradientTop()).fillMaxWidth().height(50.dp),
+            )
+        }
     }
 }

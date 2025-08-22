@@ -1,10 +1,9 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
-import android.content.res.Configuration
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
@@ -40,10 +39,8 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
@@ -60,6 +57,8 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -68,6 +67,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -77,6 +77,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -95,14 +96,11 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
-import com.ilustris.sagai.core.utils.getEventsForChapter
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.ui.ActComponent
+import com.ilustris.sagai.features.act.ui.ActReader
 import com.ilustris.sagai.features.act.ui.toRoman
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.chapter.ui.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -113,25 +111,26 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.wiki.ui.WikiCard
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
-import com.ilustris.sagai.ui.theme.GradientType
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
@@ -207,7 +206,7 @@ fun SagaDetailView(
     }, createReview = {
         viewModel.createReview()
     }, openReview = {
-        viewModel.resetReview()
+        // viewModel.resetReview()
     })
 
     if (showDeleteConfirmation) {
@@ -295,22 +294,22 @@ fun LazyListScope.SagaDrawerContent(
     with(this) {
         item {
             Column(Modifier.fillMaxWidth()) {
-                Image(
+                Icon(
                     painterResource(R.drawable.ic_spark),
                     null,
-                    Modifier
-                        .clip(CircleShape)
-                        .padding(4.dp)
-                        .size(50.dp)
-                        .align(Alignment.CenterHorizontally)
-                        .gradientFill(
-                            content.data.genre.gradient(
-                                animated = true,
-                                duration = 2.seconds,
-                            ),
-                        ).clickable {
-                            openReview()
-                        },
+                    tint = content.data.genre.color,
+                    modifier =
+                        Modifier
+                            .clip(CircleShape)
+                            .padding(4.dp)
+                            .size(50.dp)
+                            .align(Alignment.CenterHorizontally)
+                            .reactiveShimmer(
+                                content.data.review != null,
+                                targetValue = 250f,
+                            ).clickable {
+                                openReview()
+                            },
                 )
             }
         }
@@ -318,12 +317,12 @@ fun LazyListScope.SagaDrawerContent(
             val index = content.acts.indexOf(it)
             val brush =
                 content.data.genre.gradient(
-                    content.currentActInfo?.act?.id == it.id,
-                    gradientType = GradientType.LINEAR,
-                    targetValue = 200f,
+                    content.currentActInfo?.data?.id == it.data.id,
+                    targetValue = 300f,
+                    duration = 1.seconds,
                 )
 
-            val chaptersInAct = content.chapters.filter { chapter -> chapter.actId == it.id }
+            val chaptersInAct = it.chapters
             val shape = RoundedCornerShape(content.data.genre.cornerSize())
 
             Column(
@@ -342,11 +341,12 @@ fun LazyListScope.SagaDrawerContent(
                     ),
             ) {
                 Text(
-                    stringResource(R.string.saga_drawer_act_prefix) + (index + 1).toRoman(),
+                    it.data.title.ifEmpty {   stringResource(R.string.saga_drawer_act_prefix,((index + 1).toRoman()))},
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = content.data.genre.bodyFont(),
                             fontWeight = FontWeight.Bold,
+                            brush = brush,
                         ),
                     modifier = Modifier.padding(16.dp),
                 )
@@ -355,11 +355,7 @@ fun LazyListScope.SagaDrawerContent(
 
                 if (chaptersInAct.isNotEmpty()) {
                     chaptersInAct.forEachIndexed { chapterIndex, chapter ->
-                        val eventsInChapter =
-                            content.timelines.getEventsForChapter(
-                                chapter,
-                                previousChapter = chaptersInAct.getOrNull(chapterIndex - 1),
-                            )
+                        val eventsInChapter = chapter.events.filter { it.isComplete() }
 
                         var expandedEvents by remember {
                             mutableStateOf(false)
@@ -379,7 +375,11 @@ fun LazyListScope.SagaDrawerContent(
                                 Modifier.size(24.dp),
                             )
                             Text(
-                                stringResource(R.string.saga_drawer_chapter_events_count, chapter.title, eventsInChapter.size),
+                                stringResource(
+                                    R.string.saga_drawer_chapter_events_count,
+                                    chapter.data.title.ifEmpty { "Capítulo em andamento..." },
+                                    eventsInChapter.size,
+                                ),
                                 style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
@@ -391,7 +391,7 @@ fun LazyListScope.SagaDrawerContent(
                         if (expandedEvents) {
                             eventsInChapter.forEach { event ->
                                 TimeLineCard(
-                                    event,
+                                    event.timeline,
                                     content.data.genre,
                                     titleStyle = MaterialTheme.typography.bodyMedium,
                                     showText = false,
@@ -404,51 +404,53 @@ fun LazyListScope.SagaDrawerContent(
                                 )
                             }
                         }
+
+                        if (chapter.isComplete().not()) {
+                            Text(
+                                "${eventsInChapter.size} of ${UpdateRules.CHAPTER_UPDATE_LIMIT} events",
+                                style =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        textAlign = TextAlign.Center,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                        .alpha(.5f),
+                            )
+
+                            HorizontalDivider(
+                                modifier = Modifier.height(1.dp).padding(4.dp),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                            )
+
+                            if (chapter == chaptersInAct.last()) {
+                                val messageCount =
+                                    chapter.events
+                                        .lastOrNull()
+                                        ?.messages
+                                        ?.size
+
+                                Text(
+                                    "$messageCount of ${UpdateRules.LORE_UPDATE_LIMIT} messages",
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                            fontFamily = content.data.genre.bodyFont(),
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 8.dp)
+                                            .alpha(.5f),
+                                )
+                            }
+                        }
                     }
                 }
-            }
-        }
-    }
-
-    if (content.timelines.isNotEmpty()) {
-        item {
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        }
-
-        item {
-            val eventReference =
-                if (content.chapters.isNotEmpty()) {
-                    content.timelines.find { it.id == content.chapters.last().eventReference }
-                } else {
-                    content.timelines.last()
-                }
-
-            val eventIndex =
-                if (content.timelines.indexOf(eventReference) == -1) {
-                    0
-                } else {
-                    content.timelines.indexOf(eventReference)
-                }
-
-            val eventSublist = content.timelines.subList(eventIndex, content.timelines.size)
-
-            val remainEvents = (UpdateRules.CHAPTER_UPDATE_LIMIT - eventSublist.size).unaryPlus()
-
-            AnimatedVisibility(content.data.isEnded.not()) {
-                Text(
-                    stringResource(R.string.saga_drawer_events_since_last_chapter, eventSublist.size),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                            fontFamily = content.data.genre.bodyFont(),
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .alpha(.5f),
-                )
             }
         }
     }
@@ -502,7 +504,7 @@ fun SagaDetailContentView(
                                     )
                                 }
                                 SagaDrawerContent(sagaContent) {
-                                    if (sagaContent.data.review == null) {
+                                    if (sagaContent.data.review == null && sagaContent.data.isEnded) {
                                         createReview.invoke()
                                     } else {
                                         showReview = true
@@ -544,7 +546,7 @@ fun SagaDetailContentView(
                                 },
                                 modifier =
                                     Modifier
-                                        .background(MaterialTheme.colorScheme.background)
+                                        .background(fadeGradientTop())
                                         .fillMaxWidth()
                                         .padding(top = 50.dp, start = 16.dp),
                             )
@@ -621,23 +623,86 @@ fun SagaDetailContentView(
     }
 }
 
+@Preview(showBackground = true)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DetailAction.titleAndSubtitle(content: SagaContent): Pair<String, String> {
-    return when (this) {
-        DetailAction.CHARACTERS -> stringResource(R.string.saga_detail_section_title_characters) to stringResource(R.string.saga_detail_section_subtitle_characters, content.characters.size)
-        DetailAction.TIMELINE -> stringResource(R.string.saga_detail_section_title_timeline) to stringResource(R.string.saga_detail_section_subtitle_timeline, content.timelines.size)
-        DetailAction.CHAPTERS -> stringResource(R.string.saga_detail_section_title_chapters) to stringResource(R.string.saga_detail_section_subtitle_chapters, content.chapters.size)
-        DetailAction.WIKI -> stringResource(R.string.saga_detail_section_title_wiki) to stringResource(R.string.saga_detail_section_subtitle_wiki, content.wikis.size)
-        DetailAction.ACTS -> stringResource(R.string.saga_detail_section_title_acts) to stringResource(R.string.saga_detail_section_subtitle_acts, content.acts.size)
+fun SagaDetailContentViewPreview() {
+    SagaDetailContentView(
+        state =
+            State.Success(
+                SagaContent(
+                    data =
+                        Saga(
+                            title = "The Lord of the Rings",
+                            description =
+                                "The Lord of the Rings is an epic high-fantasy novel written by English author and scholar J. R. R. Tolkien.",
+                            genre = Genre.FANTASY,
+                            icon = "",
+                            isEnded = false,
+                            review = null,
+                        ),
+                    characters =
+                        listOf(
+                            Character(name = "Frodo Baggins", details = Details()),
+                            Character(name = "Gandalf", details = Details()),
+                        ),
+                    acts = emptyList(),
+                ),
+            ),
+        paddingValues = PaddingValues(0.dp),
+        createReview = {},
+        openReview = {},
+    )
+}
+
+@Composable
+private fun DetailAction.titleAndSubtitle(content: SagaContent): Pair<String, String> =
+    when (this) {
+        DetailAction.CHARACTERS ->
+            stringResource(R.string.saga_detail_section_title_characters) to
+                stringResource(
+                    R.string.saga_detail_section_subtitle_characters,
+                    content.characters.size,
+                )
+
+        DetailAction.TIMELINE ->
+            stringResource(R.string.saga_detail_section_title_timeline) to
+                stringResource(
+                    R.string.saga_detail_section_subtitle_timeline,
+                    content.eventsSize(),
+                )
+
+        DetailAction.CHAPTERS ->
+            stringResource(R.string.saga_detail_section_title_chapters) to
+                stringResource(
+                    R.string.saga_detail_section_subtitle_chapters,
+                    content.chaptersSize(),
+                )
+
+        DetailAction.WIKI ->
+            stringResource(R.string.saga_detail_section_title_wiki) to
+                stringResource(R.string.saga_detail_section_subtitle_wiki, content.wikis.size)
+
+        DetailAction.ACTS ->
+            stringResource(R.string.saga_detail_section_title_acts) to
+                stringResource(R.string.saga_detail_section_subtitle_acts, content.acts.size)
+
         else -> {
             if (content.data.isEnded) {
-                content.data.title to stringResource(R.string.saga_detail_status_ended, content.data.endedAt.formatDate())
+                content.data.title to
+                    stringResource(
+                        R.string.saga_detail_status_ended,
+                        content.data.endedAt.formatDate(),
+                    )
             } else {
-                content.data.title to stringResource(R.string.saga_detail_status_created, content.data.createdAt.formatDate())
+                content.data.title to
+                    stringResource(
+                        R.string.saga_detail_status_created,
+                        content.data.createdAt.formatDate(),
+                    )
             }
         }
     }
-}
 
 @Composable
 fun WikiContent(saga: SagaContent) {
@@ -648,9 +713,8 @@ fun WikiContent(saga: SagaContent) {
                 saga.data.genre,
                 modifier =
                     Modifier
-                        .padding(8.dp)
-                        .fillMaxWidth()
-                        .height(300.dp),
+                        .padding(16.dp)
+                        .fillMaxWidth(),
             )
         }
     }
@@ -658,18 +722,35 @@ fun WikiContent(saga: SagaContent) {
 
 @Composable
 fun ActContent(saga: SagaContent) {
-    VerticalPager(
-        modifier = Modifier.fillMaxSize(),
-        state = rememberPagerState { saga.acts.size },
-    ) {
-        val act = saga.acts[it]
-        ActComponent(
-            act,
-            saga.acts.indexOf(act) + 1,
-            saga,
-            modifier =
-                Modifier
-                    .fillMaxSize(),
+    ActReader(saga)
+}
+
+@Composable
+fun SimpleSlider(
+    title: String,
+    maxValue: Float = 10f,
+    onValueChange: (Float) -> Unit = {},
+) {
+    Column(Modifier.padding(16.dp)) {
+        var sliderPosition by remember { mutableFloatStateOf(0f) }
+
+        Text(
+            "$title - $sliderPosition",
+        )
+        Slider(
+            value = sliderPosition,
+            onValueChange = {
+                sliderPosition = it
+                onValueChange(it)
+                Log.i(javaClass.simpleName, "Slider $title value changed to $it")
+            },
+            colors =
+                SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+            valueRange = 0f..maxValue,
         )
     }
 }
@@ -702,61 +783,77 @@ private fun SagaDetailInitialView(
         state = gridState,
     ) {
         saga?.let {
+            val acts = saga.acts.filter { it.isComplete() }
+            val chapters = saga.flatChapters()
+            val events = saga.flatEvents().filter { it.isComplete() }
+            val messages = saga.flatMessages()
+
             item(span = {
                 GridItemSpan(columnCount)
             }) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    /*var highlightParams by
+                        remember {
+                            mutableStateOf(
+                                SelectiveColorParams(
+                                    targetColor = it.data.genre.color,
+                                    hueTolerance = .5f,
+                                    saturationThreshold = .5f,
+                                    highlightSaturationBoost = 1.6f,
+                                    desaturationFactorNonTarget = .7f,
+                                ),
+                            )
+                        }*/
                     Box(
                         modifier =
                             Modifier
+                                .background(
+                                    it.data.genre.color
+                                        .gradientFade(),
+                                ).height(400.dp)
                                 .fillMaxWidth()
                                 .clipToBounds(),
                     ) {
-                        if (it.data.icon
-                                .isNullOrEmpty()
-                                .not()
-                        ) {
-                            AsyncImage(
-                                it.data.icon,
-                                contentDescription = it.data.title,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(300.dp)
-                                        .background(
-                                            it.data.genre.color
-                                                .gradientFade(),
-                                        ).effectForGenre(saga.data.genre)
-                                        .selectiveColorHighlight(
-                                            saga.data.genre.selectiveHighlight(),
-                                        ).clipToBounds(),
-                                contentScale = ContentScale.Crop,
-                            )
-                        } else {
-                            Box(
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            modifier =
                                 Modifier
                                     .clickable {
-                                        selectSection(DetailAction.REGENERATE)
-                                    }.fillMaxWidth()
-                                    .height(300.dp)
-                                    .background(MaterialTheme.colorScheme.surfaceContainer),
-                            ) {
-                                Image(
-                                    painterResource(R.drawable.ic_spark),
-                                    null,
-                                    modifier =
-                                        Modifier.align(Alignment.Center).gradientFill(
-                                            it.data.genre.gradient(),
-                                        ),
-                                )
-                            }
-                        }
+                                        if (it.data.icon.isEmpty()) {
+                                            selectSection(DetailAction.REGENERATE)
+                                        }
+                                    }.align(Alignment.TopCenter)
+                                    .gradientFill(
+                                        it.data.genre.gradient(),
+                                    ),
+                        )
+                        AsyncImage(
+                            it.data.icon,
+                            contentDescription = it.data.title,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .selectiveColorHighlight(saga.data.genre.selectiveHighlight())
+                                    .effectForGenre(saga.data.genre)
+                                    .clipToBounds(),
+                            contentScale = ContentScale.Crop,
+                        )
 
                         Box(
                             Modifier
-                                .background(fadedGradientTopAndBottom())
+                                .align(Alignment.TopCenter)
+                                .background(fadeGradientTop())
                                 .fillMaxWidth()
-                                .height(300.dp),
+                                .fillMaxHeight(.25f),
+                        )
+
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .background(fadeGradientBottom())
+                                .fillMaxWidth()
+                                .fillMaxHeight(.3f),
                         )
 
                         it.mainCharacter?.let { mainChar ->
@@ -770,12 +867,13 @@ private fun SagaDetailInitialView(
                                 CharacterAvatar(
                                     mainChar,
                                     borderSize = 3.dp,
+                                    borderColor = it.data.genre.color,
                                     genre = it.data.genre,
                                     textStyle = MaterialTheme.typography.displayMedium,
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
-                                            .size(170.dp),
+                                            .size(150.dp),
                                 )
                                 Text(
                                     stringResource(R.string.saga_detail_journey_of),
@@ -794,15 +892,58 @@ private fun SagaDetailInitialView(
                                             fontFamily = it.data.genre.headerFont(),
                                             fontWeight = FontWeight.SemiBold,
                                             textAlign = TextAlign.Center,
+                                            brush = it.data.genre.gradient(),
                                         ),
                                     modifier =
                                         Modifier
                                             .padding(8.dp)
-                                            .gradientFill(it.data.genre.gradient(true)),
+                                            .reactiveShimmer(true),
                                 )
                             }
                         }
                     }
+
+/*                    SimpleSlider(
+                        "Hue tolerance",
+                        maxValue = 1f,
+                    ) { value ->
+                        highlightParams = highlightParams.copy(hueTolerance = value)
+                    }
+
+                    SimpleSlider(
+                        "Saturation threshold",
+                        maxValue = 1f,
+                    ) { value ->
+                        highlightParams = highlightParams.copy(saturationThreshold = value)
+                    }
+
+                    SimpleSlider(
+                        "Lightness threshold",
+                        maxValue = 1f,
+                    ) { value ->
+                        highlightParams = highlightParams.copy(lightnessThreshold = value)
+                    }
+
+                    SimpleSlider(
+                        "Highlight boost",
+                        maxValue = 2f,
+                    ) { value ->
+                        highlightParams = highlightParams.copy(highlightSaturationBoost = value)
+                    }
+
+                    SimpleSlider(
+                        "Highlight lightness boost",
+                        maxValue = 1f,
+                    ) { value ->
+                        highlightParams = highlightParams.copy(highlightLightnessBoost = value)
+                    }
+
+                    SimpleSlider(
+                        "Desaturation Factor",
+                        maxValue = 1f,
+                    ) { value ->
+                        highlightParams = highlightParams.copy(desaturationFactorNonTarget = value)
+                    }*/
                 }
             }
 
@@ -816,8 +957,16 @@ private fun SagaDetailInitialView(
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
-                    VerticalLabel(it.chapters.count().toString(), stringResource(R.string.saga_detail_section_title_chapters), it.data.genre)
-                    VerticalLabel(it.characters.count().toString(), stringResource(R.string.saga_detail_section_title_characters), it.data.genre)
+                    VerticalLabel(
+                        chapters.count().toString(),
+                        stringResource(R.string.saga_detail_section_title_chapters),
+                        it.data.genre,
+                    )
+                    VerticalLabel(
+                        it.characters.count().toString(),
+                        stringResource(R.string.saga_detail_section_title_characters),
+                        it.data.genre,
+                    )
                 }
             }
 
@@ -829,7 +978,7 @@ private fun SagaDetailInitialView(
                     modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
-                        it.messages.count().toString(),
+                        messages.count().toString(),
                         style =
                             MaterialTheme.typography.displaySmall.copy(
                                 fontFamily = it.data.genre.headerFont(),
@@ -861,7 +1010,7 @@ private fun SagaDetailInitialView(
                     Column(
                         modifier =
                             Modifier.padding(16.dp).fillMaxWidth().clickable {
-                                openReview.invoke()
+                                openReview()
                             },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -899,38 +1048,40 @@ private fun SagaDetailInitialView(
                 )
             }
 
-            item(span = {
-                GridItemSpan(columnCount)
-            }) {
-                Row(
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        stringResource(R.string.saga_detail_section_title_characters),
-                        style = sectionStyle,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .weight(1f),
-                    )
-
-                    IconButton(onClick = {
-                        selectSection(DetailAction.CHARACTERS)
-                    }, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.saga_detail_view_characters_action),
+            if (it.characters.isNotEmpty()) {
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Row(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            stringResource(R.string.saga_detail_section_title_characters),
+                            style = sectionStyle,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .weight(1f),
                         )
+
+                        IconButton(onClick = {
+                            selectSection(DetailAction.CHARACTERS)
+                        }, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                contentDescription = stringResource(R.string.saga_detail_view_characters_action),
+                            )
+                        }
                     }
                 }
             }
 
             item(span = { GridItemSpan(columnCount) }) {
                 LazyRow {
-                    items(sortCharactersByMessageCount(it.characters, it.messages)) { char ->
+                    items(sortCharactersByMessageCount(it.characters, it.flatMessages())) { char ->
                         Column(
                             Modifier
                                 .padding(8.dp)
@@ -966,7 +1117,7 @@ private fun SagaDetailInitialView(
                 }
             }
 
-            if (it.timelines.isNotEmpty()) {
+            if (events.isNotEmpty()) {
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
@@ -998,9 +1149,9 @@ private fun SagaDetailInitialView(
                             }
                         }
 
-                        it.timelines.lastOrNull()?.let { event ->
+                        events.lastOrNull()?.let { event ->
                             TimeLineCard(
-                                event,
+                                event.timeline,
                                 it.data.genre,
                                 false,
                                 modifier =
@@ -1071,14 +1222,13 @@ private fun SagaDetailInitialView(
                         it.data.genre,
                         modifier =
                             Modifier
-                                .padding(4.dp)
-                                .fillMaxWidth()
-                                .height(270.dp),
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     )
                 }
             }
 
-            if (it.chapters.isNotEmpty()) {
+            if (chapters.isNotEmpty()) {
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
@@ -1114,9 +1264,9 @@ private fun SagaDetailInitialView(
                     GridItemSpan(columnCount)
                 }) {
                     LazyRow {
-                        items(it.chapters) { chapter ->
+                        items(chapters) { chapter ->
                             ChapterCardView(
-                                chapter,
+                                chapter.data,
                                 it.data.genre,
                                 it.characters,
                                 Modifier
@@ -1129,55 +1279,41 @@ private fun SagaDetailInitialView(
                 }
             }
 
-            if (it.acts.isNotEmpty()) {
+            if (saga.data.isEnded) {
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
-                    Row(
+                    Box(
                         Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+                            .clickable {
+                                selectSection(DetailAction.ACTS)
+                            }.height(200.dp)
+                            .fillMaxWidth()
+                            .reactiveShimmer(
+                                true,
+                                it.data.genre.color
+                                    .darkerPalette()
+                                    .plus(Color.Transparent),
+                            ),
                     ) {
-                        Text(
-                            stringResource(R.string.saga_detail_section_title_acts),
-                            style = sectionStyle,
+                        StarryTextPlaceholder(
                             modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .weight(1f),
+                                Modifier.fillMaxSize(),
                         )
-
-                        IconButton(onClick = {
-                            selectSection(
-                                DetailAction.ACTS,
-                            )
-                        }, modifier = Modifier.size(24.dp)) {
-                            Icon(
-                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                contentDescription = stringResource(R.string.saga_detail_view_acts_action),
-                            )
-                        }
+                        Text(
+                            "Veja sua história completa",
+                            textAlign = TextAlign.Center,
+                            style =
+                                MaterialTheme.typography.headlineSmall.copy(
+                                    fontFamily = it.data.genre.bodyFont(),
+                                    fontWeight = FontWeight.Bold,
+                                    brush = it.data.genre.gradient(),
+                                ),
+                            modifier = Modifier.align(Alignment.Center),
+                        )
                     }
                 }
 
-                item(span = {
-                    GridItemSpan(columnCount)
-                }) {
-                    val act = it.acts.last()
-                    ActComponent(
-                        act,
-                        it.acts.indexOf(act) + 1,
-                        it,
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .height(300.dp),
-                    )
-                }
-            }
-
-            if (it.data.isEnded) {
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
@@ -1190,9 +1326,40 @@ private fun SagaDetailInitialView(
                                 textAlign = TextAlign.Center,
                                 brush = it.data.genre.gradient(),
                             ),
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
+
+            } else {
+                item(span = { GridItemSpan(columnCount) }) {
+                    Box(
+                        Modifier.height(200.dp).fillMaxWidth().reactiveShimmer(
+                            true,
+                            it.data.genre.color
+                                .darkerPalette()
+                                .plus(Color.Transparent),
+                        ),
+                    ) {
+                        StarryTextPlaceholder(
+                            modifier =
+                                Modifier.fillMaxSize(),
+                        )
+                        Text(
+                            "Continue avançando em sua história...",
+                            textAlign = TextAlign.Center,
+                            style =
+                                MaterialTheme.typography.headlineSmall.copy(
+                                    fontFamily = it.data.genre.bodyFont(),
+                                    fontWeight = FontWeight.Bold,
+                                    brush = it.data.genre.gradient(),
+                                ),
+                            modifier = Modifier.align(Alignment.Center),
+                        )
+                    }
+                }
             }
+
+
 
             item(span = {
                 GridItemSpan(columnCount)
@@ -1212,98 +1379,12 @@ private fun SagaDetailInitialView(
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
-                    Text(stringResource(R.string.saga_detail_delete_saga_button), textAlign = TextAlign.Center)
+                    Text(
+                        stringResource(R.string.saga_detail_delete_saga_button),
+                        textAlign = TextAlign.Center,
+                    )
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun SagaDetailContentViewLoadingPreview() {
-    SagAIScaffold {
-        SagaDetailContentView(
-            state = State.Loading,
-            paddingValues = PaddingValues(0.dp),
-            createReview = {},
-            openReview = {},
-        )
-    }
-}
-
-@Preview(
-    showBackground = true,
-    showSystemUi = true,
-    uiMode = Configuration.UI_MODE_TYPE_NORMAL,
-)
-@Composable
-fun SagaDetailContentViewPreview() {
-    SagAIScaffold {
-        val state =
-            State.Success(
-                SagaContent(
-                    data =
-                        Saga(
-                            title = "Saga de teste",
-                            description = "Descrição da saga de teste",
-                            icon = null,
-                            createdAt = System.currentTimeMillis(),
-                            genre = Genre.SCI_FI,
-                            mainCharacterId = null,
-                        ),
-                    acts =
-                        List(3) {
-                            Act()
-                        },
-                    mainCharacter =
-                        Character(
-                            name = "Personagem de teste",
-                            backstory = "Descrição do personagem de teste",
-                            image = emptyString(),
-                            hexColor = "#FFFFFF",
-                            details = Details(),
-                        ),
-                    messages =
-                        List(10) {
-                            MessageContent(
-                                Message(
-                                    id = 0,
-                                    sagaId = 0,
-                                    text = "Mensagem de teste",
-                                    senderType = SenderType.entries.random(),
-                                    timestamp = System.currentTimeMillis(),
-                                ),
-                            )
-                        },
-                    chapters =
-                        List(3) {
-                            Chapter(
-                                title = "Capítulo de teste",
-                                sagaId = 0,
-                                overview = "Texto do capítulo de teste",
-                                messageReference = 0,
-                                coverImage = emptyString(),
-                                actId = it,
-                            )
-                        },
-                    characters =
-                        List(5) {
-                            Character(
-                                name = "Personagem de teste $it",
-                                backstory = "Descrição do personagem de teste",
-                                image = emptyString(),
-                                hexColor = "#FFFFFF",
-                                details = Details(),
-                            )
-                        },
-                ),
-            )
-        SagaDetailContentView(
-            state = state,
-            paddingValues = PaddingValues(0.dp),
-            createReview = {},
-            openReview = {},
-        )
     }
 }

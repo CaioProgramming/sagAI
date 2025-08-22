@@ -1,0 +1,25 @@
+package com.ilustris.sagai.features.timeline.data.model
+
+import androidx.room.Embedded
+import androidx.room.Relation
+import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.features.saga.chat.domain.model.Message // Added import
+import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+
+data class TimelineContent(
+    @Embedded
+    val timeline: Timeline,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "timelineId",
+        entity = Message::class,
+    )
+    val messages: List<MessageContent> = emptyList(),
+) {
+    fun isFull(): Boolean = messages.size >= UpdateRules.LORE_UPDATE_LIMIT
+
+    fun isComplete(): Boolean =
+        isFull() &&
+            timeline.title.isNotEmpty() &&
+            timeline.content.isNotEmpty()
+}

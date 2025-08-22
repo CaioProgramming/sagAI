@@ -43,7 +43,9 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -55,6 +57,7 @@ import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
@@ -85,7 +88,6 @@ fun CharacterDetailsView(
                 CharacterDetailsContent(
                     it,
                     char,
-                    messageCount,
                 )
             }
         } else {
@@ -96,19 +98,18 @@ fun CharacterDetailsView(
             )
         }
     }
-
 }
 
 @Composable
 fun CharacterDetailsContent(
     sagaContent: SagaContent,
     character: Character,
-    messageCount: Int,
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
-    val characterColor = Color(character.hexColor.toColorInt())
+    val characterColor = character.hexColor.hexToColor() ?: genre.color
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
     LazyColumn(
         modifier =
             Modifier.fillMaxSize(),
@@ -164,7 +165,7 @@ fun CharacterDetailsContent(
                         .clickable {
                             viewModel.regenerate(
                                 sagaContent,
-                                character
+                                character,
                             )
                         }.padding(16.dp)
                         .size(100.dp)
@@ -265,7 +266,6 @@ fun CharacterDetailsContent(
             }
         }
     }
-
 }
 
 @Preview
@@ -289,12 +289,10 @@ fun CharacterDetailsDialogPreview() {
                         genre = genre,
                     ),
                 mainCharacter = character,
-                messages = emptyList(),
-                chapters = emptyList(),
+                acts = emptyList(),
                 characters = emptyList(),
             ),
             character,
-            0,
         )
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.genresGradient
@@ -63,12 +65,13 @@ fun ChapterContent(
 ) {
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     LazyColumn {
-        items(saga.chapters) {
+        items(saga.flatChapters().filter { it.isComplete() }) {
             ChapterContentView(
-                it,
+                it.data,
                 saga,
+                modifier = Modifier.fillMaxWidth(),
             ) { chapter ->
-                viewModel.generateIcon(saga, chapter)
+                viewModel.generateIcon(saga, it)
             }
         }
     }

@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.domain.model
 
 // Import the correct SenderType
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
 
 data class Suggestion(
     val text: String,

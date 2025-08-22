@@ -1,43 +1,53 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.CharacterFraming
-import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.features.characters.data.model.exampleCharacter
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts.artStyle
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts.moodDescription
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 object CharacterGuidelines {
-    fun imageDescriptionGuideLine(
-        framing: CharacterFraming,
-        genre: Genre,
-    ) = """
-        Your task is to act as an AI image prompt engineer. You will receive character details in JSON format. Your goal is to convert this structured JSON data into a single, highly detailed, unambiguous, and visually rich English text description. This description will be directly used as a part of a larger prompt for an AI image generation model, so precision and visual specificity are paramount.
-        **Crucially, this description MUST be formulated to be compatible with the specified 'CharacterFraming' and adhere strictly to the provided 'StoryTheme'.
-        All details should be described as they would appear and be impactful within that specific framing and thematic context.**
-        YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
-
-        **Guidelines for Conversion and Expansion:**
-        
-        1.  **Translate Accurately:** Translate all Portuguese values from the JSON fields into precise English.
-        2.  **Expand and Elaborate:** For any vague, simple, or generic descriptions from the JSON (e.g., "blue eyes", "long hair", "heavy armor"), expand them into concrete, visually descriptive terms suitable for image generation. Add details about material, texture, color nuances, specific styles, and a sense of atmosphere.
-        3.  **Integrate Coherently:** Combine all pieces of information from the JSON into a fluid, natural-language paragraph or sequence of sentences.
-        4.  **Prioritize Detail Fidelity:** Ensure that all specified attributes (facial features, hair, attire, accessories, scars, etc.) are explicitly and accurately represented in the output. The AI image model must adhere strictly to these details.
-        5.  **Include Demographics:** Start the description by clearly stating race, gender, and ethnic background.
-        6.  **Include Expression and Pose:** Integrate the expression and pose details into the descriptive flow.
-        7.  **Output Format:** The output must be ONLY the detailed English character description. Do not include any introductory phrases, explanations, JSON formatting, bullet points, or numbering. It should be ready for direct insertion into an image generation prompt.
-        8.  **Integrate Character (Dominant Central Focus, Artistic Lighting & Subtle Cybernetics - Tight Framing):** The primary character **MUST be the absolute central and dominant focus**, **framed tightly as a close-up portrait (from the chest or shoulders up), filling a significant portion of the frame.** Emphasize **strong, artistic lighting in shades of purple that defines their form and creates dramatic shadows**, similar to the use of red in your example. Their expression should be clearly visible and convey the mood. **Crucially, incorporate subtle cybernetic implants and enhancements as elements of fusion between human and machine.** These details should be visible on the **face, neck, eyes (e.g., glowing pupils or integrated displays), and lips (e.g., metallic sheen or subtle integrated tech)**, adding to the cyberpunk aesthetic without overwhelming the character's humanity, as seen in the provided example.
-        9.  **Composition for Dramatic Portrait (Tight & Centralized Focal Distance):** Formulate the prompt to suggest a **tight, portrait-oriented composition with the main character centrally and dominantly positioned, capturing a headshot or upper-body shot.** Utilize strong, focused lighting to emphasize the character, their expression, and their key elements.
-            * **Suggested terms to use:** "tight shot," "close-up portrait," "headshot," "upper body shot," "from the chest up," "shoulders up," "central composition,", "high contrast lighting," "dramatic shadows,", "character-focused,"
-
-        **CharacterFraming Specific Guidelines:**
-        ${FramingGuideLines.guidelineForFraming(framing)}
-        
-        **Story Theme Guideline:**
-        **The character's appearance, attire, and any mentioned items MUST be consistent with a ${genre.title} theme.
-        Ensure all expanded details reflect this theme.**
-
-        **Example JSON Input:**
-        ${exampleCharacter().toJsonFormat()}
-        
+    val creationGuideline =
+        """
+        **CHARACTER DETAILS REFERENCE (STRICT ADHERENCE REQUIRED):**
+         // The following message is the **ABSOLUTE AND UNALTERABLE SOURCE** for the character's core identity.
+         // From this reference message, you **MUST EXTRACT AND USE EXACTLY** the character's:
+         // 1.  **NAME**:
+         //     -   If a name is explicitly mentioned (e.g., "John", "Seraphina") in the input, you **MUST USE IT EXACTLY**.
+         //     -   **If NO name is mentioned** in this message (e.g., "a mysterious stranger", "an old woman"), you **MUST INVENT a new, unique, and fitting name** for the character. The invented name must make sense within the saga's genre and context.
+         //     -   **DO NOT USE "Unknown", "Desconhecido", "Stranger", or similar generic terms for the character's name.** Always provide a proper, specific name.
+         // 2.  **GENDER**: Derive from explicit mentions or strong implications (e.g., "jovem guerreira" (young warrior) or "cavaleiro" (knight)). If gender is not explicitly stated or clearly implied, you may invent it.
+         A highly precise, objective, and detailed description of the character's physical appearance and typical attire.
+         // 4.  **Personality hints**: Use ALL hints provided in this message you can also improve using the context of the message and saga.
+         // 5. **RACE**: 
+          - Use ALL details provided in this message.
+          - **If no race is specified assume that its a human**
+         // 6. **Ethnicity**: Use ALL details provided in this message.
+            - Use ALL details provided in this message.
+            - **If no ethnicity is specified use a random etnicity(caucasian, black, asian, latin)**
+         // **Instructions for 'details.facialDetails':**
+         // - This field must contain a highly specific and objective description of the character's **face and head, including hair**.
+         // - It should focus on all visual elements from the neck up.
+         // - This field must contain a **highly specific, objective, and concise** description of the character's face and head, including hair.
+         // - **Avoid excessive or unnecessary embellishments.** Focus on unique, defining traits.
+         // - Include precise details on:
+         //   - **Hair:** (e.g., "long, braided, silver-grey hair tied back in a complex knot," "short, spiky, electric blue hair with shaved sides," "balding with short black stubble around the ears"). Mention style, length, color, and texture.
+         //   - **Skin Tone & Complexion:** (e.g., "pale, almost translucent skin with a faint blue tint," "deep, warm brown skin with tribal markings around the eyes").
+         //   - **Eyes:** (e.g., "piercing, emerald-green eyes with dilated pupils," "deep-set, dark brown eyes with subtle glowing cybernetic enhancements around the iris," "one blind, milky white eye and one sharp, grey eye"). Mention color, shape, and any unique features.
+         //   - **Facial Features:** (e.g., "sharp jawline and prominent cheekbones," "thin, downturned lips," "aquiline nose," "a distinct scar running from his left eyebrow to his jaw").
+         //   - **Distinctive Facial Marks/Augmentations:** (e.g., "facial piercings – small silver hoop above left eyebrow and a subtle chin stud," "intricate circuit-like tattoo over the left temple").
+         // - **Example for facialDetails:** "Pale, almost greyish white skin contrasted by short, spiky, dark purple hair. Eyes are bright, synthetic yellow orbs with a faint internal glow. A series of intricate circuit-like tattoos coil around his neck and right side of his face."
+         // **Instructions for 'details':**
+         The descriptions in this field is CRITICAL and should be a consistent visual and optimized representation for high-fidelity image generation.
+         // **Instructions for 'details.clothing':**
+         // - This field must contain a highly specific and objective description SOLELY of the character's typical attire and accessories.
+         // - Focus on their signature clothing style, key items of clothing, predominant colors, materials, and any unique features or accessories.
+         // - Mention how the clothing fits their role in the theme.
+         // - **Avoid excessive or unnecessary embellishments.** Focus on unique, defining elements of their typical outfit.
+         // - **Example for clothing:** "A dark, form-fitting tactical suit with reinforced knee pads and glowing crimson accents on the shoulders.
+         It features numerous utility pouches on the belt and concealed pockets. Often accompanied by a low-profile rebreather mask worn around his neck."
+         Instructions for hexColor:
+         ** USE ONLY SOLID VIBRANT COLORS AVOID BLACK OR WHITE.
+          **Instructions for APPEARANCE** Summarize all provided details from details field creating a concise description.
         """.trimIndent()
 }
 
@@ -81,4 +91,38 @@ object FramingGuideLines {
 
                 """
         }
+}
+
+object ChapterCoverGuideline {
+    fun guidelinesForCover(genre: Genre) =
+        """
+        *CRITICAL RULES FOR CONVERSION:**
+                
+                // Section 1: Artistic Style - Highest Priority
+                ${artStyle(genre)}
+                
+                // Section 2: Exclusions - High Priority
+                no text,
+                no words,
+                no typography,
+                no letters,
+                no UI elements.
+                
+                // Section 3: Core Content & Details
+                1. Translate Accurately:
+                   Translate all Portuguese values from the input fields into precise English.
+                
+                2. Infer Visuals from Summary:
+                   From the Chapter Summary/Description, infer and elaborate on:
+                   - Dominant Mood/Atmosphere & Lighting Theme: ${moodDescription(genre)}.
+                
+                3. Integrate Main Characters:
+                   If characters are listed, integrate them visually into the scene.
+                   The main character(s) MUST be the absolute central and dominant focus.
+                
+                4. Thematic Consistency:
+                   Ensure all generated visual descriptions align with the ${genre.name} theme.  
+             
+                ${artStyle(genre)}
+        """
 }

@@ -11,8 +11,8 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.*
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.isCharacter
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.model.isCharacter
 
 val Purple80 = Color(0xff11283b)
 val PurpleGrey80 = Color(0xFFCCC2DC)
@@ -141,6 +141,7 @@ fun Genre.bubbleTextColors(sender: SenderType) =
     when (this) {
         FANTASY -> if (sender.isCharacter()) Color.Black else Color.White
         SCI_FI -> Color.White
+        HORROR -> Color.White
     }
 
 fun Modifier.contrast(contrastFactor: Float): Modifier {

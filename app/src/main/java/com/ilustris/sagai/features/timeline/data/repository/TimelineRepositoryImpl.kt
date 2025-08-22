@@ -34,5 +34,4 @@ class TimelineRepositoryImpl
 
         override suspend fun updateTimeline(timeline: Timeline) = timelineDao.updateTimeline(timeline)
 
-        override suspend fun getTimelineForSaga(sagaId: String) = timelineDao.getTimelineForSaga(sagaId)
     }

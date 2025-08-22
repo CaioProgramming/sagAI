@@ -39,12 +39,14 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
 import effectForGenre
@@ -86,9 +88,11 @@ fun ChapterCardView(
             AsyncImage(
                 chapter.coverImage,
                 contentDescription = chapter.title,
-                modifier = Modifier.fillMaxSize().effectForGenre(
-                    genre,
-                ),
+                modifier =
+                    Modifier.fillMaxSize()
+                        .effectForGenre(genre)
+                        .selectiveColorHighlight(genre.selectiveHighlight())
+                ,
                 contentScale = ContentScale.Crop,
             )
         }
@@ -157,30 +161,24 @@ fun ChapterCardViewPreview() {
     val chapters =
         listOf(
             Chapter(
-                sagaId = 1,
                 title = "The Beginning",
                 overview = "This is the first chapter of the saga.",
-                messageReference = 1,
                 coverImage = "https://i.pinimg.com/564x/0a/92/7d/0a927df0b8a6a12a5276e03882775739.jpg",
-                visualDescription = "A dark forest with a mysterious path.",
                 createdAt = System.currentTimeMillis(),
+                actId = 1,
             ),
             Chapter(
-                sagaId = 1,
+                actId = 1,
                 title = "The Journey",
                 overview = "The adventure continues.",
-                messageReference = 2,
                 coverImage = "https://i.pinimg.com/564x/0f/c0/2c/0fc02cf3c9f28d6c70607900b3e77f0c.jpg",
-                visualDescription = "A long road through the mountains.",
                 createdAt = System.currentTimeMillis(),
             ),
             Chapter(
-                sagaId = 1,
+                actId = 1,
                 title = "The End",
                 overview = "The final chapter of the saga.",
-                messageReference = 3,
                 coverImage = "https://i.pinimg.com/564x/6c/9b/7f/6c9b7f5f4c02f10b78c93a9d941846c4.jpg",
-                visualDescription = "A castle in the sunset.",
                 createdAt = System.currentTimeMillis(),
             ),
         )

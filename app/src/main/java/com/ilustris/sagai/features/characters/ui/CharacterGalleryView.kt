@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.characters.ui
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,11 +49,13 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,43 +101,48 @@ fun CharactersGalleryContent(
         mutableStateOf<Character?>(null)
     }
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier =
-            Modifier
-                .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(8.dp),
-    ) {
-        items(sortCharactersByMessageCount(saga.characters, saga.messages), key = { character -> character.id }) { character ->
-            CharacterYearbookItem(
-                character = character,
-                character.id == saga.mainCharacter?.id,
-                saga.data.genre,
-                modifier =
-                    Modifier.clickable {
-                        showCharacter = character
-                    },
-            )
-        }
-    }
-
-    val newCharacterSheetState =
-        rememberModalBottomSheetState(skipPartiallyExpanded = true)
-
-    showCharacter?.let { character ->
-        ModalBottomSheet(
-            onDismissRequest = { showCharacter = null },
-            sheetState = newCharacterSheetState,
-            containerColor = MaterialTheme.colorScheme.background,
-            dragHandle = { Box {} },
+    AnimatedContent(saga.characters) {
+        val characters =
+            remember {
+                sortCharactersByMessageCount(it, saga.flatMessages())
+            }
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier =
+                Modifier
+                    .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp),
         ) {
-            CharacterDetailsContent(
-                saga,
-                character,
-                saga.messages.count { it.character?.id == character.id || it.message.speakerName == character.name },
-            )
+            items(characters, key = { character -> character.id }) { character ->
+                CharacterYearbookItem(
+                    character = character,
+                    character.id == saga.mainCharacter?.id,
+                    saga.data.genre,
+                    modifier =
+                        Modifier.clickable {
+                            showCharacter = character
+                        },
+                )
+            }
+        }
+
+        val newCharacterSheetState =
+            rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+        showCharacter?.let { character ->
+            ModalBottomSheet(
+                onDismissRequest = { showCharacter = null },
+                sheetState = newCharacterSheetState,
+                containerColor = MaterialTheme.colorScheme.background,
+                dragHandle = { Box {} },
+            ) {
+                CharacterDetailsContent(
+                    saga,
+                    character,
+                )
+            }
         }
     }
 }
@@ -197,6 +205,7 @@ private fun CharacterVerticalItem(
 fun CharactersGalleryContentPreview() {
     val sagaContent =
         SagaContent(
+            acts = emptyList(),
             data =
                 Saga(
                     id = 0,
@@ -211,8 +220,6 @@ fun CharactersGalleryContentPreview() {
                     details = Details(),
                     sagaId = 0,
                 ),
-            messages = emptyList(),
-            chapters = emptyList(),
             characters =
                 listOf(
                     Character(id = 1, name = "Character 1", details = Details(), sagaId = 0),
@@ -315,8 +322,8 @@ fun CharacterHorizontalView(
     isLast: Boolean = false,
 ) {
     Column(
-        modifier =
-        modifier,
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -343,7 +350,7 @@ fun CharacterHorizontalView(
                     style.copy(
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.W700,
-                        color = Color(character.hexColor.toColorInt()),
+                        color = character.hexColor.hexToColor() ?: genre.color,
                     ),
                 textAlign = TextAlign.Start,
                 modifier = Modifier.weight(1f),
@@ -354,8 +361,8 @@ fun CharacterHorizontalView(
             HorizontalDivider(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
             )

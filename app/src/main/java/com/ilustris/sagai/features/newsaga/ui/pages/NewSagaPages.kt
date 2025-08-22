@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -46,10 +47,8 @@ import androidx.compose.ui.util.lerp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Clothing
-import com.ilustris.sagai.features.characters.data.model.Details // Ensure Details is imported
+import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.model.FacialFeatures
-import com.ilustris.sagai.features.characters.ui.CharacterForm
-import com.ilustris.sagai.features.characters.ui.CharacterHudForm
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -98,9 +97,7 @@ enum class NewSagaPages(
         R.string.saga_character_description_subtitle,
         content = { onSendData, data ->
             val form = data as SagaForm
-            CharacterHudForm(character = form.character, form.genre , onCharacterChange = { character ->
-                onSendData(character)
-            })
+            Box {}
         },
     ),
 }
@@ -396,22 +393,6 @@ fun CharacterFormPreview() {
             hexColor = "#3d98f7",
             joinedAt = 0L,
         )
-    val sampleSagaForm =
-        SagaForm(
-            title = "The Silverwood Guardians",
-            genre = Genre.FANTASY,
-            description = "An epic tale of courage and magic.",
-            character = sampleCharacter,
-        )
 
-    SagAIScaffold {
-        CharacterHudForm(
-            sampleSagaForm.character,
-            sampleSagaForm.genre,
-        ) { updatedCharacter ->
-            println(
-                "Character updated in preview: ${updatedCharacter.name}, Gender: ${updatedCharacter.details.gender}, Race: ${updatedCharacter.details.race}",
-            )
-        }
-    }
+
 }

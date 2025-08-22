@@ -1,26 +1,18 @@
-@file:OptIn(ExperimentalAnimationApi::class, ExperimentalFoundationApi::class)
-
 package com.ilustris.sagai.features.newsaga.ui
 
+import androidx.activity.compose.BackHandler // Import BackHandler
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,23 +23,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material3.AlertDialog // Import AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton // Import TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateOf // Import mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.setValue // Import setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -55,29 +48,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+// Removed Dialog and DialogProperties as AlertDialog is used
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.narrative.CharacterFormRules
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
+import com.ilustris.sagai.features.newsaga.ui.components.NewSagaAIForm
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages
-import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages.*
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPagesView
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
+import com.ilustris.sagai.features.newsaga.ui.components.NewSagaChat
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -89,11 +78,45 @@ fun NewSagaView(
     navHostController: NavHostController,
     createSagaViewModel: CreateSagaViewModel = hiltViewModel(),
 ) {
-    val form by createSagaViewModel.saga.collectAsStateWithLifecycle()
+    val form by createSagaViewModel.form.collectAsStateWithLifecycle()
     val state by createSagaViewModel.state.collectAsStateWithLifecycle()
     val effect by createSagaViewModel.effect.collectAsStateWithLifecycle()
+    val messages by createSagaViewModel.chatMessages.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(0) { NewSagaPages.entries.size }
     val coroutineScope = rememberCoroutineScope()
+    val aiFormState by createSagaViewModel.formState.collectAsStateWithLifecycle()
+    val isGenerating by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
+
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = isGenerating) {
+        showExitDialog = true
+    }
+
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text(text = stringResource(R.string.dialog_exit_title_new_saga)) },
+            text = { Text(text = stringResource(R.string.dialog_exit_message_new_saga)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showExitDialog = false
+                        navHostController.popBackStack() // Or navigate to a specific route
+                    },
+                ) {
+                    Text(stringResource(R.string.dialog_exit_confirm_button_new_saga))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showExitDialog = false },
+                ) {
+                    Text(stringResource(R.string.dialog_exit_dismiss_button_new_saga))
+                }
+            },
+        )
+    }
 
     LaunchedEffect(effect) {
         when (effect) {
@@ -108,6 +131,10 @@ fun NewSagaView(
         }
     }
 
+    LaunchedEffect(Unit) {
+        createSagaViewModel.startChat()
+    }
+
     fun animateToPage(
         page: Int,
         delayTime: Duration = 0.seconds,
@@ -119,9 +146,19 @@ fun NewSagaView(
     }
 
     Box {
-        val isLoading = state.isLoading || state.saga != null
-        val blurRadius = animateDpAsState(if (isLoading) 20.dp else 0.dp)
-        NewSagaFlow(
+        NewSagaAIForm(
+            form,
+            isLoading = isGenerating,
+            aiState = aiFormState,
+            sendDescription = {
+                if (it.isEmpty()) return@NewSagaAIForm
+                createSagaViewModel.sendChatMessage(it)
+            },
+            onSave = {
+                createSagaViewModel.generateSaga()
+            }
+        )
+        /*NewSagaFlow(
             pagerState = pagerState,
             form = form,
             updateContent = { page, data ->
@@ -172,65 +209,24 @@ fun NewSagaView(
                     .align(Alignment.Center)
                     .blur(blurRadius.value, edgeTreatment = BlurredEdgeTreatment.Unbounded),
         )
-        if (state.isLoading || state.saga != null) {
-            Dialog(
-                onDismissRequest = { createSagaViewModel.resetGeneratedSaga() },
-                properties =
-                    DialogProperties(
-                        dismissOnBackPress = false,
-                        dismissOnClickOutside = false,
-                    ),
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    AnimatedVisibility(isLoading && state.saga == null, enter = scaleIn(), exit = scaleOut()) {
-                        SparkLoader(
-                            brush = form.genre.gradient(),
-                            modifier = Modifier.size(100.dp),
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        state.saga != null,
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        enter = fadeIn() + scaleIn(),
-                        exit = scaleOut() + fadeOut(),
-                    ) {
-                        state.saga?.let {
-                            SagaCard(
-                                saga = it,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .fillMaxHeight(.5f),
-                            )
-                        }
-                    }
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        state.continueAction?.let { action ->
-                            Button(
-                                modifier = Modifier.fillMaxWidth(.5f),
-                                onClick = { createSagaViewModel.resetGeneratedSaga() },
-                                colors = ButtonDefaults.textButtonColors(),
-                            ) {
-                                Text(text = "Fechar")
-                            }
-                            Button(
-                                modifier = Modifier.weight(1f),
-                                onClick = {
-                                    action.second()
-                                },
-                            ) {
-                                Text(text = action.first)
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        NewSagaChat(
+            currentForm = form,
+            messages = messages,
+            userInputHint = aiFormState.hint,
+            inputSuggestions = aiFormState.suggestions,
+            isLoading = state.isLoading, // You might want to use isGenerating here too for the chat UI
+            isGenerating = isGenerating,
+            sagaToReveal = state.saga,
+            onSendMessage = {
+                createSagaViewModel.sendChatMessage(it)
+            },
+            onRetry = {
+                createSagaViewModel.retry()
+            },
+            saveSaga = {
+                createSagaViewModel.generateSaga()
+            },
+        )*/
     }
 }
 
@@ -280,9 +276,9 @@ fun NewSagaFlow(
             data = newValue
         }
 
-        val brush = form.genre.gradient()
+        val brush = form.saga.genre?.gradient() ?: Brush.verticalGradient(holographicGradient)
 
-        val pageEnabled =
+        /*val pageEnabled =
             when (currentPage) {
                 GENRE -> true
                 TITLE -> (data as? String)?.isNotEmpty() == true || form.title.isNotEmpty()
@@ -293,7 +289,7 @@ fun NewSagaFlow(
                         (form.description.isNotEmpty()) &&
                         form.title.isNotEmpty()
                 }
-            }
+            }*/
 
         Row(
             modifier =
@@ -358,7 +354,7 @@ fun NewSagaFlow(
         }
 
         AnimatedVisibility(
-            pageEnabled,
+            true,
             modifier =
                 Modifier
                     .align(Alignment.CenterHorizontally)
@@ -409,24 +405,6 @@ fun NewSagaFlow(
 @Composable
 fun NewSagaFormPreview() {
     SagAIScaffold {
-        var form by remember {
-            mutableStateOf(
-                SagaForm(
-                    title = "ok",
-                    genre = Genre.SCI_FI,
-                    description = "that's a test description for the saga",
-                ),
-            )
-        }
-        val pagerState = rememberPagerState { NewSagaPages.entries.size }
-
-        NewSagaFlow(
-            pagerState,
-            form,
-            updateContent = { _, data ->
-                form = form.copy(title = data.toString())
-                pagerState.requestScrollToPage(pagerState.currentPage + 1)
-            },
-        )
+        // var fo // This line was incomplete, removing for now
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,8 +34,10 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
@@ -57,19 +61,13 @@ fun SagaCard(
     )
 
     val backgroundColor by animateColorAsState(
-        if (fraction == 1f) saga.genre.color else MaterialTheme.colorScheme.background,
+        saga.genre.color
     )
-    BlurredGlowContainer(
-        Modifier.padding(16.dp).wrapContentSize(),
-        saga.genre.gradient(fraction == 1f),
-        blurSigma = 100f,
-        shape = RoundedCornerShape(saga.genre.cornerSize()),
-    ) {
+
         Box(
             modifier
-                .padding(4.dp)
                 .clip(RoundedCornerShape(cornerSize))
-                .background(backgroundColor)
+                .background(Brush.verticalGradient(backgroundColor.darkerPalette()))
                 .clipToBounds(),
         ) {
             AsyncImage(
@@ -88,12 +86,15 @@ fun SagaCard(
                         .clipToBounds(),
             )
 
+            Box(
+                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = .6f))
+            )
+
             Column(
                 modifier =
                     Modifier
-                        .background(fadeGradientBottom())
                         .padding(16.dp)
-                        .align(Alignment.BottomCenter)
+                        .align(Alignment.Center)
                         .verticalScroll(
                             rememberScrollState(),
                         ),
@@ -113,12 +114,17 @@ fun SagaCard(
                             .fillMaxWidth(),
                 )
 
-                CharacterSection(
-                    title = "",
-                    content = saga.description,
-                    genre = saga.genre,
+                Text(
+                    text = saga.description,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = saga.genre.bodyFont(),
+                            textAlign = TextAlign.Justify,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
                 )
             }
         }
-    }
 }

@@ -9,7 +9,6 @@ abstract class AIClient {
 
     fun modelLanguage(): String {
         val locale = Locale.getDefault()
-        locale.language
         return "All responses must be in ${locale.displayLanguage} (${locale.language})."
     }
 }

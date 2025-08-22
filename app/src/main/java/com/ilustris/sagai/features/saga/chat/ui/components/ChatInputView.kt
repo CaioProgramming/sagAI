@@ -16,7 +16,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -31,10 +30,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -44,6 +45,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -67,18 +70,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
@@ -87,17 +92,20 @@ import com.ilustris.sagai.features.characters.ui.components.transformTextWithCon
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
+import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -140,6 +148,8 @@ fun ChatInputView(
     val newCharacterSheetState =
         rememberModalBottomSheetState(skipPartiallyExpanded = false) // Consider skipping partial expansion
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     fun sendMessage(
         text: String,
@@ -148,6 +158,8 @@ fun ChatInputView(
         onSendMessage(text, action)
         inputField = TextFieldValue("")
         charactersExpanded = false
+        focusManager.clearFocus()
+        keyboardController?.hide()
     }
 
     Column(
@@ -157,7 +169,7 @@ fun ChatInputView(
         AnimatedVisibility(charactersExpanded && content.characters.isNotEmpty()) {
             LazyColumn(
                 Modifier
-                    .padding(vertical = 8.dp)
+                    .padding(16.dp)
                     .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(10.dp))
                     .heightIn(max = 300.dp)
                     .fillMaxWidth()
@@ -166,8 +178,8 @@ fun ChatInputView(
                 items(content.characters) {
                     CharacterHorizontalView(
                         Modifier
-                            .padding(vertical = 4.dp)
                             .wrapContentSize()
+                            .padding(8.dp)
                             .clickable {
                                 val startIndex =
                                     inputField.text.indexOfLast { char -> char == '@' }
@@ -191,48 +203,61 @@ fun ChatInputView(
                             },
                         character = it,
                         isLast = it == content.characters.last(),
-                        imageSize = 24.dp,
+                        imageSize = 32.dp,
                         genre = content.data.genre,
                         borderSize = 1.dp,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
         }
 
         val isImeVisible = WindowInsets.isImeVisible
-        AnimatedVisibility(suggestions.isNotEmpty() && isImeVisible) {
+        val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
+        AnimatedVisibility(suggestionsEnabled) {
             LazyRow(
                 modifier =
                     Modifier
                         .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 items(suggestions) {
-                    val brush = content.data.genre.gradient(true)
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                    ){
-                        Text(
-                            it.text,
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = content.data.genre.bodyFont(),
-                                    textAlign = TextAlign.Center,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                ),
-                            maxLines = 4,
+                    Button(
+                        onClick = {
+                            sendMessage(it.text, it.type)
+                        },
+                        shape = inputShape,
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 16.dp)
+                                .fillParentMaxWidth(.7f),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors().copy(
+                                contentColor = content.data.genre.color,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(it.type.icon()),
+                            contentDescription = it.type.description(),
                             modifier =
-                                Modifier.padding(8.dp).clickable {
-                                    sendMessage(it.text, it.type)
-                                },
+                                Modifier.padding(4.dp).size(12.dp).reactiveShimmer(
+                                    true,
+                                    content.data.genre.color
+                                        .darkerPalette()
+                                        .plus(Color.Transparent),
+                                ),
                         )
 
-                        VerticalDivider(
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .4f),
-                            thickness = 1.dp,
-                            modifier = Modifier.padding(horizontal = 8.dp).height(12.dp)
-
+                        Text(
+                            it.text,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier =
+                                Modifier.reactiveShimmer(
+                                    true,
+                                    duration = 5.seconds,
+                                ),
                         )
                     }
                 }
@@ -240,13 +265,14 @@ fun ChatInputView(
         }
 
         BlurredGlowContainer(
-            brush = inputBrush,
-            blurSigma = glowRadius,
-            shape = inputShape,
             modifier =
                 Modifier
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
                     .fillMaxWidth()
-                    .padding(2.dp),
+                    .padding(8.dp),
+            inputBrush,
+            glowRadius,
+            shape = inputShape,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -254,7 +280,8 @@ fun ChatInputView(
                     Modifier
                         .fillMaxWidth()
                         .border(1.dp, inputBrush, inputShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape),
+                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
+                        .padding(4.dp),
             ) {
                 val textStyle =
                     MaterialTheme.typography.labelLarge.copy(
@@ -319,7 +346,11 @@ fun ChatInputView(
                             }
                         }
                     },
-                    modifier = Modifier.weight(1f).animateContentSize(),
+                    modifier =
+                        Modifier
+                            .reactiveShimmer(isGenerating)
+                            .weight(1f)
+                            .animateContentSize(),
                 )
 
                 AnimatedVisibility(
@@ -366,14 +397,13 @@ fun ChatInputView(
 
         AnimatedVisibility(isImeVisible) {
             LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val inputs = SenderType.filterUserInputTypes()
                 items(inputs) {
-                    it.icon()?.let { icon ->
-                        IconButton(
+                    it.icon().let { icon ->
+                        Button(
                             onClick = {
                                 if (it != SenderType.NEW_CHARACTER) {
                                     action = it
@@ -381,7 +411,12 @@ fun ChatInputView(
                                     showNewCharacterSheet = true
                                 }
                             },
-                            modifier = Modifier.padding(4.dp).size(24.dp),
+                            shape = inputShape,
+                            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                            colors =
+                                ButtonDefaults.textButtonColors().copy(
+                                    contentColor = content.data.genre.color,
+                                ),
                         ) {
                             val color by animateColorAsState(
                                 if (action == it) {
@@ -394,6 +429,14 @@ fun ChatInputView(
                                 painterResource(icon),
                                 contentDescription = it.description(),
                                 tint = color,
+                                modifier = Modifier.padding(4.dp).size(12.dp),
+                            )
+
+                            Text(
+                                it.title(),
+                                color = color,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.wrapContentSize(),
                             )
                         }
                     }
@@ -476,8 +519,6 @@ private fun MainCharacterInputButton(
                 character,
                 borderSize = 1.dp,
                 genre = saga.genre,
-                softFocusRadius = 0f,
-                grainRadius = 0.01f,
                 innerPadding = 0.dp,
                 modifier =
                     Modifier
@@ -485,7 +526,11 @@ private fun MainCharacterInputButton(
                         .fillMaxSize()
                         .clickable {
                             onClickAction()
-                        },
+                        }.effectForGenre(
+                            saga.genre,
+                            focusRadius = .3f,
+                            customGrain = .2f,
+                        ),
             )
 
             AnimatedContent(
@@ -603,9 +648,10 @@ fun ChatInputViewPreview() {
                 isGenerating = false,
                 onSendMessage = { _, _ -> },
                 onCreateNewCharacter = {},
-                suggestions = List(3) {
-                    Suggestion("Test suggestion", type = SenderType.USER)
-                },
+                suggestions =
+                    List(3) {
+                        Suggestion("Test suggestion", type = SenderType.USER)
+                    },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

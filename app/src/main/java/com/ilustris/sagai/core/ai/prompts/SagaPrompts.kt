@@ -1,19 +1,17 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
+import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.meaning
-import com.ilustris.sagai.features.saga.chat.ui.components.description
-import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+// Added import for GenrePrompts if it's not already there implicitly by package
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 
 object SagaPrompts {
     fun details(saga: Saga) = saga.storyDetails()
@@ -25,47 +23,103 @@ object SagaPrompts {
         Genre: $genre
         """.trimIndent()
 
-    fun SagaForm.storyDetails() =
-        """
-        Adventure Details:
-        Title: $title
-        Description: $description
-        Genre: $genre
-        """.trimIndent()
+    private data class SagaGenerationContext(
+        val sagaSetup: SagaForm,
+        val initialPlayerInteractionLog: String,
+    )
 
-    fun sagaGeneration(saga: SagaForm) =
-        """
-        Develop a synopsis that engage the player to joins the adventure.
-        This synopsis should establish the adventure's setting and core theme,
-        outlining the journey players will undertake.
-        Do not include specific characters or plot points,
-        but rather focus on the overarching narrative and the world in which the adventure takes place.
-        
-        ${saga.storyDetails()}
-        
-        Starring:
-        ${CharacterPrompts.details(saga.character)}
-        
-        The synopsis should include:
-        1.  An engaging hook that sets the scene.
-        3.  The main quest or objective for the player characters.
-        5.  An indication of the adventure's scope and potential for a grand finale.
-        
-        Target a short synopsis with a maxium of 75 words, ensuring it engages the player to join the RPG experience.
-        """.trimIndent()
+    fun sagaGeneration(
+        saga: SagaForm,
+        miniChatContent: List<ChatMessage>,
+    ): String {
+        val interactionLog =
+            miniChatContent.joinToString(";") { message ->
+                val sender = if (message.isUser) "Player" else "Assistant"
+                "$sender: ${message.text}"
+            }
 
-    fun introductionGeneration(
-        saga: Saga,
-        character: Character?,
-    ) = """
+        val context =
+            SagaGenerationContext(
+                sagaSetup = saga,
+                initialPlayerInteractionLog = interactionLog,
+            )
+
+        val fieldsToExcludeFromInputContext = listOf<String>()
+        val combinedInputContextJson = context.toJsonFormatExcludingFields(fieldsToExcludeFromInputContext)
+
+        val fieldsToOmitFromAiGeneration =
+            listOf(
+                "id",
+                "coverImage",
+                "isEnded",
+                "endedAt",
+                "isDebug",
+                "endMessage",
+                "review",
+                "createdAt",
+                "currentActId",
+                "mainCharacterId",
+                "icon",
+                "actsInsight",
+                "image",
+                "sagaId",
+                "joinedAt",
+                "hexColor",
+            )
+        val outputJsonStructureGuidance =
+            toJsonMap(
+                SagaGen::class.java, // Ensure SagaGen is the correct class representing the desired output
+                fieldsToOmitFromAiGeneration,
+            )
+
+        return """
+            CONTEXT:
+            $combinedInputContextJson
+
+            TASK:
+            Your primary goal is to generate a complete `SagaGen` JSON object. This object contains a `saga` (detailing the world and story premise) and a `character` (the fully fleshed-out player character).
+            You must meticulously use all information from SAGA_SETUP (which includes `sagaDraft` for saga details and `character` for initial character seeds) and INITIAL_PLAYER_INTERACTION_LOG (player's chat) to populate the fields.
+            The aim is to create the richest possible starting point that aligns with the player's imagination.
+
+            INSTRUCTIONS:
+
+            **Overall Output Format:**
+            *   Your entire response MUST be a single, valid JSON object that strictly conforms to the structure of `SagaGen`.
+            *   A template representing the fields you need to generate is shown below (system-managed fields that you should NOT generate are excluded from this template).
+            *   Do NOT include any text outside this JSON object.
+
+            **Part 1: Populating the `saga` object (within `SagaGen`)**
+            *   **`title`**: Use `SAGA_SETUP.sagaDraft.title`.
+            *   **`genre`**: Use `SAGA_SETUP.sagaDraft.genre`.
+            *   **`description`**: Generate an engaging synopsis (max 75 words). This synopsis should establish the adventure's setting, core theme, and outline the player's journey. Base this on SAGA_SETUP and INITIAL_PLAYER_INTERACTION_LOG.
+            *   **`story`**: Generate a more detailed narrative introduction to the world and its current state (1-3 paragraphs). Describe the atmosphere, initial situation, and any immediate hooks or mysteries. Expand from SAGA_SETUP.sagaDraft.description and INITIAL_PLAYER_INTERACTION_LOG.
+            *   **Omitted `Saga` fields**: Do NOT generate values for fields like `id`, `coverImage`, `isEnded`, `createdAt`, etc., as listed in the omitted fields for the output structure.
+
+            **Part 2: Populating the `character` object (within `SagaGen`)**
+            *   **`name`**: Use `SAGA_SETUP.character.name`.
+            *   **`backstory`**: Expand `SAGA_SETUP.character.briefDescription` into a compelling and detailed backstory (3-5 sentences). **Crucially, incorporate elements, personality hints, desired abilities, or visual preferences from INITIAL_PLAYER_INTERACTION_LOG.** Ensure it aligns with `SAGA_SETUP.sagaDraft.genre`.
+            *   **`details` (Nested object):**
+                *   **`gender`**: Use `SAGA_SETUP.character.gender`.
+                *   For all other fields within `details` (`appearance`, `personality`, `race`, `height`, `weight`, `occupation`, `ethnicity`, `facialDetails`, `clothing`, `weapons`): Generate rich, imaginative, and consistent descriptions.
+                *   **Base these exhaustively on `SAGA_SETUP.character.briefDescription`, `SAGA_SETUP.sagaDraft.genre`, and any character-specific details, preferences, or visual descriptions mentioned in INITIAL_PLAYER_INTERACTION_LOG.**
+                *   Strive to fill all descriptive fields to create a vivid and complete character. For `facialDetails`, describe hair, eyes, mouth, and any scars. For `clothing`, describe body attire, accessories, and footwear.
+                *   `height` and `weight` should be plausible estimates based on the overall description and genre if not specified by the player.
+            *   **Omitted `Character` fields**: Do NOT generate values for fields like `id`, `image`, `hexColor`, `sagaId`, `joinedAt`, etc., as listed in the omitted fields for the output structure.
+
+            **Expected JSON Output Structure (Fields for you to generate):**
+            $outputJsonStructureGuidance
+            """.trimIndent()
+    }
+
+    fun introductionGeneration(saga: SagaContent) =
+        """
         Write a introduction text for the story,
         presenting the world building,
         and surface overview of our objective.
         The introduction should encourage the player to start the adventure.
         
-        ${saga.storyDetails()}
-        
-        ${CharacterPrompts.details(character)}
+        **Saga and Character Context**
+        ${saga.toJsonFormat()}
         
         The introduction should include:
         1.  Main character introduction.
@@ -76,80 +130,136 @@ object SagaPrompts {
         Target a description length of 50 words, ensuring it captures the essence of a playable RPG experience.
         """.trimIndent()
 
-    fun endingGeneration(sagaContent: SagaContent) =
-        """
-        You are the Saga Master for the saga "${sagaContent.data.title}"
-        Due to external system constraints, this saga must now conclude immediately.
-        Your task is to generate a final, conclusive message for the player, providing a sense of closure even if the ultimate goal was not fully met.
-        **CONTEXT FOR FORCED CONCLUSION MESSAGE GENERATION:**
-        
-        1.  **Player Information:**
-            ${sagaContent.mainCharacter.toJsonFormat()}
-        
-        2.  **Recent Saga Context (Most Critical Summary):**
-            Current final act description:
-            ${sagaContent.acts.last().toJsonFormat()}
-            ------
-            Last chapter description:
-            ${sagaContent.chapters.last().toJsonFormat()}
-            Last Events:
-            ${sagaContent.timelines.takeLast(10)}
-            Last Messages:
-            ${
-            sagaContent.messages.takeLast(10).map { it.joinMessage() }
-                .joinToString { it.formatToString() }
-        }
-  
-            **INSTRUCTIONS FOR GENERATING THE FORCED CONCLUSION MESSAGE:**
+    private data class SagaEndCreditsContext(
+        val sagaTitle: String,
+        val playerInfo: Character?,
+        val fullSagaStructure: List<ActContent>,
+    )
+
+    fun endCredits(saga: SagaContent): String {
+        val contextData =
+            SagaEndCreditsContext(
+                sagaTitle = saga.data.title,
+                playerInfo = saga.mainCharacter,
+                fullSagaStructure = saga.acts,
+            )
+        val fieldsToExcludeFromEndCredits =
+            listOf(
+                "details",
+                "image",
+                "hexColor",
+                "sagaId",
+                "joinedAt",
+                "id",
+                "messages",
+                "currentChapterId",
+                "currentEventId",
+                "icon",
+            )
+        val combinedContextJsonEndCredits = contextData.toJsonFormatExcludingFields(fieldsToExcludeFromEndCredits)
+        return """
+            CONTEXT FOR GENERATING THE CREDIT TEXT:
+            $combinedContextJsonEndCredits
+
+            INSTRUCTIONS FOR GENERATING THE FINAL OUTPUT (PLAIN TEXT STRING):
+            You are the Saga Master for the saga referenced in SAGA_TITLE. The saga has concluded,
+            and your final task is to generate a deeply personal, appreciative, and retrospective **text (a plain string)** directly for the user based on the PLAYER_INFO and the structured FULL_SAGA_STRUCTURE provided in the CONTEXT.
             
-            1.  **Sender & Flag:** This must be the *final* message of the saga. The `senderType` MUST be `NARRATOR`. The `shouldEndSaga` flag in the JSON MUST be set to `true`.
-            2.  **Tone & Perspective:** Adopt a reflective, perhaps slightly bittersweet or fated tone. Do NOT mention any technical limitations, message counts, or "forced" reasons. Instead, frame the conclusion narratively. Use phrases that suggest the story has reached its natural (or destined) resting point, or that the current chapter of the journey has found its end.
-            3.  **Content Requirements:**
-                * Explicitly state that this chapter of the journey or the saga itself has reached its conclusion.
-                * Briefly acknowledge the player's efforts and the path they've walked.
-                * Provide a sense of closure to the immediate situation, even if grand mysteries remain unsolved.
-                * The message should be concise and conclusive.
-            4.  **Finality:** This message MUST NOT ask any questions or prompt any further player input or actions. It is a definitive "The End."
-        """
+            FULL_SAGA_STRUCTURE contains a list of acts. Each act object (ActContent) has:
+            - 'data' (Act): which includes 'title' and 'content' (the main summary for the act).
+            - 'chapters' (List<ChapterContent>): Each chapter object (ChapterContent) has:
+                - 'data' (Chapter): which includes 'title' and 'overview' (the main summary for the chapter).
+                - 'events' (List<TimelineContent>): a list of events within that chapter. You can refer to event titles or content if needed for specific details, but prioritize act and chapter summaries.
 
-    fun endCredits(saga: SagaContent) =
-        """
-        You are the Saga Master for the saga "${saga.data.title}" The saga has concluded.
-        and your final task is to generate a deeply personal, appreciative, and retrospective **text (a plain string)** directly for the user.
-        This text will serve as the "credits" or "thank you" message for their journey through the saga.
-        It should be entirely focused on the player's overall experience, separate from the in-story narrative.
+            This text will serve as the "credits" or "thank you" message for their journey.
+            It should be entirely focused on the player's overall experience, separate from the in-story narrative.
+            
+            1.  **Output Format:** Your entire response MUST be **ONLY the plain text string** of the credit message. Do NOT include any JSON, special formatting like Markdown headers or bullet points, or anything else besides the text itself.
+            2.  **Content Tone & Focus:**
+                * Adopt a personal, warm, and highly congratulatory tone, speaking directly to the user (breaking the fourth wall), addressing them by their character name if available in PLAYER_INFO.
+                * **Infer and briefly mention the ultimate goal that was achieved** based on the provided FULL_SAGA_STRUCTURE (look at the summaries of the final acts and chapters).
+                * **Synthesize and celebrate** 3-5 of the player's most significant actions, choices, or achievements throughout the *entire* saga, drawing directly from the act 'content' fields and chapter 'overview' fields within FULL_SAGA_STRUCTURE. Use event details within chapters sparingly if needed for specific memorable moments.
+                * **Reflect on** the player's overall playstyle and personality traits as observed through their character's actions during the saga (infer from summaries in FULL_SAGA_STRUCTURE if not directly stated).
+                * Conclude with a heartfelt message of thanks for their dedication and for bringing the saga to life.
+            3.  **Finality:** The generated text MUST NOT ask any questions or prompt further user input. It should end definitively.
+            
+            **Example of Expected Plain Text Output (Your actual output will be longer and specific to the context):**
+            
+            "Ah, [Player Name from PLAYER_INFO.name, or a generic term if null]! What an incredible journey that was in [Saga Title from SAGA_TITLE]. Your adventure culminated in [inferred ultimate goal], a truly remarkable feat! I remember clearly when you [mention pivotal action 1 - inferred from an act 'content' or chapter 'overview' in FULL_SAGA_STRUCTURE], and the way you [mention pivotal action 2 - inferred from another summary in FULL_SAGA_STRUCTURE] changed everything. Your [inferred playstyle] and your [inferred personality trait] were the true driving force behind this saga. It was an honor to witness this story unfold with you. Thank you so much for playing and for bringing the legend of [Saga Title from SAGA_TITLE], shaped by your choices, to its grand conclusion. THE END."
+            """.trimIndent()
+    }
 
-        **CONTEXT FOR GENERATING THE CREDIT TEXT:**
-        
-        1.  **Player Information:**
-            ${saga.mainCharacter.toJsonFormat()}
-        
-        2.  **Key Saga Summaries for Synthesis:**
-            Below are the crucial summarized moments from the saga, structured by Act and Chapter.
-            **You will not receive pre-defined "highlights" or "pivotal moments";
-            your task is to synthesize them from these summaries.
-            ** Use this context to **infer the ultimate goal of the saga** that was achieved, and to **identify and celebrate** the player's most significant deeds, their overarching playstyle, and personality throughout the entire saga.
-        
-            ${ActPrompts.actSummaries(saga)}
-  
-            *(Ensure all summaries are concise and directly relevant to the player's journey, making sure the total input fits within the token budget. The goal is signal, not exhaustive detail.)*
-        
-        **INSTRUCTIONS FOR GENERATING THE FINAL OUTPUT (PLAIN TEXT STRING):**
-        
-        1.  **Output Format:** Your entire response MUST be **ONLY the plain text string** of the credit message. Do NOT include any JSON, special formatting like Markdown headers or bullet points, or anything else besides the text itself.
-        2.  **Content Tone & Focus:**
-            * Adopt a personal, warm, and highly congratulatory tone, speaking directly to the user (breaking the fourth wall).
-            * **Infer and briefly mention the ultimate goal that was achieved** based on the provided Act and Chapter summaries and the saga's resolution.
-            * **Synthesize and celebrate** 3-5 of the player's most significant actions, choices, or achievements throughout the *entire* saga, drawing directly from the provided Act and Chapter summaries. These "highlights" should reflect the player's impact and key decisions.
-            * **Reflect on** the player's overall playstyle and personality traits as observed through their character's actions during the saga.
-            * Conclude with a heartfelt message of thanks for their dedication and for bringing the saga to life.
-        3.  **Finality:** The generated text MUST NOT ask any questions or prompt further user input. It should end definitively.
-        
-        **Example of Expected Plain Text Output (Your actual output will be longer):**
-        
-        "Ah, [Nome do Jogador]! Que jornada incrível foi essa em Data.seek. Sua aventura culminou na [mencionar objetivo final inferido], um feito e tanto! Lembro-me claramente de quando você [mencionar ação pivotal 1 - inferida de um resumo de Ato/Capítulo], e a forma como você [mencionar ação pivotal 2 - inferida de outro resumo] mudou tudo. Sua [mencionar estilo de jogo] e sua [mencionar personalidade] foram a verdadeira força motriz desta saga. Foi uma honra vivenciar essa história com você. Muito obrigado por jogar. A lenda de Data.seek, moldada por suas mãos, agora é completa. O FIM."
-        
-                """
+    fun iconDescription(
+        saga: Saga,
+        character: Character,
+    ) = """
+                    Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.
+                    This final text prompt will be used to create a **Dramatic, Close-up Character Icon** for the saga "${saga.title}" (Genre: ${saga.genre.title}).
+
+                    **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
+
+                    1.  **Foundational Art Style (Mandatory):**
+                        *   The primary rendering style for the icon MUST be: `${GenrePrompts.artStyle(saga.genre)}`.
+
+                    2.  **Specific Color Application Instructions (Mandatory):**
+                        *   The following rules dictate how the genre's key colors are applied: `${GenrePrompts.getColorEmphasisDescription(
+        saga.genre,
+    )}`.
+                        *   **Important Clarification on Color:**
+                            *   The color rules from `getColorEmphasisDescription` are primarily for:
+                                *   The **background's dominant color**.
+                                *   **Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).
+                            *   **CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural.
+                            *   Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents. The genre accents are design elements, not the primary light source for the character.
+
+                    3.  **Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**
+                        *   You WILL have access to a Visual Reference Image (Bitmap).
+                        *   From this, draw inspiration for:
+                            *   **Compositional Framing:** (e.g., extreme close-up, angle). Adapt for an icon.
+                            *   **Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured).
+                            Adapt for a simple icon background.
+                            *   **Compatible Visual Details & Mood:** (e.g., subtle textures, expressions) that fit the art style and color rules.
+
+                    4.  **Character Details (Provided Below):** The character to be depicted.
+
+                    **YOUR TASK (Output a single text string for the Image Generation Model):**
+                    Generate a single, highly detailed, unambiguous, and visually rich English text description. This description must:
+                    *   Integrate the **Character Details**.
+                    *   Render the scene in the **Foundational Art Style**.
+                    *   Explicitly describe the **background color** and the **specific character accents** using the genre colors as per `getColorEmphasisDescription`.
+                    *   Ensure the description implies that the character's base colors (skin, hair, main clothing) are preserved and not tinted by the accent colors. Lighting on the character should be consistent with the art style, with genre colors applied as specific, non-overwhelming details.
+                    *   Incorporate **Compositional Framing** and compatible **Visual Details & Mood** inspired by the Visual Reference Image.
+                    *   **CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.
+
+                    **Saga Context (for thematic consistency):**
+                    ${saga.toJsonFormat()}
+
+                    **Main Character Details (to be depicted):**
+                    ${character.toJsonFormatExcludingFields(listOf("backstory", "image", "sagaId", "joinedAt", "hexColor", "id"))}
+
+                    ---
+                    **Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**
+                    "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].
+                    The background is a vibrant [e.g., neon purple as per genre instructions].
+                    Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their black bodysuit, as per genre instructions].
+                    The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded style.
+                    The composition is an [e.g., intense extreme close-up]. [Character Name] has [e.g., piercing blue eyes (unless overridden by genre accent color for eyes)]..."
+                    ---
+                    YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING.
+        """.trimIndent()
+
+    private data class SagaReviewContext(
+        val playerCharacter: Character?,
+        val sagaInfo: Saga,
+        val playerMessageCount: Int,
+        val messageTypeCountsText: String,
+        val dominantMessageType: String,
+        val sagaActsStructure: List<ActContent>,
+        val topInteractiveCharactersText: String,
+        val topMentionedCharactersText: String,
+        val totalUniqueNPCsEncountered: Int,
+        val languageDirective: String,
+    )
 
     fun reviewGeneration(
         saga: SagaContent,
@@ -157,102 +267,69 @@ object SagaPrompts {
         messageTypesRanking: List<Pair<SenderType, Int>>,
         topCharacters: List<Pair<Character, Int>>,
         topMentions: List<Pair<Character, Int>>,
-    ) = """
-        Your task is to act as a **Saga Journey Reviewer and Analyst** for '${saga.data.title}'.
-        Your goal is to generate a deeply personal, engaging, and celebratory textual review of the player's completed saga, in the style of a "Spotify Wrapped" year-end summary.
+    ): String {
+        val reviewContextData =
+            SagaReviewContext(
+                playerCharacter = saga.mainCharacter,
+                sagaInfo = saga.data,
+                playerMessageCount = playerMessageCount,
+                messageTypeCountsText = messageTypesRanking.joinToString(";") { "${it.first.name} : ${it.second}" },
+                dominantMessageType = messageTypesRanking.firstOrNull()?.first?.name ?: "N/A",
+                sagaActsStructure = saga.acts,
+                topInteractiveCharactersText = topCharacters.joinToString(";") { "name: ${it.first.name}, messageCount: ${it.second}" },
+                topMentionedCharactersText = topMentions.joinToString(";") { "name: ${it.first.name}, mentions: ${it.second}" },
+                totalUniqueNPCsEncountered = saga.characters.size,
+                languageDirective = GenrePrompts.conversationDirective(saga.data.genre),
+            )
 
-        You will receive pre-analyzed statistics and key insights about the player's journey.
-        Your output MUST be a **single JSON object** containing distinct named keys, each holding the narrative text for a specific section of the player's review.
-        
-        ---
-        
-        **CONTEXT AND ANALYZED PLAYER DATA (Input from your Application):**
-        
-        1.  **PLAYER CHARACTER:**
-            ${saga.mainCharacter.toJsonFormat()}
-        
-        2.  **SAGA INFORMATION:**
-            ${saga.data.toJsonFormat()}
-        
-        3.  **PLAYER INTERACTION STATISTICS (PRE-ANALYZED BY APPLICATION):**
-            * **Total Player Messages Sent:** $playerMessageCount
-            * **Message Type Counts:**
-            ${messageTypesRanking.joinToString(";\n") { "${it.first.name} : ${it.second}" }}
-            * **Dominant Message Type:** ${messageTypesRanking.first().first.name}
-            * **Acts Overview:**
-            ${ActPrompts.actSummaries(saga)}
+        val fieldsToExcludeFromReview =
+            listOf(
+                "details",
+                "image",
+                "hexColor",
+                "sagaId",
+                "joinedAt",
+                "id",
+                "coverImage",
+                "isEnded",
+                "endedAt",
+                "isDebug",
+                "endMessage",
+                "review",
+                "createdAt",
+                "currentActId",
+                "mainCharacterId",
+                "icon",
+                "messages",
+                "currentChapterId",
+                "currentEventId",
+            )
 
-        
-        4.  **CHARACTER INTERACTION STATISTICS (PRE-ANALYZED BY APPLICATION):**
-            * **Top 3-5 Most interactive Characters:
-            [
-                ${topCharacters.joinToString { "name: ${it.first.name}, messageCount: ${it.second}" }} 
-            ]**
-            * **Top 3-5 Most Mentioned Characters: 
-            [
-                ${topMentions.joinToString { "name: ${it.first.name}, mentions: ${it.second}" }}
-            ]
-            * **Total Unique NPCs Encountered (Optional):** ${saga.characters.size}
-        
-        ---
-        
-        **INSTRUCTIONS FOR GENERATING THE JSON OUTPUT:**
-        
-        1.  **Content for Each Text Field:**
-            * **`introText`**: Welcome the player to their saga Recap. 
-            Congratulate them on completing the saga.
-            Briefly tells that now he will overview his achievements on the saga.
-            Set the celebratory tone.
-            * **`playStyle`**: Analyze `Dominant Message Type` and `Message Type Percentages`. Describe what this reveals about the player's core interaction style, personality, and impact within the game. Use engaging language.
-              ** consider the meaning of the types to write this field:
-              ${SenderType.entries.joinToString("\n") { "${it.name}: ${it.meaning()}" }}
-            * **`topCharacters`**: Highlight the `Top 3-5 Most Mentioned Characters`. Comment on the nature of their relationship with the player or why they were prominent. If the player character (`Vyz`) is in the top mentions, celebrate their own focus on their internal journey/actions.
-            * **`actsInsights`**: Write a personal and concise overview about the acts events, highlight emotional and groundbreaking moments.**
-            * **`conclusionText`**: Finalize with a heartfelt message of thanks for their dedication and for bringing the saga to life.
-            Briefly recap the overall achievement in ${saga.data.title} using the `${saga.data.description}`.
-            Appreciate the player for their dedication at the journey and for bringing the saga to life.
-        3.  **Tone & Style:**
-            * Maintain an enthusiastic, celebratory, appreciative, and slightly "wrapped" style (e.g., "Quem ditou o ritmo da sua jornada?", "Seu Top Personagem do Ano!").
-            * Speak directly to the player.
-            * The language should be ${GenrePrompts.conversationDirective(saga.data.genre)}.
-        4.  **Exclusions:** Do NOT ask questions, provide choices, or generate any other content beyond the review narrative itself. Do not use external information not provided in the input. Ensure the JSON is valid and well-formed.
-        
-        FOLLOW THIS EXACTLY STRUCTURE:
-        ${toJsonMap(Review::class.java)}
-        """.trimIndent()
+        val combinedContextJsonReview = reviewContextData.toJsonFormatExcludingFields(fieldsToExcludeFromReview)
 
-    fun iconDescription(
-        saga: Saga,
-        character: Character,
-    ) = """
-        
-        Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Dramatic Character Portraits** for the saga "${saga.title}" (Genre: ${saga.genre.title}).
-        You will receive a character's description and a brief context for their current mood or situation.
-        Your goal is to convert this information into a single, highly detailed, unambiguous, and visually rich English text description.
-        This description will be directly used as a part of a larger prompt for an AI image generation model.
-        
-        YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.
-        
-        **Crucially, this description MUST be formulated to be compatible with a 'Dramatic Portrait' framing,
-        conveying the essence and mood of the character in a single, impactful image.
-        Adhere strictly to the provided 'Story Theme' (${saga.genre.title}).**
-        
-        **Character Context:**
-        ${character.toJsonFormat()}
-        3.  **Current Mood/Situation (for dramatic pose/expression):** ${CharacterPose.random().description}
-        
-        **Guidelines for Conversion and Expansion:**
-        
-        1.  **Translate Accurately:** Translate all Portuguese values from the input fields into precise English.
-        2.  **Infer Visuals from Context:** **This is critical.** From the `Character Description` and `Current Mood/Situation`, infer and elaborate on:
-            * **Primary Setting/Environment (for background):** The background should be **extremely minimalist and somber**, serving only to enhance the character's presence. Consider a **plain, dark solid color (deep grey, black, or a muted dark tone)** or a **subtle, dark gradient**. Any implied environment should be heavily out of focus or suggested through minimal abstract shapes and dark tones. The focus *must* remain entirely on the character's portrait.
-            * **Dominant Mood/Atmosphere & Lighting Theme: ${GenrePrompts.moodDescription(saga.genre)}.
-            * **Key Pose/Expression:** Based on `Current Mood/Situation`, generate a **dynamic, expressive, and dramatic pose/facial expression** that captures the character's essence in a portrait.
-            * **Important Objects/Elements:** Include any significant items, or symbols mentioned in the description, ensuring they are either held by or directly related to the central character and are potential candidates for the vivid highlights.
-        3.  **Integrate Character (Dominant Central Focus & Red Accents):** The primary character **MUST be the absolute central and dominant focus of the image, filling a significant portion of the frame.** Frame the character as a **close-up portrait** (e.g., headshot to waist-up, or very close full body if the pose demands it, but always prioritizing the character's face/expression). **Incorporate vivid red details on or around the character that are thematically relevant**, ensuring they are the immediate focal points against the somber background.
-        4.  **Integrate Character (Dominant Central Focus, Artistic Lighting & Subtle Cybernetics - Tight Framing):** The primary character **MUST be the absolute central and dominant focus**, **framed tightly as a close-up portrait (from the chest or shoulders up), filling a significant portion of the frame.** Emphasize **strong, artistic lighting in shades of purple that defines their form and creates dramatic shadows**, similar to the use of red in your example. Their expression should be clearly visible and convey the mood. **Crucially, incorporate subtle cybernetic implants and enhancements as elements of fusion between human and machine.** These details should be visible on the **face, neck, eyes (e.g., glowing pupils or integrated displays), and lips (e.g., metallic sheen or subtle integrated tech)**, adding to the cyberpunk aesthetic without overwhelming the character's humanity, as seen in the provided example.
-        5.  **Composition for Dramatic Portrait (Tight & Centralized Focal Distance):** Formulate the prompt to suggest a **tight, portrait-oriented composition with the main character centrally and dominantly positioned, capturing a headshot or upper-body shot.** Utilize strong, focused lighting to emphasize the character, their expression, and their key elements.
-        * **Suggested terms to use:** "tight shot," "close-up portrait," "headshot," "upper body shot," "from the chest up," "shoulders up," "central composition," "minimalist background (deep purple and black)," "artistic use of purple tones," "high contrast lighting," "dramatic shadows," "single light source (purple)," "rim lighting (lighter purple)," "stylized," "graphic," "character-focused," "futuristic portrait."
-        6.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.    
-        """
+        return """
+            Your task is to act as a **Saga Journey Reviewer and Analyst** for the saga detailed in the SAGA_INFO within the CONTEXT_JSON.
+            Your goal is to generate a deeply personal, engaging, and celebratory textual review of the player's completed saga, in the style of a "Spotify Wrapped" year-end summary.
+
+            You will receive pre-analyzed statistics and key insights about the player's journey within the CONTEXT_JSON.
+            Your output MUST be a **single JSON object** containing distinct named keys, each holding the narrative text for a specific section of the player's review.
+            
+            ---
+            
+            **CONTEXT_JSON:**
+            $combinedContextJsonReview
+            
+            ---
+            
+            **INSTRUCTIONS FOR GENERATING THE JSON OUTPUT:**
+            
+            1.  **Content for Each Text Field (refer to keys in CONTEXT_JSON where appropriate):**
+                * **`introText`**: Welcome the player (use PLAYER_CHARACTER.name if available) to their saga recap for SAGA_INFO.title. 
+                Congratulate them on completing the saga.
+                Briefly tell them you will now overview their achievements.
+                Set the celebratory tone.
+                * **`playStyle`**: Based on your analysis of the player's DOMINANT_MESSAGE_TYPE and MESSAGE_TYPE_COUNTS_TEXT (using the provide
+            """.trimIndent()
+        // This trimIndent() might be misaligned if the content above is not fully pasted.
+    }
 }

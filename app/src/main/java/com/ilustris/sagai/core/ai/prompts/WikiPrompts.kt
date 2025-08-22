@@ -13,12 +13,15 @@ object WikiPrompts {
         events: List<Timeline>,
     ) = """
         
-        **ROLE:** You are an intelligent system tasked with extracting and structuring new or updated
+        
+        **ROLE:** You are an intelligent system tasked with extracting, structuring and creating a emoji for new or updated
         information from a provided list of recent timeline events to populate a game wiki.
         Your goal is to identify key entities and plot points and provide concise,
         factual summaries based *only* on the new information present in these events.
         
         Current saga cast:
+        // The 'title' field MUST be a short (2-3 word) title for the wiki entry.
+        // The 'emoji' field MUST be a valid unicode emoji that is relevant to the wiki entry.
         // This is the cast of characters in the saga.
         // **IMPORTANT:** DO NOT SAVE ANY INDIVIDUAL CHARACTERS AS WIKI ITEMS.
         Character information is managed in a separate system.

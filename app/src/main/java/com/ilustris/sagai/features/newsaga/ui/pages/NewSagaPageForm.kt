@@ -19,9 +19,9 @@ fun NewSagaPagesView(
         val page = NewSagaPages.entries[it]
         val data =
             when (page) {
-                NewSagaPages.TITLE -> currentData.title
-                NewSagaPages.GENRE -> currentData.genre
-                NewSagaPages.DESCRIPTION -> currentData.description
+                NewSagaPages.TITLE -> currentData.saga.title
+                NewSagaPages.GENRE -> currentData.saga.genre
+                NewSagaPages.DESCRIPTION -> currentData.saga.description
                 NewSagaPages.CHARACTER -> currentData
             }
         page.content(
@@ -34,7 +34,7 @@ fun NewSagaPagesView(
         LaunchedEffect(page) {
             when (page) {
                 NewSagaPages.GENRE -> {
-                    onUpdateData(page, currentData.genre)
+                    onUpdateData(page, currentData.saga.genre)
                 }
                 else -> doNothing()
             }

@@ -1,40 +1,45 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
 import android.content.Context
-import android.media.MediaPlayer
+import android.content.Intent
 import android.util.Log
-import androidx.core.net.toUri
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.ilustris.sagai.core.media.MediaPlayerManager // Keep for isPlaying state
+import com.ilustris.sagai.core.media.MediaPlayerService // Import service
+import com.ilustris.sagai.core.media.model.PlaybackMetadata // Import model
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormat // For PlaybackMetadata
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.home.data.model.isFirstEvent
+import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
+import com.ilustris.sagai.features.saga.chat.domain.mapper.SagaContentUIMapper
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.CharacterInfo
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.filterInteractionMessages
-import com.ilustris.sagai.features.saga.chat.domain.usecase.model.joinMessage
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
+import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.StateFlow // Import for StateFlow
 import kotlinx.coroutines.launch
-import java.io.File
+// import java.io.File // Not needed if lastKnownMusicFile is removed
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -47,20 +52,25 @@ class ChatViewModel
         private val messageUseCase: MessageUseCase,
         private val sagaContentManager: SagaContentManager,
         private val suggestionUseCase: GetInputSuggestionsUseCase,
+        private val notificationManager: ChatNotificationManager,
+        mediaPlayerManager: MediaPlayerManager,
     ) : ViewModel(),
         DefaultLifecycleObserver {
-        val state = MutableStateFlow<ChatState>(ChatState.Empty)
+        val state = MutableStateFlow<ChatState>(ChatState.Loading)
 
-        val content = MutableStateFlow<SagaContent?>(null)
-        val messages = MutableStateFlow<List<MessageContent>>(emptyList())
-        val isGenerating = MutableStateFlow(false)
+        val content = sagaContentManager.content
+        val messages = MutableStateFlow<List<ActDisplayData>>(emptyList())
+        val isGenerating = sagaContentManager.narrativeProcessingUiState
         val characters = MutableStateFlow<List<Character>>(emptyList())
         val loreUpdateProgress = MutableStateFlow(0f)
-        val isPlaying = MutableStateFlow(false)
+        val isPlaying: StateFlow<Boolean> = mediaPlayerManager.isPlaying // Observe this for UI
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
-        private var mediaPlayer: MediaPlayer? = null
-        private var lastKnownMusicFile: File? = null
+
+        // private var lastKnownMusicFile: File? = null // No longer needed for direct control
+        private var loadFinished = false
+        private var currentSagaIdForService: String? = null
+        private var currentActCountForService: Int = 0
 
         private fun sendError(
             errorMessage: String,
@@ -75,7 +85,6 @@ class ChatViewModel
                         text = errorMessage,
                         redirectAction = Triple(action, buttonText, data),
                     )
-                isGenerating.value = false
                 delay(15.seconds)
                 snackBarMessage.value = null
             }
@@ -89,13 +98,12 @@ class ChatViewModel
                 sendError("Saga not found. Please select a valid saga.")
                 return
             }
+            currentSagaIdForService = sagaId
             state.value = ChatState.Loading
             enableDebugMode(isDebug)
             observeSaga()
-            observeContentUpdate()
-            observeEnding()
-            observeAmbientMusic()
             observeLoading()
+            observeAmbientMusicServiceControl()
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
             }
@@ -109,167 +117,218 @@ class ChatViewModel
 
         private fun observeLoading() {
             viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.narrativeProcessingUiState.collect {
-                    isGenerating.value = it
-                }
-            }
-        }
-
-        private fun observeEnding() {
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.endMessage.collect {
-                    if (it != null && it.isNotEmpty()) {
-                        snackBarMessage.emit(
-                            SnackBarState(
-                                "Você chegou ao fim.",
-                                it,
-                            ),
-                        )
-                    }
+                isGenerating.collect {
+                    Log.d(javaClass.simpleName, "observeLoading: collecting generating status -> $it")
+                    delay(3.seconds)
+                    generateSuggestions(it)
                 }
             }
         }
 
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager
-                sagaContentManager.content.collect {
-                    if (it != null) {
-                        content.value = it
-
-                        messages.value =
-                            it.messages.sortedByDescending { messageContent -> messageContent.message.timestamp }
-                        characters.value = sortCharactersByMessageCount(it.characters, it.messages)
-                        state.value = ChatState.Success
-
-                        if (it.messages.isEmpty() && isGenerating.value.not()) {
-                            generateIntroduction(it.data, it.mainCharacter)
-                            sendSnackbarMessage(
-                                SnackBarState(
-                                    "Gerando introdução",
-                                    "",
-                                ),
-                            )
+                content.collect { sagaContent ->
+                    if (sagaContent == null) {
+                        if (loadFinished) {
+                            state.value = ChatState.Error("Saga not found.")
                         }
+                        return@collect
+                    }
+                    messages.value =
+                        SagaContentUIMapper
+                            .mapToActDisplayData(sagaContent.acts)
 
-                        validateCharacterMessageUpdates(it)
-                        validateDuplicatedMessages(it)
-                        checkLoreUpdate()
+                    characters.value =
+                        sortCharactersByMessageCount(sagaContent.characters, sagaContent.flatMessages())
+
+                    validateIntroduction(sagaContent)
+
+                    checkIfUpdatesService(sagaContent)
+
+                    validateCharacterMessageUpdates(sagaContent)
+                    updateProgress(sagaContent)
+                    state.value = ChatState.Success
+                    loadFinished
+                }
+            }
+        }
+
+        private fun updateProgress(sagaContent: SagaContent) {
+            loreUpdateProgress.value =
+                when {
+                    sagaContent.isComplete() -> 1f
+                    (
+                        sagaContent.getCurrentTimeLine()?.messages?.size
+                            ?: 0
+                    ) < UpdateRules.LORE_UPDATE_LIMIT -> {
+                        val messageCount = sagaContent.getCurrentTimeLine()?.messages?.size ?: 0
+                        val maxCount = UpdateRules.LORE_UPDATE_LIMIT
+                        messageCount.toFloat() / maxCount.toFloat()
+                    }
+                    else -> 0f
+                }
+        }
+
+        private fun validateIntroduction(sagaContent: SagaContent) {
+            if (sagaContent.currentActInfo == null ||
+                sagaContent.currentActInfo.currentChapterInfo == null ||
+                sagaContent.currentActInfo.currentChapterInfo.currentEventInfo == null
+            ) {
+                return
+            }
+
+            if (sagaContent.flatMessages().isEmpty()) {
+                generateIntroduction(sagaContent)
+            }
+            notifyIfNeeded()
+        }
+
+        private fun checkIfUpdatesService(sagaContent: SagaContent) {
+            val newActCount = sagaContent.acts.size
+            if (newActCount != currentActCountForService && currentSagaIdForService != null) {
+                currentActCountForService = newActCount
+                sagaContentManager.ambientMusicFile.value?.let { musicFile ->
+                    if (musicFile.exists()) {
+                        val playbackMetadata =
+                            PlaybackMetadata(
+                                sagaId = sagaContent.data.id,
+                                sagaTitle = sagaContent.data.title,
+                                sagaIcon = sagaContent.data.icon,
+                                color =
+                                    sagaContent.data.genre.color
+                                        .toArgb(),
+                                currentActNumber = newActCount.coerceAtLeast(1),
+                                mediaFilePath = musicFile.absolutePath,
+                            )
+                        controlMediaPlayerService(MediaPlayerService.ACTION_PLAY, playbackMetadata)
+                        Log.d("ChatViewModel", "New act ($newActCount). Updated MediaPlayerService.")
                     }
                 }
             }
         }
 
-        private fun observeAmbientMusic() {
-            viewModelScope.launch {
-                sagaContentManager.ambientMusicFile.collectLatest { musicFile ->
-                    lastKnownMusicFile = musicFile
-                    if (musicFile != null) {
-                        initializeMediaPlayer(musicFile)
-                    } else {
-                        stopAmbientMusic()
-                    }
+        private fun notifyIfNeeded() {
+            val currentSaga = content.value ?: return
+            if (currentSaga.data.isEnded) {
+                return
+            }
+            viewModelScope.launch(Dispatchers.IO) {
+                val messages = currentSaga.flatMessages()
+                if (messages.isNotEmpty()) {
+                    notificationManager.sendMessageNotification(
+                        currentSaga,
+                        currentSaga.flatMessages().last(),
+                    )
                 }
             }
         }
 
-        private fun initializeMediaPlayer(file: File) {
+        private fun controlMediaPlayerService(
+            action: String,
+            metadata: PlaybackMetadata? = null,
+        ) {
+            val serviceIntent =
+                Intent(context, MediaPlayerService::class.java).apply {
+                    this.action = action
+                    metadata?.let {
+                        putExtra(MediaPlayerService.EXTRA_SAGA_CONTENT_JSON, it.toJsonFormat())
+                    }
+                }
             try {
-                stopAmbientMusic()
-                mediaPlayer =
-                    MediaPlayer().apply {
-                        setDataSource(context, file.toUri())
-                        isLooping = true
-                        prepareAsync()
-                        setOnPreparedListener {
-                            start()
-                            Log.i("ChatViewModel", "MediaPlayer prepared and started for: ${file.name}")
-                            this@ChatViewModel.isPlaying.value = true
-                        }
-                        setOnErrorListener { _, what, extra ->
-                            Log.e(
+                context.startService(serviceIntent)
+                Log.d(
+                    "ChatViewModel",
+                    "Sent $action to MediaPlayerService. Metadata: ${metadata?.toJsonFormat()}",
+                )
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error controlling MediaPlayerService with action $action", e)
+                sendError("Could not control background audio. Please check app permissions.")
+            }
+        }
+
+        // Renamed and repurposed for service control
+        private fun observeAmbientMusicServiceControl() {
+            viewModelScope.launch(Dispatchers.IO) {
+                if (content.value == null) return@launch
+                sagaContentManager.ambientMusicFile.collect { musicFile ->
+
+                    Log.i(
+                        javaClass.simpleName,
+                        "observeAmbientMusicServiceControl: file updated -> $musicFile",
+                    )
+                    if (musicFile == null && isPlaying.value.not()) {
+                        Log.w(
+                            javaClass.simpleName,
+                            "observeAmbientMusicServiceControl: Music not found skipping player",
+                        )
+                        return@collect
+                    }
+
+                    val currentSagaData = content.value?.data // Use data from current saga content
+
+                    if (currentSagaData != null && musicFile != null && musicFile.exists()) {
+                        if (currentSagaIdForService == currentSagaData.id.toString()) {
+                            val playbackMetadata =
+                                PlaybackMetadata(
+                                    sagaId = currentSagaData.id,
+                                    sagaTitle = currentSagaData.title,
+                                    sagaIcon = currentSagaData.icon,
+                                    currentActNumber =
+                                        content.value
+                                            ?.acts
+                                            ?.size
+                                            ?.coerceAtLeast(1) ?: 1,
+                                    mediaFilePath = musicFile.absolutePath,
+                                    color = currentSagaData.genre.color.toArgb(),
+                                )
+                            currentActCountForService = playbackMetadata.currentActNumber
+                            controlMediaPlayerService(MediaPlayerService.ACTION_PLAY, playbackMetadata)
+                            Log.d(
                                 "ChatViewModel",
-                                "MediaPlayer Error: what: $what, extra: $extra for file: ${file.name}",
+                                "Ambient music file available. Instructing MediaPlayerService to play.",
                             )
-                            stopAmbientMusic()
-                            true
+                        }
+                    } else {
+                        if (currentSagaIdForService != null && (musicFile == null || !musicFile.exists())) {
+                            Log.d(
+                                "ChatViewModel",
+                                "Ambient music file null/invalid for current saga. Instructing service to stop.",
+                            )
+                            controlMediaPlayerService(MediaPlayerService.ACTION_STOP)
                         }
                     }
-                lastKnownMusicFile = file
-            } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error initializing MediaPlayer for file: ${file.name}", e)
-                stopAmbientMusic()
+                }
             }
-        }
-
-        fun pauseAmbientMusic() {
-            if (mediaPlayer?.isPlaying == true) {
-                mediaPlayer?.pause()
-                Log.d("ChatViewModel", "MediaPlayer paused.")
-                this@ChatViewModel.isPlaying.value = false
-            }
-        }
-
-        fun resumeAmbientMusic() {
-            if (mediaPlayer?.isPlaying == false) {
-                mediaPlayer?.start()
-                Log.d("ChatViewModel", "MediaPlayer resumed from paused state.")
-            } else if (mediaPlayer == null && lastKnownMusicFile != null) {
-                Log.d(
-                    "ChatViewModel",
-                    "MediaPlayer is null, re-initializing with last known file: ${lastKnownMusicFile!!.name}",
-                )
-                initializeMediaPlayer(lastKnownMusicFile!!)
-            } else {
-                Log.d(
-                    "ChatViewModel",
-                    "MediaPlayer not resumed. isPlaying: ${mediaPlayer?.isPlaying}, mediaPlayer null: ${mediaPlayer == null}, lastKnownFile null: ${lastKnownMusicFile == null}",
-                )
-            }
-        }
-
-        private fun stopAmbientMusic() {
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-            mediaPlayer = null
-            lastKnownMusicFile = null
-            Log.d("ChatViewModel", "MediaPlayer stopped and released. Last known file cleared.")
-            this@ChatViewModel.isPlaying.value = false
         }
 
         override fun onResume(owner: LifecycleOwner) {
             super.onResume(owner)
-            Log.d("ChatViewModel", "Lifecycle: onResume called, resuming music.")
-            resumeAmbientMusic()
+            Log.d("ChatViewModel", "Lifecycle: onResume. MediaPlayerService manages its own state.")
         }
 
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
-            Log.d(
-                "ChatViewModel",
-                "Lifecycle: onPause called, music will continue playing if already active.",
-            )
-            // pauseAmbientMusic() // Music continues playing when ChatView is paused
+            Log.d("ChatViewModel", "Lifecycle: onPause called. Music continues via service if playing.")
         }
 
         override fun onCleared() {
             super.onCleared()
-            stopAmbientMusic()
-            Log.d("ChatViewModel", "onCleared called, MediaPlayer released.")
+            Log.d("ChatViewModel", "onCleared called. Instructing MediaPlayerService to stop.")
+            controlMediaPlayerService(MediaPlayerService.ACTION_STOP)
         }
 
-        private suspend fun validateCharacterMessageUpdates(content1: SagaContent) {
+        private suspend fun validateCharacterMessageUpdates(content: SagaContent) {
             val updatableMessages =
-                content1.messages.filter { messageContent ->
+                content.flatMessages().filter { messageContent ->
                     messageContent.character == null &&
                         messageContent.message.senderType == SenderType.CHARACTER &&
                         messageContent.message.speakerName != null &&
-                        content1.characters.find { it.name == messageContent.message.speakerName } != null
+                        content.characters.find { it.name == messageContent.message.speakerName } != null
                 }
 
             updatableMessages.forEach { message ->
                 val character =
-                    content1.characters.find { it.name.equals(message.message.speakerName, true) }
+                    content.characters.find { it.name.equals(message.message.speakerName, true) }
                 character?.let {
                     messageUseCase.updateMessage(
                         message.message.copy(
@@ -277,27 +336,6 @@ class ChatViewModel
                             speakerName = it.name,
                         ),
                     )
-                }
-            }
-        }
-
-        private suspend fun validateDuplicatedMessages(sagaContent: SagaContent) {
-            sagaContent.acts.forEach { act ->
-                val actMessages = sagaContent.messages.filter { it.message.actId == act.id }
-                if (actMessages.size > 1) {
-                    Log.d(javaClass.simpleName, "Duplicated messages found in act ${act.id}: ")
-                    actMessages.subList(1, actMessages.size).forEach { message ->
-                        messageUseCase.deleteMessage(message.message.id.toLong())
-                    }
-                }
-            }
-            sagaContent.chapters.forEach { chapter ->
-                val chapterMessages = sagaContent.messages.filter { it.message.chapterId == chapter.id }
-                if (chapterMessages.size > 1) {
-                    Log.d(javaClass.simpleName, "Duplicated messages found in chapter ${chapter.id}: ")
-                    chapterMessages.subList(1, chapterMessages.size).forEach { message ->
-                        messageUseCase.deleteMessage(message.message.id.toLong())
-                    }
                 }
             }
         }
@@ -310,28 +348,21 @@ class ChatViewModel
             }
         }
 
-        private fun observeContentUpdate() {
+        private fun generateIntroduction(saga: SagaContent) {
             viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.contentUpdateMessages.collect {
-                    sendMessage(it)
-                    delay(500)
-                    sagaContentManager.setProcessing(false)
+                val currentEvent = saga.currentActInfo?.currentChapterInfo?.currentEventInfo ?: return@launch
+                val isEmpty = currentEvent.messages.isNotEmpty()
+                if (isEmpty || isGenerating.value) {
+                    return@launch
                 }
-            }
-        }
 
-        private fun generateIntroduction(
-            saga: Saga,
-            character: Character?,
-        ) {
-            viewModelScope.launch(Dispatchers.IO) {
-                isGenerating.value = true
                 if (sagaContentManager.isInDebugMode()) {
                     sendMessage(
                         Message(
                             0,
                             "Starting the debug saga!",
                             senderType = SenderType.NARRATOR,
+                            timelineId = currentEvent.timeline.id,
                         ),
                     )
                     sendSnackbarMessage(
@@ -340,24 +371,25 @@ class ChatViewModel
                             "",
                         ),
                     )
-                    isGenerating.value = false
                     return@launch
+                } else {
+                    messageUseCase
+                        .generateIntroMessage(saga)
+                        .onSuccess { text ->
+                            sendMessage(
+                                Message(
+                                    text = text,
+                                    senderType = SenderType.NARRATOR,
+                                    characterId = saga.mainCharacter?.id,
+                                    timelineId = currentEvent.timeline.id,
+                                ),
+                                false,
+                            )
+                        }.onFailure {
+                            sendError(it.message ?: "Unknown error")
+                        }
                 }
-                messageUseCase
-                    .generateIntroMessage(saga, character)
-                    .onSuccess {
-                        sendMessage(
-                            it.copy(
-                                senderType = SenderType.NARRATOR,
-                                characterId = character?.id,
-                            ),
-                            false,
-                        )
-                    }.onFailure {
-                        sendError(it.message ?: "Unknown error")
-                    }
 
-                isGenerating.value = false
                 state.value = ChatState.Success
             }
         }
@@ -366,12 +398,14 @@ class ChatViewModel
             text: String,
             sendType: SenderType,
         ) {
+            val currentTimeline = content.value?.getCurrentTimeLine() ?: return
             val message =
                 Message(
                     text = text,
                     speakerName = null,
                     senderType = sendType,
                     characterId = content.value?.mainCharacter?.id,
+                    timelineId = currentTimeline.timeline.id,
                 )
             sendMessage(message, true)
         }
@@ -400,35 +434,10 @@ class ChatViewModel
                 val speakerId =
                     when (sendType) {
                         SenderType.NARRATOR -> message.characterId
-                        SenderType.NEW_CHARACTER,
-                        SenderType.NEW_CHAPTER,
-                        -> null
-
-                        SenderType.USER -> mainCharacter?.id
+                        SenderType.USER,
+                        -> mainCharacter?.id
                         else -> characterReference?.id
                     }
-
-                if (message.senderType == SenderType.NEW_CHAPTER && message.chapterId != null && message.chapterId != 0) {
-                    val chapterAlreadyExists = checkIfChapterMessageExists(message)
-                    if (chapterAlreadyExists) {
-                        Log.w(
-                            javaClass.simpleName,
-                            "sendMessage: A NEW_CHAPTER message for chapterId ${message.chapterId} already exists in the list. Not saving current message: '${message.text}'",
-                        )
-                        return@launch
-                    }
-                }
-
-                if (message.senderType == SenderType.NEW_ACT && message.actId != null && message.actId != 0) {
-                    val actAlreadyExists = checkIfActExists(message)
-                    if (actAlreadyExists) {
-                        Log.w(
-                            javaClass.simpleName,
-                            "sendMessage: A NEW_ACT message for actId ${message.actId} already exists in the list. Not saving current message: '${message.text}'",
-                        )
-                        return@launch
-                    }
-                }
 
                 messageUseCase
                     .saveMessage(
@@ -444,24 +453,12 @@ class ChatViewModel
             }
         }
 
-        private fun checkIfChapterMessageExists(message: Message): Boolean =
-            content.value?.messages?.any { existingMessageContent ->
-                existingMessageContent.message.senderType == SenderType.NEW_CHAPTER &&
-                    existingMessageContent.message.chapterId == message.chapterId
-            } == true
-
-        private fun checkIfActExists(message: Message): Boolean =
-            content.value?.messages?.any { existingMessageContent ->
-                existingMessageContent.message.senderType == SenderType.NEW_ACT &&
-                    existingMessageContent.message.actId == message.actId
-            } == true
-
         private fun handleNewMessage(
             it: Message,
             isFromUser: Boolean,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
-                when (isFromUser && it.senderType != SenderType.NEW_CHARACTER) {
+                when (isFromUser) {
                     true -> {
                         if (sagaContentManager.isInDebugMode().not()) {
                             replyMessage(it)
@@ -473,25 +470,25 @@ class ChatViewModel
             }
         }
 
-        private fun generateSuggestions(messagesList: List<MessageContent>) {
+        private fun generateSuggestions(isGenerating: Boolean) {
             suggestions.value = emptyList()
             if (sagaContentManager.isInDebugMode()) {
                 return
             }
+
+            Log.d(javaClass.simpleName, "generateSuggestions: checking if is generating -> $isGenerating")
+            if (isGenerating) return
+            val currentSaga = content.value ?: return
+            if (currentSaga.data.isEnded) return
+            val currentTimeline = currentSaga.getCurrentTimeLine()
+            if (currentTimeline == null) return
+            if (currentTimeline.messages.isEmpty()) return
             viewModelScope.launch(Dispatchers.IO) {
                 content.value?.data?.let { saga ->
                     suggestionUseCase
                         .invoke(
-                            messagesList
-                                .filter {
-                                    it.message.senderType != SenderType.NEW_CHAPTER &&
-                                        it.message.senderType != SenderType.NEW_ACT &&
-                                        it.message.senderType != SenderType.NEW_CHARACTER
-                                }.sortedBy { it.message.timestamp }
-                                .take(
-                                    3,
-                                ),
-                            content.value?.mainCharacter,
+                            currentTimeline.messages,
+                            currentSaga.mainCharacter,
                             saga,
                         ).onSuccess {
                             suggestions.value = it
@@ -500,121 +497,20 @@ class ChatViewModel
             }
         }
 
-        private fun checkLoreUpdate() {
-            viewModelScope.launch(Dispatchers.IO) {
-                val currentSagaContent = content.value ?: return@launch
-
-                val allMessages = messages.value
-
-                val lastLoreReferenceId =
-                    currentSagaContent.timelines.lastOrNull()?.messageReference
-                val messagesSinceLastLore: List<MessageContent> =
-                    if (lastLoreReferenceId != null) {
-                        val indexOfLastLoreMessage =
-                            allMessages.indexOfFirst { it.message.id == lastLoreReferenceId }
-                        if (indexOfLastLoreMessage != -1) {
-                            allMessages.subList(0, indexOfLastLoreMessage)
-                        } else {
-                            allMessages
-                        }
-                    } else {
-                        allMessages
-                    }
-                Log.d(
-                    javaClass.simpleName,
-                    "checkLoreUpdate: Checking lore update ${messagesSinceLastLore.size} of ${UpdateRules.LORE_UPDATE_LIMIT} ",
-                )
-                val progress =
-                    (messagesSinceLastLore.size.toFloat() / UpdateRules.LORE_UPDATE_LIMIT.toFloat())
-                        .coerceIn(0f, 1f)
-                loreUpdateProgress.value = progress
-
-                if (messagesSinceLastLore.size >= UpdateRules.LORE_UPDATE_LIMIT && !isGenerating.value) {
-                    isGenerating.value = true
-                    val messagesToProcessForLore =
-                        messagesSinceLastLore
-                            .filterInteractionMessages()
-                            .take(UpdateRules.LORE_UPDATE_LIMIT)
-                            .reversed()
-
-                    val loreReferenceForUpdate = allMessages.firstOrNull()?.message
-
-                    if (loreReferenceForUpdate != null && messagesToProcessForLore.isNotEmpty()) {
-                        sagaContentManager
-                            .updateLore(
-                                reference = loreReferenceForUpdate,
-                                messageSubList = messagesToProcessForLore,
-                            ).onSuccess { newEvent ->
-                                notifyLoreUpdate(newEvent)
-                            }.onFailure {
-                                isGenerating.value = false
-                                sendError("Ocorreu um erro ao atualizar a história.")
-                            }
-                    } else {
-                        isGenerating.value = false
-                    }
-                } else {
-                    if (sagaContentManager.isInDebugMode()) {
-                        sendSnackbarMessage(
-                            SnackBarState(
-                                "Not enough messages(${messagesSinceLastLore.size}) to update the lore",
-                                "",
-                            ),
-                        )
-                    }
-                }
-            }
-        }
-
-        private fun notifyLoreUpdate(newEvent: Timeline) {
-            isGenerating.value = false
-            viewModelScope.launch(Dispatchers.IO) {
-                sendSnackbarMessage(
-                    SnackBarState(
-                        "História atualizada",
-                        newEvent.content,
-                        redirectAction = Triple(ChatAction.OPEN_TIMELINE, "Ver mais", newEvent.id),
-                    ),
-                )
-                delay(20.seconds)
-                snackBarMessage.value = null
-            }
-        }
-
-        private fun lastEvents(): List<Timeline> {
-            val saga = content.value ?: return emptyList()
-            if (sagaContentManager.isInDebugMode()) return emptyList()
-            return saga.timelines.sortedBy { it.createdAt }.takeLast(UpdateRules.CHAPTER_UPDATE_LIMIT)
-        }
-
         private fun replyMessage(message: Message) {
-            isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
-                val characters = content.value!!.characters
-                val directive = sagaContentManager.getDirective()
+                val timeline = saga.getCurrentTimeLine() ?: return@launch
                 val newMessage =
                     MessageContent(
                         message = message,
-                        character = characters.find { it.id == message.characterId },
+                        character = saga.characters.find { it.id == message.characterId },
                     )
 
                 messageUseCase
                     .generateMessage(
                         saga = saga,
-                        chapter = content.value?.chapters?.lastOrNull(),
-                        message = newMessage.joinMessage(),
-                        lastEvents = lastEvents(),
-                        directive = directive,
-                        lastMessages =
-                            messages
-                                .value
-                                .reversed()
-                                .filterInteractionMessages()
-                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                .map { m ->
-                                    m.joinMessage()
-                                },
+                        message = newMessage,
                     ).onSuccessAsync { genMessage ->
                         if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
                             createCharacter(genMessage.newCharacter)
@@ -623,13 +519,11 @@ class ChatViewModel
                             genMessage.message.copy(
                                 chapterId = null,
                                 actId = null,
+                                characterId = null,
+                                timelineId = timeline.timeline.id,
+                                id = 0,
                             ),
                         )
-                        if (genMessage.shouldEndSaga) {
-                            // endSaga()
-                        }
-                        isGenerating.value = false
-                        generateSuggestions(messages.value.take(3))
                     }.onFailure {
                         sendError(
                             "Ocorreu um erro ao responder sua mensagem.",
@@ -637,14 +531,7 @@ class ChatViewModel
                             message,
                             buttonText = "Tentar novamente",
                         )
-                        isGenerating.value = false
                     }
-            }
-        }
-
-        private fun endSaga() {
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.endSaga()
             }
         }
 
@@ -694,27 +581,30 @@ class ChatViewModel
                 return
             }
 
+            val timeline = currentSaga.getCurrentTimeLine()
+            if (timeline == null) {
+                sendError("Current timeline not found, cannot send fake messages.")
+                return
+            }
+
             viewModelScope.launch(Dispatchers.IO) {
-                isGenerating.value = true
                 sagaContentManager.setProcessing(true)
                 repeat(count) {
                     if (it == count - 1) {
-                        isGenerating.value = false
                         sagaContentManager.setProcessing(false)
                     }
                     val fakeUserMessage =
                         Message(
-                            text = "Fake Message #${it + 1} of $count",
+                            text = "Fake Message #\${it + 1} of $count",
                             senderType = SenderType.USER,
                             characterId = mainCharacterId,
                             sagaId = currentSaga.data.id,
+                            timelineId = timeline.timeline.id,
                         )
                     sendMessage(fakeUserMessage, isFromUser = false)
                     delay(100)
                 }
-
                 Log.d("ChatViewModel", "[DEBUG] Finished enqueuing $count fake messages.")
-                checkLoreUpdate()
             }
         }
     }

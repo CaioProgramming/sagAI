@@ -6,9 +6,13 @@ import java.util.Locale
 object CharacterDirective {
     const val CHARACTER_INTRODUCTION =
         """
+         ${CharacterRules.CRITICAL_RULE}   
+            
         // 🚨🚨🚨 CRITICAL SYSTEM DIRECTIVE: NEW CHARACTER INTRODUCTION PROTOCOL 🚨🚨🚨
         // This protocol dictates the ONLY circumstances under which new characters are introduced.
         // Adherence to this directive is PARAMOUNT for maintaining narrative coherence and preventing character hallucination.
+        
+
 
         1.  **Strict Necessity:** A new character (requiring 'shouldCreateCharacter: true' and 'newCharacterInfo') MUST ONLY be introduced when their appearance is **ABSOLUTELY ESSENTIAL, LOGICALLY JUSTIFIED, AND UNAVOIDABLE** for the immediate and coherent progression of the plot.
             * **DO NOT INTRODUCE CHARACTERS FOR RANDOM PLOT TWISTS.** Every new character must serve a clear, immediate, and impactful narrative purpose.

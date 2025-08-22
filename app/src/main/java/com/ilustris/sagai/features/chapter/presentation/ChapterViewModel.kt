@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.chapter.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -34,15 +35,13 @@ class ChapterViewModel
 
         fun generateIcon(
             content: SagaContent,
-            chapter: Chapter,
+            chapter: ChapterContent,
         ) {
-            val mainCharacter = content.mainCharacter ?: return
             viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.value = true
                 chapterUseCase.generateChapterCover(
                     chapter,
                     content,
-                    listOf(mainCharacter),
                 )
                 isGenerating.value = false
             }

@@ -1,4 +1,3 @@
-
 import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
@@ -16,6 +15,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre // Your Genre class
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
+import com.ilustris.sagai.ui.theme.filters.HorrorColorTones // Import HorrorColorTones
 import com.ilustris.sagai.ui.theme.filters.SciFiColorTones
 import com.ilustris.sagai.ui.theme.grayScale
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +55,7 @@ fun Modifier.effectForGenre(
     genre: Genre,
     focusRadius: Float? = null,
     customGrain: Float? = null,
+    pixelSize: Float? = null,
     useFallBack: Boolean = false,
 ): Modifier {
     // Check if the current Android version is below 33 (Android 13)
@@ -92,63 +93,81 @@ fun Modifier.effectForGenre(
     }
 
     // Define shader parameters based on Genre
-    // These values will need careful tuning!
-    // The values you had for saturation, brightness, contrast will need to be re-evaluated
-    // in the context of how the AGSL shader handles them (e.g., 1.0 is neutral for contrast).
     val fantasyPalette = FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
+    val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
+
     val uniformValues =
-        remember(genre) {
-            // Recalculate only when genre changes
+        remember(genre, pixelSize) {
+            // Add pixelSize as a key for remember
+            // Recalculate only when genre or pixelSize changes
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: 0.15f,
-                        bloomThreshold = 0.30f,
-                        bloomIntensity = 0.20f,
-                        bloomRadius = 4.5f,
-                        softFocusRadius = focusRadius ?: 1.25f,
-                        saturation = 0.60f, // e.g., slightly desaturated
-                        contrast = 1.55f, // e.g., slightly increased contrast
-                        brightness = 0f, // e.g., slightly brighter
-                        highlightTint = fantasyPalette.highlightTint, // Warm highlights
-                        shadowTint = fantasyPalette.shadowTint, // Cool shadows
+                        grainIntensity = customGrain ?: .25f,
+                        bloomThreshold = .4f,
+                        bloomIntensity = .3f,
+                        bloomRadius = 1f,
+                        softFocusRadius = focusRadius ?: .7f,
+                        saturation = .5f,
+                        contrast = 1.5f,
+                        brightness = -.03f,
+                        highlightTint = fantasyPalette.highlightTint,
+                        shadowTint = fantasyPalette.shadowTint,
                         tintStrength = fantasyPalette.defaultTintStrength,
                         vignetteStrength = 0.2f,
                         vignetteSoftness = 0.7f,
+                        pixelationBlockSize = 0f,
+                        colorTemperature = .15f, // Slightly warm for Fantasy
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: 0.15f,
-                        bloomThreshold = 0.30f,
-                        bloomIntensity = 0.15f,
-                        bloomRadius = 2.0f,
-                        softFocusRadius = focusRadius ?: 0.10f,
-                        saturation = 0.40f, // More desaturated for Sci-Fi
-                        contrast = 1.50f, // Higher contrast
-                        brightness = -0.10f, // Slightly darker
-                        highlightTint = cyberpunkPalette.highlightTint, // Cyan/Cool highlights
-                        shadowTint = cyberpunkPalette.shadowTint, // Slightly warm/muted shadows
+                        grainIntensity = customGrain ?: .15f,
+                        bloomThreshold = .3f,
+                        bloomIntensity = .2f,
+                        bloomRadius = 1.3f,
+                        softFocusRadius = focusRadius ?: .5f,
+                        saturation = .2f,
+                        contrast = 1.5f,
+                        brightness = -.1f,
+                        highlightTint = cyberpunkPalette.highlightTint,
+                        shadowTint = cyberpunkPalette.shadowTint,
                         tintStrength = cyberpunkPalette.defaultTintStrength,
-                        vignetteStrength = 0.15f,
-                        vignetteSoftness = 0.6f,
+                        vignetteStrength = .2f,
+                        vignetteSoftness = 1f,
+                        pixelationBlockSize = 0.0f,
+                        colorTemperature = -.1f, // Slightly cool for Sci-Fi
                     )
-                // Add other genres and their specific shader parameters
-                else -> ShaderParams() // Default parameters
+                Genre.HORROR ->
+                    ShaderParams(
+                        grainIntensity = .1f,
+                        bloomThreshold = 0.4f, // Less bloom for horror
+                        bloomIntensity = 0.1f,
+                        bloomRadius = 1.0f,
+                        softFocusRadius = 0f, // Subtle soft focus
+                        saturation = .5f, // Very desaturated
+                        contrast = 1.5f, // High contrast
+                        brightness = .1f.unaryMinus(), // Darker mood
+                        highlightTint = horrorPalette.highlightTint, // From MOONLIGHT_MYSTIQUE
+                        shadowTint = horrorPalette.shadowTint, // From MOONLIGHT_MYSTIQUE
+                        tintStrength = horrorPalette.defaultTintStrength, // From MOONLIGHT_MYSTIQUE
+                        vignetteStrength = 1f, // Stronger vignette
+                        vignetteSoftness = 0.8f,
+                        pixelationBlockSize = pixelSize ?: 3.5f,
+                        colorTemperature = .3f.unaryMinus(),
+                    )
+                else ->
+                    ShaderParams()
             }
         }
 
     return this
         .onSizeChanged { newSize ->
-            // Get the size of the composable this modifier is applied to
             composableSize = newSize
         }.graphicsLayer {
-            // Apply the shader
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform("iResolution", composableSize.width.toFloat(), composableSize.height.toFloat())
-                runtimeShader.setFloatUniform("iTime", timeState) // Pass current time
-
-                // Set all your custom uniforms based on ShaderParams
+                runtimeShader.setFloatUniform("iTime", timeState)
                 runtimeShader.setFloatUniform("u_grainIntensity", uniformValues.grainIntensity)
                 runtimeShader.setFloatUniform("u_bloomThreshold", uniformValues.bloomThreshold)
                 runtimeShader.setFloatUniform("u_bloomIntensity", uniformValues.bloomIntensity)
@@ -172,18 +191,19 @@ fun Modifier.effectForGenre(
                 runtimeShader.setFloatUniform("u_tintStrength", uniformValues.tintStrength)
                 runtimeShader.setFloatUniform("u_vignetteStrength", uniformValues.vignetteStrength)
                 runtimeShader.setFloatUniform("u_vignetteSoftness", uniformValues.vignetteSoftness)
+                runtimeShader.setFloatUniform("u_pixelationBlockSize", uniformValues.pixelationBlockSize)
+                runtimeShader.setFloatUniform("u_colorTemperature", uniformValues.colorTemperature) // Set the new uniform
 
                 renderEffect =
                     RenderEffect
                         .createRuntimeShaderEffect(runtimeShader, "composable_shader")
                         .asComposeRenderEffect()
             } else {
-                renderEffect = null // Avoid applying shader if size is invalid
+                renderEffect = null
             }
         }
 }
 
-// Data class to hold shader parameters for clarity
 data class ShaderParams(
     val grainIntensity: Float = 0.0f,
     val bloomThreshold: Float = 0.8f,
@@ -193,12 +213,13 @@ data class ShaderParams(
     val saturation: Float = 1.0f,
     val contrast: Float = 1.0f,
     val brightness: Float = 0.0f,
-    val highlightTint: Triple<Float, Float, Float> = Triple(1f, 1f, 1f), // R, G, B
-    val shadowTint: Triple<Float, Float, Float> = Triple(0f, 0f, 0f), // R, G, B
+    val highlightTint: Triple<Float, Float, Float> = Triple(1f, 1f, 1f),
+    val shadowTint: Triple<Float, Float, Float> = Triple(0f, 0f, 0f),
     val tintStrength: Float = 0.0f,
     val vignetteStrength: Float = 0.0f,
     val vignetteSoftness: Float = 0.5f,
-    // Add any other uniforms your shader uses
+    val pixelationBlockSize: Float = 0.0f,
+    val colorTemperature: Float = 0.0f,
 )
 
 @Composable
@@ -207,22 +228,36 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
         when (genre) {
             Genre.FANTASY -> .6f
             Genre.SCI_FI -> .4f
+            Genre.HORROR -> 0.1f
+            else -> 1.0f
         }
 
-    val brightness =
+    val brightnessValue =
         when (genre) {
             Genre.FANTASY -> .02f
-            Genre.SCI_FI -> (.01f).unaryMinus()
+            Genre.SCI_FI -> -0.01f
+            Genre.HORROR -> -0.1f
+            else -> 0f
         }
 
-    val contrast =
+    val contrastValue =
         when (genre) {
-            Genre.FANTASY -> .2f
-            Genre.SCI_FI -> .85f
+            Genre.FANTASY -> 1.2f
+            Genre.SCI_FI -> 1.4f
+            Genre.HORROR -> 1.6f
+            else -> 1.0f
         }
 
-    return this
-        .grayScale(saturation)
-        .brightness(brightness)
-        .contrast(contrast)
+    var modifier: Modifier = this
+
+    if (saturation != 1.0f) {
+        modifier = modifier.grayScale(saturation)
+    }
+    if (brightnessValue != 0f) {
+        modifier = modifier.brightness(brightnessValue)
+    }
+    if (contrastValue != 1.0f) { // Normal contrast is 1.0f
+        modifier = modifier.contrast(contrastValue)
+    }
+    return modifier
 }

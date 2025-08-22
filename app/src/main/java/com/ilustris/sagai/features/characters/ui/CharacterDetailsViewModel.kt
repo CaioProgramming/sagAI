@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
+import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,12 +38,7 @@ class CharacterDetailsViewModel
                     saga.value = it
                     character.value = it?.characters?.find { char -> char.id == characterId.toInt() }
                     messageCount.value =
-                        it
-                            ?.messages
-                            ?.filter { message ->
-                                message.character?.id == characterId.toInt() ||
-                                    message.character?.name.equals(character.value?.name, true)
-                            }?.size ?: 0
+                        it?.flatMessages()?.filterCharacterMessages(character.value)?.size ?: 0
                 }
             }
         }

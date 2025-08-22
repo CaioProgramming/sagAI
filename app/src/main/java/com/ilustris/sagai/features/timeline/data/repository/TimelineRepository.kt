@@ -14,5 +14,4 @@ interface TimelineRepository {
 
     suspend fun updateTimeline(timeline: Timeline)
 
-    suspend fun getTimelineForSaga(sagaId: String): Flow<List<Timeline>>
 }

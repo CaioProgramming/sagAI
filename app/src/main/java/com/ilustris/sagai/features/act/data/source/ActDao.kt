@@ -25,18 +25,18 @@ interface ActDao {
     @Delete
     suspend fun delete(act: Act)
 
-    @Query("SELECT * FROM Act WHERE sagaId = :sagaId ORDER BY title ASC")
+    @Query("SELECT * FROM acts WHERE sagaId = :sagaId ORDER BY title ASC")
     fun getActsForSaga(sagaId: Int): Flow<List<Act>>
 
-    @Query("DELETE FROM Act WHERE sagaId = :sagaId")
+    @Query("DELETE FROM acts WHERE sagaId = :sagaId")
     suspend fun deleteActsForSaga(sagaId: Int)
 
     @Transaction
-    @Query("SELECT * FROM Act WHERE sagaId = :sagaId ORDER BY title ASC")
+    @Query("SELECT * FROM acts WHERE sagaId = :sagaId ORDER BY title ASC")
     fun getActContentsForSaga(sagaId: Int): Flow<List<ActContent>>
 
     // New query to get a specific ActContent by its ID
     @Transaction
-    @Query("SELECT * FROM Act WHERE id = :actId")
+    @Query("SELECT * FROM acts WHERE id = :actId")
     fun getActContent(actId: Int): Flow<ActContent?> // Nullable in case actId doesn't exist
 }

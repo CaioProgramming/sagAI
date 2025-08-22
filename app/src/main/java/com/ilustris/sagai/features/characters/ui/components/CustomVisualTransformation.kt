@@ -17,6 +17,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.lighter
@@ -60,7 +61,7 @@ fun buildCharactersAnnotatedString(
     append(text)
     characters.forEach { character ->
         val characterName = character.name
-        val characterColor = Color(character.hexColor.toColorInt())
+        val characterColor = character.hexColor.hexToColor() ?: Color.LightGray
         var startIndex = text.indexOf(characterName)
         while (startIndex != -1) {
             val endIndex = startIndex + characterName.length
@@ -109,22 +110,13 @@ fun buildWikiAndCharactersAnnotation(
                     SpanStyle(
                         fontWeight = FontWeight.Normal,
                         fontFamily = genre.headerFont(),
-                        shadow = shadow,
-                        brush = Brush.horizontalGradient(genre.colorPalette()),
+                        color = genre.color,
                     )
                 } else {
                     SpanStyle(
                         fontWeight = FontWeight.Bold,
                         fontFamily = genre.bodyFont(),
-                        brush =
-                            Brush.verticalGradient(
-                                listOf(
-                                    characterColor,
-                                    characterColor.copy(alpha = .5f),
-                                    shadowColor,
-                                ),
-                            ),
-                        shadow = shadow,
+                        color = characterColor,
                     )
                 }
             AnnotationRule(

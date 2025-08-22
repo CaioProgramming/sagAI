@@ -25,7 +25,7 @@ data class Saga(
     val id: Int = 0,
     val title: String = "",
     val description: String = "",
-    val icon: String? = null,
+    val icon: String = "",
     val createdAt: Long = System.currentTimeMillis(),
     val genre: Genre = Genre.entries.first(),
     @ColumnInfo(index = true)
