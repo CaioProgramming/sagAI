@@ -356,7 +356,7 @@ fun SagaReviewPreview() {
                                 conclusion = "As the saga reaches its climactic conclusion, prepare for an unforgettable finale that will tie together all the threads of this epic adventure. The fate of the world hangs in the balance.",
                             ),
                     ),
-                acts = emptyList()
+                acts = emptyList(),
             )
         SagaReview(content, false)
     }
@@ -646,7 +646,8 @@ fun MentionsPage(content: SagaContent) {
             delay(1000)
 
             val rankingList =
-                content.flatMessages()
+                content
+                    .flatMessages()
                     .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
             ranking = rankingList
             counting =
@@ -761,6 +762,7 @@ fun MentionsPage(content: SagaContent) {
                                         .size(80.dp)
                                         .effectForGenre(
                                             genre,
+                                            useFallBack = true,
                                         ),
                             )
 
@@ -772,6 +774,7 @@ fun MentionsPage(content: SagaContent) {
                                         .size(100.dp)
                                         .effectForGenre(
                                             genre,
+                                            useFallBack = true,
                                         ),
                             )
 
@@ -783,6 +786,7 @@ fun MentionsPage(content: SagaContent) {
                                         .size(80.dp)
                                         .effectForGenre(
                                             genre,
+                                            useFallBack = true,
                                         ),
                             )
                         }
@@ -820,7 +824,8 @@ fun MentionsPage(content: SagaContent) {
 
                             Column(Modifier.weight(1f)) {
                                 val messagesRanking =
-                                    content.flatMessages()
+                                    content
+                                        .flatMessages()
                                         .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
                                         .filter { it.second > 0 }
                                 Text(
@@ -852,7 +857,8 @@ fun MentionsPage(content: SagaContent) {
                         }
                         Column(Modifier.weight(1f)) {
                             val messagesRanking =
-                                content.flatMessages()
+                                content
+                                    .flatMessages()
                                     .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
                                     .filter { it.second > 0 }
                             Text(

@@ -207,6 +207,11 @@ class SagaContentManagerImpl
 
         private suspend fun endChapter(currentAct: ActContent?) =
             try {
+                currentAct?.currentChapterInfo?.let {
+                    it.events.filter { it.timeline.content.isEmpty() && it.timeline.title.isEmpty() }.forEach { event ->
+                        timelineUseCase.deleteTimeline(event.timeline)
+                    }
+                }
                 actUseCase
                     .updateAct(
                         currentAct!!.data.copy(

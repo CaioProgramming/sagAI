@@ -39,12 +39,14 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.headerFont
 import effectForGenre
@@ -87,9 +89,10 @@ fun ChapterCardView(
                 chapter.coverImage,
                 contentDescription = chapter.title,
                 modifier =
-                    Modifier.fillMaxSize().effectForGenre(
-                        genre,
-                    ),
+                    Modifier.fillMaxSize()
+                        .effectForGenre(genre)
+                        .selectiveColorHighlight(genre.selectiveHighlight())
+                ,
                 contentScale = ContentScale.Crop,
             )
         }

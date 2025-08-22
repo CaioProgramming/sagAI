@@ -2,7 +2,15 @@ package com.ilustris.sagai.features.saga.chat.domain.model
 
 import com.ilustris.sagai.features.characters.data.model.Character
 
-fun MessageContent.joinMessage(): Pair<String, String> = ((character?.name) ?: "Unknown") to message.text
+fun MessageContent.joinMessage(showType: Boolean = false): Pair<String, String> {
+    val key =
+        if (showType) {
+            "${character?.name}(${message.senderType.name})"
+        } else {
+            character?.name ?: message.senderType.name
+        }
+    return key to message.text
+}
 
 fun MessageContent.isUser(mainCharacter: Character?): Boolean {
     if (message.senderType == SenderType.CHARACTER) return false

@@ -322,8 +322,8 @@ fun CharacterHorizontalView(
     isLast: Boolean = false,
 ) {
     Column(
-        modifier =
-        modifier,
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -361,8 +361,8 @@ fun CharacterHorizontalView(
             HorizontalDivider(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
             )

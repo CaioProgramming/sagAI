@@ -52,16 +52,14 @@ object GenrePrompts {
                 """
         }
 
-    // In /Users/caioferreira/AndroidStudioProjects/sagAI/app/src/main/java/com/ilustris/sagai/core/ai/prompts/GenrePrompts.kt
-// Within the GenrePrompts object:
-
     fun getColorEmphasisDescription(genre: Genre): String =
         when (genre) {
             Genre.FANTASY ->
                 """
-                The **background should be a strong, evocative red color scheme** (e.g., deep crimson, fiery orange-red), possibly with subtle textures or gradients fitting the fantasy theme.
-                On the character, apply **very specific and limited rich red accents ONLY to small details**: examples include the glint in an eye, a single gemstone on a piece of jewelry, fine embroidery on clothing, or subtle streaks in hair.
-                **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST retain their natural, distinct hues and NOT be tinted red. The red accents should be isolated and clearly defined.
+                The **background should be a strong, evocative red color scheme** (e.g., deep crimson, fiery orange-red), possibly with subtle textures fitting the fantasy theme.
+                On the character, apply **very specific and limited rich red accents ONLY to small details**: examples include the glint in an eye, a single gemstone on a piece of jewelry, fine embroidery on clothing.
+                **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST retain their natural, distinct hues and NOT be tinted red.
+                The red accents should be isolated and clearly defined.
                 """
             Genre.SCI_FI ->
                 """
@@ -75,7 +73,7 @@ object GenrePrompts {
                 Character accents, if any, must be **extremely minimal, desaturated, and applied to very small details**: for instance, a faint, chilling blue reflection in the eyes, or a tiny, barely perceptible grey pattern on dark clothing.
                 **CRUCIAL:** The character should appear largely devoid of vibrant color, blending with the bleak, desaturated environment. Avoid any noticeable color accents that would break the monochromatic feel. The character's skin should appear pale or shadowed, not tinted by any accent color.
                 """
-        }
+        }.trimIndent()
 
     fun iconPrompt(
         genre: Genre,

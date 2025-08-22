@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.jvm.javaClass
@@ -86,6 +87,8 @@ fun SagaContent.getCurrentTimeLine() = currentActInfo?.currentChapterInfo?.curre
 fun SagaContent.getCurrentMessages() = getCurrentTimeLine()?.messages
 
 fun SagaContent.getCurrentChapter() = currentActInfo?.currentChapterInfo
+
+fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
 
 fun SagaContent.getDirective(): String {
     val actsCount = acts.size

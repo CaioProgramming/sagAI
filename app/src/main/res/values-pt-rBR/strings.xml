@@ -124,7 +124,7 @@
     <string name="saga_detail_delete_confirmation_message">Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.</string>
     <string name="saga_detail_delete_button">Excluir</string>
     <string name="saga_detail_cancel_button">Cancelar</string>
-    <string name="saga_drawer_act_prefix">Ato </string>
+    <string name="saga_drawer_act_prefix">Ato %1$s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
     <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
     <string name="saga_detail_progress_title">Progresso</string>

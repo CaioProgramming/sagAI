@@ -193,52 +193,59 @@ object SagaPrompts {
         saga: Saga,
         character: Character,
     ) = """
-        Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.
-        This final text prompt will be used to create a **Dramatic, Close-up Character Icon/Portrait** for the saga "${saga.title}" (Genre: ${saga.genre.title}).
+                    Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.
+                    This final text prompt will be used to create a **Dramatic, Close-up Character Icon** for the saga "${saga.title}" (Genre: ${saga.genre.title}).
 
-        **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
+                    **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
 
-        1.  **Foundational Art Style (Mandatory):**
-            *   The primary rendering style for the icon MUST be: `${GenrePrompts.artStyle(saga.genre)}`.
+                    1.  **Foundational Art Style (Mandatory):**
+                        *   The primary rendering style for the icon MUST be: `${GenrePrompts.artStyle(saga.genre)}`.
 
-        2.  **Specific Color Application Instructions (Mandatory):**
-            *   The following rules dictate how the genre's key colors are applied: `${GenrePrompts.getColorEmphasisDescription(saga.genre)}`.
-            *   **Important Clarification on Color:**
-                *   The color rules from `getColorEmphasisDescription` are primarily for:
-                    *   The **background's dominant color**.
-                    *   **Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).
-                *   **CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural.
-                *   Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents. The genre accents are design elements, not the primary light source for the character.
+                    2.  **Specific Color Application Instructions (Mandatory):**
+                        *   The following rules dictate how the genre's key colors are applied: `${GenrePrompts.getColorEmphasisDescription(
+        saga.genre,
+    )}`.
+                        *   **Important Clarification on Color:**
+                            *   The color rules from `getColorEmphasisDescription` are primarily for:
+                                *   The **background's dominant color**.
+                                *   **Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).
+                            *   **CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural.
+                            *   Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents. The genre accents are design elements, not the primary light source for the character.
 
-        3.  **Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**
-            *   You WILL have access to a Visual Reference Image (Bitmap).
-            *   From this, draw inspiration for:
-                *   **Compositional Framing:** (e.g., extreme close-up, angle). Adapt for an icon.
-                *   **Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured). Adapt for a simple icon background.
-                *   **Compatible Visual Details & Mood:** (e.g., subtle textures, expressions) that fit the art style and color rules.
+                    3.  **Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**
+                        *   You WILL have access to a Visual Reference Image (Bitmap).
+                        *   From this, draw inspiration for:
+                            *   **Compositional Framing:** (e.g., extreme close-up, angle). Adapt for an icon.
+                            *   **Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured).
+                            Adapt for a simple icon background.
+                            *   **Compatible Visual Details & Mood:** (e.g., subtle textures, expressions) that fit the art style and color rules.
 
-        4.  **Character Details (Provided Below):** The character to be depicted.
+                    4.  **Character Details (Provided Below):** The character to be depicted.
 
-        **YOUR TASK (Output a single text string for the Image Generation Model):**
-        Generate a single, highly detailed, unambiguous, and visually rich English text description. This description must:
-        *   Integrate the **Character Details**.
-        *   Render the scene in the **Foundational Art Style**.
-        *   Explicitly describe the **background color** and the **specific character accents** using the genre colors as per `getColorEmphasisDescription`.
-        *   Ensure the description implies that the character's base colors (skin, hair, main clothing) are preserved and not tinted by the accent colors. Lighting on the character should be consistent with the art style, with genre colors applied as specific, non-overwhelming details.
-        *   Incorporate **Compositional Framing** and compatible **Visual Details & Mood** inspired by the Visual Reference Image.
-        *   **CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.
+                    **YOUR TASK (Output a single text string for the Image Generation Model):**
+                    Generate a single, highly detailed, unambiguous, and visually rich English text description. This description must:
+                    *   Integrate the **Character Details**.
+                    *   Render the scene in the **Foundational Art Style**.
+                    *   Explicitly describe the **background color** and the **specific character accents** using the genre colors as per `getColorEmphasisDescription`.
+                    *   Ensure the description implies that the character's base colors (skin, hair, main clothing) are preserved and not tinted by the accent colors. Lighting on the character should be consistent with the art style, with genre colors applied as specific, non-overwhelming details.
+                    *   Incorporate **Compositional Framing** and compatible **Visual Details & Mood** inspired by the Visual Reference Image.
+                    *   **CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.
 
-        **Saga Context (for thematic consistency):**
-        ${saga.toJsonFormat()}
+                    **Saga Context (for thematic consistency):**
+                    ${saga.toJsonFormat()}
 
-        **Main Character Details (to be depicted):**
-        ${character.toJsonFormatExcludingFields(listOf("backstory", "image", "sagaId", "joinedAt", "hexColor", "id"))}
+                    **Main Character Details (to be depicted):**
+                    ${character.toJsonFormatExcludingFields(listOf("backstory", "image", "sagaId", "joinedAt", "hexColor", "id"))}
 
-        ---
-        **Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**
-        "Dramatic close-up icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines]. The background is a vibrant [e.g., neon purple as per genre instructions]. Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their black bodysuit, as per genre instructions]. The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded style. The composition is an [e.g., intense extreme close-up]. [Character Name] has [e.g., piercing blue eyes (unless overridden by genre accent color for eyes)]..."
-        ---
-        YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING.
+                    ---
+                    **Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**
+                    "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].
+                    The background is a vibrant [e.g., neon purple as per genre instructions].
+                    Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their black bodysuit, as per genre instructions].
+                    The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded style.
+                    The composition is an [e.g., intense extreme close-up]. [Character Name] has [e.g., piercing blue eyes (unless overridden by genre accent color for eyes)]..."
+                    ---
+                    YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING.
         """.trimIndent()
 
     private data class SagaReviewContext(

@@ -341,7 +341,7 @@ fun LazyListScope.SagaDrawerContent(
                     ),
             ) {
                 Text(
-                    stringResource(R.string.saga_drawer_act_prefix) + (index + 1).toRoman(),
+                    it.data.title.ifEmpty {   stringResource(R.string.saga_drawer_act_prefix,((index + 1).toRoman()))},
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = content.data.genre.bodyFont(),
@@ -1313,6 +1313,23 @@ private fun SagaDetailInitialView(
                         )
                     }
                 }
+
+                item(span = {
+                    GridItemSpan(columnCount)
+                }) {
+                    Text(
+                        it.data.endMessage,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = it.data.genre.bodyFont(),
+                                fontWeight = FontWeight.Light,
+                                textAlign = TextAlign.Center,
+                                brush = it.data.genre.gradient(),
+                            ),
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+
             } else {
                 item(span = { GridItemSpan(columnCount) }) {
                     Box(
@@ -1342,22 +1359,7 @@ private fun SagaDetailInitialView(
                 }
             }
 
-            if (it.data.isEnded) {
-                item(span = {
-                    GridItemSpan(columnCount)
-                }) {
-                    Text(
-                        it.data.endMessage,
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = it.data.genre.bodyFont(),
-                                fontWeight = FontWeight.Light,
-                                textAlign = TextAlign.Center,
-                                brush = it.data.genre.gradient(),
-                            ),
-                    )
-                }
-            }
+
 
             item(span = {
                 GridItemSpan(columnCount)

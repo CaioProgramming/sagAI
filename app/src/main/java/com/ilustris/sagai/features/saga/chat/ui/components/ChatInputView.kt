@@ -178,8 +178,8 @@ fun ChatInputView(
                 items(content.characters) {
                     CharacterHorizontalView(
                         Modifier
-                            .padding(vertical = 4.dp)
                             .wrapContentSize()
+                            .padding(8.dp)
                             .clickable {
                                 val startIndex =
                                     inputField.text.indexOfLast { char -> char == '@' }
@@ -203,10 +203,10 @@ fun ChatInputView(
                             },
                         character = it,
                         isLast = it == content.characters.last(),
-                        imageSize = 24.dp,
+                        imageSize = 32.dp,
                         genre = content.data.genre,
                         borderSize = 1.dp,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.labelLarge,
                     )
                 }
             }
@@ -214,78 +214,60 @@ fun ChatInputView(
 
         val isImeVisible = WindowInsets.isImeVisible
         val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
-        AnimatedContent(suggestionsEnabled) {
-            if (it) {
-                LazyRow(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    items(suggestions) {
-                        Button(
-                            onClick = {
-                                sendMessage(it.text, it.type)
-                            },
-                            shape = inputShape,
+        AnimatedVisibility(suggestionsEnabled) {
+            LazyRow(
+                modifier =
+                    Modifier
+                        .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                items(suggestions) {
+                    Button(
+                        onClick = {
+                            sendMessage(it.text, it.type)
+                        },
+                        shape = inputShape,
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 16.dp)
+                                .fillParentMaxWidth(.7f),
+                        colors =
+                            ButtonDefaults.outlinedButtonColors().copy(
+                                contentColor = content.data.genre.color,
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                            ),
+                    ) {
+                        Icon(
+                            painterResource(it.type.icon()),
+                            contentDescription = it.type.description(),
                             modifier =
-                                Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .fillParentMaxWidth(.6f),
-                            colors =
-                                ButtonDefaults.outlinedButtonColors().copy(
-                                    contentColor = content.data.genre.color,
-                                    containerColor = MaterialTheme.colorScheme.background,
+                                Modifier.padding(4.dp).size(12.dp).reactiveShimmer(
+                                    true,
+                                    content.data.genre.color
+                                        .darkerPalette()
+                                        .plus(Color.Transparent),
                                 ),
-                        ) {
-                            Icon(
-                                painterResource(it.type.icon()),
-                                contentDescription = it.type.description(),
-                                modifier =
-                                    Modifier.padding(4.dp).size(12.dp).reactiveShimmer(
-                                        true,
-                                        content.data.genre.color
-                                            .darkerPalette()
-                                            .plus(Color.Transparent),
-                                    ),
-                            )
+                        )
 
-                            Text(
-                                it.text,
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier =
-                                    Modifier.reactiveShimmer(
-                                        true,
-                                        duration = 5.seconds,
-                                    ),
-                            )
-
-                            Box(
-                                Modifier
-                                    .padding(4.dp)
-                                    .background(MaterialTheme.colorScheme.onBackground.copy(alpha = .1f))
-                                    .width(1.dp)
-                                    .height(12.dp),
-                            )
-                        }
+                        Text(
+                            it.text,
+                            style = MaterialTheme.typography.labelSmall,
+                            modifier =
+                                Modifier.reactiveShimmer(
+                                    true,
+                                    duration = 5.seconds,
+                                ),
+                        )
                     }
                 }
-            } else {
-                StarryTextPlaceholder(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(24.dp)
-                            .gradientFill(content.data.genre.gradient()),
-                )
             }
         }
 
         BlurredGlowContainer(
             modifier =
                 Modifier
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
                     .fillMaxWidth()
                     .padding(8.dp),
             inputBrush,
@@ -415,7 +397,7 @@ fun ChatInputView(
 
         AnimatedVisibility(isImeVisible) {
             LazyRow(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val inputs = SenderType.filterUserInputTypes()

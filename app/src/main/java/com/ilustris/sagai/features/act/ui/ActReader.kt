@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.paint
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -40,6 +41,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -71,7 +73,7 @@ fun ActReader(saga: SagaContent) {
                 enter = fadeIn(tween(1500)) + slideInVertically { -it },
                 exit = fadeOut(),
             ) {
-                ActReadingContent(act, genre, actPosition)
+                ActReadingContent(act, saga)
             }
             LaunchedEffect(Unit) {
                 isVisible = true
@@ -83,25 +85,10 @@ fun ActReader(saga: SagaContent) {
 @Composable
 fun ActReadingContent(
     act: ActContent,
-    genre: Genre,
-    actPosition: Int,
+    sagaContent: SagaContent,
 ) {
+    val genre = remember { sagaContent.data.genre }
     LazyColumn(modifier = Modifier.padding(vertical = 16.dp)) {
-        stickyHeader {
-            Text(
-                act.data.title,
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.headerFont(),
-                        textAlign = TextAlign.Center,
-                    ),
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(vertical = 16.dp),
-            )
-        }
         items(act.chapters) {
             val chapterPosition = act.chapters.indexOf(it)
             val shape = RoundedCornerShape(genre.cornerSize())
@@ -111,7 +98,7 @@ fun ActReadingContent(
                 modifier = Modifier.padding(horizontal = 16.dp),
             ) {
                 Text(
-                    it.data.title,
+                    "${sagaContent.chapterNumber(it.data).toRoman()} - ${it.data.title}",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.headerFont(),
@@ -174,6 +161,7 @@ fun IntroductionPage(saga: SagaContent) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(16.dp),
     ) {
         val genre = saga.data.genre
 
@@ -189,10 +177,10 @@ fun IntroductionPage(saga: SagaContent) {
         Text(
             saga.data.title,
             style =
-                MaterialTheme.typography.headlineLarge.copy(
+                MaterialTheme.typography.displaySmall.copy(
                     textAlign = TextAlign.Center,
                     fontFamily = genre.headerFont(),
-                    brush = genre.color.gradientFade(),
+                    brush = genre.gradient(true),
                 ),
         )
 

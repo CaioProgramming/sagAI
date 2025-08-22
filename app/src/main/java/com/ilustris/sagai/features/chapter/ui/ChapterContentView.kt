@@ -147,9 +147,9 @@ fun ChapterContentView(
                 },
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .fillMaxHeight(imageSize)
-                        .effectForGenre(genre),
+                        .fillMaxSize()
+                        .effectForGenre(genre)
+                        .selectiveColorHighlight(genre.selectiveHighlight()),
             )
 
             Box(
@@ -216,6 +216,5 @@ fun ChapterContentView(
                 Modifier.background(fadeGradientTop()).fillMaxWidth().height(50.dp),
             )
         }
-
     }
 }

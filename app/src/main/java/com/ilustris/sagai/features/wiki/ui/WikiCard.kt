@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.wiki.ui
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -69,40 +70,35 @@ fun WikiCard(
                         RoundedCornerShape(
                             genre.cornerSize(),
                         ),
-                )
-                .clickable { isExpanded = !isExpanded }
+                ).clickable { isExpanded = !isExpanded }
                 .padding(16.dp)
                 .animateContentSize(
-                    tween(800, easing = EaseIn)
-                )
+                    tween(easing = FastOutSlowInEasing),
+                ),
     ) {
+        val tag = wiki.emojiTag ?: emptyString()
 
-
-            val tag = wiki.emojiTag ?: emptyString()
-
-
+        Text(
+            text = "${tag.plus(" ")}${wiki.title}",
+            style =
+                Typography.titleSmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = genre.bodyFont(),
+                ),
+            color = MaterialTheme.colorScheme.onBackground,
+        )
+        AnimatedVisibility(isExpanded) {
             Text(
-                text = "${tag.plus(" ")}${wiki.title}",
+                text = wiki.content,
                 style =
-                    Typography.titleSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
+                    Typography.bodySmall.copy(
                         fontFamily = genre.bodyFont(),
                     ),
                 color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(top = 8.dp),
             )
-            AnimatedVisibility(isExpanded) {
-                Text(
-                    text = wiki.content,
-                    style =
-                        Typography.bodySmall.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.padding(top = 8.dp),
-                )
-            }
-
         }
+    }
 }
 
 @Preview(showBackground = true)
@@ -124,9 +120,10 @@ fun WikiCardPreview() {
                             type = type,
                         ),
                         genre = it,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
                     )
                 }
             }

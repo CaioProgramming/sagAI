@@ -127,6 +127,8 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -147,6 +149,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.ui.WikiCard
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -354,8 +357,8 @@ fun ChatView(
                                 Modifier
                                     .size(50.dp)
                                     .align(Alignment.Center),
-                            duration = 2.seconds,
-                            blurRadius = 3.dp,
+                            duration = 1.seconds,
+                            blurRadius = 1.dp,
                             tint = MaterialTheme.colorScheme.background,
                         )
                     }
@@ -576,26 +579,21 @@ fun ChatContent(
                     },
                 )
 
-                Column(
+                Box(
                     Modifier
                         .constrainAs(bottomFade) {
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         }.fillMaxWidth()
-                        .fillMaxHeight(.2f),
+                        .fillMaxHeight(.2f)
+                        .background(fadeGradientBottom()),
                 ) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight(.3f)
-                            .background(fadeGradientBottom()),
-                    )
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .background(MaterialTheme.colorScheme.background),
+                    StarryTextPlaceholder(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .gradientFill(content.data.genre.gradient()),
                     )
                 }
 
@@ -631,17 +629,6 @@ fun ChatContent(
                     animationSpec = tween(450, easing = EaseIn),
                 )
 
-                Box(
-                    Modifier
-                        .constrainAs(topFade) {
-                            top.linkTo(parent.top)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }.alpha(alpha)
-                        .fillMaxWidth()
-                        .fillMaxHeight(.4f)
-                        .background(fadeGradientTop()),
-                ) {}
                 SagaTopBar(
                     saga.title,
                     "${content.flatMessages().size} mensagens",
@@ -1154,7 +1141,6 @@ fun ChatList(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
                                 .padding(16.dp),
                     )
                 }
@@ -1165,7 +1151,7 @@ fun ChatList(
                 if (chapter.isComplete) {
                     item {
                         Text(
-                            "Fim do Capitulo ${act.chapters.indexOf(chapter) + 1}",
+                            "Fim do Capitulo ${saga.chapterNumber(chapter.chapter)}",
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
                                     brush = genre.gradient(),
@@ -1175,10 +1161,10 @@ fun ChatList(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.background)
                                     .padding(16.dp),
                         )
                     }
+
                     item {
                         ChapterContentView(
                             chapter.chapter,
@@ -1244,7 +1230,7 @@ fun ChatList(
 
                 item {
                     Text(
-                        "Capitulo ${act.chapters.indexOf(chapter) + 1}",
+                        "Capitulo ${saga.chapterNumber(chapter.chapter)}",
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 brush = genre.gradient(),

@@ -107,12 +107,12 @@ class MessageUseCaseImpl
                     textGenClient.generate<MessageGen>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
-                            message = message.joinMessage().formatToString(showSender = true),
+                            message = message.joinMessage(showType = true).formatToString(showSender = true),
                             lastMessages =
                                 saga
                                     .flatMessages()
                                     .takeLast(10)
-                                    .map { it.joinMessage().formatToString() },
+                                    .map { it.joinMessage(true).formatToString() },
                             directive = saga.getDirective(),
                         ),
                         true,
