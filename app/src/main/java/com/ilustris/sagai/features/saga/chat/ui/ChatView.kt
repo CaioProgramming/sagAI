@@ -118,6 +118,7 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.ActComponent
+import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
@@ -1124,7 +1125,6 @@ fun ChatList(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .fillParentMaxHeight()
                                 .background(MaterialTheme.colorScheme.background),
                     )
                 }
@@ -1149,22 +1149,6 @@ fun ChatList(
             act.chapters.reversed().forEach { chapter ->
 
                 if (chapter.isComplete) {
-                    item {
-                        Text(
-                            "Fim do Capitulo ${saga.chapterNumber(chapter.chapter)}",
-                            style =
-                                MaterialTheme.typography.bodyLarge.copy(
-                                    brush = genre.gradient(),
-                                    fontFamily = genre.headerFont(),
-                                    textAlign = TextAlign.Center,
-                                ),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                        )
-                    }
-
                     item {
                         ChapterContentView(
                             chapter.chapter,
@@ -1240,7 +1224,6 @@ fun ChatList(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
                                 .padding(16.dp),
                     )
                 }
@@ -1248,7 +1231,7 @@ fun ChatList(
 
             item {
                 Text(
-                    "Ato ${actList.indexOf(act) + 1}",
+                    "Ato ${(actList.indexOf(act) + 1).toRoman()}",
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             brush = genre.gradient(true),
@@ -1258,9 +1241,6 @@ fun ChatList(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.background,
-                            ).reactiveShimmer(true)
                             .padding(16.dp),
                 )
             }

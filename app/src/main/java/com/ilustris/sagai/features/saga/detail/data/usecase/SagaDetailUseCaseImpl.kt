@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
@@ -37,19 +38,26 @@ class SagaDetailUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val textGenClient: TextGenClient,
         private val imageGenClient: ImagenClient,
-        private val genreReferenceHelper: GenreReferenceHelper
+        private val genreReferenceHelper: GenreReferenceHelper,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Exception, Saga> =
             try {
-                val styleReferenceBitmap = genreReferenceHelper
-                    .getIconReference(saga.data.genre)
-                    .getSuccess()
+                val styleReferenceBitmap =
+                    genreReferenceHelper
+                        .getIconReference(saga.data.genre)
+                        .getSuccess()
+
+                val characterIcon: Bitmap? =
+                    saga
+                        .mainCharacter
+                        ?.image
+                        ?.let { genreReferenceHelper.getFileBitmap(it).getSuccess() }
 
                 val metaPrompt =
                     gemmaClient.generate<String>(
                         prompt = SagaPrompts.iconDescription(saga.data, saga.mainCharacter!!),
-                        listOf(styleReferenceBitmap),
-                        false,
+                        listOf(styleReferenceBitmap).plus(characterIcon).filterNotNull(),
+                        requireTranslation = false,
                     )!!
                 val newIcon =
                     imageGenClient.generateImage(

@@ -27,6 +27,7 @@ data class Timeline(
     val id: Int = 0,
     val title: String = "",
     val content: String = "",
+    val emotionalReview: String? = null,
     val createdAt: Long = Calendar.getInstance().timeInMillis,
     @ColumnInfo(index = true)
     val chapterId: Int,

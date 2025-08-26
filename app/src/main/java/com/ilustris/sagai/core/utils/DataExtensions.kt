@@ -236,7 +236,7 @@ fun doNothing() = {}
 
 fun Long.formatDate(): String {
     val date = Date(this)
-    val format = SimpleDateFormat("dd 'of' MMMM yyyy 'at' HH:mm", Locale.getDefault())
+    val format = SimpleDateFormat("dd 'of' MMMM yyyy", Locale.getDefault())
     return format.format(date)
 }
 

@@ -6,8 +6,10 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -19,13 +21,18 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -47,6 +54,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
+import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -115,19 +123,23 @@ fun TimeLineContent(
     onBack: () -> Unit = {},
 ) {
     val lazyListState = rememberLazyListState()
-    LazyColumn(state = lazyListState) {
-        val acts = content.acts
-        content.acts.forEach { actContent ->
+    LazyColumn(state = lazyListState, modifier = Modifier.padding(bottom = 32.dp)) {
+        val acts = content.acts.filter { it.isComplete() }
+        acts.forEach { actContent ->
             stickyHeader {
                 Text(
                     actContent.data.title.ifEmpty { "Ato ${(acts.indexOf(actContent) + 1).toRoman()}" },
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontFamily = content.data.genre.headerFont(),
-                        brush  = content.data.genre.gradient(true),
-                    ),
-                    modifier = Modifier.fillMaxWidth().background(
-                        MaterialTheme.colorScheme.background
-                    ).padding(16.dp),
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = content.data.genre.headerFont(),
+                            brush = content.data.genre.gradient(true),
+                        ),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.background,
+                            ).padding(16.dp),
                 )
             }
             actContent.chapters.forEach { chapter ->
@@ -135,43 +147,33 @@ fun TimeLineContent(
                     Text(
                         chapter.data.title.ifEmpty {
                             "Capítulo ${
-                                (actContent.chapters.indexOf(
-                                    chapter
-                                ) + 1).toRoman()
+                                (
+                                    actContent.chapters.indexOf(
+                                        chapter,
+                                    ) + 1
+                                ).toRoman()
                             }"
                         },
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = content.data.genre.headerFont(),
-                            color  = content.data.genre.color,
-                        ),
-                        modifier = Modifier.fillMaxWidth().background(
-                            MaterialTheme.colorScheme.background
-                        ).padding(16.dp),
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = content.data.genre.headerFont(),
+                                color = content.data.genre.color,
+                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.background,
+                                ).padding(16.dp),
                     )
-
                 }
 
                 items(chapter.events) {
-                    TimeLineCard(it.timeline, content.data.genre, showSpark = true)
-                }
-
-                if (chapter.isComplete()) {
-                    item {
-                        Text(
-                            "Fim do capítulo ${chapter.data.title}",
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(8.dp),
-                        )
-
-                    }
-                }
-            }
-            if (actContent.isComplete()) {
-                item {
-                    Text(
-                        "Fim do Ato ${actContent.data.title}",
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.padding(8.dp),
+                    TimeLineCard(
+                        it.timeline,
+                        content.data.genre,
+                        showSpark = true,
+                        isLast = it == chapter.events.last(),
                     )
                 }
             }
@@ -209,7 +211,7 @@ fun TimeLineCard(
     )
 
     ConstraintLayout(modifier.fillMaxWidth()) {
-        val (iconView, titleContent, contentView) = createRefs()
+        val (iconView, contentView, emotionalView) = createRefs()
         Column(
             modifier =
                 Modifier.constrainAs(iconView) {
@@ -228,19 +230,28 @@ fun TimeLineCard(
             )
 
             if (isLast.not()) {
-                Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(genre.color))
+                Box(modifier = Modifier.width(1.dp).weight(1f).background(genre.color))
             }
         }
 
         Column(
             modifier =
-                Modifier.padding(horizontal = 8.dp).constrainAs(titleContent) {
+                Modifier.padding(horizontal = 8.dp).constrainAs(contentView) {
                     top.linkTo(iconView.top)
                     start.linkTo(iconView.end)
                     end.linkTo(parent.end)
                     width = Dimension.fillToConstraints
                 },
         ) {
+            Text(
+                event.createdAt.formatDate(),
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = textColor.copy(alpha = .4f),
+                        fontWeight = FontWeight.Light,
+                        fontFamily = genre.bodyFont(),
+                    ),
+            )
             Text(
                 event.title,
                 style =
@@ -251,33 +262,32 @@ fun TimeLineCard(
             )
 
             Text(
-                event.createdAt.formatDate(),
+                if (showText) event.content else emptyString(),
+                modifier =
+                    Modifier.padding(8.dp),
                 style =
-                    MaterialTheme.typography.labelSmall.copy(
-                        color = textColor.copy(alpha = .4f),
-                        fontWeight = FontWeight.Light,
+                    contentStyle.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = textColor,
+                        textAlign = TextAlign.Start,
                     ),
             )
         }
 
-        Text(
-            if (showText) event.content else emptyString(),
-            modifier =
-                Modifier
-                    .constrainAs(contentView) {
-                        top.linkTo(titleContent.bottom)
-                        start.linkTo(titleContent.start)
-                        end.linkTo(parent.end)
-                        bottom.linkTo(parent.bottom)
+        if (event.emotionalReview?.isNotEmpty() == true) {
+            EmotionalCard(
+                event.emotionalReview,
+                genre,
+                isExpanded = isLast,
+                modifier =
+                    Modifier.constrainAs(emotionalView) {
+                        start.linkTo(iconView.start)
+                        end.linkTo(contentView.end)
+                        top.linkTo(contentView.bottom)
                         width = Dimension.fillToConstraints
-                    }.padding(8.dp),
-            style =
-                contentStyle.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = textColor,
-                    textAlign = TextAlign.Start,
-                ),
-        )
+                    },
+            )
+        }
     }
 }
 
@@ -292,7 +302,6 @@ fun TimeLineContentPreview() {
                     description = "A saga about adventure and stuff.",
                     genre = Genre.FANTASY,
                 ),
-
         )
     TimeLineContent(content)
 }
@@ -305,7 +314,8 @@ fun TimeLineCardPreview() {
             title = "The Great Battle",
             content = "A fierce battle took place, changing the course of history.",
             createdAt = Calendar.getInstance().timeInMillis,
-            chapterId = 0
+            chapterId = 0,
+            emotionalReview = "This was a great event!",
         )
     val genre = Genre.FANTASY
     TimeLineCard(

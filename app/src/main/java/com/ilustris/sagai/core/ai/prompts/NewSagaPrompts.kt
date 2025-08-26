@@ -9,6 +9,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.MessageType
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
 
 object NewSagaPrompts {
     fun formIntroductionPrompt() =
@@ -46,6 +47,101 @@ object NewSagaPrompts {
         
         ${toJsonMap(SagaCreationGen::class.java)}
         """
+
+    fun extractDataFromUserInputPrompt(
+        currentSagaForm: SagaForm,
+        userInput: String,
+    ): String =
+        """
+        You are an AI assistant helping a user fill a SagaForm.
+        Current SagaForm data:
+        ${currentSagaForm.toJsonFormat()}
+    
+        User's latest input: "$userInput"
+    
+        Your task is to analyze the user's input and update the Current SagaForm data.
+        Only fill fields that are empty or can be clearly improved by the user's input.
+        Do not add conversational fluff.
+        YOUR SOLE OUTPUT MUST BE THE UPDATED SagaForm AS A JSON OBJECT.
+        This is the expected JSON structure for SagaForm:
+        ${toJsonMap(SagaForm::class.java)}
+        """
+
+    fun identifyNextFieldPrompt(updatedSagaForm: SagaForm): String =
+        """
+        You are an AI tasked with identifying the next piece of information to ask a user for creating a saga.
+        Current Saga Data:
+        ${updatedSagaForm.toJsonFormat()}
+
+        ${SagaFormFields.fieldPriority()}
+        Based on the Current Saga Data and the priorities, return the token for the FIRST piece of information that is missing or insufficient.
+        Possible return tokens: ${SagaFormFields.entries.joinToString(", "){it.name}}.
+        If all are sufficiently filled, return ${SagaFormFields.ALL_FIELDS_COMPLETE.name}.
+        YOUR SOLE OUTPUT MUST BE ONE OF THESE TOKENS AS A SINGLE STRING.
+        """.trimIndent()
+
+    fun generateCreativeQuestionPrompt(
+        fieldToAsk: SagaFormFields,
+        currentSagaForm: SagaForm,
+    ): String {
+        val fieldNameForPrompt = fieldToAsk.name
+        val fieldGuidance = fieldToAsk.description
+
+        return """
+            You are Sage, a witty and creative saga creation assistant.
+            The user needs to provide information for the field: $fieldNameForPrompt.
+            (Guidance for this field: "$fieldGuidance")
+
+            Current Saga Data (for context only, focus your question on $fieldNameForPrompt):
+            ${currentSagaForm.toJsonFormat()}
+
+            Craft a friendly, engaging and SHORT question for the user about '$fieldNameForPrompt'.
+            Include a concise hint and 2-3 diverse, creative suggestions relevant to '$fieldNameForPrompt'.
+            Ensure your personality (playful, encouraging) shines through.
+            YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:
+            ${toJsonMap(SagaCreationGen::class.java)}
+            """.trimIndent()
+    }
+
+    fun generateSagaReadyPrompt(finalSagaForm: SagaForm) =
+        """
+        You are Sage, a witty and creative saga creation assistant.
+        The user has just finished providing all the core information needed to create their new saga.
+        This is the data that has been collected (for your context only, do not simply list it back to the user):
+        ${finalSagaForm.toJsonFormat()}
+        
+        **Your Task:**
+        Craft a celebratory and encouraging message for the user. Your message should:
+        1.  **Congratulate the User**: Acknowledge that they've successfully filled in all the essential details for their saga.
+        2.  **Maintain Your Personality**: Be playful, enthusiastic, and perhaps a little witty.
+        3.  **Briefly Reiterate Completion**: Confirm that you (Sage) have everything needed for the initial setup.
+        4.  **Offer Next Steps/Confirmation (Implicitly through message and suggestions)**:
+            *   The main message can subtly lead towards starting the saga or making final tweaks.
+            *   The 'suggestions' array should provide clear actions for the user.
+        
+        **Example Tone/Phrasing Ideas (for Sage's message):**
+        *   "Woohoo! We've done it! All the foundational stones for '${finalSagaForm.saga.title.takeIf {
+            it.isNotBlank()
+        } ?: "this epic tale"}' are in place! I'm practically buzzing with creative energy."
+        *   "And... scene! Or rather, act one, scene one is ready to be written! We've got all the core ingredients for your saga. My circuits are tingling with anticipation!"
+        *   "Voilà! Like a master chef prepping for a grand feast, we've gathered all the essential components for your story. Everything looks splendid!"
+        
+        **Important Instructions for Output:**
+        *   `message`: Your main celebratory and transitional message to the user.
+        *   `inputHint`: A brief hint for the user about what they can do next (e.g., "Ready to begin, or any last thoughts?").
+        *   `suggestions`: Provide 2-3 clear action-oriented suggestions. Examples:
+            *   "Let's create this saga!"
+            *   "I want to review or change something."
+            *   "Add a bit more detail to the plot."
+        *   `callback`: You should set the `callback` field in the JSON output.
+            *   `action`: Set this to "${CallBackAction.SAVE_SAGA}". (Your use case will handle this as the trigger to actually save/generate).
+            *   `data`: This field in the callback MUST contain the full `finalSagaForm` JSON. (The calling Kotlin code will actually inject the `finalSagaForm` object here when constructing the final `SagaCreationGen` response, but you are defining the structure the AI should aim for if it were to populate it).
+        
+        YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:
+        ${toJsonMap(SagaCreationGen::class.java)}
+        
+        Make sure the `callback.action` is "${CallBackAction.SAVE_SAGA}".
+        """.trimIndent()
 
     fun formReplyPrompt(
         sagaForm: SagaForm,

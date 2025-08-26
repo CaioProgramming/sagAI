@@ -71,6 +71,15 @@ Genre(
         background = R.drawable.horror,
         ambientMusicConfigKey = "horror_ambient_music_url",
     ),
+
+    HEROES(
+        title = "Heróis",
+        icon = R.drawable.ic_spark,
+        color = MaterialColor.Blue900,
+        iconColor = Color.White,
+        background = R.drawable.hero,
+        ambientMusicConfigKey = "heroes_ambient_music_url",
+    ),
 }
 
 @StringRes
@@ -112,6 +121,16 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.3f,
                 desaturationFactorNonTarget = .7f,
             )
+
+        Genre.HEROES ->
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = .3f,
+                saturationThreshold = .45f,
+                lightnessThreshold = .25f,
+                highlightSaturationBoost = 1.2f,
+                desaturationFactorNonTarget = .7f,
+            )
     }
 
 fun Genre.defaultHeaderImage() =
@@ -119,6 +138,7 @@ fun Genre.defaultHeaderImage() =
         Genre.FANTASY -> R.drawable.fantasy_card
         Genre.SCI_FI -> R.drawable.scifi_card
         Genre.HORROR -> R.drawable.horror_card
+        Genre.HEROES -> R.drawable.hero_card
     }
 
 fun Genre.colorPalette() =
@@ -143,5 +163,13 @@ fun Genre.colorPalette() =
                 MaterialColor.BlueGray700,
                 MaterialColor.LightBlue50,
                 MaterialColor.BlueGray300,
+            )
+
+        Genre.HEROES ->
+            listOf(
+                MaterialColor.Blue500,
+                MaterialColor.Blue900,
+                MaterialColor.LightBlue600,
+                MaterialColor.LightBlueA700,
             )
     }

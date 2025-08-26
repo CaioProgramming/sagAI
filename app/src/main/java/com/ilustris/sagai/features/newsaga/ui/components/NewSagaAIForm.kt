@@ -27,7 +27,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.filled.Add
@@ -42,6 +44,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -107,6 +110,12 @@ fun NewSagaAIForm(
         label = "iconScaleAnimation",
     )
 
+    LaunchedEffect(aiState.readyToSave) {
+        if (aiState.readyToSave) {
+            showReview = true
+        }
+    }
+
     AnimatedVisibility(
         isLoading,
         enter = fadeIn(),
@@ -125,7 +134,8 @@ fun NewSagaAIForm(
                 .blur(blurRadius)
                 .fillMaxSize()
                 .padding(16.dp)
-                .animateContentSize(),
+                .animateContentSize()
+                .verticalScroll(rememberScrollState()),
     ) {
         AnimatedVisibility(isLoading.not()) {
             Text(
@@ -145,7 +155,7 @@ fun NewSagaAIForm(
                     SimpleTypewriterText(
                         aiState.message ?: emptyString(),
                         style =
-                            MaterialTheme.typography.headlineSmall.copy(
+                            MaterialTheme.typography.bodyLarge.copy(
                                 brush = brush,
                                 fontFamily = textFont,
                                 fontWeight = FontWeight.Bold,
@@ -189,14 +199,23 @@ fun NewSagaAIForm(
         }
 
         AnimatedVisibility(isLoading.not()) {
-            AnimatedContent(showReview, modifier = Modifier
-                .padding(24.dp)
+            AnimatedContent(
+                showReview,
+                modifier =
+                    Modifier
+                        .padding(24.dp),
             ) {
                 if (it) {
-                    Button(onClick = {onSave()}, shape = MaterialTheme.shapes.extraLarge, colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Black,
-                        contentColor =  Color.White
-                    ), border = BorderStroke(1.dp, brush), modifier = Modifier.fillMaxWidth()
+                    Button(
+                        onClick = { onSave() },
+                        shape = MaterialTheme.shapes.extraLarge,
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = Color.Black,
+                                contentColor = Color.White,
+                            ),
+                        border = BorderStroke(1.dp, brush),
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Salvar", modifier = Modifier.gradientFill(brush))
                     }
@@ -214,8 +233,7 @@ fun NewSagaAIForm(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     MaterialTheme.shapes.extraLarge,
-                                )
-                                .alpha(.4f)
+                                ).alpha(.4f)
                                 .padding(16.dp),
                     ) {
                         Icon(
@@ -238,12 +256,9 @@ fun NewSagaAIForm(
                             modifier = Modifier.alpha(.4f).size(24.dp),
                         )
                     }
-
                 }
             }
         }
-
-
     }
 
     if (showInputDialog) {
@@ -286,6 +301,7 @@ fun NewSagaAIForm(
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
+                                        .fillParentMaxWidth(.7f)
                                         .clip(MaterialTheme.shapes.large)
                                         .border(
                                             1.dp,
@@ -342,7 +358,7 @@ fun NewSagaAIForm(
                             fontFamily = textFont,
                             brush = brush,
                             fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         ),
                     modifier =
                         Modifier

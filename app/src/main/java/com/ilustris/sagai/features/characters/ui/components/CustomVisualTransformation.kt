@@ -18,6 +18,7 @@ import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.lighter
@@ -105,20 +106,22 @@ fun buildWikiAndCharactersAnnotation(
                         androidx.compose.ui.geometry
                             .Offset(1f, -1f),
                 )
+
+            val mainColor = if (character.id == mainCharacter?.id) genre.color else characterColor
+            val font = if (character.id == mainCharacter?.id) genre.headerFont() else genre.bodyFont()
             val span =
-                if (character.id == mainCharacter?.id) {
-                    SpanStyle(
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = genre.headerFont(),
-                        color = genre.color,
-                    )
-                } else {
-                    SpanStyle(
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = genre.bodyFont(),
-                        color = characterColor,
-                    )
-                }
+                SpanStyle(
+                    fontWeight = FontWeight.SemiBold,
+                    fontFamily = font,
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            mainColor,
+                            mainColor.copy(alpha = .5f),
+                            shadowColor
+                        )
+                    ),
+                )
+
             AnnotationRule(
                 searchTerm = character.name,
                 annotationValue = "character:${character.id}",

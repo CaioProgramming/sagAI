@@ -107,6 +107,22 @@ object HorrorColorTones {
         )
 }
 
+object HeroColorTones {
+    val URBAN_COMIC_VIBRANCY =
+        ColorTonePalette(
+            name = "Urban Comic Vibrancy",
+            highlightTint = Triple(0.5f, 0.6f, .7f), // Bright, very subtly cool white (hint of cyan)
+            shadowTint = Triple(0.15f, 0.2f, 0.3f), // Deep, desaturated cool blue/indigo
+            defaultTintStrength = 0.4f, // Moderate strength for punchy colors
+        )
+
+    // You can add more hero-themed palettes here in the future
+    val allTones =
+        listOf(
+            URBAN_COMIC_VIBRANCY,
+        )
+}
+
 // You might also want a data class if not already defined elsewhere,
 // or ensure it's imported if it exists in another file.
 // data class ColorTonePalette(

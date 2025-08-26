@@ -42,7 +42,7 @@ object CharacterPrompts {
         *   **Composition Reference Image:** (Direct Bitmap input to the image model)
 
         **Character Context:**
-        ${character.toJsonFormat()}
+        ${character.toJsonFormatExcludingFields(listOf("id", "image", "sagaId", "joinedAt", "backstory"))}
         """.trimIndent()
 
     fun appearance(character: Character) =

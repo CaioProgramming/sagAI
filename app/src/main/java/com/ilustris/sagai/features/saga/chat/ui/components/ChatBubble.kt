@@ -103,7 +103,7 @@ fun ChatBubble(
     val bubbleShape =
         CurvedChatBubbleShape(
             cornerRadius = cornerSize,
-            tailWidth = 2.dp,
+            tailWidth = 4.dp,
             tailHeight = 4.dp,
             tailAlignment = bubbleStyle.tailAlignment,
         )

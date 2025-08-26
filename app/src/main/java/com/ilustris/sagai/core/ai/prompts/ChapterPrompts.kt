@@ -142,6 +142,9 @@ object ChapterPrompts {
                 "featuredCharacters",
                 "createdAt",
                 "coverImage",
+                "personality",
+                "overview",
+                "emotionalReview",
             )
         val coverContextJson = coverContext.toJsonFormatExcludingFields(fieldsToExcludeForCover)
 
@@ -149,6 +152,8 @@ object ChapterPrompts {
             Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Chapter Covers**.
             You will receive contextual information about the chapter and characters involved.
             You will also (outside this prompt) have access to a Visual Reference Image to inspire composition and specific details.
+            This references will include the characters actual images following the respective order on the field 'charactersInvolved'.
+            
 
             **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
             1.  **Chapter & Character Information (JSON below):** Details about the saga, chapter, and characters.

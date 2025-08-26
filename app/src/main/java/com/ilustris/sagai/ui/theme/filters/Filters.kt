@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre // Your Genre class
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
+import com.ilustris.sagai.ui.theme.filters.HeroColorTones
 import com.ilustris.sagai.ui.theme.filters.HorrorColorTones // Import HorrorColorTones
 import com.ilustris.sagai.ui.theme.filters.SciFiColorTones
 import com.ilustris.sagai.ui.theme.grayScale
@@ -96,7 +97,7 @@ fun Modifier.effectForGenre(
     val fantasyPalette = FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
     val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
-
+    val heroPalette = HeroColorTones.URBAN_COMIC_VIBRANCY
     val uniformValues =
         remember(genre, pixelSize) {
             // Add pixelSize as a key for remember
@@ -156,6 +157,25 @@ fun Modifier.effectForGenre(
                         pixelationBlockSize = pixelSize ?: 3.5f,
                         colorTemperature = .3f.unaryMinus(),
                     )
+                Genre.HEROES -> {
+                    ShaderParams(
+                        grainIntensity = customGrain ?: .1f,
+                        bloomThreshold = .3f,
+                        bloomIntensity = .2f,
+                        bloomRadius = 1f,
+                        softFocusRadius = focusRadius ?: 0f,
+                        saturation = .9f,
+                        contrast = 1.5f,
+                        brightness = -0.1f,
+                        highlightTint = heroPalette.highlightTint,
+                        shadowTint = heroPalette.shadowTint,
+                        tintStrength = heroPalette.defaultTintStrength,
+                        vignetteStrength = .1f,
+                        vignetteSoftness = 1f,
+                        pixelationBlockSize = 0.0f,
+                        colorTemperature = .2f,
+                    )
+                }
                 else ->
                     ShaderParams()
             }

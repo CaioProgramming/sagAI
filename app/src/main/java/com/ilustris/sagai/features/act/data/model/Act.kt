@@ -22,8 +22,10 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 data class Act(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val title: String = emptyString(),
-    val content: String = emptyString(),
+    val title: String = "",
+    val content: String = "",
+    @ColumnInfo(defaultValue = "")
+    val emotionalReview: String? = null,
     @ColumnInfo(index = true)
     val sagaId: Int? = null,
     @ColumnInfo(index = true)

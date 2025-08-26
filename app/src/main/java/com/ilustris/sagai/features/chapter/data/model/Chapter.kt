@@ -14,6 +14,7 @@ data class Chapter(
     val overview: String = "",
     val currentEventId: Int? = null,
     val coverImage: String = "",
+    val emotionalReview: String? = null,
     @ColumnInfo(defaultValue = "")
     val createdAt: Long? = 0L,
     @ColumnInfo(index = true)

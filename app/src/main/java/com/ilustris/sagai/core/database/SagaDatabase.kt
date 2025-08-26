@@ -32,9 +32,9 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Timeline::class,
         Act::class,
     ],
-    version = 37,
+    version = 40,
     autoMigrations = [
-        androidx.room.AutoMigration(from = 36, to = 37),
+        androidx.room.AutoMigration(from = 39, to = 40),
     ],
     exportSchema = true,
 )

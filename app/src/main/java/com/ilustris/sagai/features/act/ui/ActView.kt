@@ -31,6 +31,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
@@ -73,8 +74,7 @@ fun ActComponent(
         modifier =
             modifier
                 .padding(16.dp)
-                .animateContentSize()
-                .verticalScroll(rememberScrollState()),
+                .animateContentSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -124,6 +124,10 @@ fun ActComponent(
                 wiki = content.wikis,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
+
+            if (act.emotionalReview?.isNotEmpty() == true) {
+                EmotionalCard(act.emotionalReview, content.data.genre, false)
+            }
         }
 
     }

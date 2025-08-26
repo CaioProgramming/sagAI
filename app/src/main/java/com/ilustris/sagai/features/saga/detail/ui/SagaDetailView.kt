@@ -341,7 +341,7 @@ fun LazyListScope.SagaDrawerContent(
                     ),
             ) {
                 Text(
-                    it.data.title.ifEmpty {   stringResource(R.string.saga_drawer_act_prefix,((index + 1).toRoman()))},
+                    it.data.title.ifEmpty { stringResource(R.string.saga_drawer_act_prefix, ((index + 1).toRoman())) },
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = content.data.genre.bodyFont(),
@@ -792,7 +792,7 @@ private fun SagaDetailInitialView(
                 GridItemSpan(columnCount)
             }) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    /*var highlightParams by
+                    var highlightParams by
                         remember {
                             mutableStateOf(
                                 SelectiveColorParams(
@@ -803,7 +803,7 @@ private fun SagaDetailInitialView(
                                     desaturationFactorNonTarget = .7f,
                                 ),
                             )
-                        }*/
+                        }
                     Box(
                         modifier =
                             Modifier
@@ -903,7 +903,7 @@ private fun SagaDetailInitialView(
                         }
                     }
 
-/*                    SimpleSlider(
+                    /*SimpleSlider(
                         "Hue tolerance",
                         maxValue = 1f,
                     ) { value ->
@@ -1326,10 +1326,9 @@ private fun SagaDetailInitialView(
                                 textAlign = TextAlign.Center,
                                 brush = it.data.genre.gradient(),
                             ),
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
                     )
                 }
-
             } else {
                 item(span = { GridItemSpan(columnCount) }) {
                     Box(
@@ -1358,8 +1357,6 @@ private fun SagaDetailInitialView(
                     }
                 }
             }
-
-
 
             item(span = {
                 GridItemSpan(columnCount)

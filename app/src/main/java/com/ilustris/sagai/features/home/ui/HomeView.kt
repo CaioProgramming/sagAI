@@ -54,6 +54,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -215,13 +216,7 @@ private fun ChatList(
             }
         }
         item {
-            val brush =
-                gradientAnimation(
-                    genresGradient(),
-                    gradientType = GradientType.LINEAR,
-                    targetValue = 500f,
-                    duration = 4.seconds,
-                )
+
             Row(
                 modifier =
                     Modifier
@@ -234,7 +229,7 @@ private fun ChatList(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
-                    brush = Brush.verticalGradient(genresGradient()),
+                    brush = Brush.verticalGradient(genresGradient(), tileMode = TileMode.Decal ),
                     strokeSize = 2.dp,
                     modifier =
                         Modifier
@@ -294,7 +289,6 @@ private fun ChatList(
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontWeight = FontWeight.Light,
-                                        brush = Brush.verticalGradient(holographicGradient),
                                     ),
                             )
                         }

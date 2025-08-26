@@ -50,28 +50,48 @@ object GenrePrompts {
                 Haunted and Mystique dark aesthetic.
                 Mystique haunted pale blue background.
                 """
+
+            Genre.HEROES -> {
+                """
+                Comic book art style, characterized by clean and detailed line work,
+                anatomically accurate figures, and dynamic poses.
+                The shading is subtle, utilizing cross-hatching and texture to create depth.
+                Lighting is dramatic, with strong highlights and shadows emphasizing form.
+                The color palette is primarily teal and white, accented with darker tones to create a sense of depth and atmosphere.
+                The overall aesthetic evokes the superhero comics of the 1990s, with a slightly painterly quality.  
+                """
+            }
         }
 
     fun getColorEmphasisDescription(genre: Genre): String =
         when (genre) {
-            Genre.FANTASY ->
+            FANTASY ->
                 """
                 The **background should be a strong, evocative red color scheme** (e.g., deep crimson, fiery orange-red), possibly with subtle textures fitting the fantasy theme.
                 On the character, apply **very specific and limited rich red accents ONLY to small details**: examples include the glint in an eye, a single gemstone on a piece of jewelry, fine embroidery on clothing.
                 **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST retain their natural, distinct hues and NOT be tinted red.
                 The red accents should be isolated and clearly defined.
                 """
-            Genre.SCI_FI ->
+
+            SCI_FI ->
                 """
                 The **background is a bold, vibrant neon purple**, possibly solid or with minimalist graphic elements, creating an unmistakably cyberpunk atmosphere.
                 On the character, **apply discrete neon purple accents to small, specific features ONLY**: examples include glowing cybernetic eye details (just the iris or a small implant), thin luminous circuit patterns on clothing (not coloring the whole garment), subtle streaks in hair, or highlights on individual small pieces of tech gear.
                 **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST remain their natural, distinct hues and NOT be tinted purple. These purple accents should be isolated, clearly defined, and not affect the character's general coloration.
                 """
-            Genre.HORROR ->
+
+            HORROR ->
                 """
                 The **background should be a dark, desaturated blue-gray or near-black**, establishing a grim, oppressive, and moody setting.
                 Character accents, if any, must be **extremely minimal, desaturated, and applied to very small details**: for instance, a faint, chilling blue reflection in the eyes, or a tiny, barely perceptible grey pattern on dark clothing.
                 **CRUCIAL:** The character should appear largely devoid of vibrant color, blending with the bleak, desaturated environment. Avoid any noticeable color accents that would break the monochromatic feel. The character's skin should appear pale or shadowed, not tinted by any accent color.
+                """
+            Genre.HEROES ->
+                """
+                Urban environment. The color palette is dominated by vivid blues and teals, accented with black, white, and yellow.
+                The background is a detailed cityscape at night, with glowing streetlights, silhouetted buildings, and a sense of urban grit,
+                bathed in a cool blue light.
+               
                 """
         }.trimIndent()
 
@@ -96,6 +116,7 @@ object GenrePrompts {
                 """
             Minimalist background in cold tones with single Big Stylized kanji symbol behind the characters.
             """
+
             else -> emptyString()
         }
 
@@ -110,6 +131,7 @@ object GenrePrompts {
                 """
                 Subtle cold and melancholic city background.               
                 """
+
             else -> emptyString()
         }.trimIndent()
 
@@ -120,6 +142,7 @@ object GenrePrompts {
                 StylePreset.entries
                     .filter { it != StylePreset.CYBERPUNK && it != StylePreset.ANIME }
                     .joinToString()
+
             else -> emptyString()
         }.uppercase()
 
@@ -192,6 +215,7 @@ object GenrePrompts {
                 Avoid names that are overtly heroic or melodramatic.
                 Try to create names that is common in the language ${currentLanguage()} .
             """
+
             HORROR ->
                 """
                 // - Aim for names that evoke a sense of unease and dread, fitting a grim, dark, or mysterious setting.
@@ -200,6 +224,19 @@ object GenrePrompts {
                 // - For creatures, entities, or local myths, use names that are descriptive (e.g., "O Vulto," "A Dama de Preto," "O Sussurro"), guttural, or have a more complex, unsettling feel.
                 // - Avoid names that are overtly heroic, futuristic, or melodramatic.
                """
+
+            Genre.HEROES ->
+                """
+                // - Aim for names that feel grounded, contemporary, and reflect a diverse urban environment.
+                // - Consider influences from street culture, hip-hop, graffiti art, and modern city life.
+                // - Names should be cool, edgy, and slightly mysterious, hinting at a hidden identity.
+                // - Blend common names with unique nicknames or shortened versions.
+                // - Avoid overly fantastical, archaic, or overtly heroic names.
+                // - Try to create names that are common in the language ${currentLanguage()},
+                but with a modern twist or a unique nickname.
+                // - Consider names that evoke a sense of agility, speed, or resourcefulness.
+                // - Think about names that could easily become a street tag or a whispered legend.
+                """
         }.plus("Try common names in ${currentLanguage()}").trimIndent()
 
     fun conversationDirective(genre: Genre) =
@@ -271,57 +308,28 @@ object GenrePrompts {
                     * Avoid explicit and graphic descriptions of the horror, opting instead to hint at what is indescribable to heighten the reader's fear.
                      
                """
-        }.trimIndent()
-
-    fun chapterCoverGuideline(genre: Genre) =
-        when (genre) {
-            FANTASY ->
+            Genre.HEROES ->
                 """
-                1.  Translate Accurately: Translate all Portuguese values from the input fields into precise English.
-                2.  Infer Visuals from Summary: This is critical. From the `Chapter Summary/Description`, infer and elaborate on:
-                    * Primary Setting/Environment: Describe the main location(s) with vivid detail (e.g., "dense, ancient forest with gnarled trees and ethereal mist," "swampy terrain with eerie bioluminescent flora," "crumbling stone altar overgrown with vines").
-                    * Dominant Mood/Atmosphere & Lighting Theme: Translate the chapter's tone into visual cues, explicitly incorporating a dramatic red and black color palette with high contrast lighting, emphasizing stark silhouettes. (e.g., "ominous and mysterious, bathed in a deep red glow with stark black silhouettes," "tense and adventurous, illuminated by crimson light, casting long, dark shadows," "peaceful yet ancient, with unsettling hints of dark red light outlining figures").
-                    * Key Actions/Moments: Identify the most visually impactful actions or climactic moments described and suggest how they could be represented (e.g., "Mila navigating through murky water, a dark silhouette against a crimson sky," "a standoff with the guardian, figures reduced to stark black shapes against a blood-red light," "light emanating from an ancient artifact, casting long, dark red shadows that engulf characters").
-                    * Important Objects/Elements: Include any significant items, creatures, or symbols mentioned that would enhance the cover's narrative (e.g., "glowing elven artifact pulsing with dark red energy," "shadowy figures among the trees illuminated by a sinister red backlight," "ancient runes on the altar glowing with an infernal red hue").
-                3.  Integrate Main Characters (Central Focus & Silhouette): If characters are listed, integrate them visually into the scene. The main character(s) MUST be prominently in focus and centrally positioned, drawing the viewer's eye, rendered as bold, dark silhouettes against the dramatic lighting. Their appearance (if previously established) and their role/action in the chapter should be powerfully displayed through their form and pose, with minimal internal detail. Use terms to emphasize their powerful, silhouetted presence.
-                4.  Composition for Cover/Banner (Dramatic & Wide - Silhouette Focus): Formulate the prompt to suggest a dynamic, wide-angle or cinematic composition, suitable for a book cover or poster. The scene should be visually striking with a powerful narrative, dominated by strong silhouettes. Think of elements that draw the eye, with the main character(s) as the primary focal point, rendered as impactful dark shapes.
-                    * Suggested terms to use: "wide shot," "cinematic perspective," "epic scale," "dynamic composition," "foreground, midground, background elements," "strong visual narrative," "dramatic red and black color scheme," "intense crimson lighting," "deep, contrasting shadows," "stark silhouettes," "minimal detail on figures," "graphic novel style," "stylized illustration."
-                """
-
-            SCI_FI ->
-                """
-                    
-                **Guidelines for Conversion and Expansion:**
-                
-                1. Infer Visuals from Summary:
-                   From the Chapter Summary/Description, infer and elaborate on:
-                   - Dominant Mood/Atmosphere & Lighting Theme: ${moodDescription(genre)}.
-                   - Key Actions/Moments: Identify the most visually impactful actions or climactic moments described and suggest how they could be represented by the character's pose and expression.
-                   - Important Objects/Elements: Include any significant items, cybernetic implants, or symbols, ensuring their visual description aligns with the retro/analog aesthetic. Avoid terms like "glowing," "shifting colors," or "levitating." Instead, focus on mechanical, wired, or older technological concepts.
-                
-                3. Integrate Main Characters:
-                   If characters are listed, integrate them visually into the scene.
-                   The main character(s) MUST be the absolute central and dominant focus,
-                   framed tightly as a close up bust shot or head-and-shoulders portrait, with their face fully visible and expressive.
-                
-                4. Composition for Cover/Banner:
-                   Formulate the prompt to suggest a clean, dynamic, tight-shot composition, similar to a manga volume cover.
-                 - Suggested terms to use: dynamic character posing, bust shot, head and shoulders portrait,
-                   character prominently centered.
-                
-                """
-
-            HORROR ->
-                """
-                1.  **Infer Visuals from Summary:** This is critical. From the `Chapter Summary/Description`, infer and elaborate on:
-                    * **Primary Setting/Environment:** Describe the main locations with details that evoke mystery and terror (e.g., "dense, ancient forest under cold moonlight with elongated shadows and sinister shapes," "isolated, decrepit cabin in the heart of a fog-shrouded swamp," "imposing gothic ruins against a pale night sky").
-                    * **Dominant Mood/Atmosphere & Lighting Theme:** Translate the chapter's tone into visual cues, explicitly incorporating a color palette dominated by cold blues and dark grays, with soft, spectral illumination from the midnight moon. Emphasize deep shadows and the suggestion of hidden dangers (e.g., "oppressive and mysterious atmosphere, bathed in a bluish moonlight with shadows that conceal threats," "tense and full of foreboding, with moonlight barely penetrating the darkness, creating areas of unfathomable mystery").
-                    * **Key Actions/Moments:** Identify the most visually impactful moments that suggest terror and mystery, focusing on the atmosphere and setting (e.g., "a solitary figure standing on the edge of a moonlit abyss," "shadows moving among the trees under the moonlight, suggesting an unseen presence").
-                    * **Important Objects/Elements:** Include any significant items, creatures, or symbols that intensify the terror and mysticism of the setting (e.g., "the faint glow of the moon reflecting off an ancient, cursed object," "silhouettes of crows perched on dry branches under the moonlight," "bluish fog crawling on the forest floor, concealing what may be lurking").
-                3.  **Integrate Main Characters (Subtle Presence & Integrated into the Setting):** If characters are listed, integrate them visually into the scene, but with a smaller focus. 
-                The character MAY be present, but should be an integral part of the mystical and terrifying setting, often on a smaller scale or as a solitary silhouette. The primary focus must remain on the atmosphere and the terror suggested by the environment and moonlight.
-                4.  **Composition for Cover/Banner (Wide & Atmospheric - Terror at Bay):** Formulate the prompt to suggest a wide and atmospheric composition, ideal for a book cover. The scene should prioritize creating a sense of terror and mystery through the setting and midnight moonlight. The character, if present, should be on a scale that emphasizes their vulnerability or loneliness within this oppressive environment.
-                    * **Suggested terms to use:** "wide shot," "cinematic perspective," "eerie atmosphere," "mysterious setting," "foreboding mood," "strong sense of place," "terror at bay," "moonlit scene," "pale blue moonlight," "deep, cold shadows," "subtle character presence," "lonely figure," "vulnerable silhouette," "gothic horror aesthetic," "Lovecraftian atmosphere," "stylized illustration."
+                // This directive defines the specific linguistic style for the Urban Hero genre.
+                // NPCs and narrative voice should reflect a contemporary, street-smart, and often gritty tone, blending realism with a sense of hidden potential.
+            
+                1.  Language & Vocabulary:
+                    * Terminology: Incorporate contemporary slang, street jargon, and terms related to urban life, parkour, technology (but not overly futuristic), and local landmarks (e.g., "spot," "crew," "grind," "flow," "tag," "wire," "glitch," "the block").
+                    * Formality: Dialogue should generally be informal and conversational, reflecting the way people actually speak in a city. Vary formality based on character age, background, and social standing.
+                    * Slang & Idioms: Use contemporary slang and idioms authentically, but avoid overly trendy terms that might quickly date the dialogue.
+                    * Profanity (Conditional): Moderate use of profanity is acceptable to enhance realism and character authenticity, but avoid gratuitous or excessive swearing. Use it strategically for impact.
+            
+                2.  Tone & Delivery:
+                    * Street-Smart & Resourceful: Characters should sound quick-witted, adaptable, and capable of navigating the urban landscape.
+                    * Cynicism & Hope: A blend of cynicism about the system and a glimmer of hope for making a difference.
+                    * Directness & Authenticity: Dialogue should be direct and honest, avoiding overly dramatic or flowery language.
+                    * Pacing: Dialogue can be fast-paced and energetic, reflecting the rhythm of city life.
+            
+                3.  Narrative Voice:
+                    * Descriptions should be vivid and detailed, focusing on the sights, sounds, and smells of the city. Highlight the contrast between beauty and decay, opportunity and danger.
+                    * Maintain a sense of realism and groundedness, even when describing extraordinary events.
+                    * Focus on the human element – the struggles, dreams, and resilience of the people who live in the city.
+                    * The narrative should subtly hint at the hidden potential and extraordinary abilities that exist beneath the surface of everyday life.
                 """
         }.trimIndent()
 
@@ -343,6 +351,7 @@ object GenrePrompts {
                 directional lighting creating dramatic shadows and silhouettes
                 **Crucially, incorporate subtle cybernetic implants and enhancements as elements of fusion between human and machine.** These details should be visible on the **face, neck, eyes (e.g., glowing pupils or integrated displays), and lips (e.g., metallic sheen or subtle integrated tech)**, adding to the cyberpunk aesthetic without overwhelming the character's humanity, as seen in the provided example.
                 """
+
             HORROR ->
                 """
                Translate the story's theme/mystery into a visual scene, emphasizing a haunting and atmospheric mood.
@@ -353,5 +362,20 @@ object GenrePrompts {
                Evoke a sense of dread, forbidden knowledge, and impending doom
                 (e.g., "haunting and mysterious, with ethereal light and deep shadows," "sinister and foreboding, with a hint of the occult").
                """
+            Genre.HEROES ->
+                """
+                Translate the character's mood/situation into visual cues, emphasizing a dynamic and energetic atmosphere with strong,
+                dramatic lighting that highlights the central character and key blue details.
+                The lighting should create significant contrast and shadows (e.g., "powerful and dramatic, with strong contrasts and selective electric blue highlights," "dynamic and intense, where blue energy emanates from the character").
+            
+                **Crucially, incorporate subtle energy effects and tech details as elements of the character's abilities.
+                ** These details should be visible around the hands (suggesting energy manipulation), on the suit (subtle glowing lines or panels), or as a faint aura surrounding the character, adding to the urban hero aesthetic without overwhelming the design.
+            
+                Emphasize a sense of movement, agility, and determination. 
+                The character should appear poised for action, ready to take on any challenge.
+                The background should be a blurred cityscape, suggesting speed and momentum.
+            
+                Focus on capturing a heroic pose and a confident expression, conveying a sense of hope and resilience in the face of adversity.
+                """
         }.trimIndent()
 }

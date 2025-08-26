@@ -1,6 +1,10 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
 import android.content.Context
+import android.graphics.Bitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.decodeToImageBitmap
+import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -72,6 +76,13 @@ class ChapterUseCaseImpl
             try {
                 val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter) }.filterNotNull()
                 val coverReference = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
+                val charactersIcons: List<Bitmap> =
+                    characters.mapNotNull {
+                        fileHelper
+                            .readFile(it.image)
+                            ?.decodeToImageBitmap()
+                            ?.asAndroidBitmap()
+                    }
                 val promptGeneration =
                     gemmaClient.generate<String>(
                         ChapterPrompts.coverDescription(
@@ -79,7 +90,7 @@ class ChapterUseCaseImpl
                             chapter.data,
                             characters,
                         ),
-                        references = listOf(coverReference),
+                        references = listOf(coverReference).plus(charactersIcons).filterNotNull(),
                         requireTranslation = false,
                     )
                 val genCover =

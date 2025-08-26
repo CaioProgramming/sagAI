@@ -44,7 +44,6 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
-import com.ilustris.sagai.features.wiki.data.model.iconForType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.Typography
 import com.ilustris.sagai.ui.theme.bodyFont

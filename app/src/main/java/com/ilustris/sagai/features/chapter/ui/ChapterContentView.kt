@@ -37,6 +37,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -177,11 +178,11 @@ fun ChapterContentView(
                     .background(MaterialTheme.colorScheme.background)
                     .padding(16.dp),
             style =
-                MaterialTheme.typography.headlineSmall.copy(
+                MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Light,
                     letterSpacing = 5.sp,
                     fontFamily = genre.headerFont(),
-                    brush = genre.gradient(true),
+                    brush = genre.gradient(isLast),
                     textAlign = TextAlign.Center,
                 ),
         )
@@ -194,7 +195,7 @@ fun ChapterContentView(
                     .padding(16.dp),
             duration = 3.seconds,
             easing = LinearEasing,
-            isAnimated = true,
+            isAnimated = isLast,
             genre = genre,
             mainCharacter = content.mainCharacter,
             characters = content.characters,
@@ -210,6 +211,10 @@ fun ChapterContentView(
             },
             onTextClick = openCharacters,
         )
+
+        if (chapter.emotionalReview?.isNotEmpty() == true) {
+            EmotionalCard(chapter.emotionalReview, genre, false)
+        }
 
         if (isLast) {
             Box(

@@ -81,6 +81,19 @@ class GenreReferenceHelper(
         } catch (e: Exception) {
             e.asError()
         }
+
+    suspend fun getFileBitmap(path: String) =
+        try {
+            val request =
+                ImageRequest
+                    .Builder(context)
+                    .data(path)
+                    .build()
+            val imageResult = (imageLoader.execute(request) as SuccessResult)
+            (imageResult.image as BitmapImage).bitmap.asSuccess()
+        } catch (e: Exception) {
+            e.asError()
+        }
 }
 
 private const val ICON_FLAG = "_icon_reference"

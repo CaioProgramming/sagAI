@@ -241,6 +241,7 @@ fun Genre?.cornerSize() =
         Genre.FANTASY -> 20.dp
         Genre.SCI_FI -> 10.dp
         Genre.HORROR -> 7.dp
+        Genre.HEROES -> 4.dp
         else -> 0.dp
     }
 

@@ -5,6 +5,7 @@ import android.util.Log
 import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.ImagePart
 import com.google.ai.client.generativeai.type.TextPart
+import com.google.ai.client.generativeai.type.generationConfig
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerationConfig
@@ -50,49 +51,8 @@ class GemmaClient
 
         suspend inline fun <reified T> generate(
             prompt: String,
-            requireTranslation: Boolean = true,
-        ): T? {
-            try {
-                val client =
-                    com.google.ai.client.generativeai.GenerativeModel(
-                        modelName = modelName(),
-                        apiKey = BuildConfig.APIKEY,
-                    )
-
-                val fullPrompt =
-                    (if (requireTranslation) "$prompt ${modelLanguage()}" else prompt)
-
-                Log.i(this::class.java.simpleName, "Summarization(${modelName()}) prompt: $fullPrompt")
-                val content =
-                    client.generateContent(
-                        fullPrompt,
-                    )
-
-                val response = content.text
-                Log.i(this::class.java.simpleName, "Summarization received raw: $response") // Log raw response
-                Log.d(
-                    this::class.java.simpleName,
-                    "Token count for request: ${content.usageMetadata?.totalTokenCount}",
-                )
-
-                if (T::class == String::class) {
-                    return response as T
-                }
-
-                val cleanedJsonString = response.sanitizeAndExtractJsonString()
-                Log.i(this::class.java.simpleName, "Using cleaned JSON for parsing: $cleanedJsonString")
-
-                val typeToken = object : TypeToken<T>() {}
-                return Gson().fromJson(cleanedJsonString, typeToken.type)
-            } catch (e: Exception) {
-                Log.e(this::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)
-                return null
-            }
-        }
-
-        suspend inline fun <reified T> generate(
-            prompt: String,
             references: List<Bitmap?> = emptyList(),
+            temperatureRandomness: Float = 0f,
             requireTranslation: Boolean = true,
         ): T? {
             try {
@@ -100,6 +60,9 @@ class GemmaClient
                     com.google.ai.client.generativeai.GenerativeModel(
                         modelName = modelName(),
                         apiKey = BuildConfig.APIKEY,
+                        generationConfig {
+                            temperature = temperatureRandomness
+                        },
                     )
 
                 val fullPrompt =

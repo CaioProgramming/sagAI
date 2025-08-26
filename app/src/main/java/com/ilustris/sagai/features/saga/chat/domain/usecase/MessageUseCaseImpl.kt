@@ -66,7 +66,7 @@ class MessageUseCaseImpl
             val genText =
                 gemmaClient.generate<String>(
                     generateSagaIntroductionPrompt(saga),
-                    true,
+                    requireTranslation = true,
                 )
 
             return try {

@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import javax.inject.Inject
 
 class SagaDaoImpl
@@ -29,7 +30,13 @@ class SagaDaoImpl
 
         override suspend fun deleteAllSagas() = sagaDao.deleteAllSagas()
 
-        override fun getSagaContent(sagaId: Int): Flow<SagaContent> = sagaDao.getSagaContent(sagaId)
+        override fun getSagaContent(sagaId: Int) =
+            try {
+                sagaDao.getSagaContent(sagaId)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                flowOf(null)
+            }
 
         override fun getSagaContent() = sagaDao.getSagaContent()
     }

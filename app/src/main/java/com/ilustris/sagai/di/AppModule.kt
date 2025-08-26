@@ -61,6 +61,8 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
 import com.ilustris.sagai.features.wiki.data.source.WikiDao
+import com.ilustris.sagai.features.wiki.domain.usecase.EmotionalUseCase
+import com.ilustris.sagai.features.wiki.domain.usecase.EmotionalUseCaseImpl
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCase
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCaseImpl
 import dagger.Binds
@@ -173,6 +175,9 @@ object AppModule {
 abstract class UseCaseModule {
     @Binds
     abstract fun providesNotificationManager(notificationManagerImpl: ChatNotificationManagerImpl): ChatNotificationManager
+
+    @Binds
+    abstract fun providesEmotionalUseCase(emotionalUseCaseImpl: EmotionalUseCaseImpl): EmotionalUseCase
 
     @Binds
     abstract fun providesSagaHistoryUseCase(sagaHistoryUseCaseImpl: SagaHistoryUseCaseImpl): SagaHistoryUseCase
