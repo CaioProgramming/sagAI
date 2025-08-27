@@ -95,6 +95,8 @@ dependencies {
     implementation(libs.androidx.room.testing)
     ksp(libs.androidx.room.compiler)
 
+    implementation(libs.compose.charts)
+
     // Retrofit & OkHttp
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)

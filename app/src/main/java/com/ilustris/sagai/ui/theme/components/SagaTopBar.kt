@@ -24,6 +24,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 
@@ -61,7 +62,7 @@ fun SagaTopBar(
                 style =
                     MaterialTheme.typography.titleMedium.copy(
                         fontFamily = genre.headerFont(),
-                        brush = genre.color.gradientFade(),
+                        brush = genre.gradient(),
                         textAlign = TextAlign.Center,
                     ),
                 modifier = Modifier.fillMaxWidth(),

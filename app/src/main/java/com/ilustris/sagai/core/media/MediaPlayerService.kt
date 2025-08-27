@@ -132,6 +132,7 @@ class MediaPlayerService : Service() {
 
         mediaPlayerManager.prepareDataSource(
             file = mediaFile,
+            looping = true,
             onPrepared = {
                 Log.i(TAG, "MediaPlayer prepared, starting playback for: ${playbackMetadata.mediaFilePath}")
                 mediaPlayerManager.play()

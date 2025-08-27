@@ -111,15 +111,17 @@ fun buildWikiAndCharactersAnnotation(
             val font = if (character.id == mainCharacter?.id) genre.headerFont() else genre.bodyFont()
             val span =
                 SpanStyle(
-                    fontWeight = FontWeight.SemiBold,
+                    fontWeight = FontWeight.Normal,
                     fontFamily = font,
-                    brush = Brush.verticalGradient(
-                        listOf(
-                            mainColor,
-                            mainColor.copy(alpha = .5f),
-                            shadowColor
-                        )
-                    ),
+                    brush =
+                        Brush.verticalGradient(
+                            listOf(
+                                mainColor,
+                                mainColor.copy(alpha = .8f),
+                                mainColor.copy(alpha = .3f),
+                                shadowColor,
+                            ),
+                        ),
                 )
 
             AnnotationRule(

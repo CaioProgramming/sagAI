@@ -1,5 +1,6 @@
 [versions]
 agp = "8.10.1"
+composeCharts = "0.1.10"
 faceDetection = "16.1.7"
 generativeai = "0.9.0"
 googleGenai = "1.10.0"
@@ -37,6 +38,7 @@ lifecycleProcess = "2.9.2"
 androidx-media = { module = "androidx.media:media", version.ref = "media" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
 face-detection = { module = "com.google.mlkit:face-detection", version.ref = "faceDetection" }
 firebase-installations-ktx = { module = "com.google.firebase:firebase-installations-ktx" }
 google-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }

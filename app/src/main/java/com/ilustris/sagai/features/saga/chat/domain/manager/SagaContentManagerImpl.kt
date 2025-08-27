@@ -437,7 +437,6 @@ class SagaContentManagerImpl
             action
                 .onSuccessAsync {
                     validatePostAction(saga, narrativeStep, action.success)
-                    setNarrativeProcessingStatus(false)
                 }.onFailureAsync {
                     setNarrativeProcessingStatus(false)
                 }
@@ -445,6 +444,7 @@ class SagaContentManagerImpl
 
         private fun skipNarrative(): RequestResult.Success<Unit> {
             Log.i(javaClass.simpleName, "skipNarrative: No action needed skipping narrative")
+            setNarrativeProcessingStatus(false)
             return Unit.asSuccess()
         }
 
@@ -461,6 +461,7 @@ class SagaContentManagerImpl
                             sagaHistoryUseCase.updateSaga(
                                 saga.data.copy(currentActId = (result.value as Act).id),
                             )
+                            setNarrativeProcessingStatus(false)
                         }
 
                         is NarrativeStep.StartChapter -> {
@@ -480,6 +481,8 @@ class SagaContentManagerImpl
 
                                 previousChapter?.let {
                                     cleanUpEmptyTimeLines(it)
+                                } ?: run {
+                                    setNarrativeProcessingStatus(false)
                                 }
                             }
                         }
@@ -490,13 +493,14 @@ class SagaContentManagerImpl
                                     currentEventId = (result.value as Timeline).id,
                                 ),
                             )
+                            setNarrativeProcessingStatus(false)
                         }
 
                         is NarrativeStep.GenerateTimeLine -> {
                             (result.value as? Timeline)?.let { updateWikis(it) }
                         }
 
-                        else -> doNothing()
+                        else -> setNarrativeProcessingStatus(false)
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
@@ -506,11 +510,16 @@ class SagaContentManagerImpl
 
         private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {
             setProcessing(true)
-            chapter.events.filter { it.isComplete().not() }.forEach { timeline ->
+            val emptyEvents = chapter.events.filter { it.isComplete().not() }
+            if (emptyEvents.isEmpty()) {
+                setNarrativeProcessingStatus(false)
+                return
+            }
+            emptyEvents.forEach { timeline ->
                 timelineUseCase.deleteTimeline(timeline.timeline)
                 if (timeline == chapter.events.last()) {
                     delay(2.seconds)
-                    setProcessing(false)
+                    setNarrativeProcessingStatus(false)
                 }
             }
         }
@@ -630,6 +639,7 @@ class SagaContentManagerImpl
                     "updateWikis: No wiki updates generated for recnt events in saga ${currentSaga.data.id}.",
                 )
             }
+            setNarrativeProcessingStatus(false)
         }
 
         override suspend fun generateCharacter(description: String): RequestResult<Exception, Character> {

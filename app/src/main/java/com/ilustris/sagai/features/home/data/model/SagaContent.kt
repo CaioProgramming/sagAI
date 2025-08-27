@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.home.data.model
 
+import android.icu.util.Calendar
 import android.util.Log
 import androidx.room.Embedded
 import androidx.room.Relation
@@ -103,3 +104,13 @@ fun SagaContent.getDirective(): String {
         else -> ActDirectives.FIRST_ACT_DIRECTIVES
     }
 }
+
+fun SagaContent.rankByHour() =
+    flatMessages()
+        .groupBy {
+            val date =
+                Calendar.getInstance().apply {
+                    timeInMillis = it.message.timestamp
+                }
+            date.get(Calendar.HOUR_OF_DAY)
+        }.toSortedMap()
