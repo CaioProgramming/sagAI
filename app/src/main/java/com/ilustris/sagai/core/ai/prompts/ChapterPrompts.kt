@@ -1,18 +1,14 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.CharacterFraming
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterExpression
-import com.ilustris.sagai.features.characters.data.model.CharacterPose
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
@@ -34,8 +30,8 @@ object ChapterPrompts {
         val promptDataContext =
             ChapterEndingPromptContext(
                 sagaInfo = sagaContent.data,
-                mainCharacter = sagaContent.mainCharacter,
-                characterCast = sagaContent.characters,
+                mainCharacter = sagaContent.mainCharacter?.data,
+                characterCast = sagaContent.getCharacters(),
                 allSagaChaptersSummary = sagaContent.flatChapters().map { it.data },
                 fullSagaTimelineSummary = sagaContent.flatEvents().map { it.timeline },
                 eventsOfChapterBeingEnded = currentChapterContent.events.map { it.timeline },

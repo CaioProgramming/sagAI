@@ -10,6 +10,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.jvm.javaClass
 
@@ -19,8 +20,9 @@ data class SagaContent(
     @Relation(
         parentColumn = "mainCharacterId",
         entityColumn = "id",
+        entity = Character::class,
     )
-    val mainCharacter: Character? = null,
+    val mainCharacter: CharacterContent? = null,
     @Relation(
         entity = Act::class,
         parentColumn = "currentActId",
@@ -32,7 +34,7 @@ data class SagaContent(
         entityColumn = "sagaId",
         entity = Character::class,
     )
-    val characters: List<Character> = emptyList(),
+    val characters: List<CharacterContent> = emptyList(),
     @Relation(
         parentColumn = "id",
         entityColumn = "sagaId",
@@ -56,6 +58,13 @@ data class SagaContent(
 
     fun messagesSize() = acts.sumOf { it.chapters.sumOf { it.events.sumOf { it.messages.size } } }
 }
+
+fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
+    characters.map { it.data }.apply {
+        if (filterMainCharacter) {
+            this.filter { it.id != mainCharacter?.data?.id }
+        }
+    }
 
 fun SagaContent.isFirstAct() = currentActInfo == acts.first()
 
@@ -114,3 +123,13 @@ fun SagaContent.rankByHour() =
                 }
             date.get(Calendar.HOUR_OF_DAY)
         }.toSortedMap()
+
+fun SagaContent.emotionalSummary() =
+
+    acts
+        .map {
+            """
+            Act ${it.data.title}: ${it.data.emotionalReview}
+            ${it.chapters.joinToString(";") { chapter -> "Chapter ${chapter.data.title}: ${chapter.data.emotionalReview}" } }
+            """.trimIndent()
+        }

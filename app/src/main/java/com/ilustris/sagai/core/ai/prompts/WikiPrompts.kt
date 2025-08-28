@@ -20,12 +20,13 @@ object WikiPrompts {
         factual summaries based *only* on the new information present in these events.
         
         Current saga cast:
+        **Character information is managed in a separate system**
+        [ ${saga.characters.formatToJsonArray()} ]
         // The 'title' field MUST be a short (2-3 word) title for the wiki entry.
         // The 'emoji' field MUST be a valid unicode emoji that is relevant to the wiki entry.
         // This is the cast of characters in the saga.
         // **IMPORTANT:** DO NOT SAVE ANY INDIVIDUAL CHARACTERS AS WIKI ITEMS.
-        Character information is managed in a separate system.
-        [ ${saga.characters.formatToJsonArray()} ]
+        
         
         **EXISTING WORLD WIKI ENTRIES (For context and consistent terminology):**
         // This is a comprehensive list of all known world entities in the saga's World Knowledge Base.
@@ -50,14 +51,5 @@ object WikiPrompts {
         [ ${events.formatToJsonArray()} ]
         **FINAL AND CRITICAL RULE:** **DO NOT GENERATE WIKI ENTRIES FOR INDIVIDUAL CHARACTERS.
         Ensure 'FACTION' type is used ONLY for groups or ILLEGAL organizations.**
-        """
-
-    fun wikiContent(wiki: List<Wiki>) =
-        """
-         **WORLD WIKI KNOWLEDGE BASE:**
-         // This is a comprehensive list of all known world entities (locations, organizations, items, concepts, events, technologies, etc.) in the saga's World Knowledge Base.
-         // Use this information to ensure consistent terminology and to provide accurate details when referencing world elements.
-         [ ${wiki.formatToJsonArray()} ]
-         
         """
 }

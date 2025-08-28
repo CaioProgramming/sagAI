@@ -82,6 +82,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -397,18 +398,19 @@ fun ReviewDetails(saga: SagaContent) {
         remember {
             saga.flatMessages().rankMessageTypes().filter { it.second > 0 }
         }
+    val characters = saga.getCharacters(true)
     val charactersRanking =
         remember {
             saga
                 .flatMessages()
-                .rankTopCharacters(saga.characters.filter { it.id != saga.mainCharacter?.id })
+                .rankTopCharacters(characters)
         }
 
     val mentionsRanking =
         remember {
             saga
                 .flatMessages()
-                .rankMentions(saga.characters.filter { it.id != saga.mainCharacter?.id })
+                .rankMentions(characters)
         }
 
     val mentionsCount =
@@ -1268,7 +1270,7 @@ fun MentionsPage(content: SagaContent) {
             val rankingList =
                 content
                     .flatMessages()
-                    .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
+                    .rankMentions(content.getCharacters(true))
             ranking = rankingList
             counting =
                 rankingList.sumOf {
@@ -1446,7 +1448,7 @@ fun MentionsPage(content: SagaContent) {
                                 val messagesRanking =
                                     content
                                         .flatMessages()
-                                        .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
+                                        .rankMentions(content.getCharacters(true))
                                         .filter { it.second > 0 }
                                 Text(
                                     stringResource(R.string.review_page_most_mentioned_title),
@@ -1479,7 +1481,7 @@ fun MentionsPage(content: SagaContent) {
                             val messagesRanking =
                                 content
                                     .flatMessages()
-                                    .rankMentions(content.characters.filter { it.id != content.mainCharacter?.id })
+                                    .rankMentions(content.getCharacters(true))
                                     .filter { it.second > 0 }
                             Text(
                                 stringResource(R.string.review_page_most_mentioned_title),
@@ -1600,9 +1602,9 @@ fun ActsInsightPage(content: SagaContent) {
 fun ConclusionPage(content: SagaContent) {
     val genre = content.data.genre
     val charactersToDisplay =
-        remember(content.characters) {
-            content.characters.filter { it.image.isBlank().not() }.ifEmpty {
-                content.mainCharacter?.let {
+        remember(content.getCharacters()) {
+            content.getCharacters().filter { it.image.isBlank().not() }.ifEmpty {
+                content.mainCharacter?.data?.let {
                     listOf(
                         it,
                     )

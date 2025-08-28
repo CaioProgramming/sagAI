@@ -28,6 +28,7 @@ import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
@@ -38,6 +39,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow // Import for StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 // import java.io.File // Not needed if lastKnownMusicFile is removed
 import javax.inject.Inject
@@ -117,29 +119,35 @@ class ChatViewModel
 
         private fun observeLoading() {
             viewModelScope.launch(Dispatchers.IO) {
-                isGenerating.collect {
+                isGenerating.collectLatest {
                     Log.d(javaClass.simpleName, "observeLoading: collecting generating status -> $it")
                     delay(3.seconds)
-                    generateSuggestions(it)
                 }
             }
         }
 
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
-                content.collect { sagaContent ->
+                content.collectLatest { sagaContent ->
                     if (sagaContent == null) {
                         if (loadFinished) {
                             state.value = ChatState.Error("Saga not found.")
                         }
-                        return@collect
+                        return@collectLatest
                     }
+
+                    val allMessages = messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
+
+                    if (allMessages.size != sagaContent.flatMessages().size) {
+                        generateSuggestions()
+                    }
+
                     messages.value =
                         SagaContentUIMapper
                             .mapToActDisplayData(sagaContent.acts)
 
                     characters.value =
-                        sortCharactersByMessageCount(sagaContent.characters, sagaContent.flatMessages())
+                        sortCharactersByMessageCount(sagaContent.getCharacters(), sagaContent.flatMessages())
 
                     validateIntroduction(sagaContent)
 
@@ -323,12 +331,12 @@ class ChatViewModel
                     messageContent.character == null &&
                         messageContent.message.senderType == SenderType.CHARACTER &&
                         messageContent.message.speakerName != null &&
-                        content.characters.find { it.name == messageContent.message.speakerName } != null
+                        content.getCharacters().find { it.name == messageContent.message.speakerName } != null
                 }
 
             updatableMessages.forEach { message ->
                 val character =
-                    content.characters.find { it.name.equals(message.message.speakerName, true) }
+                    content.getCharacters().find { it.name.equals(message.message.speakerName, true) }
                 character?.let {
                     messageUseCase.updateMessage(
                         message.message.copy(
@@ -380,7 +388,7 @@ class ChatViewModel
                                 Message(
                                     text = text,
                                     senderType = SenderType.NARRATOR,
-                                    characterId = saga.mainCharacter?.id,
+                                    characterId = saga.mainCharacter?.data?.id,
                                     timelineId = currentEvent.timeline.id,
                                 ),
                                 false,
@@ -404,7 +412,11 @@ class ChatViewModel
                     text = text,
                     speakerName = null,
                     senderType = sendType,
-                    characterId = content.value?.mainCharacter?.id,
+                    characterId =
+                        content.value
+                            ?.mainCharacter
+                            ?.data
+                            ?.id,
                     timelineId = currentTimeline.timeline.id,
                 )
             sendMessage(message, true)
@@ -416,8 +428,8 @@ class ChatViewModel
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
-                val mainCharacter = content.value!!.mainCharacter
-                val characters = content.value!!.characters
+                val mainCharacter = content.value!!.mainCharacter?.data
+                val characters = content.value!!.getCharacters()
                 val characterReference =
                     characters.find {
                         message.speakerName?.contains(it.name, true) == true ||
@@ -470,14 +482,13 @@ class ChatViewModel
             }
         }
 
-        private fun generateSuggestions(isGenerating: Boolean) {
+        private fun generateSuggestions() {
             suggestions.value = emptyList()
             if (sagaContentManager.isInDebugMode()) {
                 return
             }
 
             Log.d(javaClass.simpleName, "generateSuggestions: checking if is generating -> $isGenerating")
-            if (isGenerating) return
             val currentSaga = content.value ?: return
             if (currentSaga.data.isEnded) return
             val currentTimeline = currentSaga.getCurrentTimeLine()
@@ -488,7 +499,7 @@ class ChatViewModel
                     suggestionUseCase
                         .invoke(
                             currentTimeline.messages,
-                            currentSaga.mainCharacter,
+                            currentSaga.mainCharacter?.data,
                             saga,
                         ).onSuccess {
                             suggestions.value = it
@@ -504,7 +515,7 @@ class ChatViewModel
                 val newMessage =
                     MessageContent(
                         message = message,
-                        character = saga.characters.find { it.id == message.characterId },
+                        character = saga.getCharacters().find { it.id == message.characterId },
                     )
 
                 messageUseCase
@@ -575,8 +586,8 @@ class ChatViewModel
                 sendError("Saga not loaded, cannot send fake messages.")
                 return
             }
-            val mainCharacterId = currentSaga.mainCharacter?.id
-            if (mainCharacterId == null && currentSaga.data.id != 0) { // Allow no main character for true debug saga
+            val mainCharacterId = currentSaga.mainCharacter?.data?.id
+            if (mainCharacterId == null && currentSaga.data.id != 0) {
                 sendError("Main character not found for non-debug saga, cannot send fake messages.")
                 return
             }

@@ -54,6 +54,8 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
+import com.ilustris.sagai.features.timeline.data.repository.CharacterEventRepository
+import com.ilustris.sagai.features.timeline.data.repository.CharacterEventRepositoryImpl
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -235,6 +237,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsTimelineRepository(timelineRepositoryImpl: TimelineRepositoryImpl): TimelineRepository
+
+    @Binds
+    abstract fun bindsCharacterEventRepository(characterEventRepositoryImpl: CharacterEventRepositoryImpl): CharacterEventRepository
 
     @Binds
     abstract fun bindsActRepository(actRepositoryImpl: ActRepositoryImpl): ActRepository

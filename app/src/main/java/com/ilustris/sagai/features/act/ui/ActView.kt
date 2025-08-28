@@ -8,11 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.TypewriterText
@@ -119,8 +116,8 @@ fun ActComponent(
                 duration = 10.seconds,
                 isAnimated = true,
                 genre = content.data.genre,
-                mainCharacter = content.mainCharacter,
-                characters = content.characters,
+                mainCharacter = content.mainCharacter?.data,
+                characters = content.getCharacters(),
                 wiki = content.wikis,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
@@ -129,7 +126,6 @@ fun ActComponent(
                 EmotionalCard(act.emotionalReview, content.data.genre, false)
             }
         }
-
     }
 }
 

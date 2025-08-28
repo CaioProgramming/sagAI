@@ -13,10 +13,16 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,12 +48,11 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.core.utils.formatHours
-import com.ilustris.sagai.features.act.ui.ActComponent
-import com.ilustris.sagai.features.chapter.ui.ChapterContentView
-import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
@@ -58,13 +63,9 @@ import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.saturate
 import kotlin.time.Duration
@@ -76,7 +77,7 @@ fun ChatBubble(
     content: SagaContent,
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
-    openCharacters: (Character?) -> Unit = {},
+    openCharacters: (CharacterContent?) -> Unit = {},
     openWiki: () -> Unit = {},
 ) {
     val message = messageContent.message
@@ -85,7 +86,7 @@ fun ChatBubble(
     val characters = content.characters
     val wiki = content.wikis
     val genre = content.data.genre
-    val isUser = messageContent.isUser(mainCharacter)
+    val isUser = messageContent.isUser(mainCharacter?.data)
     val cornerSize = genre.cornerSize()
     val isAnimated = isUser.not() && canAnimate
     val bubbleStyle =
@@ -142,8 +143,8 @@ fun ChatBubble(
                         text = message.text,
                         isAnimated = isAnimated,
                         genre = genre,
-                        mainCharacter = mainCharacter,
-                        characters = characters,
+                        mainCharacter = mainCharacter?.data,
+                        characters = characters.map { it.data },
                         wiki = wiki,
                         duration = duration,
                         easing = EaseIn,
@@ -203,7 +204,7 @@ fun ChatBubble(
                                     Modifier
                                         .fillMaxSize()
                                         .clickable {
-                                            openCharacters(it)
+                                            openCharacters(characters.find { c -> c.data.id == character.id })
                                         },
                             )
                         }
@@ -223,11 +224,11 @@ fun ChatBubble(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    val containsWiki = wiki.any {
-                        message.text.contains(it.title, true) ||
-                        message.text.contains(it.content, true)
-
-                    }
+                    val containsWiki =
+                        wiki.any {
+                            message.text.contains(it.title, true) ||
+                                message.text.contains(it.content, true)
+                        }
 
                     Text(
                         message.timestamp.formatHours(),
@@ -282,7 +283,7 @@ fun ChatBubble(
                                     .clip(CircleShape)
                                     .size(32.dp)
                                     .clickable {
-                                        openCharacters(it)
+                                        openCharacters(characters.find { c -> c.data.id == it.id })
                                     },
                         )
                     }
@@ -291,8 +292,8 @@ fun ChatBubble(
                         isAnimated = isAnimated,
                         duration = duration,
                         genre = genre,
-                        mainCharacter = mainCharacter,
-                        characters = characters,
+                        mainCharacter = mainCharacter?.data,
+                        characters = content.getCharacters(),
                         wiki = wiki,
                         modifier =
                             Modifier
@@ -342,7 +343,7 @@ fun ChatBubble(
                                     .clip(CircleShape)
                                     .size(32.dp)
                                     .clickable {
-                                        openCharacters(it)
+                                        openCharacters(characters.find { c -> c.data.id == it.id })
                                     },
                         )
                     }
@@ -351,8 +352,8 @@ fun ChatBubble(
                         isAnimated = isAnimated,
                         duration = duration,
                         genre = genre,
-                        mainCharacter = mainCharacter,
-                        characters = characters,
+                        mainCharacter = mainCharacter?.data,
+                        characters = content.getCharacters(),
                         wiki = wiki,
                         modifier =
                             Modifier
@@ -381,8 +382,8 @@ fun ChatBubble(
                     isAnimated = isAnimated,
                     duration = duration,
                     genre = genre,
-                    mainCharacter = mainCharacter,
-                    characters = characters,
+                    mainCharacter = mainCharacter?.data,
+                    characters = content.getCharacters(),
                     wiki = wiki,
                     modifier =
                         Modifier

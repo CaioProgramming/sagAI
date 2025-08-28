@@ -159,21 +159,21 @@ fun Modifier.effectForGenre(
                     )
                 Genre.HEROES -> {
                     ShaderParams(
-                        grainIntensity = customGrain ?: .1f,
-                        bloomThreshold = .3f,
-                        bloomIntensity = .2f,
-                        bloomRadius = 1f,
-                        softFocusRadius = focusRadius ?: 0f,
+                        grainIntensity = customGrain ?: .2f,
+                        bloomThreshold = 0f,
+                        bloomIntensity = 0f,
+                        bloomRadius = 0f,
+                        softFocusRadius = focusRadius ?: .2f,
                         saturation = .9f,
-                        contrast = 1.5f,
-                        brightness = -0.1f,
+                        contrast = 1.3f,
+                        brightness = .05f,
                         highlightTint = heroPalette.highlightTint,
                         shadowTint = heroPalette.shadowTint,
                         tintStrength = heroPalette.defaultTintStrength,
                         vignetteStrength = .1f,
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = .2f,
+                        colorTemperature = .15f,
                     )
                 }
                 else ->

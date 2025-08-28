@@ -12,6 +12,8 @@ import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterEvent // Added import for CharacterEvent
+import com.ilustris.sagai.features.characters.data.dao.CharacterEventDao // Added import for CharacterEventDao
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
@@ -31,10 +33,12 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Wiki::class,
         Timeline::class,
         Act::class,
+        CharacterEvent::class, // Added CharacterEvent
     ],
-    version = 40,
+    version = 43, // Incremented version
     autoMigrations = [
-        androidx.room.AutoMigration(from = 39, to = 40),
+        androidx.room.AutoMigration(from = 41, to = 42),
+        androidx.room.AutoMigration(from = 42, to = 43) // Added auto-migration for new version
     ],
     exportSchema = true,
 )
@@ -53,4 +57,6 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun timelineDao(): TimelineDao
 
     abstract fun actDao(): ActDao
+
+    abstract fun characterEventDao(): CharacterEventDao
 }

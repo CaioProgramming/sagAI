@@ -12,6 +12,7 @@ import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.getCharacters
 
 object ActPrompts {
 
@@ -32,7 +33,7 @@ object ActPrompts {
             fullSagaTimeline = content.acts,
             chaptersForThisActSummary = content.currentActInfo,
             actDescriptionPurpose = purpose,
-            charactersCast = content.characters
+            charactersCast = content.getCharacters()
         )
 
 

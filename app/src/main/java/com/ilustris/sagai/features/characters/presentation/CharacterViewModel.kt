@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,7 +41,7 @@ class CharacterViewModel
                 sagaHistoryUseCase.getSagaById(sagaId).collect { currentSaga ->
                     _saga.value = currentSaga
                     currentSaga?.let {
-                        val sortedCharacters = sortCharactersByMessageCount(it.characters, it.flatMessages())
+                        val sortedCharacters = sortCharactersByMessageCount(it.getCharacters(), it.flatMessages())
                         _characters.value = sortedCharacters
                     }
 

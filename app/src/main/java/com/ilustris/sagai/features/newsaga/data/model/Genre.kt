@@ -129,7 +129,7 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 saturationThreshold = .45f,
                 lightnessThreshold = .25f,
                 highlightSaturationBoost = 1.2f,
-                desaturationFactorNonTarget = .7f,
+                desaturationFactorNonTarget = .5f,
             )
     }
 

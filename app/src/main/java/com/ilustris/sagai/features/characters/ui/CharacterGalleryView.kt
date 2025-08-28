@@ -44,7 +44,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
+import com.ilustris.sagai.core.utils.sortCharactersContentByMessageCount
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -98,13 +100,13 @@ fun CharactersGalleryContent(
     onSelectCharacter: (Int, Int) -> Unit = { _, _ -> },
 ) {
     var showCharacter by remember {
-        mutableStateOf<Character?>(null)
+        mutableStateOf<CharacterContent?>(null)
     }
 
     AnimatedContent(saga.characters) {
         val characters =
             remember {
-                sortCharactersByMessageCount(it, saga.flatMessages())
+                sortCharactersContentByMessageCount(it, saga.flatMessages())
             }
         LazyVerticalGrid(
             columns = GridCells.Fixed(2),
@@ -115,10 +117,10 @@ fun CharactersGalleryContent(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(8.dp),
         ) {
-            items(characters, key = { character -> character.id }) { character ->
+            items(characters, key = { character -> character.data.id }) { character ->
                 CharacterYearbookItem(
-                    character = character,
-                    character.id == saga.mainCharacter?.id,
+                    character = character.data,
+                    character.data.id == saga.mainCharacter?.data?.id,
                     saga.data.genre,
                     modifier =
                         Modifier.clickable {
@@ -198,35 +200,6 @@ private fun CharacterVerticalItem(
             modifier = Modifier.padding(top = 4.dp),
         )
     }
-}
-
-@Preview
-@Composable
-fun CharactersGalleryContentPreview() {
-    val sagaContent =
-        SagaContent(
-            acts = emptyList(),
-            data =
-                Saga(
-                    id = 0,
-                    title = "Saga Title",
-                    description = "Saga Description",
-                    genre = Genre.FANTASY,
-                ),
-            mainCharacter =
-                Character(
-                    id = 1,
-                    name = "Main Character",
-                    details = Details(),
-                    sagaId = 0,
-                ),
-            characters =
-                listOf(
-                    Character(id = 1, name = "Character 1", details = Details(), sagaId = 0),
-                    Character(id = 2, name = "Character 2", details = Details(), sagaId = 0),
-                ),
-        )
-    CharactersGalleryContent(saga = sagaContent)
 }
 
 @Preview

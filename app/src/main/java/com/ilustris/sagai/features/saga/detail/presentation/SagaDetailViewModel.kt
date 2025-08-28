@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -79,6 +80,15 @@ class SagaDetailViewModel
                 sagaDetailUseCase.resetReview(currentSaga)
                 delay(500)
                 createReview()
+            }
+        }
+
+        fun createEmotionalReview(timelineContent: TimelineContent) {
+            val currentSaga = saga.value ?: return
+            viewModelScope.launch {
+                isGenerating.value = true
+                sagaDetailUseCase.createTimelineReview(currentSaga, timelineContent)
+                isGenerating.value = false
             }
         }
     }

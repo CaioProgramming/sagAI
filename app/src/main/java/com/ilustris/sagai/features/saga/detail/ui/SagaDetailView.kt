@@ -37,8 +37,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.VerticalPager
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -77,6 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -98,13 +97,10 @@ import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.act.ui.ActReader
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.chapter.ui.ChapterContent
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
@@ -114,9 +110,11 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.wiki.ui.WikiCard
@@ -128,6 +126,7 @@ import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.fadeColors
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
@@ -207,6 +206,8 @@ fun SagaDetailView(
         viewModel.createReview()
     }, openReview = {
         // viewModel.resetReview()
+    }, createEmotionalReview = {
+        viewModel.createEmotionalReview(it)
     })
 
     if (showDeleteConfirmation) {
@@ -391,8 +392,8 @@ fun LazyListScope.SagaDrawerContent(
                         if (expandedEvents) {
                             eventsInChapter.forEach { event ->
                                 TimeLineCard(
-                                    event.timeline,
-                                    content.data.genre,
+                                    event,
+                                    content,
                                     titleStyle = MaterialTheme.typography.bodyMedium,
                                     showText = false,
                                     showSpark = false,
@@ -467,6 +468,7 @@ fun SagaDetailContentView(
     onBackClick: (DetailAction) -> Unit = {},
     createReview: () -> Unit,
     openReview: () -> Unit,
+    createEmotionalReview: (TimelineContent) -> Unit,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -570,7 +572,9 @@ fun SagaDetailContentView(
                                 DetailAction.TIMELINE ->
                                     TimeLineContent(
                                         sagaContent,
-                                    )
+                                    ) {
+                                        createEmotionalReview(it)
+                                    }
 
                                 DetailAction.CHAPTERS ->
                                     ChapterContent(
@@ -587,6 +591,7 @@ fun SagaDetailContentView(
                                         selectSection = { action ->
                                             onChangeSection(action)
                                         },
+                                        createEmotionalReview = { },
                                         openReview = {
                                             if (sagaContent.data.review != null) {
                                                 showReview = true
@@ -642,16 +647,14 @@ fun SagaDetailContentViewPreview() {
                             review = null,
                         ),
                     characters =
-                        listOf(
-                            Character(name = "Frodo Baggins", details = Details()),
-                            Character(name = "Gandalf", details = Details()),
-                        ),
+                        emptyList(),
                     acts = emptyList(),
                 ),
             ),
         paddingValues = PaddingValues(0.dp),
         createReview = {},
         openReview = {},
+        createEmotionalReview = {},
     )
 }
 
@@ -762,6 +765,7 @@ private fun SagaDetailInitialView(
     onReachTop: () -> Unit = {},
     selectSection: (DetailAction) -> Unit = {},
     openReview: () -> Unit = {},
+    createEmotionalReview: () -> Unit = {},
 ) {
     val columnCount = 2
     val sectionStyle =
@@ -784,7 +788,7 @@ private fun SagaDetailInitialView(
     ) {
         saga?.let {
             val acts = saga.acts.filter { it.isComplete() }
-            val chapters = saga.flatChapters()
+            val chapters = saga.flatChapters().filter { it.isComplete() }
             val events = saga.flatEvents().filter { it.isComplete() }
             val messages = saga.flatMessages()
 
@@ -865,7 +869,7 @@ private fun SagaDetailInitialView(
                                         .padding(top = 150.dp),
                             ) {
                                 CharacterAvatar(
-                                    mainChar,
+                                    mainChar.data,
                                     borderSize = 3.dp,
                                     borderColor = it.data.genre.color,
                                     genre = it.data.genre,
@@ -886,7 +890,7 @@ private fun SagaDetailInitialView(
                                     modifier = Modifier.fillMaxWidth(),
                                 )
                                 Text(
-                                    it.mainCharacter.name,
+                                    it.mainCharacter.data.name,
                                     style =
                                         MaterialTheme.typography.displaySmall.copy(
                                             fontFamily = it.data.genre.headerFont(),
@@ -1081,7 +1085,7 @@ private fun SagaDetailInitialView(
 
             item(span = { GridItemSpan(columnCount) }) {
                 LazyRow {
-                    items(sortCharactersByMessageCount(it.characters, it.flatMessages())) { char ->
+                    items(sortCharactersByMessageCount(it.getCharacters(), it.flatMessages())) { char ->
                         Column(
                             Modifier
                                 .padding(8.dp)
@@ -1151,8 +1155,8 @@ private fun SagaDetailInitialView(
 
                         events.lastOrNull()?.let { event ->
                             TimeLineCard(
-                                event.timeline,
-                                it.data.genre,
+                                event,
+                                it,
                                 false,
                                 modifier =
                                     Modifier
@@ -1268,7 +1272,7 @@ private fun SagaDetailInitialView(
                             ChapterCardView(
                                 chapter.data,
                                 it.data.genre,
-                                it.characters,
+                                it.getCharacters(),
                                 Modifier
                                     .padding(4.dp)
                                     .width(300.dp)
@@ -1354,6 +1358,79 @@ private fun SagaDetailInitialView(
                                 ),
                             modifier = Modifier.align(Alignment.Center),
                         )
+                    }
+                }
+            }
+
+            if (saga.data.isEnded) {
+                item(span = { GridItemSpan(columnCount) }) {
+                    var cardExpanded by remember {
+                        mutableStateOf(false)
+                    }
+                    Box(
+                        Modifier
+                            .padding(16.dp)
+                            .clip(RoundedCornerShape(it.data.genre.cornerSize()))
+                            .fillMaxWidth()
+                            .clickable {
+                                if (it.data.emotionalReview != null) {
+                                    cardExpanded = cardExpanded.not()
+                                } else {
+                                    createEmotionalReview()
+                                }
+                            },
+                    ) {
+                        Image(
+                            painterResource(R.drawable.ic_full_spark),
+                            null,
+                            modifier =
+                                Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(.4f)
+                                    .scale(1.3f)
+                                    .clipToBounds()
+                                    .gradientFill(it.data.genre.gradient(true)),
+                            contentScale = ContentScale.Crop,
+                        )
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .reactiveShimmer(
+                                        true,
+                                        shimmerColors =
+                                            it.data.genre.color
+                                                .fadeColors(),
+                                    ).padding(16.dp),
+                        ) {
+                            if (cardExpanded.not()) {
+                                Text(
+                                    "Review emocional",
+                                    style =
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            fontFamily = it.data.genre.bodyFont(),
+                                        ),
+                                )
+
+                                Text(
+                                    "Veja como suas ações refletem no seu estado emocional",
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            fontFamily = it.data.genre.bodyFont(),
+                                        ),
+                                )
+                            } else {
+                                it.data.emotionalReview?.let { text ->
+                                    Text(
+                                        text,
+                                        style =
+                                            MaterialTheme.typography.bodyMedium.copy(
+                                                fontFamily = it.data.genre.bodyFont(),
+                                            ),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -91,6 +91,7 @@ import com.ilustris.sagai.features.characters.ui.SimpleCharacterForm
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
@@ -185,7 +186,7 @@ fun ChatInputView(
                                     inputField.text.indexOfLast { char -> char == '@' }
                                 val endIndex = inputField.text.length
 
-                                val newText = it.name
+                                val newText = it.data.name
                                 val textReplacement =
                                     inputField.text.replaceRange(
                                         startIndex,
@@ -201,7 +202,7 @@ fun ChatInputView(
 
                                 charactersExpanded = false
                             },
-                        character = it,
+                        character = it.data,
                         isLast = it == content.characters.last(),
                         imageSize = 32.dp,
                         genre = content.data.genre,
@@ -288,7 +289,7 @@ fun ChatInputView(
                         color = MaterialTheme.colorScheme.onBackground,
                         fontFamily = content.data.genre.bodyFont(),
                     )
-                val maxLength = 400
+                val maxLength = 500
                 val tagBackgroundColor = MaterialTheme.colorScheme.onBackground
 
                 BasicTextField(
@@ -317,8 +318,8 @@ fun ChatInputView(
                     visualTransformation = {
                         transformTextWithContent(
                             content.data.genre,
-                            content.mainCharacter,
-                            content.characters,
+                            content.mainCharacter?.data,
+                            content.getCharacters(),
                             content.wikis,
                             inputField.text,
                             tagBackgroundColor,
@@ -568,92 +569,4 @@ private fun MainCharacterInputButton(
     }
 }
 
-@Preview(
-    showBackground = true,
-    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,
-)
-@Composable
-fun ChatInputViewPreview() {
-    SagAIScaffold {
-        Box(Modifier.fillMaxSize()) {
-            ChatInputView(
-                SagaContent(
-                    mainCharacter =
-                        Character(
-                            id = 0,
-                            name = "Character Name",
-                            backstory = "Character backstory",
-                            image = "image_url",
-                            hexColor = "#FF0000",
-                            sagaId = 0,
-                            details =
-                                Details(
-                                    appearance = "Appearance",
-                                    personality = "Personality",
-                                    race = "Race",
-                                    height = 1.80,
-                                    weight = 70.0,
-                                    gender = "Gender",
-                                    occupation = "Occupation",
-                                    ethnicity = "Ethnicity",
-                                ),
-                            joinedAt = System.currentTimeMillis(),
-                        ),
-                    characters =
-                        listOf(
-                            Character(
-                                id = 1,
-                                name = "Character 1",
-                                backstory = "Character backstory",
-                                image = "image_url",
-                                hexColor = "#FF0000",
-                                sagaId = 0,
-                                details =
-                                    Details(
-                                        appearance = "Appearance",
-                                        personality = "Personality",
-                                        race = "Race",
-                                        height = 1.80,
-                                        weight = 70.0,
-                                        gender = "Gender",
-                                        occupation = "Occupation",
-                                        ethnicity = "Ethnicity",
-                                    ),
-                                joinedAt = System.currentTimeMillis(),
-                            ),
-                        ).plus(
-                            List(4) {
-                                Character(
-                                    id = it + 1,
-                                    name = "Character ${it + 1}",
-                                    backstory = "Character backstory",
-                                    image = "image_url",
-                                    hexColor = "#567EFF",
-                                    sagaId = 0,
-                                    details = Details(),
-                                )
-                            },
-                        ),
-                    data =
-                        Saga(
-                            id = 0,
-                            title = "Saga Title",
-                            description = "Saga description",
-                            icon = "icon_url",
-                            createdAt = System.currentTimeMillis(),
-                            genre = Genre.SCI_FI,
-                            mainCharacterId = 0,
-                        ),
-                ),
-                isGenerating = false,
-                onSendMessage = { _, _ -> },
-                onCreateNewCharacter = {},
-                suggestions =
-                    List(3) {
-                        Suggestion("Test suggestion", type = SenderType.USER)
-                    },
-                modifier = Modifier.align(Alignment.BottomCenter),
-            )
-        }
-    }
-}
+

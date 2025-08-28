@@ -1,12 +1,8 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
-import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
-import coil3.BitmapImage
-import coil3.ImageLoader
-import coil3.request.ImageRequest
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
@@ -21,17 +17,12 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.model.ChapterGen
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.timeline.data.model.Timeline
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
     @Inject
     constructor(
-        @ApplicationContext
-        private val context: Context,
         private val chapterRepository: ChapterRepository,
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
@@ -74,7 +65,7 @@ class ChapterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<Exception, Chapter> =
             try {
-                val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter) }.filterNotNull()
+                val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
                 val coverReference = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
                 val charactersIcons: List<Bitmap> =
                     characters.mapNotNull {

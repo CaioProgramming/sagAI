@@ -6,7 +6,6 @@ import com.ilustris.sagai.features.characters.data.model.Character
 
 data class LoreGen(
     val timeLine: Timeline,
-    val updatedCharacters: List<Character> = emptyList(),
 ) {
     companion object {
         fun toSchema(): Schema =
@@ -18,10 +17,6 @@ data class LoreGen(
                                 "title" to Schema.string(nullable = false, description = "Short title that describes the event"),
                                 "content" to Schema.string(nullable = false),
                             ),
-                        ),
-                    "updatedCharacters" to
-                        Schema.array(
-                            items = toFirebaseSchema(Character::class.java),
                         ),
                 ),
             )

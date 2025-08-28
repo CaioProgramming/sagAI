@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -23,7 +24,7 @@ class CharacterDetailsViewModel
         private val characterUseCase: CharacterUseCase,
     ) : ViewModel() {
         val saga = MutableStateFlow<SagaContent?>(null)
-        val character = MutableStateFlow<Character?>(null)
+        val character = MutableStateFlow<CharacterContent?>(null)
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
 
@@ -36,9 +37,9 @@ class CharacterDetailsViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaHistoryUseCase.getSagaById(sagaId.toInt()).collect {
                     saga.value = it
-                    character.value = it?.characters?.find { char -> char.id == characterId.toInt() }
+                    character.value = it?.characters?.find { char -> char.data.id == characterId.toInt() }
                     messageCount.value =
-                        it?.flatMessages()?.filterCharacterMessages(character.value)?.size ?: 0
+                        it?.flatMessages()?.filterCharacterMessages(character.value?.data)?.size ?: 0
                 }
             }
         }

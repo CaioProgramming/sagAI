@@ -101,6 +101,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -216,20 +217,23 @@ private fun ChatList(
             }
         }
         item {
-
             Row(
                 modifier =
                     Modifier
                         .padding(16.dp)
-                        .reactiveShimmer(true)
-                        .clip(RoundedCornerShape(15.dp))
+                        .reactiveShimmer(
+                            true,
+                            targetValue = 300f,
+                            shimmerColors = holographicGradient.plus(Color.Transparent),
+                            duration = 5.seconds,
+                        ).clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
                         }.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
-                    brush = Brush.verticalGradient(genresGradient(), tileMode = TileMode.Decal ),
+                    brush = MaterialTheme.colorScheme.onBackground.solidGradient(),
                     strokeSize = 2.dp,
                     modifier =
                         Modifier
@@ -254,8 +258,7 @@ private fun ChatList(
                     Column(
                         modifier =
                             Modifier
-                                .weight(1f)
-                                .gradientFill(Brush.verticalGradient(holographicGradient)),
+                                .weight(1f),
                     ) {
                         if (isLoading) {
                             StarryTextPlaceholder(
@@ -466,7 +469,9 @@ fun ChatCard(
                         if (saga.messagesSize() == 0) {
                             stringResource(R.string.chat_card_saga_begins)
                         } else {
-                            lastMessage?.joinMessage()?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
+                            lastMessage
+                                ?.joinMessage()
+                                ?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
                         }
                     }
                 Text(
@@ -493,90 +498,6 @@ fun ChatCard(
     }
 }
 
-@Composable
-private fun NewChatCard(
-    modifier: Modifier = Modifier,
-    animatedBrush: Brush,
-    onButtonClick: () -> Unit = {},
-) {
-    Box(modifier.padding(16.dp)) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            SparkIcon(
-                brush = animatedBrush,
-                duration = 3.seconds,
-                rotationTarget = 180f,
-                modifier =
-                    Modifier
-                        .clip(CircleShape)
-                        .padding(8.dp)
-                        .size(200.dp)
-                        .clickable {
-                            onButtonClick()
-                        },
-            )
-
-            Text(
-                stringResource(R.string.home_new_chat_journey_begins_title),
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Start,
-                style =
-                    MaterialTheme.typography.displayMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        brush = animatedBrush,
-                    ),
-            )
-
-            Text(
-                stringResource(R.string.home_create_new_saga_subtitle),
-                modifier = Modifier.fillMaxWidth(),
-                style = MaterialTheme.typography.titleMedium,
-            )
-
-            Button(
-                onClick = {
-                    onButtonClick()
-                },
-                modifier =
-                    Modifier.fillMaxWidth(),
-                colors =
-                    ButtonDefaults.elevatedButtonColors(
-                        containerColor = MaterialTheme.colorScheme.onBackground,
-                        contentColor = Color.White,
-                    ),
-                shape = RoundedCornerShape(15.dp),
-            ) {
-                Text(
-                    stringResource(R.string.home_new_chat_start_button),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(0.85f)
-                            .gradientFill(
-                                animatedBrush,
-                            ),
-                )
-
-                Icon(
-                    Icons.AutoMirrored.Default.ArrowForward,
-                    contentDescription = stringResource(R.string.new_saga_title),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .size(24.dp)
-                            .gradientFill(
-                                animatedBrush,
-                            ),
-                )
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable

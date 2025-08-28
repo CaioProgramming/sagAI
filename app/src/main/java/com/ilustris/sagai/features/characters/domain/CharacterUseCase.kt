@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.Flow
 
 interface CharacterUseCase {
@@ -33,4 +34,9 @@ interface CharacterUseCase {
         sagaContent: SagaContent,
         description: String,
     ): RequestResult<Exception, Character>
+
+    suspend fun generateCharactersUpdate(
+        timeline: Timeline,
+        saga: SagaContent,
+    ): RequestResult<Exception, Unit>
 }

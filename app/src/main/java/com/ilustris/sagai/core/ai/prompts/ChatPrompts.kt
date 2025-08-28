@@ -1,15 +1,10 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.model.meaning
-import com.ilustris.sagai.features.saga.chat.domain.model.rules
-import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.home.data.model.getCharacters
 
 object ChatPrompts {
     val sagaExclusions =
@@ -33,8 +28,7 @@ object ChatPrompts {
             "image",
             "sagaId",
             "joinedAt",
-            "facialDetails",
-            "clothing",
+            "details",
         )
 
     fun replyMessagePrompt(
@@ -50,17 +44,17 @@ object ChatPrompts {
         appendLine(saga.data.toJsonFormatExcludingFields(sagaExclusions))
         appendLine("PLAYER CONTEXT DATA:")
         appendLine(saga.mainCharacter.toJsonFormatExcludingFields(characterExclusions))
-        appendLine(CharacterPrompts.charactersOverview(saga.characters.filter { it.id != saga.mainCharacter?.id }))
+        appendLine(CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }))
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
         appendLine(TimelinePrompts.timeLineDetails(saga.flatEvents().filter { it.isComplete() }.map { it.timeline }))
         appendLine(ActPrompts.actDirective(directive))
-        appendLine(ChatRules.outputRules(saga.mainCharacter))
+        appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
         appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trimIndent())
         appendLine(SagaDirective.namingDirective(saga.data.genre))
         appendLine(conversationStyleAndPacing())
         appendLine(GenrePrompts.conversationDirective(saga.data.genre))
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
-        appendLine(conversationHistory(saga.mainCharacter, lastMessages))
+        appendLine(conversationHistory(saga.mainCharacter?.data, lastMessages))
         appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:** //")
         appendLine("{ $message }")
         appendLine()

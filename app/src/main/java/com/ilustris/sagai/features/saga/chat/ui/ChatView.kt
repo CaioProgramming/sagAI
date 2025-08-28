@@ -123,6 +123,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
@@ -131,6 +132,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
@@ -490,7 +492,7 @@ fun ChatContent(
 
     val bottomSheetState = rememberModalBottomSheetState()
     var showCharacter by remember {
-        mutableStateOf<Character?>(null)
+        mutableStateOf<CharacterContent?>(null)
     }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -542,7 +544,8 @@ fun ChatContent(
                             isPlaying,
                             shimmerColors = saga.genre.colorPalette(),
                             duration = 10.seconds,
-                        ).fillMaxSize(.5f)
+                        )
+                        .fillMaxSize(.5f)
                         .alpha(.6f),
             )
 
@@ -550,7 +553,8 @@ fun ChatContent(
                 Modifier
                     .padding(
                         top = padding.calculateTopPadding(),
-                    ).fillMaxSize(),
+                    )
+                    .fillMaxSize(),
             ) {
                 val coroutineScope = rememberCoroutineScope()
                 val (debugControls, messages, chatInput, topBar, bottomFade, topFade, loreProgress) = createRefs()
@@ -586,7 +590,8 @@ fun ChatContent(
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
-                        }.fillMaxWidth()
+                        }
+                        .fillMaxWidth()
                         .fillMaxHeight(.2f)
                         .background(fadeGradientBottom()),
                 ) {
@@ -607,7 +612,8 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
-                            }.padding(vertical = padding.calculateBottomPadding())
+                            }
+                            .padding(vertical = padding.calculateBottomPadding())
                             .animateContentSize(),
                     enter = slideInVertically(),
                     exit = fadeOut(),
@@ -642,17 +648,20 @@ fun ChatContent(
                                 top.linkTo(parent.top)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }.background(MaterialTheme.colorScheme.background)
+                            }
+                            .background(MaterialTheme.colorScheme.background)
                             .padding(top = 50.dp, start = 16.dp, end = 16.dp)
                             .fillMaxWidth()
                             .clickable {
                                 openSagaDetails(saga)
-                            }.reactiveShimmer(isGenerating),
+                            }
+                            .reactiveShimmer(isGenerating),
                     actionContent = {
                         AnimatedContent(characters, transitionSpec = {
                             slideInVertically() + fadeIn() with fadeOut()
                         }) { chars ->
-                            CharactersTopIcons(chars, { openSagaDetails(saga) }, saga)
+                            CharactersTopIcons(chars, saga.genre,
+                                { openSagaDetails(saga) })
                         }
                     },
                 )
@@ -671,7 +680,8 @@ fun ChatContent(
                     Modifier
                         .background(
                             backgroundColor,
-                        ).constrainAs(loreProgress) {
+                        )
+                        .constrainAs(loreProgress) {
                             top.linkTo(topBar.bottom)
                             start.linkTo(topBar.start)
                             end.linkTo(topBar.end)
@@ -837,7 +847,8 @@ fun ChatContent(
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainer,
                                         shape,
-                                    ).fillMaxWidth(),
+                                    )
+                                    .fillMaxWidth(),
                             trailingIcon = {
                                 IconButton(
                                     onClick = {
@@ -851,7 +862,8 @@ fun ChatContent(
                                             .background(
                                                 content.data.genre.color,
                                                 CircleShape,
-                                            ).size(32.dp)
+                                            )
+                                            .size(32.dp)
                                             .padding(4.dp),
                                 ) {
                                     Icon(
@@ -945,7 +957,8 @@ fun SagaHeader(
                             .effectForGenre(saga.genre)
                             .selectiveColorHighlight(
                                 saga.genre.selectiveHighlight(),
-                            ).fillMaxSize(),
+                            )
+                            .fillMaxSize(),
                 )
 
                 Box(
@@ -1018,7 +1031,8 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }.animateContentSize(),
+                    }
+                    .animateContentSize(),
         )
     }
 }
@@ -1029,7 +1043,7 @@ fun ChatList(
     actList: List<ActDisplayData>,
     modifier: Modifier,
     listState: LazyListState,
-    openCharacter: (Character?) -> Unit = {},
+    openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
 ) {
@@ -1175,9 +1189,11 @@ fun ChatList(
                                         .background(
                                             MaterialTheme.colorScheme.background,
                                             shape,
-                                        ).clickable {
+                                        )
+                                        .clickable {
                                             openSaga()
-                                        }.padding(8.dp)
+                                        }
+                                        .padding(8.dp)
                                         .gradientFill(genre.gradient()),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
@@ -1261,10 +1277,10 @@ fun ChatList(
 }
 
 @Composable
-private fun CharactersTopIcons(
+fun CharactersTopIcons(
     characters: List<Character>,
-    onCharacterSelected: (Int) -> Unit,
-    data: Saga,
+    genre: Genre,
+    onCharacterSelected: () -> Unit = {},
 ) {
     val overlapAmount = (-10).dp
     val density = LocalDensity.current
@@ -1272,10 +1288,10 @@ private fun CharactersTopIcons(
         characters.take(3)
     LazyRow(
         Modifier
-            .clip(RoundedCornerShape(25.dp))
+            .clip(RoundedCornerShape(genre.cornerSize()))
             .fillMaxWidth(.2f)
             .clickable {
-                onCharacterSelected(data.id)
+                onCharacterSelected.invoke()
             },
         userScrollEnabled = false,
         horizontalArrangement = Arrangement.End,
@@ -1288,7 +1304,7 @@ private fun CharactersTopIcons(
                 borderSize = 2.dp,
                 borderColor = MaterialTheme.colorScheme.background,
                 innerPadding = 0.dp,
-                genre = data.genre,
+                genre = genre,
                 pixelation = .1f,
                 modifier =
                     Modifier
@@ -1300,9 +1316,11 @@ private fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        ).graphicsLayer(
+                        )
+                        .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).size(24.dp),
+                        )
+                        .size(24.dp),
             )
         }
     }

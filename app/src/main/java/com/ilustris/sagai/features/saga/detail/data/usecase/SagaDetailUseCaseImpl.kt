@@ -2,10 +2,10 @@ package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -13,32 +13,35 @@ import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
-import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankMentions
 import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 class SagaDetailUseCaseImpl
     @Inject
     constructor(
-        @ApplicationContext
-        private val context: Context,
         private val sagaRepository: SagaRepository,
         private val fileHelper: FileHelper,
         private val gemmaClient: GemmaClient,
         private val textGenClient: TextGenClient,
         private val imageGenClient: ImagenClient,
         private val genreReferenceHelper: GenreReferenceHelper,
+        private val timelineUseCase: TimelineUseCase,
+        private val characterUseCase: CharacterUseCase,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Exception, Saga> =
             try {
@@ -50,12 +53,13 @@ class SagaDetailUseCaseImpl
                 val characterIcon: Bitmap? =
                     saga
                         .mainCharacter
+                        ?.data
                         ?.image
                         ?.let { genreReferenceHelper.getFileBitmap(it).getSuccess() }
 
                 val metaPrompt =
                     gemmaClient.generate<String>(
-                        prompt = SagaPrompts.iconDescription(saga.data, saga.mainCharacter!!),
+                        prompt = SagaPrompts.iconDescription(saga.data, saga.mainCharacter!!.data),
                         listOf(styleReferenceBitmap).plus(characterIcon).filterNotNull(),
                         requireTranslation = false,
                     )!!
@@ -91,21 +95,22 @@ class SagaDetailUseCaseImpl
         override suspend fun createReview(content: SagaContent): RequestResult<Exception, Saga> =
             try {
                 val messages = content.flatMessages()
+                val characters = content.getCharacters(true)
                 val prompt =
                     SagaPrompts.reviewGeneration(
                         content,
                         messages
                             .filterCharacterMessages(
-                                content.mainCharacter!!,
+                                content.mainCharacter!!.data,
                             ).size,
                         messages.rankMessageTypes(),
                         messages
                             .rankTopCharacters(
-                                content.characters.filter { it.id != content.mainCharacter.id },
+                                characters,
                             ).take(3),
                         messages
                             .rankMentions(
-                                content.characters.filter { it.id != content.mainCharacter.id },
+                                characters,
                             ).take(3),
                     )
 
@@ -131,4 +136,38 @@ class SagaDetailUseCaseImpl
                 ),
             )
         }
+
+        override suspend fun createEmotionalReview(content: SagaContent): RequestResult<Exception, Saga> =
+            try {
+                val emotionalSummary = content.emotionalSummary()
+                val prompt = SagaPrompts.emotionalGeneration(content, emotionalSummary.joinToString())
+
+                val review =
+                    textGenClient
+                        .generate<String>(
+                            prompt = prompt,
+                            requireTranslation = true,
+                        )!!
+
+                sagaRepository
+                    .updateChat(
+                        content.data.copy(
+                            emotionalReview = review,
+                        ),
+                    ).asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+
+        override suspend fun createTimelineReview(
+            content: SagaContent,
+            timelineContent: TimelineContent,
+        ): RequestResult<Exception, Unit> =
+            try {
+                characterUseCase.generateCharactersUpdate(timelineContent.timeline, content)
+                delay(300)
+                timelineUseCase.createTimelineReview(content, timelineContent)
+            } catch (e: Exception) {
+                e.asError()
+            }
     }

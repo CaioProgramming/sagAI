@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,22 +23,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
@@ -46,6 +47,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
+import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -103,10 +105,11 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     sagaContent: SagaContent,
-    character: Character,
+    characterContent: CharacterContent,
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
+    val character = characterContent.data
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
@@ -247,6 +250,23 @@ fun CharacterDetailsContent(
                 genre = genre,
             )
         }
+
+        if (characterContent.events.isNotEmpty()) {
+            item {
+                Text(
+                    stringResource(R.string.saga_detail_timeline_section_title),
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.headerFont(),
+                        ),
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+
+            items(characterContent.events) {
+                TimeLineCard(it, genre)
+            }
+        }
     }
 
     if (isGenerating) {
@@ -272,11 +292,13 @@ fun CharacterDetailsContent(
 @Composable
 fun CharacterDetailsDialogPreview() {
     val character =
-        Character(
-            name = "Character Name",
-            backstory = "Character backstory",
-            image = "https://www.example.com/image.jpg",
-            details = Details(occupation = "Occupation", race = "Human"),
+        CharacterContent(
+            Character(
+                name = "Character Name",
+                backstory = "Character backstory",
+                image = "https://www.example.com/image.jpg",
+                details = Details(occupation = "Occupation", race = "Human"),
+            ),
         )
     val genre = Genre.FANTASY
     SagAIScaffold {
