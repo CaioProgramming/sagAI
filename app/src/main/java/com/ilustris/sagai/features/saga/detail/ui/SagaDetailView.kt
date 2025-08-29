@@ -1370,11 +1370,10 @@ private fun SagaDetailInitialView(
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = it.data.genre.bodyFont(),
-                                fontWeight = FontWeight.Light,
-                                textAlign = TextAlign.Center,
+                                textAlign = TextAlign.Justify,
                                 brush = it.data.genre.gradient(),
                             ),
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier.alpha(.6f).padding(16.dp),
                     )
                 }
 
@@ -1419,7 +1418,7 @@ private fun SagaDetailInitialView(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp)
+                                    .padding(horizontal = 16.dp, vertical = 24.dp)
                                     .animateContentSize(
                                         animationSpec = tween(500, easing = EaseIn),
                                     ),

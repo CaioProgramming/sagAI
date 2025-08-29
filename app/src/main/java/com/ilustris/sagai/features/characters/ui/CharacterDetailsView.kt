@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -273,13 +274,21 @@ fun CharacterDetailsContent(
 
         if (characterContent.relationships.isNotEmpty()) {
             item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(.1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 1.dp,
+                )
+            }
+
+            item {
                 Text(
                     stringResource(R.string.saga_detail_relationships_section_title),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.headerFont(),
                         ),
-                    modifier = Modifier.padding(16.dp),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
                 )
             }
 
@@ -307,6 +316,13 @@ fun CharacterDetailsContent(
         }
 
         if (characterContent.events.isNotEmpty()) {
+            item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onSurface.copy(.1f),
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 1.dp,
+                )
+            }
             item {
                 Text(
                     stringResource(R.string.saga_detail_timeline_section_title),
