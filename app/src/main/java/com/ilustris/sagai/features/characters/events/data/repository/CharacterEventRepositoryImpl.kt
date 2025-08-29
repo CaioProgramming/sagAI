@@ -1,8 +1,7 @@
-package com.ilustris.sagai.features.timeline.data.repository
+package com.ilustris.sagai.features.characters.events.data.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.features.characters.data.model.CharacterEvent
-import kotlinx.coroutines.flow.Flow
+import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import javax.inject.Inject
 
 class CharacterEventRepositoryImpl

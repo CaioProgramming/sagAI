@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -77,6 +78,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -101,6 +103,7 @@ import com.ilustris.sagai.features.act.ui.ActReader
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.ui.ChapterCardView
 import com.ilustris.sagai.features.chapter.ui.ChapterContent
+import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
@@ -138,6 +141,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -342,7 +346,12 @@ fun LazyListScope.SagaDrawerContent(
                     ),
             ) {
                 Text(
-                    it.data.title.ifEmpty { stringResource(R.string.saga_drawer_act_prefix, ((index + 1).toRoman())) },
+                    it.data.title.ifEmpty {
+                        stringResource(
+                            R.string.saga_drawer_act_prefix,
+                            ((index + 1).toRoman()),
+                        )
+                    },
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = content.data.genre.bodyFont(),
@@ -548,7 +557,7 @@ fun SagaDetailContentView(
                                 },
                                 modifier =
                                     Modifier
-                                        .background(fadeGradientTop())
+                                        .background(MaterialTheme.colorScheme.background)
                                         .fillMaxWidth()
                                         .padding(top = 50.dp, start = 16.dp),
                             )
@@ -567,14 +576,19 @@ fun SagaDetailContentView(
                                 DetailAction.CHARACTERS ->
                                     CharactersGalleryContent(
                                         sagaContent,
+                                        onOpenEvent = {
+                                            onChangeSection(DetailAction.TIMELINE)
+                                        },
                                     )
 
                                 DetailAction.TIMELINE ->
                                     TimeLineContent(
                                         sagaContent,
-                                    ) {
-                                        createEmotionalReview(it)
-                                    }
+                                        generateEmotionalReview = {
+                                            createEmotionalReview(it)
+                                        },
+                                        openCharacters = { onChangeSection(DetailAction.CHARACTERS) },
+                                    )
 
                                 DetailAction.CHAPTERS ->
                                     ChapterContent(
@@ -1081,41 +1095,71 @@ private fun SagaDetailInitialView(
                         }
                     }
                 }
-            }
 
-            item(span = { GridItemSpan(columnCount) }) {
-                LazyRow {
-                    items(sortCharactersByMessageCount(it.getCharacters(), it.flatMessages())) { char ->
-                        Column(
-                            Modifier
-                                .padding(8.dp)
-                                .clip(RoundedCornerShape(it.data.genre.cornerSize()))
-                                .clickable {
-                                    selectSection(DetailAction.CHARACTERS)
-                                },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            CharacterAvatar(
-                                char,
-                                borderSize = 2.dp,
-                                genre = it.data.genre,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .clip(CircleShape)
-                                        .size(120.dp)
-                                        .padding(8.dp),
-                            )
+                item(span = { GridItemSpan(columnCount) }) {
+                    LazyRow {
+                        items(
+                            sortCharactersByMessageCount(
+                                it.getCharacters(),
+                                it.flatMessages(),
+                            ),
+                        ) { char ->
+                            Column(
+                                Modifier
+                                    .padding(8.dp)
+                                    .clip(RoundedCornerShape(it.data.genre.cornerSize()))
+                                    .clickable {
+                                        selectSection(DetailAction.CHARACTERS)
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                CharacterAvatar(
+                                    char,
+                                    borderSize = 2.dp,
+                                    genre = it.data.genre,
+                                    modifier =
+                                        Modifier
+                                            .padding(8.dp)
+                                            .clip(CircleShape)
+                                            .size(120.dp)
+                                            .padding(8.dp),
+                                )
 
-                            Text(
-                                char.name,
-                                style =
-                                    MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                        textAlign = TextAlign.Center,
-                                        fontFamily = it.data.genre.bodyFont(),
-                                    ),
-                            )
+                                Text(
+                                    char.name,
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontWeight = FontWeight.Light,
+                                            textAlign = TextAlign.Center,
+                                            fontFamily = it.data.genre.bodyFont(),
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (it.relationships.isNotEmpty()) {
+                    item(span = { GridItemSpan(columnCount) }) {
+                        Text(
+                            stringResource(R.string.saga_detail_relationships_section_title),
+                            style = sectionStyle,
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                        )
+                    }
+
+                    item(span = { GridItemSpan(columnCount) }) {
+                        LazyRow {
+                            items(it.relationships) { relation ->
+                                RelationShipCard(
+                                    content = relation,
+                                    genre = it.data.genre,
+                                    modifier = Modifier.padding(16.dp).requiredWidthIn(max = 300.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -1333,6 +1377,84 @@ private fun SagaDetailInitialView(
                         modifier = Modifier.padding(16.dp),
                     )
                 }
+
+                item(span = { GridItemSpan(columnCount) }) {
+                    var cardExpanded by remember {
+                        mutableStateOf(false)
+                    }
+                    Box(
+                        Modifier
+                            .padding(16.dp)
+                            .clip(it.data.genre.shape())
+                            .border(
+                                1.dp,
+                                it.data.genre.gradient(cardExpanded),
+                                it.data.genre.shape(),
+                            ).background(MaterialTheme.colorScheme.background, it.data.genre.shape())
+                            .background(
+                                it.data.genre.color
+                                    .gradientFade(),
+                                it.data.genre.shape(),
+                            ).fillMaxWidth()
+                            .clickable {
+                                if (it.data.emotionalReview != null) {
+                                    cardExpanded = cardExpanded.not()
+                                } else {
+                                    createEmotionalReview()
+                                }
+                            },
+                    ) {
+                        Image(
+                            painterResource(R.drawable.ic_full_spark),
+                            null,
+                            modifier =
+                                Modifier
+                                    .alpha(.4f)
+                                    .size(64.dp)
+                                    .clipToBounds(),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground.copy(.4f)),
+                            contentScale = ContentScale.Crop,
+                        )
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .animateContentSize(
+                                        animationSpec = tween(500, easing = EaseIn),
+                                    ),
+                        ) {
+                            if (cardExpanded.not()) {
+                                Text(
+                                    "Review emocional",
+                                    style =
+                                        MaterialTheme.typography.titleLarge.copy(
+                                            fontFamily = it.data.genre.headerFont(),
+                                        ),
+                                    modifier = Modifier.padding(vertical = 8.dp),
+                                )
+
+                                Text(
+                                    "Veja como suas ações refletem no seu estado emocional",
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontFamily = it.data.genre.bodyFont(),
+                                        ),
+                                )
+                            } else {
+                                it.data.emotionalReview?.let { text ->
+                                    Text(
+                                        text,
+                                        style =
+                                            MaterialTheme.typography.bodyMedium.copy(
+                                                fontFamily = it.data.genre.bodyFont(),
+                                            ),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             } else {
                 item(span = { GridItemSpan(columnCount) }) {
                     Box(
@@ -1358,79 +1480,6 @@ private fun SagaDetailInitialView(
                                 ),
                             modifier = Modifier.align(Alignment.Center),
                         )
-                    }
-                }
-            }
-
-            if (saga.data.isEnded) {
-                item(span = { GridItemSpan(columnCount) }) {
-                    var cardExpanded by remember {
-                        mutableStateOf(false)
-                    }
-                    Box(
-                        Modifier
-                            .padding(16.dp)
-                            .clip(RoundedCornerShape(it.data.genre.cornerSize()))
-                            .fillMaxWidth()
-                            .clickable {
-                                if (it.data.emotionalReview != null) {
-                                    cardExpanded = cardExpanded.not()
-                                } else {
-                                    createEmotionalReview()
-                                }
-                            },
-                    ) {
-                        Image(
-                            painterResource(R.drawable.ic_full_spark),
-                            null,
-                            modifier =
-                                Modifier
-                                    .fillMaxHeight()
-                                    .fillMaxWidth(.4f)
-                                    .scale(1.3f)
-                                    .clipToBounds()
-                                    .gradientFill(it.data.genre.gradient(true)),
-                            contentScale = ContentScale.Crop,
-                        )
-                        Column(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .reactiveShimmer(
-                                        true,
-                                        shimmerColors =
-                                            it.data.genre.color
-                                                .fadeColors(),
-                                    ).padding(16.dp),
-                        ) {
-                            if (cardExpanded.not()) {
-                                Text(
-                                    "Review emocional",
-                                    style =
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            fontFamily = it.data.genre.bodyFont(),
-                                        ),
-                                )
-
-                                Text(
-                                    "Veja como suas ações refletem no seu estado emocional",
-                                    style =
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            fontFamily = it.data.genre.bodyFont(),
-                                        ),
-                                )
-                            } else {
-                                it.data.emotionalReview?.let { text ->
-                                    Text(
-                                        text,
-                                        style =
-                                            MaterialTheme.typography.bodyMedium.copy(
-                                                fontFamily = it.data.genre.bodyFont(),
-                                            ),
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
             }

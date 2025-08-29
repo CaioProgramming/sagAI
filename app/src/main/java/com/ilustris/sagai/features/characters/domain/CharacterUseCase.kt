@@ -39,4 +39,9 @@ interface CharacterUseCase {
         timeline: Timeline,
         saga: SagaContent,
     ): RequestResult<Exception, Unit>
+
+    suspend fun generateCharacterRelations(
+        timeline: Timeline,
+        saga: SagaContent,
+    ) : RequestResult<Exception, Unit>
 }

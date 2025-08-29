@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.characters.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,10 +21,12 @@ fun CharacterStats(
     character: Character,
     genre: Genre,
 ) {
-    Row(modifier = Modifier.padding(16.dp)) {
-        VerticalLabel("${character.details.height}cm", "Altura", genre)
-        VerticalLabel(character.details.race, "Raça", genre)
-        VerticalLabel("${character.details.weight}kg", "Peso", genre)
+    LazyRow(modifier = Modifier.padding(16.dp)) {
+        item { VerticalLabel(character.details.gender, "Gênero", genre) }
+        item { VerticalLabel("${character.details.height}cm", "Altura", genre) }
+        item { VerticalLabel(character.details.race, "Raça", genre) }
+        item { VerticalLabel(character.details.ethnicity, "Etnia", genre) }
+        item { VerticalLabel("${character.details.weight}kg", "Peso", genre) }
     }
 }
 

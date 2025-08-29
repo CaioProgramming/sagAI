@@ -44,6 +44,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -90,7 +91,6 @@ fun ActReadingContent(
     val genre = remember { sagaContent.data.genre }
     LazyColumn(modifier = Modifier.padding(vertical = 16.dp)) {
         items(act.chapters) {
-            val chapterPosition = act.chapters.indexOf(it)
             val shape = RoundedCornerShape(genre.cornerSize())
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -133,8 +133,17 @@ fun ActReadingContent(
                             fontFamily = genre.bodyFont(),
                         ),
                 )
+
+                it.data.emotionalReview?.let {
+                    EmotionalCard(
+                        it,
+                        genre,
+                        modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    )
+                }
             }
         }
+
         item {
             Column(Modifier.padding(horizontal = 16.dp)) {
                 HorizontalDivider(
@@ -152,6 +161,86 @@ fun ActReadingContent(
                 )
             }
         }
+
+        if (act == sagaContent.acts.last()) {
+            item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                )
+            }
+
+            item {
+                Text(
+                    "Conclusão",
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Start,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                )
+            }
+
+            item {
+                Text(
+                    sagaContent.data.endMessage,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                )
+            }
+
+            sagaContent.data.emotionalReview?.let {
+                item {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                        modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    )
+                }
+                item {
+                    Text(
+                        "Sobre você",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.headerFont(),
+                                textAlign = TextAlign.Start,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                    )
+                }
+
+                item {
+                    Text(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                        modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    )
+                }
+            }
+        }
+
+        act.data.emotionalReview?.let {
+            item {
+                EmotionalCard(
+                    it,
+                    genre,
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                )
+            }
+        }
+
         item { Spacer(Modifier.height(50.dp)) }
     }
 }

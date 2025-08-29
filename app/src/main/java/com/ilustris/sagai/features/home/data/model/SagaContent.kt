@@ -12,6 +12,8 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
+import com.ilustris.sagai.features.characters.relations.domain.data.RelationshipContent
 import kotlin.jvm.javaClass
 
 data class SagaContent(
@@ -47,6 +49,12 @@ data class SagaContent(
         entity = Act::class,
     )
     val acts: List<ActContent> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "sagaId",
+        entity = CharacterRelation::class,
+    )
+    val relationships: List<RelationshipContent> = emptyList(),
 ) {
     fun isFull(): Boolean = acts.count { it.isComplete() } == UpdateRules.MAX_ACTS_LIMIT
 
@@ -60,10 +68,10 @@ data class SagaContent(
 }
 
 fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
-    characters.map { it.data }.apply {
-        if (filterMainCharacter) {
-            this.filter { it.id != mainCharacter?.data?.id }
-        }
+    if (filterMainCharacter) {
+        characters.filter { it.data.id != mainCharacter?.data?.id }.map { it.data }
+    } else {
+        characters.map { it.data }
     }
 
 fun SagaContent.isFirstAct() = currentActInfo == acts.first()

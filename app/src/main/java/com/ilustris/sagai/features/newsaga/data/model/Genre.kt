@@ -141,6 +141,14 @@ fun Genre.defaultHeaderImage() =
         Genre.HEROES -> R.drawable.hero_card
     }
 
+fun Genre.shimmerColors() =
+    listOf(
+        Color.Transparent,
+        color.copy(alpha = .3f),
+    ).plus(colorPalette())
+        .plus(color.copy(alpha = .3f))
+        .plus(Color.Transparent)
+
 fun Genre.colorPalette() =
     when (this) {
         Genre.FANTASY ->
@@ -150,6 +158,7 @@ fun Genre.colorPalette() =
                 MaterialColor.DeepOrange600,
                 MaterialColor.Red500,
             )
+
         Genre.SCI_FI ->
             listOf(
                 MaterialColor.Purple500,
@@ -157,6 +166,7 @@ fun Genre.colorPalette() =
                 MaterialColor.DeepPurple800,
                 MaterialColor.PinkA100,
             )
+
         Genre.HORROR ->
             listOf(
                 MaterialColor.BlueGray100,

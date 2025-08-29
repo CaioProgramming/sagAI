@@ -6,6 +6,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -79,6 +80,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
@@ -339,8 +341,9 @@ fun ChatCard(
                         .clip(CircleShape),
             ) {
                 if (saga.data.isDebug.not()) {
+                    val borderBrush = if (sagaData.isEnded) sagaData.genre.gradient() else sagaData.genre.color.solidGradient()
                     AsyncImage(
-                        sagaData.icon ?: sagaData.genre.defaultHeaderImage(),
+                        sagaData.icon,
                         contentDescription = sagaData.title,
                         contentScale = ContentScale.Crop,
                         modifier =
@@ -348,7 +351,7 @@ fun ChatCard(
                                 .padding(8.dp)
                                 .border(
                                     2.dp,
-                                    sagaData.genre.color,
+                                    borderBrush,
                                     CircleShape,
                                 ).padding(4.dp)
                                 .background(
@@ -424,20 +427,26 @@ fun ChatCard(
             Spacer(modifier = Modifier.width(12.dp))
 
             val lastMessage = saga.flatMessages().lastOrNull()
+            val color by animateColorAsState(
+                if (saga.data.isEnded) sagaData.genre.color else MaterialTheme.colorScheme.onBackground,
+            )
             Column(
                 modifier =
-                    Modifier.weight(1f).reactiveShimmer(
-                        sagaData.isEnded,
-                        shimmerColors = sagaData.genre.color.fadeColors(),
-                        targetValue = 1000f,
-                        duration = 5.seconds,
-                    ),
+                    Modifier
+                        .weight(1f)
+                        .reactiveShimmer(
+                            sagaData.isEnded,
+                            sagaData.genre.shimmerColors(),
+                            targetValue = 1000f,
+                            duration = 10.seconds,
+                        ),
             ) {
                 Row {
                     Text(
                         text = sagaData.title,
                         style = MaterialTheme.typography.titleMedium,
                         fontFamily = saga.data.genre.headerFont(),
+                        color = color,
                         modifier = Modifier.weight(1f),
                     )
 
@@ -457,7 +466,7 @@ fun ChatCard(
                                 MaterialTheme.typography.labelSmall.copy(
                                     fontFamily = saga.data.genre.bodyFont(),
                                 ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = color.copy(alpha = .6f),
                         )
                     }
                 }
@@ -481,6 +490,7 @@ fun ChatCard(
                             fontWeight = FontWeight.Normal,
                             fontFamily = saga.data.genre.bodyFont(),
                             textAlign = TextAlign.Start,
+                            color = color.copy(alpha = .6f),
                         ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -497,7 +507,6 @@ fun ChatCard(
         )
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

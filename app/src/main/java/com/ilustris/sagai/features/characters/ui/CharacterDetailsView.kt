@@ -12,8 +12,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,6 +42,8 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.Details
+import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
+import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -47,6 +51,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -61,6 +66,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
@@ -106,6 +112,7 @@ fun CharacterDetailsView(
 fun CharacterDetailsContent(
     sagaContent: SagaContent,
     characterContent: CharacterContent,
+    openEvent: (Timeline?) -> Unit = {},
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
@@ -190,7 +197,20 @@ fun CharacterDetailsContent(
                     Modifier
                         .background(MaterialTheme.colorScheme.background)
                         .padding(vertical = 24.dp)
+                        .reactiveShimmer(true)
                         .fillMaxWidth(),
+            )
+        }
+
+        item {
+            Text(
+                character.details.occupation,
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontFamily = genre.headerFont(),
+                        color = characterColor,
+                    ),
+                modifier = Modifier.padding(16.dp),
             )
         }
 
@@ -251,10 +271,10 @@ fun CharacterDetailsContent(
             )
         }
 
-        if (characterContent.events.isNotEmpty()) {
+        if (characterContent.relationships.isNotEmpty()) {
             item {
                 Text(
-                    stringResource(R.string.saga_detail_timeline_section_title),
+                    stringResource(R.string.saga_detail_relationships_section_title),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.headerFont(),
@@ -263,8 +283,50 @@ fun CharacterDetailsContent(
                 )
             }
 
-            items(characterContent.events) {
-                TimeLineCard(it, genre)
+            item {
+                LazyRow {
+                    items(characterContent.relationships) { relationContent ->
+                        val currentId = character.id
+                        val relatedCharacter =
+                            when (currentId) {
+                                relationContent.characterOne.id -> relationContent.characterTwo
+                                relationContent.characterTwo.id -> relationContent.characterOne
+                                else -> null
+                            }
+                        if (relatedCharacter != null) {
+                            SingleRelationShipCard(
+                                character = relatedCharacter,
+                                relation = relationContent.data,
+                                genre = genre,
+                                modifier = Modifier.padding(16.dp).requiredWidthIn(max = 300.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        if (characterContent.events.isNotEmpty()) {
+            item {
+                Text(
+                    stringResource(R.string.saga_detail_timeline_section_title),
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.headerFont(),
+                        ),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                )
+            }
+
+            items(characterContent.events.sortedBy { it.timeline?.createdAt }) {
+                TimeLineCard(
+                    it,
+                    genre,
+                    modifier =
+                        Modifier.padding(16.dp).clickable {
+                            openEvent(it.timeline)
+                        },
+                )
             }
         }
     }

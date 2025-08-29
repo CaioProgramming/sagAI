@@ -54,6 +54,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
@@ -67,6 +68,7 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.saturate
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -77,6 +79,7 @@ fun ChatBubble(
     content: SagaContent,
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
+    isLoading: Boolean = false,
     openCharacters: (CharacterContent?) -> Unit = {},
     openWiki: () -> Unit = {},
 ) {
@@ -157,7 +160,8 @@ fun ChatBubble(
                                 .clip(bubbleShape)
                                 .padding(16.dp)
                                 .align(alignment)
-                                .animateContentSize(),
+                                .animateContentSize()
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontWeight = FontWeight.Normal,
@@ -197,6 +201,7 @@ fun ChatBubble(
                         }) {
                             CharacterAvatar(
                                 it,
+                                isLoading = isLoading,
                                 genre = genre,
                                 borderSize = 2.dp,
                                 pixelation = 0f,
@@ -275,6 +280,7 @@ fun ChatBubble(
                     messageContent.character?.let {
                         CharacterAvatar(
                             it,
+                            isLoading = isLoading,
                             borderSize = 2.dp,
                             genre = genre,
                             pixelation = 0f,
@@ -305,7 +311,8 @@ fun ChatBubble(
                                 .background(
                                     MaterialTheme.colorScheme.background.copy(alpha = .4f),
                                     RoundedCornerShape(genre.cornerSize()),
-                                ).padding(16.dp),
+                                ).padding(16.dp)
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontStyle = FontStyle.Italic,
@@ -335,6 +342,7 @@ fun ChatBubble(
                     messageContent.character?.let {
                         CharacterAvatar(
                             it,
+                            isLoading = isLoading,
                             borderSize = 2.dp,
                             genre = genre,
                             pixelation = 0f,
@@ -361,7 +369,8 @@ fun ChatBubble(
                                 .background(
                                     Color.Black,
                                     shape = RoundedCornerShape(genre.cornerSize()),
-                                ).padding(16.dp),
+                                ).padding(16.dp)
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
                             MaterialTheme.typography.labelMedium.copy(
                                 fontStyle = FontStyle.Italic,
@@ -392,6 +401,7 @@ fun ChatBubble(
                                     alpha = .7f,
                                 ),
                             ).padding(16.dp)
+                            .reactiveShimmer(isLoading, genre.shimmerColors())
                             .fillMaxWidth(),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(

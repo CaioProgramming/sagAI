@@ -196,7 +196,8 @@
     <string name="continue_text">continue</string>
     <string name="notification_title">New message on %1$s</string>
     <string name="notification_playing_act">Playing act %1$s</string>
-    <string name="notification_action_pause">Pause</string>
-    <string name="notification_action_play">Play</string>
+    <string name="notification_action_pause" translatable="false">Pause</string>
+    <string name="notification_action_play" translatable="false">Play</string>
+    <string name="saga_detail_relationships_section_title">Relationships</string>
 
 </resources>

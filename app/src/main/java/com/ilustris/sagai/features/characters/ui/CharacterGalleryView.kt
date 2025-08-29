@@ -53,6 +53,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -79,16 +80,6 @@ fun CharacterGalleryView(
     saga?.let {
         CharactersGalleryContent(
             it,
-            onSelectCharacter = { charId, sagId ->
-                navController.navigateToRoute(
-                    Routes.CHARACTER_DETAIL,
-                    arguments =
-                        mapOf(
-                            "sagaId" to sagId.toString(),
-                            "characterId" to charId.toString(),
-                        ),
-                )
-            },
         )
     }
 }
@@ -97,7 +88,7 @@ fun CharacterGalleryView(
 @Composable
 fun CharactersGalleryContent(
     saga: SagaContent,
-    onSelectCharacter: (Int, Int) -> Unit = { _, _ -> },
+    onOpenEvent: (Timeline) -> Unit = {},
 ) {
     var showCharacter by remember {
         mutableStateOf<CharacterContent?>(null)
@@ -143,6 +134,7 @@ fun CharactersGalleryContent(
                 CharacterDetailsContent(
                     saga,
                     character,
+                    openEvent = { it?.let { p1 -> onOpenEvent(p1) } },
                 )
             }
         }

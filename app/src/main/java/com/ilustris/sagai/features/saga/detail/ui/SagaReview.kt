@@ -32,6 +32,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -77,6 +78,7 @@ import androidx.constraintlayout.compose.Dimension
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -610,6 +612,31 @@ fun ReviewDetails(saga: SagaContent) {
             }
 
             item {
+                Text(
+                    stringResource(R.string.saga_detail_relationships_section_title),
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = genre.headerFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                        ),
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+
+            item {
+                LazyRow {
+                    items(saga.relationships) { relation ->
+                        RelationShipCard(
+                            content = relation,
+                            genre = genre,
+                            modifier = Modifier.padding(16.dp).requiredWidthIn(max = 300.dp),
+                        )
+                    }
+                }
+
+            }
+
+            item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
                     modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
@@ -680,6 +707,34 @@ fun ReviewDetails(saga: SagaContent) {
                     modifier = Modifier.padding(16.dp),
                 )
             }
+
+            saga.data.emotionalReview?.let {
+
+                item {
+                    Text(
+                        "Sobre você",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = genre.headerFont(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                            ),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+
+                item {
+                    Text(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = bodyFont,
+                                color = MaterialTheme.colorScheme.onBackground,
+                            ),
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
+
 
             item {
                 Spacer(Modifier.height(50.dp))

@@ -18,8 +18,10 @@ import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
+import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
+import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
+import com.ilustris.sagai.features.characters.relations.domain.usecase.CharacterRelationUseCase
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -27,7 +29,6 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.timeline.data.repository.CharacterEventRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
@@ -41,6 +42,7 @@ class CharacterUseCaseImpl
         private val context: Context,
         private val repository: CharacterRepository,
         private val eventsRepository: CharacterEventRepository,
+        private val characterRelationUseCase: CharacterRelationUseCase,
         private val imagenClient: ImagenClient,
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
@@ -182,4 +184,9 @@ class CharacterUseCaseImpl
             } catch (e: Exception) {
                 e.asError()
             }
-    }
+
+    override suspend fun generateCharacterRelations(
+        timeline: Timeline,
+        saga: SagaContent
+    ): RequestResult<Exception, Unit> = characterRelationUseCase.generateCharacterRelation(timeline, saga)
+}

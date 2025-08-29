@@ -93,6 +93,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -147,7 +148,7 @@ fun ChatInputView(
 
     var showNewCharacterSheet by remember { mutableStateOf(false) }
     val newCharacterSheetState =
-        rememberModalBottomSheetState(skipPartiallyExpanded = false) // Consider skipping partial expansion
+        rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -171,8 +172,10 @@ fun ChatInputView(
             LazyColumn(
                 Modifier
                     .padding(16.dp)
-                    .background(MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(10.dp))
-                    .heightIn(max = 300.dp)
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainer,
+                        RoundedCornerShape(10.dp),
+                    ).heightIn(max = 300.dp)
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
@@ -329,7 +332,14 @@ fun ChatInputView(
                         content.data.genre.gradient(),
                     decorationBox = { innerTextField ->
                         val boxPadding = 12.dp
-                        Box(contentAlignment = Alignment.CenterStart) {
+                        Box(
+                            contentAlignment = Alignment.CenterStart,
+                            modifier =
+                                Modifier.reactiveShimmer(
+                                    isGenerating,
+                                    content.data.genre.shimmerColors(),
+                                ),
+                        ) {
                             if (inputField.text.isEmpty()) {
                                 Text(
                                     action.hint(),
@@ -349,7 +359,6 @@ fun ChatInputView(
                     },
                     modifier =
                         Modifier
-                            .reactiveShimmer(isGenerating)
                             .weight(1f)
                             .animateContentSize(),
                 )
@@ -568,5 +577,3 @@ private fun MainCharacterInputButton(
         }
     }
 }
-
-

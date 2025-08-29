@@ -7,6 +7,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -44,9 +45,10 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.ui.toRoman
-import com.ilustris.sagai.features.characters.data.model.CharacterEvent
+import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -58,6 +60,7 @@ import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
@@ -120,6 +123,7 @@ fun TimelineContentView(
 fun TimeLineContent(
     content: SagaContent,
     generateEmotionalReview: (TimelineContent) -> Unit = {},
+    openCharacters: () -> Unit = {},
 ) {
     val lazyListState = rememberLazyListState()
     LazyColumn(state = lazyListState, modifier = Modifier.padding(bottom = 32.dp)) {
@@ -145,13 +149,7 @@ fun TimeLineContent(
                 stickyHeader {
                     Text(
                         chapter.data.title.ifEmpty {
-                            "Capítulo ${
-                                (
-                                    actContent.chapters.indexOf(
-                                        chapter,
-                                    ) + 1
-                                ).toRoman()
-                            }"
+                            "Capítulo ${content.chapterNumber(chapter.data).toRoman()}"
                         },
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
@@ -172,7 +170,8 @@ fun TimeLineContent(
                         it,
                         content,
                         showSpark = true,
-                        isLast = it == chapter.events.last(),
+                        isLast = false,
+                        openCharacters = openCharacters,
                         modifier =
                             Modifier
                                 .clip(content.data.genre.shape())
@@ -201,6 +200,7 @@ fun TimeLineCard(
     titleStyle: TextStyle = MaterialTheme.typography.titleMedium,
     contentStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
+    openCharacters: () -> Unit = {},
 ) {
     val genre = saga.data.genre
     val color = genre.color
@@ -216,7 +216,7 @@ fun TimeLineCard(
         ),
     )
 
-    ConstraintLayout(modifier.fillMaxWidth()) {
+    ConstraintLayout(modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         val (iconView, contentView, emotionalView) = createRefs()
         Column(
             modifier =
@@ -265,7 +265,8 @@ fun TimeLineCard(
                 CharactersTopIcons(
                     eventContent.characterEventDetails.map { it.character },
                     genre,
-                ) { }
+                    false,
+                ) { openCharacters() }
             }
 
             Text(
@@ -309,7 +310,7 @@ fun TimeLineCard(
 
 @Composable
 fun TimeLineCard(
-    event: CharacterEvent,
+    eventDetails: CharacterEventDetails,
     genre: Genre,
     isLast: Boolean = false,
     showText: Boolean = true,
@@ -318,6 +319,7 @@ fun TimeLineCard(
     contentStyle: TextStyle = MaterialTheme.typography.bodyMedium,
     modifier: Modifier = Modifier,
 ) {
+    val event = eventDetails.event
     val color = genre.color
     val cornerSize = genre.cornerSize()
     val cardShape = RoundedCornerShape(cornerSize)
@@ -381,6 +383,33 @@ fun TimeLineCard(
                         color = genre.color,
                     ),
             )
+
+            eventDetails.timeline?.let {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier =
+                        Modifier
+                            .background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                genre.shape(),
+                            ).padding(8.dp)
+                            .gradientFill(genre.gradient()),
+                ) {
+                    Image(
+                        painterResource(R.drawable.ic_spark),
+                        null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Text(
+                        it.title,
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
+                }
+            }
 
             Text(
                 if (showText) event.summary else emptyString(),

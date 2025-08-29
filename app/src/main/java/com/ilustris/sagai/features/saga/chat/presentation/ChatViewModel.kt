@@ -63,9 +63,10 @@ class ChatViewModel
         val content = sagaContentManager.content
         val messages = MutableStateFlow<List<ActDisplayData>>(emptyList())
         val isGenerating = sagaContentManager.narrativeProcessingUiState
+        val isLoading = MutableStateFlow(false)
         val characters = MutableStateFlow<List<Character>>(emptyList())
         val loreUpdateProgress = MutableStateFlow(0f)
-        val isPlaying: StateFlow<Boolean> = mediaPlayerManager.isPlaying // Observe this for UI
+        val isPlaying: StateFlow<Boolean> = mediaPlayerManager.isPlaying
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
 
@@ -89,6 +90,7 @@ class ChatViewModel
                     )
                 delay(15.seconds)
                 snackBarMessage.value = null
+                isLoading.value = false
             }
         }
 
@@ -458,6 +460,7 @@ class ChatViewModel
                             characterId = speakerId,
                         ),
                     ).onSuccess {
+                        isLoading.value = false
                         handleNewMessage(it, isFromUser)
                     }.onFailure {
                         sendError("Ocorreu um erro ao salvar a mensagem")
@@ -512,6 +515,7 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val timeline = saga.getCurrentTimeLine() ?: return@launch
+                isLoading.emit(true)
                 val newMessage =
                     MessageContent(
                         message = message,

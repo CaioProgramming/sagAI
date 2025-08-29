@@ -192,6 +192,7 @@ fun ChatView(
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
     val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
     val contentHaze = rememberHazeState()
@@ -313,7 +314,7 @@ fun ChatView(
                             characters = characters,
                             messagesList = messages,
                             suggestions = suggestions,
-                            isGenerating = isGenerating,
+                            isGenerating = isGenerating || isLoading,
                             padding = padding,
                             isDebug = isDebug,
                             isPlaying = isPlaying,
@@ -544,8 +545,7 @@ fun ChatContent(
                             isPlaying,
                             shimmerColors = saga.genre.colorPalette(),
                             duration = 10.seconds,
-                        )
-                        .fillMaxSize(.5f)
+                        ).fillMaxSize(.5f)
                         .alpha(.6f),
             )
 
@@ -553,8 +553,7 @@ fun ChatContent(
                 Modifier
                     .padding(
                         top = padding.calculateTopPadding(),
-                    )
-                    .fillMaxSize(),
+                    ).fillMaxSize(),
             ) {
                 val coroutineScope = rememberCoroutineScope()
                 val (debugControls, messages, chatInput, topBar, bottomFade, topFade, loreProgress) = createRefs()
@@ -563,6 +562,7 @@ fun ChatContent(
                     saga = content,
                     actList = messagesList,
                     listState = listState,
+                    isLoading = isGenerating,
                     modifier =
                         Modifier
                             .constrainAs(messages) {
@@ -590,8 +590,7 @@ fun ChatContent(
                             bottom.linkTo(parent.bottom)
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
-                        }
-                        .fillMaxWidth()
+                        }.fillMaxWidth()
                         .fillMaxHeight(.2f)
                         .background(fadeGradientBottom()),
                 ) {
@@ -612,8 +611,7 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                                 width = Dimension.fillToConstraints
-                            }
-                            .padding(vertical = padding.calculateBottomPadding())
+                            }.padding(vertical = padding.calculateBottomPadding())
                             .animateContentSize(),
                     enter = slideInVertically(),
                     exit = fadeOut(),
@@ -640,6 +638,7 @@ fun ChatContent(
                     saga.title,
                     "${content.flatMessages().size} mensagens",
                     saga.genre,
+                    isLoading = isGenerating,
                     onBackClick = onBack,
                     modifier =
                         Modifier
@@ -648,20 +647,21 @@ fun ChatContent(
                                 top.linkTo(parent.top)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }
-                            .background(MaterialTheme.colorScheme.background)
+                            }.background(MaterialTheme.colorScheme.background)
                             .padding(top = 50.dp, start = 16.dp, end = 16.dp)
                             .fillMaxWidth()
                             .clickable {
                                 openSagaDetails(saga)
-                            }
-                            .reactiveShimmer(isGenerating),
+                            },
                     actionContent = {
                         AnimatedContent(characters, transitionSpec = {
                             slideInVertically() + fadeIn() with fadeOut()
                         }) { chars ->
-                            CharactersTopIcons(chars, saga.genre,
-                                { openSagaDetails(saga) })
+                            CharactersTopIcons(
+                                chars,
+                                saga.genre,
+                                isLoading = isGenerating,
+                            ) { openSagaDetails(saga) }
                         }
                     },
                 )
@@ -680,8 +680,7 @@ fun ChatContent(
                     Modifier
                         .background(
                             backgroundColor,
-                        )
-                        .constrainAs(loreProgress) {
+                        ).constrainAs(loreProgress) {
                             top.linkTo(topBar.bottom)
                             start.linkTo(topBar.start)
                             end.linkTo(topBar.end)
@@ -847,8 +846,7 @@ fun ChatContent(
                                     .background(
                                         MaterialTheme.colorScheme.surfaceContainer,
                                         shape,
-                                    )
-                                    .fillMaxWidth(),
+                                    ).fillMaxWidth(),
                             trailingIcon = {
                                 IconButton(
                                     onClick = {
@@ -862,8 +860,7 @@ fun ChatContent(
                                             .background(
                                                 content.data.genre.color,
                                                 CircleShape,
-                                            )
-                                            .size(32.dp)
+                                            ).size(32.dp)
                                             .padding(4.dp),
                                 ) {
                                     Icon(
@@ -898,6 +895,9 @@ fun ChatContent(
             CharacterDetailsContent(
                 content,
                 character,
+                openEvent = {
+                    openSagaDetails(saga)
+                },
             )
         }
     }
@@ -957,8 +957,7 @@ fun SagaHeader(
                             .effectForGenre(saga.genre)
                             .selectiveColorHighlight(
                                 saga.genre.selectiveHighlight(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                 )
 
                 Box(
@@ -1031,8 +1030,7 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }
-                    .animateContentSize(),
+                    }.animateContentSize(),
         )
     }
 }
@@ -1043,6 +1041,7 @@ fun ChatList(
     actList: List<ActDisplayData>,
     modifier: Modifier,
     listState: LazyListState,
+    isLoading: Boolean = false,
     openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
@@ -1189,11 +1188,9 @@ fun ChatList(
                                         .background(
                                             MaterialTheme.colorScheme.background,
                                             shape,
-                                        )
-                                        .clickable {
+                                        ).clickable {
                                             openSaga()
-                                        }
-                                        .padding(8.dp)
+                                        }.padding(8.dp)
                                         .gradientFill(genre.gradient()),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
@@ -1219,6 +1216,7 @@ fun ChatList(
                     items(timeline.messages.reversed(), key = { it.message.id }) {
                         ChatBubble(
                             it,
+                            isLoading = isLoading,
                             content = saga,
                             alreadyAnimatedMessages = animatedMessages,
                             canAnimate = timeline.messages.lastOrNull() == it,
@@ -1280,6 +1278,7 @@ fun ChatList(
 fun CharactersTopIcons(
     characters: List<Character>,
     genre: Genre,
+    isLoading: Boolean = false,
     onCharacterSelected: () -> Unit = {},
 ) {
     val overlapAmount = (-10).dp
@@ -1316,11 +1315,9 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        )
-                        .graphicsLayer(
+                        ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .size(24.dp),
+                        ).size(24.dp),
             )
         }
     }

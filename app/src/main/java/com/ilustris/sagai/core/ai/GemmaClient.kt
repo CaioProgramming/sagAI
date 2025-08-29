@@ -15,6 +15,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken // <-- ADDED IMPORT
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString // <-- ADDED IMPORT FOR EXTENSION
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -80,6 +81,8 @@ class GemmaClient
                         role = "user",
                         contentParts,
                     )
+
+                delay(250)
 
                 val content = client.generateContent(inputContent)
 

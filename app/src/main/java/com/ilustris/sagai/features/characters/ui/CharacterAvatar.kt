@@ -32,11 +32,13 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import effectForGenre
 
 @Composable
@@ -47,6 +49,7 @@ fun CharacterAvatar(
     borderSize: Dp = 2.dp,
     textStyle: TextStyle = MaterialTheme.typography.labelSmall,
     genre: Genre,
+    isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
@@ -55,11 +58,13 @@ fun CharacterAvatar(
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     Box(
         modifier
+            .reactiveShimmer(isLoading, genre.shimmerColors())
             .border(
                 borderSize,
                 borderColor ?: characterColor,
                 CircleShape,
-            ).clip(CircleShape)
+            )
+            .clip(CircleShape)
             .padding(innerPadding)
             .background(
                 characterColor.darker(.3f),

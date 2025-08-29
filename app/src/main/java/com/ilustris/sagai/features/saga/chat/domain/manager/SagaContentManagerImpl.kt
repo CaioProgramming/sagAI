@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -107,30 +108,33 @@ class SagaContentManagerImpl
         override suspend fun loadSaga(sagaId: String) {
             Log.d(javaClass.simpleName, "Loading saga: $sagaId")
             try {
-                sagaHistoryUseCase.getSagaById(sagaId.toInt()).collectLatest { saga ->
-                    Log.d(
-                        javaClass.simpleName,
-                        "Saga flow updated for saga -> $sagaId \n ${saga?.data.toJsonFormat()}",
-                    )
-                    content.value = saga
-                    if (saga == null) {
-                        return@collectLatest
-                    }
+                sagaHistoryUseCase
+                    .getSagaById(sagaId.toInt())
+                    .debounce(500L)
+                    .collectLatest { saga ->
+                        Log.d(
+                            javaClass.simpleName,
+                            "Saga flow updated for saga -> $sagaId \n ${saga?.data.toJsonFormat()}",
+                        )
+                        content.value = saga
+                        if (saga == null) {
+                            return@collectLatest
+                        }
 
-                    val messages = saga.flatMessages()
-                    if (messages.isNotEmpty() &&
-                        messages
-                            .last()
-                            .message
-                            .senderType == SenderType.ACTION &&
-                        isDebugModeEnabled
-                    ) {
-                        return@collectLatest
-                    }
-                    checkNarrativeProgression(saga)
+                        val messages = saga.flatMessages()
+                        if (messages.isNotEmpty() &&
+                            messages
+                                .last()
+                                .message
+                                .senderType == SenderType.ACTION &&
+                            isDebugModeEnabled
+                        ) {
+                            return@collectLatest
+                        }
+                        checkNarrativeProgression(saga)
 
-                    getAmbienceMusic(saga)
-                }
+                        getAmbienceMusic(saga)
+                    }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
                 content.value = null
@@ -582,6 +586,8 @@ class SagaContentManagerImpl
             }
 
             characterUseCase.generateCharactersUpdate(timeline, currentSaga)
+
+            characterUseCase.generateCharacterRelations(timeline, currentSaga)
 
             setNarrativeProcessingStatus(false)
         }

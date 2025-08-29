@@ -23,10 +23,13 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 @Composable
 fun SagaTopBar(
@@ -36,6 +39,7 @@ fun SagaTopBar(
     actionContent: (@Composable () -> Unit)? = null,
     onBackClick: (() -> Unit)? = null,
     modifier: Modifier,
+    isLoading: Boolean = false,
 ) {
     Row(
         modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -47,14 +51,18 @@ fun SagaTopBar(
                 tint = MaterialTheme.colorScheme.onBackground,
                 contentDescription = stringResource(R.string.back_button_description),
                 modifier =
-                    Modifier.clip(CircleShape).size(24.dp).clickable {
-                        onBackClick()
-                    },
+                    Modifier
+                        .reactiveShimmer(isLoading, shimmerColors = genre.shimmerColors())
+                        .clip(CircleShape)
+                        .size(24.dp)
+                        .clickable {
+                            onBackClick()
+                        },
             )
         }
 
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp).weight(1f),
+            modifier = Modifier.reactiveShimmer(isLoading, genre.shimmerColors()).padding(horizontal = 8.dp).weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -65,7 +73,7 @@ fun SagaTopBar(
                         brush = genre.gradient(),
                         textAlign = TextAlign.Center,
                     ),
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().reactiveShimmer(isLoading, genre.shimmerColors()),
             )
 
             Text(
