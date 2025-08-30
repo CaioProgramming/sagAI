@@ -15,7 +15,6 @@ import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.chapter.data.model.ChapterGen
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import javax.inject.Inject
@@ -44,15 +43,14 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             chapterContent: ChapterContent,
         ) = try {
-            textGenClient
-                .generate<ChapterGen>(
+            gemmaClient
+                .generate<Chapter>(
                     prompt =
                         generateChapterPrompt(
                             saga = saga,
                             currentChapter = chapterContent,
                         ),
                     requireTranslation = true,
-                    customSchema = ChapterGen.toSchema(),
                 )!!
                 .asSuccess()
         } catch (e: Exception) {

@@ -60,6 +60,11 @@ object ActPrompts {
                 "description",
                 "content",
                 "overview",
+                "sagaData",
+                "mainCharacter",
+                "previousActData",
+                "chaptersInCurrentAct",
+                "actPurpose",
             )
 
         val combinedContextJson = promptDataContext.toJsonFormatIncludingFields(includedFields)
@@ -88,14 +93,14 @@ object ActPrompts {
                 "2.  Generate a concise 'content' for this Act (typically 2-3 paragraphs, around 150-250 words). This description should:",
             )
             appendLine(
-                "    a.  Summarize the main plot developments, character arcs, and key resolutions that occurred across all chapters in `CHAPTERS_IN_CURRENT_ACT`.",
+                "a.  Summarize the main plot developments, character arcs, and key resolutions that occurred across all chapters in `CHAPTERS_IN_CURRENT_ACT`.",
             )
-            appendLine("    b.  Reflect the overall tone and significance of this Act within the larger saga (`SAGA_DATA`).")
+            appendLine("b.  Reflect the overall tone and significance of this Act within the larger saga (`SAGA_DATA`).")
             appendLine(
-                "    c.  If `PREVIOUS_ACT_DATA` is provided, ensure your description provides a sense of narrative flow from that previous Act.",
+                "c.  If `PREVIOUS_ACT_DATA` is provided, ensure your description provides a sense of narrative flow from that previous Act.",
             )
             appendLine(
-                "    d.  Conclude with a sentence or two that creates a natural hook or sets the stage for the subsequent Act, hinting at unresolved threads or future directions.",
+                "d.  Conclude with a sentence or two that creates a natural hook or sets the stage for the subsequent Act, hinting at unresolved threads or future directions.",
             )
             appendLine("")
             appendLine("Consider the `MAIN_CHARACTER`'s journey if their data is provided and relevant to the Act's core.")

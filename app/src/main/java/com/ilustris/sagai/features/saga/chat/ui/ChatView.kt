@@ -1216,7 +1216,7 @@ fun ChatList(
                     items(timeline.messages.reversed(), key = { it.message.id }) {
                         ChatBubble(
                             it,
-                            isLoading = isLoading,
+                            isLoading = false,
                             content = saga,
                             alreadyAnimatedMessages = animatedMessages,
                             canAnimate = timeline.messages.lastOrNull() == it,

@@ -28,5 +28,5 @@ interface ChapterUseCase {
     suspend fun generateChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,
-    ): RequestResult<Exception, ChapterGen>
+    ): RequestResult<Exception, Chapter>
 }

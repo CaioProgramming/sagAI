@@ -56,6 +56,11 @@ object ChapterPrompts {
 
         val includedFields =
             listOf(
+                "sagaData",
+                "mainCharacter",
+                "previousActData",
+                "previousChaptersInCurrentAct",
+                "eventsOfThisChapter",
                 "title",
                 "description",
                 "content",
