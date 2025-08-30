@@ -8,7 +8,6 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.FileCacheService
-import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -30,7 +29,6 @@ import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
-import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -38,7 +36,6 @@ import com.ilustris.sagai.features.wiki.domain.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -169,7 +166,7 @@ class SagaContentManagerImpl
                     Message(
                         text = message,
                         senderType = SenderType.ACTION,
-                        timelineId = timeLine?.timeline?.id ?: -1,
+                        timelineId = timeLine?.data?.id ?: -1,
                     ),
                 )
             } else {
@@ -208,8 +205,8 @@ class SagaContentManagerImpl
                     generateEmotionalReview(
                         chapter.events.filter { it.isComplete() }.mapIndexed { i, event ->
                             """
-                            ${i + 1} - ${event.timeline.title}
-                            ${event.timeline.emotionalReview}   
+                            ${i + 1} - ${event.data.title}
+                            ${event.data.emotionalReview}   
                             """.trimIndent()
                         },
                     )
@@ -218,8 +215,8 @@ class SagaContentManagerImpl
                     .generateChapterCover(
                         chapter.copy(
                             chapter.data.copy(
-                                title = chapterGen.chapter.title,
-                                overview = chapterGen.chapter.overview,
+                                title = chapterGen.title,
+                                overview = chapterGen.overview,
                                 emotionalReview = emotionalReview ?: emptyString(),
                                 featuredCharacters = featuredCharacters,
                             ),
@@ -285,17 +282,17 @@ class SagaContentManagerImpl
                     ).getSuccess()!!
 
             val userMessages =
-                content.messages.map { it.joinMessage(showType = true).formatToString() }
+                content.messages.map { it.joinMessage(showType = true).formatToString(true) }
 
             val emotionalReview = generateEmotionalReview(userMessages)
 
             val newEvent =
                 timelineUseCase
                     .updateTimeline(
-                        content.timeline.copy(
-                            id = content.timeline.id,
-                            title = loreGen.timeLine.title,
-                            content = loreGen.timeLine.content,
+                        content.data.copy(
+                            id = content.data.id,
+                            title = loreGen.title,
+                            content = loreGen.content,
                             emotionalReview = emotionalReview ?: emptyString(),
                         ),
                     )
@@ -532,7 +529,7 @@ class SagaContentManagerImpl
                     return@launch
                 }
                 emptyEvents.forEach { timeline ->
-                    timelineUseCase.deleteTimeline(timeline.timeline)
+                    timelineUseCase.deleteTimeline(timeline.data)
                     if (timeline == chapter.events.last()) {
                         delay(2.seconds)
                         setNarrativeProcessingStatus(false)

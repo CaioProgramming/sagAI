@@ -46,7 +46,7 @@ object ChatPrompts {
         appendLine(saga.mainCharacter.toJsonFormatExcludingFields(characterExclusions))
         appendLine(CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }))
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
-        appendLine(TimelinePrompts.timeLineDetails(saga.flatEvents().filter { it.isComplete() }.map { it.timeline }))
+        appendLine(TimelinePrompts.timeLineDetails(saga.flatEvents().filter { it.isComplete() }.map { it.data }))
         appendLine(ActPrompts.actDirective(directive))
         appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
         appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trimIndent())

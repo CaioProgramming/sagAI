@@ -6,19 +6,4 @@ import com.ilustris.sagai.features.characters.data.model.Character
 
 data class LoreGen(
     val timeLine: Timeline,
-) {
-    companion object {
-        fun toSchema(): Schema =
-            Schema.obj(
-                mapOf(
-                    "timeLine" to
-                        Schema.obj(
-                            mapOf(
-                                "title" to Schema.string(nullable = false, description = "Short title that describes the event"),
-                                "content" to Schema.string(nullable = false),
-                            ),
-                        ),
-                ),
-            )
-    }
-}
+)

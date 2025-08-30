@@ -150,6 +150,7 @@ fun NewSagaView(
             form,
             isLoading = isGenerating,
             aiState = aiFormState,
+            savedSaga = state.saga,
             sendDescription = {
                 if (it.isEmpty()) return@NewSagaAIForm
                 createSagaViewModel.sendChatMessage(it)

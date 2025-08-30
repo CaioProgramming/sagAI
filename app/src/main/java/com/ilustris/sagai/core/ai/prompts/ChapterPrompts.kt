@@ -1,11 +1,15 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
+import com.ilustris.sagai.core.utils.toJsonMap
+import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -13,94 +17,95 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 object ChapterPrompts {
-    private data class ChapterEndingPromptContext(
-        val sagaInfo: Saga,
+    private data class ChapterConclusionContext(
+        val sagaData: Saga,
         val mainCharacter: Character?,
-        val characterCast: List<Character>,
-        val allSagaChaptersSummary: List<Chapter>,
-        val fullSagaTimelineSummary: List<Timeline>,
-        val eventsOfChapterBeingEnded: List<Timeline>,
-        val worldKnowledge: List<Wiki>,
+        val eventsOfThisChapter: List<Timeline>,
+        val previousActData: Act?,
+        val previousChaptersInCurrentAct: List<Chapter>,
     )
 
+    @Suppress("ktlint:standard:max-line-length")
     fun chapterGeneration(
         sagaContent: SagaContent,
         currentChapterContent: ChapterContent,
-    ): String {
+    ) = buildString {
+        val chapterAct = sagaContent.findChapterAct(currentChapterContent.data)
+        val isFirstAct =
+            sagaContent.acts
+                .first()
+                .data.id == chapterAct?.data?.id
+        val currentChapters = chapterAct?.chapters?.filter { it.data.id != currentChapterContent.data.id } ?: emptyList()
+
+        val previousAct =
+            if (isFirstAct) {
+                null
+            } else {
+                val previousActIndex = sagaContent.acts.indexOfFirst { it.data.id == chapterAct?.data?.id } - 1
+                sagaContent.acts[previousActIndex]
+            }
+
         val promptDataContext =
-            ChapterEndingPromptContext(
-                sagaInfo = sagaContent.data,
+            ChapterConclusionContext(
+                sagaData = sagaContent.data,
                 mainCharacter = sagaContent.mainCharacter?.data,
-                characterCast = sagaContent.getCharacters(),
-                allSagaChaptersSummary = sagaContent.flatChapters().map { it.data },
-                fullSagaTimelineSummary = sagaContent.flatEvents().map { it.timeline },
-                eventsOfChapterBeingEnded = currentChapterContent.events.map { it.timeline },
-                worldKnowledge = sagaContent.wikis,
+                eventsOfThisChapter = currentChapterContent.events.map { it.data },
+                previousChaptersInCurrentAct = currentChapters.map { it.data },
+                previousActData = previousAct?.data,
             )
 
-        val fieldsToExclude =
+        val includedFields =
             listOf(
-                "id",
-                "messages",
-                "icon",
-                "details",
-                "image",
-                "hexColor",
-                "sagaId",
-                "joinedAt",
-                "coverImage",
-                "isEnded",
-                "endedAt",
-                "isDebug",
-                "endMessage",
-                "review",
-                "messageReference",
-                "createdAt",
-                "currentActId",
-                "currentChapterId",
-                "currentEventId",
-                "actId",
-                "chapterId",
+                "title",
+                "description",
+                "content",
+                "genre",
+                "name",
+                "backstory",
             )
 
-        val combinedContextJson = promptDataContext
-        promptDataContext.toJsonFormatExcludingFields(fieldsToExclude)
+        val combinedContextJson = promptDataContext.toJsonFormatIncludingFields(includedFields)
 
-        return """
-            CONTEXT:
-             $combinedContextJson
+        val chapterOutput =
+            toJsonMap(
+                Chapter::class.java,
+                filteredFields =
+                    listOf(
+                        "coverImage",
+                        "currentEventId",
+                        "createdAt",
+                        "featuredCharacters",
+                        "emotionalReview",
+                        "id",
+                        "actId",
+                    ),
+            )
 
-             TASK:
-             You are writing the concluding narrative for the chapter detailed in the CHAPTER_BEING_ENDED object within the CONTEXT.
-             This narrative will form the "overview" for this chapter. Based on the SAGA_INFO and particularly the EVENTS_OF_CHAPTER_BEING_ENDED:
+        appendLine("Context:")
+        appendLine(combinedContextJson)
 
-             1.  Craft a concise (around 100 words) **concluding narrative**. This narrative MUST:
-                 a.  Summarize the key outcomes and the immediate aftermath of the EVENTS_OF_CHAPTER_BEING_ENDED.
-                 b.  Reflect on the MAIN_CHARACTER's current situation, pivotal decisions made, or consequences faced as a result of these events.
-                 c.  Provide a clear transition or hook that **sets the stage for the next chapter**, hinting at new challenges, mysteries, or paths forward.
+        appendLine("TASK:")
+        appendLine("You are an AI assistant tasked with concluding a chapter of a saga.")
+        appendLine(
+            "Based ENTIRELY on the `EVENTS_OF_THIS_CHAPTER` provided in the CONTEXT, you need to generate two pieces of information for the `CHAPTER_BEING_CONCLUDED`:",
+        )
+        appendLine(
+            " - If `PREVIOUS_CHAPTERS_IN_CURRENT_ACT` is provided and not empty, use their `title`s and `overview`s to understand the immediate preceding narrative progression within this act. Your generated `overview` for the current chapter should flow naturally from these, and its hook should set the stage for what might come next, considering this continuity.",
+        )
+        appendLine(
+            " - If `PREVIOUS_ACT_DATA` is provided, use its `title` and `description` (or `overview`) to understand the broader story arc of the saga leading up to the current act. Ensure the current chapter's conclusion aligns with this larger progression.",
+        )
 
-             2.  Suggest a "title" for this chapter (it can be the same as the original title in CHAPTER_BEING_ENDED if one exists, or a new one if the original title is empty or needs refinement to reflect its conclusive nature).
-
-             3.  From the CHARACTER_CAST, select up to 3 "featuredCharacters" most relevant to this chapter's conclusion and its transition to the next.
-                 **Critical rule: YOU MUST SELECT AT LEAST 1 CHARACTER.**
-                 **Critical rule: YOU CAN ONLY RETURN THE NAME OF A CHARACTER, NOT ANY OTHER DETAIL FROM THEIR PROFILE.**
-
-             Use WORLD_KNOWLEDGE for consistent terminology.
-             The tone should be engaging and make the player anticipate what's next.
-
-             OUTPUT_FORMAT_EXPECTED:
-              ${currentChapterContent.data.toJsonFormatExcludingFields(fieldsToExclude)}
-             // "title", "overview", and "featuredCharacters" are the primary fields to generate for this chapter's concluding summary.
-            """.trimIndent()
+        appendLine(
+            "1. A concise \"overview\" (around 100 words) that summarizes the key outcomes, significant developments, and the immediate aftermath of these events. This overview should also provide a natural hook or transition setting the stage for what might come next.",
+        )
+        appendLine(
+            "2. Generate a fitting \"title\" for this chapter that accurately reflects its core content or theme as derived from the events. **The title should be short (ideally 2-5 words) and impactful, creating intrigue or summarizing the chapter's essence memorably.**",
+        )
+        appendLine("Consider the `SAGA_DATA` for overall tone and style, and the `MAIN_CHARACTER`'s perspective if relevant to the events.")
+        appendLine("EXPECTED OUTPUT FORMAT:")
+        appendLine(chapterOutput)
     }
-
-    fun coverGeneration(
-        data: Saga,
-        description: String,
-    ) = """
-        ${GenrePrompts.artStyle(data.genre)}
-        $description
-        """.trimIndent()
 
     fun coverDescription(
         content: SagaContent,

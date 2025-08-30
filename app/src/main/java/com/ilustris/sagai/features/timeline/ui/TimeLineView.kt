@@ -175,7 +175,7 @@ fun TimeLineContent(
                         modifier =
                             Modifier
                                 .clip(content.data.genre.shape())
-                                .clickable(it.timeline.emotionalReview.isNullOrEmpty()) {
+                                .clickable(it.data.emotionalReview.isNullOrEmpty()) {
                                     generateEmotionalReview(it)
                                 },
                     )
@@ -206,7 +206,7 @@ fun TimeLineCard(
     val color = genre.color
     val cornerSize = genre.cornerSize()
     val cardShape = RoundedCornerShape(cornerSize)
-    val event = eventContent.timeline
+    val event = eventContent.data
     val textColor by animateColorAsState(
         MaterialTheme.colorScheme.onBackground,
         tween(

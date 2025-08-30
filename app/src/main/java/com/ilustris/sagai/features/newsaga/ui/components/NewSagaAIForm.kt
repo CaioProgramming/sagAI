@@ -68,6 +68,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.google.ai.client.generativeai.type.content
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -91,6 +92,7 @@ fun NewSagaAIForm(
     sagaForm: SagaForm,
     isLoading: Boolean = false,
     aiState: FormState,
+    savedSaga: Saga?,
     sendDescription: (String) -> Unit = {},
     onSave: () -> Unit = {},
 ) {
@@ -117,7 +119,7 @@ fun NewSagaAIForm(
     }
 
     AnimatedVisibility(
-        isLoading,
+        isLoading || savedSaga != null,
         enter = fadeIn(),
         exit = scaleOut(),
         modifier = Modifier.fillMaxSize(),
@@ -167,6 +169,11 @@ fun NewSagaAIForm(
         }
 
         SharedTransitionLayout(modifier = Modifier.fillMaxWidth().weight(1f)) {
+            AnimatedVisibility(savedSaga != null) {
+                savedSaga?.let {
+                    SagaCard(it, modifier = Modifier.padding(32.dp).fillMaxSize())
+                }
+            }
             AnimatedContent(showReview) {
                 if (it && isLoading.not()) {
                     SagaFormCards(
@@ -397,6 +404,7 @@ fun NewSagaAIFormPreview() {
                         "try fantasy",
                     ),
             ),
+            savedSaga = null,
             sendDescription = {},
         )
     }

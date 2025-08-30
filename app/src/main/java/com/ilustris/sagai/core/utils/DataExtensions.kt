@@ -129,7 +129,13 @@ fun String.removePackagePrefix(): String =
         .replace(".", "")
 
 fun Pair<String, String>.formatToString(showSender: Boolean = true) =
-    "${if (showSender) this.first.plus(":").plus(emptyString()) else emptyString()} ${this.second}"
+    buildString {
+        if (showSender) {
+            append(first)
+            append(":")
+        }
+        append(second)
+    }
 
 fun Class<*>.toJsonString(): String {
     val fields =
@@ -211,6 +217,24 @@ fun Any?.toJsonFormat(): String {
         .setPrettyPrinting()
         .create()
         .toJson(this)
+}
+
+fun Any?.toJsonFormatIncludingFields(fieldsToInclude: List<String>): String {
+    if (this == null) return emptyString()
+
+    val inclusionStrategy =
+        object : ExclusionStrategy {
+            override fun shouldSkipField(f: FieldAttributes): Boolean = !fieldsToInclude.contains(f.name)
+
+            override fun shouldSkipClass(clazz: Class<*>): Boolean = false
+        }
+
+    val gson =
+        GsonBuilder()
+            .addSerializationExclusionStrategy(inclusionStrategy)
+            .setPrettyPrinting()
+            .create()
+    return gson.toJson(this)
 }
 
 fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {

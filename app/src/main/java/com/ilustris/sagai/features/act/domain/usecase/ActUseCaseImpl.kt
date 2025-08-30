@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.act.domain.usecase
 
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -18,6 +19,7 @@ class ActUseCaseImpl
     constructor(
         private val actRepository: ActRepository,
         private val textGenClient: TextGenClient,
+        private val gemmaClient: GemmaClient,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
@@ -36,14 +38,15 @@ class ActUseCaseImpl
         override suspend fun generateAct(saga: SagaContent): RequestResult<Exception, Act> =
             try {
                 val titlePrompt = generateActPrompt(saga)
-                textGenClient.generate<Act>(titlePrompt)!!.asSuccess()
+                gemmaClient.generate<Act>(titlePrompt)!!.asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }
 
         private fun generateActPrompt(saga: SagaContent) =
-            ActPrompts.generateAct(
+            ActPrompts.generateActConclusion(
                 saga,
+                saga.currentActInfo!!,
                 getPurpose(saga.acts.size),
             )
 

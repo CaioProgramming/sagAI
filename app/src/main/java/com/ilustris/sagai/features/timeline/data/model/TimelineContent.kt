@@ -10,7 +10,7 @@ import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 
 data class TimelineContent(
     @Embedded
-    val timeline: Timeline,
+    val data: Timeline,
     @Relation(
         parentColumn = "id",
         entityColumn = "timelineId",
@@ -28,6 +28,6 @@ data class TimelineContent(
 
     fun isComplete(): Boolean =
         isFull() &&
-            timeline.title.isNotEmpty() &&
-            timeline.content.isNotEmpty()
+            data.title.isNotEmpty() &&
+            data.content.isNotEmpty()
 }

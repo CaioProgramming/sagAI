@@ -571,7 +571,7 @@ fun SagaDetailContentView(
                                         400,
                                     ),
                                 )
-                        }, modifier = Modifier.fillMaxSize().padding(top = 100.dp)) { section ->
+                        }, modifier = Modifier.fillMaxSize().padding(top = 120.dp)) { section ->
                             when (section) {
                                 DetailAction.CHARACTERS ->
                                     CharactersGalleryContent(

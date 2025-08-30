@@ -20,7 +20,7 @@ object HomePrompts {
 
             **Core Task for THIS Generation:**
             
-            Generate a random call action to this theme: ${Genre.entries.random().title}.
+            Generate a random call action for one of this theme: $genreDisplayTitles.
             
             **Instructions for 'title' (Must be NEW and based on your RANDOM genre theme selection):**
             *   Short (2-4 words).
@@ -42,30 +42,4 @@ object HomePrompts {
             ${toJsonMap(DynamicSagaPrompt::class.java)}
             """.trimIndent()
     }
-
-    private fun Genre.dynamicExample() =
-        when (this) {
-            Genre.FANTASY ->
-                DynamicSagaPrompt(
-                    "Craft Your Legend",
-                    "Where ancient magic and mythical beasts await your command.",
-                )
-
-            Genre.SCI_FI ->
-                DynamicSagaPrompt(
-                    "Interface Your Future",
-                    "Code your destiny in a neon-drenched, cybernetic metropolis.",
-                )
-
-            Genre.HORROR ->
-                DynamicSagaPrompt(
-                    "Confront the Unseen",
-                    "Dare to script the nightmares that lurk in the shadows?",
-                )
-            Genre.HEROES ->
-                DynamicSagaPrompt(
-                    "Unleash Your Powers",
-                    "Forge a saga where extraordinary abilities shape destiny.",
-                )
-        }
 }

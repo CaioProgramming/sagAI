@@ -74,6 +74,12 @@ object NewSagaPrompts {
         ${updatedSagaForm.toJsonFormat()}
 
         ${SagaFormFields.fieldPriority()}
+        // Example of what SagaFormFields.fieldPriority() might output:
+        // 1. SAGA_TITLE: Must be a non-empty string.
+        // 2. SAGA_GENRE: Must be a non-empty string chosen from available options. An empty string "" or null is insufficient.
+        // 3. MAIN_CHARACTER_NAME: Must be a non-empty string.
+        // ... and so on for other fields.
+
         Based on the Current Saga Data and the priorities, return the token for the FIRST piece of information that is missing or insufficient.
         Possible return tokens: ${SagaFormFields.entries.joinToString(", "){it.name}}.
         If all are sufficiently filled, return ${SagaFormFields.ALL_FIELDS_COMPLETE.name}.

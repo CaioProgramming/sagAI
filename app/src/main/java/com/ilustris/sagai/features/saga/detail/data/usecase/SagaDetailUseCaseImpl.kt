@@ -1,11 +1,9 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
-import android.content.Context
 import android.graphics.Bitmap
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -27,7 +25,6 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 
@@ -164,7 +161,7 @@ class SagaDetailUseCaseImpl
             timelineContent: TimelineContent,
         ): RequestResult<Exception, Unit> =
             try {
-                characterUseCase.generateCharactersUpdate(timelineContent.timeline, content)
+                characterUseCase.generateCharactersUpdate(timelineContent.data, content)
                 delay(300)
                 timelineUseCase.createTimelineReview(content, timelineContent)
             } catch (e: Exception) {

@@ -20,7 +20,6 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
-import com.ilustris.sagai.features.home.data.model.isFirstEvent
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.mapper.SagaContentUIMapper
@@ -32,7 +31,6 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
-import com.ilustris.sagai.features.timeline.data.model.Timeline
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -372,7 +370,7 @@ class ChatViewModel
                             0,
                             "Starting the debug saga!",
                             senderType = SenderType.NARRATOR,
-                            timelineId = currentEvent.timeline.id,
+                            timelineId = currentEvent.data.id,
                         ),
                     )
                     sendSnackbarMessage(
@@ -391,7 +389,7 @@ class ChatViewModel
                                     text = text,
                                     senderType = SenderType.NARRATOR,
                                     characterId = saga.mainCharacter?.data?.id,
-                                    timelineId = currentEvent.timeline.id,
+                                    timelineId = currentEvent.data.id,
                                 ),
                                 false,
                             )
@@ -419,7 +417,7 @@ class ChatViewModel
                             ?.mainCharacter
                             ?.data
                             ?.id,
-                    timelineId = currentTimeline.timeline.id,
+                    timelineId = currentTimeline.data.id,
                 )
             sendMessage(message, true)
         }
@@ -535,7 +533,7 @@ class ChatViewModel
                                 chapterId = null,
                                 actId = null,
                                 characterId = null,
-                                timelineId = timeline.timeline.id,
+                                timelineId = timeline.data.id,
                                 id = 0,
                             ),
                         )
@@ -614,7 +612,7 @@ class ChatViewModel
                             senderType = SenderType.USER,
                             characterId = mainCharacterId,
                             sagaId = currentSaga.data.id,
-                            timelineId = timeline.timeline.id,
+                            timelineId = timeline.data.id,
                         )
                     sendMessage(fakeUserMessage, isFromUser = false)
                     delay(100)

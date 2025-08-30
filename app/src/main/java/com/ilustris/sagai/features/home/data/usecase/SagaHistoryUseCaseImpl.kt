@@ -1,11 +1,13 @@
 package com.ilustris.sagai.features.home.data.usecase
 
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.LorePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -26,6 +28,7 @@ class SagaHistoryUseCaseImpl
     constructor(
         private val sagaRepository: SagaRepository,
         private val textGenClient: TextGenClient,
+        private val gemmaClient: GemmaClient,
     ) : SagaHistoryUseCase {
         override suspend fun getSagaById(sagaId: Int): Flow<SagaContent?> = sagaRepository.getSagaById(sagaId)
 
@@ -34,19 +37,15 @@ class SagaHistoryUseCaseImpl
         override suspend fun generateLore(
             saga: SagaContent,
             currentTimeline: TimelineContent,
-        ): RequestResult<Exception, LoreGen> =
-            try {
-                textGenClient
-                    .generate<LoreGen>(
+        ): RequestResult<Exception, Timeline> =
+            executeRequest {
+                gemmaClient
+                    .generate<Timeline>(
                         LorePrompts.loreGeneration(
                             saga,
                             currentTimeline,
                         ),
-                        customSchema = LoreGen.toSchema(),
                     )!!
-                    .asSuccess()
-            } catch (e: Exception) {
-                e.asError()
             }
 
         override suspend fun createFakeSaga(): RequestResult<Exception, Saga> =
@@ -65,13 +64,10 @@ class SagaHistoryUseCaseImpl
             }
 
         override suspend fun generateEndMessage(saga: SagaContent): RequestResult<Exception, String> =
-            try {
+            executeRequest {
                 textGenClient
                     .generate<String>(
                         SagaPrompts.endCredits(saga),
                     )!!
-                    .asSuccess()
-            } catch (e: Exception) {
-                e.asError()
             }
     }

@@ -11,9 +11,10 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.domain.data.RelationshipContent
+import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.jvm.javaClass
 
 data class SagaContent(
@@ -74,25 +75,25 @@ fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
         characters.map { it.data }
     }
 
-fun SagaContent.isFirstAct() = currentActInfo == acts.first()
+fun SagaContent.isFirstAct() = currentActInfo?.data?.id == acts.first().data.id
 
-fun SagaContent.isFirstChapter() =
-    isFirstAct() &&
-        (
-            currentActInfo?.chapters?.isEmpty() == true ||
-                currentActInfo?.currentChapterInfo == currentActInfo?.chapters?.first()
-        )
+fun SagaContent.isFirstChapter() = flatChapters().first().data.id == currentActInfo?.currentChapterInfo?.data?.id
 
-fun SagaContent.isFirstEvent() =
-    isFirstAct() &&
-        isFirstChapter() &&
-        currentActInfo?.currentChapterInfo?.events?.isEmpty() == true ||
-        currentActInfo?.currentChapterInfo?.currentEventInfo ==
+fun SagaContent.isFirstTimeline() =
+    flatEvents().first().data.id ==
         currentActInfo
-            ?.chapters
-            ?.first()
-            ?.events
-            ?.first()
+            ?.currentChapterInfo
+            ?.currentEventInfo
+            ?.data
+            ?.id
+
+fun SagaContent.findTimelineChapter(timeline: Timeline) = flatChapters().find { it.data.id == timeline.chapterId }
+
+fun SagaContent.findChapterAct(chapter: Chapter?) = acts.find { it.data.id == chapter?.actId }
+
+fun SagaContent.isTimelineOnFirstChapter(timeline: Timeline) = findTimelineChapter(timeline) == flatChapters().first()
+
+fun SagaContent.isChapterOnFirstAct(chapter: Chapter) = findChapterAct(chapter) == acts.first()
 
 fun SagaContent.flatMessages() = acts.flatMap { it.chapters.flatMap { it.events.flatMap { it.messages } } }
 
