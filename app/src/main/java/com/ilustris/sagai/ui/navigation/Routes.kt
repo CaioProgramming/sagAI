@@ -95,7 +95,9 @@ enum class Routes(
     ),
     PROFILE,
     SETTINGS,
-    NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = { nav, padding, _, _ ->
+    NEW_SAGA(title = R.string.new_saga_title, deepLink = "saga://new_saga", showBottomNav = false, topBarContent = {
+        Box(modifier = Modifier.size(0.dp))
+    }, view = { nav, padding, _, _ ->
         Box(
             Modifier
                 .padding(padding)

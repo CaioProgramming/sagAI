@@ -287,4 +287,8 @@ class CreateSagaViewModel
         fun retry() {
             sendChatMessage(chatMessages.value.last().text)
         }
+
+    fun updateGenre(genre: Genre) {
+        form.update { it.copy(saga = it.saga.copy(genre = genre)) }
     }
+}

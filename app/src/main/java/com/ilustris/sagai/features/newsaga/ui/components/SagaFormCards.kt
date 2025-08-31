@@ -69,9 +69,7 @@ enum class CardFace(
 fun SagaFormCards(
     sagaForm: SagaForm,
     onDismiss: () -> Unit,
-    modifier: Modifier,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
+    modifier: Modifier
 ) {
     var cardFace by remember {
         mutableStateOf(CardFace.Front)
@@ -85,7 +83,6 @@ fun SagaFormCards(
     }
 
     val brush = sagaForm.saga.genre?.gradient(true) ?: Brush.verticalGradient(holographicGradient)
-    with(sharedTransitionScope) {
         ConstraintLayout(modifier) {
             val (reviewCard, spark) = createRefs()
 
@@ -123,11 +120,7 @@ fun SagaFormCards(
                 painter = painterResource(R.drawable.ic_spark),
                 null,
                 modifier =
-                    Modifier
-                        .sharedElement(
-                            rememberSharedContentState(key = "image"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        ).constrainAs(spark) {
+                    Modifier.constrainAs(spark) {
                             top.linkTo(reviewCard.top)
                             start.linkTo(reviewCard.start)
                             end.linkTo(reviewCard.end)
@@ -138,7 +131,6 @@ fun SagaFormCards(
                             onDismiss()
                         },
             )
-        }
     }
 }
 

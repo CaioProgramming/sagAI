@@ -23,4 +23,6 @@ interface SagaDetailUseCase {
         content: SagaContent,
         timelineContent: TimelineContent,
     ): RequestResult<Exception, Unit>
+
+    suspend fun createSagaEmotionalReview(currentSaga: SagaContent): RequestResult<Exception, Saga>
 }

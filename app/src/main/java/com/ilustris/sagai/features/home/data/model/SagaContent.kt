@@ -109,6 +109,8 @@ fun SagaContent.getCurrentChapter() = currentActInfo?.currentChapterInfo
 
 fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
 
+fun SagaContent.actNumber(act: Act) = acts.indexOfFirst { it.data.id == act.id } + 1
+
 fun SagaContent.getDirective(): String {
     val actsCount = acts.size
     Log.d(
@@ -139,6 +141,8 @@ fun SagaContent.emotionalSummary() =
         .map {
             """
             Act ${it.data.title}: ${it.data.emotionalReview}
-            ${it.chapters.joinToString(";") { chapter -> "Chapter ${chapter.data.title}: ${chapter.data.emotionalReview}" } }
+            ${it.chapters.joinToString(
+                ";",
+            ) { chapter -> "${chapterNumber(chapter.data)} Chapter ${chapter.data.title}: ${chapter.data.emotionalReview}" } }
             """.trimIndent()
         }

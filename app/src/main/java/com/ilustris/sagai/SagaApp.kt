@@ -20,7 +20,7 @@ class SagaApp : Application() {
         val remoteConfig = Firebase.remoteConfig
         val configSettings =
             remoteConfigSettings {
-                minimumFetchIntervalInSeconds = 3600
+                minimumFetchIntervalInSeconds = 3000
             }
         remoteConfig.setConfigSettingsAsync(configSettings)
         remoteConfig.fetchAndActivate()

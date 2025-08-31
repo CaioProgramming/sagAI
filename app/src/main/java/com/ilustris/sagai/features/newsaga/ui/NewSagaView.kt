@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,10 +24,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AlertDialog // Import AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton // Import TextButton
@@ -51,10 +56,13 @@ import androidx.compose.ui.unit.dp
 // Removed Dialog and DialogProperties as AlertDialog is used
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.isValid
+import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCaseImpl
 import com.ilustris.sagai.features.newsaga.ui.components.NewSagaAIForm
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPages
 import com.ilustris.sagai.features.newsaga.ui.pages.NewSagaPagesView
@@ -64,9 +72,11 @@ import com.ilustris.sagai.features.newsaga.ui.components.NewSagaChat
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAIScaffold
+import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -81,9 +91,6 @@ fun NewSagaView(
     val form by createSagaViewModel.form.collectAsStateWithLifecycle()
     val state by createSagaViewModel.state.collectAsStateWithLifecycle()
     val effect by createSagaViewModel.effect.collectAsStateWithLifecycle()
-    val messages by createSagaViewModel.chatMessages.collectAsStateWithLifecycle()
-    val pagerState = rememberPagerState(0) { NewSagaPages.entries.size }
-    val coroutineScope = rememberCoroutineScope()
     val aiFormState by createSagaViewModel.formState.collectAsStateWithLifecycle()
     val isGenerating by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
 
@@ -135,17 +142,38 @@ fun NewSagaView(
         createSagaViewModel.startChat()
     }
 
-    fun animateToPage(
-        page: Int,
-        delayTime: Duration = 0.seconds,
-    ) {
-        coroutineScope.launch {
-            delay(delayTime)
-            pagerState.animateScrollToPage(page)
-        }
-    }
+    Column {
+        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(top = 50.dp).fillMaxWidth()) {
+            IconButton(onClick = {
+                navHostController.popBackStack()
+            }, modifier = Modifier
+                .size(32.dp)
+                .clip(CircleShape).padding(8.dp), colors = IconButtonDefaults.iconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onBackground,
+            )) {
+                Icon(Icons.Rounded.Close, "Close", modifier = Modifier.fillMaxSize())
+            }
+            Box(Modifier.weight(1f)) {
+                SagaTitle(
+                    Modifier
+                        .align(Alignment.Center)
+                        .background(MaterialTheme.colorScheme.background)
+                        ,
+                )
+            }
 
-    Box {
+            val genre = form.saga.genre
+            Button(onClick = {
+                createSagaViewModel.generateSaga()
+            }, enabled = !isGenerating && form.isValid(),
+                colors = ButtonDefaults.buttonColors().copy(
+                    containerColor = genre?.color ?: MaterialTheme.colorScheme.primary,
+                    contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onPrimary,
+                ), shape = RoundedCornerShape(50.dp)) {
+                Text(stringResource(R.string.save_saga))
+            }
+        }
         NewSagaAIForm(
             form,
             isLoading = isGenerating,
@@ -155,8 +183,8 @@ fun NewSagaView(
                 if (it.isEmpty()) return@NewSagaAIForm
                 createSagaViewModel.sendChatMessage(it)
             },
-            onSave = {
-                createSagaViewModel.generateSaga()
+            selectGenre = {
+                createSagaViewModel.updateGenre(it)
             }
         )
         /*NewSagaFlow(
@@ -230,6 +258,8 @@ fun NewSagaView(
         )*/
     }
 }
+
+
 
 @Composable
 fun NewSagaFlow(
@@ -337,7 +367,8 @@ fun NewSagaFlow(
                             .size(size.value)
                             .clickable(enabled = isEnabled) {
                                 changePage(page)
-                            }.gradientFill(
+                            }
+                            .gradientFill(
                                 indicatorBrush,
                             ),
                 )
@@ -348,7 +379,8 @@ fun NewSagaFlow(
                             .background(
                                 indicatorBrush,
                                 RoundedCornerShape(25.dp),
-                            ).height(5.dp)
+                            )
+                            .height(5.dp)
                             .weight(indicatorWeight),
                 )
             }
@@ -402,10 +434,4 @@ fun NewSagaFlow(
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun NewSagaFormPreview() {
-    SagAIScaffold {
-        // var fo // This line was incomplete, removing for now
-    }
-}
+

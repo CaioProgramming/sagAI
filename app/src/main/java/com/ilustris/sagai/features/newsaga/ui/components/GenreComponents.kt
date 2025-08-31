@@ -113,21 +113,20 @@ fun GenreAvatar(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painterResource(genre.icon),
+           painterResource(genre.defaultHeaderImage()),
             genre.name,
-            colorFilter =
-                androidx.compose.ui.graphics.ColorFilter
-                    .tint(iconTint),
+            contentScale = ContentScale.Crop,
             modifier =
                 Modifier
-                    .size(50.dp)
-                    .border(1.dp, backgroundColor.gradientFade(), CircleShape)
-                    .padding(4.dp)
+                    .size(64.dp)
+                    .border(3.dp, backgroundColor.gradientFade(), CircleShape)
                     .background(
                         backgroundColor,
                         CircleShape,
-                    ).padding(4.dp)
+                    )
                     .clip(CircleShape)
+                    .effectForGenre(genre)
+                    .selectiveColorHighlight(genre.selectiveHighlight())
                     .clickable {
                         onClick(genre)
                     },
@@ -137,7 +136,8 @@ fun GenreAvatar(
             Text(
                 genre.title,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Light,
             )
         }

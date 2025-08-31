@@ -5,6 +5,9 @@ import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import javax.inject.Inject
 
 class EmotionalUseCaseImpl
@@ -23,5 +26,12 @@ class EmotionalUseCaseImpl
                     .asSuccess()
             } catch (e: Exception) {
                 e.asError()
+            }
+
+        override suspend fun generateEmotionalProfile(saga: SagaContent): RequestResult<Exception, String> =
+            executeRequest {
+                gemmaClient.generate<String>(
+                    prompt = EmotionalPrompt.generateEmotionalProfile(saga.emotionalSummary()),
+                )!!
             }
     }

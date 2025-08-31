@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
@@ -25,6 +26,7 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
+import com.ilustris.sagai.features.wiki.domain.usecase.EmotionalUseCase
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 
@@ -39,6 +41,7 @@ class SagaDetailUseCaseImpl
         private val genreReferenceHelper: GenreReferenceHelper,
         private val timelineUseCase: TimelineUseCase,
         private val characterUseCase: CharacterUseCase,
+        private val emotionalUseCase: EmotionalUseCase,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Exception, Saga> =
             try {
@@ -166,5 +169,20 @@ class SagaDetailUseCaseImpl
                 timelineUseCase.createTimelineReview(content, timelineContent)
             } catch (e: Exception) {
                 e.asError()
+            }
+
+        override suspend fun createSagaEmotionalReview(currentSaga: SagaContent) =
+            executeRequest {
+                val request =
+                    emotionalUseCase
+                        .generateEmotionalProfile(currentSaga)
+                        .getSuccess()!!
+
+                sagaRepository
+                    .updateChat(
+                        currentSaga.data.copy(
+                            emotionalReview = request,
+                        ),
+                    )
             }
     }

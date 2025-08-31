@@ -198,7 +198,7 @@ class SagaContentManagerImpl
                     chapter
                         .fetchChapterMessages()
                         .rankTopCharacters(saga.getCharacters())
-                        .take(3)
+                        .take(2)
                         .map { it.first.id }
 
                 val emotionalReview =

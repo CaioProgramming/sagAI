@@ -5,6 +5,7 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -42,6 +43,7 @@ import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -67,8 +69,8 @@ fun SagaCard(
 
         Box(
             modifier
-                .clip(RoundedCornerShape(cornerSize))
-                .background(Brush.verticalGradient(backgroundColor.darkerPalette()))
+                .clip(saga.genre.shape())
+                .background(Brush.verticalGradient(backgroundColor.darkerPalette()), saga.genre.shape())
                 .clipToBounds(),
         ) {
             AsyncImage(

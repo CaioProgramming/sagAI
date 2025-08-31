@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.features.home.data.model.SagaContent
+
 object EmotionalPrompt {
     fun generateEmotionalReview(texts: List<String>) =
         """
@@ -26,5 +28,32 @@ object EmotionalPrompt {
 
         Analyze the following texts and provide the single, insightful emotional behavior summary:
         ${texts.joinToString("", prefix = "- ")}
+        """
+
+    fun generateEmotionalProfile(summary: List<String>) =
+        """
+         You are an AI expert in personal development and behavioral coaching.
+        Your task is to analyze a series of notes on a user's actions and behavior, and then generate a constructive feedback summary. This feedback should be friendly and kind, offering a general overview of their personality with recommendations for growth.
+        
+        The notes contain:
+        - Descriptions of the user's actions, choices, or reactions.
+        - Previous emotional analyses.
+        
+        Your goal is to synthesize this information into feedback that not only describes the behavioral patterns but also offers a positive and guiding perspective. The tone should be like a gentle friend or a supportive coach.
+        
+        When generating the feedback, consider the following:
+        - **Behavioral Patterns:** Identify recurring themes. Is the user proactive or cautious? Do they take risks or prefer to plan? Do they demonstrate empathy or are they more pragmatic?
+        - **Strengths and Opportunities:** Instead of just focusing on what was observed, reframe the observations in terms of strengths and opportunities for growth. For example, an "impulsive" action can be seen as "a proactive and courageous nature, with an opportunity to refine strategy."
+        - **Recommendations and Advice:** Offer practical and friendly advice based on the patterns you've identified. For example, if the user is very cautious, you might suggest they "allow themselves to explore the unknown with more confidence."
+        - **Friendly Language:** Use encouraging, gentle, and supportive language. Avoid technical terms, psychological jargon, or a cold, impersonal tone.
+        
+        **Output Requirements:**
+        - The feedback should be a single, general, and positive reflection, like a final piece of advice.
+        - It **must** include both a personality analysis and friendly recommendations.
+        - The feedback should be direct and not contain introductory phrases like "Based on your data..."
+        - Do NOT use specific character names, locations, or plot details from the story. Focus purely on the user's behavior.
+        
+        Analyze the following texts and provide a single, gentle final reflection:
+        ${summary.joinToString("", prefix = "- ")}
         """
 }

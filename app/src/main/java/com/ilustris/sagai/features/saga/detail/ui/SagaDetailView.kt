@@ -120,6 +120,7 @@ import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineContent
+import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
@@ -174,7 +175,7 @@ fun SagaDetailView(
         )
     }
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-
+    val emotionalCardReference by viewModel.emotionalCardReference.collectAsStateWithLifecycle()
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
             showDeleteConfirmation = false
@@ -191,28 +192,43 @@ fun SagaDetailView(
         }
     }
 
-    SagaDetailContentView(state, section, paddingValues, onChangeSection = {
-        section = it
-        if (it == DetailAction.DELETE) {
-            sagaToDelete = saga?.data
-            showDeleteConfirmation = true
-        }
+    SagaDetailContentView(
+        state,
+        section,
+        paddingValues,
+        emotionalCardReference = emotionalCardReference,
+        onChangeSection = {
+            section = it
+            if (it == DetailAction.DELETE) {
+                sagaToDelete = saga?.data
+                showDeleteConfirmation = true
+            }
 
-        if (it == DetailAction.REGENERATE) {
-            viewModel.regenerateIcon()
-        }
-    }, onBackClick = {
-        when (it) {
-            DetailAction.BACK, DetailAction.DELETE -> navHostController.popBackStack()
-            else -> section = DetailAction.BACK
-        }
-    }, createReview = {
-        viewModel.createReview()
-    }, openReview = {
-        // viewModel.resetReview()
-    }, createEmotionalReview = {
-        viewModel.createEmotionalReview(it)
-    })
+            if (it == DetailAction.REGENERATE) {
+                viewModel.regenerateIcon()
+            }
+        },
+        onBackClick = {
+            when (it) {
+                DetailAction.BACK, DetailAction.DELETE -> navHostController.popBackStack()
+                else -> section = DetailAction.BACK
+            }
+        },
+        createReview = {
+            viewModel.createReview()
+        },
+        openReview = {
+            // viewModel.resetReview()
+        },
+        createEmotionalReview = {
+            if (saga?.data?.emotionalReview == null) {
+                viewModel.createSagaEmotionalReview()
+            }
+        },
+        createTimelineReview = {
+            viewModel.createEmotionalReview(it)
+        },
+    )
 
     if (showDeleteConfirmation) {
         sagaToDelete?.let {
@@ -473,16 +489,19 @@ fun SagaDetailContentView(
     currentSection: DetailAction = DetailAction.BACK,
     paddingValues: PaddingValues,
     generatingReview: Boolean = false,
+    emotionalCardReference: String,
     onChangeSection: (DetailAction) -> Unit = {},
     onBackClick: (DetailAction) -> Unit = {},
     createReview: () -> Unit,
     openReview: () -> Unit,
-    createEmotionalReview: (TimelineContent) -> Unit,
+    createTimelineReview: (TimelineContent) -> Unit,
+    createEmotionalReview: () -> Unit,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     var showReview by remember { mutableStateOf(false) }
+    var showEmotionalReview by remember { mutableStateOf(false) }
 
     saga?.let { sagaContent ->
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -585,7 +604,7 @@ fun SagaDetailContentView(
                                     TimeLineContent(
                                         sagaContent,
                                         generateEmotionalReview = {
-                                            createEmotionalReview(it)
+                                            createTimelineReview(it)
                                         },
                                         openCharacters = { onChangeSection(DetailAction.CHARACTERS) },
                                     )
@@ -605,7 +624,14 @@ fun SagaDetailContentView(
                                         selectSection = { action ->
                                             onChangeSection(action)
                                         },
-                                        createEmotionalReview = { },
+                                        emotionalReviewUrl = emotionalCardReference,
+                                        openEmotionalReview = {
+                                            if (sagaContent.data.emotionalReview == null) {
+                                                createEmotionalReview()
+                                            } else {
+                                                showEmotionalReview = true
+                                            }
+                                        },
                                         openReview = {
                                             if (sagaContent.data.review != null) {
                                                 showReview = true
@@ -633,6 +659,22 @@ fun SagaDetailContentView(
                                 containerColor = MaterialTheme.colorScheme.background,
                             ) {
                                 SagaReview(content = sagaContent, generatingReview)
+                            }
+                        }
+
+                        if (showEmotionalReview) {
+                            ModalBottomSheet(
+                                onDismissRequest = {
+                                    showEmotionalReview = false
+                                },
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(),
+                                containerColor = MaterialTheme.colorScheme.background,
+                            ) {
+                                EmotionalSheet(sagaContent, emotionalCardReference)
                             }
                         }
                     }
@@ -665,10 +707,12 @@ fun SagaDetailContentViewPreview() {
                     acts = emptyList(),
                 ),
             ),
+        emotionalCardReference = "",
         paddingValues = PaddingValues(0.dp),
         createReview = {},
         openReview = {},
         createEmotionalReview = {},
+        createTimelineReview = {},
     )
 }
 
@@ -776,10 +820,11 @@ fun SimpleSlider(
 private fun SagaDetailInitialView(
     saga: SagaContent?,
     modifier: Modifier,
+    emotionalReviewUrl: String,
     onReachTop: () -> Unit = {},
     selectSection: (DetailAction) -> Unit = {},
     openReview: () -> Unit = {},
-    createEmotionalReview: () -> Unit = {},
+    openEmotionalReview: () -> Unit = {},
 ) {
     val columnCount = 2
     val sectionStyle =
@@ -1157,7 +1202,10 @@ private fun SagaDetailInitialView(
                                 RelationShipCard(
                                     content = relation,
                                     genre = it.data.genre,
-                                    modifier = Modifier.padding(16.dp).requiredWidthIn(max = 300.dp),
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .requiredWidthIn(max = 300.dp),
                                 )
                             }
                         }
@@ -1378,79 +1426,60 @@ private fun SagaDetailInitialView(
                 }
 
                 item(span = { GridItemSpan(columnCount) }) {
-                    var cardExpanded by remember {
-                        mutableStateOf(false)
-                    }
-                    Box(
+                    Column(
                         Modifier
                             .padding(16.dp)
                             .clip(it.data.genre.shape())
-                            .border(
-                                1.dp,
-                                it.data.genre.gradient(cardExpanded),
-                                it.data.genre.shape(),
-                            ).background(MaterialTheme.colorScheme.background, it.data.genre.shape())
-                            .background(
-                                it.data.genre.color
-                                    .gradientFade(),
-                                it.data.genre.shape(),
-                            ).fillMaxWidth()
+                            .border(1.dp, it.data.genre.gradient(true), it.data.genre.shape())
+                            .fillMaxWidth()
                             .clickable {
-                                if (it.data.emotionalReview != null) {
-                                    cardExpanded = cardExpanded.not()
-                                } else {
-                                    createEmotionalReview()
-                                }
+                                openEmotionalReview()
                             },
                     ) {
-                        Image(
-                            painterResource(R.drawable.ic_full_spark),
-                            null,
+                        Box(
                             modifier =
                                 Modifier
-                                    .alpha(.4f)
-                                    .size(64.dp)
-                                    .clipToBounds(),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground.copy(.4f)),
-                            contentScale = ContentScale.Crop,
-                        )
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .fillMaxWidth()
+                                    .height(150.dp),
+                        ) {
+                            AsyncImage(
+                                emotionalReviewUrl,
+                                null,
+                                modifier = Modifier.fillMaxSize(),
+                                contentScale = ContentScale.Crop,
+                            )
+
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .fillMaxHeight(.25f)
+                                    .align(Alignment.BottomCenter)
+                                    .background(
+                                        fadeGradientBottom(),
+                                    ),
+                            )
+                        }
                         Column(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 24.dp)
-                                    .animateContentSize(
-                                        animationSpec = tween(500, easing = EaseIn),
-                                    ),
+                                    .padding(horizontal = 16.dp, vertical = 24.dp),
                         ) {
-                            if (cardExpanded.not()) {
-                                Text(
-                                    "Review emocional",
-                                    style =
-                                        MaterialTheme.typography.titleLarge.copy(
-                                            fontFamily = it.data.genre.headerFont(),
-                                        ),
-                                    modifier = Modifier.padding(vertical = 8.dp),
-                                )
+                            Text(
+                                "Jornada Interior",
+                                style =
+                                    MaterialTheme.typography.headlineSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                    ),
+                                modifier = Modifier.padding(vertical = 16.dp),
+                            )
 
-                                Text(
-                                    "Veja como suas ações refletem no seu estado emocional",
-                                    style =
-                                        MaterialTheme.typography.bodySmall.copy(
-                                            fontFamily = it.data.genre.bodyFont(),
-                                        ),
-                                )
-                            } else {
-                                it.data.emotionalReview?.let { text ->
-                                    Text(
-                                        text,
-                                        style =
-                                            MaterialTheme.typography.bodyMedium.copy(
-                                                fontFamily = it.data.genre.bodyFont(),
-                                            ),
-                                    )
-                                }
-                            }
+                            Text(
+                                "Sua história não está apenas no que você fez, mas em como você sentiu.",
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(),
+                            )
                         }
                     }
                 }

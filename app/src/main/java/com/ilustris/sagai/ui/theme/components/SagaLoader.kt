@@ -130,7 +130,6 @@ fun DistortingBubble(
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val duration = animationDduration.toInt(DurationUnit.MILLISECONDS)
-    // Animação para largura e altura do círculo
     val horizontalDistortion =
         infiniteTransition.animateFloat(
             initialValue = .9f,
