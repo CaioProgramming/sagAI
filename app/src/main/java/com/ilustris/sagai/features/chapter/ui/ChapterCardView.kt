@@ -38,6 +38,9 @@ import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
+import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
+import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.GradientType
@@ -53,11 +56,11 @@ import effectForGenre
 
 @Composable
 fun ChapterCardView(
+    saga: SagaContent,
     chapter: Chapter,
-    genre: Genre,
-    characters: List<Character> = emptyList(),
     modifier: Modifier,
 ) {
+    val genre = saga.data.genre
     val shape = RoundedCornerShape(genre.cornerSize())
     val showCover = remember { mutableStateOf(false) }
     Box(
@@ -89,10 +92,10 @@ fun ChapterCardView(
                 chapter.coverImage,
                 contentDescription = chapter.title,
                 modifier =
-                    Modifier.fillMaxSize()
+                    Modifier
+                        .fillMaxSize()
                         .effectForGenre(genre)
-                        .selectiveColorHighlight(genre.selectiveHighlight())
-                ,
+                        .selectiveColorHighlight(genre.selectiveHighlight()),
                 contentScale = ContentScale.Crop,
             )
         }
@@ -142,7 +145,14 @@ fun ChapterCardView(
                             .padding(8.dp),
                 )
                 Text(
-                    text = buildCharactersAnnotatedString(chapter.overview, characters),
+                    text =
+                        buildWikiAndCharactersAnnotation(
+                            chapter.overview,
+                            genre,
+                            saga.mainCharacter?.data,
+                            saga.characters.map { it.data },
+                            saga.wikis
+                        ),
                     style =
                         MaterialTheme.typography.bodySmall.copy(
                             fontFamily = genre.bodyFont(),
@@ -193,8 +203,11 @@ fun ChapterCardViewPreview() {
             items(chapters.size) { index ->
                 ChapterCardView(
                     chapter = chapters[index],
-                    genre = genre,
-                    characters = emptyList(),
+                    saga = SagaContent(
+                        Saga(
+                            genre = Genre.FANTASY
+                        )
+                    ),
                     modifier = Modifier.fillMaxWidth(.4f).fillMaxHeight(.2f),
                 )
             }

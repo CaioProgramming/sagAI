@@ -82,7 +82,9 @@ fun ActComponent(
         )
         Text(
             actCount.toRoman(),
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = content.data.genre.headerFont(),
+            ),
             textAlign = TextAlign.Center,
             modifier = Modifier.alpha(countAnimation),
         )

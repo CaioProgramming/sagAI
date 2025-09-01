@@ -75,7 +75,7 @@ object GenrePrompts {
 
             SCI_FI ->
                 """
-                The **background is a bold, vibrant neon purple**, possibly solid or with minimalist graphic elements, creating an unmistakably cyberpunk atmosphere.
+                The **background is a bold, vibrant deep purple**, possibly solid or with minimalist graphic elements, creating an unmistakably cyberpunk atmosphere.
                 On the character, **apply discrete neon purple accents to small, specific features ONLY**: examples include glowing cybernetic eye details (just the iris or a small implant), thin luminous circuit patterns on clothing (not coloring the whole garment), subtle streaks in hair, or highlights on individual small pieces of tech gear.
                 **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST remain their natural, distinct hues and NOT be tinted purple. These purple accents should be isolated, clearly defined, and not affect the character's general coloration.
                 """

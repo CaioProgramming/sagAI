@@ -71,25 +71,20 @@ fun TypewriterText(
         onTextUpdate(text.substring(0, charIndex))
     }
 
-    val annotatedText =
-        buildCharactersAnnotatedString(
-            currentText,
-            characters,
-        )
     val wikiAnnotation =
         buildWikiAndCharactersAnnotation(
-            annotatedText.text,
+            currentText,
             genre,
             mainCharacter,
             characters,
             wiki,
-            MaterialTheme.colorScheme.onBackground,
+            MaterialTheme.colorScheme.background,
         )
     ClickableText(
         text = wikiAnnotation,
         style = style,
         onClick = { offset ->
-            annotatedText
+            wikiAnnotation
                 .getStringAnnotations(tag = "character_tag", start = offset, end = offset)
                 .firstOrNull()
                 ?.let { annotation ->
@@ -101,7 +96,6 @@ fun TypewriterText(
         modifier = modifier,
     )
 }
-
 
 @Composable
 fun SimpleTypewriterText(
@@ -138,7 +132,6 @@ fun SimpleTypewriterText(
     LaunchedEffect(charIndex) {
         onTextUpdate(text.substring(0, charIndex))
     }
-
 
     Text(
         text = currentText,

@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import android.graphics.Bitmap
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
@@ -49,13 +50,26 @@ class SagaDetailUseCaseImpl
                     genreReferenceHelper
                         .getIconReference(saga.data.genre)
                         .getSuccess()
+                        ?.let {
+                            ImageReference(
+                                it,
+                                "Icon composition aesthetic and reference",
+                            )
+                        }
 
-                val characterIcon: Bitmap? =
+                val characterIcon =
                     saga
                         .mainCharacter
                         ?.data
                         ?.image
-                        ?.let { genreReferenceHelper.getFileBitmap(it).getSuccess() }
+                        ?.let {
+                            genreReferenceHelper.getFileBitmap(it).getSuccess()?.let {
+                                ImageReference(
+                                    it,
+                                    "Character ${saga.mainCharacter.data.name} visual reference.",
+                                )
+                            }
+                        }
 
                 val metaPrompt =
                     gemmaClient.generate<String>(

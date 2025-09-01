@@ -7,6 +7,7 @@ import coil3.ImageLoader
 import coil3.request.ImageRequest
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
@@ -112,7 +113,19 @@ class NewSagaUseCaseImpl
                         ?.image
                         ?.let { genreReferenceHelper.getFileBitmap(it) }
                         ?.getSuccess()
-                val reference = genreReferenceHelper.getIconReference(sagaForm.genre).getSuccess()
+                        ?.let {
+                            ImageReference(
+                                it,
+                                "Character ${character.name} visual reference.",
+                            )
+                        }
+                val reference =
+                    genreReferenceHelper.getIconReference(sagaForm.genre).getSuccess()?.let {
+                        ImageReference(
+                            it,
+                            "Icon composition aesthetic and reference",
+                        )
+                    }
                 val metaPromptCover =
                     gemmaClient.generate<String>(
                         SagaPrompts.iconDescription(

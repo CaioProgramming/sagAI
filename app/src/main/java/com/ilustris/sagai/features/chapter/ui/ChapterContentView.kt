@@ -83,43 +83,6 @@ fun ChapterContentView(
                 .background(fadeGradientBottom()),
         )
 
-        Row(
-            Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(.20f)
-                    .height(1.dp)
-                    .background(genre.color),
-            )
-
-            Text(
-                text = chapter.title,
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .weight(1f),
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = genre.bodyFont(),
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-
-            Box(
-                Modifier
-                    .fillMaxWidth(.20f)
-                    .height(1.dp)
-                    .background(genre.color),
-            )
-        }
-
         var imageSize by remember {
             mutableFloatStateOf(
                 .35f,
@@ -202,7 +165,7 @@ fun ChapterContentView(
                 MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Normal,
                     fontFamily = genre.bodyFont(),
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),
             onTextUpdate = {
@@ -211,7 +174,7 @@ fun ChapterContentView(
         )
 
         if (chapter.emotionalReview?.isNotEmpty() == true) {
-            EmotionalCard(chapter.emotionalReview, genre, false)
+            EmotionalCard(chapter.emotionalReview, genre, true)
         }
 
         if (isLast) {

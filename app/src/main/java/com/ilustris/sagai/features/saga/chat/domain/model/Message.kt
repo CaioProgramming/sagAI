@@ -89,7 +89,6 @@ enum class SenderType {
                 it == USER ||
                     it == THOUGHT ||
                     it == ACTION ||
-                    it == NEW_CHARACTER ||
                     it == NARRATOR
             }
     }

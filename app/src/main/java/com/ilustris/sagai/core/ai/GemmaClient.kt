@@ -52,11 +52,13 @@ class GemmaClient
 
         suspend inline fun <reified T> generate(
             prompt: String,
-            references: List<Bitmap?> = emptyList(),
+            references: List<ImageReference?> = emptyList(),
             temperatureRandomness: Float = 0f,
             requireTranslation: Boolean = true,
         ): T? {
             try {
+                delay(300)
+
                 val client =
                     com.google.ai.client.generativeai.GenerativeModel(
                         modelName = modelName(),
@@ -73,7 +75,10 @@ class GemmaClient
 
                 val contentParts =
                     listOf(TextPart(fullPrompt)).plus(
-                        references.filterNotNull().map { bitmap -> ImagePart(bitmap) },
+                        references.filterNotNull().map { reference ->
+                            ImagePart(reference.bitmap)
+                            TextPart(reference.description)
+                        },
                     )
 
                 val inputContent =
@@ -81,8 +86,6 @@ class GemmaClient
                         role = "user",
                         contentParts,
                     )
-
-                delay(250)
 
                 val content = client.generateContent(inputContent)
 

@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Schema
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
@@ -96,7 +97,10 @@ class CharacterUseCaseImpl
                         context.resources,
                         saga.genre.defaultHeaderImage(),
                     )
-                val portraitReference = genreReferenceHelper.getPortraitReference().getSuccess()
+                val portraitReference =
+                    genreReferenceHelper.getPortraitReference().getSuccess()?.let {
+                        ImageReference(it, "Portrait photography composition reference")
+                    }
                 val translatedDescription =
                     gemmaClient.generate<String>(
                         CharacterPrompts.descriptionTranslationPrompt(
@@ -105,7 +109,7 @@ class CharacterUseCaseImpl
                         ),
                         references =
                             listOf(
-                                styleReferenceBitmap,
+                                ImageReference(styleReferenceBitmap, "Artistic style reference"),
                                 portraitReference,
                             ),
                         requireTranslation = false,
@@ -185,8 +189,8 @@ class CharacterUseCaseImpl
                 e.asError()
             }
 
-    override suspend fun generateCharacterRelations(
-        timeline: Timeline,
-        saga: SagaContent
-    ): RequestResult<Exception, Unit> = characterRelationUseCase.generateCharacterRelation(timeline, saga)
-}
+        override suspend fun generateCharacterRelations(
+            timeline: Timeline,
+            saga: SagaContent,
+        ): RequestResult<Exception, Unit> = characterRelationUseCase.generateCharacterRelation(timeline, saga)
+    }

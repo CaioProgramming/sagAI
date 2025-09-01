@@ -123,21 +123,21 @@ fun Modifier.effectForGenre(
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .15f,
+                        grainIntensity = customGrain ?: .1f,
                         bloomThreshold = .3f,
                         bloomIntensity = .2f,
                         bloomRadius = 1.3f,
-                        softFocusRadius = focusRadius ?: .5f,
-                        saturation = .2f,
-                        contrast = 1.5f,
-                        brightness = -.1f,
+                        softFocusRadius = focusRadius ?: .2f,
+                        saturation = .5f,
+                        contrast = 1.7f,
+                        brightness = -.05f,
                         highlightTint = cyberpunkPalette.highlightTint,
                         shadowTint = cyberpunkPalette.shadowTint,
                         tintStrength = cyberpunkPalette.defaultTintStrength,
-                        vignetteStrength = .2f,
+                        vignetteStrength = .3f,
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = -.1f, // Slightly cool for Sci-Fi
+                        colorTemperature = 1f.unaryMinus(), // Slightly cool for Sci-Fi
                     )
                 Genre.HORROR ->
                     ShaderParams(

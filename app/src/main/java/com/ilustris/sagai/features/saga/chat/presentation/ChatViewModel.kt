@@ -104,7 +104,6 @@ class ChatViewModel
             state.value = ChatState.Loading
             enableDebugMode(isDebug)
             observeSaga()
-            observeLoading()
             observeAmbientMusicServiceControl()
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
@@ -114,15 +113,6 @@ class ChatViewModel
         fun retryAiResponse(message: Message?) {
             message?.let {
                 replyMessage(message)
-            }
-        }
-
-        private fun observeLoading() {
-            viewModelScope.launch(Dispatchers.IO) {
-                isGenerating.collectLatest {
-                    Log.d(javaClass.simpleName, "observeLoading: collecting generating status -> $it")
-                    delay(3.seconds)
-                }
             }
         }
 
@@ -486,6 +476,10 @@ class ChatViewModel
         private fun generateSuggestions() {
             suggestions.value = emptyList()
             if (sagaContentManager.isInDebugMode()) {
+                return
+            }
+
+            if (isGenerating.value) {
                 return
             }
 

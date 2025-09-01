@@ -16,10 +16,6 @@ sealed class NarrativeStep {
         val act: ActContent,
     ) : NarrativeStep()
 
-    data class EndAct(
-        val act: ActContent,
-    ) : NarrativeStep()
-
     data class StartChapter(
         val act: ActContent,
     ) : NarrativeStep()
@@ -28,19 +24,11 @@ sealed class NarrativeStep {
         val chapter: ChapterContent,
     ) : NarrativeStep()
 
-    data class EndChapter(
-        val chapter: ChapterContent,
-    ) : NarrativeStep()
-
     data class StartTimeline(
         val chapter: ChapterContent,
     ) : NarrativeStep()
 
     data class GenerateTimeLine(
-        val timeline: TimelineContent,
-    ) : NarrativeStep()
-
-    data class EndTimeline(
         val timeline: TimelineContent,
     ) : NarrativeStep()
 
@@ -57,13 +45,10 @@ object NarrativeCheck {
             saga.isComplete() -> NarrativeStep.NoActionNeeded
             saga.isFull() -> NarrativeStep.GenerateSagaEnding(saga)
             currentAct == null -> NarrativeStep.StartAct
-            currentAct.isComplete() -> NarrativeStep.EndAct(currentAct)
             currentAct.isFull() -> NarrativeStep.GenerateAct(currentAct)
             currentChapter == null -> NarrativeStep.StartChapter(currentAct)
-            currentChapter.isComplete() -> NarrativeStep.EndChapter(currentChapter)
             currentChapter.isFull() -> NarrativeStep.GenerateChapter(currentChapter)
             currentTimeline == null -> NarrativeStep.StartTimeline(currentChapter)
-            currentTimeline.isComplete() -> NarrativeStep.EndTimeline(currentTimeline)
             currentTimeline.isFull() -> NarrativeStep.GenerateTimeLine(currentTimeline)
             else -> NarrativeStep.NoActionNeeded
         }

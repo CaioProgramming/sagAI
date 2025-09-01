@@ -5,6 +5,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.FileCacheService
@@ -22,6 +23,8 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
+import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -175,11 +178,13 @@ class SagaContentManagerImpl
         }
 
         private suspend fun startChapter(act: ActContent) =
-            try {
+            executeRequest {
+                val lastChapter = act.chapters.lastOrNull()
+                if (lastChapter?.isComplete()?.not() == true) {
+                    throw IllegalArgumentException("Chapter is already set at this act")
+                }
                 val chapterOperation = chapterUseCase.saveChapter(Chapter(actId = act.data.id))
-                chapterOperation.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                chapterOperation
             }
 
         private suspend fun updateChapter(
@@ -211,18 +216,21 @@ class SagaContentManagerImpl
                         },
                     )
 
-                chapterUseCase
-                    .generateChapterCover(
-                        chapter.copy(
-                            chapter.data.copy(
-                                title = chapterGen.title,
-                                overview = chapterGen.overview,
-                                emotionalReview = emotionalReview ?: emptyString(),
-                                featuredCharacters = featuredCharacters,
+                val newChapter =
+                    chapterUseCase
+                        .generateChapterCover(
+                            chapter.copy(
+                                chapter.data.copy(
+                                    title = chapterGen.title,
+                                    overview = chapterGen.overview,
+                                    emotionalReview = emotionalReview ?: emptyString(),
+                                    featuredCharacters = featuredCharacters,
+                                ),
                             ),
-                        ),
-                        saga,
-                    )
+                            saga,
+                        )
+                endChapter(saga.currentActInfo!!)
+                newChapter
             } catch (e: Exception) {
                 e.asError()
             }
@@ -240,7 +248,11 @@ class SagaContentManagerImpl
             }
 
         private suspend fun startTimeline(currentChapter: ChapterContent?) =
-            try {
+            executeRequest {
+                val lastTimeline = currentChapter!!.events.lastOrNull()
+                if (lastTimeline?.isComplete()?.not() == true) {
+                    throw IllegalArgumentException("Timeline already set at this chapter")
+                }
                 val timeLineOperation =
                     timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter!!.data.id))
                 chapterUseCase.updateChapter(
@@ -248,9 +260,7 @@ class SagaContentManagerImpl
                         currentEventId = timeLineOperation.id,
                     ),
                 )
-                timeLineOperation.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                timeLineOperation
             }
 
         private suspend fun endTimeline(currentChapter: ChapterContent?) =
@@ -296,31 +306,28 @@ class SagaContentManagerImpl
                             emotionalReview = emotionalReview ?: emptyString(),
                         ),
                     )
+            endTimeline(saga.currentActInfo!!.currentChapterInfo)
             newEvent.asSuccess()
         } catch (e: Exception) {
             e.asError()
         }
 
         private suspend fun createAct(currentSaga: SagaContent): RequestResult<Exception, Act> =
-            try {
+            executeRequest {
+                val lastAct = currentSaga.acts.lastOrNull()
+                if (lastAct?.isComplete()?.not() == true) {
+                    throw IllegalArgumentException("Act is already set at this saga")
+                }
                 actUseCase
                     .saveAct(
                         Act(
                             sagaId = currentSaga.data.id,
                         ),
-                    ).asSuccess()
-            } catch (e: Exception) {
-                Log.e(
-                    javaClass.simpleName,
-                    "Error creating act for saga ${content.value?.data?.id}",
-                    e,
-                )
-                e.asError()
+                    )
             }
 
         private suspend fun updateAct(currentAct: ActContent): RequestResult<Exception, Act> =
-            try {
-                setProcessing(true)
+            executeRequest {
                 val saga = content.value!!
                 Log.d(
                     javaClass.simpleName,
@@ -356,12 +363,9 @@ class SagaContentManagerImpl
                         content = genAct.content,
                         emotionalReview = emotionalReview ?: emptyString(),
                     )
-                val updateTransaction = actUseCase.updateAct(updatedActData)
-                Log.i(javaClass.simpleName, "Act updated successfully: ${updateTransaction.id}")
-                updateTransaction.asSuccess()
-            } catch (e: Exception) {
-                Log.e(javaClass.simpleName, "Error updating act.", e)
-                e.asError()
+                val newAct = actUseCase.updateAct(updatedActData)
+                endAct(saga)
+                newAct
             }
 
         private suspend fun endAct(saga: SagaContent) =
@@ -416,13 +420,10 @@ class SagaContentManagerImpl
                         NarrativeStep.StartAct -> createAct(saga)
                         is NarrativeStep.GenerateSagaEnding -> generateEnding(saga)
                         is NarrativeStep.GenerateAct -> updateAct(narrativeStep.act)
-                        is NarrativeStep.EndAct -> endAct(saga)
                         is NarrativeStep.StartChapter -> startChapter(narrativeStep.act)
                         is NarrativeStep.GenerateChapter -> updateChapter(saga, narrativeStep.chapter)
-                        is NarrativeStep.EndChapter -> endChapter(saga.currentActInfo)
                         is NarrativeStep.StartTimeline -> startTimeline(narrativeStep.chapter)
                         is NarrativeStep.GenerateTimeLine -> updateTimeline(saga, narrativeStep.timeline)
-                        is NarrativeStep.EndTimeline -> endTimeline(saga.currentActInfo?.currentChapterInfo)
                         NarrativeStep.NoActionNeeded -> skipNarrative()
                     }
 
@@ -439,18 +440,17 @@ class SagaContentManagerImpl
                     """.trimIndent(),
                 )
                 action
-                    .onSuccessAsync {
+                    .onSuccess {
                         validatePostAction(saga, narrativeStep, action.success)
-                    }.onFailureAsync {
+                    }.onFailure {
                         setNarrativeProcessingStatus(false)
                     }
             }
 
-        private fun skipNarrative(): RequestResult.Success<Unit> {
-            Log.i(javaClass.simpleName, "skipNarrative: No action needed skipping narrative")
-            setNarrativeProcessingStatus(false)
-            return Unit.asSuccess()
-        }
+        private suspend fun skipNarrative() =
+            executeRequest {
+                Log.i(javaClass.simpleName, "skipNarrative: No action needed skipping narrative")
+            }
 
         private fun validatePostAction(
             saga: SagaContent,
@@ -504,9 +504,8 @@ class SagaContentManagerImpl
                     is NarrativeStep.GenerateTimeLine -> {
                         (result.value as? Timeline)?.let {
                             delay(250L)
-                            updateWikis(it)
-                            delay(250L)
                             updateCharacters(it, saga)
+                            updateWikis(it)
                             setNarrativeProcessingStatus(false)
                         } ?: run {
                             setNarrativeProcessingStatus(false)
@@ -515,6 +514,8 @@ class SagaContentManagerImpl
 
                     else -> setNarrativeProcessingStatus(false)
                 }
+
+                // clearInvalidData(saga)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -605,6 +606,7 @@ class SagaContentManagerImpl
             }
 
             val wikisToUpdateOrAdd = wikiUseCase.generateWiki(currentSaga, listOf(lastEvent))
+            Log.d(javaClass.simpleName, "updateWikis: Updating wikis $wikisToUpdateOrAdd")
             wikisToUpdateOrAdd.forEach { generatedWiki ->
                 val existingWiki =
                     currentSaga.wikis.find { wiki ->

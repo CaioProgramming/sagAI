@@ -30,6 +30,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -129,6 +130,7 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -1143,19 +1145,31 @@ fun ChatList(
                 }
 
                 item {
-                    Text(
-                        "Fim do Ato ${actList.indexOf(act) + 1}",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                brush = genre.gradient(),
-                                fontFamily = genre.headerFont(),
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Fim",
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    brush = genre.gradient(),
+                                    fontFamily = genre.headerFont(),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier = Modifier.alpha(.4f),
+                        )
+                        Text(
+                            act.content.data.title,
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    brush = genre.gradient(),
+                                    fontFamily = genre.headerFont(),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                        )
+                    }
                 }
             }
 
@@ -1184,14 +1198,14 @@ fun ChatList(
                                     Modifier
                                         .padding(16.dp)
                                         .clip(shape)
-                                        .alpha(.6f)
+                                        .border(1.dp, genre.gradient(true), shape)
                                         .background(
-                                            MaterialTheme.colorScheme.background,
+                                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
                                             shape,
                                         ).clickable {
                                             openSaga()
                                         }.padding(8.dp)
-                                        .gradientFill(genre.gradient()),
+                                        .gradientFill(genre.gradient(true)),
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                             ) {
                                 Icon(
@@ -1201,7 +1215,7 @@ fun ChatList(
                                     tint = genre.iconColor,
                                 )
                                 Text(
-                                    "História atualizada",
+                                    "História atualizada ${timeline.title}",
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
                                             color = genre.iconColor,
@@ -1227,8 +1241,9 @@ fun ChatList(
                 }
 
                 item {
+                    val title = chapter.chapter.title.ifEmpty { "Capitulo ${saga.chapterNumber(chapter.chapter).toRoman()}" }
                     Text(
-                        "Capitulo ${saga.chapterNumber(chapter.chapter)}",
+                        title,
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 brush = genre.gradient(),
@@ -1244,8 +1259,11 @@ fun ChatList(
             }
 
             item {
+                val title =
+                    act.content.data.title
+                        .ifEmpty { "Ato ${saga.actNumber(act.content.data).toRoman()}" }
                 Text(
-                    "Ato ${(actList.indexOf(act) + 1).toRoman()}",
+                    title,
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             brush = genre.gradient(true),

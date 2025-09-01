@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
@@ -64,13 +65,29 @@ class ChapterUseCaseImpl
         ): RequestResult<Exception, Chapter> =
             try {
                 val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
-                val coverReference = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
-                val charactersIcons: List<Bitmap> =
-                    characters.mapNotNull {
-                        fileHelper
-                            .readFile(it.image)
-                            ?.decodeToImageBitmap()
-                            ?.asAndroidBitmap()
+                val coverBitmap = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
+                val coverReference =
+                    coverBitmap?.let {
+                        ImageReference(
+                            it,
+                            "Cover composition aesthetic and reference",
+                        )
+                    }
+                val charactersIcons =
+                    characters.mapNotNull { character ->
+
+                        val characterBitmap =
+                            fileHelper
+                                .readFile(character.image)
+                                ?.decodeToImageBitmap()
+                                ?.asAndroidBitmap()
+
+                        characterBitmap?.let {
+                            ImageReference(
+                                it,
+                                "Character ${character.name} visual reference.",
+                            )
+                        }
                     }
                 val promptGeneration =
                     gemmaClient.generate<String>(

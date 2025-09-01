@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.characters.ui.components
 
 import ai.atick.material.MaterialColor
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -17,6 +18,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
@@ -101,10 +104,8 @@ fun buildWikiAndCharactersAnnotation(
             val shadow =
                 Shadow(
                     color = shadowColor,
-                    blurRadius = 5f,
-                    offset =
-                        androidx.compose.ui.geometry
-                            .Offset(1f, -1f),
+                    blurRadius = 2f,
+                    offset = Offset(2f, 2f),
                 )
 
             val mainColor = if (character.id == mainCharacter?.id) genre.color else characterColor
@@ -113,15 +114,8 @@ fun buildWikiAndCharactersAnnotation(
                 SpanStyle(
                     fontWeight = FontWeight.Normal,
                     fontFamily = font,
-                    brush =
-                        Brush.verticalGradient(
-                            listOf(
-                                mainColor,
-                                mainColor.copy(alpha = .8f),
-                                mainColor.copy(alpha = .3f),
-                                shadowColor,
-                            ),
-                        ),
+                    shadow = shadow,
+                    color = mainColor,
                 )
 
             AnnotationRule(

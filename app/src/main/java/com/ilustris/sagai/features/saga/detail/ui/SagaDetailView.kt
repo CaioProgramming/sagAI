@@ -115,6 +115,7 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -141,8 +142,10 @@ import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -294,12 +297,10 @@ fun SagaDetailView(
                     dismissOnClickOutside = false,
                 ),
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                SparkLoader(
-                    brush = gradientAnimation(genresGradient(), duration = 2.seconds),
-                    modifier = Modifier.size(100.dp),
-                )
-            }
+            val brush = saga?.data?.genre?.colorPalette() ?: holographicGradient
+            StarryTextPlaceholder(
+                modifier = Modifier.fillMaxSize().gradientFill(gradientAnimation(brush)),
+            )
         }
     }
 
@@ -667,7 +668,7 @@ fun SagaDetailContentView(
                                 onDismissRequest = {
                                     showEmotionalReview = false
                                 },
-                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+                                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -1198,7 +1199,7 @@ private fun SagaDetailInitialView(
 
                     item(span = { GridItemSpan(columnCount) }) {
                         LazyRow {
-                            items(it.relationships) { relation ->
+                            items(it.relationships.sortedBy { it.data.lastUpdated }) { relation ->
                                 RelationShipCard(
                                     content = relation,
                                     genre = it.data.genre,
@@ -1362,9 +1363,8 @@ private fun SagaDetailInitialView(
                     LazyRow {
                         items(chapters) { chapter ->
                             ChapterCardView(
+                                it,
                                 chapter.data,
-                                it.data.genre,
-                                it.getCharacters(),
                                 Modifier
                                     .padding(4.dp)
                                     .width(300.dp)
@@ -1426,44 +1426,33 @@ private fun SagaDetailInitialView(
                 }
 
                 item(span = { GridItemSpan(columnCount) }) {
-                    Column(
+                    Box(
                         Modifier
                             .padding(16.dp)
-                            .clip(it.data.genre.shape())
-                            .border(1.dp, it.data.genre.gradient(true), it.data.genre.shape())
+                            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .2f), it.data.genre.shape())
+                            .background(MaterialTheme.colorScheme.surfaceContainer, it.data.genre.shape())
                             .fillMaxWidth()
+                            .height(200.dp)
                             .clickable {
                                 openEmotionalReview()
                             },
                     ) {
-                        Box(
-                            modifier =
-                                Modifier
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .fillMaxWidth()
-                                    .height(150.dp),
-                        ) {
-                            AsyncImage(
-                                emotionalReviewUrl,
-                                null,
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop,
-                            )
+                        AsyncImage(
+                            emotionalReviewUrl,
+                            null,
+                            modifier = Modifier.fillMaxSize().zoomAnimation(),
+                            contentScale = ContentScale.Crop,
+                        )
 
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .fillMaxHeight(.25f)
-                                    .align(Alignment.BottomCenter)
-                                    .background(
-                                        fadeGradientBottom(),
-                                    ),
-                            )
-                        }
                         Column(
                             modifier =
                                 Modifier
-                                    .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
+                                    .background(
+                                        fadeGradientBottom(
+                                            it.data.genre.color,
+                                        ),
+                                    ).fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 24.dp),
                         ) {
                             Text(
