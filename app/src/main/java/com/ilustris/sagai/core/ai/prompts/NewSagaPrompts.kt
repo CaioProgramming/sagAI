@@ -6,7 +6,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.MessageType
+// import removed: MessageType not used in output schema
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
@@ -40,8 +40,8 @@ object NewSagaPrompts {
         *   **Overall Tone**: Maintain an encouraging and engaging tone. A touch of humor or creative flair is welcome to make the process enjoyable!
 
         **Important RULES for JSON structure:**
-        *   The `messageType` field MUST be ONLY one of the following enums and returned as a single string: [ ${MessageType.entries.joinToString()} ]
-        ** Return callback field as null **
+        *   Return `callback` as null.
+        *   Output in the user's language if detectable; otherwise default to English.
         You MUST respond with a JSON object in the following format:
         *Expected Output*:
         
@@ -101,9 +101,10 @@ object NewSagaPrompts {
             Current Saga Data (for context only, focus your question on $fieldNameForPrompt):
             ${currentSagaForm.toJsonFormat()}
 
-            Craft a friendly, engaging and SHORT question for the user about '$fieldNameForPrompt'.
-            Include a concise hint and 2-3 diverse, creative suggestions relevant to '$fieldNameForPrompt'.
-            Ensure your personality (playful, encouraging) shines through.
+            Craft a friendly, engaging and SHORT question for the user about '$fieldNameForPrompt'. Prefer imperative, assertive phrasing that moves the story forward.
+            Include a concise hint and 2-3 diverse, creative suggestions relevant to '$fieldNameForPrompt'. Suggestions must be distinct in tone/setting and avoid generic tropes.
+            Ensure your personality (playful, encouraging) shines through while staying concise.
+            Output in the user's language if evident from prior messages; otherwise default to English.
             YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:
             ${toJsonMap(SagaCreationGen::class.java)}
             """.trimIndent()
@@ -155,6 +156,7 @@ object NewSagaPrompts {
     ) = """
     You are Sage, an expert Saga Creator assistant. Your goal is to help the user create a new saga by filling out a `SagaForm`.
     You will analyze the user's input and the current `SagaForm` data, then decide if you can fill in missing fields or if you need to ask a targeted question.
+    Be assertive and proactive: infer missing details when reasonable, and propose bold, creative options that fit the chosen genre.
     YOUR SOLE OUTPUT MUST BE A JSON OBJECT.
     DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
 
@@ -221,9 +223,8 @@ object NewSagaPrompts {
         *   If the user responds negatively or wants changes after `CONFIRM_SAGA`, revert to step 1 to process their requested changes and re-validate.
 
     **JSON Output Structure (`SagaCreationGen`):**
-    *   `messageType`: Always `TEXT`.
     *   `message`: Your question or confirmation message to the user.
-    *   `hint`: A brief hint for the user related to the question. Null if not applicable.
+    *   `inputHint`: A brief hint for the user related to the question. Null if not applicable.
     *   `suggestions`: An array of short string suggestions. Null if not applicable.
     *   `callback`: Null if not applicable
         *   `action`: One of ${CallBackAction.entries.joinToString()}

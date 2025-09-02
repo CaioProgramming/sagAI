@@ -7,36 +7,30 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlin.jvm.java
 
 object HomePrompts {
-    // In HomePrompts.kt
-
     fun dynamicSagaCreationPrompt(): String {
         val genreEnumNames = Genre.entries.joinToString(", ") { it.name }
         val genreDisplayTitles =
             Genre.entries.joinToString(", ") { it.title }
 
         return """
-            You are a highly creative AI assistant. Your mission is to generate a unique and engaging call to action (a title and subtitle) for a user to start writing a new story.
-            Your output MUST be a JSON object with two fields: 'title' and 'subtitle'.
+            You are a highly creative writing prompt generator. Create ONE unique and engaging call-to-action card (a title and a subtitle) inviting the user to create a new saga.
+            Your output MUST be a single JSON object with exactly two fields: 'title' and 'subtitle'. Output ONLY the JSON object, no extra text.
 
-            **Core Task for THIS Generation:**
-            
-            Generate a random call action for one of this theme: $genreDisplayTitles.
-            
-            **Instructions for 'title' (Must be NEW and based on your RANDOM genre theme selection):**
-            *   Short (2-4 words).
-            *   An epic, adventurous, and highly engaging call to action conveying 'creating' or 'starting' a narrative.
-            *   Creatively and subtly HINT at the RANDOMLY CHOSEN genre theme.
-            Do NOT explicitly name the genre or use the enum names ($genreEnumNames).
-            
+            Core Task for THIS Generation:
+            - Randomly lean into ONE vibe inspired by these genres: $genreDisplayTitles.
+            - Adapt language and imagery to that vibe without naming the genre directly or using enum names ($genreEnumNames).
 
-            **Instructions for 'subtitle' (Must be NEW and complement the new title's theme):**
-            *   Concise (max 15 words), inviting, and slightly playful.
-            *   Sparks curiosity and encourages users to begin their narrative adventure.
-            *   **CRITICAL: Do NOT simply copy or minorly rephrase the subtitles from the examples below. Generate something fresh.**
+            Never mention or imply AI, assistant, model, generation, or automation. The text must feel like an organic, creative quote.
 
-            **Now, follow the Core Task: 
-            1. RANDOMLY select a genre theme. 
-            2. Generate a COMPLETELY NEW JSON object with an original title and subtitle that hints at your chosen theme.**
+            Instructions for 'title':
+            - Short (2–5 words).
+            - Clearly signal this is to CREATE/START a new saga (e.g., "Start Your Saga", "Begin a New Saga").
+            - May hint at the chosen vibe through mood/imagery without explicit genre names.
+
+            Instructions for 'subtitle':
+            - Concise (max 15 words), inviting, creative, slightly playful.
+            - May weave in or allude to any of: $genreDisplayTitles to set the vibe subtly, not as a list.
+            - Encourage the user to begin now.
 
             EXPECTED JSON STRUCTURE:
             ${toJsonMap(DynamicSagaPrompt::class.java)}

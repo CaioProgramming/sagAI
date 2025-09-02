@@ -119,4 +119,17 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             currentChapter: ChapterContent,
         ) = ChapterPrompts.chapterGeneration(saga, currentChapter)
-    }
+
+        override suspend fun generateChapterIntroduction(
+            saga: SagaContent,
+            chapterContent: ChapterContent,
+        ): RequestResult<Exception, Chapter> =
+            try {
+                val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapterContent)
+                val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
+                val updated = chapterContent.data.copy(introduction = intro)
+                chapterRepository.updateChapter(updated).asSuccess()
+            } catch (e: Exception) {
+                e.asError()
+            }
+}

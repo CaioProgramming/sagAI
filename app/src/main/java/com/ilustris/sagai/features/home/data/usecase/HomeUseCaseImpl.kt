@@ -35,7 +35,7 @@ class HomeUseCaseImpl
                 val result =
                     gemmaClient.generate<DynamicSagaPrompt>(
                         prompt,
-                        temperatureRandomness = 1f,
+                        temperatureRandomness = 0.7f,
                         requireTranslation = true,
                     )
                 result!!.asSuccess()

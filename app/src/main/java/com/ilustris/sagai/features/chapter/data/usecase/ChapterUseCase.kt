@@ -10,6 +10,10 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.Flow
 
 interface ChapterUseCase {
+    suspend fun generateChapterIntroduction(
+        saga: SagaContent,
+        chapterContent: ChapterContent,
+    ): RequestResult<Exception, Chapter>
     suspend fun saveChapter(chapter: Chapter): Chapter
 
     suspend fun deleteChapter(chapter: Chapter)

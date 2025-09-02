@@ -35,11 +35,12 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterEvent::class,
         CharacterRelation::class, // Added CharacterRelation
     ],
-    version = 44, // Incremented version
+    version = 45, // Incremented version
     autoMigrations = [
         androidx.room.AutoMigration(from = 41, to = 42),
         androidx.room.AutoMigration(from = 42, to = 43),
         androidx.room.AutoMigration(from = 43, to = 44),
+        androidx.room.AutoMigration(from = 44, to = 45),
     ],
     exportSchema = true,
 )

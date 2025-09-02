@@ -25,6 +25,8 @@ data class Act(
     val title: String = "",
     val content: String = "",
     @ColumnInfo(defaultValue = "")
+    val introduction: String = "",
+    @ColumnInfo(defaultValue = "")
     val emotionalReview: String? = null,
     @ColumnInfo(index = true)
     val sagaId: Int? = null,

@@ -71,7 +71,7 @@ object ActPrompts {
         val actOutput =
             toJsonMap(
                 Act::class.java,
-                filteredFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
+                filteredFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview", "introduction"),
             )
 
         return buildString {
@@ -110,6 +110,7 @@ object ActPrompts {
         }.trimIndent()
     }
 
+    @Suppress("ktlint:standard:max-line-length")
     fun actDirective(directive: String) =
         """
          ## SAGA ACT DIRECTIVE
@@ -117,4 +118,41 @@ object ActPrompts {
         // It dictates the specific tone, focus, and goal for your responses and the evolving plot.
         $directive
         """.trimIndent()
+
+    fun actIntroductionPrompt(
+        saga: Saga,
+        previousAct: ActContent? = null,
+    ): String =
+        buildString {
+            appendLine("CONTEXT:")
+            appendLine("You are an AI assistant helping to write a saga.")
+            appendLine("Saga Title: \"${saga.title}\"")
+            appendLine("Saga Genre: ${saga.genre.title}")
+
+            if (previousAct == null) {
+                // First Act
+                appendLine("Saga Description: \"${saga.description}\"")
+                appendLine("\nTASK:")
+                appendLine(
+                    "Generate a single, compelling and concise introductory paragraph (around 50-70 words) for the very FIRST ACT of this saga.",
+                )
+                appendLine(
+                    "The introduction must set the initial scene and tone based on the saga's overall description and genre, and end with a light hook.",
+                )
+            } else {
+                // Subsequent Act
+                val previousActSummary = previousAct.data.content.take(200)
+                val previousActEmotionalReview = previousAct.data.emotionalReview ?: "neutral"
+                appendLine("Previous Act ended with summary: \"$previousActSummary\"")
+                appendLine("Previous Act emotional tone: \"$previousActEmotionalReview\"")
+                appendLine("\nTASK:")
+                appendLine(
+                    "Generate a single, compelling and concise introductory paragraph (around 50-70 words) for the NEXT ACT of this saga.",
+                )
+                appendLine(
+                    "The introduction must smoothly transition from the end of the previous act, using its tone/cliffhanger to create continuity, and engage the reader to continue.",
+                )
+            }
+            appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
+        }
 }

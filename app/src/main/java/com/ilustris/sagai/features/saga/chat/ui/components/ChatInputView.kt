@@ -355,6 +355,7 @@ fun ChatInputView(
                                         Text(
                                             it.hint(),
                                             style = textStyle,
+                                            maxLines = 1,
                                             modifier =
                                                 Modifier
                                                     .fillMaxWidth()

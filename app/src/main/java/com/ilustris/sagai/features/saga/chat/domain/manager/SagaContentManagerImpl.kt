@@ -464,14 +464,24 @@ class SagaContentManagerImpl
                         sagaHistoryUseCase.updateSaga(
                             saga.data.copy(currentActId = (result.value as Act).id),
                         )
+                        // Generate Act introduction right after starting a new act
+                        actUseCase.generateActIntroduction(content.value!!)
                         setNarrativeProcessingStatus(false)
                     }
 
                     is NarrativeStep.StartChapter -> {
                         val currentAct = saga.currentActInfo!!
+                        val newChapterId = (result.value as Chapter).id
                         actUseCase.updateAct(
-                            currentAct.data.copy(currentChapterId = (result.value as Chapter).id),
+                            currentAct.data.copy(currentChapterId = newChapterId),
                         )
+
+                        // After starting a chapter, generate its introduction
+                        val updatedSaga = content.value!!
+                        val currentChapterContent = updatedSaga.currentActInfo?.chapters?.lastOrNull()
+                        currentChapterContent?.let { chapterContent ->
+                            chapterUseCase.generateChapterIntroduction(updatedSaga, chapterContent)
+                        }
 
                         if (currentAct.chapters.size > 1) {
                             val previousChapter =
@@ -482,11 +492,7 @@ class SagaContentManagerImpl
                                     null
                                 }
 
-                            previousChapter?.let {
-                                cleanUpEmptyTimeLines(it)
-                            } ?: run {
-                                setNarrativeProcessingStatus(false)
-                            }
+                            setNarrativeProcessingStatus(false)
                         } else {
                             setNarrativeProcessingStatus(false)
                         }

@@ -81,6 +81,12 @@ object SagaPrompts {
 
             INSTRUCTIONS:
 
+            Creativity & Assertiveness Guidelines:
+            - Be original: avoid clichés and overused tropes for the chosen genre; prefer fresh twists and specific details.
+            - Be assertive: make confident choices when the user's intent allows reasonable inference; don't over-hedge.
+            - Maintain internal consistency between saga and character details.
+            - Reflect the user's language if evident; otherwise default to English.
+
             **Overall Output Format:**
             *   Your entire response MUST be a single, valid JSON object that strictly conforms to the structure of `SagaGen`.
             *   A template representing the fields you need to generate is shown below (system-managed fields that you should NOT generate are excluded from this template).
@@ -91,6 +97,7 @@ object SagaPrompts {
             *   **`genre`**: Use `SAGA_SETUP.sagaDraft.genre`.
             *   **`description`**: Generate an engaging synopsis (max 75 words). This synopsis should establish the adventure's setting, core theme, and outline the player's journey. Base this on SAGA_SETUP and INITIAL_PLAYER_INTERACTION_LOG.
             *   **`story`**: Generate a more detailed narrative introduction to the world and its current state (1-3 paragraphs). Describe the atmosphere, initial situation, and any immediate hooks or mysteries. Expand from SAGA_SETUP.sagaDraft.description and INITIAL_PLAYER_INTERACTION_LOG.
+            *   Prefer evocative, specific imagery; minimize generic filler.
             *   **Omitted `Saga` fields**: Do NOT generate values for fields like `id`, `coverImage`, `isEnded`, `createdAt`, etc., as listed in the omitted fields for the output structure.
 
             **Part 2: Populating the `character` object (within `SagaGen`)**
