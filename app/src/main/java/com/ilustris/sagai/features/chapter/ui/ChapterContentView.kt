@@ -156,7 +156,7 @@ fun ChapterContentView(
                     .padding(16.dp),
             duration = 3.seconds,
             easing = LinearEasing,
-            isAnimated = isLast,
+            isAnimated = false,
             genre = genre,
             mainCharacter = content.mainCharacter?.data,
             characters = content.getCharacters(),

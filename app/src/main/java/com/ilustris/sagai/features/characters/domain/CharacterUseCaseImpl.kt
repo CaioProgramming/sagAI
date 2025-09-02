@@ -101,29 +101,23 @@ class CharacterUseCaseImpl
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
                         ImageReference(it, "Portrait photography composition reference")
                     }
+                val references =
+                    listOfNotNull(
+                        ImageReference(styleReferenceBitmap, "Artistic style reference"),
+                        portraitReference,
+                    )
                 val translatedDescription =
                     gemmaClient.generate<String>(
                         CharacterPrompts.descriptionTranslationPrompt(
                             character,
                             saga.genre,
                         ),
-                        references =
-                            listOf(
-                                ImageReference(styleReferenceBitmap, "Artistic style reference"),
-                                portraitReference,
-                            ),
+                        references = references,
                         requireTranslation = false,
                     )
                 val prompt = ImagePrompts.generateImage(translatedDescription!!)
 
-                val request =
-                    FreepikRequest(
-                        prompt,
-                        GenrePrompts.negativePrompt(saga.genre),
-                        GenrePrompts.characterStyling(saga.genre),
-                    )
-
-                val image = imagenClient.generateImage(prompt)!!
+                val image = imagenClient.generateImage(prompt, references)!!
                 val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)

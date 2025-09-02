@@ -80,6 +80,7 @@ fun ChatBubble(
     alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
     isLoading: Boolean = false,
+    modifier: Modifier = Modifier,
     openCharacters: (CharacterContent?) -> Unit = {},
     openWiki: () -> Unit = {},
 ) {
@@ -118,7 +119,7 @@ fun ChatBubble(
         -> {
             ConstraintLayout(
                 modifier =
-                    Modifier
+                    modifier
                         .padding(8.dp)
                         .fillMaxWidth()
                         .animateContentSize(),
@@ -266,7 +267,7 @@ fun ChatBubble(
 
         SenderType.THOUGHT -> {
             Box(
-                Modifier
+                modifier
                     .fillMaxWidth(),
             ) {
                 Column(
@@ -328,7 +329,7 @@ fun ChatBubble(
 
         SenderType.ACTION -> {
             Box(
-                Modifier
+                modifier
                     .padding(16.dp)
                     .fillMaxWidth(),
             ) {
@@ -388,14 +389,14 @@ fun ChatBubble(
             Column {
                 TypewriterText(
                     text = message.text,
-                    isAnimated = isAnimated,
+                    isAnimated = false,
                     duration = duration,
                     genre = genre,
                     mainCharacter = mainCharacter?.data,
                     characters = content.getCharacters(),
                     wiki = wiki,
                     modifier =
-                        Modifier
+                        modifier
                             .background(
                                 MaterialTheme.colorScheme.background.copy(
                                     alpha = .7f,

@@ -10,6 +10,7 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
+import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig // Added
 import com.ilustris.sagai.core.network.FreePikApiService
@@ -19,7 +20,10 @@ import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 interface ImagenClient {
-    suspend fun generateImage(prompt: String): Bitmap?
+    suspend fun generateImage(
+        prompt: String,
+        references: List<ImageReference> = emptyList(),
+    ): Bitmap?
 
     suspend fun generateWithFreePik(request: FreepikRequest): FreePikResponse?
 }
@@ -54,39 +58,40 @@ class ImagenClientImpl
             val premiumModel = firebaseRemoteConfig.getString(IMAGE_PREMIUM_MODEL_FLAG)
 
             if (isPremium) {
-                premiumModel
+                "gemini-2.5-flash-image-preview"
             } else {
-                defaultModel
+                "gemini-2.0-flash-preview-image-generation"
             }
         }
 
-        val model by lazy {
-            Log.i(
-                TAG,
-                "Initializing Imagen model with: $modelName (flag: '$IMAGE_MODEL_FLAG')",
-            )
-            Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
-                modelName = modelName,
-                generationConfig {
-                    responseModalities = listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
-                },
-            )
-        }
-
-        override suspend fun generateImage(prompt: String): Bitmap? =
+        override suspend fun generateImage(
+            prompt: String,
+            references: List<ImageReference>,
+        ): Bitmap? =
             try {
                 Log.i(javaClass.simpleName, "Generating image with prompt:\n$prompt")
                 val imageModel =
-                    Firebase.ai(backend = GenerativeBackend.vertexAI()).imagenModel(
+                    Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
                         modelName = modelName,
+                        generationConfig =
+                            generationConfig {
+                                responseModalities = listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
+                            },
                     )
+                val promptBuilder =
+                    content {
+                        text(prompt.trimIndent())
+                        references.forEach {
+                            image(it.bitmap)
+                            text(it.description)
+                        }
+                    }
                 imageModel
-                    .generateImages(prompt.trimIndent())
-                    .images
+                    .generateContent(promptBuilder)
+                    .candidates
                     .first()
-                    .data
-                    .decodeToImageBitmap()
-                    .asAndroidBitmap()
+                    .content.parts
+                    .firstNotNullOf { it.asImageOrNull() }
             } catch (e: Exception) {
                 e.printStackTrace()
                 null

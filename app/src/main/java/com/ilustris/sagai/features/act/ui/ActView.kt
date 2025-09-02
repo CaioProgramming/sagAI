@@ -116,7 +116,7 @@ fun ActComponent(
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 duration = 10.seconds,
-                isAnimated = true,
+                isAnimated = false,
                 genre = content.data.genre,
                 mainCharacter = content.mainCharacter?.data,
                 characters = content.getCharacters(),

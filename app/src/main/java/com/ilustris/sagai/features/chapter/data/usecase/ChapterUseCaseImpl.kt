@@ -89,6 +89,7 @@ class ChapterUseCaseImpl
                             )
                         }
                     }
+                val imageReferences = listOf(coverReference).plus(charactersIcons).filterNotNull()
                 val promptGeneration =
                     gemmaClient.generate<String>(
                         ChapterPrompts.coverDescription(
@@ -96,12 +97,12 @@ class ChapterUseCaseImpl
                             chapter.data,
                             characters,
                         ),
-                        references = listOf(coverReference).plus(charactersIcons).filterNotNull(),
+                        references = imageReferences,
                         requireTranslation = false,
                     )
                 val genCover =
                     imagenClient
-                        .generateImage(promptGeneration!!)
+                        .generateImage(promptGeneration!!, imageReferences)
                 val coverFile =
                     fileHelper.saveFile(chapter.data.title, genCover, path = "${saga.data.id}/chapters/")
                 val newChapter =

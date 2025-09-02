@@ -1068,6 +1068,7 @@ fun ChatList(
                 Column(
                     modifier =
                         Modifier
+                            .animateItem()
                             .padding(16.dp)
                             .fillMaxWidth()
                             .clickable {
@@ -1111,6 +1112,7 @@ fun ChatList(
                         ),
                     modifier =
                         Modifier
+                            .animateItem()
                             .fillMaxWidth()
                             .padding(16.dp),
                 )
@@ -1139,13 +1141,14 @@ fun ChatList(
                         saga,
                         modifier =
                             Modifier
+                                .animateItem()
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background),
                     )
                 }
 
                 item {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.animateItem()) {
                         Text(
                             "Fim",
                             style =
@@ -1183,6 +1186,7 @@ fun ChatList(
                             isLast = act.chapters.lastOrNull() == chapter,
                             modifier =
                                 Modifier
+                                    .animateItem()
                                     .fillMaxWidth(),
                         ) {}
                     }
@@ -1196,6 +1200,7 @@ fun ChatList(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier =
                                     Modifier
+                                        .animateItem()
                                         .padding(16.dp)
                                         .clip(shape)
                                         .border(1.dp, genre.gradient(true), shape)
@@ -1234,6 +1239,7 @@ fun ChatList(
                             content = saga,
                             alreadyAnimatedMessages = animatedMessages,
                             canAnimate = timeline.messages.lastOrNull() == it,
+                            modifier = Modifier.animateItem(),
                             openCharacters = { char -> openCharacter(char) },
                             openWiki = { openWiki() },
                         )

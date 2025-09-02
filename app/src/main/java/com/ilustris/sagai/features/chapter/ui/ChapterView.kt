@@ -23,10 +23,13 @@ import androidx.navigation.NavHostController
 import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.genresGradient
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import kotlin.time.Duration.Companion.seconds
 
@@ -85,12 +88,9 @@ fun ChapterContent(
                     dismissOnClickOutside = false,
                 ),
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                SparkLoader(
-                    brush = gradientAnimation(genresGradient(), duration = 2.seconds),
-                    modifier = Modifier.size(100.dp),
-                )
-            }
+            StarryTextPlaceholder(
+                modifier = Modifier.fillMaxSize().gradientFill(saga.data.genre.gradient(true)),
+            )
         }
     }
 }

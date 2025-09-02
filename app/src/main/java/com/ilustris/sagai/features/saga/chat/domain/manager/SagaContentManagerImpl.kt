@@ -203,7 +203,7 @@ class SagaContentManagerImpl
                     chapter
                         .fetchChapterMessages()
                         .rankTopCharacters(saga.getCharacters())
-                        .take(2)
+                        .take(3)
                         .map { it.first.id }
 
                 val emotionalReview =
@@ -254,7 +254,7 @@ class SagaContentManagerImpl
                     throw IllegalArgumentException("Timeline already set at this chapter")
                 }
                 val timeLineOperation =
-                    timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter!!.data.id))
+                    timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter.data.id))
                 chapterUseCase.updateChapter(
                     currentChapter.data.copy(
                         currentEventId = timeLineOperation.id,
@@ -554,9 +554,7 @@ class SagaContentManagerImpl
                 }
                 val endingMessage = sagaHistoryUseCase.generateEndMessage(saga).getSuccess()!!
                 val emotionalEnding =
-                    emotionalUseCase
-                        .generateEmotionalReview(saga.emotionalSummary())
-                        .getSuccess()
+                    emotionalUseCase.generateEmotionalProfile(saga).getSuccess()
                 sagaHistoryUseCase
                     .updateSaga(
                         saga.data.copy(

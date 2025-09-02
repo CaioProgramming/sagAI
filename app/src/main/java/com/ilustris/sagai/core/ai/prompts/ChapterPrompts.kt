@@ -49,7 +49,7 @@ object ChapterPrompts {
             ChapterConclusionContext(
                 sagaData = sagaContent.data,
                 mainCharacter = sagaContent.mainCharacter?.data,
-                eventsOfThisChapter = currentChapterContent.events.map { it.data },
+                eventsOfThisChapter = currentChapterContent.events.filter { it.isComplete() }.map { it.data },
                 previousChaptersInCurrentAct = currentChapters.map { it.data },
                 previousActData = previousAct?.data,
             )
@@ -203,7 +203,8 @@ object ChapterPrompts {
                 *   Synthesize these character appearances into the artistic and compositional framework derived from the general Visual Reference Image.
             5.  **Self-Contained Prompt:**
                 *   **CRUCIAL: Your output text prompt MUST NOT mention any Visual Reference Image directly.** It must be a self-contained description.
-
+            6. **No Text or borders: **
+                * Focus entirely on the art description, ensure that no text from the context is described in the final result.
             YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
             """.trimIndent()
     }

@@ -871,10 +871,7 @@ private fun SagaDetailInitialView(
                     Box(
                         modifier =
                             Modifier
-                                .background(
-                                    it.data.genre.color
-                                        .gradientFade(),
-                                ).height(400.dp)
+                                .height(400.dp)
                                 .fillMaxWidth()
                                 .clipToBounds(),
                     ) {
@@ -1429,7 +1426,9 @@ private fun SagaDetailInitialView(
                     Box(
                         Modifier
                             .padding(16.dp)
-                            .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .2f), it.data.genre.shape())
+                            .clip(
+                                RoundedCornerShape(it.data.genre.cornerSize()),
+                            ).border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .2f), it.data.genre.shape())
                             .background(MaterialTheme.colorScheme.surfaceContainer, it.data.genre.shape())
                             .fillMaxWidth()
                             .height(200.dp)

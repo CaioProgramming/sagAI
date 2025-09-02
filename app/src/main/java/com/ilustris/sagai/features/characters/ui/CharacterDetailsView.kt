@@ -54,6 +54,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -61,6 +62,7 @@ import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.genresGradient
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -294,7 +296,7 @@ fun CharacterDetailsContent(
 
             item {
                 LazyRow {
-                    items(characterContent.relationships) { relationContent ->
+                    items(characterContent.relationships.sortedByDescending { it.data.lastUpdated }) { relationContent ->
                         val currentId = character.id
                         val relatedCharacter =
                             when (currentId) {
@@ -356,12 +358,9 @@ fun CharacterDetailsContent(
                     dismissOnClickOutside = false,
                 ),
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                SparkLoader(
-                    brush = gradientAnimation(genresGradient(), duration = 2.seconds),
-                    modifier = Modifier.size(100.dp),
-                )
-            }
+            StarryTextPlaceholder(
+                modifier = Modifier.fillMaxSize().gradientFill(genre.gradient(true)),
+            )
         }
     }
 }

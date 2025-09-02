@@ -66,15 +66,16 @@ class SagaDetailUseCaseImpl
                             genreReferenceHelper.getFileBitmap(it).getSuccess()?.let {
                                 ImageReference(
                                     it,
-                                    "Character ${saga.mainCharacter.data.name} visual reference.",
+                                    "Main Character ${saga.mainCharacter.data.name} visual reference.",
                                 )
                             }
                         }
 
+                val references = listOf(styleReferenceBitmap).plus(characterIcon).filterNotNull()
                 val metaPrompt =
                     gemmaClient.generate<String>(
                         prompt = SagaPrompts.iconDescription(saga.data, saga.mainCharacter!!.data),
-                        listOf(styleReferenceBitmap).plus(characterIcon).filterNotNull(),
+                        references,
                         requireTranslation = false,
                     )!!
                 val newIcon =
@@ -83,6 +84,7 @@ class SagaDetailUseCaseImpl
                             saga.data,
                             metaPrompt,
                         ),
+                        references,
                     )!!
 
                 val file =
