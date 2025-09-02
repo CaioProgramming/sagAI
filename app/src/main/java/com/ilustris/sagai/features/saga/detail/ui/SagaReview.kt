@@ -434,6 +434,7 @@ fun ReviewDetails(saga: SagaContent) {
                 saga.data.title,
                 "",
                 genre,
+                isLoading = true,
                 modifier =
                     Modifier
                         .background(MaterialTheme.colorScheme.background)
