@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -61,6 +62,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -418,8 +420,14 @@ fun ChatInputView(
                 }
 
                 AnimatedVisibility(isImeVisible) {
+                    val suggestionsState = rememberLazyListState()
+
+                    LaunchedEffect(action) {
+                        suggestionsState.animateScrollToItem(0)
+                    }
                     LazyRow(
                         modifier = Modifier.fillMaxWidth(),
+                        state = suggestionsState,
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -469,7 +477,7 @@ fun ChatInputView(
                                 modifier =
                                     Modifier
                                         .clip(content.data.genre.shape())
-                                        .gradientFill(gradientAnimation(holographicGradient))
+                                        .gradientFill(gradientAnimation(holographicGradient, gradientType = GradientType.VERTICAL))
                                         .clickable {
                                             showNewCharacterSheet = true
                                         }.padding(16.dp),

@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
+import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
@@ -122,14 +123,15 @@ class ChapterUseCaseImpl
 
         override suspend fun generateChapterIntroduction(
             saga: SagaContent,
-            chapterContent: ChapterContent,
+            chapter: Chapter,
+            act: ActContent,
         ): RequestResult<Exception, Chapter> =
             try {
-                val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapterContent)
+                val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
                 val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
-                val updated = chapterContent.data.copy(introduction = intro)
+                val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated).asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }
-}
+    }

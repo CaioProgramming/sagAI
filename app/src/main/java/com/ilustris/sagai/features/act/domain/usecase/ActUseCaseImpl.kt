@@ -59,15 +59,22 @@ class ActUseCaseImpl
 
         override fun getActContent(actId: Int): Flow<ActContent?> = actRepository.getActContent(actId)
 
-        override suspend fun generateActIntroduction(saga: SagaContent) = try {
-            val currentAct = saga.currentActInfo!!
-            val isFirst = saga.acts.first().data.id == currentAct.data.id
-            val previousAct = if (isFirst) null else saga.acts[saga.acts.indexOfFirst { it.data.id == currentAct.data.id } - 1]
+        override suspend fun generateActIntroduction(
+            saga: SagaContent,
+            act: Act,
+        ) = try {
+            val currentAct = act
+            val isFirst =
+                saga.acts.isEmpty() ||
+                    saga.acts
+                        .first()
+                        .data.id == act.id
+            val previousAct = if (isFirst) null else saga.acts[saga.acts.indexOfFirst { it.data.id == act.id } - 1]
             val prompt = ActPrompts.actIntroductionPrompt(saga.data, previousAct)
             val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
-            val updated = currentAct.data.copy(introduction = intro)
+            val updated = currentAct.copy(introduction = intro)
             actRepository.updateAct(updated).asSuccess()
         } catch (e: Exception) {
             e.asError()
         }
-}
+    }

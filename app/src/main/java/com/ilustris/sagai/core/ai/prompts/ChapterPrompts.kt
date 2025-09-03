@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.act.data.model.Act
+import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -19,37 +20,63 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 object ChapterPrompts {
     fun chapterIntroductionPrompt(
         sagaContent: SagaContent,
-        currentChapter: ChapterContent,
-    ): String = buildString {
-        val actContent = sagaContent.findChapterAct(currentChapter.data)
-        val chaptersInAct = actContent?.chapters?.map { it.data } ?: emptyList()
-        val index = chaptersInAct.indexOfFirst { it.id == currentChapter.data.id }
+        currentChapter: Chapter,
+        currentAct: ActContent,
+    ): String =
+        buildString {
+            val actContent = sagaContent.findChapterAct(currentChapter)
+            val chaptersInAct = currentAct.chapters.map { it.data }
+            val isFirst = chaptersInAct.isEmpty()
+            val excludedFields =
+                listOf(
+                    "details",
+                    "image",
+                    "hexColor",
+                    "sagaId",
+                    "joinedAt",
+                    "id",
+                )
+            val sagaExclusion =
+                listOf(
+                    "id",
+                    "icon",
+                    "createdAt",
+                    "mainCharacterId",
+                    "isDebug",
+                    "endMessage",
+                    "currentActId",
+                    "endedAt",
+                    "review",
+                    "emotionalReview",
+                    "isEnded",
+                )
+            appendLine("CONTEXT:")
+            appendLine("You are an AI assistant helping to write a saga chapter.")
+            appendLine("Saga context:")
+            appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusion))
+            appendLine("Main character: ")
+            appendLine(sagaContent.mainCharacter.toJsonFormatExcludingFields(excludedFields))
 
-        appendLine("CONTEXT:")
-        appendLine("You are an AI assistant helping to write a saga chapter.")
-        appendLine("Saga Title: \"${sagaContent.data.title}\"")
-        appendLine("Saga Genre: ${sagaContent.data.genre.title}")
-        appendLine("Act Title: \"${actContent?.data?.title ?: ""}\"")
-
-        if (index == 0) {
-            // First chapter in act: use act description as base
-            val actDescription = actContent?.data?.content?.take(250) ?: ""
-            appendLine("Act Description: \"$actDescription\"")
-            appendLine("\nTASK:")
-            appendLine("Generate a single, compelling introductory paragraph (around 40-60 words) for the FIRST CHAPTER of this act.")
-            appendLine("Base the introduction on the act's description to set the immediate context and hook the reader to continue.")
-        } else {
-            val previous = chaptersInAct.getOrNull(index - 1)
-            val prevTitle = previous?.title ?: ""
-            val prevOverview = previous?.overview?.take(250) ?: ""
-            appendLine("Previous Chapter Title: \"$prevTitle\"")
-            appendLine("Previous Chapter Overview: \"$prevOverview\"")
-            appendLine("\nTASK:")
-            appendLine("Generate a single, compelling introductory paragraph (around 40-60 words) for the NEXT CHAPTER of this act.")
-            appendLine("Use the previous chapter's title and overview to smoothly transition, contextualize, and engage the reader to continue the story.")
+            if (isFirst) {
+                val actDescription = actContent?.data?.content
+                appendLine("Act Description: \"$actDescription\"")
+                appendLine("TASK:")
+                appendLine("Generate a single, compelling introductory paragraph (around 40-60 words) for the FIRST CHAPTER of this act.")
+                appendLine("Base the introduction on the act's description to set the immediate context and hook the reader to continue.")
+            } else {
+                val previous = chaptersInAct.lastOrNull()
+                val prevTitle = previous?.title ?: ""
+                val prevOverview = previous?.overview
+                appendLine("Previous Chapter Title: \"$prevTitle\"")
+                appendLine("Previous Chapter Overview: \"$prevOverview\"")
+                appendLine("\nTASK:")
+                appendLine("Generate a single, compelling introductory paragraph (around 40-60 words) for the NEXT CHAPTER of this act.")
+                appendLine("Use the previous chapter's title and overview to smoothly transition")
+                appendLine("contextualize, and engage the reader to continue the story.")
+            }
+            appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
         }
-        appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
-    }
+
     private data class ChapterConclusionContext(
         val sagaData: Saga,
         val mainCharacter: Character?,

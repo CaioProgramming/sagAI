@@ -139,12 +139,11 @@ class ChatViewModel
                     characters.value =
                         sortCharactersByMessageCount(sagaContent.getCharacters(), sagaContent.flatMessages())
 
-                    validateIntroduction(sagaContent)
-
                     checkIfUpdatesService(sagaContent)
 
                     validateCharacterMessageUpdates(sagaContent)
                     updateProgress(sagaContent)
+                    notifyIfNeeded()
                     state.value = ChatState.Success
                     loadFinished
                 }
@@ -165,20 +164,6 @@ class ChatViewModel
                     }
                     else -> 0f
                 }
-        }
-
-        private fun validateIntroduction(sagaContent: SagaContent) {
-            if (sagaContent.currentActInfo == null ||
-                sagaContent.currentActInfo.currentChapterInfo == null ||
-                sagaContent.currentActInfo.currentChapterInfo.currentEventInfo == null
-            ) {
-                return
-            }
-
-            if (sagaContent.flatMessages().isEmpty()) {
-                generateIntroduction(sagaContent)
-            }
-            notifyIfNeeded()
         }
 
         private fun checkIfUpdatesService(sagaContent: SagaContent) {

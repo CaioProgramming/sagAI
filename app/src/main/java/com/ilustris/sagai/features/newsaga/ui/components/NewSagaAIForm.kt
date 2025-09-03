@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalSharedTransitionApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 
 package com.ilustris.sagai.features.newsaga.ui.components
 
@@ -12,6 +12,7 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.EaseInCubic
 import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.EaseInOutSine
@@ -27,6 +28,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -69,6 +71,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TooltipBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -125,22 +128,15 @@ import com.ilustris.sagai.ui.theme.Typography
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
-import com.skydoves.balloon.ArrowOrientation
-import com.skydoves.balloon.ArrowPositionRules
-import com.skydoves.balloon.BalloonAnimation
-import com.skydoves.balloon.BalloonSizeSpec
-import com.skydoves.balloon.compose.Balloon
-import com.skydoves.balloon.compose.BalloonWindow
-import com.skydoves.balloon.compose.rememberBalloonBuilder
-import com.skydoves.balloon.compose.setBackgroundColor
-import com.skydoves.balloon.compose.setTextColor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.min
@@ -157,9 +153,18 @@ fun NewSagaAIForm(
     sendDescription: (String) -> Unit = {},
     selectGenre: (Genre) -> Unit = {},
 ) {
-    val coroutineScope = rememberCoroutineScope()
     val genre = sagaForm.saga.genre
-    val brush = genre?.gradient() ?: Brush.linearGradient(holographicGradient)
+    val color by animateColorAsState(
+        genre?.color ?: MaterialTheme.colorScheme.primary,
+    )
+    val brush =
+        if (genre != null) {
+            gradientAnimation(color.darkerPalette())
+        } else {
+            gradientAnimation(
+                holographicGradient,
+            )
+        }
     val textFont = genre?.bodyFont()
     var showReview by remember { mutableStateOf(false) }
     var showText by remember { mutableStateOf(false) }
@@ -244,7 +249,7 @@ fun NewSagaAIForm(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .gradientFill(brush),
+                        .gradientFill(gradientAnimation(holographicGradient)),
             )
         }
         Column(
@@ -299,7 +304,7 @@ fun NewSagaAIForm(
                             }
                         }
                     } else {
-                        val fullStarCount = Genre.entries.size * 10
+                        val fullStarCount = Genre.entries.size * 100
                         val starCount = if (showText) 0 else fullStarCount
                         val blurStar by animateDpAsState(
                             if (showText) 50.dp else 5.dp,
@@ -319,7 +324,6 @@ fun NewSagaAIForm(
                                     Modifier
                                         .align(Alignment.Center)
                                         .fillMaxSize()
-                                        .background(background)
                                         .gradientFill(brush),
                             )
                         }
@@ -330,9 +334,14 @@ fun NewSagaAIForm(
                     showText,
                     modifier = Modifier.align(Alignment.Center),
                 ) {
-                    AnimatedContent(aiState.message) {
+                    AnimatedContent(aiState.message, transitionSpec = {
+                        slideInVertically() + fadeIn(tween(400)) togetherWith scaleOut() +
+                            fadeOut(
+                                tween(200),
+                            )
+                    }) {
                         it?.let { _ ->
-                            SimpleTypewriterText(
+                            Text(
                                 aiState.message ?: emptyString(),
                                 style =
                                     MaterialTheme.typography.bodyLarge.copy(
@@ -342,9 +351,11 @@ fun NewSagaAIForm(
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier =
-                                    Modifier.clickable {
-                                        showText = false
-                                    },
+                                    Modifier
+                                        .animateContentSize(tween(500, easing = EaseIn))
+                                        .clickable {
+                                            showText = false
+                                        },
                             )
                         }
                     }
@@ -357,7 +368,7 @@ fun NewSagaAIForm(
                     MaterialTheme.typography.titleMedium.copy(
                         fontFamily = textFont,
                     ),
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.animateContentSize().padding(16.dp),
             )
 
             LazyRow(
@@ -384,7 +395,7 @@ fun NewSagaAIForm(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier =
                     Modifier
-                        .padding(16.dp)
+                        .padding(vertical = 8.dp)
                         .fillMaxWidth(),
             ) {
                 items(aiState.suggestions) {
@@ -411,7 +422,7 @@ fun NewSagaAIForm(
             Row(
                 modifier =
                     Modifier
-                        .padding(16.dp)
+                        .padding(12.dp)
                         .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -430,6 +441,7 @@ fun NewSagaAIForm(
                             onDone = {
                                 if (input.isNotEmpty()) {
                                     sendDescription(input)
+                                    input = ""
                                 }
                             },
                         ),
@@ -479,6 +491,7 @@ fun NewSagaAIForm(
                     IconButton(
                         onClick = {
                             sendDescription(input)
+                            input = ""
                         },
                         modifier =
                             Modifier
@@ -498,11 +511,69 @@ fun NewSagaAIForm(
                             modifier = Modifier.fillMaxSize().gradientFill(brush),
                         )
                     }
+                }
 
+                val character = sagaForm.character
+                val characterTooltipState = androidx.compose.material3.rememberTooltipState()
+                val tooltipPositionProvider =
+                    androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
+                        spacingBetweenTooltipAndAnchor = 8.dp,
+                    )
+                val scope = rememberCoroutineScope()
+                TooltipBox(
+                    positionProvider = tooltipPositionProvider,
+                    state = characterTooltipState,
+                    tooltip = {
+                        if (character.name.isNotEmpty()) {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                                        .padding(12.dp),
+                            ) {
+                                Text(
+                                    text = character.name,
+                                    style =
+                                        MaterialTheme.typography.titleSmall.copy(
+                                            fontFamily = genre?.bodyFont(),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            fontWeight = FontWeight.Bold,
+                                        ),
+                                )
+                                if (character.briefDescription.isNotEmpty()) {
+                                    Text(
+                                        text = character.briefDescription,
+                                        style =
+                                            MaterialTheme.typography.bodySmall.copy(
+                                                fontFamily = genre?.bodyFont(),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                            ),
+                                        modifier = Modifier.padding(top = 4.dp),
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(12.dp))
+                                        .padding(12.dp),
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.character_tooltip_empty_message),
+                                    style =
+                                        MaterialTheme.typography.bodySmall.copy(
+                                            fontFamily = genre?.bodyFont(),
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                        ),
+                                )
+                            }
+                        }
+                    },
+                ) {
                     IconButton(
                         onClick = {
-                            if (sagaForm.character.name.isNotEmpty()) {
-                            }
+                            scope.launch { characterTooltipState.show() }
                         },
                         modifier =
                             Modifier
@@ -515,7 +586,7 @@ fun NewSagaAIForm(
                             ),
                     ) {
                         AnimatedContent(
-                            sagaForm.character,
+                            character,
                             modifier = Modifier.gradientFill(brush),
                         ) {
                             if (it.name.isEmpty()) {

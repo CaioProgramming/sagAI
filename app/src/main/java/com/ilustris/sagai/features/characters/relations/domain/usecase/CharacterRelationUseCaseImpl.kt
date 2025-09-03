@@ -40,6 +40,9 @@ class CharacterRelationUseCaseImpl
                                     .find { c ->
                                         c.data.name.equals(it.secondCharacter, ignoreCase = true)
                                     }?.data
+                            if (firstCharacter?.id == secondCharacter?.id) {
+                                throw IllegalArgumentException("Character cannot be related to itself")
+                            }
                             if (firstCharacter == null || secondCharacter == null) {
                                 Log.w(javaClass.simpleName, "generateCharacterRelation: Characters not found, skipping relation")
                                 return@map null

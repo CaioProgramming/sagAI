@@ -199,5 +199,6 @@
     <string name="notification_action_pause" translatable="false">Pause</string>
     <string name="notification_action_play" translatable="false">Play</string>
     <string name="saga_detail_relationships_section_title">Relationships</string>
+    <string name="character_tooltip_empty_message">Describe your hero to reveal their card — name, traits, and a glimpse of their story.</string>
 
 </resources>

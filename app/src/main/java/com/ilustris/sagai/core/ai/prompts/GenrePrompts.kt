@@ -67,8 +67,9 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                The **background should be a strong, evocative red color scheme** (e.g., deep crimson, fiery orange-red), possibly with subtle textures fitting the fantasy theme.
-                On the character, apply **very specific and limited rich red accents ONLY to small details**: examples include the glint in an eye, a single gemstone on a piece of jewelry, fine embroidery on clothing.
+                The background Dominated by a strong, evocative red color scheme, featuring deep scarlet, crimson, fiery orange-red, and burgundy tones.
+                The background is composed of voluminous, dramatic cloud formations intensely lit with these red and orange hues, creating a powerful, ambient glow that permeates the entire scene.
+                The lighting is an intense, almost apocalyptic, reddish-orange glow, suggesting either an epic, burning sunset or the aftermath of a fiery event, casting everything in a warm yet foreboding light with deep, rich shadows.
                 **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST retain their natural, distinct hues and NOT be tinted red.
                 The red accents should be isolated and clearly defined.
                 """

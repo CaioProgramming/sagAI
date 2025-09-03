@@ -143,34 +143,30 @@ fun NewSagaView(
     }
 
     Column {
-        Row(verticalAlignment = Alignment.Top, modifier = Modifier.padding(top = 50.dp).fillMaxWidth()) {
-            IconButton(onClick = {
-                navHostController.popBackStack()
-            }, modifier = Modifier
-                .size(32.dp)
-                .clip(CircleShape).padding(8.dp), colors = IconButtonDefaults.iconButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                contentColor = MaterialTheme.colorScheme.onBackground,
-            )) {
-                Icon(Icons.Rounded.Close, "Close", modifier = Modifier.fillMaxSize())
-            }
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 50.dp).fillMaxWidth()) {
+            Box(Modifier.size(32.dp))
+
             Box(Modifier.weight(1f)) {
                 SagaTitle(
                     Modifier
                         .align(Alignment.Center)
-                        .background(MaterialTheme.colorScheme.background)
-                        ,
+                        .background(MaterialTheme.colorScheme.background),
                 )
             }
 
             val genre = form.saga.genre
-            Button(onClick = {
-                createSagaViewModel.generateSaga()
-            }, enabled = !isGenerating && form.isValid(),
-                colors = ButtonDefaults.buttonColors().copy(
-                    containerColor = genre?.color ?: MaterialTheme.colorScheme.primary,
-                    contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onPrimary,
-                ), shape = RoundedCornerShape(50.dp)) {
+            Button(
+                onClick = {
+                    createSagaViewModel.generateSaga()
+                },
+                enabled = !isGenerating && form.isValid(),
+                colors =
+                    ButtonDefaults.buttonColors().copy(
+                        containerColor = genre?.color ?: MaterialTheme.colorScheme.primary,
+                        contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onPrimary,
+                    ),
+                shape = RoundedCornerShape(50.dp),
+            ) {
                 Text(stringResource(R.string.save_saga))
             }
         }
@@ -185,7 +181,7 @@ fun NewSagaView(
             },
             selectGenre = {
                 createSagaViewModel.updateGenre(it)
-            }
+            },
         )
         /*NewSagaFlow(
             pagerState = pagerState,
@@ -258,8 +254,6 @@ fun NewSagaView(
         )*/
     }
 }
-
-
 
 @Composable
 fun NewSagaFlow(
@@ -367,8 +361,7 @@ fun NewSagaFlow(
                             .size(size.value)
                             .clickable(enabled = isEnabled) {
                                 changePage(page)
-                            }
-                            .gradientFill(
+                            }.gradientFill(
                                 indicatorBrush,
                             ),
                 )
@@ -379,8 +372,7 @@ fun NewSagaFlow(
                             .background(
                                 indicatorBrush,
                                 RoundedCornerShape(25.dp),
-                            )
-                            .height(5.dp)
+                            ).height(5.dp)
                             .weight(indicatorWeight),
                 )
             }
@@ -433,5 +425,3 @@ fun NewSagaFlow(
         }
     }
 }
-
-

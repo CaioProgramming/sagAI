@@ -19,7 +19,10 @@ interface ActUseCase {
 
     suspend fun generateAct(saga: SagaContent): RequestResult<Exception, Act>
 
-    suspend fun generateActIntroduction(saga: SagaContent): RequestResult<Exception, Act>
+    suspend fun generateActIntroduction(
+        saga: SagaContent,
+        act: Act,
+    ): RequestResult<Exception, Act>
 
     fun getActContent(actId: Int): Flow<ActContent?>
 }

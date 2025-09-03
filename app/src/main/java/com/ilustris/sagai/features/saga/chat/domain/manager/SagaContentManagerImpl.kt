@@ -184,6 +184,9 @@ class SagaContentManagerImpl
                     throw IllegalArgumentException("Chapter is already set at this act")
                 }
                 val chapterOperation = chapterUseCase.saveChapter(Chapter(actId = act.data.id))
+
+                chapterUseCase.generateChapterIntroduction(content.value!!, chapterOperation, act)
+
                 chapterOperation
             }
 
@@ -461,11 +464,11 @@ class SagaContentManagerImpl
                 Log.d(javaClass.simpleName, "validatePostAction: performing next step $step")
                 when (step) {
                     is NarrativeStep.StartAct -> {
+                        val data = result.value as Act
                         sagaHistoryUseCase.updateSaga(
-                            saga.data.copy(currentActId = (result.value as Act).id),
+                            saga.data.copy(currentActId = data.id),
                         )
-                        // Generate Act introduction right after starting a new act
-                        actUseCase.generateActIntroduction(content.value!!)
+                        actUseCase.generateActIntroduction(saga, data)
                         setNarrativeProcessingStatus(false)
                     }
 
@@ -475,32 +478,12 @@ class SagaContentManagerImpl
                         actUseCase.updateAct(
                             currentAct.data.copy(currentChapterId = newChapterId),
                         )
-
-                        // After starting a chapter, generate its introduction
-                        val updatedSaga = content.value!!
-                        val currentChapterContent = updatedSaga.currentActInfo?.chapters?.lastOrNull()
-                        currentChapterContent?.let { chapterContent ->
-                            chapterUseCase.generateChapterIntroduction(updatedSaga, chapterContent)
-                        }
-
-                        if (currentAct.chapters.size > 1) {
-                            val previousChapter =
-                                try {
-                                    currentAct.chapters[currentAct.chapters.lastIndex - 1]
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    null
-                                }
-
-                            setNarrativeProcessingStatus(false)
-                        } else {
-                            setNarrativeProcessingStatus(false)
-                        }
+                        setNarrativeProcessingStatus(false)
                     }
 
                     is NarrativeStep.StartTimeline -> {
                         chapterUseCase.updateChapter(
-                            saga.currentActInfo?.currentChapterInfo!!.data.copy(
+                            saga.currentActInfo!!.currentChapterInfo!!.data.copy(
                                 currentEventId = (result.value as Timeline).id,
                             ),
                         )

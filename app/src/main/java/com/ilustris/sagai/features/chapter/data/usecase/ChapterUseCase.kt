@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.model.ChapterGen
@@ -12,8 +13,10 @@ import kotlinx.coroutines.flow.Flow
 interface ChapterUseCase {
     suspend fun generateChapterIntroduction(
         saga: SagaContent,
-        chapterContent: ChapterContent,
+        chapterContent: Chapter,
+        act: ActContent,
     ): RequestResult<Exception, Chapter>
+
     suspend fun saveChapter(chapter: Chapter): Chapter
 
     suspend fun deleteChapter(chapter: Chapter)

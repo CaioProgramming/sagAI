@@ -105,21 +105,21 @@ fun Modifier.effectForGenre(
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .25f,
+                        grainIntensity = customGrain ?: .2f,
                         bloomThreshold = .4f,
                         bloomIntensity = .3f,
                         bloomRadius = 1f,
                         softFocusRadius = focusRadius ?: .7f,
-                        saturation = .5f,
-                        contrast = 1.5f,
-                        brightness = -.03f,
+                        saturation = .6f,
+                        contrast = 1.2f,
+                        brightness = 0f,
                         highlightTint = fantasyPalette.highlightTint,
                         shadowTint = fantasyPalette.shadowTint,
                         tintStrength = fantasyPalette.defaultTintStrength,
                         vignetteStrength = 0.2f,
                         vignetteSoftness = 0.7f,
                         pixelationBlockSize = 0f,
-                        colorTemperature = .15f, // Slightly warm for Fantasy
+                        colorTemperature = .1f, // Slightly warm for Fantasy
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
@@ -128,7 +128,7 @@ fun Modifier.effectForGenre(
                         bloomIntensity = .2f,
                         bloomRadius = 1.3f,
                         softFocusRadius = focusRadius ?: .2f,
-                        saturation = .5f,
+                        saturation = .65f,
                         contrast = 1.7f,
                         brightness = -.05f,
                         highlightTint = cyberpunkPalette.highlightTint,

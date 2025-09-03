@@ -66,7 +66,7 @@ class SagaDetailUseCaseImpl
                             genreReferenceHelper.getFileBitmap(it).getSuccess()?.let {
                                 ImageReference(
                                     it,
-                                    "Main Character ${saga.mainCharacter.data.name} visual reference.",
+                                    "Main Character ${saga.mainCharacter.data.name} visual reference. To apply on image generation, use as context do not replicate the entire image",
                                 )
                             }
                         }

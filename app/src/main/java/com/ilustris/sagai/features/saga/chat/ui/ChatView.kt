@@ -1055,7 +1055,7 @@ fun ChatList(
     }
 
     LazyColumn(
-        modifier,
+        modifier.animateContentSize(),
         state = listState,
         horizontalAlignment = Alignment.CenterHorizontally,
         reverseLayout = true,
@@ -1246,6 +1246,24 @@ fun ChatList(
                     }
                 }
 
+                if (chapter.chapter.introduction.isNotEmpty()) {
+                    item {
+                        Text(
+                            chapter.chapter.introduction,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Justify,
+                                ),
+                            modifier =
+                                Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                        )
+                    }
+                }
+
                 item {
                     val title = chapter.chapter.title.ifEmpty { "Capitulo ${saga.chapterNumber(chapter.chapter).toRoman()}" }
                     Text(
@@ -1258,6 +1276,27 @@ fun ChatList(
                             ),
                         modifier =
                             Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                    )
+                }
+            }
+
+            if (act.content.data.introduction
+                    .isNotEmpty()
+            ) {
+                item {
+                    Text(
+                        act.content.data.introduction,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Justify,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        modifier =
+                            Modifier
+                                .animateItem()
                                 .fillMaxWidth()
                                 .padding(16.dp),
                     )
@@ -1282,18 +1321,15 @@ fun ChatList(
                             .padding(16.dp),
                 )
             }
-
-            if (isFirst) {
-                item {
-                    SagaHeader(
-                        saga = saga.data,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth(),
-                        openSaga = openSaga,
-                    )
-                }
-            }
+        }
+        item {
+            SagaHeader(
+                saga = saga.data,
+                modifier =
+                    Modifier
+                        .fillMaxWidth(),
+                openSaga = openSaga,
+            )
         }
     }
 }
