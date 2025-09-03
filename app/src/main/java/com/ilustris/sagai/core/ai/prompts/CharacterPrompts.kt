@@ -229,6 +229,47 @@ object CharacterPrompts {
     ) = """
         You are an expert narrative analyst and relationship extractor AI.
 
-        GOAL: Analyze the provided Timeline Event and the list of Characters and determine if there is any relationship established between any two characters based on this specific event (or solidifying an ongoing bond). If there are one or more relationships, output them strictly as a JSON array following the required schema below. If no relationship can be inferred, output an empty
-        """.trimIndent()
+        GOAL: Analyze the provided Timeline Event and the list of Characters and determine if there is any relationship established between any two characters based on this specific event (or solidifying an ongoing bond). If there are one or more relationships, output them strictly as a JSON array following the required schema below. If no relationship can be inferred, output an empty JSON array [].
+
+        IMPORTANT CONSTRAINTS:
+        - Output MUST be ONLY valid JSON. No prose, no markdown, no explanations.
+        - Use EXACT character names as they appear in the Characters list (case-sensitive match required for best results).
+        - Title: short and assertive (3–6 words max).
+        - Description: concise, 1–2 sentences.
+        - Emoji (relationEmoji): choose an emoji that reflects the relationship feeling (e.g., 🤝 allies, ❤️ love, 💔 heartbreak, ⚔️ rivalry, 🛡️ protector, 🧪 tension, 💫 admiration, 😠 conflict, 🧠 mentorship, 🕊️ truce, 🌀 complicated, 🌩️ betrayal). One emoji only.
+        - Do not fabricate characters not present in the Characters list.
+        - Prefer relationships that are explicitly or strongly implied by the Timeline Event.
+
+        REQUIRED OUTPUT SCHEMA (JSON array of objects):
+        [
+          {
+            "firstCharacter": "ExactNameFromList",
+            "secondCharacter": "ExactNameFromList",
+            "relationEmoji": "🤝",
+            "title": "Short, assertive title",
+            "description": "1–2 sentence concise summary of the relationship established or evolved in this event."
+          }
+        ]
+
+        FIELD DEFINITIONS (for precision):
+        - firstCharacter: First character's name (string). Must match EXACTLY a name from Characters list.
+        - secondCharacter: Second character's name (string). Must match EXACTLY a name from Characters list. Must not be the same as firstCharacter.
+        - relationEmoji: Single emoji symbol that best represents the relationship feeling.
+        - title: Very short, assertive label (3–6 words max) capturing the essence of the relationship.
+        - description: A brief, clear explanation (1–2 sentences) describing how this event establishes or changes their relationship.
+
+        STEP-BY-STEP INSTRUCTIONS:
+        1) Read the Timeline Event carefully and identify interactions, emotional beats, support/opposition, trust/distrust, alliances, mentorship, romance, betrayal, rivalry, etc.
+        2) Cross-check mentions with the Characters list and ensure all names used are exactly as listed.
+        3) For each strong relationship signal, create one object following the schema.
+        4) Keep the title short and assertive; keep the description 1–2 sentences; pick a fitting emoji.
+        5) If multiple distinct relationships are present, include multiple objects in the array. If none, return [].
+
+        CONTEXT:
+        // Timeline Event (sanitized):
+        ${timeline.toJsonFormatExcludingFields(listOf("id", "emotionalReview", "chapterId"))}
+
+        // Characters (names must be used EXACTLY as listed):
+        ${saga.getCharacters().toJsonFormatExcludingFields(listOf("id", "image", "hexColor", "details", "sagaId", "joinedAt"))}
+        """
 }

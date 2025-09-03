@@ -305,7 +305,7 @@ fun ChatInputView(
                             fontFamily = content.data.genre.bodyFont(),
                         )
                     val maxLength = 500
-                    val tagBackgroundColor = MaterialTheme.colorScheme.onBackground
+                    val tagBackgroundColor = MaterialTheme.colorScheme.background
 
                     BasicTextField(
                         inputField,
@@ -455,6 +455,7 @@ fun ChatInputView(
                                             action = it
                                         }.padding(16.dp),
                             ) {
+                                val weight = if (it == action) FontWeight.Bold else FontWeight.Normal
                                 it.icon().let { icon ->
                                     Image(
                                         painterResource(icon),
@@ -464,7 +465,11 @@ fun ChatInputView(
 
                                     Text(
                                         it.title(),
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style =
+                                            MaterialTheme.typography.labelSmall.copy(
+                                                fontWeight = weight,
+                                                fontFamily = content.data.genre.bodyFont(),
+                                            ),
                                     )
                                 }
                             }

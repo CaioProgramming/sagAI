@@ -104,8 +104,8 @@ fun buildWikiAndCharactersAnnotation(
             val shadow =
                 Shadow(
                     color = shadowColor,
-                    blurRadius = 2f,
-                    offset = Offset(2f, 2f),
+                    blurRadius = 10f,
+                    offset = Offset(.5f, .3f),
                 )
 
             val mainColor = if (character.id == mainCharacter?.id) genre.color else characterColor

@@ -16,6 +16,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig // Added
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.network.response.FreePikResponse
+import com.ilustris.sagai.core.utils.toJsonFormat
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
@@ -86,8 +87,10 @@ class ImagenClientImpl
                             text(it.description)
                         }
                     }
-                imageModel
-                    .generateContent(promptBuilder)
+                val content = imageModel.generateContent(promptBuilder)
+                Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
+                Log.d(TAG, "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}")
+                content
                     .candidates
                     .first()
                     .content.parts

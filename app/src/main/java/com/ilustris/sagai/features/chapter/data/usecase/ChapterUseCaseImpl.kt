@@ -9,6 +9,8 @@ import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
+import com.ilustris.sagai.core.ai.prompts.ImageRules
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -86,7 +88,7 @@ class ChapterUseCaseImpl
                         characterBitmap?.let {
                             ImageReference(
                                 it,
-                                "Character ${character.name} visual reference.",
+                                ImageGuidelines.characterVisualReferenceGuidance(character.name),
                             )
                         }
                     }
@@ -103,7 +105,7 @@ class ChapterUseCaseImpl
                     )
                 val genCover =
                     imagenClient
-                        .generateImage(promptGeneration!!, imageReferences)
+                        .generateImage(promptGeneration!!.plus(ImageRules.TEXTUAL_ELEMENTS), imageReferences)
                 val coverFile =
                     fileHelper.saveFile(chapter.data.title, genCover, path = "${saga.data.id}/chapters/")
                 val newChapter =

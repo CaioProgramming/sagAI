@@ -1,11 +1,14 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.prompts.ImageRules
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
@@ -19,6 +22,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankMentions
 import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
@@ -46,14 +50,22 @@ class SagaDetailUseCaseImpl
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Exception, Saga> =
             try {
-                val styleReferenceBitmap =
+                val styleReference =
+                    genreReferenceHelper
+                        .getGenreStyleReference(saga.data.genre)
+                        .getSuccess()
+                        ?.let {
+                            ImageReference(it, ImageGuidelines.styleReferenceGuidance)
+                        }
+
+                val iconReferenceComposition =
                     genreReferenceHelper
                         .getIconReference(saga.data.genre)
                         .getSuccess()
                         ?.let {
                             ImageReference(
                                 it,
-                                "Icon composition aesthetic and reference",
+                                ImageGuidelines.compositionReferenceGuidance,
                             )
                         }
 
@@ -63,18 +75,22 @@ class SagaDetailUseCaseImpl
                         ?.data
                         ?.image
                         ?.let {
-                            genreReferenceHelper.getFileBitmap(it).getSuccess()?.let {
+                            genreReferenceHelper.getFileBitmap(it).getSuccess()?.let { icon ->
                                 ImageReference(
-                                    it,
-                                    "Main Character ${saga.mainCharacter.data.name} visual reference. To apply on image generation, use as context do not replicate the entire image",
+                                    icon,
+                                    ImageGuidelines.characterVisualReferenceGuidance(saga.mainCharacter.data.name),
                                 )
                             }
                         }
 
-                val references = listOf(styleReferenceBitmap).plus(characterIcon).filterNotNull()
+                val references =
+                    listOfNotNull(styleReference, iconReferenceComposition, characterIcon)
                 val metaPrompt =
                     gemmaClient.generate<String>(
-                        prompt = SagaPrompts.iconDescription(saga.data, saga.mainCharacter!!.data),
+                        prompt =
+                            SagaPrompts
+                                .iconDescription(saga.data, saga.mainCharacter!!.data)
+                                .plus(ImageRules.TEXTUAL_ELEMENTS),
                         references,
                         requireTranslation = false,
                     )!!
@@ -82,7 +98,7 @@ class SagaDetailUseCaseImpl
                     imageGenClient.generateImage(
                         ImagePrompts.wallpaperGeneration(
                             saga.data,
-                            metaPrompt,
+                            metaPrompt.plus(ImageRules.TEXTUAL_ELEMENTS),
                         ),
                         references,
                     )!!

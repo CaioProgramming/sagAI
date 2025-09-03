@@ -10,7 +10,9 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.prompts.ImageRules
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -116,15 +118,20 @@ class NewSagaUseCaseImpl
                         ?.let {
                             ImageReference(
                                 it,
-                                "Character ${character.name} visual reference.",
+                                ImageGuidelines.characterVisualReferenceGuidance(character.name),
                             )
                         }
                 val reference =
                     genreReferenceHelper.getIconReference(sagaForm.genre).getSuccess()?.let {
                         ImageReference(
                             it,
-                            "Icon composition aesthetic and reference",
+                            ImageGuidelines.compositionReferenceGuidance,
                         )
+                    }
+
+                val style =
+                    genreReferenceHelper.getGenreStyleReference(sagaForm.genre).getSuccess()?.let {
+                        ImageReference(it, ImageGuidelines.styleReferenceGuidance)
                     }
                 val metaPromptCover =
                     gemmaClient.generate<String>(
@@ -132,20 +139,14 @@ class NewSagaUseCaseImpl
                             sagaForm,
                             character,
                         ),
-                        references = listOf(reference).plus(characterIcon).filterNotNull(),
+                        references = listOf(style, reference, characterIcon),
                         requireTranslation = false,
-                    )
-                val sagaIconPrompt =
-                    generateSagaIconPrompt(
-                        saga = sagaForm,
-                        mainCharacter = character,
-                        description = metaPromptCover!!,
-                    )
+                    )!!
 
                 val file =
                     fileHelper.saveFile(
                         fileName = sagaForm.title,
-                        data = imageGenClient.generateImage(sagaIconPrompt)!!,
+                        data = imageGenClient.generateImage(metaPromptCover.plus(ImageRules.TEXTUAL_ELEMENTS)),
                         path = "${sagaForm.id}",
                     )
 
@@ -249,15 +250,6 @@ class NewSagaUseCaseImpl
             } catch (e: Exception) {
                 e.asError()
             }
-
-        private fun generateSagaIconPrompt(
-            saga: Saga,
-            mainCharacter: Character,
-            description: String,
-        ) = ImagePrompts.wallpaperGeneration(
-            saga,
-            description,
-        )
 
         private fun generateSagaPrompt(
             sagaForm: SagaForm,

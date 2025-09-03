@@ -175,28 +175,25 @@ object ChapterPrompts {
 
     fun coverDescription(
         content: SagaContent,
-        chapter: Chapter, // Chapter context is kept for potential genre/saga reference, but not for detailed scene elements
-        characters: List<Character>, // List of 2 or 3 characters to feature
+        chapter: Chapter,
+        characters: List<Character>,
     ): String {
         val coverContext =
             mapOf(
                 "sagaTitle" to content.data.title,
                 "sagaGenre" to content.data.genre.title,
-                // "chapterContext" is still here, but the prompt will de-emphasize its use for scene details.
-                // It primarily serves to link to the saga's overall theme/genre.
-                "chapterTitle" to chapter.title, // Keep title for minimal context if needed, but AI will be told to ignore for scene
+                "chapterTitle" to chapter.title,
                 "charactersInvolved" to characters,
             )
-        // Keep exclusions tight, especially for chapter-specific details that might suggest complex scenes.
         val fieldsToExcludeForCover =
             listOf(
                 "sagaId",
                 "joinedAt",
                 "actId",
-                "events", // Exclude chapter events from context
+                "events",
                 "currentEventId",
-                "synopsis", // Exclude detailed synopsis
-                "fullContent", // Exclude full content
+                "synopsis",
+                "fullContent",
                 "soundTrack",
                 "isEnded",
                 "endedAt",
@@ -222,51 +219,50 @@ object ChapterPrompts {
         val coverContextJson = coverContext.toJsonFormatExcludingFields(fieldsToExcludeForCover)
 
         return """
-            Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Minimalistic Chapter Covers**.
-            You will receive contextual information about the SAGA (title, genre) and the specific CHARACTERS to be featured.
-            You will also (outside this prompt) have access to Visual Reference Images for each character involved to inspire their appearance, and a general Visual Reference Image for overall composition and style.
+             Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Minimalistic Chapter Covers**.
+             You will receive contextual information about the SAGA (title, genre) and the specific CHARACTERS to be featured.
+             You will also (outside this prompt) have access to Visual Reference Images for each character involved to inspire their appearance, and a general Visual Reference Image for overall composition and style.
 
-            **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
-            1.  **Saga & Character Information (JSON below):** Details about the saga's genre and the characters to feature.
-                $coverContextJson
+             **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
+             1.  **Saga & Character Information (JSON below):** Details about the saga's genre and the characters to feature.
+                 $coverContextJson
 
-            **CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**
-            1.  **Foundational Art Style:**
-                *   The primary rendering style for the cover MUST be: `${GenrePrompts.artStyle(content.data.genre)}`.
-            2.  **Specific Color Application Instructions:**
-                *   The following rules dictate how the genre's key colors (derived from `${content.data.genre.title}`)
-                are applied: `${GenrePrompts.getColorEmphasisDescription(content.data.genre)}`.
-                *   **Important Clarification on Color:**
-                    *   These color rules are primarily for:
-                        *   A **MINIMALISTIC background** with a dominant color theme derived from the genre.
-                        *   **Small, discrete, isolated accents ON THE CHARACTERS**.
-                    *   **CRUCIAL: DO NOT use these genre colors to tint the overall image, characters' base skin tones, hair (beyond tiny accents), or main clothing areas.** Characters' base colors should be preserved and appear natural.
-                    *   Lighting on characters should be primarily dictated by the foundational art style, not an overall color cast from the genre accents.
+             **CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**
+             1.  **Foundational Art Style:**
+                 *   The primary rendering style for the cover MUST be: `${GenrePrompts.artStyle(content.data.genre)}`.
+             2.  **Specific Color Application Instructions:**
+                 *   The following rules dictate how the genre's key colors (derived from `${content.data.genre.title}`)
+                 are applied: `${GenrePrompts.getColorEmphasisDescription(content.data.genre)}`.
+                 *   **Important Clarification on Color:**
+                     *   These color rules are primarily for:
+                         *   A **MINIMALISTIC background** with a dominant color theme derived from the genre.
+                         *   **Small, discrete, isolated accents ON THE CHARACTERS**.
+                     *   **CRUCIAL: DO NOT use these genre colors to tint the overall image, characters' base skin tones, hair (beyond tiny accents), or main clothing areas.** Characters' base colors should be preserved and appear natural.
+                     *   Lighting on characters should be primarily dictated by the foundational art style, not an overall color cast from the genre accents.
 
-            **YOUR TASK (Output a single text string for the Image Generation Model):**
-            Generate a single, highly detailed, unambiguous, and visually rich English text description for an AI image generation model. This description MUST create a **MINIMALISTIC CHAPTER COVER FOCUSED ON THE CHARACTERS**.
+             **YOUR TASK (Output a single text string for the Image Generation Model):**
+             Generate a single, highly detailed, unambiguous, and visually rich English text description for an AI image generation model. This description MUST create a **MINIMALISTIC CHAPTER COVER FOCUSED ON THE CHARACTERS**.
 
-            The description must:
-            1.  **Prioritize Character Depiction:**
-                *   Focus EXCLUSIVELY on the character(s) listed in `charactersInvolved` from the JSON context.
-                *   Ensure their appearance, pose, and expression are primarily inspired by their individual Visual Reference Images and the overall compositional Visual Reference Image.
-                *   If multiple characters are present, their interaction or composition should be clear and engaging, suitable for a cover.
-            2.  **Minimalistic Background:**
-                *   Describe a SIMPLE and MINIMALISTIC background.
-                *   The background should primarily feature the dominant color theme derived from the `sagaGenre` as per the `Specific Color Application Instructions`. Avoid complex scenes or detailed environmental elements from the chapter's specific content. The focus is on the characters against a stylized, genre-appropriate backdrop.
-            3.  **Adherence to Directives:**
-                *   Render the scene in the **Foundational Art Style**.
-                *   Explicitly describe the **background color theme** and any **specific character accents** using the genre colors as per the `Specific Color Application Instructions`.
-                *   Ensure the description implies that characters' base colors (skin, hair, main clothing) are preserved.
-            4.  **Visual Reference Synthesis:**
-                *   **Heavily rely on the general Visual Reference Image for overall art style, compositional framing (suitable for a minimalistic character-focused cover), character poses, and mood.**
-                *   The specific CHARACTERS are dictated by the `charactersInvolved` in the JSON. Their individual appearances are inspired by their respective Visual Reference Images.
-                *   Synthesize these character appearances into the artistic and compositional framework derived from the general Visual Reference Image.
-            5.  **Self-Contained Prompt:**
-                *   **CRUCIAL: Your output text prompt MUST NOT mention any Visual Reference Image directly.** It must be a self-contained description.
-            6. **No Text or borders: **
-                * Focus entirely on the art description, ensure that no text from the context is described in the final result.
-            YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
-            """.trimIndent()
+             The description must:
+             1.  **Prioritize Character Depiction:**
+                 *   Focus EXCLUSIVELY on the character(s) listed in `charactersInvolved` from the JSON context.
+                 *   Ensure their appearance and expression are primarily inspired by their individual Visual Reference Images. **Their POSE, however, should be DRAMATIC and EXPRESSIVE, derived from their context within the chapter (implied by the 'chapterTitle' and 'sagaGenre') or their inherent character traits, rather than a direct copy from any visual reference.** The overall compositional Visual Reference Image can inspire the *framing* of these dynamic poses.
+                 *   If multiple characters are present, their interaction or composition should be clear and engaging, suitable for a cover.
+             2.  **Minimalistic Background:**
+                 *   Describe a SIMPLE and MINIMALISTIC background.
+                 *   The background should primarily feature the dominant color theme derived from the `sagaGenre` as per the `Specific Color Application Instructions`. Avoid complex scenes or detailed environmental elements from the chapter's specific content. The focus is on the characters against a stylized, genre-appropriate backdrop.
+             3.  **Adherence to Directives:**
+                 *   Render the scene in the **Foundational Art Style**.
+                 *   Explicitly describe the **background color theme** and any **specific character accents** using the genre colors as per the `Specific Color Application Instructions`.
+                 *   Ensure the description implies that characters' base colors (skin, hair, main clothing) are preserved.
+             4.  **Visual Reference Synthesis:**
+                 *   **Heavily rely on the general Visual Reference Image for overall art style, compositional framing (suitable for a minimalistic character-focused cover), character pose *inspiration* (not direct replication), and mood.**
+                 *   The specific CHARACTERS are dictated by the `charactersInvolved` in the JSON. Their individual appearances are inspired by their respective Visual Reference Images.
+                 *   Synthesize these character appearances into the artistic and compositional framework derived from the general Visual Reference Image, **ensuring the poses are dynamic and narratively suggestive for the chapter cover.** Describe these poses vividly.
+                 *   The prompt must NOT mention any Visual Reference Image directly. It must be a self-contained description.
+             5.  **No Text or borders: **
+                 *   Focus entirely on the art description, ensure that no text from the context is described in the final result.
+             YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
+             """.trimIndent()
     }
 }
