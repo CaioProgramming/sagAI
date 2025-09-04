@@ -27,8 +27,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.ilustris.sagai.features.newsaga.data.model.Genre // Assuming this is the correct path
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
@@ -38,7 +37,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 fun WordArtText(
     text: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = 64.sp,
+    fontSize: TextUnit = MaterialTheme.typography.displayMedium.fontSize,
     fontFamily: FontFamily? = null,
     fontWeight: FontWeight = FontWeight.Bold,
     topColor: Color = Color(0xFFFDB813),
@@ -106,14 +105,11 @@ fun WordArtText(
                         ),
                     )
                 }
-                // 2. Outline Layer
                 drawText(
                     textLayoutResult = outlineTextLayoutResult,
-                    // Color is now part of outlineTextLayoutResult's style
                 )
             },
     ) {
-        // 3. Main Gradient Text
         Text(
             text = text,
             style = baseTextStyle.copy(brush = mainTextBrush),
@@ -125,7 +121,6 @@ fun WordArtText(
 @Composable
 fun WordArtTextPreview() {
     SagAIScaffold {
-        // Replace with your actual app theme if different
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Genre.entries.forEach {
                 WordArtText(
