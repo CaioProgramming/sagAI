@@ -59,9 +59,9 @@ class ImagenClientImpl
             val premiumModel = firebaseRemoteConfig.getString(IMAGE_PREMIUM_MODEL_FLAG)
 
             if (isPremium) {
-                "gemini-2.5-flash-image-preview"
+                premiumModel
             } else {
-                "gemini-2.0-flash-preview-image-generation"
+                defaultModel
             }
         }
 
