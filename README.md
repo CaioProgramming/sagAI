@@ -1,18 +1,20 @@
-The AI Chat RPG app, create your own adventures with AI
+# sagAI — AI-powered Saga and Chat RPG Creator
 
-## Embark on Limitless Adventures!
+sagAI is an Android app that helps you create, expand, and play through interactive sagas using generative AI. The objective of the project is to make long-form storytelling approachable and fun: pick a genre, set the tone, and let AI co-author chapters, scenes, and worldbuilding elements while you stay in control of the plot.
 
-Welcome to AI Chat RPG, where **you** are the master of your own destiny! Forget pre-written scripts and linear storylines. Here, every choice you make, every word you utter, shapes a unique and evolving narrative. The AI Dungeon Master adapts to your actions, weaving intricate plots and unexpected twists based on your creativity.
+## Project Objective
+- Empower creators to prototype and write sagas (series, novels, episodic adventures) with AI assistance.
+- Provide guidance and structure (genres, tones, constraints) without sacrificing creative freedom.
+- Offer an enjoyable reading/writing flow with iterative AI suggestions and continuity across chapters.
 
-**Unleash Your Imagination:**
+## What you can do
+- Create a new saga by choosing a genre and a high-level premise.
+- Generate blurbs, outlines, and scenes; iterate with AI to refine tone and detail.
+- Keep continuity with characters, locations, and lore as your story grows.
 
-*   **Become Anyone, Go Anywhere:** From a valiant knight in a dragon's lair to a cunning detective solving a futuristic mystery, or even a humble baker caught in an intergalactic war – the possibilities are truly endless. Dream it, and the AI will help you live it.
-*   **Dynamic Storytelling:** No two sagas are ever the same. Your decisions have real consequences, opening new paths, introducing unforgettable characters, and potentially altering the fate of entire worlds.
-*   **Freedom to Explore:** Want to investigate that shadowy alleyway? Attempt to reason with the grumpy troll? Try to fly using only a bedsheet and sheer willpower? Go for it! The AI is ready to react and build upon your wildest ideas.
-*   **Impactful Choices:** Your words are your weapons, your tools, and your magic. Negotiate peace treaties, incite rebellions, uncover ancient secrets, or simply try to make a friend. Every interaction can ripple through the narrative, creating a story that is uniquely yours.
+## Documentation
+- Feature ideas and UX roadmap: docs/feature_ideas.md
+- Available genres supported in prompts: docs/GENRES.md
 
-**What Kind of Saga Will You Forge?**
-
-Will you be a hero, a villain, or something in between? Will you seek fortune, knowledge, or simply survival? The power to create epic tales, hilarious misadventures, and poignant dramas rests in your hands.
-
-**The only limit is your imagination. Start your adventure today!**
+## Status
+Active development. See the docs above for upcoming ideas and supported genres.
