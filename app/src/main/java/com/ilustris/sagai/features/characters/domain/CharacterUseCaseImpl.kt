@@ -17,6 +17,7 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
+import com.ilustris.sagai.core.utils.ImageCropHelper
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
@@ -48,6 +49,7 @@ class CharacterUseCaseImpl
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
+        private val imageCropHelper: ImageCropHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
@@ -118,7 +120,8 @@ class CharacterUseCaseImpl
                 val prompt = ImagePrompts.generateImage(translatedDescription!!)
 
                 val image = imagenClient.generateImage(prompt, references)!!
-                val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
+                val croppedImage = imageCropHelper.cropToPortraitBitmap(image)
+                val file = fileHelper.saveFile(character.name, croppedImage, path = "${saga.id}/characters/")
                 // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)

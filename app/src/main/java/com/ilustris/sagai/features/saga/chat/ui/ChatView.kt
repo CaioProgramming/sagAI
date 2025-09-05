@@ -597,6 +597,7 @@ fun ChatContent(
                         .background(fadeGradientBottom()),
                 ) {
                     StarryTextPlaceholder(
+                        starCount = 100,
                         modifier =
                             Modifier
                                 .fillMaxSize()
@@ -1375,7 +1376,7 @@ fun CharactersTopIcons(
                         ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
                         ).size(24.dp)
-                                                .clickable { onCharacterSelected(character) },
+                        .clickable { onCharacterSelected(character) },
             )
         }
     }

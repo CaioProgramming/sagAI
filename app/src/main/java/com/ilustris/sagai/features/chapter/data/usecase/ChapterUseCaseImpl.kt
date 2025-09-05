@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.ai.prompts.ImageRules
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -21,6 +22,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -128,12 +130,11 @@ class ChapterUseCaseImpl
             chapter: Chapter,
             act: ActContent,
         ): RequestResult<Exception, Chapter> =
-            try {
+            executeRequest {
+                delay(300L)
                 val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
                 val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
                 val updated = chapter.copy(introduction = intro)
-                chapterRepository.updateChapter(updated).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                chapterRepository.updateChapter(updated)
             }
     }

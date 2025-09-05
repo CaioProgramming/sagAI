@@ -5,6 +5,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -12,6 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -26,9 +28,9 @@ private data class Star(
 @Composable
 fun StarryTextPlaceholder(
     modifier: Modifier = Modifier,
-    starColor: Color = Color.White,
-    starCount: Int = 100, // Adjust for density
-    twinkleDurationMillis: Int = 1500 // How long a star takes to fade in and out
+    starColor: Color = MaterialTheme.colorScheme.onBackground,
+    starCount: Int = Genre.entries.size * 100,
+    twinkleDurationMillis: Int = 1500
 ) {
     val stars = remember { mutableStateListOf<Star>() }
 

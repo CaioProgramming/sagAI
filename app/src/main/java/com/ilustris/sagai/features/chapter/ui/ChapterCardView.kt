@@ -65,7 +65,6 @@ fun ChapterCardView(
 ) {
     val genre = saga.data.genre
     val shape = RoundedCornerShape(genre.cornerSize())
-    val showCover = remember { mutableStateOf(false) }
     Column(modifier) {
             AsyncImage(
                 chapter.coverImage,
@@ -82,7 +81,7 @@ fun ChapterCardView(
 
         Text(
             text = chapter.title,
-            maxLines = 2,
+            maxLines = 1,
             style =
                 MaterialTheme.typography.titleMedium.copy(
                     fontFamily = genre.bodyFont(),

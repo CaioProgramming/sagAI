@@ -231,8 +231,9 @@ class SagaContentManagerImpl
                                 ),
                             ),
                             saga,
-                        )
-                endChapter(saga.currentActInfo!!)
+                        ).onSuccessAsync {
+                            endChapter(saga.currentActInfo!!)
+                        }
                 newChapter
             } catch (e: Exception) {
                 e.asError()

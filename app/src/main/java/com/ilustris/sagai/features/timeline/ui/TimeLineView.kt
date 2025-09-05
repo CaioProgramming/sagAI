@@ -251,7 +251,7 @@ fun TimeLineCard(
 
         Column(
             modifier =
-                Modifier.constrainAs(iconView) {
+                Modifier.padding(horizontal = 8.dp).constrainAs(iconView) {
                     top.linkTo(parent.top)
                     bottom.linkTo(emotionalView.top)
                     start.linkTo(parent.start)
@@ -311,7 +311,6 @@ fun TimeLineCard(
                             fontFamily = genre.bodyFont(),
                             textAlign = TextAlign.End,
                         ),
-                    modifier = Modifier,
                 )
             }
 
@@ -319,7 +318,7 @@ fun TimeLineCard(
                 Text(
                     if (showText) event.content else emptyString(),
                     modifier =
-                        Modifier.padding(8.dp),
+                        Modifier.padding(vertical = 8.dp),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),
@@ -462,7 +461,7 @@ fun TimeLineCard(
 
             Column(
                 modifier =
-                    Modifier.constrainAs(iconView) {
+                    Modifier.padding(horizontal = 8.dp).constrainAs(iconView) {
                         top.linkTo(parent.top)
                         bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)

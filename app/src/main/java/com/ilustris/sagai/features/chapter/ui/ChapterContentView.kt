@@ -110,6 +110,7 @@ fun ChapterContentView(
                 modifier =
                     Modifier
                         .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background)
                         .effectForGenre(genre)
                         .selectiveColorHighlight(genre.selectiveHighlight()),
             )
@@ -174,7 +175,7 @@ fun ChapterContentView(
         )
 
         if (chapter.emotionalReview?.isNotEmpty() == true) {
-            EmotionalCard(chapter.emotionalReview, genre, true)
+            EmotionalCard(chapter.emotionalReview, genre, true, modifier = Modifier.padding(16.dp))
         }
 
         if (isLast) {

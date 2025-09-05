@@ -79,6 +79,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -119,6 +120,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
@@ -1046,7 +1048,7 @@ private fun SagaDetailInitialView(
                         Modifier
                             .padding(16.dp)
                             .clip(shape = genre.shape())
-                            .border(1.dp, genre.gradient(true), genre.shape())
+                            .border(1.dp, genre.color.gradientFade(), genre.shape())
                             .background(genre.color.gradientFade())
                             .fillMaxWidth()
                             .height(300.dp)
@@ -1068,9 +1070,10 @@ private fun SagaDetailInitialView(
                         Box(
                             Modifier
                                 .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .fillMaxHeight(.8f)
-                                .background(fadeGradientBottom()),
+                                .background(
+                                    fadeGradientBottom(genre.color),
+                                ).fillMaxWidth()
+                                .fillMaxHeight(),
                         )
 
                         Column(
@@ -1086,9 +1089,10 @@ private fun SagaDetailInitialView(
                                 style =
                                     MaterialTheme.typography.titleLarge.copy(
                                         fontFamily = genre.headerFont(),
-                                        brush = genre.gradient(true),
                                         textAlign = TextAlign.Center,
+                                        color = genre.iconColor,
                                     ),
+                                modifier = Modifier.reactiveShimmer(true, genre.shimmerColors(), duration = 15.seconds),
                             )
 
                             Text(
@@ -1098,6 +1102,7 @@ private fun SagaDetailInitialView(
                                     MaterialTheme.typography.bodyMedium.copy(
                                         fontFamily = genre.bodyFont(),
                                         textAlign = TextAlign.Justify,
+                                        color = genre.iconColor,
                                     ),
                             )
                         }
@@ -1253,7 +1258,7 @@ private fun SagaDetailInitialView(
 
                     item(span = { GridItemSpan(columnCount) }) {
                         LazyRow {
-                            items(it.relationships.sortedBy { it.data.lastUpdated }) { relation ->
+                            items(it.relationships.sortedByDescending { it.data.lastUpdated }) { relation ->
                                 RelationShipCard(
                                     content = relation,
                                     genre = it.data.genre,
@@ -1307,7 +1312,7 @@ private fun SagaDetailInitialView(
                                 false,
                                 openCharacters = {
                                     selectSection(
-                                        DetailAction.CHARACTERS
+                                        DetailAction.CHARACTERS,
                                     )
                                 },
                                 modifier =
@@ -1419,7 +1424,7 @@ private fun SagaDetailInitialView(
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
-                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(chapters) { chapter ->
                             ChapterCardView(
                                 it,
@@ -1429,7 +1434,8 @@ private fun SagaDetailInitialView(
                                         selectSection(
                                             DetailAction.CHAPTERS,
                                         )
-                                    }.size(250.dp),
+                                    }.size(250.dp)
+                                    .padding(8.dp),
                             )
                         }
                     }

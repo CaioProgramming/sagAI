@@ -60,7 +60,7 @@ fun EmotionalCard(
         modifier = modifier
             .clip(cardShape)
             .border(1.dp, genre.color.copy(alpha = .3f), cardShape)
-            .background(MaterialTheme.colorScheme.surfaceContainer, cardShape)
+            .background(MaterialTheme.colorScheme.background, cardShape)
             .clickable { emotionExpanded = !emotionExpanded }
             .animateContentSize()
             .fillMaxWidth()
@@ -69,7 +69,7 @@ fun EmotionalCard(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.background)
+                .background(MaterialTheme.colorScheme.surfaceContainer)
                 .fillMaxWidth()
                 .padding(8.dp)
 
