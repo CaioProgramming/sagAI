@@ -381,7 +381,11 @@ class ChatViewModel
             text: String,
             sendType: SenderType,
         ) {
-            val currentTimeline = content.value?.getCurrentTimeLine() ?: return
+            val currentTimeline = content.value?.getCurrentTimeLine()
+            if (currentTimeline == null) {
+                sagaContentManager.checkNarrativeProgression(content.value)
+                return
+            }
             val message =
                 Message(
                     text = text,
@@ -492,6 +496,10 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val timeline = saga.getCurrentTimeLine() ?: return@launch
+                if (timeline == null) {
+                    sagaContentManager.checkNarrativeProgression(saga)
+                    return@launch
+                }
                 isLoading.emit(true)
                 val newMessage =
                     MessageContent(

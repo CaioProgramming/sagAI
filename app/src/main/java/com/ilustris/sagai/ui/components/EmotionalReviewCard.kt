@@ -6,8 +6,10 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,9 +29,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -45,48 +52,70 @@ fun EmotionalCard(
     modifier: Modifier = Modifier
 ) {
     val cardShape = RoundedCornerShape(genre.cornerSize())
-    var emotionExpanded by remember {
-        mutableStateOf(isExpanded)
-    }
-    val emotionCardColor by animateColorAsState(
-        if (emotionExpanded.not()) Color.Transparent else MaterialTheme.colorScheme.surfaceContainer,
-    )
-    val cardTint by animateColorAsState(
-        if (emotionExpanded.not()) MaterialTheme.colorScheme.onSurface else genre.color,
-        tween(1.seconds.toInt(DurationUnit.MILLISECONDS), easing = FastOutSlowInEasing),
-    )
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.Top,
-        modifier =
-            modifier
-                .clip(cardShape)
-                .clickable {
-                    emotionExpanded = !emotionExpanded
-                }
-                .animateContentSize(),
-    ) {
-        Image(
-            painterResource(R.drawable.ic_full_spark),
-            "Open emotion review",
-            modifier = Modifier.size(24.dp),
-            colorFilter = ColorFilter.tint(genre.color),
-        )
+    var emotionExpanded by remember { mutableStateOf(isExpanded) }
 
-        if (emotionExpanded && review != null) {
+
+
+    Column(
+        modifier = modifier
+            .clip(cardShape)
+            .border(1.dp, genre.color.copy(alpha = .3f), cardShape)
+            .background(MaterialTheme.colorScheme.surfaceContainer, cardShape)
+            .clickable { emotionExpanded = !emotionExpanded }
+            .animateContentSize()
+            .fillMaxWidth()
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.background)
+                .fillMaxWidth()
+                .padding(8.dp)
+
+        ) {
+            Image(
+                painterResource(R.drawable.ic_full_spark),
+                contentDescription = "Open emotion review",
+                modifier = Modifier.size(24.dp),
+                colorFilter = ColorFilter.tint(genre.color),
+            )
+
             Text(
-                review,
+                text = stringResource(R.string.emotional_card_title),
+                style = MaterialTheme.typography.labelLarge.copy(
+                    fontFamily = genre.bodyFont(),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        if (emotionExpanded && !review.isNullOrBlank()) {
+            Text(
+                text = review,
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(end= 8.dp)
-                    .background(emotionCardColor, cardShape)
-                    .padding(8.dp)
-                ,
-                style =
-                    MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                    ),
+                    .padding(16.dp),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                    textAlign = TextAlign.Justify
+                ),
             )
         }
     }
 }
+
+@Preview
+@Composable
+fun EmotionalCardPreview() {
+    SagAIScaffold {
+        EmotionalCard(
+            review = "This is a sample emotional review. It can be expanded to show more details about the user's feelings regarding a specific topic or event.",
+            genre = Genre.FANTASY,
+            isExpanded = true,
+        )
+    }
+}
+
+

@@ -16,6 +16,7 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
+import com.ilustris.sagai.core.utils.ImageCropHelper
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -40,6 +41,7 @@ class SagaDetailUseCaseImpl
     constructor(
         private val sagaRepository: SagaRepository,
         private val fileHelper: FileHelper,
+        private val imageCropHelper: ImageCropHelper,
         private val gemmaClient: GemmaClient,
         private val textGenClient: TextGenClient,
         private val imageGenClient: ImagenClient,
@@ -49,7 +51,7 @@ class SagaDetailUseCaseImpl
         private val emotionalUseCase: EmotionalUseCase,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Exception, Saga> =
-            try {
+            executeRequest {
                 val styleReference =
                     genreReferenceHelper
                         .getGenreStyleReference(saga.data.genre)
@@ -103,18 +105,19 @@ class SagaDetailUseCaseImpl
                         references,
                     )!!
 
+                val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)
+
                 val file =
                     fileHelper.saveFile(
                         fileName = saga.data.title,
-                        data = newIcon,
+                        data = croppedIcon,
                         path = "${saga.data.id}",
                     )
 
+                newIcon.recycle()
+                croppedIcon.recycle()
                 sagaRepository
                     .updateChat(saga.data.copy(icon = file!!.absolutePath))
-                    .asSuccess()
-            } catch (e: Exception) {
-                e.asError()
             }
 
         override suspend fun fetchSaga(sagaId: Int) = sagaRepository.getSagaById(sagaId)

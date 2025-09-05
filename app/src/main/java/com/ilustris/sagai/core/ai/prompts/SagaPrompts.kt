@@ -229,8 +229,10 @@ object SagaPrompts {
         appendLine("3.**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
         appendLine("*You WILL have access to a Visual Reference Image (Bitmap)")
         appendLine("*From this, draw inspiration for:")
-        appendLine("***Overall Compositional Framing & Mood:** Adapt for an icon. The character's specific pose should be dramatic and derived from their details, not a direct copy of a pose from any visual reference.")
-        appendLine("**Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured).\n")
+        appendLine(
+            "***Overall Compositional Framing & Mood:** Adapt for an icon. The character's specific pose should be dramatic and derived from their details, not a direct copy of a pose from any visual reference.",
+        )
+        appendLine("**Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured")
         appendLine("Adapt for a simple icon background")
         appendLine("Compatible Visual Details & Mood:")
         appendLine("* Also you will have access to character visual reference to provide a more precise description.")
@@ -239,7 +241,12 @@ object SagaPrompts {
         appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
         appendLine("This description must:")
         appendLine("*   Integrate the **Character Details**.")
-        appendLine("*   Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.")
+        appendLine(
+            "*   Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
+        )
+        appendLine(
+            "*   **Character Focus and Framing:** Ensure the character is the primary subject, framed as a close-up or medium close-up shot (e.g., from the chest up or waist up). The character should dominate the icon and be the clear focal point, with dynamic posing.",
+        )
         appendLine("*   Render the scene in the **Foundational Art Style**.")
         appendLine(
             "*Explicitly describe the **background color** and the **specific character accents** using the genre colors using the provided color rules.",
@@ -272,11 +279,13 @@ object SagaPrompts {
             "Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their blackpopover, as per genre instructions].",
         )
         appendLine(
-            "The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded style.",
+            "The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded anime style and studio quality.",
         )
-        appendLine("The character is in a [e.g., dynamic mid-action lunge, or a thoughtful, powerful stance reflecting their role], framed in an [e.g., intense extreme close-up].")
-        appendLine("YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING")
-    }.trimIndent()
+        appendLine(
+            "The character should be the absolute focus of the image, filling most of the frame in a compelling, dynamic pose. No other characters or complex backgrounds should be present, ensuring the icon is clean and impactful.",
+        )
+        appendLine("Desired Output: A single, striking icon image. NO TEXT SHOULD BE GENERATED ON THE IMAGE ITSELF.")
+    }
 
     private data class SagaReviewContext(
         val playerCharacter: Character?,

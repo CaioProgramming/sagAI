@@ -22,6 +22,7 @@ import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.core.utils.ImageCropHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.domain.usecase.ActUseCase
@@ -80,6 +81,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
+    @Provides
+    @Singleton
+    fun provideImageCropHelper(): ImageCropHelper = ImageCropHelper()
+
     @Provides
     @Singleton
     fun provideImageLoader(

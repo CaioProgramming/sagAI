@@ -4,6 +4,7 @@ import ai.atick.material.MaterialColor
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
@@ -34,6 +35,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -299,7 +301,10 @@ fun SagaDetailView(
         ) {
             val brush = saga?.data?.genre?.colorPalette() ?: holographicGradient
             StarryTextPlaceholder(
-                modifier = Modifier.fillMaxSize().gradientFill(gradientAnimation(brush)),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .gradientFill(gradientAnimation(brush)),
             )
         }
     }
@@ -420,7 +425,6 @@ fun LazyListScope.SagaDrawerContent(
                                 TimeLineCard(
                                     event,
                                     content,
-                                    titleStyle = MaterialTheme.typography.bodyMedium,
                                     showText = false,
                                     showSpark = false,
                                     isLast = eventsInChapter.indexOf(event) == eventsInChapter.lastIndex,
@@ -449,7 +453,10 @@ fun LazyListScope.SagaDrawerContent(
                             )
 
                             HorizontalDivider(
-                                modifier = Modifier.height(1.dp).padding(4.dp),
+                                modifier =
+                                    Modifier
+                                        .height(1.dp)
+                                        .padding(4.dp),
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                             )
 
@@ -584,14 +591,21 @@ fun SagaDetailContentView(
                         }
                     }) { _ ->
 
-                        AnimatedContent(currentSection, transitionSpec = {
-                            fadeIn(tween(500)) + slideInVertically() togetherWith
-                                fadeOut(
-                                    tween(
-                                        400,
-                                    ),
-                                )
-                        }, modifier = Modifier.fillMaxSize().padding(top = 120.dp)) { section ->
+                        AnimatedContent(
+                            currentSection,
+                            transitionSpec = {
+                                fadeIn(tween(500)) + slideInVertically { -it } togetherWith
+                                    fadeOut(
+                                        tween(
+                                            400,
+                                        ),
+                                    )
+                            },
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(top = 120.dp),
+                        ) { section ->
                             when (section) {
                                 DetailAction.CHARACTERS ->
                                     CharactersGalleryContent(
@@ -822,23 +836,21 @@ private fun SagaDetailInitialView(
     saga: SagaContent?,
     modifier: Modifier,
     emotionalReviewUrl: String,
-    onReachTop: () -> Unit = {},
+    onListChange: (LazyGridState) -> Unit = {},
     selectSection: (DetailAction) -> Unit = {},
     openReview: () -> Unit = {},
     openEmotionalReview: () -> Unit = {},
 ) {
     val columnCount = 2
     val sectionStyle =
-        MaterialTheme.typography.headlineMedium.copy(
+        MaterialTheme.typography.titleLarge.copy(
             fontFamily = saga?.data?.genre?.bodyFont(),
             fontWeight = FontWeight.Bold,
         )
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(remember { derivedStateOf { gridState.firstVisibleItemIndex } }) {
-        if (gridState.firstVisibleItemIndex == 0) {
-            onReachTop()
-        }
+        onListChange(gridState)
     }
 
     LazyVerticalGrid(
@@ -847,10 +859,10 @@ private fun SagaDetailInitialView(
         state = gridState,
     ) {
         saga?.let {
-            val acts = saga.acts.filter { it.isComplete() }
             val chapters = saga.flatChapters().filter { it.isComplete() }
             val events = saga.flatEvents().filter { it.isComplete() }
             val messages = saga.flatMessages()
+            val genre = it.data.genre
 
             item(span = {
                 GridItemSpan(columnCount)
@@ -868,13 +880,44 @@ private fun SagaDetailInitialView(
                                 ),
                             )
                         }
-                    Box(
-                        modifier =
-                            Modifier
-                                .height(400.dp)
-                                .fillMaxWidth()
-                                .clipToBounds(),
-                    ) {
+
+                    if (it.data.icon.isNotEmpty()) {
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxHeight(.4f)
+                                    .fillMaxWidth(),
+                        ) {
+                            AsyncImage(
+                                it.data.icon,
+                                contentDescription = it.data.title,
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .effectForGenre(saga.data.genre)
+                                        .selectiveColorHighlight(saga.data.genre.selectiveHighlight())
+                                        .zoomAnimation(),
+                                contentScale = ContentScale.Crop,
+                            )
+
+                            Text(
+                                it.data.title,
+                                style =
+                                    MaterialTheme.typography.displaySmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontFamily = it.data.genre.headerFont(),
+                                        brush = it.data.genre.gradient(true),
+                                        textAlign = TextAlign.Center,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .background(fadeGradientBottom())
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                            )
+                        }
+                    } else {
                         Image(
                             painterResource(R.drawable.ic_spark),
                             null,
@@ -884,84 +927,10 @@ private fun SagaDetailInitialView(
                                         if (it.data.icon.isEmpty()) {
                                             selectSection(DetailAction.REGENERATE)
                                         }
-                                    }.align(Alignment.TopCenter)
-                                    .gradientFill(
+                                    }.gradientFill(
                                         it.data.genre.gradient(),
                                     ),
                         )
-                        AsyncImage(
-                            it.data.icon,
-                            contentDescription = it.data.title,
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .selectiveColorHighlight(saga.data.genre.selectiveHighlight())
-                                    .effectForGenre(saga.data.genre)
-                                    .clipToBounds(),
-                            contentScale = ContentScale.Crop,
-                        )
-
-                        Box(
-                            Modifier
-                                .align(Alignment.TopCenter)
-                                .background(fadeGradientTop())
-                                .fillMaxWidth()
-                                .fillMaxHeight(.25f),
-                        )
-
-                        Box(
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .background(fadeGradientBottom())
-                                .fillMaxWidth()
-                                .fillMaxHeight(.3f),
-                        )
-
-                        it.mainCharacter?.let { mainChar ->
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .padding(top = 150.dp),
-                            ) {
-                                CharacterAvatar(
-                                    mainChar.data,
-                                    borderSize = 3.dp,
-                                    borderColor = it.data.genre.color,
-                                    genre = it.data.genre,
-                                    textStyle = MaterialTheme.typography.displayMedium,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .size(150.dp),
-                                )
-                                Text(
-                                    stringResource(R.string.saga_detail_journey_of),
-                                    style =
-                                        MaterialTheme.typography.labelSmall.copy(
-                                            fontFamily = it.data.genre.bodyFont(),
-                                            fontWeight = FontWeight.Light,
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                    modifier = Modifier.fillMaxWidth(),
-                                )
-                                Text(
-                                    it.mainCharacter.data.name,
-                                    style =
-                                        MaterialTheme.typography.displaySmall.copy(
-                                            fontFamily = it.data.genre.headerFont(),
-                                            fontWeight = FontWeight.SemiBold,
-                                            textAlign = TextAlign.Center,
-                                            brush = it.data.genre.gradient(),
-                                        ),
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .reactiveShimmer(true),
-                                )
-                            }
-                        }
                     }
 
                     /*SimpleSlider(
@@ -1011,56 +980,128 @@ private fun SagaDetailInitialView(
             item(span = {
                 GridItemSpan(columnCount)
             }) {
-                Row(
+                LazyRow(
                     horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth(),
                 ) {
-                    VerticalLabel(
-                        chapters.count().toString(),
-                        stringResource(R.string.saga_detail_section_title_chapters),
-                        it.data.genre,
-                    )
-                    VerticalLabel(
-                        it.characters.count().toString(),
-                        stringResource(R.string.saga_detail_section_title_characters),
-                        it.data.genre,
-                    )
+                    item {
+                        VerticalLabel(
+                            chapters.count().toString(),
+                            stringResource(R.string.saga_detail_section_title_chapters),
+                            it.data.genre,
+                        )
+                    }
+
+                    item {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(16.dp),
+                        ) {
+                            Text(
+                                messages.count().toString(),
+                                style =
+                                    MaterialTheme.typography.displaySmall.copy(
+                                        fontFamily = it.data.genre.headerFont(),
+                                        fontWeight = FontWeight.Normal,
+                                        textAlign = TextAlign.Center,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .fillMaxWidth(),
+                            )
+
+                            Text(
+                                stringResource(R.string.saga_detail_messages_label),
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = it.data.genre.bodyFont(),
+                                        fontWeight = FontWeight.Light,
+                                        textAlign = TextAlign.Center,
+                                    ),
+                            )
+                        }
+                    }
+                    item {
+                        VerticalLabel(
+                            it.characters.count().toString(),
+                            stringResource(R.string.saga_detail_section_title_characters),
+                            it.data.genre,
+                        )
+                    }
                 }
             }
 
-            item(span = {
-                GridItemSpan(columnCount)
-            }) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(16.dp),
-                ) {
-                    Text(
-                        messages.count().toString(),
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontFamily = it.data.genre.headerFont(),
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .fillMaxWidth(),
-                    )
+            item(span = { GridItemSpan(columnCount) }) {
+                Text(stringResource(R.string.starring), style = sectionStyle, modifier = Modifier.padding(16.dp))
+            }
 
-                    Text(
-                        stringResource(R.string.saga_detail_messages_label),
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = it.data.genre.bodyFont(),
-                                fontWeight = FontWeight.Light,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
+            it.mainCharacter?.let {
+                item(span = { GridItemSpan(columnCount) }) {
+                    Box(
+                        Modifier
+                            .padding(16.dp)
+                            .clip(shape = genre.shape())
+                            .border(1.dp, genre.gradient(true), genre.shape())
+                            .background(genre.color.gradientFade())
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .clickable {
+                                selectSection(DetailAction.CHARACTERS)
+                            },
+                    ) {
+                        AsyncImage(
+                            it.data.image,
+                            contentDescription = it.data.name,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .effectForGenre(genre)
+                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                            contentScale = ContentScale.Crop,
+                        )
+
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .fillMaxHeight(.8f)
+                                .background(fadeGradientBottom()),
+                        )
+
+                        Column(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.BottomCenter)
+                                    .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(
+                                it.data.name,
+                                style =
+                                    MaterialTheme.typography.titleLarge.copy(
+                                        fontFamily = genre.headerFont(),
+                                        brush = genre.gradient(true),
+                                        textAlign = TextAlign.Center,
+                                    ),
+                            )
+
+                            Text(
+                                it.data.backstory,
+                                maxLines = 4,
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        textAlign = TextAlign.Justify,
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
 
@@ -1070,9 +1111,12 @@ private fun SagaDetailInitialView(
                 }) {
                     Column(
                         modifier =
-                            Modifier.padding(16.dp).fillMaxWidth().clickable {
-                                openReview()
-                            },
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth()
+                                .clickable {
+                                    openReview()
+                                },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
@@ -1099,13 +1143,26 @@ private fun SagaDetailInitialView(
                 }
             }
 
-            item(span = {
-                GridItemSpan(columnCount)
-            }) {
-                CharacterSection(
+            item(span = { GridItemSpan(columnCount) }) {
+                Text(
                     stringResource(R.string.saga_detail_description_section_title),
+                    style = sectionStyle,
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                )
+            }
+
+            item(span = { GridItemSpan(columnCount) }) {
+                Text(
                     it.data.description,
-                    it.data.genre,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = it.data.genre.bodyFont(),
+                            textAlign = TextAlign.Justify,
+                        ),
+                    modifier = Modifier.padding(16.dp),
                 )
             }
 
@@ -1248,6 +1305,11 @@ private fun SagaDetailInitialView(
                                 event,
                                 it,
                                 false,
+                                openCharacters = {
+                                    selectSection(
+                                        DetailAction.CHARACTERS
+                                    )
+                                },
                                 modifier =
                                     Modifier
                                         .padding(16.dp)
@@ -1357,15 +1419,17 @@ private fun SagaDetailInitialView(
                 item(span = {
                     GridItemSpan(columnCount)
                 }) {
-                    LazyRow {
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         items(chapters) { chapter ->
                             ChapterCardView(
                                 it,
                                 chapter.data,
                                 Modifier
-                                    .padding(4.dp)
-                                    .width(300.dp)
-                                    .height(300.dp),
+                                    .clickable {
+                                        selectSection(
+                                            DetailAction.CHAPTERS,
+                                        )
+                                    }.size(250.dp),
                             )
                         }
                     }
@@ -1418,7 +1482,10 @@ private fun SagaDetailInitialView(
                                 textAlign = TextAlign.Justify,
                                 brush = it.data.genre.gradient(),
                             ),
-                        modifier = Modifier.alpha(.6f).padding(16.dp),
+                        modifier =
+                            Modifier
+                                .alpha(.6f)
+                                .padding(16.dp),
                     )
                 }
 
@@ -1428,9 +1495,14 @@ private fun SagaDetailInitialView(
                             .padding(16.dp)
                             .clip(
                                 RoundedCornerShape(it.data.genre.cornerSize()),
-                            ).border(1.dp, MaterialTheme.colorScheme.onBackground.copy(alpha = .2f), it.data.genre.shape())
-                            .background(MaterialTheme.colorScheme.surfaceContainer, it.data.genre.shape())
-                            .fillMaxWidth()
+                            ).border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
+                                it.data.genre.shape(),
+                            ).background(
+                                MaterialTheme.colorScheme.surfaceContainer,
+                                it.data.genre.shape(),
+                            ).fillMaxWidth()
                             .height(200.dp)
                             .clickable {
                                 openEmotionalReview()
@@ -1439,7 +1511,10 @@ private fun SagaDetailInitialView(
                         AsyncImage(
                             emotionalReviewUrl,
                             null,
-                            modifier = Modifier.fillMaxSize().zoomAnimation(),
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .zoomAnimation(),
                             contentScale = ContentScale.Crop,
                         )
 
@@ -1474,12 +1549,15 @@ private fun SagaDetailInitialView(
             } else {
                 item(span = { GridItemSpan(columnCount) }) {
                     Box(
-                        Modifier.height(200.dp).fillMaxWidth().reactiveShimmer(
-                            true,
-                            it.data.genre.color
-                                .darkerPalette()
-                                .plus(Color.Transparent),
-                        ),
+                        Modifier
+                            .height(200.dp)
+                            .fillMaxWidth()
+                            .reactiveShimmer(
+                                true,
+                                it.data.genre.color
+                                    .darkerPalette()
+                                    .plus(Color.Transparent),
+                            ),
                     ) {
                         StarryTextPlaceholder(
                             modifier =

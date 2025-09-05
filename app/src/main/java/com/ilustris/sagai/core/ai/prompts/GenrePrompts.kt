@@ -76,9 +76,19 @@ object GenrePrompts {
 
             SCI_FI ->
                 """
-                The **background is a bold, vibrant deep purple**, possibly solid or with minimalist graphic elements, creating an unmistakably cyberpunk atmosphere.
-                On the character, **apply discrete neon purple accents to small, specific features ONLY**: examples include glowing cybernetic eye details (just the iris or a small implant), thin luminous circuit patterns on clothing (not coloring the whole garment), subtle streaks in hair, or highlights on individual small pieces of tech gear.
-                **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST remain their natural, distinct hues and NOT be tinted purple. These purple accents should be isolated, clearly defined, and not affect the character's general coloration.
+                The overall scene should capture a moody, retro-anime cyberpunk aesthetic, with a strong emphasis on purple, drawing inspiration from visuals like a character in a neon-lit city at dusk.
+
+                **Background & Ambient Lighting:**
+                The background should evoke a cyberpunk city at dusk or night, featuring sources of **subtle ambient purple neon lighting** that cast a moody glow. This could manifest as reflections off wet surfaces, distant city lights, or atmospheric haze, creating an environment rich with purple hues without being uniformly purple. For character icons, this background should be significantly simplified to bold graphic shapes, a minimalist abstract texture, or a tastefully blurred representation, still retaining the purple atmospheric feel and ensuring the character remains the dominant focus.
+
+                **Character Purple Highlights & Details:**
+                While the character's primary clothing, skin, and hair colors must remain distinct and true to their base design (as per the CRUCIAL rule below), integrate **more pronounced and thoughtfully placed purple light details and highlights** in the following ways:
+                *   **Reflective Surfaces:** Catch subtle but clear purple reflections on metallic parts of clothing (zippers, buckles), cybernetics, weapons, or accessories.
+                *   **Edge Lighting/Rim Lighting:** Use sharp purple rim lighting to define parts of the character's silhouette against the darker background, suggesting they are being hit by distinct purple light sources from the environment.
+                *   **Emissive Details:** Enhance or add elements like glowing purple cybernetic eye details (irises, small implants), thin luminous purple circuit patterns on clothing (not coloring the whole garment), subtle purple light strips on gear, or faint highlights on individual small pieces of tech. These elements should feel like they are emitting a soft purple light.
+                *   **Subtle Cast Light:** Allow a *very subtle* and localized cast of purple light onto areas of the character immediately adjacent to strong purple light sources or their own emissive details. Avoid tinting large surfaces or the character's overall complexion.
+
+                **CRUCIAL:** The character's overall skin tone, hair color (apart from specific, small glowing accents like streaks or cybernetic parts), and primary clothing colors MUST retain their natural, distinct hues and NOT be globally tinted purple. The purple elements should be targeted highlights, reflections, and light sources, enhancing the cyberpunk feel without altering the character's core color palette. The goal is a sophisticated interplay of light, not a purple wash.
                 """
 
             HORROR ->

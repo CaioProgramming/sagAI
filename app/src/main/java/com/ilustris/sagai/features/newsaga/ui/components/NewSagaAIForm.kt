@@ -289,9 +289,8 @@ fun NewSagaAIForm(
                                     it,
                                     modifier =
                                         Modifier
-                                            .padding(16.dp)
-                                            .fillMaxWidth()
-                                            .fillMaxHeight(.5f),
+                                            .padding(4.dp)
+                                            .fillMaxSize(),
                                 )
                             } ?: run {
                                 SagaFormCards(

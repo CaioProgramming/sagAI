@@ -106,12 +106,12 @@ fun Modifier.effectForGenre(
                 Genre.FANTASY ->
                     ShaderParams(
                         grainIntensity = customGrain ?: .2f,
-                        bloomThreshold = .4f,
-                        bloomIntensity = .3f,
-                        bloomRadius = 1f,
+                        bloomThreshold = .6f,
+                        bloomIntensity = .1f,
+                        bloomRadius = 1.3f,
                         softFocusRadius = focusRadius ?: .7f,
-                        saturation = .6f,
-                        contrast = 1.2f,
+                        saturation = .7f,
+                        contrast = 1.5f,
                         brightness = 0f,
                         highlightTint = fantasyPalette.highlightTint,
                         shadowTint = fantasyPalette.shadowTint,

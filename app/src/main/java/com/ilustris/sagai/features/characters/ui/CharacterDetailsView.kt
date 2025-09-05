@@ -25,6 +25,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -70,6 +71,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
@@ -210,7 +212,7 @@ fun CharacterDetailsContent(
                 character.details.occupation,
                 style =
                     MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.headerFont(),
+                        fontFamily = genre.bodyFont(),
                         color = characterColor,
                     ),
                 modifier = Modifier.padding(16.dp),
@@ -228,7 +230,7 @@ fun CharacterDetailsContent(
                     messageCount.toString(),
                     style =
                         MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = genre.bodyFont(),
                             fontWeight = FontWeight.Normal,
                             textAlign = TextAlign.Center,
                         ),
@@ -288,7 +290,7 @@ fun CharacterDetailsContent(
                     stringResource(R.string.saga_detail_relationships_section_title),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = genre.bodyFont(),
                         ),
                     modifier = Modifier.padding(16.dp).fillMaxWidth(),
                 )
@@ -330,7 +332,7 @@ fun CharacterDetailsContent(
                     stringResource(R.string.saga_detail_timeline_section_title),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
+                            fontFamily = genre.bodyFont(),
                         ),
                     modifier = Modifier.padding(16.dp).fillMaxWidth(),
                 )
@@ -340,8 +342,11 @@ fun CharacterDetailsContent(
                 TimeLineCard(
                     it,
                     genre,
+                    showIndicator = true,
+                    showSpark = character == sagaContent.mainCharacter,
+                    isLast = it == characterContent.events.last(),
                     modifier =
-                        Modifier.padding(16.dp).clickable {
+                        Modifier.padding(horizontal = 16.dp).clip(genre.shape()).clickable {
                             openEvent(it.timeline)
                         },
                 )

@@ -111,6 +111,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.lottie.compose)
     implementation(libs.compose.cloudy)
+    implementation(libs.face.detection)
     implementation(libs.skydoves.balloon)
     implementation(libs.chrisbanes.haze)
     implementation(libs.chrisbanes.haze.materials)

@@ -378,7 +378,7 @@ class SagaContentManagerImpl
                 e.asError()
             }
 
-        private fun checkNarrativeProgression(saga: SagaContent?) =
+        override fun checkNarrativeProgression(saga: SagaContent?) {
             CoroutineScope(Dispatchers.IO).launch {
                 Log.d(javaClass.simpleName, "Starting narrative progression check")
                 progressionCounter++
@@ -416,7 +416,10 @@ class SagaContentManagerImpl
                 }
                 setNarrativeProcessingStatus(true)
                 val narrativeStep = NarrativeCheck.validateProgression(saga)
-                Log.d(javaClass.simpleName, "checkNarrativeProgression: Progression step $narrativeStep")
+                Log.d(
+                    javaClass.simpleName,
+                    "checkNarrativeProgression: Progression step $narrativeStep",
+                )
 
                 val action: RequestResult<Exception, Any> =
                     when (narrativeStep) {
@@ -424,9 +427,19 @@ class SagaContentManagerImpl
                         is NarrativeStep.GenerateSagaEnding -> generateEnding(saga)
                         is NarrativeStep.GenerateAct -> updateAct(narrativeStep.act)
                         is NarrativeStep.StartChapter -> startChapter(narrativeStep.act)
-                        is NarrativeStep.GenerateChapter -> updateChapter(saga, narrativeStep.chapter)
+                        is NarrativeStep.GenerateChapter ->
+                            updateChapter(
+                                saga,
+                                narrativeStep.chapter,
+                            )
+
                         is NarrativeStep.StartTimeline -> startTimeline(narrativeStep.chapter)
-                        is NarrativeStep.GenerateTimeLine -> updateTimeline(saga, narrativeStep.timeline)
+                        is NarrativeStep.GenerateTimeLine ->
+                            updateTimeline(
+                                saga,
+                                narrativeStep.timeline,
+                            )
+
                         NarrativeStep.NoActionNeeded -> skipNarrative()
                     }
 
@@ -449,6 +462,7 @@ class SagaContentManagerImpl
                         setNarrativeProcessingStatus(false)
                     }
             }
+        }
 
         private suspend fun skipNarrative() =
             executeRequest {

@@ -663,7 +663,7 @@ fun ChatContent(
                                 chars,
                                 saga.genre,
                                 isLoading = isGenerating,
-                            ) { openSagaDetails(saga) }
+                            ) { _ -> openSagaDetails(saga) }
                         }
                     },
                 )
@@ -1339,7 +1339,7 @@ fun CharactersTopIcons(
     characters: List<Character>,
     genre: Genre,
     isLoading: Boolean = false,
-    onCharacterSelected: () -> Unit = {},
+    onCharacterSelected: (Character?) -> Unit = {},
 ) {
     val overlapAmount = (-10).dp
     val density = LocalDensity.current
@@ -1348,10 +1348,7 @@ fun CharactersTopIcons(
     LazyRow(
         Modifier
             .clip(RoundedCornerShape(genre.cornerSize()))
-            .fillMaxWidth(.2f)
-            .clickable {
-                onCharacterSelected.invoke()
-            },
+            .fillMaxWidth(.2f),
         userScrollEnabled = false,
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
@@ -1377,7 +1374,8 @@ fun CharactersTopIcons(
                             },
                         ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).size(24.dp),
+                        ).size(24.dp)
+                                                .clickable { onCharacterSelected(character) },
             )
         }
     }

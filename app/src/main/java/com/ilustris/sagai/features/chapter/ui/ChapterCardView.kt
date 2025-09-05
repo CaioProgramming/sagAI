@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -31,10 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
@@ -63,104 +66,30 @@ fun ChapterCardView(
     val genre = saga.data.genre
     val shape = RoundedCornerShape(genre.cornerSize())
     val showCover = remember { mutableStateOf(false) }
-    Box(
-        modifier =
-            modifier
-                .border(
-                    1.dp,
-                    gradientAnimation(
-                        genre.color.darkerPalette(),
-                        gradientType = GradientType.VERTICAL,
-                    ),
-                    shape,
-                ).background(MaterialTheme.colorScheme.surface, shape)
-                .clip(shape)
-                .clickable {
-                    showCover.value = showCover.value.not()
-                },
-    ) {
-        AnimatedVisibility(
-            showCover.value.not(),
-            modifier = Modifier.fillMaxSize(),
-            enter =
-                fadeIn(
-                    tween(600, easing = EaseIn),
-                ),
-            exit = fadeOut(),
-        ) {
+    Column(modifier) {
             AsyncImage(
                 chapter.coverImage,
                 contentDescription = chapter.title,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .effectForGenre(genre)
-                        .selectiveColorHighlight(genre.selectiveHighlight()),
                 contentScale = ContentScale.Crop,
+                placeholder = painterResource( R.drawable.ic_spark),
+                fallback = painterResource(R.drawable.ic_spark),
+                modifier = Modifier.clip(shape)
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .effectForGenre(genre)
+                    .selectiveColorHighlight(genre.selectiveHighlight())
             )
-        }
 
-        Box(Modifier.fillMaxSize().background(fadeGradientBottom()))
-
-        AnimatedVisibility(
-            showCover.value.not(),
-            enter = fadeIn(),
-            exit = fadeOut(),
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(8.dp),
-        ) {
-            Text(
-                text = chapter.title,
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontFamily = genre.headerFont(),
-                        brush = Brush.verticalGradient(genre.color.darkerPalette()),
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-        }
-
-        AnimatedVisibility(
-            showCover.value,
-            modifier = Modifier.fillMaxSize(),
-            enter = slideInVertically { -it } + fadeIn(),
-            exit = fadeOut(),
-        ) {
-            Column(
-                Modifier.padding(8.dp).verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(
-                    text = chapter.title,
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.headerFont(),
-                            brush = gradientAnimation(genre.color.darkerPalette()),
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(8.dp),
-                )
-                Text(
-                    text =
-                        buildWikiAndCharactersAnnotation(
-                            chapter.overview,
-                            genre,
-                            saga.mainCharacter?.data,
-                            saga.characters.map { it.data },
-                            saga.wikis
-                        ),
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            textAlign = TextAlign.Start,
-                        ),
-                )
-            }
-        }
+        Text(
+            text = chapter.title,
+            maxLines = 2,
+            style =
+                MaterialTheme.typography.titleMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                    textAlign = TextAlign.Start,
+                ),
+            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+        )
     }
 }
 
@@ -198,17 +127,18 @@ fun ChapterCardViewPreview() {
             columns = GridCells.Fixed(2),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(8.dp).fillMaxSize(),
         ) {
             items(chapters.size) { index ->
                 ChapterCardView(
                     chapter = chapters[index],
-                    saga = SagaContent(
-                        Saga(
-                            genre = Genre.FANTASY
-                        )
-                    ),
-                    modifier = Modifier.fillMaxWidth(.4f).fillMaxHeight(.2f),
+                    saga =
+                        SagaContent(
+                            Saga(
+                                genre = Genre.FANTASY,
+                            ),
+                        ),
+                    modifier = Modifier.fillMaxWidth().fillMaxHeight(.4f),
                 )
             }
         }
