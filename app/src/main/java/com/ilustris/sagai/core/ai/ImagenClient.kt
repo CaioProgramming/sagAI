@@ -70,7 +70,6 @@ class ImagenClientImpl
             references: List<ImageReference>,
         ): Bitmap? =
             try {
-                Log.i(javaClass.simpleName, "Generating image with prompt:\n$prompt")
                 val imageModel =
                     Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
                         modelName = modelName,
@@ -90,6 +89,8 @@ class ImagenClientImpl
                 val content = imageModel.generateContent(promptBuilder)
                 Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
                 Log.d(TAG, "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}")
+                Log.i(javaClass.simpleName, "Generating image with prompt:\n${promptBuilder.toJsonFormat()}")
+
                 content
                     .candidates
                     .first()

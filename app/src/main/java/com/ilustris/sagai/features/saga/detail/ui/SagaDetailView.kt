@@ -79,9 +79,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -128,6 +130,7 @@ import com.ilustris.sagai.features.timeline.ui.TimeLineContent
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -902,13 +905,19 @@ private fun SagaDetailInitialView(
                                 contentScale = ContentScale.Crop,
                             )
 
-                            Text(
+                            AutoResizeText(
                                 it.data.title,
+                                maxLines = 1,
                                 style =
-                                    MaterialTheme.typography.displaySmall.copy(
-                                        fontWeight = FontWeight.Bold,
+                                    MaterialTheme.typography.displayMedium.copy(
                                         fontFamily = it.data.genre.headerFont(),
                                         brush = it.data.genre.gradient(true),
+                                        shadow =
+                                            Shadow(
+                                                Color.Black,
+                                                offset = Offset(0f, 1f),
+                                                blurRadius = .5f,
+                                            ),
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier =
@@ -916,7 +925,8 @@ private fun SagaDetailInitialView(
                                         .align(Alignment.BottomCenter)
                                         .background(fadeGradientBottom())
                                         .fillMaxWidth()
-                                        .padding(16.dp),
+                                        .padding(16.dp)
+                                        .reactiveShimmer(true, duration = 10.seconds),
                             )
                         }
                     } else {
@@ -1430,6 +1440,7 @@ private fun SagaDetailInitialView(
                                 it,
                                 chapter.data,
                                 Modifier
+                                    .clip(genre.shape())
                                     .clickable {
                                         selectSection(
                                             DetailAction.CHAPTERS,

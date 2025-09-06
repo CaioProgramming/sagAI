@@ -72,6 +72,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -278,7 +279,7 @@ fun ChatInputView(
         BlurredGlowContainer(
             modifier =
                 Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
                     .fillMaxWidth()
                     .padding(8.dp),
             inputBrush,
@@ -341,7 +342,10 @@ fun ChatInputView(
                             )
                         },
                         cursorBrush =
-                            content.data.genre.gradient(),
+                            Brush.verticalGradient(
+                                content.data.genre.color
+                                    .darkerPalette(),
+                            ),
                         decorationBox = { innerTextField ->
                             val boxPadding = 12.dp
                             Box(

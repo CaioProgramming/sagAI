@@ -104,7 +104,7 @@ fun buildWikiAndCharactersAnnotation(
             val shadow =
                 Shadow(
                     color = shadowColor,
-                    blurRadius = 10f,
+                    blurRadius = 2f,
                     offset = Offset(.5f, .3f),
                 )
 

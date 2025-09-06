@@ -110,7 +110,7 @@ class SagaDetailUseCaseImpl
                 val file =
                     fileHelper.saveFile(
                         fileName = saga.data.title,
-                        data = croppedIcon,
+                        data = newIcon,
                         path = "${saga.data.id}",
                     )
 

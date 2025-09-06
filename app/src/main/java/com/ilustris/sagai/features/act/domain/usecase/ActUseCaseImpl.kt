@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -71,6 +72,7 @@ class ActUseCaseImpl
                         .data.id == act.id
             val previousAct = if (isFirst) null else saga.acts[saga.acts.indexOfFirst { it.data.id == act.id } - 1]
             val prompt = ActPrompts.actIntroductionPrompt(saga.data, previousAct)
+            delay(500)
             val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
             val updated = currentAct.copy(introduction = intro)
             actRepository.updateAct(updated).asSuccess()

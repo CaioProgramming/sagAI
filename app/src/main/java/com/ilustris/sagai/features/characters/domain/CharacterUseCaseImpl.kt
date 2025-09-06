@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts
+import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
@@ -95,17 +96,20 @@ class CharacterUseCaseImpl
         ): RequestResult<Exception, Pair<Character, String>> =
             try {
                 val styleReferenceBitmap =
-                    BitmapFactory.decodeResource(
-                        context.resources,
-                        saga.genre.defaultHeaderImage(),
+                    ImageReference(
+                        BitmapFactory.decodeResource(
+                            context.resources,
+                            saga.genre.defaultHeaderImage(),
+                        ),
+                        ImageGuidelines.styleReferenceGuidance,
                     )
                 val portraitReference =
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
-                        ImageReference(it, "Portrait photography composition reference")
+                        ImageReference(it, ImageGuidelines.compositionReferenceGuidance)
                     }
                 val references =
                     listOfNotNull(
-                        ImageReference(styleReferenceBitmap, "Artistic style reference"),
+                        styleReferenceBitmap,
                         portraitReference,
                     )
                 val translatedDescription =
@@ -120,11 +124,11 @@ class CharacterUseCaseImpl
                 val prompt = ImagePrompts.generateImage(translatedDescription!!)
 
                 val image = imagenClient.generateImage(prompt, references)!!
-                val croppedImage = imageCropHelper.cropToPortraitBitmap(image)
-                val file = fileHelper.saveFile(character.name, croppedImage, path = "${saga.id}/characters/")
+                val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)
+                image.recycle()
                 RequestResult.Success(newCharacter to prompt)
             } catch (e: Exception) {
                 e.asError()

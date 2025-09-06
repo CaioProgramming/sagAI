@@ -173,6 +173,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.rememberHazeState
@@ -1185,11 +1186,16 @@ fun ChatList(
                             chapter.chapter,
                             saga,
                             isLast = act.chapters.lastOrNull() == chapter,
+                            imageSize = 400.dp,
                             modifier =
                                 Modifier
+                                    .clip(genre.shape())
                                     .animateItem()
-                                    .fillMaxWidth(),
-                        ) {}
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        openSaga()
+                                    },
+                        )
                     }
                 }
 

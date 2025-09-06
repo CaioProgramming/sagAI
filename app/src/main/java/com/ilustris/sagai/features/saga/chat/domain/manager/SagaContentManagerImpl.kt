@@ -179,15 +179,13 @@ class SagaContentManagerImpl
 
         private suspend fun startChapter(act: ActContent) =
             executeRequest {
+                setNarrativeProcessingStatus(true)
                 val lastChapter = act.chapters.lastOrNull()
                 if (lastChapter?.isComplete()?.not() == true) {
+                    actUseCase.updateAct(act.data.copy(currentChapterId = lastChapter.data.id))
                     throw IllegalArgumentException("Chapter is already set at this act")
                 }
-                val chapterOperation = chapterUseCase.saveChapter(Chapter(actId = act.data.id))
-
-                chapterUseCase.generateChapterIntroduction(content.value!!, chapterOperation, act)
-
-                chapterOperation
+                chapterUseCase.saveChapter(Chapter(actId = act.data.id))
             }
 
         private suspend fun updateChapter(
@@ -195,6 +193,7 @@ class SagaContentManagerImpl
             chapter: ChapterContent,
         ): RequestResult<Exception, Chapter> =
             try {
+                delay(200L)
                 val chapterGen =
                     chapterUseCase
                         .generateChapter(
@@ -219,52 +218,44 @@ class SagaContentManagerImpl
                         },
                     )
 
-                val newChapter =
-                    chapterUseCase
-                        .generateChapterCover(
-                            chapter.copy(
-                                chapter.data.copy(
-                                    title = chapterGen.title,
-                                    overview = chapterGen.overview,
-                                    emotionalReview = emotionalReview ?: emptyString(),
-                                    featuredCharacters = featuredCharacters,
-                                ),
+                chapterUseCase
+                    .generateChapterCover(
+                        chapter.copy(
+                            chapter.data.copy(
+                                title = chapterGen.title,
+                                overview = chapterGen.overview,
+                                emotionalReview = emotionalReview ?: emptyString(),
+                                featuredCharacters = featuredCharacters,
                             ),
-                            saga,
-                        ).onSuccessAsync {
-                            endChapter(saga.currentActInfo!!)
-                        }
-                newChapter
+                        ),
+                        saga,
+                    )
             } catch (e: Exception) {
                 e.asError()
             }
 
         private suspend fun endChapter(currentAct: ActContent?) =
-            try {
+            executeRequest {
                 actUseCase
                     .updateAct(
                         currentAct!!.data.copy(
                             currentChapterId = null,
                         ),
-                    ).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                    )
             }
 
         private suspend fun startTimeline(currentChapter: ChapterContent?) =
             executeRequest {
                 val lastTimeline = currentChapter!!.events.lastOrNull()
                 if (lastTimeline?.isComplete()?.not() == true) {
+                    chapterUseCase.updateChapter(
+                        currentChapter.data.copy(
+                            currentEventId = lastTimeline.data.id,
+                        ),
+                    )
                     throw IllegalArgumentException("Timeline already set at this chapter")
                 }
-                val timeLineOperation =
-                    timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter.data.id))
-                chapterUseCase.updateChapter(
-                    currentChapter.data.copy(
-                        currentEventId = timeLineOperation.id,
-                    ),
-                )
-                timeLineOperation
+                timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter.data.id))
             }
 
         private suspend fun endTimeline(currentChapter: ChapterContent?) =
@@ -287,7 +278,7 @@ class SagaContentManagerImpl
         private suspend fun updateTimeline(
             saga: SagaContent,
             content: TimelineContent,
-        ) = try {
+        ) = executeRequest {
             val loreGen =
                 sagaHistoryUseCase
                     .generateLore(
@@ -310,10 +301,7 @@ class SagaContentManagerImpl
                             emotionalReview = emotionalReview ?: emptyString(),
                         ),
                     )
-            endTimeline(saga.currentActInfo!!.currentChapterInfo)
-            newEvent.asSuccess()
-        } catch (e: Exception) {
-            e.asError()
+            newEvent
         }
 
         private suspend fun createAct(currentSaga: SagaContent): RequestResult<Exception, Act> =
@@ -489,9 +477,13 @@ class SagaContentManagerImpl
 
                     is NarrativeStep.StartChapter -> {
                         val currentAct = saga.currentActInfo!!
-                        val newChapterId = (result.value as Chapter).id
+                        val newChapter = (result.value as Chapter)
+
+                        chapterUseCase
+                            .generateChapterIntroduction(content.value!!, result.value, currentAct)
+
                         actUseCase.updateAct(
-                            currentAct.data.copy(currentChapterId = newChapterId),
+                            currentAct.data.copy(currentChapterId = newChapter.id),
                         )
                         setNarrativeProcessingStatus(false)
                     }
@@ -510,37 +502,41 @@ class SagaContentManagerImpl
                             delay(250L)
                             updateCharacters(it, saga)
                             updateWikis(it)
+                            endTimeline(saga.currentActInfo!!.currentChapterInfo)
                             setNarrativeProcessingStatus(false)
                         } ?: run {
                             setNarrativeProcessingStatus(false)
                         }
                     }
 
+                    is NarrativeStep.GenerateChapter -> {
+                        endChapter(saga.currentActInfo)
+                        cleanUpEmptyTimeLines(step.chapter)
+                        setNarrativeProcessingStatus(false)
+                    }
+
                     else -> setNarrativeProcessingStatus(false)
                 }
-
-                // clearInvalidData(saga)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
 
-        private fun cleanUpEmptyTimeLines(chapter: ChapterContent) =
-            CoroutineScope(Dispatchers.IO).launch {
-                setProcessing(true)
-                val emptyEvents = chapter.events.filter { it.isComplete().not() }
-                if (emptyEvents.isEmpty()) {
+        private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {
+            setProcessing(true)
+            val emptyEvents = chapter.events.filter { it.isComplete().not() }
+            if (emptyEvents.isEmpty()) {
+                setNarrativeProcessingStatus(false)
+                return
+            }
+            emptyEvents.forEach { timeline ->
+                timelineUseCase.deleteTimeline(timeline.data)
+                if (timeline == chapter.events.last()) {
+                    delay(2.seconds)
                     setNarrativeProcessingStatus(false)
-                    return@launch
-                }
-                emptyEvents.forEach { timeline ->
-                    timelineUseCase.deleteTimeline(timeline.data)
-                    if (timeline == chapter.events.last()) {
-                        delay(2.seconds)
-                        setNarrativeProcessingStatus(false)
-                    }
                 }
             }
+        }
 
         private suspend fun createEndingMessage(saga: SagaContent) =
             try {
