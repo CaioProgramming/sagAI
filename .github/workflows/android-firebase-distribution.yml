@@ -26,6 +26,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare config.properties ⚙️
+        run: |
+          mkdir -p app
+          cat > app/config.properties <<'EOF'
+          ${{ secrets.CONFIG_PROPERTIES }}
+          EOF
+          chmod 600 app/config.properties
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -43,7 +51,7 @@ jobs:
 
       # If you want to sign a release, provide the keystore secrets and uncomment the signing step below.
       # Otherwise we build Debug which does not require signing keys.
-      - name: Assemble APK
+      - name: APK Shipping📦
         run: |
           VARIANT_LOWER=$(echo "${BUILD_VARIANT}" | tr '[:upper:]' '[:lower:]')
           ./gradlew :${ANDROID_MODULE}:assemble${BUILD_VARIANT}
