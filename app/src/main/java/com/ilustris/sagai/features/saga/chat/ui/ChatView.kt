@@ -151,11 +151,11 @@ import com.ilustris.sagai.features.saga.chat.presentation.SnackBarState
 import com.ilustris.sagai.features.saga.chat.presentation.TimelineSummaryData
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.detail.ui.DetailAction
+import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
-import com.ilustris.sagai.features.saga.detail.ui.DetailAction
-import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
@@ -319,16 +319,18 @@ fun ChatView(
                             state = state.value,
                             content = cont,
                             characters = characters,
-                            titleModifier = (sharedTransitionScope?.let { sts ->
-                                with(sts) {
-                                    Modifier.sharedElement(
-                                        rememberSharedContentState(
-                                            key = DetailAction.BACK.sharedElementTitleKey(cont.data.id)!!
-                                        ),
-                                        animatedVisibilityScope = this@AnimatedContent
-                                    )
-                                }
-                            } ?: Modifier),
+                            titleModifier = (
+                                sharedTransitionScope?.let { sts ->
+                                    with(sts) {
+                                        Modifier.sharedElement(
+                                            rememberSharedContentState(
+                                                key = DetailAction.BACK.sharedElementTitleKey(cont.data.id)!!,
+                                            ),
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                    }
+                                } ?: Modifier
+                            ),
                             messagesList = messages,
                             suggestions = suggestions,
                             isGenerating = isGenerating || isLoading,
@@ -1189,8 +1191,8 @@ fun ChatList(
                             imageSize = 400.dp,
                             modifier =
                                 Modifier
-                                    .clip(genre.shape())
                                     .animateItem()
+                                    .clip(genre.shape())
                                     .fillMaxWidth()
                                     .clickable {
                                         openSaga()

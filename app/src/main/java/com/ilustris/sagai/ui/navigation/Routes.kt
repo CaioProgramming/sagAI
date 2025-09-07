@@ -48,7 +48,6 @@ import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
-import com.ilustris.sagai.features.timeline.ui.TimelineView
 import com.ilustris.sagai.ui.theme.SagaTitle
 
 @OptIn(ExperimentalSharedTransitionApi::class)

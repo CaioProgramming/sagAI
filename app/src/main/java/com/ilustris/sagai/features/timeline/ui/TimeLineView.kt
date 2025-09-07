@@ -57,6 +57,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -105,33 +106,6 @@ import kotlinx.coroutines.delay
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
-
-@Composable
-fun TimelineView(
-    sagaId: String,
-    navHostController: NavHostController,
-    viewModel: TimelineViewModel = hiltViewModel(),
-) {
-    val saga by viewModel.saga.collectAsStateWithLifecycle()
-
-    TimelineContentView(saga) {
-        navHostController.popBackStack()
-    }
-
-    LaunchedEffect(saga) {
-        if (saga == null) {
-            viewModel.getSaga(sagaId)
-        }
-    }
-}
-
-@Composable
-fun TimelineContentView(
-    sagaContent: SagaContent?,
-    onBack: () -> Unit = {},
-) {
-    SparkLoader(gradientAnimation(genresGradient()))
-}
 
 @Composable
 fun TimeLineContent(
@@ -493,6 +467,8 @@ fun TimeLineSimpleCard(
                         color = genre.color,
                         fontWeight = FontWeight.SemiBold,
                     ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -500,6 +476,8 @@ fun TimeLineSimpleCard(
         AnimatedVisibility(showText) {
             Text(
                 event.content,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 4,
                 style =
                     MaterialTheme.typography.bodySmall.copy(
                         fontFamily = genre.bodyFont(),
@@ -774,7 +752,7 @@ fun TimelineCharacterAttachment(
                     true,
                     genre,
                     Modifier
-                        .size(50.dp)
+                        .size(32.dp)
                         .border(2.dp, genre.color, CircleShape)
                         .clickable {
                             onSelectCharacter(eventDetails.character)
@@ -861,7 +839,7 @@ fun TimelineCharacterAttachment(
                     TimeLineSimpleCard(
                         it,
                         sagaContent,
-                        false,
+                        true,
                         Modifier
                             .clip(genre.shape())
                             .clickable {

@@ -348,10 +348,11 @@ fun CharacterDetailsContent(
                     showIndicator = true,
                     showSpark = character == sagaContent.mainCharacter,
                     isLast = it == characterContent.events.last(),
+                    onSelectReference = {
+                        openEvent(it)
+                    },
                     modifier =
-                        Modifier.padding(horizontal = 16.dp).clip(genre.shape()).clickable {
-                            openEvent(it.timeline)
-                        },
+                        Modifier.padding(horizontal = 16.dp).clip(genre.shape()),
                 )
             }
         }

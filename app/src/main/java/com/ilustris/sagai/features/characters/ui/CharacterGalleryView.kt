@@ -189,7 +189,11 @@ fun CharactersGalleryContent(
                         CharacterDetailsContent(
                             saga,
                             character,
-                            openEvent = { it?.let { p1 -> onOpenEvent(p1) } },
+                            openEvent = { event ->
+                                event?.let {
+                                    onOpenEvent(event)
+                                }
+                            },
                         )
                     }
                 }
