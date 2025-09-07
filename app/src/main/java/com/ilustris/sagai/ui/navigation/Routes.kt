@@ -79,13 +79,14 @@ enum class Routes(
         )
     }),
     CHAT(
-        view = { nav, padding, _, snack ->
+        view = { nav, padding, transitionScope, snack ->
             val arguments = nav.currentBackStackEntry?.arguments
             ChatView(
                 navHostController = nav,
                 padding,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
                 isDebug = arguments?.getString(CHAT.arguments.last()) == "true",
+                sharedTransitionScope = transitionScope,
             )
         },
         topBarContent = { Box {} },
@@ -106,23 +107,6 @@ enum class Routes(
             NewSagaView(nav)
         }
     }),
-    CHARACTER_GALLERY(
-        // Added Character Gallery Route
-        view = { nav, padding, transitionScope, _ ->
-            val arguments = nav.currentBackStackEntry?.arguments
-            CharacterGalleryView(
-                navController = nav,
-                sagaId = arguments?.getString(CHARACTER_GALLERY.arguments.first()) ?: "",
-            )
-        },
-        topBarContent = {
-            Box {}
-        },
-        title = R.string.character_gallery_title, // Example title, ensure this exists
-        arguments = listOf("sagaId"),
-        deepLink = "saga://character_gallery/{sagaId}",
-        showBottomNav = false, // Or true, depending on your desired UX
-    ),
     SAGA_DETAIL(
         view = { nav, padding, _, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
@@ -137,19 +121,7 @@ enum class Routes(
         deepLink = "saga://saga_detail/{sagaId}",
         showBottomNav = false,
     ),
-    TIMELINE(
-        view = { nav, padding, _, _ ->
-            val arguments = nav.currentBackStackEntry?.arguments
-            TimelineView(
-                sagaId = arguments?.getString(TIMELINE.arguments.first()) ?: "",
-                navHostController = nav,
-            )
-        },
-        topBarContent = { Box {} },
-        arguments = listOf("sagaId"),
-        deepLink = "saga://timeline/{sagaId}",
-        showBottomNav = false,
-    ),
+
     CHARACTER_DETAIL(
         arguments =
             listOf(

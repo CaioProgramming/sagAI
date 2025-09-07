@@ -18,12 +18,8 @@ object SagaContentUIMapper {
                             isComplete = chapterContentDomain.isComplete(),
                             timelineSummaries =
                                 chapterContentDomain.events.map {
-                                    TimelineSummaryData(
-                                        id = it.data.id,
-                                        title = it.data.title,
-                                        content = it.data.content,
+                                    it.copy(
                                         messages = it.messages.sortedBy { m -> m.message.timestamp },
-                                        isComplete = it.isComplete(),
                                     )
                                 },
                         )

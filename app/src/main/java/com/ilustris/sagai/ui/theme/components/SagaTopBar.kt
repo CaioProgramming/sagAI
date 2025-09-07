@@ -40,6 +40,7 @@ fun SagaTopBar(
     onBackClick: (() -> Unit)? = null,
     modifier: Modifier,
     isLoading: Boolean = false,
+    titleModifier: Modifier = Modifier,
 ) {
     Row(
         modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -73,7 +74,7 @@ fun SagaTopBar(
                         brush = genre.gradient(),
                         textAlign = TextAlign.Center,
                     ),
-                modifier = Modifier.fillMaxWidth().reactiveShimmer(isLoading, genre.shimmerColors()),
+                modifier = Modifier.fillMaxWidth().then(titleModifier).reactiveShimmer(isLoading, genre.shimmerColors()),
             )
 
             Text(

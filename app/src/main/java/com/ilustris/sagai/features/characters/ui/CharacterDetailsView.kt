@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -55,6 +56,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
+import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -125,6 +127,7 @@ fun CharacterDetailsContent(
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
+
     LazyColumn(
         modifier =
             Modifier.fillMaxSize(),
@@ -339,9 +342,9 @@ fun CharacterDetailsContent(
             }
 
             items(characterContent.events.sortedBy { it.timeline?.createdAt }) {
-                TimeLineCard(
+                TimelineCharacterAttachment(
                     it,
-                    genre,
+                    sagaContent,
                     showIndicator = true,
                     showSpark = character == sagaContent.mainCharacter,
                     isLast = it == characterContent.events.last(),

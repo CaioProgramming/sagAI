@@ -153,6 +153,9 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
+import com.ilustris.sagai.features.saga.detail.ui.DetailAction
+import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
@@ -181,7 +184,7 @@ import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun ChatView(
     navHostController: NavHostController,
@@ -189,6 +192,7 @@ fun ChatView(
     sagaId: String? = null,
     isDebug: Boolean = false,
     viewModel: ChatViewModel = hiltViewModel(),
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val content by viewModel.content.collectAsStateWithLifecycle()
@@ -315,6 +319,16 @@ fun ChatView(
                             state = state.value,
                             content = cont,
                             characters = characters,
+                            titleModifier = (sharedTransitionScope?.let { sts ->
+                                with(sts) {
+                                    Modifier.sharedElement(
+                                        rememberSharedContentState(
+                                            key = DetailAction.BACK.sharedElementTitleKey(cont.data.id)!!
+                                        ),
+                                        animatedVisibilityScope = this@AnimatedContent
+                                    )
+                                }
+                            } ?: Modifier),
                             messagesList = messages,
                             suggestions = suggestions,
                             isGenerating = isGenerating || isLoading,
@@ -429,26 +443,7 @@ fun ChatListPreview() {
                                     actId = 1,
                                 ),
                             timelineSummaries =
-                                listOf(
-                                    TimelineSummaryData(
-                                        id = 1,
-                                        title = "Timeline 1",
-                                        content = "Timeline 1 content",
-                                        messages =
-                                            List(SenderType.entries.size) {
-                                                MessageContent(
-                                                    message =
-                                                        Message(
-                                                            id = SenderType.entries[it].ordinal,
-                                                            text = "Message $it",
-                                                            senderType = SenderType.entries[it],
-                                                            timelineId = 1,
-                                                        ),
-                                                )
-                                            },
-                                        isComplete = true,
-                                    ),
-                                ),
+                                emptyList(),
                         ),
                     ),
             ),
@@ -470,6 +465,7 @@ fun ChatContent(
     state: ChatState = ChatState.Loading,
     content: SagaContent,
     characters: List<Character> = emptyList(),
+    titleModifier: Modifier = Modifier,
     messagesList: List<ActDisplayData> = emptyList(),
     suggestions: List<Suggestion> = emptyList(),
     isGenerating: Boolean = false,
@@ -657,6 +653,7 @@ fun ChatContent(
                             .clickable {
                                 openSagaDetails(saga)
                             },
+                    titleModifier = titleModifier,
                     actionContent = {
                         AnimatedContent(characters, transitionSpec = {
                             slideInVertically() + fadeIn() with fadeOut()
@@ -1150,7 +1147,10 @@ fun ChatList(
                 }
 
                 item {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.animateItem()) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.animateItem(),
+                    ) {
                         Text(
                             "Fim",
                             style =
@@ -1201,41 +1201,21 @@ fun ChatList(
 
                 chapter.timelineSummaries.reversed().forEach { timeline ->
 
-                    if (timeline.isComplete) {
+                    if (timeline.isComplete()) {
                         item {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                            TimeLineSimpleCard(
+                                timeline,
+                                saga,
                                 modifier =
                                     Modifier
                                         .animateItem()
                                         .padding(16.dp)
-                                        .clip(shape)
-                                        .border(1.dp, genre.gradient(true), shape)
-                                        .background(
-                                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
-                                            shape,
+                                        .clip(
+                                            genre.shape(),
                                         ).clickable {
                                             openSaga()
-                                        }.padding(8.dp)
-                                        .gradientFill(genre.gradient(true)),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_spark),
-                                    null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = genre.iconColor,
-                                )
-                                Text(
-                                    "História atualizada ${timeline.title}",
-                                    style =
-                                        MaterialTheme.typography.labelSmall.copy(
-                                            color = genre.iconColor,
-                                            fontFamily = genre.bodyFont(),
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                )
-                            }
+                                        }.fillMaxWidth(),
+                            )
                         }
                     }
 
@@ -1272,7 +1252,12 @@ fun ChatList(
                 }
 
                 item {
-                    val title = chapter.chapter.title.ifEmpty { "Capitulo ${saga.chapterNumber(chapter.chapter).toRoman()}" }
+                    val title =
+                        chapter.chapter.title.ifEmpty {
+                            "Capitulo ${
+                                saga.chapterNumber(chapter.chapter).toRoman()
+                            }"
+                        }
                     Text(
                         title,
                         style =
@@ -1381,7 +1366,8 @@ fun CharactersTopIcons(
                             },
                         ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).size(24.dp)
+                        ).clip(CircleShape)
+                        .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )
         }
