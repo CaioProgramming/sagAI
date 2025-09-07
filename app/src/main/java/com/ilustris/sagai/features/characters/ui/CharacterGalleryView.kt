@@ -142,7 +142,7 @@ fun CharactersGalleryContent(
                             titleAndSubtitle.first,
                             titleAndSubtitle.second,
                             titleStyle =
-                                MaterialTheme.typography.displayMedium.copy(
+                                MaterialTheme.typography.displaySmall.copy(
                                     fontFamily = genre.headerFont(),
                                 ),
                             subtitleStyle =

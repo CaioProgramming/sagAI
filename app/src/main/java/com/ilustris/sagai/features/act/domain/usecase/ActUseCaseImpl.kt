@@ -19,7 +19,6 @@ class ActUseCaseImpl
     @Inject
     constructor(
         private val actRepository: ActRepository,
-        private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
@@ -39,7 +38,7 @@ class ActUseCaseImpl
         override suspend fun generateAct(saga: SagaContent): RequestResult<Exception, Act> =
             try {
                 val titlePrompt = generateActPrompt(saga)
-                gemmaClient.generate<Act>(titlePrompt)!!.asSuccess()
+                gemmaClient.generate<Act>(titlePrompt, skipRunning = true)!!.asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }
@@ -72,8 +71,7 @@ class ActUseCaseImpl
                         .data.id == act.id
             val previousAct = if (isFirst) null else saga.acts[saga.acts.indexOfFirst { it.data.id == act.id } - 1]
             val prompt = ActPrompts.actIntroductionPrompt(saga.data, previousAct)
-            delay(500)
-            val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
+            val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
             val updated = currentAct.copy(introduction = intro)
             actRepository.updateAct(updated).asSuccess()
         } catch (e: Exception) {

@@ -29,7 +29,6 @@ class ChapterUseCaseImpl
     @Inject
     constructor(
         private val chapterRepository: ChapterRepository,
-        private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
@@ -48,7 +47,7 @@ class ChapterUseCaseImpl
         override suspend fun generateChapter(
             saga: SagaContent,
             chapterContent: ChapterContent,
-        ) = try {
+        ) = executeRequest {
             gemmaClient
                 .generate<Chapter>(
                     prompt =
@@ -57,10 +56,8 @@ class ChapterUseCaseImpl
                             currentChapter = chapterContent,
                         ),
                     requireTranslation = true,
+                    skipRunning = true,
                 )!!
-                .asSuccess()
-        } catch (e: Exception) {
-            e.asError()
         }
 
         @OptIn(PublicPreviewAPI::class)
@@ -104,6 +101,7 @@ class ChapterUseCaseImpl
                         ),
                         references = imageReferences,
                         requireTranslation = false,
+                        skipRunning = true,
                     )
                 val genCover =
                     imagenClient
@@ -131,9 +129,8 @@ class ChapterUseCaseImpl
             act: ActContent,
         ): RequestResult<Exception, Chapter> =
             executeRequest {
-                delay(300L)
                 val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
-                val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
+                val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)
             }

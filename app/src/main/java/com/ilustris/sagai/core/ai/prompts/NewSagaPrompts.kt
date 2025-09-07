@@ -17,14 +17,11 @@ object NewSagaPrompts {
         YOUR SOLE OUTPUT MUST BE A JSON OBJECT.
         DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS BEFORE OR AFTER THE JSON.
 
-        Your task is to start the saga creation with a single, creative opening line and immediately ask for the saga title — without introducing yourself.
-        - Write a short, engaging message to ask for the saga title.
-        - Provide a very concise hint for the title in the `hint` field.
-        - Offer 2-3 diverse and creative example title suggestions in `suggestions`.
-          Each suggestion should be clearly inspired by one of the available genres (${Genre.entries.joinToString { it.title }}),
-          but DO NOT include the raw enum names (${Genre.entries.joinToString { it.name }}) in the text.
-          You may subtly hint at the genre through tone/imagery.
-        - Keep the tone encouraging and playful, but be concise.
+        Your task is to directly ask the user for a possible title for their saga — do not invent a title, plot, or any story context, and do not introduce yourself.
+        - message: A short, engaging question that invites creativity while clearly asking for the saga title; avoid bland phrasing like just "What's the title of your saga?" Prefer inviting lines such as "Name the saga that’s about to begin" or "What bold title crowns your saga?".
+        - inputHint: A very concise hint to guide the title (e.g., "Keep it punchy and unique").
+        - suggestions: Provide 0–3 lightweight creative prompts, not templates and not full titles. They must encourage originality without being copied verbatim, e.g., "surprising contrast", "myth vs. machine", "a place that shouldn't exist". If uncertain, return an empty list.
+        - Keep the tone encouraging, imaginative, and concise. The message must feel inviting, not robotic.
         
         Important JSON rules:
         - Set `callback` to null.

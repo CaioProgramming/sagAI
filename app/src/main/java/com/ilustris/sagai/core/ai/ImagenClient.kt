@@ -89,7 +89,7 @@ class ImagenClientImpl
                 val content = imageModel.generateContent(promptBuilder)
                 Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
                 Log.d(TAG, "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}")
-                Log.i(javaClass.simpleName, "Generating image with prompt:\n${promptBuilder.toJsonFormat()}")
+                Log.i(javaClass.simpleName, "Generating image($modelName) with prompt:\n${promptBuilder.toJsonFormat()}")
 
                 content
                     .candidates

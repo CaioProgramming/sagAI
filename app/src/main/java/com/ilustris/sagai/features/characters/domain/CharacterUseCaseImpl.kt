@@ -15,6 +15,7 @@ import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
@@ -70,31 +71,11 @@ class CharacterUseCaseImpl
 
         override suspend fun getCharacterById(characterId: Int): Character? = repository.getCharacterById(characterId)
 
-        override suspend fun generateCharacterPrompt(
-            character: Character,
-            guidelines: String,
-            genre: Genre,
-        ): RequestResult<Exception, String> =
-            try {
-                textGenClient
-                    .generate<String>(
-                        CharacterPrompts.descriptionTranslationPrompt(
-                            character,
-                            genre,
-                        ),
-                        customSchema = Schema.string(),
-                        requireTranslation = false,
-                    )!!
-                    .asSuccess()
-            } catch (e: Exception) {
-                e.asError()
-            }
-
         override suspend fun generateCharacterImage(
             character: Character,
             saga: Saga,
         ): RequestResult<Exception, Pair<Character, String>> =
-            try {
+            executeRequest {
                 val styleReferenceBitmap =
                     ImageReference(
                         BitmapFactory.decodeResource(
@@ -123,15 +104,15 @@ class CharacterUseCaseImpl
                     )
                 val prompt = ImagePrompts.generateImage(translatedDescription!!)
 
-                val image = imagenClient.generateImage(prompt, references)!!
+                val image =
+                    imagenClient.generateImage(prompt, references)!!.apply {
+                        // imageCropHelper.cropToPortraitBitmap(this,)
+                    }
                 val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
-                // val file = fileHelper.saveFile(character.name, image!!.data, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)
                 image.recycle()
-                RequestResult.Success(newCharacter to prompt)
-            } catch (e: Exception) {
-                e.asError()
+                newCharacter to prompt
             }
 
         override suspend fun generateCharacter(

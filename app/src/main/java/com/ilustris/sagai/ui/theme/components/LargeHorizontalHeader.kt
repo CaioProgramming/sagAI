@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 
@@ -29,11 +30,10 @@ fun LargeHorizontalHeader(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
+        AutoResizeText(
             title,
             style = titleStyle,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
             modifier = titleModifier.weight(1f, false),
         )
 

@@ -16,6 +16,7 @@ import com.google.gson.reflect.TypeToken // <-- ADDED IMPORT
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString // <-- ADDED IMPORT FOR EXTENSION
 import kotlinx.coroutines.delay
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -25,10 +26,14 @@ class GemmaClient
     constructor(
         private val firebaseRemoteConfig: FirebaseRemoteConfig,
     ) : AIClient() {
+        @PublishedApi
+        internal val requestRunning = AtomicBoolean(false)
+        val isRequestRunning: Boolean get() = requestRunning.get()
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
 
             const val DEFAULT_SUMMARIZATION_MODEL = "gemini-2.0-flash-lite"
+            const val DEFAULT_DELAY: Long = 500L
         }
 
         fun modelName() =
@@ -55,8 +60,18 @@ class GemmaClient
             references: List<ImageReference?> = emptyList(),
             temperatureRandomness: Float = 0f,
             requireTranslation: Boolean = true,
+            skipRunning: Boolean = false,
         ): T? {
+            var acquired = false
             try {
+                if (!skipRunning) {
+                    acquired = requestRunning.compareAndSet(false, true)
+                    if (!acquired) {
+                        throw IllegalStateException("Gemma request already running")
+                    }
+                } else if (isRequestRunning) {
+                    delay(DEFAULT_DELAY)
+                }
                 delay(300)
 
                 val client =
@@ -108,6 +123,10 @@ class GemmaClient
             } catch (e: Exception) {
                 Log.e(this::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)
                 return null
+            } finally {
+                if (!skipRunning && acquired) {
+                    requestRunning.set(false)
+                }
             }
         }
     }

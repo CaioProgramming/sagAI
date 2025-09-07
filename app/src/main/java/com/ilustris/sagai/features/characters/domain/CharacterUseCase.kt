@@ -19,12 +19,6 @@ interface CharacterUseCase {
 
     suspend fun getCharacterById(characterId: Int): Character?
 
-    suspend fun generateCharacterPrompt(
-        character: Character,
-        guidelines: String,
-        genre: Genre,
-    ): RequestResult<Exception, String>
-
     suspend fun generateCharacterImage(
         character: Character,
         saga: Saga,
@@ -43,5 +37,5 @@ interface CharacterUseCase {
     suspend fun generateCharacterRelations(
         timeline: Timeline,
         saga: SagaContent,
-    ) : RequestResult<Exception, Unit>
+    ): RequestResult<Exception, Unit>
 }

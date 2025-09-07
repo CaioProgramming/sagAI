@@ -381,7 +381,7 @@ fun ChatCard(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .border(2.dp, sagaData.genre.gradient(), CircleShape)
+                                .border(2.dp, sagaData.genre.color, CircleShape)
                                 .padding(4.dp),
                     )
 
@@ -419,7 +419,7 @@ fun ChatCard(
                         modifier =
                             Modifier.offset(y = 6.dp).size(24.dp).align(
                                 Alignment.BottomCenter,
-                            ),
+                            ).reactiveShimmer(true),
                     )
                 }
             }
@@ -433,13 +433,7 @@ fun ChatCard(
             Column(
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .reactiveShimmer(
-                            sagaData.isEnded,
-                            sagaData.genre.shimmerColors(),
-                            targetValue = 1000f,
-                            duration = 10.seconds,
-                        ),
+                        .weight(1f),
             ) {
                 Row {
                     Text(
