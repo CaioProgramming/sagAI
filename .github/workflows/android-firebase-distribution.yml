@@ -29,11 +29,30 @@ jobs:
       - name: Prepare config.properties ⚙️
         shell: bash
         run: |
+          set -euo pipefail
+          echo "[CI] Working dir: $(pwd)"
           mkdir -p app
+          # Fail fast if secret is empty (will not print it)
+          if [ -z "${{ secrets.GEMINI_KEY }}" ]; then
+            echo "[CI][ERROR] GEMINI_KEY secret is empty or not configured." >&2
+            exit 2
+          fi
           {
             echo "GEMINI_KEY = \"${{ secrets.GEMINI_KEY }}\"";
           } > app/config.properties
           chmod 600 app/config.properties
+          # Optionally mirror into assets if project expects it there (safe if not used)
+          mkdir -p app/src/main/assets
+          cp app/config.properties app/src/main/assets/config.properties
+          chmod 600 app/src/main/assets/config.properties || true
+          # Non-secret diagnostics
+          echo "[CI] Wrote app/config.properties"
+          ls -l app/config.properties || true
+          echo "[CI] Also mirrored to app/src/main/assets/config.properties"; ls -l app/src/main/assets/config.properties || true
+          echo "[CI] Showing sanitized preview (no values):"
+          # Print only the key names without values
+          awk -F'=' '{ gsub(/ /,""); key=$1; if (length(key)>0) print key " = \"***\"" }' app/config.properties
+          echo "[CI] app folder listing:"; ls -la app || true
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -54,8 +73,17 @@ jobs:
       # Otherwise we build Debug which does not require signing keys.
       - name: APK Shipping📦
         run: |
+          set -euo pipefail
           VARIANT_LOWER=$(echo "${BUILD_VARIANT}" | tr '[:upper:]' '[:lower:]')
-          ./gradlew :${ANDROID_MODULE}:assemble${BUILD_VARIANT}
+          echo "[CI] Checking config.properties before build:"
+          if [ -f app/config.properties ]; then
+            echo "[CI] app/config.properties exists"; ls -l app/config.properties
+            echo "[CI] Sanitized content:"; awk -F'=' '{ gsub(/ /,"" ); key=$1; if (length(key)>0) print key " = \"***\"" }' app/config.properties
+          else
+            echo "[CI][ERROR] app/config.properties is missing." >&2
+            exit 3
+          fi
+          ./gradlew :${ANDROID_MODULE}:assemble${BUILD_VARIANT} --stacktrace
           echo "APK_PATH=${ANDROID_MODULE}/build/outputs/apk/${VARIANT_LOWER}/" >> $GITHUB_ENV
 
       - name: Locate generated APK
