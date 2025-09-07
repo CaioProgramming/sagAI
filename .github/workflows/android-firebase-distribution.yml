@@ -27,11 +27,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Prepare config.properties ⚙️
+        shell: bash
         run: |
           mkdir -p app
-          cat > app/config.properties <<'EOF'
-          ${{ secrets.CONFIG_PROPERTIES }}
-          EOF
+          {
+            echo "GEMINI_KEY = \"${{ secrets.GEMINI_KEY }}\"";
+          } > app/config.properties
           chmod 600 app/config.properties
 
       - name: Set up JDK 17
