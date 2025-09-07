@@ -33,16 +33,16 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Timeline::class,
         Act::class,
         CharacterEvent::class,
-        CharacterRelation::class, // Added CharacterRelation
+        CharacterRelation::class,
     ],
-    version = 45, // Incremented version
-    autoMigrations = [
+    version = 45,
+    /*autoMigrations = [
         androidx.room.AutoMigration(from = 41, to = 42),
         androidx.room.AutoMigration(from = 42, to = 43),
         androidx.room.AutoMigration(from = 43, to = 44),
         androidx.room.AutoMigration(from = 44, to = 45),
     ],
-    exportSchema = true,
+    exportSchema = true,*/
 )
 @TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {
