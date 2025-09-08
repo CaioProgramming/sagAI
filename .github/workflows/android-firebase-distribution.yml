@@ -59,7 +59,7 @@ jobs:
       # If you want to sign a release, provide the keystore secrets and uncomment the signing step below.
       # Otherwise we build Debug which does not require signing keys.
       - name: 🏗️ Build APK
-        id: build
+        id: build_apk
         uses: MirkoMajkicProductDock/BuildAPK@v0.0.1
         with:
           flavour: debug
@@ -68,7 +68,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: apk-${{ env.BUILD_VARIANT }}
-          path: ${{ steps.apk-path }}
+          path: ${{ steps.build_apk.apk-path }}
 
       - name: Pull Request Commenter
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
