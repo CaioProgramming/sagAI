@@ -63,19 +63,12 @@ jobs:
         uses: MirkoMajkicProductDock/BuildAPK@v0.0.1
         with:
           flavour: debug
-      - name: 🔎 Find APK
-        id: locate_apk
-        run: |
-          chmod +x scripts/locate-apk.sh
-          OUT=$(ANDROID_MODULE=${ANDROID_MODULE} BUILD_VARIANT=${BUILD_VARIANT} scripts/locate-apk.sh)
-          echo "$OUT" >> $GITHUB_OUTPUT
-
       - name: ⬆️ Upload artifact
         id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk-${{ env.BUILD_VARIANT }}
-          path: ${{ steps.locate_apk.outputs.apk }}
+          path: ${{ steps.apk-path }}
 
       - name: Pull Request Commenter
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
