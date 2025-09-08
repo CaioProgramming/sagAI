@@ -81,8 +81,8 @@ jobs:
           name: apk-${{ env.BUILD_VARIANT }}
           path: ${{ steps.locate_apk.outputs.apk }}
 
-      - name: 💬 PR comment
-        uses: OrjanSkarnes/pull-request-commenter@<tag/branch>
+      - name: Pull Request Commenter
+        uses: OrjanSkarnes/pull-request-commenter@1.2.3
         with:
           comment-body: 'Download the APK[artifact](${runUrl}) to test this feature'
           comment-title: '[ Feature ] ${{ github.event.pull_request.title }} APK ready!'
