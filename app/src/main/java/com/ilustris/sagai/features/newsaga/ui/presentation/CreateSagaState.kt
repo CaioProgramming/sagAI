@@ -1,18 +1,21 @@
 package com.ilustris.sagai.features.newsaga.ui.presentation
 
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.ui.navigation.Routes
+import com.ilustris.sagai.features.home.data.model.SagaData
 
-data class CreateSagaState(
-    val isLoading: Boolean = false,
-    val saga: Saga? = null,
-    val errorMessage: String? = null,
-    val continueAction: Pair<String, () -> Unit>? = null,
-)
+sealed class CreateSagaState {
+    data class Success(
+        val saga: SagaData,
+    ) : CreateSagaState()
 
-sealed interface Effect {
-    data class Navigate(
-        val route: Routes,
-        val arguments: Map<String, String>,
-    ) : Effect
+    data class Error(
+        val exception: Exception,
+    ) : CreateSagaState()
+
+    data class GeneratedSaga(
+        val saga: SagaData,
+    ) : CreateSagaState()
+
+    object Loading : CreateSagaState()
+
+    object Idle : CreateSagaState()
 }

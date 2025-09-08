@@ -1,7 +1,5 @@
 package com.ilustris.sagai.core.utils
 
-import java.util.Locale
-
 fun String.addQueryParameter(
     key: String,
     value: String,
@@ -10,9 +8,3 @@ fun String.addQueryParameter(
 fun emptyString() = ""
 
 fun String.removeBlankSpace() = this.replace(" ", emptyString())
-
-fun currentLanguage(): String {
-    val locale = Locale.getDefault()
-
-    return "${locale.displayLanguage} (${locale.language}"
-}

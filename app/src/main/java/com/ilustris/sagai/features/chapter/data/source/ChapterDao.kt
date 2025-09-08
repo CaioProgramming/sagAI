@@ -11,6 +11,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ChapterDao {
+    @Query("SELECT * FROM Chapter WHERE sagaId = :sagaId")
+    fun getChaptersBySagaId(sagaId: Int): Flow<List<Chapter>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveChapter(chapter: Chapter): Long
 
@@ -25,4 +28,10 @@ interface ChapterDao {
 
     @Query("DELETE FROM Chapter")
     suspend fun deleteAllChapters()
+
+    @Query("SELECT * FROM Chapter WHERE sagaId = :sagaId AND messageReference = :messageId")
+    suspend fun getChapterBySagaAndMessageId(
+        sagaId: Int,
+        messageId: Int,
+    ): Chapter?
 }

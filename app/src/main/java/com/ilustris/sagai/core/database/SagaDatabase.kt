@@ -2,49 +2,20 @@ package com.ilustris.sagai.core.database
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.TypeConverters
-import com.ilustris.sagai.core.database.converters.IntListConverter
-import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.act.data.source.ActDao
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.source.ChapterDao
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
-import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
-import com.ilustris.sagai.features.characters.events.data.source.CharacterEventDao
-import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
-import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
-import com.ilustris.sagai.features.saga.datasource.MessageDao
-import com.ilustris.sagai.features.saga.datasource.SagaDao
-import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.timeline.data.source.TimelineDao
-import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.features.wiki.data.source.WikiDao
+import com.ilustris.sagai.features.chat.data.MessageDao
+import com.ilustris.sagai.features.chat.data.SagaDao
+import com.ilustris.sagai.features.chat.data.model.Message
+import com.ilustris.sagai.features.home.data.model.SagaData
 
 @Database(
-    entities = [
-        Saga::class,
-        Message::class,
-        Chapter::class,
-        Character::class,
-        Wiki::class,
-        Timeline::class,
-        Act::class,
-        CharacterEvent::class,
-        CharacterRelation::class,
-    ],
-    version = 45,
-   /* autoMigrations = [
-        androidx.room.AutoMigration(from = 41, to = 42),
-        androidx.room.AutoMigration(from = 42, to = 43),
-        androidx.room.AutoMigration(from = 43, to = 44),
-        androidx.room.AutoMigration(from = 44, to = 45),
-    ],
-    exportSchema = true,*/
+    entities = [SagaData::class, Message::class, Chapter::class, Character::class],
+    version = 8,
+    exportSchema = true,
 )
-@TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {
     abstract fun sagaDao(): SagaDao
 
@@ -53,14 +24,4 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun chapterDao(): ChapterDao
 
     abstract fun characterDao(): CharacterDao
-
-    abstract fun wikiDao(): WikiDao
-
-    abstract fun timelineDao(): TimelineDao
-
-    abstract fun actDao(): ActDao
-
-    abstract fun characterEventDao(): CharacterEventDao
-
-    abstract fun characterRelationDao(): CharacterRelationDao
 }
