@@ -1,11 +1,9 @@
 package com.ilustris.sagai.features.characters.repository
 
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import kotlinx.coroutines.flow.Flow
-import java.util.Calendar
 import javax.inject.Inject
 
 class CharacterRepositoryImpl
@@ -21,9 +19,8 @@ class CharacterRepositoryImpl
             character.copy(
                 id =
                     characterDao
-                        .insertCharacter(
-                            character,
-                        ).toInt(),
+                        .insertCharacter(character.copy(id = 0))
+                        .toInt(),
             )
 
         override suspend fun updateCharacter(character: Character): Character {
@@ -34,9 +31,4 @@ class CharacterRepositoryImpl
         override suspend fun deleteCharacter(characterId: Int) = characterDao.deleteCharacter(characterId)
 
         override suspend fun getCharacterById(characterId: Int): Character? = characterDao.getCharacterById(characterId)
-
-        override suspend fun getCharacterByName(
-            name: String,
-            sagaId: Int,
-        ): Character? = characterDao.getCharacterByName(name, sagaId)
     }

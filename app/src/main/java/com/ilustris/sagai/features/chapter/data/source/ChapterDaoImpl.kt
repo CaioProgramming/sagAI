@@ -14,6 +14,8 @@ class ChapterDaoImpl
             database.chapterDao()
         }
 
+        override fun getChaptersBySagaId(sagaId: Int): Flow<List<Chapter>> = chapterDao.getChaptersBySagaId(sagaId)
+
         override suspend fun saveChapter(chapter: Chapter): Long = chapterDao.saveChapter(chapter)
 
         override fun updateChapter(chapter: Chapter) = chapterDao.updateChapter(chapter)
@@ -29,4 +31,13 @@ class ChapterDaoImpl
         override suspend fun deleteAllChapters() {
             chapterDao.deleteAllChapters()
         }
+
+        override suspend fun getChapterBySagaAndMessageId(
+            chapterId: Int,
+            messageId: Int,
+        ): Chapter? =
+            chapterDao.getChapterBySagaAndMessageId(
+                chapterId,
+                messageId,
+            )
     }

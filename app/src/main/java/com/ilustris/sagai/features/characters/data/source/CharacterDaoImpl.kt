@@ -28,9 +28,4 @@ class CharacterDaoImpl
 
         @Query("SELECT * FROM Characters WHERE id = :characterId")
         override suspend fun getCharacterById(characterId: Int): Character? = characterDao.getCharacterById(characterId)
-
-        override fun getCharacterByName(
-            name: String,
-            sagaId: Int,
-        ) = characterDao.getCharacterByName(name, sagaId)
     }
