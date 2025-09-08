@@ -66,16 +66,12 @@ jobs:
       - name: 🔎 Find APK
         id: locate_apk
         run: |
-          VARIANT_LOWER=$(echo "${BUILD_VARIANT}" | tr '[:upper:]' '[:lower:]')
-          # Prefer universal APK if using app bundles/splits, otherwise fallback to app-{variant}.apk
-          APK_FILE=$(ls ${ANDROID_MODULE}/build/outputs/apk/${VARIANT_LOWER}/*.apk | head -n 1)
-          if [ -z "$APK_FILE" ]; then
-            echo "No APK found in ${ANDROID_MODULE}/build/outputs/apk/${VARIANT_LOWER}" >&2
-            exit 1
-          fi
-          echo "apk=$APK_FILE" >> $GITHUB_OUTPUT
+          chmod +x scripts/locate-apk.sh
+          OUT=$(ANDROID_MODULE=${ANDROID_MODULE} BUILD_VARIANT=${BUILD_VARIANT} scripts/locate-apk.sh)
+          echo "$OUT" >> $GITHUB_OUTPUT
 
       - name: ⬆️ Upload artifact
+        id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk-${{ env.BUILD_VARIANT }}
@@ -84,7 +80,7 @@ jobs:
       - name: Pull Request Commenter
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
         with:
-          comment-body: 'Download the APK[artifact](${runUrl}) to test this feature'
+          comment-body: 'Download the APK artifact from: ${{ steps.upload_artifact.outputs.artifact-url }}'
           comment-title: '[ Feature ] ${{ github.event.pull_request.title }} APK ready!'
           remove-comment-if-no-output: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
