@@ -79,7 +79,7 @@ jobs:
       - name: Delivering artifact 🚚
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
         with:
-          comment-body: 'Your apk is ready Sir! 📦️ Download it here[${{ steps.upload_artifact.outputs.artifact-url }}]'
+          comment-body: 'Your APK is ready 📦️ — [Download it here](${{ steps.upload_artifact.outputs.artifact-url }})'
           comment-title: '${{ github.event.pull_request.title }} APK Delivered! 🎉'
           remove-comment-if-no-output: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
