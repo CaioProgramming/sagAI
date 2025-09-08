@@ -1,0 +1,473 @@
+package com.ilustris.sagai.features.act.ui
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.VerticalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.paint
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.features.act.data.model.ActContent
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.actNumber
+import com.ilustris.sagai.features.home.data.model.chapterNumber
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.components.EmotionalCard
+import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.shape
+import effectForGenre
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
+
+@Composable
+fun ActReader(saga: SagaContent) {
+    val pagerState = rememberPagerState { saga.acts.size + 1 }
+    val genre = saga.data.genre
+
+    LazyColumn {
+        item {
+            IntroductionPage(saga)
+        }
+
+        saga.acts.forEach { act ->
+            stickyHeader {
+                Column(
+                    modifier =
+                        Modifier
+                            .background(MaterialTheme.colorScheme.background)
+                            .fillMaxWidth(),
+                ) {
+                    Text(
+                        saga.actNumber(act.data).toRoman(),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier = Modifier.fillMaxWidth().alpha(.4f),
+                    )
+
+                    Text(
+                        act.data.title,
+                        style =
+                            MaterialTheme.typography.headlineSmall.copy(
+                                fontFamily = genre.headerFont(),
+                                textAlign = TextAlign.Center,
+                                brush = genre.color.gradientFade(),
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                                .fillMaxWidth(),
+                    )
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .5f),
+                        modifier = Modifier.fillMaxWidth().height(1.dp),
+                    )
+                }
+            }
+            items(act.chapters) {
+                val shape = RoundedCornerShape(genre.cornerSize())
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                ) {
+                    Text(
+                        "${saga.chapterNumber(it.data).toRoman()} - ${it.data.title}",
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = genre.headerFont(),
+                                textAlign = TextAlign.Start,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(vertical = 12.dp)
+                                .fillMaxWidth(),
+                    )
+
+                    AsyncImage(
+                        model = it.data.coverImage,
+                        contentDescription = it.data.title,
+                        placeholder = painterResource(R.drawable.ic_spark),
+                        error = painterResource(R.drawable.ic_spark),
+                        fallback = painterResource(R.drawable.ic_spark),
+                        contentScale = ContentScale.Crop,
+                        modifier =
+                            Modifier
+                                .clip(shape)
+                                .selectiveColorHighlight(genre.selectiveHighlight())
+                                .effectForGenre(genre)
+                                .fillMaxWidth()
+                                .fillParentMaxHeight(.4f),
+                    )
+
+                    Text(
+                        it.data.overview,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
+
+                    it.data.emotionalReview?.let {
+                        Text(
+                            it,
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Justify,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(vertical = 8.dp)
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceContainer,
+                                        genre.shape(),
+                                    ).padding(8.dp),
+                        )
+                    }
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                        modifier = Modifier.padding(vertical = 8.dp).height(1.dp),
+                    )
+                }
+            }
+            act.data.emotionalReview?.let {
+                item {
+                    Text(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Justify,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    genre.shape(),
+                                ).padding(8.dp),
+                    )
+                }
+            }
+
+            item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                )
+            }
+        }
+        item {
+            Text(
+                "Conclusão",
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = genre.headerFont(),
+                        textAlign = TextAlign.Start,
+                    ),
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .fillMaxWidth(),
+            )
+        }
+
+        item {
+            Text(
+                saga.data.endMessage,
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = genre.bodyFont(),
+                        textAlign = TextAlign.Justify,
+                    ),
+                modifier = Modifier.padding(8.dp).fillMaxWidth(),
+            )
+        }
+
+        saga.data.emotionalReview?.let {
+            item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                )
+            }
+            item {
+                Text(
+                    "Sobre você",
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Start,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                )
+            }
+
+            item {
+                Text(
+                    it,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            textAlign = TextAlign.Justify,
+                        ),
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                )
+            }
+        }
+
+        item { Spacer(Modifier.height(50.dp)) }
+    }
+}
+
+@Composable
+fun ActReadingContent(
+    act: ActContent,
+    sagaContent: SagaContent,
+) {
+    val genre = remember { sagaContent.data.genre }
+    LazyColumn(modifier = Modifier.padding(vertical = 16.dp)) {
+        items(act.chapters) {
+            val shape = RoundedCornerShape(genre.cornerSize())
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(horizontal = 16.dp),
+            ) {
+                Text(
+                    "${sagaContent.chapterNumber(it.data).toRoman()} - ${it.data.title}",
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Start,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .fillMaxWidth(),
+                )
+
+                AsyncImage(
+                    model = it.data.coverImage,
+                    contentDescription = it.data.title,
+                    placeholder = painterResource(R.drawable.ic_spark),
+                    error = painterResource(R.drawable.ic_spark),
+                    fallback = painterResource(R.drawable.ic_spark),
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier
+                            .selectiveColorHighlight(genre.selectiveHighlight())
+                            .effectForGenre(genre)
+                            .fillMaxWidth()
+                            .fillParentMaxHeight(.4f)
+                            .clip(shape),
+                )
+
+                Text(
+                    it.data.overview,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                )
+
+                it.data.emotionalReview?.let {
+                    EmotionalCard(
+                        it,
+                        genre,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        }
+
+        item {
+            Column(Modifier.padding(horizontal = 16.dp)) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                )
+
+                Text(
+                    act.data.content,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            textAlign = TextAlign.Justify,
+                        ),
+                )
+            }
+        }
+
+        if (act == sagaContent.acts.last()) {
+            item {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                    modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                )
+            }
+
+            item {
+                Text(
+                    "Conclusão",
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Start,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                )
+            }
+
+            item {
+                Text(
+                    sagaContent.data.endMessage,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            textAlign = TextAlign.Justify,
+                        ),
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                )
+            }
+
+            sagaContent.data.emotionalReview?.let {
+                item {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                        modifier = Modifier.padding(vertical = 12.dp).height(1.dp),
+                    )
+                }
+                item {
+                    Text(
+                        "Sobre você",
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.headerFont(),
+                                textAlign = TextAlign.Start,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
+                }
+
+                item {
+                    Text(
+                        it,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Justify,
+                            ),
+                        modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    )
+                }
+            }
+        }
+
+        act.data.emotionalReview?.let {
+            item {
+                EmotionalCard(
+                    it,
+                    genre,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        item { Spacer(Modifier.height(50.dp)) }
+    }
+}
+
+@Composable
+fun IntroductionPage(saga: SagaContent) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier.padding(16.dp),
+    ) {
+        val genre = saga.data.genre
+
+        Text(
+            saga.data.createdAt.formatDate(),
+            style =
+                MaterialTheme.typography.labelMedium.copy(
+                    fontFamily = genre.bodyFont(),
+                ),
+            textAlign = TextAlign.Center,
+        )
+
+        Text(
+            saga.data.title,
+            style =
+                MaterialTheme.typography.displaySmall.copy(
+                    textAlign = TextAlign.Center,
+                    fontFamily = genre.headerFont(),
+                    brush = genre.gradient(true),
+                ),
+        )
+
+        Text(
+            saga.data.description,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    textAlign = TextAlign.Justify,
+                    fontFamily = genre.bodyFont(),
+                ),
+        )
+    }
+}

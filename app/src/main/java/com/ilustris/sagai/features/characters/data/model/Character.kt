@@ -5,13 +5,13 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.PrimaryKey
-import com.ilustris.sagai.features.home.data.model.SagaData
+import com.ilustris.sagai.features.home.data.model.Saga
 
 @Entity(
     tableName = "Characters",
     foreignKeys = [
         androidx.room.ForeignKey(
-            entity = SagaData::class,
+            entity = Saga::class,
             parentColumns = ["id"],
             childColumns = ["sagaId"],
             onDelete = CASCADE,
@@ -21,7 +21,7 @@ import com.ilustris.sagai.features.home.data.model.SagaData
 data class Character(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val name: String,
+    val name: String = "",
     val backstory: String = "",
     val image: String = "",
     val hexColor: String = "#3d98f7",
@@ -29,7 +29,9 @@ data class Character(
     val sagaId: Int = 0,
     @Embedded
     val details: Details,
+    val joinedAt: Long = 0L,
 )
+
 
 data class Details(
     val appearance: String = "",
@@ -37,7 +39,25 @@ data class Details(
     val race: String = "",
     val height: Double = 0.0,
     val weight: Double = 0.0,
-    val style: String = "",
     val gender: String = "",
     val occupation: String = "",
+    val ethnicity: String = "",
+    @Embedded
+    val facialDetails: FacialFeatures = FacialFeatures(),
+    @Embedded
+    val clothing: Clothing = Clothing(),
+    val weapons: String = "",
+)
+
+data class Clothing(
+    val body: String = "",
+    val accessories: String = "",
+    val footwear: String = "",
+)
+
+data class FacialFeatures(
+    val hair: String = "",
+    val eyes: String = "",
+    val mouth: String = "",
+    val scars: String = "",
 )

@@ -1,0 +1,173 @@
+uniform shader composable_shader; // The original image/composable content
+uniform float2 iResolution;      // The width and height of the composable
+uniform float iTime;            // Current time in seconds, useful for animations
+
+// --- USER-CONTROLLED UNIFORMS (will be set from Kotlin) ---
+// These allow dynamic adjustment of the effects
+
+// Grain Effect
+uniform float u_grainIntensity;   // How strong the grain is (e.g., 0.0 to 0.2)
+
+// Bloom/Glow Effect
+uniform float u_bloomThreshold; // Luminance threshold to identify bright areas for bloom (e.g., 0.7)
+uniform float u_bloomIntensity; // Strength of the bloom effect (e.g., 0.0 to 1.5)
+uniform float u_bloomRadius;    // How far the bloom spreads (in pixels, e.g., 2.0 to 10.0)
+
+// Soft Focus / Texture Reduction (can also be a general blur)
+uniform float u_softFocusRadius;  // Blur radius for softening (in pixels, e.g., 0.0 to 2.0)
+
+// Color Grading
+uniform float u_saturation;     // Color saturation (1.0 is original, <1.0 desaturates, >1.0 oversaturates)
+uniform float u_contrast;       // Image contrast (1.0 is original)
+uniform float u_brightness;     // Overall brightness adjustment (0.0 is original)
+uniform vec3 u_highlightTint;   // Color to tint highlights (e.g., vec3(1.0, 0.9, 0.8) for warm)
+uniform vec3 u_shadowTint;      // Color to tint shadows (e.g., vec3(0.8, 0.9, 1.0) for cool)
+uniform float u_tintStrength;   // How strongly the tints are applied (0.0 to 1.0)
+
+// Vignette Effect
+uniform float u_vignetteStrength; // How strong the vignette is (e.g., 0.0 to 1.0, higher means darker edges)
+uniform float u_vignetteSoftness; // How gradual the vignette falloff is (e.g., 0.1 to 2.0)
+
+// Pixelation Effect
+uniform float u_pixelationBlockSize; // Size of the 'pixels'. 0.0 or < 1.0 means no pixelation.
+
+// Color Temperature
+uniform float u_colorTemperature; // -1.0 (cold) to 1.0 (warm), 0.0 is neutral
+
+
+// --- HELPER FUNCTIONS ---
+
+// Simple pseudo-random number generator for grain
+// Input: 2D vector (e.g., texture coordinates), Output: float [0,1)
+float random(vec2 st) {
+    // Add iTime for animated grain, remove for static grain
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123 + iTime * 0.1);
+}
+
+// Calculates the luminance (perceived brightness) of a color
+// Input: vec3 color (RGB), Output: float luminance
+float getLuminance(vec3 color) {
+    return dot(color, vec3(0.2126, 0.7152, 0.0722)); // Standard luminance weights
+}
+
+// Basic Box Blur: Averages pixels in a square region.
+// Not the highest quality blur, but simple to implement.
+// Input: uv_pixel_space (pixel coordinates, not normalized), blurRadius (in pixels)
+// Output: vec3 blurred color
+// Note: For better quality, a Gaussian blur (often two-pass) is preferred.
+const int MAX_KERNEL_HALF_SIZE = 8; // Example: Max blur radius of 8 pixels
+
+vec3 boxBlur(float2 uv_pixel_space, float blurRadius) {
+    if (blurRadius <= 0.01) {
+        // If pixelation is active, we should sample from the effective (pixelated) coordinates
+        // However, the original composable_shader.eval is done with effectiveFragCoord.
+        // For boxBlur, if we want the blur itself to be smooth (not blocky), we sample around the original uv_pixel_space.
+        // If we wanted the blur to be blocky, we'd need to pass effectiveFragCoord to boxBlur and use it.
+        return composable_shader.eval(uv_pixel_space).rgb;
+    }
+
+    vec3 sum = vec3(0.0);
+    float numSamples = 0.0;
+
+    int dynamicKernelHalfSize = int(max(1.0, floor(blurRadius)));
+
+    for (int y = -MAX_KERNEL_HALF_SIZE; y <= MAX_KERNEL_HALF_SIZE; ++y) {
+        for (int x = -MAX_KERNEL_HALF_SIZE; x <= MAX_KERNEL_HALF_SIZE; ++x) {
+            float dynamicRadius = float(dynamicKernelHalfSize);
+            float absX = abs(float(x));
+            float absY = abs(float(y));
+            bool x_within_radius = (absX <= dynamicRadius);
+            bool y_within_radius = (absY <= dynamicRadius);
+            if (x_within_radius && y_within_radius) {
+              float2 offset = vec2(float(x), float(y));
+              // Sample around the original uv_pixel_space for a smooth blur,
+              // even if the base image is pixelated.
+              sum += composable_shader.eval(uv_pixel_space + offset).rgb;
+              numSamples += 1.0;
+             }
+        }
+    }
+    return sum / max(1.0, numSamples);
+}
+
+
+// --- MAIN SHADER FUNCTION ---
+half4 main(float2 fragCoord) {
+    vec2 uv = fragCoord.xy / iResolution.xy;
+    float2 effectiveFragCoord = fragCoord;
+
+    // --- 0. Pixelation ---
+    if (u_pixelationBlockSize >= 1.0) {
+        effectiveFragCoord = floor(fragCoord / u_pixelationBlockSize) * u_pixelationBlockSize;
+        effectiveFragCoord += 0.5 * u_pixelationBlockSize;
+    }
+
+    // --- 1. Initial Color Sampling ---
+    half4 originalSample = composable_shader.eval(effectiveFragCoord);
+    vec3 color = originalSample.rgb;
+
+    // --- 2. Soft Focus / Texture Reduction ---
+    if (u_softFocusRadius > 0.01) {
+        // Blurs the (potentially) pixelated image. Uses original fragCoord for blur sampling
+        // to make the blur itself smooth, not blocky.
+        color = boxBlur(fragCoord, u_softFocusRadius);
+    }
+
+    // --- 3. Color Grading ---
+    // Adjust Saturation
+    if (u_saturation != 1.0) {
+        float luma = getLuminance(color);
+        color = mix(vec3(luma), color, u_saturation);
+    }
+    // Adjust Contrast
+    if (u_contrast != 1.0) {
+        color = (color - 0.5) * u_contrast + 0.5;
+    }
+    // Adjust Brightness
+    color += u_brightness;
+
+    // --- Color Temperature Adjustment ---
+    if (u_colorTemperature != 0.0) {
+        float temp = u_colorTemperature * 0.15; // Adjust sensitivity factor
+        color.r = clamp(color.r + temp, 0.0, 1.0);
+        color.b = clamp(color.b - temp, 0.0, 1.0);
+    }
+
+    // --- 4. Bloom/Glow Effect ---
+    if (u_bloomIntensity > 0.01 && u_bloomRadius > 0.01) {
+        float currentLuminance = getLuminance(color);
+        vec3 brightPass = vec3(0.0);
+        if (currentLuminance > u_bloomThreshold) {
+            brightPass = color * (currentLuminance - u_bloomThreshold);
+        }
+        // Blur for bloom, using original fragCoord for smooth bloom spread
+        vec3 blurredBloom = boxBlur(fragCoord, u_bloomRadius);
+        color += blurredBloom * u_bloomIntensity * step(u_bloomThreshold, currentLuminance);
+    }
+
+    // --- 5. Split Toning (Tinting Highlights and Shadows) ---
+    if (u_tintStrength > 0.01) {
+        float luma = getLuminance(color);
+        vec3 shadowContribution = mix(color, color * u_shadowTint, 1.0 - smoothstep(0.25, 0.5, luma));
+        vec3 finalTintedColor = mix(shadowContribution, shadowContribution * u_highlightTint, smoothstep(0.5, 0.75, luma));
+        color = mix(color, finalTintedColor, u_tintStrength);
+    }
+
+    // --- 6. Film Grain ---
+    if (u_grainIntensity > 0.001) {
+        float noise = random(uv) - 0.5;
+        color += noise * u_grainIntensity;
+    }
+
+    // --- 7. Vignette ---
+    if (u_vignetteStrength > 0.001) {
+        float2 centeredUV = uv - 0.5;
+        float distFromCenter = length(centeredUV * vec2(1.0, iResolution.y / iResolution.x));
+        float vignetteAmount = smoothstep(0.2, u_vignetteSoftness + 0.2, distFromCenter);
+        color *= (1.0 - vignetteAmount * u_vignetteStrength);
+    }
+
+    // --- Final Output ---
+    color = clamp(color, 0.0, 1.0);
+    return half4(color, originalSample.a);
+}

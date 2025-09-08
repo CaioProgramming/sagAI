@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
@@ -33,13 +32,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.CornerRounding
+import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.circle
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.theme.DrawShape
 import com.ilustris.sagai.ui.theme.RoundedPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -130,7 +130,6 @@ fun DistortingBubble(
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val duration = animationDduration.toInt(DurationUnit.MILLISECONDS)
-    // Animação para largura e altura do círculo
     val horizontalDistortion =
         infiniteTransition.animateFloat(
             initialValue = .9f,
@@ -174,16 +173,95 @@ fun DistortingBubble(
             Modifier
                 .fillMaxSize()
                 .blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded)
-                .background(brush, shape)
-            ,
+                .background(brush, shape),
         )
         Box(
             Modifier
                 .fillMaxSize()
+                .blur(2.dp, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                 .background(
                     tint,
                     shape,
                 ),
+        )
+    }
+}
+
+@Composable
+fun SparkLoader(
+    brush: Brush,
+    strokeSize: Dp = 5.dp,
+    duration: Duration = 5.seconds,
+    modifier: Modifier = Modifier,
+) {
+    val infiniteTransition = rememberInfiniteTransition()
+
+    infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1.5f,
+        animationSpec =
+            infiniteRepeatable(
+                tween(
+                    durationMillis = duration.toInt(DurationUnit.MILLISECONDS),
+                    easing = EaseIn,
+                    delayMillis = duration.toInt(DurationUnit.MILLISECONDS) / 2,
+                ),
+                repeatMode = Reverse,
+            ),
+    )
+
+    val rotateAnimation =
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
+                    repeatMode = Reverse,
+                ),
+        )
+
+    val shapeA =
+        remember {
+            RoundedPolygon.star(
+                4,
+                rounding = CornerRounding(5f),
+            )
+        }
+    val shapeB =
+        remember {
+            RoundedPolygon.star(
+                4,
+                rounding = CornerRounding(0f),
+            )
+        }
+    val morph =
+        remember {
+            Morph(shapeA, shapeB)
+        }
+
+    val morphProgress =
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(3.seconds.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
+                    repeatMode = Reverse,
+                ),
+            label = "morph",
+        )
+
+    Box(modifier = modifier.padding(4.dp)) {
+        val drawDuration = duration - 1.seconds
+
+
+        DrawShape(
+            modifier = Modifier.fillMaxSize(),
+            strokeSize = strokeSize,
+            morph = morph,
+            brush = brush,
+            duration = drawDuration,
         )
     }
 }
@@ -214,7 +292,7 @@ fun SagaLoaderPreview() {
 
             SagaLoader(
                 modifier = Modifier.size(200.dp),
-                brush = gradientAnimation(Genre.FANTASY.gradient(), targetValue = 500f),
+                brush = Genre.FANTASY.gradient(),
                 animationDuration = 10.seconds,
                 scaleDistortion = .8f to .8f,
                 tint = MaterialColor.RedA200.copy(alpha = .4f),
@@ -227,6 +305,11 @@ fun SagaLoaderPreview() {
                             rounding = CornerRounding(.0f),
                         ),
                     ),
+            )
+
+            SparkLoader(
+                gradientAnimation(holographicGradient, targetValue = 1000f),
+                modifier = Modifier.size(200.dp),
             )
         }
     }

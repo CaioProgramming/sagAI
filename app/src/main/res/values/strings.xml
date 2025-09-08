@@ -1,21 +1,206 @@
 <resources>
+
     <string name="app_name">sagAI</string>
     <string name="saga">Saga</string>
-    <string name="start_saga">Pronto para iniciar sua saga?</string>
-    <string name="start_saga_subtitle">Comece com o nome da sua história.</string>
-    <string name="saga_title_hint">Um nome épico que combine com você</string>
-    <string name="saga_genre">Qual o tema da sua Saga?</string>
-    <string name="saga_genre_subtitle">Qual universo vai se passar sua saga?</string>
-    <string name="saga_genre_hint">Escolha um tema para sua história</string>
-    <string name="saga_description">Por onde comecamos?</string>
-    <string name="saga_description_subtitle">Vamos definir o início dessa aventura, nao se preocupe com os detalhes, vamos melhorando juntos.</string>
-    <string name="saga_description_hint">Descreva sua história...</string>
-    <string name="saga_saving">Hora de construir esse mundo!</string>
-    <string name="saga_saving_subtitle">Deixa comigo, vou construir seu mundo em alguns instantes,</string>
-    <string name="saga_saving_hint" />
-    <string name="new_saga_title">Nova saga</string>
+    <string name="saga_title_hint">An epic name that suits you</string>
+    <string name="start_saga">Ready to start your saga?</string>
+    <string name="start_saga_subtitle">Start with your story\'s name.</string>
+    <string name="saga_genre">What is the theme of your saga?</string>
+    <string name="saga_genre_subtitle">In which universe will your saga take place\?</string>
+    <string name="saga_genre_hint">Choose a theme for your story…</string>
+    <string name="saga_description">Where do we begin\?</string>
+    <string name="saga_character_description">Who will you be?</string>
+    <string name="saga_character_description_subtitle">Describe your character, appearance, personality, style…</string>
+    <string name="saga_description_subtitle">Let\'s define the beginning of this adventure; don\'t worry about the details, we\'ll improve it together.</string>
+    <string name="saga_description_hint">Describe your story…</string>
+    <string name="saga_saving">Time to build this world!</string>
+    <string name="saga_saving_subtitle">Leave it to me; I\'ll build your world in a few moments,</string>
+    <string name="saga_saving_hint" >Saving saga</string>
+    <string name="new_saga_title">New saga</string>
     <string name="home_title">Sagas</string>
-    <string name="save_saga">Salvar</string>
-    <string name="character_gallery_title">Personagens</string>
-    <string name="back_button_description">Voltar</string>
+    <string name="save_saga">Save</string>
+    <string name="character_gallery_title">Characters</string>
+    <string name="back_button_description">Back</string>
+    <string name="lets_create_saga">Let\'s create your saga</string>
+    <string name="lets_create_saga_subtitle">AI will help you bring everything to life; don\'t be shy with the details of your journey.</string>
+    <string name="next">Continue</string>
+    <string name="user_action_title">Speak</string>
+    <string name="sender_type_narrator_title">Narrate</string>
+    <string name="sender_type_thought_title">Think</string>
+    <string name="sender_type_action_title">Action</string>
+    <string name="sender_type_new_character_title">New Character</string>
+    <string name="sender_type_user_description">Your character\'s speech, what they say in the current conversation.</string>
+    <string name="sender_type_thought_description">What your character is thinking, their plans and fears.</string>
+    <string name="sender_type_action_description">An action your character is performing.</string>
+    <string name="sender_type_narrator_description">Complete the story with external events or happenings in the environment.</string>
+    <string name="sender_type_new_chapter_description">Start a new chapter in the story; this will generate a new summary for your saga.</string>
+    <string name="sender_type_new_character_description">Add a new character to your story; they can interact with the main character and other characters.</string>
+    <string name="sender_type_character_description">Ask a specific character a question about the story.</string>
+    <string name="sender_type_user_hint">Send new message…</string>
+    <string name="sender_type_narrator_hint">Describe what happens next…</string>
+    <string name="sender_type_thought_hint">What is your character thinking\?</string>
+    <string name="sender_type_action_hint">What action does your character perform\?</string>
+    <string name="sender_type_new_character_hint">Describe the new character (name, appearance, etc.)…</string>
+    <string name="sender_type_new_chapter_hint">This will start a new chapter. What happens\?</string>
+    <string name="sender_type_character_hint">Ask a specific character something…</string>
+    <string name="sender_type_default_hint">Type your message…</string>
+
+    <!-- CharacterForm: Image Content Description -->
+    <string name="character_form_image_content_description">Character silhouette</string>
+
+    <!-- CharacterForm: Name Field -->
+    <string name="character_form_label_name">Name</string>
+    <string name="character_form_placeholder_name">e.g., Kaelen, Unit 734, Whisperwind</string>
+    <string name="character_form_placeholder_name_fantasy">e.g., Elara, Sir Kaelen, Anya Swiftarrow</string>
+    <string name="character_form_placeholder_name_scifi">e.g., Unit 734, Jax Glitch, Nova Kylo</string>
+
+    <!-- CharacterForm: Backstory Section -->
+    <string name="character_form_title_backstory">Backstory</string>
+    <string name="character_form_placeholder_backstory">Brief origin, key life events, motivations…</string>
+
+    <!-- CharacterForm: Quick Details Section -->
+    <string name="character_form_title_quick_details">Quick Details</string>
+    <string name="character_form_label_occupation">Occupation</string>
+    <string name="character_form_placeholder_occupation">Occupation</string>
+    <string name="character_form_label_style_vibe">Style/Vibe</string>
+    <string name="character_form_placeholder_style_vibe">Style/Vibe</string>
+    <string name="character_form_label_weapons_gear">Weapons &amp; Gear</string>
+    <string name="character_form_placeholder_weapons_gear">Weapons &amp; Gear</string>
+
+    <!-- CharacterForm: Appearance Details Section -->
+    <string name="character_form_title_appearance_details">Wearing Details</string>
+    <string name="character_form_placeholder_appearance_details">Overall build, height, skin, hair, distinct physical traits…</string>
+
+    <!-- CharacterForm: Facial Features Section -->
+    <string name="character_form_title_facial_features">Facial Features</string>
+    <string name="character_form_placeholder_facial_features">Eyes (color, shape), nose, mouth, jawline, scars, tattoos…</string>
+
+    <!-- CharacterForm: Clothing & Attire Section -->
+    <string name="character_form_title_clothing_attire">Clothing &amp; Attire</string>
+    <string name="character_form_placeholder_clothing_attire">Typical outfit, armor, accessories, style of dress…</string>
+    <string name="character_form_title_gender">Gender</string>
+    <string name="personality_title">Personality</string> <!-- Corrected -->
+    <string-array name="character_form_gender_options">
+        <item>Masculine</item>
+        <item>Feminine</item>
+    </string-array>
+
+    <!-- New Strings -->
+    <string name="character_form_placeholder_personality">e.g., Stoic, witty, cynical, kind-hearted</string>
+    <string name="character_form_label_ethnicity">Ethnicity</string>
+    <string name="character_form_placeholder_ethnicity">e.g., Highland, Coastal, Nomadic, Urbanite</string>
+    <string name="character_form_label_race">Race / Species</string>
+    <string name="character_form_placeholder_race">e.g., Human, Elf, Dwarf, Cyborg, KTharr</string>
+    <string name="character_form_label_hair">Hair Description</string>
+    <string name="character_form_placeholder_hair">e.g., Long, flowing, braided, bald, bio-luminescent tendrils</string>
+    <string name="character_form_label_eyes">Eye Details</string>
+    <string name="character_form_placeholder_eyes">e.g., Piercing blue, heterochromia, glowing red, multifaceted</string>
+    <string name="character_form_label_mouth">Mouth &amp; Lips</string>
+    <string name="character_form_placeholder_mouth">e.g., Thin-lipped, full, often smiling, fanged</string>
+    <string name="character_form_label_scars">Scars &amp; Markings</string>
+    <string name="character_form_placeholder_scars">e.g., A long scar over the left eye, tribal tattoos, cybernetic implants</string>
+    <string name="character_form_label_clothing_body">Bodywear</string>
+    <string name="character_form_placeholder_clothing_body">e.g., Leather armor, robes, environment suit, rags</string>
+    <string name="character_form_label_clothing_accessories">Accessories</string>
+    <string name="character_form_placeholder_clothing_accessories">e.g., Hooded cloak, amulet, utility belt, breathing mask</string>
+    <string name="character_form_label_clothing_footwear">Footwear</string>
+    <string name="character_form_placeholder_clothing_footwear">e.g., Sturdy boots, sandals, barefoot, grav-boots</string>
+
+    <string-array name="loading_quotes">
+        <item>Forging ancient runes...</item>
+        <item>Consulting with wise dragons...</item>
+        <item>Gathering stardust...</item>
+        <item>Decoding ancient scrolls...</item>
+        <item>Warming up the AI\'s imagination...</item>
+        <item>Plotting epic adventures...</item>
+    </string-array>
+
+    <string-array name="loading_quotes_fantasy">
+        <item>Sharpening legendary blades...</item>
+        <item>Brewing potent elixirs...</item>
+        <item>Summoning mythical beasts...</item>
+    </string-array>
+
+    <string-array name="loading_quotes_scifi">
+        <item>Calibrating warp drives...</item>
+        <item>Engaging cybernetic enhancements...</item>
+        <item>Navigating asteroid fields...</item>
+    </string-array>
+
+    <!-- SagaReview.kt Strings -->
+    <string name="review_page_surprise_awaits">A surprise awaits you...</string>
+    <string name="review_page_messages_label">Messages</string>
+    <string name="review_page_messages_rank_title">Message Rank</string>
+    <string name="review_page_character_mentions_label">Character Mentions</string>
+    <string name="review_page_characters_rank_title">Character Rank</string>
+    <string name="review_page_most_present_title">Most Present</string>
+    <string name="review_page_most_mentioned_title">Most Mentioned</string>
+    <string name="review_page_your_journey_title">Your Journey</string>
+    <string name="review_page_thank_you">Thank you</string>
+    <string name="review_page_for_playing">FOR PLAYING</string>
+
+    <!-- SagaDetailView.kt Strings -->
+    <string name="saga_detail_delete_confirmation_title">Confirm Deletion</string>
+    <string name="saga_detail_delete_confirmation_message">Are you sure you want to delete this saga? This action cannot be undone.</string>
+    <string name="saga_detail_delete_button">Delete</string>
+    <string name="saga_detail_cancel_button">Cancel</string>
+    <string name="saga_drawer_act_prefix">Act %1$s</string>
+    <string name="saga_drawer_chapter_events_count">%1$s - %2$d events</string>
+    <string name="saga_drawer_events_since_last_chapter">%1$d events in chapter.</string>
+    <string name="saga_detail_progress_title">Progress</string>
+    <string name="saga_detail_section_title_characters">Characters</string>
+    <string name="saga_detail_section_subtitle_characters">%1$d characters</string>
+    <string name="saga_detail_section_title_timeline">Events</string>
+    <string name="saga_detail_section_subtitle_timeline">%1$d events</string>
+    <string name="saga_detail_section_title_chapters">Chapters</string>
+    <string name="saga_detail_section_subtitle_chapters">%1$d chapters</string>
+    <string name="saga_detail_section_title_wiki">Wiki</string>
+    <string name="saga_detail_section_subtitle_wiki">%1$d items</string>
+    <string name="saga_detail_section_title_acts">Acts</string>
+    <string name="saga_detail_section_subtitle_acts">%1$d acts</string>
+    <string name="saga_detail_status_ended">Finished on %1$s</string>
+    <string name="saga_detail_status_created">Created on %1$s</string>
+    <string name="saga_detail_journey_of">The journey of</string>
+    <string name="saga_detail_messages_label">Messages</string>
+    <string name="saga_detail_see_your_now">See your</string>
+    <string name="saga_detail_recap_button">Recap</string>
+    <string name="saga_detail_description_section_title">Description</string>
+    <string name="saga_detail_timeline_section_title">Timeline</string>
+    <string name="saga_detail_view_characters_action">View characters</string>
+    <string name="saga_detail_view_timeline_action">View Timeline</string>
+    <string name="saga_detail_view_wiki_action">View wiki</string>
+    <string name="saga_detail_view_chapters_action">View chapters</string>
+    <string name="saga_detail_view_acts_action">View acts</string>
+    <string name="saga_detail_no_events_placeholder">No events recorded</string>
+    <string name="saga_detail_no_wiki_info_placeholder">No information saved</string>
+    <string name="saga_detail_delete_saga_button">Delete Saga</string>
+
+    <!-- HomeView.kt Strings -->
+    <string name="home_debug_session_icon_desc">Debug Session</string>
+    <string name="home_start_debug_session_title">Start Debug Session</string>
+    <string name="home_test_with_fake_messages_subtitle">Test with fake messages.</string>
+    <string name="home_create_new_saga_title">Create new saga</string>
+    <string name="home_create_new_saga_subtitle">Create a new adventure and discover what the future holds for you.</string>
+    <string name="chat_card_unknown_character">Unknown</string>
+    <string name="chat_card_saga_begins">Your saga begins now!</string>
+    <string name="chat_card_saga_ended">Your saga has come to an end!</string>
+    <string name="home_new_chat_journey_begins_title">The journey starts here</string>
+    <string name="home_new_chat_start_button">Start</string>
+    <string name="no_internet_connection_title">No Internet Connection</string>
+    <string name="no_internet_connection_message">Please check your network settings and try again.</string>
+    <string name="dialog_exit_title_new_saga">Exit Creation?</string>
+    <string name="dialog_exit_message_new_saga">The AI is currently working. Are you sure you want to leave? Your progress might be lost.</string>
+    <string name="dialog_exit_confirm_button_new_saga">Leave</string>
+    <string name="dialog_exit_dismiss_button_new_saga">Stay</string>
+    <string name="notification_explanation">To notify you about new messages in your saga when you\'re not in the app, please allow notification permission.</string>
+    <string name="continue_text">continue</string>
+    <string name="notification_title">New message on %1$s</string>
+    <string name="notification_playing_act">Playing act %1$s</string>
+    <string name="notification_action_pause" translatable="false">Pause</string>
+    <string name="notification_action_play" translatable="false">Play</string>
+    <string name="saga_detail_relationships_section_title">Relationships</string>
+    <string name="character_tooltip_empty_message">Describe your hero to reveal their card — name, traits, and a glimpse of their story.</string>
+    <string name="starring">Starring</string>
+    <string name="emotional_card_title">Emotional Review</string>
+
 </resources>
