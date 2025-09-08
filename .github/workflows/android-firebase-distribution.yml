@@ -84,10 +84,12 @@ jobs:
       - name: 💬 PR comment
         uses: OrjanSkarnes/pull-request-commenter@<tag/branch>
         with:
-          comment-body: Download the APK[artifact](${runUrl}) to test this feature
-          comment-title: [Feature] ${{ github.event.pull_request.title }} APK (artifact) ready!
-          remove-comment-if-no-output: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+            comment-body: Download the APK[artifact](${runUrl}) to test this feature
+            comment-search-includes: Output from the script
+            comment-title: [Feature] ${{ github.event.pull_request.title }} APK (artifact) ready!
+            fail-on-output: true
+            github-token: ${{ secrets.GITHUB_TOKEN }}
+
 # ---------------------------
 # Notes:
 # - This simplified workflow only builds the APK and uploads it as a GitHub Actions artifact.
