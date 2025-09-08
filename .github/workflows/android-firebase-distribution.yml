@@ -1,4 +1,4 @@
-name: Android APK - Build and Artifact Only
+name: Generate Artifact 📦
 
 on:
   push:
@@ -56,8 +56,6 @@ jobs:
       - name: 🔧 chmod gradlew
         run: chmod +x ./gradlew
 
-      # If you want to sign a release, provide the keystore secrets and uncomment the signing step below.
-      # Otherwise we build Debug which does not require signing keys.
       - name: 🏗️ Build APK
         id: build_apk
         shell: bash
@@ -78,11 +76,11 @@ jobs:
           name: apk-${{ env.BUILD_VARIANT }}
           path: ${{ steps.build_apk.outputs.apk }}
 
-      - name: Pull Request Commenter
+      - name: Delivering artifact 🚚
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
         with:
-          comment-body: 'Download the APK artifact from: ${{ steps.upload_artifact.outputs.artifact-url }}'
-          comment-title: '[ Feature ] ${{ github.event.pull_request.title }} APK ready!'
+          comment-body: 'Your apk is ready Sir! 📦️ Download it here[${{ steps.upload_artifact.outputs.artifact-url }}]'
+          comment-title: '${{ github.event.pull_request.title }} APK Delivered! 🎉'
           remove-comment-if-no-output: true
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
