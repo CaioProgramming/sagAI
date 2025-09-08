@@ -70,7 +70,7 @@ log "Running: ./gradlew :${MODULE}:assemble${TASK_VARIANT}"
 # Locate the APK using the existing helper
 log "Locating APK..."
 # Use bash to avoid relying on executable bit of the helper script
-APK_LINE="$(bash scripts/locate-apk.sh --module "${MODULE}" --variant "${VARIANT}")" || {
+APK_LINE="$(bash scripts/locate-apk.sh --module "${MODULE}" --variant "${VARIANT}" --quiet)" || {
   err "APK not found after build"; exit 1;
 }
 
