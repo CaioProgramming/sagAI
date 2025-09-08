@@ -84,8 +84,8 @@ jobs:
       - name: 💬 PR comment
         uses: OrjanSkarnes/pull-request-commenter@<tag/branch>
         with:
-          comment-body: `Download the APK[artifact](${runUrl}) to test this feature`
-          comment-title: `[Feature] ${{ github.event.pull_request.title }} APK (artifact) ready!`
+          comment-body: Download the APK[artifact](${runUrl}) to test this feature
+          comment-title: [Feature] ${{ github.event.pull_request.title }} APK (artifact) ready!
           remove-comment-if-no-output: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 # ---------------------------
