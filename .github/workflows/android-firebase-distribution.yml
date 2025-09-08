@@ -84,7 +84,7 @@ jobs:
           comment-body: 'Download the APK artifact from: ${{ steps.upload_artifact.outputs.artifact-url }}'
           comment-title: '[ Feature ] ${{ github.event.pull_request.title }} APK ready!'
           remove-comment-if-no-output: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
 # ---------------------------
 # Notes:
