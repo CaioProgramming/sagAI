@@ -26,33 +26,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Make helper script executable
+        run: chmod +x scripts/prepare-config.sh
+
       - name: Prepare config.properties ⚙️
         shell: bash
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
         run: |
           set -euo pipefail
           echo "[CI] Working dir: $(pwd)"
-          mkdir -p app
-          # Fail fast if secret is empty (will not print it)
-          if [ -z "${{ secrets.GEMINI_KEY }}" ]; then
-            echo "[CI][ERROR] GEMINI_KEY secret is empty or not configured." >&2
-            exit 2
-          fi
-          {
-            echo "GEMINI_KEY = \"${{ secrets.GEMINI_KEY }}\"";
-          } > app/config.properties
-          chmod 600 app/config.properties
-          # Optionally mirror into assets if project expects it there (safe if not used)
-          mkdir -p app/src/main/assets
-          cp app/config.properties app/src/main/assets/config.properties
-          chmod 600 app/src/main/assets/config.properties || true
-          # Non-secret diagnostics
-          echo "[CI] Wrote app/config.properties"
-          ls -l app/config.properties || true
-          echo "[CI] Also mirrored to app/src/main/assets/config.properties"; ls -l app/src/main/assets/config.properties || true
-          echo "[CI] Showing sanitized preview (no values):"
-          # Print only the key names without values
-          awk -F'=' '{ gsub(/ /,""); key=$1; if (length(key)>0) print key " = \"***\"" }' app/config.properties
-          echo "[CI] app folder listing:"; ls -la app || true
+          ./scripts/prepare-config.sh
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
