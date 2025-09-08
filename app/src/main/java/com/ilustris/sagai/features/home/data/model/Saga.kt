@@ -40,4 +40,6 @@ data class Saga(
     val endMessage: String = "",
     @Embedded
     val review: Review? = null,
+    @ColumnInfo(defaultValue = "")
+    val emotionalReview: String? = null,
 )

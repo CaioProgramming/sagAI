@@ -10,16 +10,21 @@ import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
+import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig // Added
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.network.response.FreePikResponse
+import com.ilustris.sagai.core.utils.toJsonFormat
 import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
 interface ImagenClient {
-    suspend fun generateImage(prompt: String): Bitmap?
+    suspend fun generateImage(
+        prompt: String,
+        references: List<ImageReference> = emptyList(),
+    ): Bitmap?
 
     suspend fun generateWithFreePik(request: FreepikRequest): FreePikResponse?
 }
@@ -60,33 +65,37 @@ class ImagenClientImpl
             }
         }
 
-        val model by lazy {
-            Log.i(
-                TAG,
-                "Initializing Imagen model with: $modelName (flag: '$IMAGE_MODEL_FLAG')",
-            )
-            Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
-                modelName = modelName,
-                generationConfig {
-                    responseModalities = listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
-                },
-            )
-        }
-
-        override suspend fun generateImage(prompt: String): Bitmap? =
+        override suspend fun generateImage(
+            prompt: String,
+            references: List<ImageReference>,
+        ): Bitmap? =
             try {
-                Log.i(javaClass.simpleName, "Generating image with prompt:\n$prompt")
                 val imageModel =
-                    Firebase.ai(backend = GenerativeBackend.vertexAI()).imagenModel(
+                    Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
                         modelName = modelName,
+                        generationConfig =
+                            generationConfig {
+                                responseModalities = listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
+                            },
                     )
-                imageModel
-                    .generateImages(prompt.trimIndent())
-                    .images
+                val promptBuilder =
+                    content {
+                        text(prompt.trimIndent())
+                        references.forEach {
+                            image(it.bitmap)
+                            text(it.description)
+                        }
+                    }
+                val content = imageModel.generateContent(promptBuilder)
+                Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
+                Log.d(TAG, "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}")
+                Log.i(javaClass.simpleName, "Generating image($modelName) with prompt:\n${promptBuilder.toJsonFormat()}")
+
+                content
+                    .candidates
                     .first()
-                    .data
-                    .decodeToImageBitmap()
-                    .asAndroidBitmap()
+                    .content.parts
+                    .firstNotNullOf { it.asImageOrNull() }
             } catch (e: Exception) {
                 e.printStackTrace()
                 null

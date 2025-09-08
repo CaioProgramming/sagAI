@@ -77,7 +77,7 @@
     <!-- CharacterForm: Clothing & Attire Section -->
     <string name="character_form_title_clothing_attire">Vestuário &amp; Traje</string>
     <string name="character_form_placeholder_clothing_attire">Roupa típica, armadura, acessórios, estilo de vestimenta…</string>
-    
+
     <!-- CharacterForm: Gender Section -->
     <string name="character_form_title_gender">Gênero</string>
     <string name="personality_title">Personalidade</string>
@@ -177,4 +177,9 @@
     <string name="continue_text">continuar</string>
     <string name="notification_title">Nova mensagem em %1$s</string>
     <string name="notification_playing_act">Jogando ato %1$s</string>
+    <string name="saga_detail_relationships_section_title">Relacionamentos</string>
+    <string name="character_tooltip_empty_message">Descreva seu herói para revelar o cartão — nome, traços e um vislumbre da história.</string>
+    <string name="starring">Estrelando</string>
+    <string name="emotional_card_title">Review emocional</string>
+
 </resources>

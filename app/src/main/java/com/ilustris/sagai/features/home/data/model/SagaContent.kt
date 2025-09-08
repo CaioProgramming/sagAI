@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.home.data.model
 
+import android.icu.util.Calendar
 import android.util.Log
 import androidx.room.Embedded
 import androidx.room.Relation
@@ -9,6 +10,10 @@ import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
+import com.ilustris.sagai.features.characters.relations.domain.data.RelationshipContent
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.jvm.javaClass
 
@@ -18,8 +23,9 @@ data class SagaContent(
     @Relation(
         parentColumn = "mainCharacterId",
         entityColumn = "id",
+        entity = Character::class,
     )
-    val mainCharacter: Character? = null,
+    val mainCharacter: CharacterContent? = null,
     @Relation(
         entity = Act::class,
         parentColumn = "currentActId",
@@ -31,7 +37,7 @@ data class SagaContent(
         entityColumn = "sagaId",
         entity = Character::class,
     )
-    val characters: List<Character> = emptyList(),
+    val characters: List<CharacterContent> = emptyList(),
     @Relation(
         parentColumn = "id",
         entityColumn = "sagaId",
@@ -44,6 +50,12 @@ data class SagaContent(
         entity = Act::class,
     )
     val acts: List<ActContent> = emptyList(),
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "sagaId",
+        entity = CharacterRelation::class,
+    )
+    val relationships: List<RelationshipContent> = emptyList(),
 ) {
     fun isFull(): Boolean = acts.count { it.isComplete() } == UpdateRules.MAX_ACTS_LIMIT
 
@@ -56,25 +68,32 @@ data class SagaContent(
     fun messagesSize() = acts.sumOf { it.chapters.sumOf { it.events.sumOf { it.messages.size } } }
 }
 
-fun SagaContent.isFirstAct() = currentActInfo == acts.first()
+fun SagaContent.getCharacters(filterMainCharacter: Boolean = false) =
+    if (filterMainCharacter) {
+        characters.filter { it.data.id != mainCharacter?.data?.id }.map { it.data }
+    } else {
+        characters.map { it.data }
+    }
 
-fun SagaContent.isFirstChapter() =
-    isFirstAct() &&
-        (
-            currentActInfo?.chapters?.isEmpty() == true ||
-                currentActInfo?.currentChapterInfo == currentActInfo?.chapters?.first()
-        )
+fun SagaContent.isFirstAct() = currentActInfo?.data?.id == acts.first().data.id
 
-fun SagaContent.isFirstEvent() =
-    isFirstAct() &&
-        isFirstChapter() &&
-        currentActInfo?.currentChapterInfo?.events?.isEmpty() == true ||
-        currentActInfo?.currentChapterInfo?.currentEventInfo ==
+fun SagaContent.isFirstChapter() = flatChapters().first().data.id == currentActInfo?.currentChapterInfo?.data?.id
+
+fun SagaContent.isFirstTimeline() =
+    flatEvents().first().data.id ==
         currentActInfo
-            ?.chapters
-            ?.first()
-            ?.events
-            ?.first()
+            ?.currentChapterInfo
+            ?.currentEventInfo
+            ?.data
+            ?.id
+
+fun SagaContent.findTimelineChapter(timeline: Timeline) = flatChapters().find { it.data.id == timeline.chapterId }
+
+fun SagaContent.findChapterAct(chapter: Chapter?) = acts.find { it.data.id == chapter?.actId }
+
+fun SagaContent.isTimelineOnFirstChapter(timeline: Timeline) = findTimelineChapter(timeline) == flatChapters().first()
+
+fun SagaContent.isChapterOnFirstAct(chapter: Chapter) = findChapterAct(chapter) == acts.first()
 
 fun SagaContent.flatMessages() = acts.flatMap { it.chapters.flatMap { it.events.flatMap { it.messages } } }
 
@@ -90,6 +109,8 @@ fun SagaContent.getCurrentChapter() = currentActInfo?.currentChapterInfo
 
 fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
 
+fun SagaContent.actNumber(act: Act) = acts.indexOfFirst { it.data.id == act.id } + 1
+
 fun SagaContent.getDirective(): String {
     val actsCount = acts.size
     Log.d(
@@ -103,3 +124,25 @@ fun SagaContent.getDirective(): String {
         else -> ActDirectives.FIRST_ACT_DIRECTIVES
     }
 }
+
+fun SagaContent.rankByHour() =
+    flatMessages()
+        .groupBy {
+            val date =
+                Calendar.getInstance().apply {
+                    timeInMillis = it.message.timestamp
+                }
+            date.get(Calendar.HOUR_OF_DAY)
+        }.toSortedMap()
+
+fun SagaContent.emotionalSummary() =
+
+    acts
+        .map {
+            """
+            Act ${it.data.title}: ${it.data.emotionalReview}
+            ${it.chapters.joinToString(
+                ";",
+            ) { chapter -> "${chapterNumber(chapter.data)} Chapter ${chapter.data.title}: ${chapter.data.emotionalReview}" } }
+            """.trimIndent()
+        }

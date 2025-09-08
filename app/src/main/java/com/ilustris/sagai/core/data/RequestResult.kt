@@ -64,3 +64,10 @@ fun <L : Exception> L.asError(sendToCrashlytics: Boolean = true): RequestResult.
 
     return RequestResult.Error(this)
 }
+
+suspend fun <R> executeRequest(block: suspend () -> R): RequestResult<Exception, R> =
+    try {
+        block().asSuccess()
+    } catch (e: Exception) {
+        e.asError()
+    }

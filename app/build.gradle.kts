@@ -21,7 +21,7 @@ android {
         minSdk = 27
         targetSdk = 36
         versionCode = 1
-        versionName = "1.2.0"
+        versionName = "1.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -49,11 +49,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -95,6 +95,8 @@ dependencies {
     implementation(libs.androidx.room.testing)
     ksp(libs.androidx.room.compiler)
 
+    implementation(libs.compose.charts)
+
     // Retrofit & OkHttp
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)
@@ -109,6 +111,7 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.lottie.compose)
     implementation(libs.compose.cloudy)
+    implementation(libs.face.detection)
     implementation(libs.skydoves.balloon)
     implementation(libs.chrisbanes.haze)
     implementation(libs.chrisbanes.haze.materials)

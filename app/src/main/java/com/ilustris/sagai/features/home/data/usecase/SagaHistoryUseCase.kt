@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.LoreGen
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
 
@@ -16,7 +17,7 @@ interface SagaHistoryUseCase {
     suspend fun generateLore(
         saga: SagaContent,
         currentTimeline: TimelineContent,
-    ): RequestResult<Exception, LoreGen>
+    ): RequestResult<Exception, Timeline>
 
     suspend fun createFakeSaga(): RequestResult<Exception, Saga>
 

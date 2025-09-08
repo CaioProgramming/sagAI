@@ -32,36 +32,6 @@ data class Character(
     val joinedAt: Long = 0L,
 )
 
-fun exampleCharacter() =
-    Character(
-        id = 0,
-        name = "Tess",
-        backstory = "Noble warrior that fought in many battles, seeking redemption.",
-        image = "https://example.com/tess.png",
-        hexColor = "#A0522D",
-        sagaId = 1,
-        details =
-            Details(
-                appearance = "Tall and muscular with long braided brown hair.",
-                personality = "Stoic but kind-hearted, fiercely loyal.",
-                race = "Human",
-                height = 1.8,
-                weight = 75.0,
-                gender = "Female",
-                occupation = "Mercenary",
-                ethnicity = "Nordic",
-                facialDetails =
-                    FacialFeatures(
-                        hair = "Long, braided brown",
-                        eyes = "Piercing blue",
-                        mouth = "Firm, determined",
-                        scars = "A faint scar above the left eyebrow",
-                    ),
-                clothing = Clothing(body = "Leather armor", accessories = "Silver amulet", footwear = "Sturdy boots"),
-                weapons = "Longsword and shield",
-            ),
-        joinedAt = System.currentTimeMillis(),
-    )
 
 data class Details(
     val appearance: String = "",

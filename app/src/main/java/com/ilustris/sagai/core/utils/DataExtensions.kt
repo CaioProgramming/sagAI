@@ -129,7 +129,13 @@ fun String.removePackagePrefix(): String =
         .replace(".", "")
 
 fun Pair<String, String>.formatToString(showSender: Boolean = true) =
-    "${if (showSender) this.first.plus(":").plus(emptyString()) else emptyString()} ${this.second}"
+    buildString {
+        if (showSender) {
+            append(first)
+            append(":")
+        }
+        append(second)
+    }
 
 fun Class<*>.toJsonString(): String {
     val fields =
@@ -213,6 +219,24 @@ fun Any?.toJsonFormat(): String {
         .toJson(this)
 }
 
+fun Any?.toJsonFormatIncludingFields(fieldsToInclude: List<String>): String {
+    if (this == null) return emptyString()
+
+    val inclusionStrategy =
+        object : ExclusionStrategy {
+            override fun shouldSkipField(f: FieldAttributes): Boolean = !fieldsToInclude.contains(f.name)
+
+            override fun shouldSkipClass(clazz: Class<*>): Boolean = false
+        }
+
+    val gson =
+        GsonBuilder()
+            .addSerializationExclusionStrategy(inclusionStrategy)
+            .setPrettyPrinting()
+            .create()
+    return gson.toJson(this)
+}
+
 fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     if (this == null) return emptyString()
 
@@ -234,11 +258,24 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
 
 fun doNothing() = {}
 
-fun Long.formatDate(): String {
+enum class DateFormatOption(val pattern: String) {
+    SIMPLE_DD_MM_YYYY("dd/MM/yyyy"),
+    DAY_OF_WEEK_DD_MM_YYYY("EEE, dd/MM/yyyy"),
+    FULL_DAY_MONTH_YEAR("dd 'of' MMMM yyyy"),
+    ISO_DATE("yyyy-MM-dd"),
+    MONTH_DAY_YEAR("MM/dd/yyyy");
+}
+
+fun Long.formatDate(
+    option: DateFormatOption = DateFormatOption.SIMPLE_DD_MM_YYYY,
+    locale: Locale = Locale.getDefault(),
+): String {
     val date = Date(this)
-    val format = SimpleDateFormat("dd 'of' MMMM yyyy 'at' HH:mm", Locale.getDefault())
+    val format = SimpleDateFormat(option.pattern, locale)
     return format.format(date)
 }
+
+
 
 fun Long.formatHours(): String {
     val date = Date(this)

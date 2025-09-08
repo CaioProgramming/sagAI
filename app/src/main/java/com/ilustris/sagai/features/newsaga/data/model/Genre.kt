@@ -71,6 +71,15 @@ Genre(
         background = R.drawable.horror,
         ambientMusicConfigKey = "horror_ambient_music_url",
     ),
+
+    HEROES(
+        title = "Heróis",
+        icon = R.drawable.ic_spark,
+        color = MaterialColor.Blue900,
+        iconColor = Color.White,
+        background = R.drawable.hero,
+        ambientMusicConfigKey = "heroes_ambient_music_url",
+    ),
 }
 
 @StringRes
@@ -87,21 +96,20 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = 1f,
-                saturationThreshold = .6f,
-                lightnessThreshold = .15f,
+                saturationThreshold = .5f,
+                lightnessThreshold = .4f,
                 highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .6f,
+                desaturationFactorNonTarget = .5f,
             )
 
         Genre.SCI_FI ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .15f,
-                saturationThreshold = .3f,
-                lightnessThreshold = .17f,
+                hueTolerance = 1f,
+                saturationThreshold = .5f,
+                lightnessThreshold = .7f,
                 highlightSaturationBoost = 2f,
-                highlightLightnessBoost = .05f,
-                desaturationFactorNonTarget = .8f,
+                desaturationFactorNonTarget = .7f,
             )
 
         Genre.HORROR ->
@@ -112,6 +120,16 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.3f,
                 desaturationFactorNonTarget = .7f,
             )
+
+        Genre.HEROES ->
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = .3f,
+                saturationThreshold = .45f,
+                lightnessThreshold = .25f,
+                highlightSaturationBoost = 1.2f,
+                desaturationFactorNonTarget = .5f,
+            )
     }
 
 fun Genre.defaultHeaderImage() =
@@ -119,7 +137,16 @@ fun Genre.defaultHeaderImage() =
         Genre.FANTASY -> R.drawable.fantasy_card
         Genre.SCI_FI -> R.drawable.scifi_card
         Genre.HORROR -> R.drawable.horror_card
+        Genre.HEROES -> R.drawable.hero_card
     }
+
+fun Genre.shimmerColors() =
+    listOf(
+        Color.Transparent,
+        color.copy(alpha = .3f),
+    ).plus(colorPalette())
+        .plus(color.copy(alpha = .3f))
+        .plus(Color.Transparent)
 
 fun Genre.colorPalette() =
     when (this) {
@@ -130,6 +157,7 @@ fun Genre.colorPalette() =
                 MaterialColor.DeepOrange600,
                 MaterialColor.Red500,
             )
+
         Genre.SCI_FI ->
             listOf(
                 MaterialColor.Purple500,
@@ -137,11 +165,20 @@ fun Genre.colorPalette() =
                 MaterialColor.DeepPurple800,
                 MaterialColor.PinkA100,
             )
+
         Genre.HORROR ->
             listOf(
                 MaterialColor.BlueGray100,
                 MaterialColor.BlueGray700,
                 MaterialColor.LightBlue50,
                 MaterialColor.BlueGray300,
+            )
+
+        Genre.HEROES ->
+            listOf(
+                MaterialColor.Blue500,
+                MaterialColor.Blue900,
+                MaterialColor.LightBlue600,
+                MaterialColor.LightBlueA700,
             )
     }

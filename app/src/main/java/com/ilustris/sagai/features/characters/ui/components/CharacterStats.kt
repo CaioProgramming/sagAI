@@ -3,11 +3,13 @@ package com.ilustris.sagai.features.characters.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -20,10 +22,12 @@ fun CharacterStats(
     character: Character,
     genre: Genre,
 ) {
-    Row(modifier = Modifier.padding(16.dp)) {
-        VerticalLabel("${character.details.height}cm", "Altura", genre)
-        VerticalLabel(character.details.race, "Raça", genre)
-        VerticalLabel("${character.details.weight}kg", "Peso", genre)
+    LazyRow(modifier = Modifier.padding(16.dp)) {
+        item { VerticalLabel(character.details.gender, "Gênero", genre) }
+        item { VerticalLabel("${character.details.height}cm", "Altura", genre) }
+        item { VerticalLabel(character.details.race, "Raça", genre) }
+        item { VerticalLabel(character.details.ethnicity, "Etnia", genre) }
+        item { VerticalLabel("${character.details.weight}kg", "Peso", genre) }
     }
 }
 
@@ -50,10 +54,11 @@ fun VerticalLabel(
         Text(
             label,
             style =
-                MaterialTheme.typography.bodySmall.copy(
+                MaterialTheme.typography.labelMedium.copy(
                     fontFamily = genre.bodyFont(),
                     textAlign = TextAlign.Center,
                 ),
+            modifier = Modifier.alpha(.4f),
         )
     }
 }

@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -10,8 +11,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
-// Added import for GenrePrompts if it's not already there implicitly by package
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 
 object SagaPrompts {
     fun details(saga: Saga) = saga.storyDetails()
@@ -68,7 +67,7 @@ object SagaPrompts {
             )
         val outputJsonStructureGuidance =
             toJsonMap(
-                SagaGen::class.java, // Ensure SagaGen is the correct class representing the desired output
+                SagaGen::class.java,
                 fieldsToOmitFromAiGeneration,
             )
 
@@ -83,6 +82,12 @@ object SagaPrompts {
 
             INSTRUCTIONS:
 
+            Creativity & Assertiveness Guidelines:
+            - Be original: avoid clichés and overused tropes for the chosen genre; prefer fresh twists and specific details.
+            - Be assertive: make confident choices when the user's intent allows reasonable inference; don't over-hedge.
+            - Maintain internal consistency between saga and character details.
+            - Reflect the user's language if evident; otherwise default to English.
+
             **Overall Output Format:**
             *   Your entire response MUST be a single, valid JSON object that strictly conforms to the structure of `SagaGen`.
             *   A template representing the fields you need to generate is shown below (system-managed fields that you should NOT generate are excluded from this template).
@@ -93,6 +98,7 @@ object SagaPrompts {
             *   **`genre`**: Use `SAGA_SETUP.sagaDraft.genre`.
             *   **`description`**: Generate an engaging synopsis (max 75 words). This synopsis should establish the adventure's setting, core theme, and outline the player's journey. Base this on SAGA_SETUP and INITIAL_PLAYER_INTERACTION_LOG.
             *   **`story`**: Generate a more detailed narrative introduction to the world and its current state (1-3 paragraphs). Describe the atmosphere, initial situation, and any immediate hooks or mysteries. Expand from SAGA_SETUP.sagaDraft.description and INITIAL_PLAYER_INTERACTION_LOG.
+            *   Prefer evocative, specific imagery; minimize generic filler.
             *   **Omitted `Saga` fields**: Do NOT generate values for fields like `id`, `coverImage`, `isEnded`, `createdAt`, etc., as listed in the omitted fields for the output structure.
 
             **Part 2: Populating the `character` object (within `SagaGen`)**
@@ -140,7 +146,7 @@ object SagaPrompts {
         val contextData =
             SagaEndCreditsContext(
                 sagaTitle = saga.data.title,
-                playerInfo = saga.mainCharacter,
+                playerInfo = saga.mainCharacter?.data,
                 fullSagaStructure = saga.acts,
             )
         val fieldsToExcludeFromEndCredits =
@@ -189,64 +195,97 @@ object SagaPrompts {
             """.trimIndent()
     }
 
+    @Suppress("ktlint:standard:max-line-length")
     fun iconDescription(
         saga: Saga,
         character: Character,
-    ) = """
-                    Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.
-                    This final text prompt will be used to create a **Dramatic, Close-up Character Icon** for the saga "${saga.title}" (Genre: ${saga.genre.title}).
-
-                    **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
-
-                    1.  **Foundational Art Style (Mandatory):**
-                        *   The primary rendering style for the icon MUST be: `${GenrePrompts.artStyle(saga.genre)}`.
-
-                    2.  **Specific Color Application Instructions (Mandatory):**
-                        *   The following rules dictate how the genre's key colors are applied: `${GenrePrompts.getColorEmphasisDescription(
-        saga.genre,
-    )}`.
-                        *   **Important Clarification on Color:**
-                            *   The color rules from `getColorEmphasisDescription` are primarily for:
-                                *   The **background's dominant color**.
-                                *   **Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).
-                            *   **CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural.
-                            *   Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents. The genre accents are design elements, not the primary light source for the character.
-
-                    3.  **Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**
-                        *   You WILL have access to a Visual Reference Image (Bitmap).
-                        *   From this, draw inspiration for:
-                            *   **Compositional Framing:** (e.g., extreme close-up, angle). Adapt for an icon.
-                            *   **Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured).
-                            Adapt for a simple icon background.
-                            *   **Compatible Visual Details & Mood:** (e.g., subtle textures, expressions) that fit the art style and color rules.
-
-                    4.  **Character Details (Provided Below):** The character to be depicted.
-
-                    **YOUR TASK (Output a single text string for the Image Generation Model):**
-                    Generate a single, highly detailed, unambiguous, and visually rich English text description. This description must:
-                    *   Integrate the **Character Details**.
-                    *   Render the scene in the **Foundational Art Style**.
-                    *   Explicitly describe the **background color** and the **specific character accents** using the genre colors as per `getColorEmphasisDescription`.
-                    *   Ensure the description implies that the character's base colors (skin, hair, main clothing) are preserved and not tinted by the accent colors. Lighting on the character should be consistent with the art style, with genre colors applied as specific, non-overwhelming details.
-                    *   Incorporate **Compositional Framing** and compatible **Visual Details & Mood** inspired by the Visual Reference Image.
-                    *   **CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.
-
-                    **Saga Context (for thematic consistency):**
-                    ${saga.toJsonFormat()}
-
-                    **Main Character Details (to be depicted):**
-                    ${character.toJsonFormatExcludingFields(listOf("backstory", "image", "sagaId", "joinedAt", "hexColor", "id"))}
-
-                    ---
-                    **Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**
-                    "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].
-                    The background is a vibrant [e.g., neon purple as per genre instructions].
-                    Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their black bodysuit, as per genre instructions].
-                    The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded style.
-                    The composition is an [e.g., intense extreme close-up]. [Character Name] has [e.g., piercing blue eyes (unless overridden by genre accent color for eyes)]..."
-                    ---
-                    YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING.
-        """.trimIndent()
+    ) = buildString {
+        appendLine(
+            "Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.",
+        )
+        appendLine(
+            "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.title}).",
+        )
+        appendLine("**CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**")
+        appendLine("1.**Foundational Art Style (Mandatory):**")
+        appendLine(" *The primary rendering style for the icon MUST be:")
+        appendLine(GenrePrompts.artStyle(saga.genre))
+        appendLine("2.**Specific Color Application Instructions (Mandatory):**")
+        appendLine("*The following rules dictate how the genre's key colors are applied:")
+        appendLine(GenrePrompts.getColorEmphasisDescription(saga.genre))
+        appendLine("**Important Clarification on Color:**")
+        appendLine("*The color rules from `getColorEmphasisDescription` are primarily for:")
+        appendLine("*The **background's dominant color**.")
+        appendLine(
+            "***Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).",
+        )
+        appendLine(
+            "***CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural.",
+        )
+        appendLine(
+            "*Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents.",
+        )
+        appendLine("*The genre accents are design elements, not the primary light source for the character.")
+        appendLine("3.**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
+        appendLine("*You WILL have access to a Visual Reference Image (Bitmap)")
+        appendLine("*From this, draw inspiration for:")
+        appendLine(
+            "***Overall Compositional Framing & Mood:** Adapt for an icon. The character's specific pose should be dramatic and derived from their details, not a direct copy of a pose from any visual reference.",
+        )
+        appendLine("**Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured")
+        appendLine("Adapt for a simple icon background")
+        appendLine("Compatible Visual Details & Mood:")
+        appendLine("* Also you will have access to character visual reference to provide a more precise description.")
+        appendLine("4.  **Character Details (Provided Below):** The character to be depicted.")
+        appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
+        appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
+        appendLine("This description must:")
+        appendLine("*   Integrate the **Character Details**.")
+        appendLine(
+            "*   Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
+        )
+        appendLine(
+            "*   **Character Focus and Framing:** Ensure the character is the primary subject, framed as a close-up or medium close-up shot (e.g., from the chest up or waist up). The character should dominate the icon and be the clear focal point, with dynamic posing.",
+        )
+        appendLine("*   Render the scene in the **Foundational Art Style**.")
+        appendLine(
+            "*Explicitly describe the **background color** and the **specific character accents** using the genre colors using the provided color rules.",
+        )
+        appendLine(
+            "*Ensure the description implies that the character's base colors (skin, hair, main clothing) are preserved and not tinted by the accent colors.",
+        )
+        appendLine(
+            "*Lighting on the character should be consistent with the art style, with genre colors applied as specific, non-overwhelming details.",
+        )
+        appendLine(
+            "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character's Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
+        )
+        appendLine(
+            "***CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.",
+        )
+        appendLine("* CRUCIAL: ENSURE THAT NO TEXT IS RENDERED AT ALL ONLY THE Image")
+        appendLine("Saga Context:")
+        appendLine(saga.toJsonFormatIncludingFields(listOf("title", "description", "genre")))
+        appendLine("Main Character Details:")
+        appendLine(character.toJsonFormatExcludingFields(listOf("backstory", "image", "sagaId", "joinedAt", "hexColor", "id")))
+        appendLine(
+            "**Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**",
+        )
+        appendLine(
+            "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].",
+        )
+        appendLine("The background is a vibrant [e.g., neon purple as per genre instructions].")
+        appendLine(
+            "Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their blackpopover, as per genre instructions].",
+        )
+        appendLine(
+            "The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded anime style and studio quality.",
+        )
+        appendLine(
+            "The character should be the absolute focus of the image, filling most of the frame in a compelling, dynamic pose. No other characters or complex backgrounds should be present, ensuring the icon is clean and impactful.",
+        )
+        appendLine("Desired Output: A single, striking icon image. NO TEXT SHOULD BE GENERATED ON THE IMAGE ITSELF.")
+    }
 
     private data class SagaReviewContext(
         val playerCharacter: Character?,
@@ -261,6 +300,12 @@ object SagaPrompts {
         val languageDirective: String,
     )
 
+    data class SagaEmotionalContext(
+        val sagaInfo: Saga,
+        val playerCharacter: Character?,
+        val emotionalSummary: String,
+    )
+
     fun reviewGeneration(
         saga: SagaContent,
         playerMessageCount: Int,
@@ -270,7 +315,7 @@ object SagaPrompts {
     ): String {
         val reviewContextData =
             SagaReviewContext(
-                playerCharacter = saga.mainCharacter,
+                playerCharacter = saga.mainCharacter?.data,
                 sagaInfo = saga.data,
                 playerMessageCount = playerMessageCount,
                 messageTypeCountsText = messageTypesRanking.joinToString(";") { "${it.first.name} : ${it.second}" },
@@ -331,5 +376,65 @@ object SagaPrompts {
                 * **`playStyle`**: Based on your analysis of the player's DOMINANT_MESSAGE_TYPE and MESSAGE_TYPE_COUNTS_TEXT (using the provide
             """.trimIndent()
         // This trimIndent() might be misaligned if the content above is not fully pasted.
+    }
+
+    fun emotionalGeneration(
+        saga: SagaContent,
+        emotionalSummary: String,
+    ): String {
+        val emotionalContext =
+            SagaEmotionalContext(
+                sagaInfo = saga.data,
+                playerCharacter = saga.mainCharacter?.data,
+                emotionalSummary = emotionalSummary,
+            )
+
+        val excludedFields =
+            listOf(
+                "details",
+                "image",
+                "hexColor",
+                "sagaId",
+                "joinedAt",
+                "id",
+            )
+
+        return """
+            Context for emotional review:
+            ${emotionalContext.toJsonFormatExcludingFields(excludedFields)}
+            
+            You are an insightful and empathetic observer reflecting on a player's emotional journey through the saga referenced in SAGA_TITLE.
+            Your task is to generate a thoughtful and personal reflection addressed directly TO THE PLAYER (in the second person, e.g., "you").
+            This reflection should be based *solely* on the AGGREGATED_EMOTIONAL_ARC provided, which represents a series of emotional summaries and observations collected about the player's reactions and decisions throughout their adventure.
+
+            1.  **Output Format:** Your entire response MUST be **ONLY the plain text string** of the emotional review (approximately 3-5 paragraphs). Do NOT include any JSON, special formatting like Markdown headers, or anything else besides the text itself.
+
+            2.  **Tone and Style:**
+            *   Adopt a reflective, empathetic, and slightly analytical tone.
+            *   Speak directly to the player using "you" (e.g., "Looking back at your journey, [Player Name if available, otherwise 'adventurer'], it seems you often...").
+            *   The review should feel personal and tailored, as if you've been a quiet companion observing their emotional responses.
+
+            
+            3.  **Content Focus (Based on AGGREGATED_EMOTIONAL_ARC):**
+            *   **Synthesize the Core Emotional Journey:** Analyze the sequence of emotional summaries in AGGREGATED_EMOTIONAL_ARC. Identify recurring emotional themes, how the player's emotional responses might have evolved or remained consistent, and any significant emotional turning points.
+            *   **Identify Dominant Personality Traits:** Based on the emotional patterns, infer and discuss the player's likely personality traits as they manifested during the saga (e.g., "Your responses suggest a deeply cautious nature," or "A clear pattern of empathetic decision-making indicates a strong compassionate streak in you.").
+            *   **Highlight Emotional Strengths and Skills:** Acknowledge any emotional skills or strengths the player demonstrated (e.g., resilience in the face of adversity, ability to remain calm under pressure, capacity for deep empathy, courageous conviction).
+            *   **Acknowledge Emotional Struggles or Challenges:** Gently point out any emotional struggles or patterns that might have been challenging for the player (e.g., "There were moments where it seemed you struggled with uncertainty," or "At times, a tendency towards impulsiveness appeared to shape your reactions.").
+            *   **Offer Balanced Observations/Advice:** Provide observations that are neither overly praiseful nor harshly critical. The goal is gentle, constructive insight. For example, "This tendency to prioritize logic, while often a strength, sometimes seemed to create internal conflict when faced with purely emotional dilemmas." or "Your ability to find hope in difficult situations was remarkable, though it's worth reflecting if this optimism sometimes led to underestimating risks." Offer observations that the player might find useful about their approach or reactions.
+            *   **Concluding Thought:** End with a thoughtful, summary statement about their overall emotional journey or what they might take away from it.
+
+            4.  **Key Constraints:**
+            *   **Second Person:** Address the player as "you." If PLAYER_NAME is available, use it in the greeting.
+            *   **Based ONLY on AGGREGATED_EMOTIONAL_ARC:** Do not invent story events or infer details beyond what the emotional summaries provide. The review is about their emotional processing, not their specific in-game achievements unless directly reflected in the emotional summaries.
+            *   **Balanced Perspective:** Avoid being excessively positive or negative. Aim for genuine, constructive reflection.
+            *   **No Spoilers:** The reflection should be about the player's internal journey, not a recap of the saga's plot.
+            *   **No Questions:** The generated text must not ask any questions or prompt further user input. It should end definitively.
+
+            Example Snippets (Your actual output will be more cohesive and detailed, forming a few paragraphs):
+            "Looking back at your journey in [SAGA_TITLE], [Player Name, or 'adventurer' if null], it's clear that you approached many situations with a distinct sense of [observed trait, e.g., 'cautious optimism']. The emotional records show that while you often [observed pattern, e.g., 'sought peaceful resolutions'], there were moments, particularly [general situation, e.g., 'when allies were threatened'], where a fierce [observed emotion, e.g., 'protectiveness'] emerged. This suggests a personality that values [inferred value, e.g., 'harmony but is fiercely loyal']."
+            "One of your notable emotional skills appears to be [skill, e.g., 'your resilience in the face of setbacks']. Even when [general struggle, e.g., 'plans went awry, as indicated by moments of frustration in your emotional responses'], you often found a way to [positive outcome, e.g., 'regroup and adapt']. However, the tendency to [observed challenge, e.g., 'internalize blame during difficult choices'] seemed to be a recurring struggle. Perhaps reflecting on these moments could offer insights into [gentle advice, e.g., 'how you navigate responsibility under pressure']."
+            "Ultimately, your emotional journey through this saga was marked by [summary statement, e.g., 'a growing confidence in your intuitive judgments']. It was a privilege to witness."
+            
+            """.trimIndent()
     }
 }

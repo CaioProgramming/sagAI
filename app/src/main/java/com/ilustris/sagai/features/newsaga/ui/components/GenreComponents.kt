@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -48,6 +49,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -92,9 +94,9 @@ fun GenreAvatar(
     modifier: Modifier = Modifier,
     onClick: (Genre) -> Unit,
 ) {
-    val backgroundColor by animateColorAsState(
-        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer,
-    )
+    val backgroundColor =
+        if (isSelected) Brush.verticalGradient(genre.color.darkerPalette()) else MaterialTheme.colorScheme.surfaceContainer.solidGradient()
+
 
     val iconTint by animateColorAsState(
         if (isSelected) genre.iconColor else MaterialTheme.colorScheme.onBackground,
@@ -113,21 +115,20 @@ fun GenreAvatar(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Image(
-            painterResource(genre.icon),
+           painterResource(genre.defaultHeaderImage()),
             genre.name,
-            colorFilter =
-                androidx.compose.ui.graphics.ColorFilter
-                    .tint(iconTint),
+            contentScale = ContentScale.Crop,
             modifier =
                 Modifier
-                    .size(50.dp)
-                    .border(1.dp, backgroundColor.gradientFade(), CircleShape)
-                    .padding(4.dp)
+                    .size(64.dp)
+                    .border(3.dp, backgroundColor, CircleShape)
                     .background(
                         backgroundColor,
                         CircleShape,
-                    ).padding(4.dp)
+                    )
                     .clip(CircleShape)
+                    .effectForGenre(genre, customGrain = 0f)
+                    .selectiveColorHighlight(genre.selectiveHighlight())
                     .clickable {
                         onClick(genre)
                     },
@@ -137,7 +138,8 @@ fun GenreAvatar(
             Text(
                 genre.title,
                 textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Light,
             )
         }

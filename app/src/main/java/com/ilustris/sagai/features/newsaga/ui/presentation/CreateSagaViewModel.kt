@@ -28,6 +28,7 @@ data class FormState(
     val message: String? = null,
     val hint: String? = null,
     val suggestions: List<String> = emptyList(),
+    val readyToSave: Boolean = false,
 )
 
 @HiltViewModel
@@ -116,17 +117,55 @@ class CreateSagaViewModel
 
                     sagaForm?.let {
                         Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
-                        form.value = it
+                        form.value =
+                            it.copy(
+                                saga =
+                                    form.value.saga.copy(
+                                        title = it.saga.title,
+                                        description = it.saga.description,
+                                        genre = it.saga.genre,
+                                    ),
+                                character =
+                                    form.value.character.copy(
+                                        name = it.character.name,
+                                        gender = it.character.gender,
+                                        briefDescription = it.character.briefDescription,
+                                    ),
+                            )
                     }
                 }
 
                 CallBackAction.SAVE_SAGA -> {
-                    saveSaga(form.value.character)
+                    val sagaForm: SagaForm? = callback.data
+
+                    sagaForm?.let {
+                        Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
+                        form.value =
+                            it.copy(
+                                saga =
+                                    form.value.saga.copy(
+                                        title = it.saga.title,
+                                        description = it.saga.description,
+                                        genre = it.saga.genre,
+                                    ),
+                                character =
+                                    form.value.character.copy(
+                                        name = it.character.name,
+                                        gender = it.character.gender,
+                                        briefDescription = it.character.briefDescription,
+                                    ),
+                            )
+                    }
+                    formState.value = (
+                        formState.value.copy(
+                            readyToSave = true,
+                        )
+                    )
                 }
             }
         }
 
-        fun saveSaga(character: CharacterInfo) {
+        fun saveSaga() {
             val saga = form.value.saga
             val character = form.value.character
 
@@ -208,7 +247,7 @@ class CreateSagaViewModel
                                     ),
                             )
                         }
-                        saveSaga(saga.character)
+                        saveSaga()
                     }.onFailure {
                         sendErrorState(it)
                     }
@@ -248,4 +287,8 @@ class CreateSagaViewModel
         fun retry() {
             sendChatMessage(chatMessages.value.last().text)
         }
+
+    fun updateGenre(genre: Genre) {
+        form.update { it.copy(saga = it.saga.copy(genre = genre)) }
     }
+}

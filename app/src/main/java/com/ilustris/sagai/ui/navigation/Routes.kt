@@ -48,7 +48,6 @@ import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
-import com.ilustris.sagai.features.timeline.ui.TimelineView
 import com.ilustris.sagai.ui.theme.SagaTitle
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -79,13 +78,14 @@ enum class Routes(
         )
     }),
     CHAT(
-        view = { nav, padding, _, snack ->
+        view = { nav, padding, transitionScope, snack ->
             val arguments = nav.currentBackStackEntry?.arguments
             ChatView(
                 navHostController = nav,
                 padding,
                 sagaId = arguments?.getString(CHAT.arguments.first()),
                 isDebug = arguments?.getString(CHAT.arguments.last()) == "true",
+                sharedTransitionScope = transitionScope,
             )
         },
         topBarContent = { Box {} },
@@ -95,7 +95,9 @@ enum class Routes(
     ),
     PROFILE,
     SETTINGS,
-    NEW_SAGA(title = R.string.new_saga_title, showBottomNav = false, view = { nav, padding, _, _ ->
+    NEW_SAGA(title = R.string.new_saga_title, deepLink = "saga://new_saga", showBottomNav = false, topBarContent = {
+        Box(modifier = Modifier.size(0.dp))
+    }, view = { nav, padding, _, _ ->
         Box(
             Modifier
                 .padding(padding)
@@ -104,23 +106,6 @@ enum class Routes(
             NewSagaView(nav)
         }
     }),
-    CHARACTER_GALLERY(
-        // Added Character Gallery Route
-        view = { nav, padding, transitionScope, _ ->
-            val arguments = nav.currentBackStackEntry?.arguments
-            CharacterGalleryView(
-                navController = nav,
-                sagaId = arguments?.getString(CHARACTER_GALLERY.arguments.first()) ?: "",
-            )
-        },
-        topBarContent = {
-            Box {}
-        },
-        title = R.string.character_gallery_title, // Example title, ensure this exists
-        arguments = listOf("sagaId"),
-        deepLink = "saga://character_gallery/{sagaId}",
-        showBottomNav = false, // Or true, depending on your desired UX
-    ),
     SAGA_DETAIL(
         view = { nav, padding, _, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
@@ -135,19 +120,7 @@ enum class Routes(
         deepLink = "saga://saga_detail/{sagaId}",
         showBottomNav = false,
     ),
-    TIMELINE(
-        view = { nav, padding, _, _ ->
-            val arguments = nav.currentBackStackEntry?.arguments
-            TimelineView(
-                sagaId = arguments?.getString(TIMELINE.arguments.first()) ?: "",
-                navHostController = nav,
-            )
-        },
-        topBarContent = { Box {} },
-        arguments = listOf("sagaId"),
-        deepLink = "saga://timeline/{sagaId}",
-        showBottomNav = false,
-    ),
+
     CHARACTER_DETAIL(
         arguments =
             listOf(

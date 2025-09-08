@@ -73,11 +73,9 @@ object SciFiColorTones { // Or add to your existing tones object
     val CYBERPUNK_NEON_NIGHT =
         ColorTonePalette(
             name = "Cyberpunk Neon Night",
-            // Highlights can pick up neon colors, but let's make a base that's slightly cool/neutral
-            // so specific lights in the scene can dominate.
             highlightTint = Triple(0.85f, 0.9f, 1.0f), // Pale, slightly cyan/cool white
-            shadowTint = Triple(0.15f, 0.25f, 0.4f), // Deep, desaturated teal-blue or indigo
-            defaultTintStrength = 0.4f, // Tint strength can be higher for a strong mood
+            shadowTint = Triple(0.2f, 0.25f, 0.4f), // Deep, desaturated teal-blue or indigo
+            defaultTintStrength = 0.4f,
         )
 
     // Optional: A variation if you want more prominent colored highlights by default
@@ -104,6 +102,22 @@ object HorrorColorTones {
     val allTones =
         listOf(
             MOONLIGHT_MYSTIQUE,
+        )
+}
+
+object HeroColorTones {
+    val URBAN_COMIC_VIBRANCY =
+        ColorTonePalette(
+            name = "Urban Comic Vibrancy",
+            highlightTint = Triple(0.5f, 0.6f, .7f), // Bright, very subtly cool white (hint of cyan)
+            shadowTint = Triple(0.15f, 0.2f, 0.3f), // Deep, desaturated cool blue/indigo
+            defaultTintStrength = 0.4f, // Moderate strength for punchy colors
+        )
+
+    // You can add more hero-themed palettes here in the future
+    val allTones =
+        listOf(
+            URBAN_COMIC_VIBRANCY,
         )
 }
 

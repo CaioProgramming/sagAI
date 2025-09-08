@@ -5,6 +5,7 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -24,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
@@ -41,6 +43,7 @@ import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
@@ -61,70 +64,73 @@ fun SagaCard(
     )
 
     val backgroundColor by animateColorAsState(
-        saga.genre.color
+        saga.genre.color,
     )
 
+    Box(
+        modifier
+            .clip(saga.genre.shape())
+            .background(Brush.verticalGradient(backgroundColor.darkerPalette()), saga.genre.shape())
+            .clipToBounds(),
+    ) {
+        AsyncImage(
+            saga.icon,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            onSuccess = {
+                fraction = 1f
+            },
+            modifier =
+                Modifier
+                    .blur(5.dp)
+                    .background(backgroundColor)
+                    .fillMaxWidth()
+                    .fillMaxHeight(imageSize)
+                    .zoomAnimation()
+                    .clipToBounds(),
+        )
+
         Box(
-            modifier
-                .clip(RoundedCornerShape(cornerSize))
-                .background(Brush.verticalGradient(backgroundColor.darkerPalette()))
-                .clipToBounds(),
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = .6f)),
+        )
+
+        Column(
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .align(Alignment.Center)
+                    .verticalScroll(
+                        rememberScrollState(),
+                    ),
         ) {
-            AsyncImage(
-                saga.icon,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                onSuccess = {
-                    fraction = 1f
-                },
+            Text(
+                text = saga.title,
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = saga.genre.headerFont(),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Normal,
+                        brush = saga.genre.gradient(true),
+                    ),
                 modifier =
                     Modifier
-                        .background(backgroundColor)
-                        .fillMaxWidth()
-                        .fillMaxHeight(imageSize)
-                        .zoomAnimation()
-                        .clipToBounds(),
+                        .padding(8.dp)
+                        .fillMaxWidth(),
             )
 
-            Box(
-                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = .6f))
-            )
-
-            Column(
+            Text(
+                text = saga.description,
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = saga.genre.bodyFont(),
+                        textAlign = TextAlign.Justify,
+                    ),
                 modifier =
                     Modifier
-                        .padding(16.dp)
-                        .align(Alignment.Center)
-                        .verticalScroll(
-                            rememberScrollState(),
-                        ),
-            ) {
-                Text(
-                    text = saga.title,
-                    style =
-                        MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = saga.genre.headerFont(),
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Normal,
-                            brush = saga.genre.gradient(true),
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(),
-                )
-
-                Text(
-                    text = saga.description,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = saga.genre.bodyFont(),
-                            textAlign = TextAlign.Justify,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                )
-            }
+                        .padding(8.dp),
+            )
         }
+    }
 }

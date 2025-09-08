@@ -29,7 +29,7 @@ class TextGenClient(
     override fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
         Log.i("TextGenClient", "Using text model: ${modelName()} from Remote Config (flag: '$TEXT_GEN_MODEL_FLAG')")
         return Firebase
-            .ai(backend = GenerativeBackend.vertexAI())
+            .ai(backend = GenerativeBackend.googleAI())
             .generativeModel(
                 modelName = modelName(),
                 generationConfig = generationConfig,

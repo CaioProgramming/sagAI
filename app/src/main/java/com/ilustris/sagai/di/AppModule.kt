@@ -1,10 +1,8 @@
 package com.ilustris.sagai.di
 
-import android.app.NotificationManager
 import android.content.Context
 import androidx.work.WorkManager
 import coil3.ImageLoader
-import coil3.PlatformContext
 import coil3.request.crossfade
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
@@ -24,6 +22,7 @@ import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.core.utils.ImageCropHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.domain.usecase.ActUseCase
@@ -34,6 +33,12 @@ import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCaseImpl
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.characters.domain.CharacterUseCaseImpl
+import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
+import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepositoryImpl
+import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
+import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepositoryImpl
+import com.ilustris.sagai.features.characters.relations.domain.usecase.CharacterRelationUseCase
+import com.ilustris.sagai.features.characters.relations.domain.usecase.CharacterRelationUseCaseImpl
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
@@ -60,7 +65,8 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCaseImpl
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepositoryImpl
-import com.ilustris.sagai.features.wiki.data.source.WikiDao
+import com.ilustris.sagai.features.wiki.domain.usecase.EmotionalUseCase
+import com.ilustris.sagai.features.wiki.domain.usecase.EmotionalUseCaseImpl
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCase
 import com.ilustris.sagai.features.wiki.domain.usecase.WikiUseCaseImpl
 import dagger.Binds
@@ -75,6 +81,10 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
+    @Provides
+    @Singleton
+    fun provideImageCropHelper(): ImageCropHelper = ImageCropHelper()
+
     @Provides
     @Singleton
     fun provideImageLoader(
@@ -137,14 +147,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideWikiDao(appDatabase: SagaDatabase): WikiDao = appDatabase.wikiDao()
-
-    @Provides
-    @Singleton
-    fun providesActDao(appDatabase: SagaDatabase) = appDatabase.sagaDao()
-
-    @Provides
-    @Singleton
     fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
         val remoteConfig = Firebase.remoteConfig
         val configSettings =
@@ -175,6 +177,9 @@ abstract class UseCaseModule {
     abstract fun providesNotificationManager(notificationManagerImpl: ChatNotificationManagerImpl): ChatNotificationManager
 
     @Binds
+    abstract fun providesEmotionalUseCase(emotionalUseCaseImpl: EmotionalUseCaseImpl): EmotionalUseCase
+
+    @Binds
     abstract fun providesSagaHistoryUseCase(sagaHistoryUseCaseImpl: SagaHistoryUseCaseImpl): SagaHistoryUseCase
 
     @Binds
@@ -188,6 +193,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun providesCharacterUseCase(characterUseCaseImpl: CharacterUseCaseImpl): CharacterUseCase
+
+    @Binds
+    abstract fun providesCharacterRelationUseCase(characterRelationUseCaseImpl: CharacterRelationUseCaseImpl): CharacterRelationUseCase
 
     @Binds
     abstract fun providesSagaDetailUseCase(sagaDetailUseCaseImpl: SagaDetailUseCaseImpl): SagaDetailUseCase
@@ -217,6 +225,11 @@ abstract class RepositoryModule {
     abstract fun bindsSagaRepository(sagaRepositoryImpl: SagaRepositoryImpl): SagaRepository
 
     @Binds
+    abstract fun bindsCharacterRelationRepository(
+        characterRelationRepositoryImpl: CharacterRelationRepositoryImpl,
+    ): CharacterRelationRepository
+
+    @Binds
     abstract fun bindsMessageRepository(messageRepositoryImpl: MessageRepositoryImpl): MessageRepository
 
     @Binds
@@ -230,6 +243,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsTimelineRepository(timelineRepositoryImpl: TimelineRepositoryImpl): TimelineRepository
+
+    @Binds
+    abstract fun bindsCharacterEventRepository(characterEventRepositoryImpl: CharacterEventRepositoryImpl): CharacterEventRepository
 
     @Binds
     abstract fun bindsActRepository(actRepositoryImpl: ActRepositoryImpl): ActRepository

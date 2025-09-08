@@ -11,7 +11,6 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCurrentChapter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
@@ -66,7 +65,7 @@ class MessageUseCaseImpl
             val genText =
                 gemmaClient.generate<String>(
                     generateSagaIntroductionPrompt(saga),
-                    true,
+                    requireTranslation = true,
                 )
 
             return try {
@@ -91,7 +90,7 @@ class MessageUseCaseImpl
                             text = "[Debug AI]: I see you said '${message.joinMessage().second}'. That's... interesting.",
                             senderType = SenderType.CHARACTER, // Or could be NARRATOR or a specific character if needed
                             sagaId = saga.data.id,
-                            timelineId = saga.getCurrentTimeLine()!!.timeline.id,
+                            timelineId = saga.getCurrentTimeLine()!!.data.id,
                         )
                     val fakeMessageGen =
                         MessageGen(

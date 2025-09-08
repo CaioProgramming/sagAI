@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.chapter.ui
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -30,13 +31,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.components.AutoResizeText
+import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -46,6 +51,7 @@ import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
@@ -55,11 +61,12 @@ fun ChapterContentView(
     content: SagaContent,
     modifier: Modifier,
     isLast: Boolean = false,
+    imageSize: Dp = 250.dp,
     openCharacters: () -> Unit = {},
     regenerateCover: (Chapter) -> Unit = {},
 ) {
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val genre = content.data.genre
@@ -84,69 +91,27 @@ fun ChapterContentView(
                 .background(fadeGradientBottom()),
         )
 
-        Row(
-            Modifier
-                .background(MaterialTheme.colorScheme.background)
-                .fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(.20f)
-                    .height(1.dp)
-                    .background(genre.color),
-            )
-
-            Text(
-                text = chapter.title,
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .weight(1f),
-                style =
-                    MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = genre.bodyFont(),
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
-
-            Box(
-                Modifier
-                    .fillMaxWidth(.20f)
-                    .height(1.dp)
-                    .background(genre.color),
-            )
-        }
-
         var imageSize by remember {
-            mutableFloatStateOf(
-                .35f,
-            )
+            mutableStateOf(imageSize)
         }
-
-        val sizeAnimation by animateFloatAsState(
-            targetValue = imageSize,
-            label = "Image Size Animation",
-        )
 
         Box(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(sizeAnimation),
+                    .height(imageSize)
+                    .animateContentSize(),
         ) {
             AsyncImage(
                 model = chapter.coverImage,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 onError = {
-                    imageSize = 0f
+                    imageSize = 0.dp
                 },
                 modifier =
                     Modifier
+                        .background(MaterialTheme.colorScheme.background)
                         .fillMaxSize()
                         .effectForGenre(genre)
                         .selectiveColorHighlight(genre.selectiveHighlight()),
@@ -154,37 +119,27 @@ fun ChapterContentView(
 
             Box(
                 Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .background(fadeGradientTop())
-                    .align(Alignment.TopCenter),
-            )
-
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .background(fadeGradientBottom())
+                    .fillMaxSize()
+                    .background(fadedGradientTopAndBottom())
                     .align(Alignment.BottomCenter),
             )
-        }
 
-        Text(
-            text = chapter.title,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(16.dp),
-            style =
-                MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Light,
-                    letterSpacing = 5.sp,
-                    fontFamily = genre.headerFont(),
-                    brush = genre.gradient(true),
-                    textAlign = TextAlign.Center,
-                ),
-        )
+            AutoResizeText(
+                text = chapter.title,
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .reactiveShimmer(isLast),
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = genre.gradient(true),
+                        textAlign = TextAlign.Center,
+                    ),
+            )
+        }
 
         TypewriterText(
             text = chapter.overview,
@@ -194,22 +149,26 @@ fun ChapterContentView(
                     .padding(16.dp),
             duration = 3.seconds,
             easing = LinearEasing,
-            isAnimated = true,
+            isAnimated = false,
             genre = genre,
-            mainCharacter = content.mainCharacter,
-            characters = content.characters,
+            mainCharacter = content.mainCharacter?.data,
+            characters = content.getCharacters(),
             wiki = content.wikis,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.Normal,
                     fontFamily = genre.bodyFont(),
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),
             onTextUpdate = {
             },
             onTextClick = openCharacters,
         )
+
+        if (chapter.emotionalReview?.isNotEmpty() == true) {
+            EmotionalCard(chapter.emotionalReview, genre, true, modifier = Modifier.padding(16.dp))
+        }
 
         if (isLast) {
             Box(

@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.utils
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Log
 import coil3.BitmapImage
 import coil3.ImageLoader
@@ -12,13 +13,23 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 
 class GenreReferenceHelper(
     private val context: Context,
     private val firebaseRemoteConfig: FirebaseRemoteConfig,
     private val imageLoader: ImageLoader,
 ) {
+    suspend fun getGenreStyleReference(genre: Genre) =
+        executeRequest {
+            BitmapFactory.decodeResource(
+                context.resources,
+                genre.defaultHeaderImage(),
+            )
+        }
+
     suspend fun getIconReference(genre: Genre): RequestResult<Exception, Bitmap> =
         try {
             val flag = "${genre.name.lowercase()}$ICON_FLAG"
@@ -75,6 +86,19 @@ class GenreReferenceHelper(
                 ImageRequest
                     .Builder(context)
                     .data(portraitUrl)
+                    .build()
+            val imageResult = (imageLoader.execute(request) as SuccessResult)
+            (imageResult.image as BitmapImage).bitmap.asSuccess()
+        } catch (e: Exception) {
+            e.asError()
+        }
+
+    suspend fun getFileBitmap(path: String) =
+        try {
+            val request =
+                ImageRequest
+                    .Builder(context)
+                    .data(path)
                     .build()
             val imageResult = (imageLoader.execute(request) as SuccessResult)
             (imageResult.image as BitmapImage).bitmap.asSuccess()

@@ -142,12 +142,13 @@ fun Modifier.gradientFill(
         }
     }
 
-fun Color.fadeColors() = listOf(
-    this,
-    this.copy(alpha = 0.5f),
-    this.copy(alpha = 0.2f),
-    Color.Transparent,
-)
+fun Color.fadeColors() =
+    listOf(
+        this,
+        this.copy(alpha = 0.5f),
+        this.copy(alpha = 0.2f),
+        Color.Transparent,
+    )
 
 fun Color.gradientFade() =
     Brush.verticalGradient(
@@ -271,8 +272,8 @@ fun Modifier.reactiveShimmer(
             Color.White.copy(alpha = 0.1f),
             Color.White.copy(alpha = 0.0f),
         ),
-    duration: Duration = 2.seconds,
-    targetValue: Float = 500f
+    duration: Duration = 4.seconds,
+    targetValue: Float = 500f,
 ): Modifier {
     val infiniteTransition = rememberInfiniteTransition()
     val offsetAnimation =

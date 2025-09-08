@@ -32,7 +32,12 @@ class HomeUseCaseImpl
                 Log.d("HomeUseCaseImpl", "Fetching new dynamic saga texts...")
                 val prompt = HomePrompts.dynamicSagaCreationPrompt()
 
-                val result = gemmaClient.generate<DynamicSagaPrompt>(prompt, requireTranslation = true)
+                val result =
+                    gemmaClient.generate<DynamicSagaPrompt>(
+                        prompt,
+                        temperatureRandomness = 0.7f,
+                        requireTranslation = true,
+                    )
                 result!!.asSuccess()
             } catch (e: Exception) {
                 e.asError()
@@ -53,13 +58,12 @@ class HomeUseCaseImpl
                 e.asError()
             }
 
-        private fun processSagaContent(content: List<SagaContent>): List<SagaContent> {
-
-            return content.sortedByDescending { saga ->
-                saga.flatMessages()
+        private fun processSagaContent(content: List<SagaContent>): List<SagaContent> =
+            content.sortedByDescending { saga ->
+                saga
+                    .flatMessages()
                     .firstOrNull()
                     ?.message
                     ?.timestamp ?: 0L
             }
-        }
     }

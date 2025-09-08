@@ -7,9 +7,12 @@ import coil3.ImageLoader
 import coil3.request.ImageRequest
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.prompts.ImageRules
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -23,11 +26,15 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.domain.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
+import com.ilustris.sagai.features.newsaga.data.model.CallbackContent
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -96,34 +103,50 @@ class NewSagaUseCaseImpl
             character: Character,
         ): RequestResult<Exception, Saga> =
             try {
-                val reference = genreReferenceHelper.getIconReference(sagaForm.genre).getSuccess()
+                val characterOperation =
+                    characterUseCase.generateCharacterImage(
+                        character = character,
+                        saga = sagaForm,
+                    )
+                val characterIcon =
+                    characterOperation
+                        .getSuccess()
+                        ?.first
+                        ?.image
+                        ?.let { genreReferenceHelper.getFileBitmap(it) }
+                        ?.getSuccess()
+                        ?.let {
+                            ImageReference(
+                                it,
+                                ImageGuidelines.characterVisualReferenceGuidance(character.name),
+                            )
+                        }
+                val reference =
+                    genreReferenceHelper.getIconReference(sagaForm.genre).getSuccess()?.let {
+                        ImageReference(
+                            it,
+                            ImageGuidelines.compositionReferenceGuidance,
+                        )
+                    }
+
+                val style =
+                    genreReferenceHelper.getGenreStyleReference(sagaForm.genre).getSuccess()?.let {
+                        ImageReference(it, ImageGuidelines.styleReferenceGuidance)
+                    }
                 val metaPromptCover =
                     gemmaClient.generate<String>(
                         SagaPrompts.iconDescription(
                             sagaForm,
                             character,
                         ),
-                        references = listOf(reference),
+                        references = listOf(style, reference, characterIcon),
                         requireTranslation = false,
-                    )
-                val sagaIconPrompt =
-                    generateSagaIconPrompt(
-                        saga = sagaForm,
-                        mainCharacter = character,
-                        description = metaPromptCover!!,
-                    )
-
-                withContext(Dispatchers.IO) {
-                    characterUseCase.generateCharacterImage(
-                        character = character,
-                        saga = sagaForm,
-                    )
-                }
+                    )!!
 
                 val file =
                     fileHelper.saveFile(
                         fileName = sagaForm.title,
-                        data = imageGenClient.generateImage(sagaIconPrompt)!!,
+                        data = imageGenClient.generateImage(metaPromptCover.plus(ImageRules.TEXTUAL_ELEMENTS)),
                         path = "${sagaForm.id}",
                     )
 
@@ -139,25 +162,54 @@ class NewSagaUseCaseImpl
             currentFormData: SagaForm,
         ): RequestResult<Exception, SagaCreationGen> =
             try {
-                val prompt =
-                    NewSagaPrompts.formReplyPrompt(
-                        currentFormData,
-                        currentMessages.map {
-                            if (it.isUser) {
-                                "USER" to it.text
-                            } else {
-                                "AI" to it.text
-                            }
-                        },
-                    )
+                val delayDefaultTime = 700L
 
-                val aiRequest =
-                    gemmaClient.generate<SagaCreationGen>(
-                        prompt,
+                val extractedDataPrompt =
+                    gemmaClient.generate<SagaForm>(
+                        NewSagaPrompts.extractDataFromUserInputPrompt(
+                            currentFormData,
+                            currentMessages.last().text,
+                        ),
                         requireTranslation = true,
-                    )
+                    )!!
 
-                aiRequest!!.asSuccess()
+                delay(delayDefaultTime)
+
+                val identifyNextFieldPrompt =
+                    gemmaClient
+                        .generate<String>(
+                            NewSagaPrompts.identifyNextFieldPrompt(extractedDataPrompt),
+                            requireTranslation = false,
+                        )!!
+                        .replace("\n", "")
+
+                val field = SagaFormFields.getByKey(identifyNextFieldPrompt)!!
+
+                delay(delayDefaultTime)
+
+                val nextQuestion =
+                    gemmaClient.generate<SagaCreationGen>(
+                        NewSagaPrompts.generateCreativeQuestionPrompt(
+                            field!!,
+                            extractedDataPrompt,
+                        ),
+                    )!!
+
+                val callBackAction =
+                    if (field == SagaFormFields.ALL_FIELDS_COMPLETE) {
+                        CallBackAction.SAVE_SAGA
+                    } else {
+                        CallBackAction.UPDATE_DATA
+                    }
+
+                nextQuestion
+                    .copy(
+                        callback =
+                            CallbackContent(
+                                action = callBackAction,
+                                data = extractedDataPrompt,
+                            ),
+                    ).asSuccess()
             } catch (e: Exception) {
                 e.asError()
             }
@@ -198,15 +250,6 @@ class NewSagaUseCaseImpl
             } catch (e: Exception) {
                 e.asError()
             }
-
-        private fun generateSagaIconPrompt(
-            saga: Saga,
-            mainCharacter: Character,
-            description: String,
-        ) = ImagePrompts.wallpaperGeneration(
-            saga,
-            description,
-        )
 
         private fun generateSagaPrompt(
             sagaForm: SagaForm,

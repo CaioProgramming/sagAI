@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -241,8 +242,11 @@ fun Genre?.cornerSize() =
         Genre.FANTASY -> 20.dp
         Genre.SCI_FI -> 10.dp
         Genre.HORROR -> 7.dp
+        Genre.HEROES -> 4.dp
         else -> 0.dp
     }
+
+fun Genre?.shape() = RoundedCornerShape(this.cornerSize())
 
 fun Morph.toComposePath(
     progress: Float,

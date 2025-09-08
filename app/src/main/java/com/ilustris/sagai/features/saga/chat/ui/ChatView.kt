@@ -30,6 +30,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -118,18 +119,22 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.ActComponent
+import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
@@ -146,8 +151,11 @@ import com.ilustris.sagai.features.saga.chat.presentation.SnackBarState
 import com.ilustris.sagai.features.saga.chat.presentation.TimelineSummaryData
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.detail.ui.DetailAction
+import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
@@ -168,6 +176,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import dev.chrisbanes.haze.rememberHazeState
@@ -175,7 +184,7 @@ import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun ChatView(
     navHostController: NavHostController,
@@ -183,12 +192,14 @@ fun ChatView(
     sagaId: String? = null,
     isDebug: Boolean = false,
     viewModel: ChatViewModel = hiltViewModel(),
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val content by viewModel.content.collectAsStateWithLifecycle()
     val messages by viewModel.messages.collectAsStateWithLifecycle()
     val characters by viewModel.characters.collectAsStateWithLifecycle()
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
     val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
     val contentHaze = rememberHazeState()
@@ -308,9 +319,21 @@ fun ChatView(
                             state = state.value,
                             content = cont,
                             characters = characters,
+                            titleModifier = (
+                                sharedTransitionScope?.let { sts ->
+                                    with(sts) {
+                                        Modifier.sharedElement(
+                                            rememberSharedContentState(
+                                                key = DetailAction.BACK.sharedElementTitleKey(cont.data.id)!!,
+                                            ),
+                                            animatedVisibilityScope = this@AnimatedContent,
+                                        )
+                                    }
+                                } ?: Modifier
+                            ),
                             messagesList = messages,
                             suggestions = suggestions,
-                            isGenerating = isGenerating,
+                            isGenerating = isGenerating || isLoading,
                             padding = padding,
                             isDebug = isDebug,
                             isPlaying = isPlaying,
@@ -422,26 +445,7 @@ fun ChatListPreview() {
                                     actId = 1,
                                 ),
                             timelineSummaries =
-                                listOf(
-                                    TimelineSummaryData(
-                                        id = 1,
-                                        title = "Timeline 1",
-                                        content = "Timeline 1 content",
-                                        messages =
-                                            List(SenderType.entries.size) {
-                                                MessageContent(
-                                                    message =
-                                                        Message(
-                                                            id = SenderType.entries[it].ordinal,
-                                                            text = "Message $it",
-                                                            senderType = SenderType.entries[it],
-                                                            timelineId = 1,
-                                                        ),
-                                                )
-                                            },
-                                        isComplete = true,
-                                    ),
-                                ),
+                                emptyList(),
                         ),
                     ),
             ),
@@ -463,6 +467,7 @@ fun ChatContent(
     state: ChatState = ChatState.Loading,
     content: SagaContent,
     characters: List<Character> = emptyList(),
+    titleModifier: Modifier = Modifier,
     messagesList: List<ActDisplayData> = emptyList(),
     suggestions: List<Suggestion> = emptyList(),
     isGenerating: Boolean = false,
@@ -489,7 +494,7 @@ fun ChatContent(
 
     val bottomSheetState = rememberModalBottomSheetState()
     var showCharacter by remember {
-        mutableStateOf<Character?>(null)
+        mutableStateOf<CharacterContent?>(null)
     }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -558,6 +563,7 @@ fun ChatContent(
                     saga = content,
                     actList = messagesList,
                     listState = listState,
+                    isLoading = isGenerating,
                     modifier =
                         Modifier
                             .constrainAs(messages) {
@@ -590,6 +596,7 @@ fun ChatContent(
                         .background(fadeGradientBottom()),
                 ) {
                     StarryTextPlaceholder(
+                        starCount = 100,
                         modifier =
                             Modifier
                                 .fillMaxSize()
@@ -633,6 +640,7 @@ fun ChatContent(
                     saga.title,
                     "${content.flatMessages().size} mensagens",
                     saga.genre,
+                    isLoading = isGenerating,
                     onBackClick = onBack,
                     modifier =
                         Modifier
@@ -646,12 +654,17 @@ fun ChatContent(
                             .fillMaxWidth()
                             .clickable {
                                 openSagaDetails(saga)
-                            }.reactiveShimmer(isGenerating),
+                            },
+                    titleModifier = titleModifier,
                     actionContent = {
                         AnimatedContent(characters, transitionSpec = {
                             slideInVertically() + fadeIn() with fadeOut()
                         }) { chars ->
-                            CharactersTopIcons(chars, { openSagaDetails(saga) }, saga)
+                            CharactersTopIcons(
+                                chars,
+                                saga.genre,
+                                isLoading = isGenerating,
+                            ) { _ -> openSagaDetails(saga) }
                         }
                     },
                 )
@@ -885,6 +898,9 @@ fun ChatContent(
             CharacterDetailsContent(
                 content,
                 character,
+                openEvent = {
+                    openSagaDetails(saga)
+                },
             )
         }
     }
@@ -1028,7 +1044,8 @@ fun ChatList(
     actList: List<ActDisplayData>,
     modifier: Modifier,
     listState: LazyListState,
-    openCharacter: (Character?) -> Unit = {},
+    isLoading: Boolean = false,
+    openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
 ) {
@@ -1039,7 +1056,7 @@ fun ChatList(
     }
 
     LazyColumn(
-        modifier,
+        modifier.animateContentSize(),
         state = listState,
         horizontalAlignment = Alignment.CenterHorizontally,
         reverseLayout = true,
@@ -1052,6 +1069,7 @@ fun ChatList(
                 Column(
                     modifier =
                         Modifier
+                            .animateItem()
                             .padding(16.dp)
                             .fillMaxWidth()
                             .clickable {
@@ -1095,6 +1113,7 @@ fun ChatList(
                         ),
                     modifier =
                         Modifier
+                            .animateItem()
                             .fillMaxWidth()
                             .padding(16.dp),
                 )
@@ -1123,37 +1142,31 @@ fun ChatList(
                         saga,
                         modifier =
                             Modifier
+                                .animateItem()
                                 .fillMaxWidth()
-                                .fillParentMaxHeight()
                                 .background(MaterialTheme.colorScheme.background),
                     )
                 }
 
                 item {
-                    Text(
-                        "Fim do Ato ${actList.indexOf(act) + 1}",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                brush = genre.gradient(),
-                                fontFamily = genre.headerFont(),
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                    )
-                }
-            }
-
-            act.chapters.reversed().forEach { chapter ->
-
-                if (chapter.isComplete) {
-                    item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.animateItem(),
+                    ) {
                         Text(
-                            "Fim do Capitulo ${saga.chapterNumber(chapter.chapter)}",
+                            "Fim",
                             style =
-                                MaterialTheme.typography.bodyLarge.copy(
+                                MaterialTheme.typography.labelMedium.copy(
+                                    brush = genre.gradient(),
+                                    fontFamily = genre.headerFont(),
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier = Modifier.alpha(.4f),
+                        )
+                        Text(
+                            act.content.data.title,
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
                                     brush = genre.gradient(),
                                     fontFamily = genre.headerFont(),
                                     textAlign = TextAlign.Center,
@@ -1164,73 +1177,91 @@ fun ChatList(
                                     .padding(16.dp),
                         )
                     }
+                }
+            }
 
+            act.chapters.reversed().forEach { chapter ->
+
+                if (chapter.isComplete) {
                     item {
                         ChapterContentView(
                             chapter.chapter,
                             saga,
                             isLast = act.chapters.lastOrNull() == chapter,
+                            imageSize = 400.dp,
                             modifier =
                                 Modifier
-                                    .fillMaxWidth(),
-                        ) {}
+                                    .animateItem()
+                                    .clip(genre.shape())
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        openSaga()
+                                    },
+                        )
                     }
                 }
 
                 chapter.timelineSummaries.reversed().forEach { timeline ->
 
-                    if (timeline.isComplete) {
+                    if (timeline.isComplete()) {
                         item {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
+                            TimeLineSimpleCard(
+                                timeline,
+                                saga,
                                 modifier =
                                     Modifier
+                                        .animateItem()
                                         .padding(16.dp)
-                                        .clip(shape)
-                                        .alpha(.6f)
-                                        .background(
-                                            MaterialTheme.colorScheme.background,
-                                            shape,
+                                        .clip(
+                                            genre.shape(),
                                         ).clickable {
                                             openSaga()
-                                        }.padding(8.dp)
-                                        .gradientFill(genre.gradient()),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.ic_spark),
-                                    null,
-                                    modifier = Modifier.size(12.dp),
-                                    tint = genre.iconColor,
-                                )
-                                Text(
-                                    "História atualizada",
-                                    style =
-                                        MaterialTheme.typography.labelSmall.copy(
-                                            color = genre.iconColor,
-                                            fontFamily = genre.bodyFont(),
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                )
-                            }
+                                        }.fillMaxWidth(),
+                            )
                         }
                     }
 
                     items(timeline.messages.reversed(), key = { it.message.id }) {
                         ChatBubble(
                             it,
+                            isLoading = false,
                             content = saga,
                             alreadyAnimatedMessages = animatedMessages,
                             canAnimate = timeline.messages.lastOrNull() == it,
+                            modifier = Modifier.animateItem(),
                             openCharacters = { char -> openCharacter(char) },
                             openWiki = { openWiki() },
                         )
                     }
                 }
 
+                if (chapter.chapter.introduction.isNotEmpty()) {
+                    item {
+                        Text(
+                            chapter.chapter.introduction,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Justify,
+                                ),
+                            modifier =
+                                Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                        )
+                    }
+                }
+
                 item {
+                    val title =
+                        chapter.chapter.title.ifEmpty {
+                            "Capitulo ${
+                                saga.chapterNumber(chapter.chapter).toRoman()
+                            }"
+                        }
                     Text(
-                        "Capitulo ${saga.chapterNumber(chapter.chapter)}",
+                        title,
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 brush = genre.gradient(),
@@ -1240,15 +1271,38 @@ fun ChatList(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.background)
+                                .padding(16.dp),
+                    )
+                }
+            }
+
+            if (act.content.data.introduction
+                    .isNotEmpty()
+            ) {
+                item {
+                    Text(
+                        act.content.data.introduction,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Justify,
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                        modifier =
+                            Modifier
+                                .animateItem()
+                                .fillMaxWidth()
                                 .padding(16.dp),
                     )
                 }
             }
 
             item {
+                val title =
+                    act.content.data.title
+                        .ifEmpty { "Ato ${saga.actNumber(act.content.data).toRoman()}" }
                 Text(
-                    "Ato ${actList.indexOf(act) + 1}",
+                    title,
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             brush = genre.gradient(true),
@@ -1258,33 +1312,28 @@ fun ChatList(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.background,
-                            ).reactiveShimmer(true)
                             .padding(16.dp),
                 )
             }
-
-            if (isFirst) {
-                item {
-                    SagaHeader(
-                        saga = saga.data,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth(),
-                        openSaga = openSaga,
-                    )
-                }
-            }
+        }
+        item {
+            SagaHeader(
+                saga = saga.data,
+                modifier =
+                    Modifier
+                        .fillMaxWidth(),
+                openSaga = openSaga,
+            )
         }
     }
 }
 
 @Composable
-private fun CharactersTopIcons(
+fun CharactersTopIcons(
     characters: List<Character>,
-    onCharacterSelected: (Int) -> Unit,
-    data: Saga,
+    genre: Genre,
+    isLoading: Boolean = false,
+    onCharacterSelected: (Character?) -> Unit = {},
 ) {
     val overlapAmount = (-10).dp
     val density = LocalDensity.current
@@ -1292,11 +1341,8 @@ private fun CharactersTopIcons(
         characters.take(3)
     LazyRow(
         Modifier
-            .clip(RoundedCornerShape(25.dp))
-            .fillMaxWidth(.2f)
-            .clickable {
-                onCharacterSelected(data.id)
-            },
+            .clip(RoundedCornerShape(genre.cornerSize()))
+            .fillMaxWidth(.2f),
         userScrollEnabled = false,
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
@@ -1308,7 +1354,7 @@ private fun CharactersTopIcons(
                 borderSize = 2.dp,
                 borderColor = MaterialTheme.colorScheme.background,
                 innerPadding = 0.dp,
-                genre = data.genre,
+                genre = genre,
                 pixelation = .1f,
                 modifier =
                     Modifier
@@ -1322,7 +1368,9 @@ private fun CharactersTopIcons(
                             },
                         ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        ).size(24.dp),
+                        ).clip(CircleShape)
+                        .size(24.dp)
+                        .clickable { onCharacterSelected(character) },
             )
         }
     }

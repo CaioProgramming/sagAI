@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre // Your Genre class
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
+import com.ilustris.sagai.ui.theme.filters.HeroColorTones
 import com.ilustris.sagai.ui.theme.filters.HorrorColorTones // Import HorrorColorTones
 import com.ilustris.sagai.ui.theme.filters.SciFiColorTones
 import com.ilustris.sagai.ui.theme.grayScale
@@ -96,7 +97,7 @@ fun Modifier.effectForGenre(
     val fantasyPalette = FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
     val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
-
+    val heroPalette = HeroColorTones.URBAN_COMIC_VIBRANCY
     val uniformValues =
         remember(genre, pixelSize) {
             // Add pixelSize as a key for remember
@@ -104,39 +105,39 @@ fun Modifier.effectForGenre(
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .25f,
-                        bloomThreshold = .4f,
-                        bloomIntensity = .3f,
-                        bloomRadius = 1f,
+                        grainIntensity = customGrain ?: .2f,
+                        bloomThreshold = .6f,
+                        bloomIntensity = .1f,
+                        bloomRadius = 1.3f,
                         softFocusRadius = focusRadius ?: .7f,
-                        saturation = .5f,
+                        saturation = .7f,
                         contrast = 1.5f,
-                        brightness = -.03f,
+                        brightness = 0f,
                         highlightTint = fantasyPalette.highlightTint,
                         shadowTint = fantasyPalette.shadowTint,
                         tintStrength = fantasyPalette.defaultTintStrength,
                         vignetteStrength = 0.2f,
                         vignetteSoftness = 0.7f,
                         pixelationBlockSize = 0f,
-                        colorTemperature = .15f, // Slightly warm for Fantasy
+                        colorTemperature = .1f, // Slightly warm for Fantasy
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .15f,
+                        grainIntensity = customGrain ?: .1f,
                         bloomThreshold = .3f,
                         bloomIntensity = .2f,
                         bloomRadius = 1.3f,
-                        softFocusRadius = focusRadius ?: .5f,
-                        saturation = .2f,
-                        contrast = 1.5f,
-                        brightness = -.1f,
+                        softFocusRadius = focusRadius ?: .2f,
+                        saturation = .65f,
+                        contrast = 1.7f,
+                        brightness = -.05f,
                         highlightTint = cyberpunkPalette.highlightTint,
                         shadowTint = cyberpunkPalette.shadowTint,
                         tintStrength = cyberpunkPalette.defaultTintStrength,
-                        vignetteStrength = .2f,
+                        vignetteStrength = .3f,
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = -.1f, // Slightly cool for Sci-Fi
+                        colorTemperature = 1f.unaryMinus(), // Slightly cool for Sci-Fi
                     )
                 Genre.HORROR ->
                     ShaderParams(
@@ -156,6 +157,25 @@ fun Modifier.effectForGenre(
                         pixelationBlockSize = pixelSize ?: 3.5f,
                         colorTemperature = .3f.unaryMinus(),
                     )
+                Genre.HEROES -> {
+                    ShaderParams(
+                        grainIntensity = customGrain ?: .2f,
+                        bloomThreshold = 0f,
+                        bloomIntensity = 0f,
+                        bloomRadius = 0f,
+                        softFocusRadius = focusRadius ?: .2f,
+                        saturation = .9f,
+                        contrast = 1.3f,
+                        brightness = .05f,
+                        highlightTint = heroPalette.highlightTint,
+                        shadowTint = heroPalette.shadowTint,
+                        tintStrength = heroPalette.defaultTintStrength,
+                        vignetteStrength = .1f,
+                        vignetteSoftness = 1f,
+                        pixelationBlockSize = 0.0f,
+                        colorTemperature = .15f,
+                    )
+                }
                 else ->
                     ShaderParams()
             }

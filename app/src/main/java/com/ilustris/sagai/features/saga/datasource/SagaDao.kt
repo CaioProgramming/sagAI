@@ -36,7 +36,7 @@ interface SagaDao {
 
     @Transaction
     @Query("SELECT * FROM sagas WHERE id = :sagaId")
-    fun getSagaContent(sagaId: Int): Flow<SagaContent>
+    fun getSagaContent(sagaId: Int): Flow<SagaContent?>
 
     @Transaction
     @Query("SELECT * FROM sagas")

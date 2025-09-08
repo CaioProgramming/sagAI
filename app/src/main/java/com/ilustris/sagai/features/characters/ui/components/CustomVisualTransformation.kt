@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.characters.ui.components
 
 import ai.atick.material.MaterialColor
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
@@ -17,7 +18,10 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.lighter
@@ -100,25 +104,20 @@ fun buildWikiAndCharactersAnnotation(
             val shadow =
                 Shadow(
                     color = shadowColor,
-                    blurRadius = 5f,
-                    offset =
-                        androidx.compose.ui.geometry
-                            .Offset(1f, -1f),
+                    blurRadius = 2f,
+                    offset = Offset(.5f, .3f),
                 )
+
+            val mainColor = if (character.id == mainCharacter?.id) genre.color else characterColor
+            val font = if (character.id == mainCharacter?.id) genre.headerFont() else genre.bodyFont()
             val span =
-                if (character.id == mainCharacter?.id) {
-                    SpanStyle(
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = genre.headerFont(),
-                        color = genre.color,
-                    )
-                } else {
-                    SpanStyle(
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = genre.bodyFont(),
-                        color = characterColor,
-                    )
-                }
+                SpanStyle(
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = font,
+                    shadow = shadow,
+                    color = mainColor,
+                )
+
             AnnotationRule(
                 searchTerm = character.name,
                 annotationValue = "character:${character.id}",

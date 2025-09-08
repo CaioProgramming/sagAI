@@ -8,11 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +26,9 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
@@ -73,8 +71,7 @@ fun ActComponent(
         modifier =
             modifier
                 .padding(16.dp)
-                .animateContentSize()
-                .verticalScroll(rememberScrollState()),
+                .animateContentSize(),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -85,7 +82,9 @@ fun ActComponent(
         )
         Text(
             actCount.toRoman(),
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelMedium.copy(
+                fontFamily = content.data.genre.headerFont(),
+            ),
             textAlign = TextAlign.Center,
             modifier = Modifier.alpha(countAnimation),
         )
@@ -117,15 +116,18 @@ fun ActComponent(
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
                 duration = 10.seconds,
-                isAnimated = true,
+                isAnimated = false,
                 genre = content.data.genre,
-                mainCharacter = content.mainCharacter,
-                characters = content.characters,
+                mainCharacter = content.mainCharacter?.data,
+                characters = content.getCharacters(),
                 wiki = content.wikis,
                 modifier = Modifier.padding(bottom = 16.dp),
             )
-        }
 
+            if (act.emotionalReview?.isNotEmpty() == true) {
+                EmotionalCard(act.emotionalReview, content.data.genre, false)
+            }
+        }
     }
 }
 
