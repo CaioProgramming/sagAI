@@ -64,71 +64,73 @@ fun SagaCard(
     )
 
     val backgroundColor by animateColorAsState(
-        saga.genre.color
+        saga.genre.color,
     )
 
+    Box(
+        modifier
+            .clip(saga.genre.shape())
+            .background(Brush.verticalGradient(backgroundColor.darkerPalette()), saga.genre.shape())
+            .clipToBounds(),
+    ) {
+        AsyncImage(
+            saga.icon,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            onSuccess = {
+                fraction = 1f
+            },
+            modifier =
+                Modifier
+                    .blur(5.dp)
+                    .background(backgroundColor)
+                    .fillMaxWidth()
+                    .fillMaxHeight(imageSize)
+                    .zoomAnimation()
+                    .clipToBounds(),
+        )
+
         Box(
-            modifier
-                .clip(saga.genre.shape())
-                .background(Brush.verticalGradient(backgroundColor.darkerPalette()), saga.genre.shape())
-                .clipToBounds(),
+            Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = .6f)),
+        )
+
+        Column(
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .align(Alignment.Center)
+                    .verticalScroll(
+                        rememberScrollState(),
+                    ),
         ) {
-            AsyncImage(
-                saga.icon,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                onSuccess = {
-                    fraction = 1f
-                },
+            Text(
+                text = saga.title,
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = saga.genre.headerFont(),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Normal,
+                        brush = saga.genre.gradient(true),
+                    ),
                 modifier =
                     Modifier
-                        .blur(5.dp)
-                        .background(backgroundColor)
-                        .fillMaxWidth()
-                        .fillMaxHeight(imageSize)
-                        .zoomAnimation()
-                        .clipToBounds(),
+                        .padding(8.dp)
+                        .fillMaxWidth(),
             )
 
-            Box(
-                Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background.copy(alpha = .6f))
-            )
-
-            Column(
+            Text(
+                text = saga.description,
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = saga.genre.bodyFont(),
+                        textAlign = TextAlign.Justify,
+                    ),
                 modifier =
                     Modifier
-                        .padding(16.dp)
-                        .align(Alignment.Center)
-                        .verticalScroll(
-                            rememberScrollState(),
-                        ),
-            ) {
-                Text(
-                    text = saga.title,
-                    style =
-                        MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = saga.genre.headerFont(),
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Normal,
-                            brush = saga.genre.gradient(true),
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(),
-                )
-
-                Text(
-                    text = saga.description,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = saga.genre.bodyFont(),
-                            textAlign = TextAlign.Justify,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                )
-            }
+                        .padding(8.dp),
+            )
         }
+    }
 }

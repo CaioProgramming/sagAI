@@ -59,20 +59,10 @@ jobs:
       # If you want to sign a release, provide the keystore secrets and uncomment the signing step below.
       # Otherwise we build Debug which does not require signing keys.
       - name: 🏗️ Build APK
-        run: |
-          set -euo pipefail
-          VARIANT_LOWER=$(echo "${BUILD_VARIANT}" | tr '[:upper:]' '[:lower:]')
-          echo "[CI] Checking config.properties before build:"
-          if [ -f app/config.properties ]; then
-            echo "[CI] app/config.properties exists"; ls -l app/config.properties
-            echo "[CI] Sanitized content:"; awk -F'=' '{ gsub(/ /,"" ); key=$1; if (length(key)>0) print key " = \"***\"" }' app/config.properties
-          else
-            echo "[CI][ERROR] app/config.properties is missing." >&2
-            exit 3
-          fi
-          ./gradlew :${ANDROID_MODULE}:assemble${BUILD_VARIANT} --stacktrace
-          echo "APK_PATH=${ANDROID_MODULE}/build/outputs/apk/${VARIANT_LOWER}/" >> $GITHUB_ENV
-
+        id: build
+        uses: MirkoMajkicProductDock/BuildAPK@v0.0.1
+        with:
+          flavour: debug
       - name: 🔎 Find APK
         id: locate_apk
         run: |
