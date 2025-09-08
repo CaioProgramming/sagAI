@@ -60,15 +60,23 @@ jobs:
       # Otherwise we build Debug which does not require signing keys.
       - name: 🏗️ Build APK
         id: build_apk
-        uses: MirkoMajkicProductDock/BuildAPK@v0.0.1
-        with:
-          flavour: debug
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "[CI] Building APK with scripts/build-apk.sh"
+          bash scripts/build-apk.sh --module "${ANDROID_MODULE}" --variant "${BUILD_VARIANT}" | tee build_apk_output.txt
+          APK_LINE=$(grep '^apk=' build_apk_output.txt)
+          if [ -z "$APK_LINE" ]; then
+            echo "No apk output from build-apk.sh" >&2
+            exit 1
+          fi
+          echo "$APK_LINE" >> "$GITHUB_OUTPUT"
       - name: ⬆️ Upload artifact
         id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
           name: apk-${{ env.BUILD_VARIANT }}
-          path: ${{ steps.build_apk.apk-path }}
+          path: ${{ steps.build_apk.outputs.apk }}
 
       - name: Pull Request Commenter
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
