@@ -225,7 +225,7 @@ object SagaPrompts {
         appendLine(
             "*Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents.",
         )
-        appendLine("*The genre accents are design elements, not the primary light source for the character.")
+        appendLine("*The accents are design elements, not the primary light source for the character.")
         appendLine("3.**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
         appendLine("*You WILL have access to a Visual Reference Image (Bitmap)")
         appendLine("*From this, draw inspiration for:")

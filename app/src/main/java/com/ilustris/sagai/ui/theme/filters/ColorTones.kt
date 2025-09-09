@@ -121,6 +121,18 @@ object HeroColorTones {
         )
 }
 
+object CrimeColorTones {
+    val MIAMI_NEON_SUNSET =
+        ColorTonePalette(
+            name = "Miami Neon Sunset",
+            highlightTint = Triple(1.0f, 0.55f, 0.85f), // neon pink/magenta
+            shadowTint = Triple(1.0f, 0.78f, 0.3f), // warm amber/yellow
+            defaultTintStrength = 0.35f,
+        )
+
+    val allTones = listOf(MIAMI_NEON_SUNSET)
+}
+
 // You might also want a data class if not already defined elsewhere,
 // or ensure it's imported if it exists in another file.
 // data class ColorTonePalette(

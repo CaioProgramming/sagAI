@@ -272,7 +272,7 @@ fun Modifier.reactiveShimmer(
             Color.White.copy(alpha = 0.1f),
             Color.White.copy(alpha = 0.0f),
         ),
-    duration: Duration = 4.seconds,
+    duration: Duration = 5.seconds,
     targetValue: Float = 500f,
 ): Modifier {
     val infiniteTransition = rememberInfiniteTransition()

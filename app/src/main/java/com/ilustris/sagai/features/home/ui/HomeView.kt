@@ -219,15 +219,18 @@ private fun ChatList(
             }
         }
         item {
+            val shimmerColors =
+                remember {
+                    Genre.entries.random().colorPalette()
+                }
             Row(
                 modifier =
                     Modifier
                         .padding(16.dp)
                         .reactiveShimmer(
                             true,
-                            targetValue = 300f,
-                            shimmerColors = holographicGradient.plus(Color.Transparent),
-                            duration = 5.seconds,
+                            shimmerColors = shimmerColors,
+                            duration = 10.seconds,
                         ).clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
@@ -264,6 +267,7 @@ private fun ChatList(
                     ) {
                         if (isLoading) {
                             StarryTextPlaceholder(
+                                starCount = 100,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -417,9 +421,12 @@ fun ChatCard(
                                 sagaData.genre.color,
                             ),
                         modifier =
-                            Modifier.offset(y = 6.dp).size(24.dp).align(
-                                Alignment.BottomCenter,
-                            ).reactiveShimmer(true),
+                            Modifier
+                                .offset(y = 6.dp)
+                                .size(24.dp)
+                                .align(
+                                    Alignment.BottomCenter,
+                                ).reactiveShimmer(true),
                     )
                 }
             }

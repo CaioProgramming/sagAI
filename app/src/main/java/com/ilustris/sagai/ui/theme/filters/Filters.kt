@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.IntSize
 import com.ilustris.sagai.features.newsaga.data.model.Genre // Your Genre class
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
+import com.ilustris.sagai.ui.theme.filters.CrimeColorTones
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
 import com.ilustris.sagai.ui.theme.filters.HeroColorTones
 import com.ilustris.sagai.ui.theme.filters.HorrorColorTones // Import HorrorColorTones
@@ -98,6 +99,7 @@ fun Modifier.effectForGenre(
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
     val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
     val heroPalette = HeroColorTones.URBAN_COMIC_VIBRANCY
+    val crimePalette = CrimeColorTones.MIAMI_NEON_SUNSET
     val uniformValues =
         remember(genre, pixelSize) {
             // Add pixelSize as a key for remember
@@ -176,6 +178,24 @@ fun Modifier.effectForGenre(
                         colorTemperature = .15f,
                     )
                 }
+                Genre.CRIME ->
+                    ShaderParams(
+                        grainIntensity = customGrain ?: .15f,
+                        bloomThreshold = 0.25f,
+                        bloomIntensity = 0.25f,
+                        bloomRadius = 1.4f,
+                        softFocusRadius = focusRadius ?: .3f,
+                        saturation = .7f,
+                        contrast = 1.5f,
+                        brightness = .02f,
+                        highlightTint = crimePalette.highlightTint,
+                        shadowTint = crimePalette.shadowTint,
+                        tintStrength = crimePalette.defaultTintStrength,
+                        vignetteStrength = .25f,
+                        vignetteSoftness = .9f,
+                        pixelationBlockSize = 0.0f,
+                        colorTemperature = .05f,
+                    )
                 else ->
                     ShaderParams()
             }
@@ -249,6 +269,8 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
             Genre.FANTASY -> .6f
             Genre.SCI_FI -> .4f
             Genre.HORROR -> 0.1f
+            Genre.HEROES -> .9f
+            Genre.CRIME -> .85f
             else -> 1.0f
         }
 
@@ -257,6 +279,8 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
             Genre.FANTASY -> .02f
             Genre.SCI_FI -> -0.01f
             Genre.HORROR -> -0.1f
+            Genre.HEROES -> .03f
+            Genre.CRIME -> .02f
             else -> 0f
         }
 
@@ -265,6 +289,8 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
             Genre.FANTASY -> 1.2f
             Genre.SCI_FI -> 1.4f
             Genre.HORROR -> 1.6f
+            Genre.HEROES -> 1.3f
+            Genre.CRIME -> 1.35f
             else -> 1.0f
         }
 

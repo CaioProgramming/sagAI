@@ -39,7 +39,6 @@ import kotlin.random.Random
 enum class
 Genre(
     val title: String,
-    val icon: Int,
     val color: Color,
     val iconColor: Color,
     @DrawableRes
@@ -48,7 +47,6 @@ Genre(
 ) {
     FANTASY(
         title = "Fantasia",
-        icon = R.drawable.fantasy_icon,
         color = MaterialColor.Red800,
         iconColor = Color.White,
         background = R.drawable.fantasy,
@@ -56,7 +54,6 @@ Genre(
     ),
     SCI_FI(
         title = "Cyberpunk",
-        icon = R.drawable.scifi_icon,
         color = MaterialColor.DeepPurpleA200,
         iconColor = Color.White,
         background = R.drawable.scifi,
@@ -65,7 +62,6 @@ Genre(
 
     HORROR(
         title = "Terror",
-        icon = R.drawable.ic_spark,
         color = MaterialColor.BlueGray200,
         iconColor = Color.Black,
         background = R.drawable.horror,
@@ -74,11 +70,17 @@ Genre(
 
     HEROES(
         title = "Heróis",
-        icon = R.drawable.ic_spark,
         color = MaterialColor.Blue900,
         iconColor = Color.White,
         background = R.drawable.hero,
         ambientMusicConfigKey = "heroes_ambient_music_url",
+    ),
+    CRIME(
+        title = "Crime City",
+        color = MaterialColor.PinkA200,
+        iconColor = Color.White,
+        background = R.drawable.crime,
+        ambientMusicConfigKey = "crime_ambient_music_url",
     ),
 }
 
@@ -127,8 +129,18 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 hueTolerance = .3f,
                 saturationThreshold = .45f,
                 lightnessThreshold = .25f,
-                highlightSaturationBoost = 1.2f,
+                highlightSaturationBoost = 1.4f,
                 desaturationFactorNonTarget = .5f,
+            )
+
+        Genre.CRIME ->
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = 1f,
+                saturationThreshold = .5f,
+                lightnessThreshold = .2f,
+                highlightSaturationBoost = 2f,
+                desaturationFactorNonTarget = .8f,
             )
     }
 
@@ -138,6 +150,7 @@ fun Genre.defaultHeaderImage() =
         Genre.SCI_FI -> R.drawable.scifi_card
         Genre.HORROR -> R.drawable.horror_card
         Genre.HEROES -> R.drawable.hero_card
+        Genre.CRIME -> R.drawable.crime_card
     }
 
 fun Genre.shimmerColors() =
@@ -180,5 +193,13 @@ fun Genre.colorPalette() =
                 MaterialColor.Blue900,
                 MaterialColor.LightBlue600,
                 MaterialColor.LightBlueA700,
+            )
+
+        Genre.CRIME ->
+            listOf(
+                MaterialColor.PinkA200,
+                MaterialColor.PinkA100,
+                MaterialColor.Amber300,
+                MaterialColor.YellowA200,
             )
     }

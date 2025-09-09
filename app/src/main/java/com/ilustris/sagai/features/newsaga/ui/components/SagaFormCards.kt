@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
@@ -47,6 +48,7 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -69,7 +71,7 @@ enum class CardFace(
 fun SagaFormCards(
     sagaForm: SagaForm,
     onDismiss: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var cardFace by remember {
         mutableStateOf(CardFace.Front)
@@ -82,56 +84,30 @@ fun SagaFormCards(
         cardFace = cardFace.next
     }
 
-    val brush = sagaForm.saga.genre?.gradient(true) ?: Brush.verticalGradient(holographicGradient)
-        ConstraintLayout(modifier) {
-            val (reviewCard, spark) = createRefs()
-
-            FlipCard(
-                cardFace,
-                onClick = {
-                    cardFace = it.next
-                },
-                front = {
-                    ReviewCard(
-                        sagaForm.saga.title,
-                        sagaForm.saga.genre?.title ?: emptyString(),
-                        sagaForm.saga.description,
-                        sagaForm.saga.genre,
-                    )
-                },
-                back = {
-                    ReviewCard(
-                        sagaForm.character.name,
-                        sagaForm.character.gender,
-                        sagaForm.character.briefDescription,
-                        sagaForm.saga.genre,
-                    )
-                },
-                modifier =
-                    Modifier.fillMaxWidth(.8f).fillMaxHeight(.75f).constrainAs(reviewCard) {
-                        top.linkTo(parent.top)
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                    },
+    FlipCard(
+        cardFace,
+        onClick = {
+            cardFace = it.next
+        },
+        front = {
+            ReviewCard(
+                sagaForm.saga.title,
+                sagaForm.saga.genre?.title ?: emptyString(),
+                sagaForm.saga.description,
+                sagaForm.saga.genre,
             )
-
-            Image(
-                painter = painterResource(R.drawable.ic_spark),
-                null,
-                modifier =
-                    Modifier.constrainAs(spark) {
-                            top.linkTo(reviewCard.top)
-                            start.linkTo(reviewCard.start)
-                            end.linkTo(reviewCard.end)
-                        }.offset(y = 24.unaryMinus().dp)
-                        .gradientFill(brush)
-                        .size(64.dp)
-                        .clickable {
-                            onDismiss()
-                        },
+        },
+        back = {
+            ReviewCard(
+                sagaForm.character.name,
+                sagaForm.character.gender,
+                sagaForm.character.briefDescription,
+                sagaForm.saga.genre,
             )
-    }
+        },
+        modifier =
+            Modifier.fillMaxSize(),
+    )
 }
 
 @Composable
@@ -160,7 +136,8 @@ fun ReviewCard(
             .border(2.dp, brush, shape)
             .background(MaterialTheme.colorScheme.surfaceContainer, shape)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(16.dp)
+            .reactiveShimmer(true),
     ) {
         Text(
             text = title,
@@ -177,8 +154,9 @@ fun ReviewCard(
             style =
                 MaterialTheme.typography.labelMedium.copy(
                     fontFamily = font,
+                    brush = brush,
                 ),
-            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.alpha(.6f)
         )
 
         Text(

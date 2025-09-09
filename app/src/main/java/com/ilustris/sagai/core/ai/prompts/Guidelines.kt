@@ -1,9 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.CharacterFraming
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts.artStyle
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts.moodDescription
-import com.ilustris.sagai.features.newsaga.data.model.Genre
+
 
 object CharacterGuidelines {
     val creationGuideline =

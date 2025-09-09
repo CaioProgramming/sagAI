@@ -1137,7 +1137,7 @@ fun ChatList(
             if (act.isComplete) {
                 item {
                     ActComponent(
-                        act.content.data,
+                        act.content,
                         saga.acts.indexOf(act.content) + 1,
                         saga,
                         modifier =

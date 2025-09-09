@@ -61,6 +61,18 @@ object GenrePrompts {
                 The overall aesthetic evokes the superhero comics of the 1990s, with a slightly painterly quality.  
                 """
             }
+
+            Genre.CRIME ->
+                """
+                Rendered in the style of 1980s commercial illustration and airbrush art – characterized by soft, blended shading, subtle gradients, visible brushstrokes, and a slightly grainy texture.
+                The image should have a slightly retro, hand-painted feel, reminiscent of vintage magazine illustrations with a *noir aesthetic*.
+                Avoid sharp lines and overly defined edges.
+                Strong shadows and highlights, emphasizing rim lighting and a sense of depth.
+                Emphasis on a slightly imperfect, hand-painted aesthetic with *subtle imperfections and realistic skin textures*.
+                Avoid cel-shading, vector art, and comic book style.
+                *Focus on realistic proportions and anatomy, avoiding exaggerated features*.
+                *Incorporate a sense of grit and realism, reminiscent of vintage crime drama artwork*.
+                """
         }
 
     fun getColorEmphasisDescription(genre: Genre): String =
@@ -104,108 +116,18 @@ object GenrePrompts {
                 bathed in a cool blue light.
                
                 """
+
+            Genre.CRIME ->
+                """
+                Abstract, silhouette-focused tropical environment. 
+                The color palette is dominated by vibrant pinks, oranges, and teals, accented with deep blues and blacks.
+                The background is composed of stark silhouettes of beach background.
+                Minimal detail, emphasizing form and shadow.
+                Emphasis on strong contrasts, a hazy, dreamlike atmosphere, and the feeling of warm, humid air.
+                A sense of glamour and decadence mixed with underlying tension and mystery.
+                The overall mood is atmospheric and evocative, prioritizing style over realism and evoking a sense of summer nights and tropical danger.
+                """
         }.trimIndent()
-
-    fun iconPrompt(
-        genre: Genre,
-        description: String,
-    ) = """
-        ${CharacterRules.IMAGE_CRITICAL_RULE}
-
-        $description
-        """.trimIndent()
-
-    fun coverComposition(genre: Genre) =
-        when (genre) {
-            FANTASY ->
-                """
-                Simple background in celestial tones, with subtle, stylized 
-                fantasy landmark.
-                """
-
-            SCI_FI ->
-                """
-            Minimalist background in cold tones with single Big Stylized kanji symbol behind the characters.
-            """
-
-            else -> emptyString()
-        }
-
-    fun portraitStyle(genre: Genre) =
-        when (genre) {
-            FANTASY ->
-                """
-            Ethereal epic background with a divine mood.
-            """
-
-            SCI_FI ->
-                """
-                Subtle cold and melancholic city background.               
-                """
-
-            else -> emptyString()
-        }.trimIndent()
-
-    fun negativePrompt(genre: Genre) =
-        when (genre) {
-            FANTASY -> StylePreset.entries.filter { it != StylePreset.FANTASY }.joinToString()
-            SCI_FI ->
-                StylePreset.entries
-                    .filter { it != StylePreset.CYBERPUNK && it != StylePreset.ANIME }
-                    .joinToString()
-
-            else -> emptyString()
-        }.uppercase()
-
-    fun characterStyling(genre: Genre): ImageStyling =
-        when (genre) {
-            SCI_FI ->
-                ImageStyling(
-                    style = StylePreset.ANIME.key,
-                    effects =
-                        Effects(
-                            color = ColorPreset.COLD_NEON,
-                            lightning = LightningPreset.DRAMATIC,
-                            framing = FramingPreset.CLOSE_UP,
-                        ),
-                )
-
-            else ->
-                ImageStyling(
-                    style = StylePreset.VINTAGE.key,
-                    effects =
-                        Effects(
-                            color = ColorPreset.GOLD_GLOW,
-                            lightning = LightningPreset.DRAMATIC,
-                            framing = FramingPreset.PORTRAIT,
-                        ),
-                )
-        }
-
-    fun chapterCoverStyling(genre: Genre): ImageStyling =
-        when (genre) {
-            FANTASY ->
-                ImageStyling(
-                    style = StylePreset.FANTASY.key,
-                    effects =
-                        Effects(
-                            color = ColorPreset.GOLD_GLOW,
-                            lightning = LightningPreset.STUDIO,
-                            framing = FramingPreset.entries.random(),
-                        ),
-                )
-
-            else ->
-                ImageStyling(
-                    style = StylePreset.CYBERPUNK.key,
-                    effects =
-                        Effects(
-                            color = ColorPreset.COLD_NEON,
-                            lightning = LightningPreset.VOLUMETRIC,
-                            framing = FramingPreset.entries.random(),
-                        ),
-                )
-        }
 
     fun nameDirectives(genre: Genre) =
 
@@ -247,6 +169,15 @@ object GenrePrompts {
                 but with a modern twist or a unique nickname.
                 // - Consider names that evoke a sense of agility, speed, or resourcefulness.
                 // - Think about names that could easily become a street tag or a whispered legend.
+                """
+
+            Genre.CRIME ->
+                """
+                // - Aim for names fitting a crime drama set in a stylized neon city.
+                // - Blend gritty street nicknames with classic, timeless first names.
+                // - Consider influences from 80s Miami/LA crime fiction, Latin and Anglo names common in ${currentLanguage()} locales.
+                // - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
+                // - Avoid overtly sci-fi or fantasy elements.
                 """
         }.plus("Try common names in ${currentLanguage()}").trimIndent()
 
@@ -323,70 +254,46 @@ object GenrePrompts {
                 """
                 // This directive defines the specific linguistic style for the Urban Hero genre.
                 // NPCs and narrative voice should reflect a contemporary, street-smart, and often gritty tone, blending realism with a sense of hidden potential.
-            
+                
                 1.  Language & Vocabulary:
                     * Terminology: Incorporate contemporary slang, street jargon, and terms related to urban life, parkour, technology (but not overly futuristic), and local landmarks (e.g., "spot," "crew," "grind," "flow," "tag," "wire," "glitch," "the block").
                     * Formality: Dialogue should generally be informal and conversational, reflecting the way people actually speak in a city. Vary formality based on character age, background, and social standing.
                     * Slang & Idioms: Use contemporary slang and idioms authentically, but avoid overly trendy terms that might quickly date the dialogue.
                     * Profanity (Conditional): Moderate use of profanity is acceptable to enhance realism and character authenticity, but avoid gratuitous or excessive swearing. Use it strategically for impact.
-            
+                
                 2.  Tone & Delivery:
                     * Street-Smart & Resourceful: Characters should sound quick-witted, adaptable, and capable of navigating the urban landscape.
                     * Cynicism & Hope: A blend of cynicism about the system and a glimmer of hope for making a difference.
                     * Directness & Authenticity: Dialogue should be direct and honest, avoiding overly dramatic or flowery language.
                     * Pacing: Dialogue can be fast-paced and energetic, reflecting the rhythm of city life.
-            
+                
                 3.  Narrative Voice:
                     * Descriptions should be vivid and detailed, focusing on the sights, sounds, and smells of the city. Highlight the contrast between beauty and decay, opportunity and danger.
                     * Maintain a sense of realism and groundedness, even when describing extraordinary events.
                     * Focus on the human element – the struggles, dreams, and resilience of the people who live in the city.
                     * The narrative should subtly hint at the hidden potential and extraordinary abilities that exist beneath the surface of everyday life.
                 """
-        }.trimIndent()
 
-    fun moodDescription(genre: Genre) =
-        when (genre) {
-            FANTASY ->
+            Genre.CRIME ->
                 """
-                  Translate the character's mood/situation into visual cues, emphasizing a dark and moody atmosphere with stark,
-                  dramatic lighting that strongly highlights the central character and key red details.
-                  The lighting should create significant contrast and shadows (e.g., "powerful and dramatic, with strong contrasts and selective crimson highlights,"
-                  "mysterious and intense, where red details pierce through deep shadows") 
-                   """
-
-            SCI_FI ->
-                """
-                Translate the character's mood/situation into visual cues,
-                explicitly incorporating a limited color palette dominated by artistic shades of neon purple
-                and contrasting highlights of a lighter, almost neon purple. Emphasize strong,
-                directional lighting creating dramatic shadows and silhouettes
-                **Crucially, incorporate subtle cybernetic implants and enhancements as elements of fusion between human and machine.** These details should be visible on the **face, neck, eyes (e.g., glowing pupils or integrated displays), and lips (e.g., metallic sheen or subtle integrated tech)**, adding to the cyberpunk aesthetic without overwhelming the character's humanity, as seen in the provided example.
-                """
-
-            HORROR ->
-                """
-               Translate the story's theme/mystery into a visual scene, emphasizing a haunting and atmospheric mood.
-               The main focus should be on the environment and the supernatural elements.
-               explicitly incorporating a limited color palette dominated by artistic shades of blue gray.
-               and contrasting highlights of a lighter, almost moonlight blue.
-               Emphasize strong directional lighting creating dramatic shadows and silhouettes
-               Evoke a sense of dread, forbidden knowledge, and impending doom
-                (e.g., "haunting and mysterious, with ethereal light and deep shadows," "sinister and foreboding, with a hint of the occult").
-               """
-            Genre.HEROES ->
-                """
-                Translate the character's mood/situation into visual cues, emphasizing a dynamic and energetic atmosphere with strong,
-                dramatic lighting that highlights the central character and key blue details.
-                The lighting should create significant contrast and shadows (e.g., "powerful and dramatic, with strong contrasts and selective electric blue highlights," "dynamic and intense, where blue energy emanates from the character").
-            
-                **Crucially, incorporate subtle energy effects and tech details as elements of the character's abilities.
-                ** These details should be visible around the hands (suggesting energy manipulation), on the suit (subtle glowing lines or panels), or as a faint aura surrounding the character, adding to the urban hero aesthetic without overwhelming the design.
-            
-                Emphasize a sense of movement, agility, and determination. 
-                The character should appear poised for action, ready to take on any challenge.
-                The background should be a blurred cityscape, suggesting speed and momentum.
-            
-                Focus on capturing a heroic pose and a confident expression, conveying a sense of hope and resilience in the face of adversity.
+                // This directive defines the specific linguistic style for the Crime City genre.
+                // NPCs and narration should evoke 80s crime drama with a neon-soaked, Miami Vice mood.
+                
+                1. Language & Vocabulary:
+                    * Terminology: Use crime and street terms (e.g., "stakeout", "heat", "hustle", "dirty money", "dealer", "detective", "vice squad").
+                    * Formality: Conversational and direct. Cops may be clipped and procedural; criminals can be slick, terse, or menacing.
+                    * Slang & Idioms: Period-appropriate 80s flavor where possible; avoid modern internet slang.
+                    * Profanity (Conditional): Moderate and contextual—used for grit, not excess.
+                
+                2. Tone & Delivery:
+                    * Cool, tense, and stylish. Understated bravado with subtext; terse exchanges and loaded pauses.
+                    * Noir sensibility meets pop neon. Melancholic glamour and danger.
+                    * Pacing: Snappy during action or interrogation; laconic and moody between beats.
+                
+                3. Narrative Voice:
+                    * Visual metaphors that evoke neon nights, ocean breeze, and rumbling engines.
+                    * Emphasize rim lighting, silhouettes against pink-yellow dusk, and reflective wet streets.
+                    * Keep descriptions cinematic but slightly imperfect and gritty.
                 """
         }.trimIndent()
 }

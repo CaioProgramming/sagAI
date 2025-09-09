@@ -20,6 +20,7 @@ import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
+import com.ilustris.sagai.core.utils.ImageCropHelper
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
@@ -48,6 +49,7 @@ class NewSagaUseCaseImpl
         private val characterUseCase: CharacterUseCase,
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
+        private val imageCropHelper: ImageCropHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
     ) : NewSagaUseCase {
         override suspend fun saveSaga(
@@ -146,7 +148,10 @@ class NewSagaUseCaseImpl
                 val file =
                     fileHelper.saveFile(
                         fileName = sagaForm.title,
-                        data = imageGenClient.generateImage(metaPromptCover.plus(ImageRules.TEXTUAL_ELEMENTS)),
+                        data =
+                            imageGenClient.generateImage(metaPromptCover).apply {
+                                imageCropHelper.cropToPortraitBitmap(this!!)
+                            },
                         path = "${sagaForm.id}",
                     )
 

@@ -29,6 +29,7 @@ fun Genre.headerFont(): FontFamily {
             Genre.SCI_FI -> R.font.ninja_cyber
             Genre.HORROR -> R.font.pixelwarden
             Genre.HEROES -> R.font.super_energy
+            Genre.CRIME -> R.font.broadway
             else -> null
         }
     return if (fontResource != null) {
@@ -45,6 +46,7 @@ fun Genre.bodyFont(): FontFamily {
             Genre.SCI_FI -> R.font.tektur
             Genre.HORROR -> R.font.jersey
             Genre.HEROES -> R.font.comic_book
+            Genre.CRIME -> R.font.retro_neon
             else -> null
         }
     return if (fontResource != null) {

@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -94,14 +95,11 @@ fun GenreAvatar(
     modifier: Modifier = Modifier,
     onClick: (Genre) -> Unit,
 ) {
-    val backgroundColor =
-        if (isSelected) Brush.verticalGradient(genre.color.darkerPalette()) else MaterialTheme.colorScheme.surfaceContainer.solidGradient()
+    val backgroundColor by animateColorAsState(
+        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer
 
-
-    val iconTint by animateColorAsState(
-        if (isSelected) genre.iconColor else MaterialTheme.colorScheme.onBackground,
-        animationSpec = tween(400, easing = EaseIn),
     )
+
     val scale by animateFloatAsState(
         if (isSelected) 1.1f else 1f,
         tween(),
@@ -114,19 +112,19 @@ fun GenreAvatar(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        val backgroundBrush = Brush.verticalGradient(backgroundColor.darkerPalette())
         Image(
-           painterResource(genre.defaultHeaderImage()),
+            painterResource(genre.defaultHeaderImage()),
             genre.name,
             contentScale = ContentScale.Crop,
             modifier =
                 Modifier
                     .size(64.dp)
-                    .border(3.dp, backgroundColor, CircleShape)
+                    .border(1.dp, backgroundBrush, CircleShape)
                     .background(
-                        backgroundColor,
+                        backgroundBrush,
                         CircleShape,
-                    )
-                    .clip(CircleShape)
+                    ).clip(CircleShape)
                     .effectForGenre(genre, customGrain = 0f)
                     .selectiveColorHighlight(genre.selectiveHighlight())
                     .clickable {
@@ -207,16 +205,17 @@ fun GenreCard(
 
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
 
-        Text(
+        AutoResizeText(
             genre.title,
-            textAlign = TextAlign.Center,
             style =
-                MaterialTheme.typography.titleMedium.copy(
+                MaterialTheme.typography.headlineMedium.copy(
+                    textAlign = TextAlign.Center,
                     fontFamily = genre.headerFont(),
                     brush = genre.gradient(true, 1.seconds, 300f),
                 ),
             modifier =
-                Modifier.fillMaxWidth()
+                Modifier
+                    .fillMaxWidth()
                     .padding(2.dp)
                     .align(Alignment.Center),
         )
