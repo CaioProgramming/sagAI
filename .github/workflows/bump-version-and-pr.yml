@@ -87,6 +87,21 @@ jobs:
           echo "changed=true" >> $GITHUB_OUTPUT
           echo "version=$newMajor.$newMinor.$newPatch" >> $GITHUB_OUTPUT
 
+      - name: Build Signed APK
+        uses: TeamNecta/build-signed-apk@main
+        with:
+          keystore_b64: ${{ secrets.KEY_STORE }}
+          keystore_password: ${{ secrets.KEY_STORE_PASS }}
+          key_alias: ${{ secrets.KEY_STORE_ALIAS }}
+          key_password: ${{ secrets.ALIAS_PASS }}
+
+      - name: ⬆️ Upload artifact
+        id: upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ steps.bump.outputs.version }}
+          path: app/build/outputs/apk/release/app-release.apk
+
       - name: Create Pull Request
         if: steps.bump.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
