@@ -3,8 +3,6 @@ package com.ilustris.sagai.features.home.data.usecase
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
-import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow

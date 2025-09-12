@@ -1,22 +1,14 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.models.ActConclusionContext
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 
 object ActPrompts {
-    private data class ActConclusionContext(
-        val sagaData: Saga,
-        val mainCharacter: Character?,
-        val previousActData: Act?,
-        val chaptersInCurrentAct: List<Chapter>,
-        val actPurpose: String,
-    )
 
     @Suppress("ktlint:standard:max-line-length")
     fun generateActConclusion(

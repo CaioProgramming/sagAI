@@ -1,7 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.features.home.data.model.SagaContent
-
 object EmotionalPrompt {
     fun generateEmotionalReview(texts: List<String>) =
         """

@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.models.SagaEndCreditsContext
+import com.ilustris.sagai.core.ai.models.SagaGenerationContext
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
@@ -53,11 +55,6 @@ object SagaPrompts {
         Description: ${description.trimEnd()}
         Genre: $genre
         """.trimIndent()
-
-    private data class SagaGenerationContext(
-        val sagaSetup: SagaForm,
-        val initialPlayerInteractionLog: String,
-    )
 
     fun sagaGeneration(
         saga: SagaForm,
@@ -167,12 +164,6 @@ object SagaPrompts {
         5.  An indication of the adventure's scope and potential.
         Target a description length of 50 words, ensuring it captures the essence of a playable RPG experience.
         """.trimIndent()
-
-    private data class SagaEndCreditsContext(
-        val sagaTitle: String,
-        val playerInfo: Character?,
-        val fullSagaStructure: List<ActContent>,
-    )
 
     fun endCredits(saga: SagaContent): String {
         val contextData =

@@ -1,21 +1,15 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
-import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 object ChapterPrompts {
     fun chapterIntroductionPrompt(
@@ -77,14 +71,6 @@ object ChapterPrompts {
             appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
         }
 
-    private data class ChapterConclusionContext(
-        val sagaData: Saga,
-        val mainCharacter: Character?,
-        val eventsOfThisChapter: List<Timeline>,
-        val previousActData: Act?,
-        val previousChaptersInCurrentAct: List<Chapter>,
-    )
-
     @Suppress("ktlint:standard:max-line-length")
     fun chapterGeneration(
         sagaContent: SagaContent,
@@ -109,7 +95,8 @@ object ChapterPrompts {
             ChapterConclusionContext(
                 sagaData = sagaContent.data,
                 mainCharacter = sagaContent.mainCharacter?.data,
-                eventsOfThisChapter = currentChapterContent.events.filter { it.isComplete() }.map { it.data },
+                eventsOfThisChapter = currentChapterContent.events.filter { it.isComplete() }
+                    .map { it.data },
                 previousChaptersInCurrentAct = currentChapters.map { it.data },
                 previousActData = previousAct?.data,
             )
@@ -203,16 +190,15 @@ object ChapterPrompts {
                 "mainCharacterId",
                 "currentActId",
                 "id",
-                "image", // Character image is handled by visual reference
+                "image",
                 "hexColor",
-                "backstory", // Character backstory is too detailed for cover prompt
-                "featuredCharacters", // This is passed via the `characters` parameter directly
+                "backstory",
+                "featuredCharacters",
                 "createdAt",
                 "coverImage",
-                "personality", // Character personality is too detailed for cover prompt
-                "overview", // Chapter overview excluded
-                "emotionalReview", // Chapter emotional review excluded
-                // Fields from Chapter data class that might imply setting or plot:
+                "personality",
+                "overview",
+                "emotionalReview",
                 "content",
                 "order",
             )

@@ -45,12 +45,12 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManagerImpl
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
-import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository

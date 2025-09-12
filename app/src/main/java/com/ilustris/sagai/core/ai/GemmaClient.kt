@@ -14,6 +14,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken // <-- ADDED IMPORT
 import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString // <-- ADDED IMPORT FOR EXTENSION
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
@@ -29,6 +30,7 @@ class GemmaClient
         @PublishedApi
         internal val requestRunning = AtomicBoolean(false)
         val isRequestRunning: Boolean get() = requestRunning.get()
+
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
 

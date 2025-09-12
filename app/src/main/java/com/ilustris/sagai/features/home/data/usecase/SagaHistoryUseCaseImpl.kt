@@ -16,7 +16,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
-import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
