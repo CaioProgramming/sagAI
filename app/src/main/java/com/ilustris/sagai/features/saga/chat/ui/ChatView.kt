@@ -17,6 +17,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
@@ -192,7 +193,7 @@ fun ChatView(
     sagaId: String? = null,
     isDebug: Boolean = false,
     viewModel: ChatViewModel = hiltViewModel(),
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
+    sharedTransitionScope: SharedTransitionScope? = null,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val content by viewModel.content.collectAsStateWithLifecycle()
@@ -207,7 +208,7 @@ fun ChatView(
     val loreProgress by viewModel.loreUpdateProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showRationaleDialog by remember { mutableStateOf(false) }
-
+    val showTitle by viewModel.showTitle.collectAsStateWithLifecycle()
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
@@ -324,7 +325,7 @@ fun ChatView(
                                     with(sts) {
                                         Modifier.sharedElement(
                                             rememberSharedContentState(
-                                                key = DetailAction.BACK.sharedElementTitleKey(cont.data.id)!!,
+                                                key = DetailAction.BACK.sharedElementTitleKey(cont.data.id),
                                             ),
                                             animatedVisibilityScope = this@AnimatedContent,
                                         )
@@ -546,6 +547,7 @@ fun ChatContent(
                             isPlaying,
                             shimmerColors = saga.genre.colorPalette(),
                             duration = 10.seconds,
+                            targetValue = 200f,
                         ).fillMaxSize(.5f)
                         .alpha(.6f),
             )

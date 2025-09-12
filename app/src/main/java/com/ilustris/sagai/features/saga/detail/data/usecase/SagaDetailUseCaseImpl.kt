@@ -98,13 +98,14 @@ class SagaDetailUseCaseImpl
                     )!!
                 val newIcon =
                     imageGenClient.generateImage(
-                        ImagePrompts.wallpaperGeneration(
-                            saga.data,
-                            metaPrompt
-                                .plus(ImageGuidelines.fullImage)
-                                .plus(ImageRules.TEXTUAL_ELEMENTS),
-                        ),
-                        references.subList(1, references.lastIndex),
+                        buildString {
+                            appendLine(GenrePrompts.artStyle(saga.data.genre))
+
+                            appendLine(metaPrompt)
+
+                            appendLine(GenrePrompts.getColorEmphasisDescription(saga.data.genre))
+                        },
+                        references,
                     )!!
 
                 val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)

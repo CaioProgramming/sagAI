@@ -49,45 +49,39 @@ object CharacterGuidelines {
 object ImageGuidelines {
     val styleReferenceGuidance: String =
         """
-        **Interpreting the Style Reference Image (Context, Not Replication):**
-        This image serves as a primary inspiration for the *overall artistic style and aesthetic execution*. When generating the new image, analyze and draw from this reference's:
-        *   **Artistic Medium/Technique:** Identify the core technique (e.g., oil painting, watercolor, digital illustration, cel-shaded anime, photorealistic 3D render, pixel art, charcoal sketch, cinematic photography).
-        *   **Texture & Detail Level:** Note the surface qualities and amount of fine detail (e.g., gritty and textured, smooth and polished, painterly strokes, highly detailed, impressionistic and abstract).
-        *   **Color Palette Philosophy:** Understand the approach to color (e.g., vibrant and saturated, muted and desaturated, monochromatic, specific dominant hues, harmonious or contrasting).
-        *   **Lighting & Shadow Style:** Observe how light and shadow are used to create form and mood (e.g., dramatic chiaroscuro, soft and diffused, stark and high-contrast, specific light source types implied, rim lighting).
-        *   **Overall Mood & Atmosphere:** Discern the feeling the style evokes (e.g., dark and ominous, bright and uplifting, mysterious and ethereal, epic and grand, gritty and realistic).
-        **Crucial:** The goal is to capture the *essence* of this artistic style and apply it to the *new, distinct subject* of your current task. **DO NOT replicate the specific content, characters, or scene elements from this Style Reference Image.** It guides *how* the new image is rendered, not *what* it depicts beyond the subject you are tasked to create.
+        **Analyzing Style Reference Image (for Artistic Vibe & Execution):**
+         Analyze the uploaded image to understand its core artistic style, mood, and technical execution. Focus on these key visual characteristics as *inspiration for the new image's aesthetic*:
+         * **Rendering Technique:** Identify the dominant medium and rendering style (e.g., painterly with visible brush strokes, clean digital illustration with crisp lines, textured photorealistic render, simplified cel-shaded design).
+         * **Linework:** Observe how lines are used. Are they bold and dominant, thin and subtle, or are forms primarily defined by color and light with minimal to no outlines?
+         * **Color & Saturation:** Determine the overall color palette's philosophy. Are the colors vibrant and saturated, muted and desaturated, or does it use a specific color harmony (e.g., warm sunset tones, cool industrial blues)? How does this palette contribute to the mood?
+         * **Lighting & Shadow Style:** Analyze how light and shadow are used to create form and atmosphere (e.g., high-contrast and dramatic, soft and diffused, rim lighting). How does the lighting enhance the mood?
+         * **Overall Mood & Vibe:** Discern the overarching feeling the style evokes (e.g., dark and ominous, bright and uplifting, mysterious and ethereal, gritty and realistic, dreamy and nostalgic).
+         **Crucial Application:** Apply the *essence of this artistic style and its emotional tone* to the new image. **DO NOT replicate the specific content, characters, objects, or background elements from this Style Reference Image.** Instead, use the identified stylistic and atmospheric qualities to *render a completely new scene* as described in the main prompt, ensuring the new image is consistent *in style and mood* with the reference, but *original in its depiction*.
         """.trimIndent()
 
     val compositionReferenceGuidance: String =
         """
-        **Interpreting the Composition Reference Image (Inspiration, Not Replication):**
-        This image provides inspiration for the *compositional arrangement, framing, and visual structure*. Focus on and adapt these underlying principles:
-        *   **Subject Framing:** Note how the main subject is framed (e.g., close-up, extreme close-up, medium shot, cowboy shot, full body, wide shot showing environment).
-        *   **Camera Angle & Perspective:** Consider the viewpoint (e.g., eye-level, low angle looking up, high angle looking down, bird's-eye view, Dutch angle).
-        *   **Subject Placement & Balance:** Analyze how elements are arranged within the frame (e.g., rule of thirds, golden ratio, central focus, leading lines, use of negative space, symmetry or asymmetry).
-        *   **Depth of Field & Focus:** Observe the use of focus (e.g., shallow depth of field with a blurred background (bokeh), deep focus with all elements sharp, selective focus).
-        *   **Pose & Staging Cues (for characters/subjects, if applicable):** If this reference contains figures, look at their poses, gestures, and interaction with the space as *inspiration only*.
-        **DO NOT directly copy poses.** Instead, understand the *type* of pose (e.g., dynamic action, static and powerful, contemplative, interactive) and adapt this concept for a fresh, original pose.
-        *   **Visual Flow & Leading Lines:** How does the composition guide the viewer's eye?
-        *   **Aspect Ratio:** Analyze the aspect ratio of the Composition Reference Image (e.g., 16:9, 4:3, 1:1, 9:16). In the text prompt you generate, you MUST explicitly state this aspect ratio so the final image is created with it. For example, if the reference image is 16:9, include 'aspect ratio 16:9' or a similar instruction like '--ar 16:9' in your generated prompt.
-        **Crucial:** Adapt these compositional principles to the *new subject and scene* of your current task. The aim is to achieve a similar structural feel or solve a similar compositional challenge, **not to directly replicate the layout, subject matter, or specific pose from this Composition Reference Image.** It guides *how* the scene is structured, not *what specific elements or poses* must be present. **When generating your text prompt, do not describe or request any borders or text elements, even if they appear in this Composition Reference Image. The focus must remain solely on the compositional aspects, ensuring no such graphical elements are introduced into your prompt from this reference.**
+        **Analyzing Compositional Reference:**
+        Analyze the uploaded image for its compositional and photographic principles. Adapt these key elements to the new subject:
+        * **Framing & Shot Type:** Identify the main shot type (e.g., wide shot, medium close-up, full body, headshot).
+        * **Camera Angle:** Note the camera perspective (e.g., high angle, low angle, eye-level, Dutch angle).
+        * **Subject Placement:** Observe how the main subject is positioned within the frame (e.g., center-framed, rule of thirds, leading lines, negative space).
+        * **Depth of Field:** Analyze the use of focus and blur (e.g., shallow depth of field with blurred background, deep focus).
+        * **Pose & Staging:** Understand the nature of the pose (e.g., dynamic, static, contemplative) and adapt this to the new character. DO NOT copy the pose directly.
+        **Objective:** The goal is to replicate the *compositional feel and structure* of this reference. **Do not** copy the content, characters, or specific pose.
+        Extract this compositions and use to to define aspect ratio, lighting, and composition.
         """.trimIndent()
 
     fun characterVisualReferenceGuidance(characterName: String): String =
         """
-        **Interpreting the Visual Reference for '$characterName' (Inspiration for Appearance, Not Direct Copy):**
-        This image is the primary visual blueprint for '$characterName'. Use it to understand and then creatively adapt:
-        *   **Key Physical Features:** Note their facial structure, hairstyle and color, eye color, build (as visible), skin tone, and any distinctive marks like scars, tattoos, or unique racial traits for '$characterName'.
-        *   **Signature Attire & Accessories:** Identify the style, cut, colors, and textures of '$characterName''s typical clothing, armor, or any notable accessories they wear.
-        *   **Overall Visual Identity:** Get a sense of '$characterName''s established look and feel.
-
-        **Crucial Application:**
-        *   **Adapt, Don't Copy-Paste:** Your goal is to *re-interpret* these visual details for '$characterName' and render them within the target art style specified by a Style Reference or the main prompt. Do not aim for a pixel-perfect replication of this reference image.
-        *   **Integrate with Context:** Seamlessly blend '$characterName''s appearance with the specific pose, expression, action, and lighting described in the main text prompt or inspired by a Composition Reference.
-        *   **Maintain Recognizability:** While adapting, ensure '$characterName' remains clearly recognizable based on their core visual traits from this reference.
-        *   **Flexibility for Narrative:** If the prompt describes a change in attire for '$characterName' or a new temporary feature (e.g., battle damage, a disguise), prioritize the prompt's description while keeping '$characterName''s base appearance consistent where appropriate.
-        This image defines *who* '$characterName' is visually. Your task is to bring that visual identity to life authentically within the new scene's specific requirements.
+        **Analyzing Character Reference for '$characterName':**
+        Analyze the uploaded image to understand the visual identity of '$characterName'.
+        Adapt these key features to the new scene:
+        * **Core Traits:** Identify key physical features like face shape, hairstyle and color, eye color, and any unique marks (e.g., tattoos, scars).
+        * **Attire & Accessories:** Note the style, colors, and textures of their clothing or armor.
+        * **Visual Consistency:** The goal is to make '$characterName' instantly recognizable in the new image.
+        Do not copy the pose, expression, or lighting from this reference.
+        * **Adaptation:** Apply these features to the character's new action and pose as described in the main prompt, integrating them seamlessly with the scene's art style, lighting, and composition.
         """.trimIndent()
 
     val fullImage =

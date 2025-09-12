@@ -118,7 +118,10 @@ object GenrePrompts {
 
             Genre.CRIME ->
                 """
-                Overall is mood a Miami Vice aesthetic with pink highlights with the sky and dramatic cinematic lights.
+                Tropical environment.
+                The color palette is dominated by vivid pink and orange, accented with teal blues.
+                The background is a detailed beach at a sunset, with a sense of calm and tranquility.
+                In a  Miami Vice aesthetic with pink highlights at the sky and dramatic cinematic lights.
                 """
         }.trimIndent()
 

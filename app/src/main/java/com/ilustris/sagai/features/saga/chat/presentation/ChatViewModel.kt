@@ -63,6 +63,7 @@ class ChatViewModel
         val isGenerating = sagaContentManager.narrativeProcessingUiState
         val isLoading = MutableStateFlow(false)
         val characters = MutableStateFlow<List<Character>>(emptyList())
+        val showTitle = MutableStateFlow(true)
         val loreUpdateProgress = MutableStateFlow(0f)
         val isPlaying: StateFlow<Boolean> = mediaPlayerManager.isPlaying
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
@@ -119,6 +120,7 @@ class ChatViewModel
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
                 content.collectLatest { sagaContent ->
+                    val isFirstLoading = content.value == null
                     if (sagaContent == null) {
                         if (loadFinished) {
                             state.value = ChatState.Error("Saga not found.")
@@ -146,6 +148,10 @@ class ChatViewModel
                     notifyIfNeeded()
                     state.value = ChatState.Success
                     loadFinished
+                    if (isFirstLoading) {
+                        delay(3.seconds)
+                        showTitle.emit(false)
+                    }
                 }
             }
         }

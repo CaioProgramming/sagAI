@@ -552,7 +552,7 @@ fun SagaDetailContentView(
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                         Scaffold { _ ->
 
-                            androidx.compose.animation.SharedTransitionLayout {
+                            SharedTransitionLayout {
                                 AnimatedContent(
                                     currentSection,
                                     transitionSpec = {
@@ -583,7 +583,9 @@ fun SagaDetailContentView(
                                                         rememberSharedContentState(
                                                             key =
                                                                 DetailAction.CHARACTERS
-                                                                    .sharedElementTitleKey(sagaContent.data.id),
+                                                                    .sharedElementTitleKey(
+                                                                        sagaContent.data.id,
+                                                                    ),
                                                         ),
                                                         animatedVisibilityScope = this,
                                                     ),
@@ -598,7 +600,9 @@ fun SagaDetailContentView(
                                                         rememberSharedContentState(
                                                             key =
                                                                 DetailAction.TIMELINE
-                                                                    .sharedElementTitleKey(sagaContent.data.id),
+                                                                    .sharedElementTitleKey(
+                                                                        sagaContent.data.id,
+                                                                    ),
                                                         ),
                                                         animatedVisibilityScope = this,
                                                     ),
@@ -620,7 +624,9 @@ fun SagaDetailContentView(
                                                         rememberSharedContentState(
                                                             key =
                                                                 DetailAction.CHAPTERS
-                                                                    .sharedElementTitleKey(sagaContent.data.id),
+                                                                    .sharedElementTitleKey(
+                                                                        sagaContent.data.id,
+                                                                    ),
                                                         ),
                                                         animatedVisibilityScope = this,
                                                     ),
@@ -640,7 +646,9 @@ fun SagaDetailContentView(
                                                         rememberSharedContentState(
                                                             key =
                                                                 DetailAction.WIKI
-                                                                    .sharedElementTitleKey(sagaContent.data.id),
+                                                                    .sharedElementTitleKey(
+                                                                        sagaContent.data.id,
+                                                                    ),
                                                         ),
                                                         animatedVisibilityScope = this,
                                                     ),
@@ -885,664 +893,522 @@ private fun SagaDetailInitialView(
         val gridState = rememberLazyGridState()
         val genre = saga.data.genre
         with(animationScopes.first) {
-            SharedTransitionLayout {
-                AnimatedContent(showTitleOnly) {
-                    if (it) {
-                        Box(Modifier.fillMaxSize()) {
-                            genre.stylisedText(
-                                saga.data.title,
-                                modifier =
-                                    Modifier
-                                        .align(Alignment.Center)
-                                        .reactiveShimmer(true)
-                                        .padding(16.dp)
-                                        .sharedElement(
-                                            rememberSharedContentState(
-                                                key = "saga-style-header",
-                                            ),
-                                            animatedVisibilityScope = this@AnimatedContent,
+            AnimatedContent(showTitleOnly) {
+                if (it) {
+                    Box(Modifier.fillMaxSize()) {
+                        genre.stylisedText(
+                            saga.data.title,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .reactiveShimmer(true)
+                                    .padding(16.dp)
+                                    .sharedElement(
+                                        rememberSharedContentState(
+                                            key = "saga-style-header",
                                         ),
-                            )
-                        }
-                    } else {
-                        Box(Modifier.fillMaxSize()) {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(columnCount),
-                                modifier = modifier,
-                                state = gridState,
-                            ) {
-                                val chapters = saga.flatChapters().filter { it.isComplete() }
-                                val events = saga.flatEvents().filter { it.isComplete() }
-                                val messages = saga.flatMessages()
+                                        animatedVisibilityScope = this@AnimatedContent,
+                                    ),
+                        )
+                    }
+                } else {
+                    Box(Modifier.fillMaxSize()) {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(columnCount),
+                            modifier = modifier,
+                            state = gridState,
+                        ) {
+                            val chapters = saga.flatChapters().filter { it.isComplete() }
+                            val events = saga.flatEvents().filter { it.isComplete() }
+                            val messages = saga.flatMessages()
 
-                                item(span = {
-                                    GridItemSpan(columnCount)
-                                }) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        var highlightParams by
-                                            remember {
-                                                mutableStateOf(
-                                                    SelectiveColorParams(
-                                                        targetColor = saga.data.genre.color,
-                                                        hueTolerance = .5f,
-                                                        saturationThreshold = .5f,
-                                                        highlightSaturationBoost = 1.6f,
-                                                        desaturationFactorNonTarget = .7f,
-                                                    ),
-                                                )
-                                            }
+                            item(span = {
+                                GridItemSpan(columnCount)
+                            }) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    var highlightParams by
+                                        remember {
+                                            mutableStateOf(
+                                                SelectiveColorParams(
+                                                    targetColor = saga.data.genre.color,
+                                                    hueTolerance = .5f,
+                                                    saturationThreshold = .5f,
+                                                    highlightSaturationBoost = 1.6f,
+                                                    desaturationFactorNonTarget = .7f,
+                                                ),
+                                            )
+                                        }
 
-                                        if (saga.data.icon.isNotEmpty()) {
-                                            Box(
+                                    if (saga.data.icon.isNotEmpty()) {
+                                        Box(
+                                            modifier =
+                                                Modifier
+                                                    .background(MaterialTheme.colorScheme.background)
+                                                    .fillMaxHeight(.4f)
+                                                    .fillMaxWidth(),
+                                        ) {
+                                            AsyncImage(
+                                                saga.data.icon,
+                                                contentDescription = saga.data.title,
                                                 modifier =
                                                     Modifier
                                                         .background(MaterialTheme.colorScheme.background)
-                                                        .fillMaxHeight(.4f)
-                                                        .fillMaxWidth(),
-                                            ) {
-                                                AsyncImage(
-                                                    saga.data.icon,
-                                                    contentDescription = saga.data.title,
-                                                    modifier =
-                                                        Modifier
-                                                            .background(MaterialTheme.colorScheme.background)
-                                                            .fillMaxSize()
-                                                            .effectForGenre(saga.data.genre)
-                                                            .selectiveColorHighlight(saga.data.genre.selectiveHighlight())
-                                                            .zoomAnimation(),
-                                                    contentScale = ContentScale.Crop,
-                                                )
-
-                                                Text(
-                                                    saga.data.title,
-                                                    maxLines = 1,
-                                                    style =
-                                                        MaterialTheme.typography.displayMedium.copy(
-                                                            fontFamily = saga.data.genre.headerFont(),
-                                                            brush = saga.data.genre.gradient(true),
-                                                            textAlign = TextAlign.Center,
-                                                        ),
-                                                    modifier =
-                                                        Modifier
-                                                            .align(Alignment.BottomCenter)
-                                                            .background(fadeGradientBottom())
-                                                            .fillMaxWidth()
-                                                            .padding(8.dp)
-                                                            .sharedElement(
-                                                                rememberSharedContentState(
-                                                                    key = "saga-style-header",
-                                                                ),
-                                                                animatedVisibilityScope = this@AnimatedContent,
-                                                            ).reactiveShimmer(true, duration = 10.seconds),
-                                                )
-                                            }
-                                        } else {
-                                            Image(
-                                                painterResource(R.drawable.ic_spark),
-                                                null,
-                                                modifier =
-                                                    Modifier
-                                                        .clickable {
-                                                            if (saga.data.icon.isEmpty()) {
-                                                                selectSection(DetailAction.REGENERATE)
-                                                            }
-                                                        }.gradientFill(
-                                                            saga.data.genre.gradient(),
-                                                        ),
+                                                        .fillMaxSize()
+                                                        .effectForGenre(saga.data.genre)
+                                                        .selectiveColorHighlight(saga.data.genre.selectiveHighlight())
+                                                        .zoomAnimation(),
+                                                contentScale = ContentScale.Crop,
                                             )
 
-                                            AutoResizeText(
+                                            Text(
                                                 saga.data.title,
                                                 maxLines = 1,
                                                 style =
                                                     MaterialTheme.typography.displayMedium.copy(
                                                         fontFamily = saga.data.genre.headerFont(),
                                                         brush = saga.data.genre.gradient(true),
-                                                        shadow =
-                                                            Shadow(
-                                                                Color.Black,
-                                                                offset = Offset(0f, 1f),
-                                                                blurRadius = .5f,
-                                                            ),
                                                         textAlign = TextAlign.Center,
                                                     ),
                                                 modifier =
                                                     Modifier
+                                                        .align(Alignment.BottomCenter)
                                                         .background(fadeGradientBottom())
                                                         .fillMaxWidth()
-                                                        .padding(16.dp)
+                                                        .padding(8.dp)
                                                         .sharedElement(
                                                             rememberSharedContentState(
-                                                                key = DetailAction.BACK.sharedElementTitleKey(saga.data.id),
+                                                                key = "saga-style-header",
                                                             ),
-                                                            animatedVisibilityScope = animationScopes.second,
-                                                        ).reactiveShimmer(true, duration = 10.seconds),
-                                            )
-                                        }
-
-                                       /*SimpleSlider(
-                                           "Hue tolerance",
-                                           maxValue = 1f,
-                                       ) { value ->
-                                           highlightParams = highlightParams.copy(hueTolerance = value)
-                                       }
-
-                                       SimpleSlider(
-                                           "Saturation threshold",
-                                           maxValue = 1f,
-                                       ) { value ->
-                                           highlightParams = highlightParams.copy(saturationThreshold = value)
-                                       }
-
-                                       SimpleSlider(
-                                           "Lightness threshold",
-                                           maxValue = 1f,
-                                       ) { value ->
-                                           highlightParams = highlightParams.copy(lightnessThreshold = value)
-                                       }
-
-                                       SimpleSlider(
-                                           "Highlight boost",
-                                           maxValue = 2f,
-                                       ) { value ->
-                                           highlightParams = highlightParams.copy(highlightSaturationBoost = value)
-                                       }
-
-                                       SimpleSlider(
-                                           "Highlight lightness boost",
-                                           maxValue = 1f,
-                                       ) { value ->
-                                           highlightParams = highlightParams.copy(highlightLightnessBoost = value)
-                                       }
-
-                                       SimpleSlider(
-                                           "Desaturation Factor",
-                                           maxValue = 1f,
-                                       ) { value ->
-                                           highlightParams = highlightParams.copy(desaturationFactorNonTarget = value)
-                                       }*/
-                                    }
-                                }
-
-                                item(span = {
-                                    GridItemSpan(columnCount)
-                                }) {
-                                    LazyRow(
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth(),
-                                    ) {
-                                        item {
-                                            VerticalLabel(
-                                                chapters.count().toString(),
-                                                stringResource(R.string.saga_detail_section_title_chapters),
-                                                saga.data.genre,
-                                            )
-                                        }
-
-                                        item {
-                                            Column(
-                                                horizontalAlignment = Alignment.CenterHorizontally,
-                                                modifier = Modifier.padding(16.dp),
-                                            ) {
-                                                Text(
-                                                    messages.count().toString(),
-                                                    style =
-                                                        MaterialTheme.typography.headlineLarge.copy(
-                                                            fontFamily = saga.data.genre.headerFont(),
-                                                            fontWeight = FontWeight.Normal,
-                                                            textAlign = TextAlign.Center,
+                                                            animatedVisibilityScope = this@AnimatedContent,
+                                                        ).reactiveShimmer(
+                                                            true,
+                                                            duration = 10.seconds,
                                                         ),
-                                                    modifier =
-                                                        Modifier
-                                                            .padding(2.dp)
-                                                            .fillMaxWidth(),
-                                                )
-
-                                                Text(
-                                                    stringResource(R.string.saga_detail_messages_label),
-                                                    style =
-                                                        MaterialTheme.typography.bodySmall.copy(
-                                                            fontFamily = saga.data.genre.bodyFont(),
-                                                            fontWeight = FontWeight.Light,
-                                                            textAlign = TextAlign.Center,
-                                                        ),
-                                                    modifier = Modifier.alpha(.4f),
-                                                )
-                                            }
-                                        }
-                                        item {
-                                            VerticalLabel(
-                                                saga.characters.count().toString(),
-                                                stringResource(R.string.saga_detail_section_title_characters),
-                                                saga.data.genre,
                                             )
                                         }
-                                    }
-                                }
-
-                                item(span = { GridItemSpan(columnCount) }) {
-                                    Text(
-                                        stringResource(R.string.starring),
-                                        style = sectionStyle,
-                                        modifier = Modifier.padding(16.dp),
-                                    )
-                                }
-
-                                saga.mainCharacter?.let {
-                                    item(span = { GridItemSpan(columnCount) }) {
-                                        Box(
-                                            Modifier
-                                                .padding(16.dp)
-                                                .clip(shape = genre.shape())
-                                                .border(1.dp, genre.color.gradientFade(), genre.shape())
-                                                .background(genre.color.gradientFade())
-                                                .fillMaxWidth()
-                                                .height(300.dp)
-                                                .clickable {
-                                                    selectSection(DetailAction.CHARACTERS)
-                                                },
-                                        ) {
-                                            val characterModifier =
-                                                this@with.sharedTransitionActionItemModifier(
-                                                    DetailAction.CHARACTERS,
-                                                    animationScopes.second,
-                                                    saga.data.id,
-                                                    saga.data.id,
-                                                )
-                                            AsyncImage(
-                                                it.data.image,
-                                                contentDescription = it.data.name,
-                                                modifier =
-                                                    characterModifier
-                                                        .fillMaxSize()
-                                                        .effectForGenre(genre)
-                                                        .selectiveColorHighlight(genre.selectiveHighlight()),
-                                                contentScale = ContentScale.Crop,
-                                            )
-
-                                            Box(
+                                    } else {
+                                        Image(
+                                            painterResource(R.drawable.ic_spark),
+                                            null,
+                                            modifier =
                                                 Modifier
-                                                    .align(Alignment.BottomCenter)
-                                                    .background(
-                                                        fadeGradientBottom(genre.color),
-                                                    ).fillMaxWidth()
-                                                    .fillMaxHeight(),
-                                            )
+                                                    .clickable {
+                                                        if (saga.data.icon.isEmpty()) {
+                                                            selectSection(DetailAction.REGENERATE)
+                                                        }
+                                                    }.gradientFill(
+                                                        saga.data.genre.gradient(),
+                                                    ),
+                                        )
 
-                                            Column(
+                                        AutoResizeText(
+                                            saga.data.title,
+                                            maxLines = 1,
+                                            style =
+                                                MaterialTheme.typography.displayMedium.copy(
+                                                    fontFamily = saga.data.genre.headerFont(),
+                                                    brush = saga.data.genre.gradient(true),
+                                                    shadow =
+                                                        Shadow(
+                                                            Color.Black,
+                                                            offset = Offset(0f, 1f),
+                                                            blurRadius = .5f,
+                                                        ),
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                            modifier =
+                                                Modifier
+                                                    .background(fadeGradientBottom())
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp)
+                                                    .sharedElement(
+                                                        rememberSharedContentState(
+                                                            key =
+                                                                DetailAction.BACK.sharedElementTitleKey(
+                                                                    saga.data.id,
+                                                                ),
+                                                        ),
+                                                        animatedVisibilityScope = animationScopes.second,
+                                                    ).reactiveShimmer(true, duration = 10.seconds),
+                                        )
+                                    }
+
+                                    /*SimpleSlider(
+                                        "Hue tolerance",
+                                        maxValue = 1f,
+                                    ) { value ->
+                                        highlightParams = highlightParams.copy(hueTolerance = value)
+                                    }
+
+                                    SimpleSlider(
+                                        "Saturation threshold",
+                                        maxValue = 1f,
+                                    ) { value ->
+                                        highlightParams = highlightParams.copy(saturationThreshold = value)
+                                    }
+
+                                    SimpleSlider(
+                                        "Lightness threshold",
+                                        maxValue = 1f,
+                                    ) { value ->
+                                        highlightParams = highlightParams.copy(lightnessThreshold = value)
+                                    }
+
+                                    SimpleSlider(
+                                        "Highlight boost",
+                                        maxValue = 2f,
+                                    ) { value ->
+                                        highlightParams = highlightParams.copy(highlightSaturationBoost = value)
+                                    }
+
+                                    SimpleSlider(
+                                        "Highlight lightness boost",
+                                        maxValue = 1f,
+                                    ) { value ->
+                                        highlightParams = highlightParams.copy(highlightLightnessBoost = value)
+                                    }
+
+                                    SimpleSlider(
+                                        "Desaturation Factor",
+                                        maxValue = 1f,
+                                    ) { value ->
+                                        highlightParams = highlightParams.copy(desaturationFactorNonTarget = value)
+                                    }*/
+                                }
+                            }
+
+                            item(span = {
+                                GridItemSpan(columnCount)
+                            }) {
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                ) {
+                                    item {
+                                        VerticalLabel(
+                                            chapters.count().toString(),
+                                            stringResource(R.string.saga_detail_section_title_chapters),
+                                            saga.data.genre,
+                                        )
+                                    }
+
+                                    item {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            modifier = Modifier.padding(16.dp),
+                                        ) {
+                                            Text(
+                                                messages.count().toString(),
+                                                style =
+                                                    MaterialTheme.typography.headlineLarge.copy(
+                                                        fontFamily = saga.data.genre.headerFont(),
+                                                        fontWeight = FontWeight.Normal,
+                                                        textAlign = TextAlign.Center,
+                                                    ),
                                                 modifier =
                                                     Modifier
-                                                        .fillMaxWidth()
-                                                        .align(Alignment.BottomCenter)
-                                                        .padding(16.dp),
-                                                verticalArrangement = Arrangement.spacedBy(8.dp),
-                                            ) {
-                                                Text(
-                                                    it.data.name,
-                                                    style =
-                                                        MaterialTheme.typography.titleLarge.copy(
-                                                            fontFamily = genre.headerFont(),
-                                                            textAlign = TextAlign.Center,
-                                                            color = genre.iconColor,
-                                                        ),
-                                                    modifier =
-                                                        Modifier.reactiveShimmer(
-                                                            true,
-                                                            genre.shimmerColors(),
-                                                            duration = 15.seconds,
-                                                        ),
-                                                )
+                                                        .padding(2.dp)
+                                                        .fillMaxWidth(),
+                                            )
 
-                                                Text(
-                                                    it.data.backstory,
-                                                    maxLines = 4,
-                                                    style =
-                                                        MaterialTheme.typography.bodyMedium.copy(
-                                                            fontFamily = genre.bodyFont(),
-                                                            textAlign = TextAlign.Justify,
-                                                            color = genre.iconColor,
-                                                        ),
-                                                )
-                                            }
+                                            Text(
+                                                stringResource(R.string.saga_detail_messages_label),
+                                                style =
+                                                    MaterialTheme.typography.bodySmall.copy(
+                                                        fontFamily = saga.data.genre.bodyFont(),
+                                                        fontWeight = FontWeight.Light,
+                                                        textAlign = TextAlign.Center,
+                                                    ),
+                                                modifier = Modifier.alpha(.4f),
+                                            )
                                         }
                                     }
+                                    item {
+                                        VerticalLabel(
+                                            saga.characters.count().toString(),
+                                            stringResource(R.string.saga_detail_section_title_characters),
+                                            saga.data.genre,
+                                        )
+                                    }
                                 }
+                            }
 
-                                if (saga.data.isEnded) {
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
+                            item(span = { GridItemSpan(columnCount) }) {
+                                Text(
+                                    stringResource(R.string.starring),
+                                    style = sectionStyle,
+                                    modifier = Modifier.padding(16.dp),
+                                )
+                            }
+
+                            saga.mainCharacter?.let {
+                                item(span = { GridItemSpan(columnCount) }) {
+                                    Box(
+                                        Modifier
+                                            .padding(16.dp)
+                                            .clip(shape = genre.shape())
+                                            .border(1.dp, genre.color.gradientFade(), genre.shape())
+                                            .background(genre.color.gradientFade())
+                                            .fillMaxWidth()
+                                            .height(300.dp)
+                                            .clickable {
+                                                selectSection(DetailAction.CHARACTERS)
+                                            },
+                                    ) {
+                                        val characterModifier =
+                                            this@with.sharedTransitionActionItemModifier(
+                                                DetailAction.CHARACTERS,
+                                                animationScopes.second,
+                                                saga.data.id,
+                                                saga.data.id,
+                                            )
+                                        AsyncImage(
+                                            it.data.image,
+                                            contentDescription = it.data.name,
+                                            modifier =
+                                                characterModifier
+                                                    .fillMaxSize()
+                                                    .effectForGenre(genre)
+                                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                                            contentScale = ContentScale.Crop,
+                                        )
+
+                                        Box(
+                                            Modifier
+                                                .align(Alignment.BottomCenter)
+                                                .background(
+                                                    fadeGradientBottom(genre.color),
+                                                ).fillMaxWidth()
+                                                .fillMaxHeight(),
+                                        )
+
                                         Column(
                                             modifier =
                                                 Modifier
-                                                    .padding(16.dp)
                                                     .fillMaxWidth()
-                                                    .clickable {
-                                                        openReview()
-                                                    },
-                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                                    .align(Alignment.BottomCenter)
+                                                    .padding(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
                                         ) {
                                             Text(
-                                                stringResource(R.string.saga_detail_see_your_now),
-                                                style = MaterialTheme.typography.labelMedium,
-                                                modifier = Modifier.alpha(.4f),
-                                                textAlign = TextAlign.Center,
-                                            )
-                                            Text(
-                                                stringResource(R.string.saga_detail_recap_button),
+                                                it.data.name,
                                                 style =
-                                                    MaterialTheme.typography.displaySmall.copy(
-                                                        fontFamily = saga.data.genre.headerFont(),
-                                                        fontWeight = FontWeight.Bold,
-                                                        brush = saga.data.genre.gradient(),
+                                                    MaterialTheme.typography.titleLarge.copy(
+                                                        fontFamily = genre.headerFont(),
                                                         textAlign = TextAlign.Center,
+                                                        color = genre.iconColor,
                                                     ),
                                                 modifier =
                                                     Modifier.reactiveShimmer(
                                                         true,
+                                                        genre.shimmerColors(),
+                                                        duration = 15.seconds,
+                                                    ),
+                                            )
+
+                                            Text(
+                                                it.data.backstory,
+                                                maxLines = 4,
+                                                style =
+                                                    MaterialTheme.typography.bodyMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        textAlign = TextAlign.Justify,
+                                                        color = genre.iconColor,
                                                     ),
                                             )
                                         }
                                     }
                                 }
+                            }
 
-                                item(span = { GridItemSpan(columnCount) }) {
-                                    Text(
-                                        stringResource(R.string.saga_detail_description_section_title),
-                                        style = sectionStyle,
+                            if (saga.data.isEnded) {
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    Column(
                                         modifier =
                                             Modifier
                                                 .padding(16.dp)
-                                                .fillMaxWidth(),
-                                    )
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    openReview()
+                                                },
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        Text(
+                                            stringResource(R.string.saga_detail_see_your_now),
+                                            style = MaterialTheme.typography.labelMedium,
+                                            modifier = Modifier.alpha(.4f),
+                                            textAlign = TextAlign.Center,
+                                        )
+                                        Text(
+                                            stringResource(R.string.saga_detail_recap_button),
+                                            style =
+                                                MaterialTheme.typography.displaySmall.copy(
+                                                    fontFamily = saga.data.genre.headerFont(),
+                                                    fontWeight = FontWeight.Bold,
+                                                    brush = saga.data.genre.gradient(),
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                            modifier =
+                                                Modifier.reactiveShimmer(
+                                                    true,
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
+
+                            item(span = { GridItemSpan(columnCount) }) {
+                                Text(
+                                    stringResource(R.string.saga_detail_description_section_title),
+                                    style = sectionStyle,
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                )
+                            }
+
+                            item(span = { GridItemSpan(columnCount) }) {
+                                Text(
+                                    saga.data.description,
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            fontFamily = saga.data.genre.bodyFont(),
+                                            textAlign = TextAlign.Justify,
+                                        ),
+                                    modifier = Modifier.padding(16.dp),
+                                )
+                            }
+
+                            if (saga.characters.isNotEmpty()) {
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    Row(
+                                        Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            stringResource(R.string.saga_detail_section_title_characters),
+                                            style = sectionStyle,
+                                            modifier =
+                                                Modifier
+                                                    .sharedElement(
+                                                        rememberSharedContentState(
+                                                            key =
+                                                                DetailAction.CHARACTERS.sharedElementTitleKey(
+                                                                    saga.data.id,
+                                                                )!!,
+                                                        ),
+                                                        animatedVisibilityScope = animationScopes.second,
+                                                    ).padding(8.dp)
+                                                    .weight(1f),
+                                        )
+
+                                        IconButton(onClick = {
+                                            selectSection(DetailAction.CHARACTERS)
+                                        }, modifier = Modifier.size(24.dp)) {
+                                            Icon(
+                                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                contentDescription = stringResource(R.string.saga_detail_view_characters_action),
+                                            )
+                                        }
+                                    }
                                 }
 
                                 item(span = { GridItemSpan(columnCount) }) {
-                                    Text(
-                                        saga.data.description,
-                                        style =
-                                            MaterialTheme.typography.bodyMedium.copy(
-                                                fontFamily = saga.data.genre.bodyFont(),
-                                                textAlign = TextAlign.Justify,
+                                    LazyRow {
+                                        items(
+                                            sortCharactersByMessageCount(
+                                                saga.getCharacters(),
+                                                saga.flatMessages(),
                                             ),
-                                        modifier = Modifier.padding(16.dp),
-                                    )
-                                }
+                                        ) { char ->
 
-                                if (saga.characters.isNotEmpty()) {
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
-                                        Row(
-                                            Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth(),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                        ) {
-                                            Text(
-                                                stringResource(R.string.saga_detail_section_title_characters),
-                                                style = sectionStyle,
-                                                modifier =
-                                                    Modifier
-                                                        .sharedElement(
-                                                            rememberSharedContentState(
-                                                                key =
-                                                                    DetailAction.CHARACTERS.sharedElementTitleKey(
-                                                                        saga.data.id,
-                                                                    )!!,
-                                                            ),
-                                                            animatedVisibilityScope = animationScopes.second,
-                                                        ).padding(8.dp)
-                                                        .weight(1f),
-                                            )
-
-                                            IconButton(onClick = {
-                                                selectSection(DetailAction.CHARACTERS)
-                                            }, modifier = Modifier.size(24.dp)) {
-                                                Icon(
-                                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                                    contentDescription = stringResource(R.string.saga_detail_view_characters_action),
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    item(span = { GridItemSpan(columnCount) }) {
-                                        LazyRow {
-                                            items(
-                                                sortCharactersByMessageCount(
-                                                    saga.getCharacters(),
-                                                    saga.flatMessages(),
-                                                ),
-                                            ) { char ->
-
-                                                Column(
-                                                    Modifier
-                                                        .padding(8.dp)
-                                                        .clip(RoundedCornerShape(saga.data.genre.cornerSize()))
-                                                        .clickable {
-                                                            selectSection(DetailAction.CHARACTERS)
-                                                        },
-                                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                                ) {
-                                                    val characterModifier =
-                                                        this@with.sharedTransitionActionItemModifier(
-                                                            DetailAction.CHARACTERS,
-                                                            animationScopes.second,
-                                                            saga.data.id,
-                                                            char.id,
-                                                        )
-                                                    CharacterAvatar(
-                                                        char,
-                                                        borderSize = 2.dp,
-                                                        genre = saga.data.genre,
-                                                        modifier =
-                                                            characterModifier
-                                                                .padding(8.dp)
-                                                                .clip(CircleShape)
-                                                                .size(120.dp)
-                                                                .padding(8.dp),
-                                                    )
-
-                                                    Text(
-                                                        char.name,
-                                                        style =
-                                                            MaterialTheme.typography.bodySmall.copy(
-                                                                fontWeight = FontWeight.Light,
-                                                                textAlign = TextAlign.Center,
-                                                                fontFamily = saga.data.genre.bodyFont(),
-                                                            ),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if (saga.relationships.isNotEmpty()) {
-                                        item(span = { GridItemSpan(columnCount) }) {
-                                            Text(
-                                                stringResource(R.string.saga_detail_relationships_section_title),
-                                                style = sectionStyle,
-                                                modifier =
-                                                    Modifier
-                                                        .padding(16.dp)
-                                                        .fillMaxWidth(),
-                                            )
-                                        }
-
-                                        item(span = { GridItemSpan(columnCount) }) {
-                                            LazyRow {
-                                                items(saga.relationships.sortedByDescending { it.data.lastUpdated }) { relation ->
-                                                    RelationShipCard(
-                                                        content = relation,
-                                                        genre = saga.data.genre,
-                                                        modifier =
-                                                            Modifier
-                                                                .padding(16.dp)
-                                                                .requiredWidthIn(max = 300.dp),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (events.isNotEmpty()) {
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
-                                        Column {
-                                            Row(
+                                            Column(
                                                 Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically,
+                                                    .padding(8.dp)
+                                                    .clip(RoundedCornerShape(saga.data.genre.cornerSize()))
+                                                    .clickable {
+                                                        selectSection(DetailAction.CHARACTERS)
+                                                    },
+                                                horizontalAlignment = Alignment.CenterHorizontally,
                                             ) {
-                                                Text(
-                                                    stringResource(R.string.saga_detail_timeline_section_title),
-                                                    style = sectionStyle,
-                                                    modifier =
-                                                        Modifier
-                                                            .sharedElement(
-                                                                rememberSharedContentState(
-                                                                    key =
-                                                                        DetailAction.TIMELINE.sharedElementTitleKey(
-                                                                            saga.data.id,
-                                                                        )!!,
-                                                                ),
-                                                                animatedVisibilityScope = animationScopes.second,
-                                                            ).padding(8.dp)
-                                                            .weight(1f),
-                                                )
-
-                                                IconButton(onClick = {
-                                                    selectSection(
-                                                        DetailAction.TIMELINE,
-                                                    )
-                                                }, modifier = Modifier.size(24.dp)) {
-                                                    Icon(
-                                                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                                        contentDescription = stringResource(R.string.saga_detail_view_timeline_action),
-                                                    )
-                                                }
-                                            }
-
-                                            events.lastOrNull()?.let { event ->
-                                                val eventModifier =
+                                                val characterModifier =
                                                     this@with.sharedTransitionActionItemModifier(
-                                                        DetailAction.TIMELINE,
+                                                        DetailAction.CHARACTERS,
                                                         animationScopes.second,
                                                         saga.data.id,
-                                                        event.data.id,
+                                                        char.id,
                                                     )
-                                                TimeLineCard(
-                                                    event,
-                                                    saga,
-                                                    false,
-                                                    openCharacters = {
-                                                        selectSection(
-                                                            DetailAction.CHARACTERS,
-                                                        )
-                                                    },
+                                                CharacterAvatar(
+                                                    char,
+                                                    borderSize = 2.dp,
+                                                    genre = saga.data.genre,
                                                     modifier =
-                                                        eventModifier
-                                                            .padding(16.dp)
-                                                            .clip(RoundedCornerShape(saga.data.genre.cornerSize()))
-                                                            .clickable {
-                                                                selectSection(
-                                                                    DetailAction.TIMELINE,
-                                                                )
-                                                            }.fillMaxWidth()
-                                                            .wrapContentHeight(),
+                                                        characterModifier
+                                                            .padding(8.dp)
+                                                            .clip(CircleShape)
+                                                            .size(120.dp)
+                                                            .padding(8.dp),
                                                 )
-                                            } ?: run {
+
                                                 Text(
-                                                    stringResource(R.string.saga_detail_no_events_placeholder),
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.fillMaxWidth(),
+                                                    char.name,
+                                                    style =
+                                                        MaterialTheme.typography.bodySmall.copy(
+                                                            fontWeight = FontWeight.Light,
+                                                            textAlign = TextAlign.Center,
+                                                            fontFamily = saga.data.genre.bodyFont(),
+                                                        ),
                                                 )
                                             }
                                         }
                                     }
                                 }
 
-                                if (saga.wikis.isNotEmpty()) {
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
-                                        Column {
-                                            Row(
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                            ) {
-                                                Text(
-                                                    stringResource(R.string.saga_detail_section_title_wiki),
-                                                    style = sectionStyle,
-                                                    modifier =
-                                                        Modifier
-                                                            .sharedElement(
-                                                                rememberSharedContentState(
-                                                                    key =
-                                                                        DetailAction.WIKI.sharedElementTitleKey(
-                                                                            saga.data.id,
-                                                                        )!!,
-                                                                ),
-                                                                animatedVisibilityScope = animationScopes.second,
-                                                            ).padding(8.dp)
-                                                            .weight(1f),
-                                                )
-
-                                                IconButton(onClick = {
-                                                    selectSection(DetailAction.WIKI)
-                                                }, modifier = Modifier.size(24.dp)) {
-                                                    Icon(
-                                                        Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                                        contentDescription = stringResource(R.string.saga_detail_view_wiki_action),
-                                                    )
-                                                }
-                                            }
-
-                                            if (saga.wikis.isEmpty()) {
-                                                Text(
-                                                    stringResource(R.string.saga_detail_no_wiki_info_placeholder),
-                                                    textAlign = TextAlign.Center,
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                )
-                                            }
-                                        }
-                                    }
-
-                                    items(saga.wikis.takeLast(4)) { wiki ->
-
-                                        val wikiModifier =
-                                            this@with.sharedTransitionActionItemModifier(
-                                                DetailAction.WIKI,
-                                                animationScopes.second,
-                                                saga.data.id,
-                                                wiki.id,
-                                            )
-
-                                        WikiCard(
-                                            wiki,
-                                            saga.data.genre,
+                                if (saga.relationships.isNotEmpty()) {
+                                    item(span = { GridItemSpan(columnCount) }) {
+                                        Text(
+                                            stringResource(R.string.saga_detail_relationships_section_title),
+                                            style = sectionStyle,
                                             modifier =
-                                                wikiModifier
+                                                Modifier
                                                     .padding(16.dp)
                                                     .fillMaxWidth(),
                                         )
                                     }
-                                }
 
-                                if (chapters.isNotEmpty()) {
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
+                                    item(span = { GridItemSpan(columnCount) }) {
+                                        LazyRow {
+                                            items(saga.relationships.sortedByDescending { it.data.lastUpdated }) { relation ->
+                                                RelationShipCard(
+                                                    content = relation,
+                                                    genre = saga.data.genre,
+                                                    modifier =
+                                                        Modifier
+                                                            .padding(16.dp)
+                                                            .requiredWidthIn(max = 300.dp),
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (events.isNotEmpty()) {
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    Column {
                                         Row(
                                             Modifier
                                                 .padding(16.dp)
@@ -1550,14 +1416,14 @@ private fun SagaDetailInitialView(
                                             verticalAlignment = Alignment.CenterVertically,
                                         ) {
                                             Text(
-                                                stringResource(R.string.saga_detail_section_title_chapters),
+                                                stringResource(R.string.saga_detail_timeline_section_title),
                                                 style = sectionStyle,
                                                 modifier =
                                                     Modifier
                                                         .sharedElement(
                                                             rememberSharedContentState(
                                                                 key =
-                                                                    DetailAction.CHAPTERS.sharedElementTitleKey(
+                                                                    DetailAction.TIMELINE.sharedElementTitleKey(
                                                                         saga.data.id,
                                                                     )!!,
                                                             ),
@@ -1568,183 +1434,159 @@ private fun SagaDetailInitialView(
 
                                             IconButton(onClick = {
                                                 selectSection(
-                                                    DetailAction.CHAPTERS,
+                                                    DetailAction.TIMELINE,
                                                 )
                                             }, modifier = Modifier.size(24.dp)) {
                                                 Icon(
                                                     Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                                                    contentDescription = stringResource(R.string.saga_detail_view_chapters_action),
+                                                    contentDescription = stringResource(R.string.saga_detail_view_timeline_action),
                                                 )
                                             }
                                         }
-                                    }
 
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
-                                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            items(chapters) { chapter ->
-                                                val chapterModifier =
-                                                    this@with.sharedTransitionActionItemModifier(
-                                                        DetailAction.CHAPTERS,
-                                                        animationScopes.second,
-                                                        saga.data.id,
-                                                        chapter.data.id,
+                                        events.lastOrNull()?.let { event ->
+                                            val eventModifier =
+                                                this@with.sharedTransitionActionItemModifier(
+                                                    DetailAction.TIMELINE,
+                                                    animationScopes.second,
+                                                    saga.data.id,
+                                                    event.data.id,
+                                                )
+                                            TimeLineCard(
+                                                event,
+                                                saga,
+                                                false,
+                                                openCharacters = {
+                                                    selectSection(
+                                                        DetailAction.CHARACTERS,
                                                     )
-                                                ChapterCardView(
-                                                    saga,
-                                                    chapter.data,
-                                                    chapterModifier
-                                                        .clip(genre.shape())
+                                                },
+                                                modifier =
+                                                    eventModifier
+                                                        .padding(16.dp)
+                                                        .clip(RoundedCornerShape(saga.data.genre.cornerSize()))
                                                         .clickable {
                                                             selectSection(
-                                                                DetailAction.CHAPTERS,
+                                                                DetailAction.TIMELINE,
                                                             )
-                                                        }.size(250.dp)
-                                                        .padding(8.dp),
+                                                        }.fillMaxWidth()
+                                                        .wrapContentHeight(),
+                                            )
+                                        } ?: run {
+                                            Text(
+                                                stringResource(R.string.saga_detail_no_events_placeholder),
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth(),
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (saga.wikis.isNotEmpty()) {
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    Column {
+                                        Row(
+                                            Modifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                        ) {
+                                            Text(
+                                                stringResource(R.string.saga_detail_section_title_wiki),
+                                                style = sectionStyle,
+                                                modifier =
+                                                    Modifier
+                                                        .sharedElement(
+                                                            rememberSharedContentState(
+                                                                key =
+                                                                    DetailAction.WIKI.sharedElementTitleKey(
+                                                                        saga.data.id,
+                                                                    )!!,
+                                                            ),
+                                                            animatedVisibilityScope = animationScopes.second,
+                                                        ).padding(8.dp)
+                                                        .weight(1f),
+                                            )
+
+                                            IconButton(onClick = {
+                                                selectSection(DetailAction.WIKI)
+                                            }, modifier = Modifier.size(24.dp)) {
+                                                Icon(
+                                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                    contentDescription = stringResource(R.string.saga_detail_view_wiki_action),
                                                 )
                                             }
+                                        }
+
+                                        if (saga.wikis.isEmpty()) {
+                                            Text(
+                                                stringResource(R.string.saga_detail_no_wiki_info_placeholder),
+                                                textAlign = TextAlign.Center,
+                                                modifier = Modifier.fillMaxWidth(),
+                                            )
                                         }
                                     }
                                 }
 
-                                if (saga.data.isEnded) {
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
-                                        Box(
-                                            Modifier
-                                                .clickable {
-                                                    selectSection(DetailAction.ACTS)
-                                                }.height(200.dp)
-                                                .fillMaxWidth()
-                                                .reactiveShimmer(
-                                                    true,
-                                                    saga.data.genre.color
-                                                        .darkerPalette()
-                                                        .plus(Color.Transparent),
-                                                ),
-                                        ) {
-                                            StarryTextPlaceholder(
-                                                modifier =
-                                                    Modifier.fillMaxSize(),
-                                            )
-                                            Text(
-                                                "Veja sua história completa",
-                                                textAlign = TextAlign.Center,
-                                                style =
-                                                    MaterialTheme.typography.headlineSmall.copy(
-                                                        fontFamily = saga.data.genre.bodyFont(),
-                                                        fontWeight = FontWeight.Bold,
-                                                        brush = saga.data.genre.gradient(),
-                                                    ),
-                                                modifier = Modifier.align(Alignment.Center),
-                                            )
-                                        }
-                                    }
+                                items(saga.wikis.takeLast(4)) { wiki ->
 
-                                    item(span = {
-                                        GridItemSpan(columnCount)
-                                    }) {
+                                    val wikiModifier =
+                                        this@with.sharedTransitionActionItemModifier(
+                                            DetailAction.WIKI,
+                                            animationScopes.second,
+                                            saga.data.id,
+                                            wiki.id,
+                                        )
+
+                                    WikiCard(
+                                        wiki,
+                                        saga.data.genre,
+                                        modifier =
+                                            wikiModifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
+                                    )
+                                }
+                            }
+
+                            if (chapters.isNotEmpty()) {
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    Row(
+                                        Modifier
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
                                         Text(
-                                            saga.data.endMessage,
-                                            style =
-                                                MaterialTheme.typography.bodySmall.copy(
-                                                    fontFamily = saga.data.genre.bodyFont(),
-                                                    textAlign = TextAlign.Justify,
-                                                    brush = saga.data.genre.gradient(),
-                                                ),
+                                            stringResource(R.string.saga_detail_section_title_chapters),
+                                            style = sectionStyle,
                                             modifier =
                                                 Modifier
-                                                    .alpha(.6f)
-                                                    .padding(16.dp),
-                                        )
-                                    }
-
-                                    item(span = { GridItemSpan(columnCount) }) {
-                                        Box(
-                                            Modifier
-                                                .padding(16.dp)
-                                                .clip(
-                                                    RoundedCornerShape(saga.data.genre.cornerSize()),
-                                                ).border(
-                                                    1.dp,
-                                                    MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
-                                                    saga.data.genre.shape(),
-                                                ).background(
-                                                    MaterialTheme.colorScheme.surfaceContainer,
-                                                    saga.data.genre.shape(),
-                                                ).fillMaxWidth()
-                                                .height(200.dp)
-                                                .clickable {
-                                                    openEmotionalReview()
-                                                },
-                                        ) {
-                                            AsyncImage(
-                                                emotionalReviewIconUrl,
-                                                null,
-                                                modifier =
-                                                    Modifier
-                                                        .fillMaxSize()
-                                                        .zoomAnimation(),
-                                                contentScale = ContentScale.Crop,
-                                            )
-
-                                            Column(
-                                                modifier =
-                                                    Modifier
-                                                        .align(Alignment.BottomCenter)
-                                                        .background(
-                                                            fadeGradientBottom(
-                                                                saga.data.genre.color,
-                                                            ),
-                                                        ).fillMaxWidth()
-                                                        .padding(horizontal = 16.dp, vertical = 24.dp),
-                                            ) {
-                                                Text(
-                                                    "Jornada Interior",
-                                                    style =
-                                                        MaterialTheme.typography.headlineSmall.copy(
-                                                            fontWeight = FontWeight.Bold,
+                                                    .sharedElement(
+                                                        rememberSharedContentState(
+                                                            key =
+                                                                DetailAction.CHAPTERS.sharedElementTitleKey(
+                                                                    saga.data.id,
+                                                                )!!,
                                                         ),
-                                                    modifier = Modifier.padding(vertical = 16.dp),
-                                                )
+                                                        animatedVisibilityScope = animationScopes.second,
+                                                    ).padding(8.dp)
+                                                    .weight(1f),
+                                        )
 
-                                                Text(
-                                                    "Sua história não está apenas no que você fez, mas em como você sentiu.",
-                                                    style =
-                                                        MaterialTheme.typography.bodySmall.copy(),
-                                                )
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    item(span = { GridItemSpan(columnCount) }) {
-                                        Box(
-                                            Modifier
-                                                .height(200.dp)
-                                                .fillMaxWidth()
-                                                .reactiveShimmer(
-                                                    true,
-                                                    saga.data.genre.color
-                                                        .darkerPalette()
-                                                        .plus(Color.Transparent),
-                                                ),
-                                        ) {
-                                            StarryTextPlaceholder(
-                                                modifier =
-                                                    Modifier.fillMaxSize(),
+                                        IconButton(onClick = {
+                                            selectSection(
+                                                DetailAction.CHAPTERS,
                                             )
-                                            Text(
-                                                "Continue avançando em sua história...",
-                                                textAlign = TextAlign.Center,
-                                                style =
-                                                    MaterialTheme.typography.headlineSmall.copy(
-                                                        fontFamily = saga.data.genre.bodyFont(),
-                                                        fontWeight = FontWeight.Bold,
-                                                        brush = saga.data.genre.gradient(),
-                                                    ),
-                                                modifier = Modifier.align(Alignment.Center),
+                                        }, modifier = Modifier.size(24.dp)) {
+                                            Icon(
+                                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                contentDescription = stringResource(R.string.saga_detail_view_chapters_action),
                                             )
                                         }
                                     }
@@ -1753,60 +1595,230 @@ private fun SagaDetailInitialView(
                                 item(span = {
                                     GridItemSpan(columnCount)
                                 }) {
-                                    Button(
-                                        onClick = {
-                                            selectSection(
-                                                DetailAction.DELETE,
+                                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        items(chapters) { chapter ->
+                                            val chapterModifier =
+                                                this@with.sharedTransitionActionItemModifier(
+                                                    DetailAction.CHAPTERS,
+                                                    animationScopes.second,
+                                                    saga.data.id,
+                                                    chapter.data.id,
+                                                )
+                                            ChapterCardView(
+                                                saga,
+                                                chapter.data,
+                                                chapterModifier
+                                                    .clip(genre.shape())
+                                                    .clickable {
+                                                        selectSection(
+                                                            DetailAction.CHAPTERS,
+                                                        )
+                                                    }.size(250.dp)
+                                                    .padding(8.dp),
                                             )
-                                        },
-                                        colors =
-                                            ButtonDefaults.textButtonColors(
-                                                contentColor = MaterialColor.Red400,
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (saga.data.isEnded) {
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    Box(
+                                        Modifier
+                                            .clickable {
+                                                selectSection(DetailAction.ACTS)
+                                            }.height(200.dp)
+                                            .fillMaxWidth()
+                                            .reactiveShimmer(
+                                                true,
+                                                saga.data.genre.color
+                                                    .darkerPalette()
+                                                    .plus(Color.Transparent),
+                                            ),
+                                    ) {
+                                        StarryTextPlaceholder(
+                                            modifier =
+                                                Modifier.fillMaxSize(),
+                                        )
+                                        Text(
+                                            "Veja sua história completa",
+                                            textAlign = TextAlign.Center,
+                                            style =
+                                                MaterialTheme.typography.headlineSmall.copy(
+                                                    fontFamily = saga.data.genre.bodyFont(),
+                                                    fontWeight = FontWeight.Bold,
+                                                    brush = saga.data.genre.gradient(),
+                                                ),
+                                            modifier = Modifier.align(Alignment.Center),
+                                        )
+                                    }
+                                }
+
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    Text(
+                                        saga.data.endMessage,
+                                        style =
+                                            MaterialTheme.typography.bodySmall.copy(
+                                                fontFamily = saga.data.genre.bodyFont(),
+                                                textAlign = TextAlign.Justify,
+                                                brush = saga.data.genre.gradient(),
                                             ),
                                         modifier =
                                             Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth(),
+                                                .alpha(.6f)
+                                                .padding(16.dp),
+                                    )
+                                }
+
+                                item(span = { GridItemSpan(columnCount) }) {
+                                    Box(
+                                        Modifier
+                                            .padding(16.dp)
+                                            .clip(
+                                                RoundedCornerShape(saga.data.genre.cornerSize()),
+                                            ).border(
+                                                1.dp,
+                                                MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
+                                                saga.data.genre.shape(),
+                                            ).background(
+                                                MaterialTheme.colorScheme.surfaceContainer,
+                                                saga.data.genre.shape(),
+                                            ).fillMaxWidth()
+                                            .height(200.dp)
+                                            .clickable {
+                                                openEmotionalReview()
+                                            },
                                     ) {
+                                        AsyncImage(
+                                            emotionalReviewIconUrl,
+                                            null,
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxSize()
+                                                    .zoomAnimation(),
+                                            contentScale = ContentScale.Crop,
+                                        )
+
+                                        Column(
+                                            modifier =
+                                                Modifier
+                                                    .align(Alignment.BottomCenter)
+                                                    .background(
+                                                        fadeGradientBottom(
+                                                            saga.data.genre.color,
+                                                        ),
+                                                    ).fillMaxWidth()
+                                                    .padding(horizontal = 16.dp, vertical = 24.dp),
+                                        ) {
+                                            Text(
+                                                "Jornada Interior",
+                                                style =
+                                                    MaterialTheme.typography.headlineSmall.copy(
+                                                        fontWeight = FontWeight.Bold,
+                                                    ),
+                                                modifier = Modifier.padding(vertical = 16.dp),
+                                            )
+
+                                            Text(
+                                                "Sua história não está apenas no que você fez, mas em como você sentiu.",
+                                                style =
+                                                    MaterialTheme.typography.bodySmall.copy(),
+                                            )
+                                        }
+                                    }
+                                }
+                            } else {
+                                item(span = { GridItemSpan(columnCount) }) {
+                                    Box(
+                                        Modifier
+                                            .height(200.dp)
+                                            .fillMaxWidth()
+                                            .reactiveShimmer(
+                                                true,
+                                                saga.data.genre.color
+                                                    .darkerPalette()
+                                                    .plus(Color.Transparent),
+                                            ),
+                                    ) {
+                                        StarryTextPlaceholder(
+                                            modifier =
+                                                Modifier.fillMaxSize(),
+                                        )
                                         Text(
-                                            stringResource(R.string.saga_detail_delete_saga_button),
+                                            "Continue avançando em sua história...",
                                             textAlign = TextAlign.Center,
+                                            style =
+                                                MaterialTheme.typography.headlineSmall.copy(
+                                                    fontFamily = saga.data.genre.bodyFont(),
+                                                    fontWeight = FontWeight.Bold,
+                                                    brush = saga.data.genre.gradient(),
+                                                ),
+                                            modifier = Modifier.align(Alignment.Center),
                                         )
                                     }
                                 }
                             }
 
-                            AnimatedVisibility(
-                                gridState.canScrollBackward,
-                                enter = fadeIn(tween(400, delayMillis = 200)),
-                                exit = fadeOut(tween(200)),
-                            ) {
-                                val titleAndSub = DetailAction.BACK.titleAndSubtitle(saga)
-                                SagaTopBar(
-                                    titleAndSub.first,
-                                    titleAndSub.second,
-                                    saga.data.genre,
-                                    onBackClick = { onBackClick() },
-                                    actionContent = {
-                                        Icon(
-                                            painterResource(R.drawable.ic_spark),
-                                            null,
-                                            tint = saga.data.genre.color,
-                                            modifier =
-                                                Modifier
-                                                    .clickable {
-                                                        openDrawer()
-                                                    }.padding(horizontal = 8.dp)
-                                                    .size(24.dp),
+                            item(span = {
+                                GridItemSpan(columnCount)
+                            }) {
+                                Button(
+                                    onClick = {
+                                        selectSection(
+                                            DetailAction.DELETE,
                                         )
                                     },
+                                    colors =
+                                        ButtonDefaults.textButtonColors(
+                                            contentColor = MaterialColor.Red400,
+                                        ),
                                     modifier =
                                         Modifier
-                                            .background(MaterialTheme.colorScheme.background)
-                                            .fillMaxWidth()
-                                            .padding(top = 50.dp, start = 16.dp),
-                                )
+                                            .padding(16.dp)
+                                            .fillMaxWidth(),
+                                ) {
+                                    Text(
+                                        stringResource(R.string.saga_detail_delete_saga_button),
+                                        textAlign = TextAlign.Center,
+                                    )
+                                }
                             }
+                        }
+
+                        AnimatedVisibility(
+                            gridState.canScrollBackward,
+                            enter = fadeIn(tween(400, delayMillis = 200)),
+                            exit = fadeOut(tween(200)),
+                        ) {
+                            val titleAndSub = DetailAction.BACK.titleAndSubtitle(saga)
+                            SagaTopBar(
+                                titleAndSub.first,
+                                titleAndSub.second,
+                                saga.data.genre,
+                                onBackClick = { onBackClick() },
+                                actionContent = {
+                                    Icon(
+                                        painterResource(R.drawable.ic_spark),
+                                        null,
+                                        tint = saga.data.genre.color,
+                                        modifier =
+                                            Modifier
+                                                .clickable {
+                                                    openDrawer()
+                                                }.padding(horizontal = 8.dp)
+                                                .size(24.dp),
+                                    )
+                                },
+                                modifier =
+                                    Modifier
+                                        .background(MaterialTheme.colorScheme.background)
+                                        .fillMaxWidth()
+                                        .padding(top = 50.dp, start = 16.dp),
+                            )
                         }
                     }
                 }

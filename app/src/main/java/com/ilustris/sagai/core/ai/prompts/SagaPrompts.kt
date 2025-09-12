@@ -206,25 +206,6 @@ object SagaPrompts {
         appendLine(
             "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.title}).",
         )
-        appendLine("**CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**")
-        appendLine("1.**Foundational Art Style (Mandatory):**")
-        appendLine(" *The primary rendering style for the icon MUST be:")
-        appendLine(GenrePrompts.artStyle(saga.genre))
-        appendLine("2.**Specific Color Application Instructions (Mandatory):**")
-        appendLine("*The following rules dictate how the genre's key colors are applied:")
-        appendLine(GenrePrompts.getColorEmphasisDescription(saga.genre))
-        appendLine("**Important Clarification on Color:**")
-        appendLine("*The color rules from `getColorEmphasisDescription` are primarily for:")
-        appendLine("*The **background's dominant color**.")
-        appendLine(
-            "***Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).",
-        )
-        appendLine(
-            "***CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural.",
-        )
-        appendLine(
-            "*Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents.",
-        )
         appendLine("*The accents are design elements, not the primary light source for the character.")
         appendLine("3.**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
         appendLine("*You WILL have access to a Visual Reference Image (Bitmap)")
@@ -246,16 +227,6 @@ object SagaPrompts {
         )
         appendLine(
             "*   **Character Focus and Framing:** Ensure the character is the primary subject, framed as a close-up or medium close-up shot (e.g., from the chest up or waist up). The character should dominate the icon and be the clear focal point, with dynamic posing.",
-        )
-        appendLine("*   Render the scene in the **Foundational Art Style**.")
-        appendLine(
-            "*Explicitly describe the **background color** and the **specific character accents** using the genre colors using the provided color rules.",
-        )
-        appendLine(
-            "*Ensure the description implies that the character's base colors (skin, hair, main clothing) are preserved and not tinted by the accent colors.",
-        )
-        appendLine(
-            "*Lighting on the character should be consistent with the art style, with genre colors applied as specific, non-overwhelming details.",
         )
         appendLine(
             "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character's Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",

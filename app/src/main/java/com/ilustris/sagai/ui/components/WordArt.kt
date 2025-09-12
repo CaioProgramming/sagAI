@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -116,23 +117,22 @@ fun WordArtText(
                     this.rotationX = rotationX
                 }.drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
-                    glowColor?.let { gColor ->
-                        val glowSteps = 6
-                        val base = (fontSize * glowRadiusFactor).toPx()
-                        for (i in glowSteps downTo 1) {
-                            val radius = base * i
-                            val alpha = (glowAlpha / glowSteps) * i
-                            drawText(
-                                textLayoutResult = outlineTextLayoutResult,
-                                color = gColor.copy(alpha = alpha.coerceIn(0f, 1f)),
-                            )
-                        }
-                    }
+
                     // 1. Extrusion Layers
                     for (i in numberOfExtrusionLayers downTo 1) {
+                        val shadow = if (i == numberOfExtrusionLayers) {
+                            if (glowColor != null) {
+                                Shadow(
+                                    glowColor,
+                                    offset = Offset(0f, 0f),
+                                    blurRadius = glowRadiusFactor
+                                )
+                            } else null
+                        } else null
                         drawText(
                             textLayoutResult = textLayoutResult,
                             color = extrusionColor,
+                            shadow = shadow,
                             topLeft =
                                 Offset(
                                     x = i * extrusionOffsetPx * 0.5f,
@@ -221,6 +221,9 @@ fun Genre.stylisedText(
                     outlineColor = genre.colorPalette().last(),
                     outlineWidthFactor = .05f,
                     rotationX = 15f,
+                    glowColor = genre.color,
+                    glowRadiusFactor = 10f,
+                    glowAlpha = 1f,
                 )
 
                 StarryTextPlaceholder(
@@ -265,71 +268,7 @@ fun Genre.stylisedText(
     }
 }
 
-@Composable
-private fun SparkOverlay(
-    modifier: Modifier = Modifier,
-    sparkColors: List<Color>,
-) {
-    val density = LocalDensity.current
-    // Simple gentle shimmer factor to vary alpha subtly
-    val transition = rememberInfiniteTransition(label = "spark_overlay")
-    val twinkle by transition.animateFloat(
-        initialValue = 0.85f,
-        targetValue = 1f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(1600, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        label = "spark_twinkle",
-    )
 
-    Box(
-        modifier =
-            modifier.drawBehind {
-                val w = size.width
-                val h = size.height
-                if (w <= 0f || h <= 0f) return@drawBehind
-
-                fun drawSpark(
-                    center: Offset,
-                    baseRadius: Float,
-                ) {
-                    // Draw 3 soft circles to emulate a glow with slight blur
-                    val radii = listOf(baseRadius, baseRadius * 1.8f, baseRadius * 3f)
-                    val alphas = listOf(0.9f, 0.45f, 0.15f)
-                    radii.forEachIndexed { idx, r ->
-                        val color = sparkColors.getOrNull(idx % sparkColors.size) ?: Color.White
-                        drawCircle(
-                            color = color.copy(alpha = alphas[idx] * twinkle),
-                            radius = r,
-                            center = center,
-                        )
-                    }
-                    // Tiny bright core
-                    drawCircle(
-                        color = Color.White.copy(alpha = 0.9f * twinkle),
-                        radius = baseRadius * 0.4f,
-                        center = center,
-                    )
-                }
-
-                // Place 2–3 sparks near top-left and top-right edges
-                val margin = 0.06f * w
-                val topY = h * 0.18f
-                val leftX = margin
-                val rightX = w - margin
-
-                // Slightly varied radii for organic feel
-                val base = (h.coerceAtMost(w) * 0.06f)
-                drawSpark(Offset(leftX, topY), base)
-                drawSpark(Offset(leftX + base * 0.9f, topY + base * 0.2f), base * 0.6f)
-
-                drawSpark(Offset(rightX, topY), base)
-                drawSpark(Offset(rightX - base * 0.9f, topY + base * 0.2f), base * 0.6f)
-            },
-    )
-}
 
 @Preview(
     showBackground = true,
