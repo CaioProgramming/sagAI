@@ -78,10 +78,7 @@ class CharacterUseCaseImpl
             executeRequest {
                 val styleReferenceBitmap =
                     ImageReference(
-                        BitmapFactory.decodeResource(
-                            context.resources,
-                            saga.genre.defaultHeaderImage(),
-                        ),
+                        genreReferenceHelper.getGenreStyleReference(saga.genre).getSuccess()!!,
                         ImageGuidelines.styleReferenceGuidance,
                     )
                 val portraitReference =
@@ -102,11 +99,13 @@ class CharacterUseCaseImpl
                         references = references,
                         requireTranslation = false,
                     )
-                val prompt = ImagePrompts.generateImage(translatedDescription!!)
+                val prompt =
+                    ImagePrompts
+                        .generateImage(translatedDescription!!)
 
                 val image =
                     imagenClient.generateImage(prompt, references)!!.apply {
-                        // imageCropHelper.cropToPortraitBitmap(this,)
+                        imageCropHelper.cropToPortraitBitmap(this)
                     }
                 val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)

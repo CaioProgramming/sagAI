@@ -16,12 +16,27 @@ android {
     namespace = "com.ilustris.sagai"
     compileSdk = 36
 
+    // Load version from version.properties (MAJOR.MINOR.PATCH)
+    val versionPropsFile = rootProject.file("version.properties")
+    val versionProps = Properties()
+    if (versionPropsFile.exists()) {
+        versionProps.load(FileInputStream(versionPropsFile))
+    } else {
+        logger.warn("version.properties not found at root. Falling back to default version 0.0.0")
+    }
+    val major = (versionProps.getProperty("MAJOR") ?: "0").toInt()
+    val minor = (versionProps.getProperty("MINOR") ?: "0").toInt()
+    val patch = (versionProps.getProperty("PATCH") ?: "0").toInt()
+    val computedVersionName = "$major.$minor.$patch"
+    // A simple versionCode calculation to keep it increasing with semantic parts
+    val computedVersionCode = major * 10000 + minor * 100 + patch
+
     defaultConfig {
         applicationId = "com.ilustris.sagai"
         minSdk = 27
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.3.0"
+        versionCode = computedVersionCode
+        versionName = computedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,7 +51,7 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",

@@ -31,8 +31,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.ui.components.WordArtText
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.headerFont
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -77,7 +79,7 @@ Genre(
     ),
     CRIME(
         title = "Crime City",
-        color = MaterialColor.PinkA200,
+        color = MaterialColor.PinkA100,
         iconColor = Color.White,
         background = R.drawable.crime,
         ambientMusicConfigKey = "crime_ambient_music_url",
@@ -136,11 +138,11 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.CRIME ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = 1f,
-                saturationThreshold = .5f,
+                hueTolerance = .8f,
+                saturationThreshold = .2f,
                 lightnessThreshold = .2f,
-                highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .8f,
+                highlightSaturationBoost = 1f,
+                desaturationFactorNonTarget = .5f,
             )
     }
 
@@ -191,8 +193,8 @@ fun Genre.colorPalette() =
             listOf(
                 MaterialColor.Blue500,
                 MaterialColor.Blue900,
-                MaterialColor.LightBlue600,
-                MaterialColor.LightBlueA700,
+                MaterialColor.LightBlue300,
+                MaterialColor.RedA200,
             )
 
         Genre.CRIME ->

@@ -111,7 +111,7 @@ fun CharactersGalleryContent(
     animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
 ) {
     var showCharacter by remember {
-        mutableStateOf<CharacterContent?>(null)
+        mutableStateOf<Int?>(null)
     }
 
     val titleAndSubtitle =
@@ -170,7 +170,7 @@ fun CharactersGalleryContent(
                                 Modifier
                                     .clip(genre.shape())
                                     .clickable {
-                                        showCharacter = character
+                                        showCharacter = character.data.id
                                     },
                         )
                     }
@@ -179,22 +179,24 @@ fun CharactersGalleryContent(
                 val newCharacterSheetState =
                     rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-                showCharacter?.let { character ->
+                showCharacter?.let { id ->
                     ModalBottomSheet(
                         onDismissRequest = { showCharacter = null },
                         sheetState = newCharacterSheetState,
                         containerColor = MaterialTheme.colorScheme.background,
                         dragHandle = { Box {} },
                     ) {
-                        CharacterDetailsContent(
-                            saga,
-                            character,
-                            openEvent = { event ->
-                                event?.let {
-                                    onOpenEvent(event)
-                                }
-                            },
-                        )
+                        saga.characters.find { it.data.id == id }?.let { character ->
+                            CharacterDetailsContent(
+                                saga,
+                                character,
+                                openEvent = { event ->
+                                    event?.let {
+                                        onOpenEvent(event)
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
 

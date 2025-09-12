@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">sagAI</string>
     <string name="saga">Saga</string>
     <string name="start_saga">Pronto para iniciar sua saga?</string>
     <string name="start_saga_subtitle">Comece com o nome da sua história.</string>

@@ -1,7 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-
-
 object CharacterGuidelines {
     val creationGuideline =
         """
@@ -69,7 +67,8 @@ object ImageGuidelines {
         *   **Camera Angle & Perspective:** Consider the viewpoint (e.g., eye-level, low angle looking up, high angle looking down, bird's-eye view, Dutch angle).
         *   **Subject Placement & Balance:** Analyze how elements are arranged within the frame (e.g., rule of thirds, golden ratio, central focus, leading lines, use of negative space, symmetry or asymmetry).
         *   **Depth of Field & Focus:** Observe the use of focus (e.g., shallow depth of field with a blurred background (bokeh), deep focus with all elements sharp, selective focus).
-        *   **Pose & Staging Cues (for characters/subjects, if applicable):** If this reference contains figures, look at their poses, gestures, and interaction with the space as *inspiration only*. **DO NOT directly copy poses.** Instead, understand the *type* of pose (e.g., dynamic action, static and powerful, contemplative, interactive) and adapt this concept to the new character and their specific context and narrative needs for a fresh, original pose.
+        *   **Pose & Staging Cues (for characters/subjects, if applicable):** If this reference contains figures, look at their poses, gestures, and interaction with the space as *inspiration only*.
+        **DO NOT directly copy poses.** Instead, understand the *type* of pose (e.g., dynamic action, static and powerful, contemplative, interactive) and adapt this concept for a fresh, original pose.
         *   **Visual Flow & Leading Lines:** How does the composition guide the viewer's eye?
         *   **Aspect Ratio:** Analyze the aspect ratio of the Composition Reference Image (e.g., 16:9, 4:3, 1:1, 9:16). In the text prompt you generate, you MUST explicitly state this aspect ratio so the final image is created with it. For example, if the reference image is 16:9, include 'aspect ratio 16:9' or a similar instruction like '--ar 16:9' in your generated prompt.
         **Crucial:** Adapt these compositional principles to the *new subject and scene* of your current task. The aim is to achieve a similar structural feel or solve a similar compositional challenge, **not to directly replicate the layout, subject matter, or specific pose from this Composition Reference Image.** It guides *how* the scene is structured, not *what specific elements or poses* must be present. **When generating your text prompt, do not describe or request any borders or text elements, even if they appear in this Composition Reference Image. The focus must remain solely on the compositional aspects, ensuring no such graphical elements are introduced into your prompt from this reference.**
@@ -90,4 +89,9 @@ object ImageGuidelines {
         *   **Flexibility for Narrative:** If the prompt describes a change in attire for '$characterName' or a new temporary feature (e.g., battle damage, a disguise), prioritize the prompt's description while keeping '$characterName''s base appearance consistent where appropriate.
         This image defines *who* '$characterName' is visually. Your task is to bring that visual identity to life authentically within the new scene's specific requirements.
         """.trimIndent()
+
+    val fullImage =
+        """
+        FULL IMAGE RENDERING NO BORDERS AT ALL.    
+        """
 }

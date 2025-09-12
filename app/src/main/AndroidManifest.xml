@@ -7,7 +7,6 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <!-- Add this permission for Android 14+ media playback -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -27,7 +26,6 @@
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
             android:launchMode="singleTop"
             android:theme="@style/Theme.App.Starting">
             <intent-filter>
@@ -36,18 +34,11 @@
             </intent-filter>
         </activity>
 
-        <!-- MediaPlayerService Declaration -->
         <service
             android:name=".core.media.MediaPlayerService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 
-        <!-- Explicitly declare WorkManager's SystemForegroundService with the required type -->
-        <service
-            android:name="androidx.work.impl.foreground.SystemForegroundService"
-            android:foregroundServiceType="dataSync"
-            android:exported="false"
-            tools:node="merge" />
 
     </application>
 

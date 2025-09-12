@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class SagaDetailViewModel
@@ -31,6 +32,7 @@ class SagaDetailViewModel
         val saga = MutableStateFlow<SagaContent?>(null)
         val isGenerating = MutableStateFlow(false)
         val emotionalCardReference = MutableStateFlow<String>(emptyString())
+        val showIntro = MutableStateFlow(false)
 
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -40,6 +42,7 @@ class SagaDetailViewModel
         }
 
         fun fetchSagaDetails(sagaId: String) {
+            showIntro.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 emotionalCardReference.value = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
                 _state.value = State.Loading
@@ -50,6 +53,8 @@ class SagaDetailViewModel
                             fetchEmotionalCardReference()
                         }
                         this@SagaDetailViewModel.saga.value = data
+                        // Trigger intro sequence only once per fetch
+                        launchIntroSequence()
                     }
                 }
             }
@@ -114,6 +119,13 @@ class SagaDetailViewModel
                 isGenerating.value = true
                 sagaDetailUseCase.createSagaEmotionalReview(currentSaga)
                 isGenerating.value = false
+            }
+        }
+
+        private fun launchIntroSequence() {
+            viewModelScope.launch {
+                delay(2.seconds)
+                showIntro.value = false
             }
         }
     }

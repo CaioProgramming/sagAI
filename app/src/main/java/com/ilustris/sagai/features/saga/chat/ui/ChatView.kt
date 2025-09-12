@@ -537,7 +537,7 @@ fun ChatContent(
                 null,
                 colorFilter =
                     ColorFilter.tint(
-                        saga.genre.color,
+                        MaterialTheme.colorScheme.background,
                     ),
                 modifier =
                     Modifier
@@ -1143,7 +1143,7 @@ fun ChatList(
                         modifier =
                             Modifier
                                 .animateItem()
-                                .fillMaxWidth()
+                                .fillParentMaxSize()
                                 .background(MaterialTheme.colorScheme.background),
                     )
                 }

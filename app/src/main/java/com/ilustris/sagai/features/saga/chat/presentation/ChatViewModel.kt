@@ -463,7 +463,6 @@ class ChatViewModel
         }
 
         private fun generateSuggestions() {
-            suggestions.value = emptyList()
             if (sagaContentManager.isInDebugMode()) {
                 return
             }
@@ -480,6 +479,9 @@ class ChatViewModel
             if (currentTimeline.messages.isEmpty()) return
             viewModelScope.launch(Dispatchers.IO) {
                 content.value?.data?.let { saga ->
+                    suggestions.value = emptyList()
+
+                    delay(500L)
                     suggestionUseCase
                         .invoke(
                             currentTimeline.messages,

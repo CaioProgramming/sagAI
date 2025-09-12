@@ -180,21 +180,21 @@ fun Modifier.effectForGenre(
                 }
                 Genre.CRIME ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .15f,
-                        bloomThreshold = 0.25f,
-                        bloomIntensity = 0.25f,
-                        bloomRadius = 1.4f,
-                        softFocusRadius = focusRadius ?: .3f,
+                        grainIntensity = customGrain ?: .1f,
+                        bloomThreshold = .2f,
+                        bloomIntensity = .1f,
+                        bloomRadius = 1.2f,
+                        softFocusRadius = focusRadius ?: .1f,
                         saturation = .7f,
-                        contrast = 1.5f,
-                        brightness = .02f,
+                        contrast = 1.3f,
+                        brightness = .05f,
                         highlightTint = crimePalette.highlightTint,
                         shadowTint = crimePalette.shadowTint,
                         tintStrength = crimePalette.defaultTintStrength,
                         vignetteStrength = .25f,
                         vignetteSoftness = .9f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = .05f,
+                        colorTemperature = .1f,
                     )
                 else ->
                     ShaderParams()

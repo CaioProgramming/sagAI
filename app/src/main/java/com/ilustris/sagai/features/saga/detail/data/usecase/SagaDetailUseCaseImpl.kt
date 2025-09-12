@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImageReference
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageRules
@@ -91,8 +92,7 @@ class SagaDetailUseCaseImpl
                     gemmaClient.generate<String>(
                         prompt =
                             SagaPrompts
-                                .iconDescription(saga.data, saga.mainCharacter!!.data)
-                                .plus(ImageRules.TEXTUAL_ELEMENTS),
+                                .iconDescription(saga.data, saga.mainCharacter!!.data),
                         references,
                         requireTranslation = false,
                     )!!
@@ -100,9 +100,11 @@ class SagaDetailUseCaseImpl
                     imageGenClient.generateImage(
                         ImagePrompts.wallpaperGeneration(
                             saga.data,
-                            metaPrompt.plus(ImageRules.TEXTUAL_ELEMENTS),
+                            metaPrompt
+                                .plus(ImageGuidelines.fullImage)
+                                .plus(ImageRules.TEXTUAL_ELEMENTS),
                         ),
-                        references,
+                        references.subList(1, references.lastIndex),
                     )!!
 
                 val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)

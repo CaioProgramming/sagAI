@@ -43,6 +43,8 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
@@ -98,13 +100,28 @@ fun ActComponent(
                         Modifier
                             .alpha(alpha)
                             .background(MaterialTheme.colorScheme.background)
-                            .fillMaxHeight(.3f)
+                            .weight(1f)
                             .fillMaxWidth()
                             .effectForGenre(genre),
                     contentScale = ContentScale.Crop,
                 )
             }
         }
+
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(.5f)
+                .background(fadeGradientTop()),
+        )
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(.5f)
+                .background(fadeGradientBottom()),
+        )
 
         Column(
             modifier =

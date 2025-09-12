@@ -82,6 +82,21 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient(true))
                     .padding(16.dp),
             )
+
+            AutoResizeText(
+                text = chapter.title,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                        .reactiveShimmer(isLast),
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = genre.headerFont(),
+                        brush = genre.gradient(true),
+                        textAlign = TextAlign.Center,
+                    ),
+            )
         }
 
         Box(

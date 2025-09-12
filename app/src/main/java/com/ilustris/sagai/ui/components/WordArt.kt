@@ -1,14 +1,30 @@
 package com.ilustris.sagai.ui.components
 
+import ai.atick.material.MaterialColor
+import android.content.res.Configuration
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -29,9 +45,12 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.lighter
+import effectForGenre
 
 @Composable
 fun WordArtText(
@@ -48,6 +67,9 @@ fun WordArtText(
     outlineColor: Color = Color(0xFF652800),
     outlineWidthFactor: Float = 0.12f,
     rotationX: Float = 15f,
+    glowColor: Color? = null,
+    glowRadiusFactor: Float = 0.18f,
+    glowAlpha: Float = 0.55f,
 ) {
     val textMeasurer = rememberTextMeasurer()
     val density = LocalDensity.current
@@ -74,41 +96,54 @@ fun WordArtText(
             textMeasurer.measure(text = AnnotatedString(text), style = baseTextStyle)
         }
 
-    val outlineTextStyle = remember(baseTextStyle, outlineColor, outlineWidthPx) {
-        baseTextStyle.copy(
-            brush = SolidColor(outlineColor),
-            drawStyle = Stroke(width = outlineWidthPx, join = StrokeJoin.Round)
-        )
-    }
+    val outlineTextStyle =
+        remember(baseTextStyle, outlineColor, outlineWidthPx) {
+            baseTextStyle.copy(
+                brush = SolidColor(outlineColor),
+                drawStyle = Stroke(width = outlineWidthPx, join = StrokeJoin.Round),
+            )
+        }
 
-    val outlineTextLayoutResult = remember(text, outlineTextStyle) {
-        textMeasurer.measure(AnnotatedString(text), style = outlineTextStyle)
-    }
-
+    val outlineTextLayoutResult =
+        remember(text, outlineTextStyle) {
+            textMeasurer.measure(AnnotatedString(text), style = outlineTextStyle)
+        }
 
     Box(
         modifier =
-        modifier
-            .graphicsLayer {
-                this.rotationX = rotationX
-            }
-            .drawBehind {
-                // 1. Extrusion Layers
-                for (i in numberOfExtrusionLayers downTo 1) {
+            modifier
+                .graphicsLayer {
+                    this.rotationX = rotationX
+                }.drawBehind {
+                    // Optional outer glow around the text outline to emulate neon/cyberpunk
+                    glowColor?.let { gColor ->
+                        val glowSteps = 6
+                        val base = (fontSize * glowRadiusFactor).toPx()
+                        for (i in glowSteps downTo 1) {
+                            val radius = base * i
+                            val alpha = (glowAlpha / glowSteps) * i
+                            drawText(
+                                textLayoutResult = outlineTextLayoutResult,
+                                color = gColor.copy(alpha = alpha.coerceIn(0f, 1f)),
+                            )
+                        }
+                    }
+                    // 1. Extrusion Layers
+                    for (i in numberOfExtrusionLayers downTo 1) {
+                        drawText(
+                            textLayoutResult = textLayoutResult,
+                            color = extrusionColor,
+                            topLeft =
+                                Offset(
+                                    x = i * extrusionOffsetPx * 0.5f,
+                                    y = i * extrusionOffsetPx * 0.866f,
+                                ),
+                        )
+                    }
                     drawText(
-                        textLayoutResult = textLayoutResult,
-                        color = extrusionColor,
-                        topLeft =
-                        Offset(
-                            x = i * extrusionOffsetPx * 0.5f,
-                            y = i * extrusionOffsetPx * 0.866f,
-                        ),
+                        textLayoutResult = outlineTextLayoutResult,
                     )
-                }
-                drawText(
-                    textLayoutResult = outlineTextLayoutResult,
-                )
-            },
+                },
     ) {
         Text(
             text = text,
@@ -117,22 +152,197 @@ fun WordArtText(
     }
 }
 
-@Preview(showBackground = true)
+@Composable
+fun Genre.stylisedText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
+) {
+    when (this) {
+        Genre.FANTASY -> {
+            val palette = this.colorPalette()
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = palette.first(),
+                bottomColor = palette.last(),
+                numberOfExtrusionLayers = 0,
+                outlineColor = MaterialTheme.colorScheme.background,
+                extrusionColor = palette.last(),
+                glowAlpha = .5f,
+                glowColor = color,
+                glowRadiusFactor = 15f,
+            )
+        }
+        Genre.SCI_FI -> {
+            val palette = this.colorPalette()
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = color,
+                bottomColor = Color.White,
+                numberOfExtrusionLayers = 2,
+                outlineColor = palette.first().darker(.3f),
+                extrusionColor = palette.last(),
+                glowRadiusFactor = 10f,
+                glowColor = iconColor,
+                glowAlpha = 1f,
+            )
+        }
+        Genre.HORROR -> {
+            val palette = this.colorPalette()
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = palette.first(),
+                bottomColor = color.lighter(.2f),
+                numberOfExtrusionLayers = 2,
+                outlineColor = color.darker(.7f),
+            )
+        }
+        Genre.CRIME -> {
+            val genre = this
+            Box(modifier = modifier) {
+                WordArtText(
+                    text = text,
+                    fontSize = fontSize,
+                    fontFamily = genre.headerFont(),
+                    topColor = genre.color,
+                    bottomColor = genre.color.darker(.3f),
+                    extrusionColor = MaterialColor.DeepPurple800,
+                    extrusionDepthFactor = .03f,
+                    numberOfExtrusionLayers = 10,
+                    outlineColor = genre.colorPalette().last(),
+                    outlineWidthFactor = .05f,
+                    rotationX = 15f,
+                )
+
+                StarryTextPlaceholder(
+                    modifier =
+                        Modifier
+                            .matchParentSize(),
+                    starColor = Color.White,
+                    starCount = 50,
+                )
+            }
+        }
+        Genre.HEROES -> {
+            val palette = this.colorPalette()
+            // Comic hero style: strong rotation and long extrusion. Use HEROES blues instead of yellow/red.
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = color,
+                bottomColor = MaterialColor.LightBlueA200,
+                extrusionColor = MaterialColor.Red400,
+                extrusionDepthFactor = 0.02f,
+                numberOfExtrusionLayers = 15,
+                outlineColor = MaterialTheme.colorScheme.background,
+                outlineWidthFactor = .1f,
+                rotationX = 10f,
+            )
+        }
+        else -> {
+            // Default fallback using palette
+            val palette = this.colorPalette()
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = palette.first(),
+                bottomColor = palette.last(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SparkOverlay(
+    modifier: Modifier = Modifier,
+    sparkColors: List<Color>,
+) {
+    val density = LocalDensity.current
+    // Simple gentle shimmer factor to vary alpha subtly
+    val transition = rememberInfiniteTransition(label = "spark_overlay")
+    val twinkle by transition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1600, easing = LinearEasing),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "spark_twinkle",
+    )
+
+    Box(
+        modifier =
+            modifier.drawBehind {
+                val w = size.width
+                val h = size.height
+                if (w <= 0f || h <= 0f) return@drawBehind
+
+                fun drawSpark(
+                    center: Offset,
+                    baseRadius: Float,
+                ) {
+                    // Draw 3 soft circles to emulate a glow with slight blur
+                    val radii = listOf(baseRadius, baseRadius * 1.8f, baseRadius * 3f)
+                    val alphas = listOf(0.9f, 0.45f, 0.15f)
+                    radii.forEachIndexed { idx, r ->
+                        val color = sparkColors.getOrNull(idx % sparkColors.size) ?: Color.White
+                        drawCircle(
+                            color = color.copy(alpha = alphas[idx] * twinkle),
+                            radius = r,
+                            center = center,
+                        )
+                    }
+                    // Tiny bright core
+                    drawCircle(
+                        color = Color.White.copy(alpha = 0.9f * twinkle),
+                        radius = baseRadius * 0.4f,
+                        center = center,
+                    )
+                }
+
+                // Place 2–3 sparks near top-left and top-right edges
+                val margin = 0.06f * w
+                val topY = h * 0.18f
+                val leftX = margin
+                val rightX = w - margin
+
+                // Slightly varied radii for organic feel
+                val base = (h.coerceAtMost(w) * 0.06f)
+                drawSpark(Offset(leftX, topY), base)
+                drawSpark(Offset(leftX + base * 0.9f, topY + base * 0.2f), base * 0.6f)
+
+                drawSpark(Offset(rightX, topY), base)
+                drawSpark(Offset(rightX - base * 0.9f, topY + base * 0.2f), base * 0.6f)
+            },
+    )
+}
+
+@Preview(
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,
+)
 @Composable
 fun WordArtTextPreview() {
     SagAIScaffold {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Genre.entries.forEach {
-                WordArtText(
-                    text = it.title,
-                    fontSize = MaterialTheme.typography.displaySmall.fontSize,
-                    fontFamily = it.headerFont(),
-                    topColor = it.colorPalette().first(),
-                    bottomColor = it.colorPalette().last(),
-                    extrusionColor = it.color.darker(.3f),
-                    outlineColor = it.color.darker(.5f),
+                it.stylisedText(
+                    it.title,
                 )
-
             }
         }
     }

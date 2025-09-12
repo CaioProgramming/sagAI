@@ -64,14 +64,13 @@ object GenrePrompts {
 
             Genre.CRIME ->
                 """
-                Rendered in the style of 1980s commercial illustration and airbrush art – characterized by soft, blended shading, subtle gradients, visible brushstrokes, and a slightly grainy texture.
-                The image should have a slightly retro, hand-painted feel, reminiscent of vintage magazine illustrations with a *noir aesthetic*.
-                Avoid sharp lines and overly defined edges.
-                Strong shadows and highlights, emphasizing rim lighting and a sense of depth.
-                Emphasis on a slightly imperfect, hand-painted aesthetic with *subtle imperfections and realistic skin textures*.
-                Avoid cel-shading, vector art, and comic book style.
-                *Focus on realistic proportions and anatomy, avoiding exaggerated features*.
-                *Incorporate a sense of grit and realism, reminiscent of vintage crime drama artwork*.
+                highly detailed video game key art, in the style of stylized photorealistic digital painting.
+                rendered with very subtle and strategic linework, primarily defined by very dramatic,
+                high-contrast directional lighting and pronounced shadow gradients.
+                features a rich, vibrant yet slightly desaturated color palette.
+                character with natural, unidealized human features,
+                anatomically accurate and expressive,
+                with detailed textures and a strong, determined expression.
                 """
         }
 
@@ -111,21 +110,15 @@ object GenrePrompts {
                 """
             Genre.HEROES ->
                 """
-                Urban environment. The color palette is dominated by vivid blues and teals, accented with black, white, and yellow.
+                Urban environment.
+                The color palette is dominated by vivid blues and teals, accented with black, white, and yellow.
                 The background is a detailed cityscape at night, with glowing streetlights, silhouetted buildings, and a sense of urban grit,
                 bathed in a cool blue light.
-               
                 """
 
             Genre.CRIME ->
                 """
-                Abstract, silhouette-focused tropical environment. 
-                The color palette is dominated by vibrant pinks, oranges, and teals, accented with deep blues and blacks.
-                The background is composed of stark silhouettes of beach background.
-                Minimal detail, emphasizing form and shadow.
-                Emphasis on strong contrasts, a hazy, dreamlike atmosphere, and the feeling of warm, humid air.
-                A sense of glamour and decadence mixed with underlying tension and mystery.
-                The overall mood is atmospheric and evocative, prioritizing style over realism and evoking a sense of summer nights and tropical danger.
+                Overall is mood a Miami Vice aesthetic with pink highlights with the sky and dramatic cinematic lights.
                 """
         }.trimIndent()
 

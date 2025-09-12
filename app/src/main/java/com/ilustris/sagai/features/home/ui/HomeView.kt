@@ -355,7 +355,7 @@ fun ChatCard(
                                 .padding(8.dp)
                                 .border(
                                     2.dp,
-                                    borderBrush,
+                                    saga.data.genre.color,
                                     CircleShape,
                                 ).padding(4.dp)
                                 .background(
