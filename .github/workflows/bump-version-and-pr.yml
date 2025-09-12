@@ -110,8 +110,7 @@ jobs:
           title: "Release: ${{ steps.bump.outputs.version }}"
           body: |
             Automated version bump on push to main.
-            - Previous version: see commit history
-            - New version: ${{ steps.bump.outputs.version }}
+            - New version Available: [${{ steps.bump.outputs.version }}](${{ steps.upload_artifact.outputs.artifact-url }})
           branch: "release/version-${{ steps.bump.outputs.version }}"
           labels: |
             automation
