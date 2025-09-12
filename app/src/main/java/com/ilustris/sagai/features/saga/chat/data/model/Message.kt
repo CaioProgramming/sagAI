@@ -65,6 +65,7 @@ data class Message(
     val actId: Int? = null,
     @ColumnInfo(index = true)
     val timelineId: Int,
+//    val emotionalTone: EmotionalTone? = null,
 )
 
 data class MessageGen(

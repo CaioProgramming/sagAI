@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
-import com.ilustris.sagai.features.characters.relations.domain.data.RelationshipContent
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.SagAITheme

@@ -10,14 +10,16 @@ import kotlinx.coroutines.flow.Flow
 interface MessageUseCase {
     suspend fun getMessages(sagaId: Int): Flow<List<MessageContent>>
 
-    suspend fun saveMessage(message: Message): RequestResult<Exception, Message>
+    suspend fun saveMessage(
+        message: Message,
+        isFromUser: Boolean,
+    ): RequestResult<Exception, Message>
 
     suspend fun deleteMessage(messageId: Long)
 
     suspend fun getLastMessage(sagaId: Int): Message?
 
     suspend fun generateIntroMessage(saga: SagaContent): RequestResult<Exception, String>
-
 
     suspend fun generateMessage(
         saga: SagaContent,

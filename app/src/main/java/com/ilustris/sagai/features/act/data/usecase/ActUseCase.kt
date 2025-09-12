@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.act.domain.usecase
+package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.act.data.model.Act

@@ -442,6 +442,7 @@ class ChatViewModel
                             sagaId = saga.data.id,
                             characterId = speakerId,
                         ),
+                        isFromUser,
                     ).onSuccess {
                         isLoading.value = false
                         handleNewMessage(it, isFromUser)

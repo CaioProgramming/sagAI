@@ -1,9 +1,8 @@
-package com.ilustris.sagai.features.characters.relations.domain.data
+package com.ilustris.sagai.features.characters.relations.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 
 data class RelationshipContent(
     @Embedded

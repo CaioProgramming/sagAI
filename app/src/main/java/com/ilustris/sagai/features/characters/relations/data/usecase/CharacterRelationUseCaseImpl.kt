@@ -1,15 +1,14 @@
-package com.ilustris.sagai.features.characters.relations.domain.usecase
+package com.ilustris.sagai.features.characters.relations.data.usecase
 
 import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
+import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
-import com.ilustris.sagai.features.characters.relations.domain.data.RelationGeneration
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import javax.inject.Inject

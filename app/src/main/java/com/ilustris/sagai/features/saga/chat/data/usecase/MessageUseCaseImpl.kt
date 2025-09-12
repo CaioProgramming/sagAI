@@ -8,11 +8,13 @@ import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
+import com.ilustris.sagai.features.saga.chat.domain.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
@@ -39,14 +41,25 @@ class MessageUseCaseImpl
 
         override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
 
-        override suspend fun saveMessage(message: Message) =
-            try {
-                messageRepository
-                    .saveMessage(message)!!
-                    .asSuccess()
-            } catch (e: Exception) {
-                e.asError()
-            }
+        override suspend fun saveMessage(
+            message: Message,
+            isFromUser: Boolean,
+        ) = executeRequest {
+            val tone =
+                if (isFromUser) {
+                    val prompt = SagaPrompts.emotionalToneExtraction(message.text)
+                    val raw = gemmaClient.generate<String>(prompt, requireTranslation = false)?.trim()?.uppercase()
+                    EmotionalTone.getTone(raw)
+                } else {
+                    EmotionalTone.NEUTRAL
+                }
+
+            messageRepository.saveMessage(
+                message.copy(
+                    // emotionalTone = tone,
+                ),
+            )!!
+        }
 
         override suspend fun deleteMessage(messageId: Long) {
             messageRepository.deleteMessage(messageId)

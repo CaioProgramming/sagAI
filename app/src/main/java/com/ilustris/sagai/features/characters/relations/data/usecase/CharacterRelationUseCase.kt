@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.characters.relations.domain.usecase
+package com.ilustris.sagai.features.characters.relations.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.SagaContent

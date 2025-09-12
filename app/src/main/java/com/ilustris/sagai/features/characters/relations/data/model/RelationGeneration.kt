@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.characters.relations.domain.data
+package com.ilustris.sagai.features.characters.relations.data.model
 
 data class RelationGeneration(
     val firstCharacter: String,

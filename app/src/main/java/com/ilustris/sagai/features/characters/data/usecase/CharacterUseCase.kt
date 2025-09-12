@@ -1,10 +1,9 @@
-package com.ilustris.sagai.features.characters.domain
+package com.ilustris.sagai.features.characters.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import kotlinx.coroutines.flow.Flow
 

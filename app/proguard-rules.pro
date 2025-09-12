@@ -19,3 +19,17 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keepnames class kotlin.Pair { *; }
+-keepnames class kotlin.Triple { *; }
+-keep class com.ilustris.sagai.core.ai.models.** { *; }
+-keep class com.ilustris.sagai.features.*.data.model.** { *; }
+
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepclassmembers class * {
+ @com.google.gson.annotations.SerializedName <fields>;
+ }
+-keepclassmembers enum * {
+ @com.google.gson.annotations.SerializedName <fields>;
+ }

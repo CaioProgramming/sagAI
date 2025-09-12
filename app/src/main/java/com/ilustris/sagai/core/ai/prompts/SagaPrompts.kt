@@ -13,6 +13,38 @@ import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 
 object SagaPrompts {
+    fun emotionalToneExtraction(userText: String): String {
+        val labels =
+            listOf(
+                "NEUTRAL",
+                "CALM",
+                "CURIOUS",
+                "HOPEFUL",
+                "DETERMINED",
+                "EMPATHETIC",
+                "JOYFUL",
+                "CONCERNED",
+                "ANXIOUS",
+                "FRUSTRATED",
+                "ANGRY",
+                "SAD",
+                "MELANCHOLIC",
+                "CYNICAL",
+            ).joinToString(", ")
+        return """
+            You classify the emotional tone of a single USER message into exactly one label from this set:
+            $labels
+            
+            Rules:
+            - Output ONLY the label, uppercase, with no punctuation or extra text.
+            - If uncertain, output NEUTRAL.
+            - Focus on the user's expressed feeling/stance, not plot.
+            
+            USER MESSAGE:
+            >>> $userText
+            """.trimIndent()
+    }
+
     fun details(saga: Saga) = saga.storyDetails()
 
     fun Saga.storyDetails() =
