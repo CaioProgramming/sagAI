@@ -82,8 +82,8 @@ class CharacterUseCaseImpl
                     }
                 val references =
                     listOfNotNull(
-                        styleReferenceBitmap,
                         portraitReference,
+                        styleReferenceBitmap,
                     )
                 val translatedDescription =
                     gemmaClient.generate<String>(
@@ -100,14 +100,7 @@ class CharacterUseCaseImpl
 
                 val image =
                     imagenClient
-                        .generateImage(
-                            buildString {
-                                appendLine(GenrePrompts.artStyle(saga.genre))
-                                appendLine(GenrePrompts.getColorEmphasisDescription(saga.genre))
-                                appendLine(translatedDescription)
-                            },
-                            emptyList(),
-                        )!!
+                        .generateImage(translatedDescription, listOfNotNull(portraitReference))!!
                         .apply {
                             imageCropHelper.cropToPortraitBitmap(this, centerCropZoomFactor = .6f)
                         }

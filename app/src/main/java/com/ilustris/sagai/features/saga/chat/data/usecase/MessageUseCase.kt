@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.domain.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
@@ -31,4 +32,6 @@ interface MessageUseCase {
     fun setDebugMode(enabled: Boolean)
 
     fun isInDebugMode(): Boolean
+
+    suspend fun checkMessageTypo(message: String, lastMessage: String?): RequestResult<Exception, TypoFix?>
 }

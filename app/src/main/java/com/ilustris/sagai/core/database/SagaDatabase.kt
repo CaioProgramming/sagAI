@@ -35,14 +35,11 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterEvent::class,
         CharacterRelation::class,
     ],
-    version = 45,
-   /* autoMigrations = [
-        androidx.room.AutoMigration(from = 41, to = 42),
-        androidx.room.AutoMigration(from = 42, to = 43),
-        androidx.room.AutoMigration(from = 43, to = 44),
-        androidx.room.AutoMigration(from = 44, to = 45),
+    version = 46,
+    autoMigrations = [
+        androidx.room.AutoMigration(from = 45, to = 46),
     ],
-    exportSchema = true,*/
+    exportSchema = true,
 )
 @TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {

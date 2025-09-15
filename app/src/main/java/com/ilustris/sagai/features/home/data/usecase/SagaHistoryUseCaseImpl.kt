@@ -44,6 +44,7 @@ class SagaHistoryUseCaseImpl
                             saga,
                             currentTimeline,
                         ),
+                        skipRunning = true,
                     )!!
             }
 

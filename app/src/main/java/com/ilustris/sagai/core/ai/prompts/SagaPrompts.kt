@@ -12,27 +12,15 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.chat.domain.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import kotlin.jvm.java
+import kotlin.text.appendLine
 
 object SagaPrompts {
     fun emotionalToneExtraction(userText: String): String {
-        val labels =
-            listOf(
-                "NEUTRAL",
-                "CALM",
-                "CURIOUS",
-                "HOPEFUL",
-                "DETERMINED",
-                "EMPATHETIC",
-                "JOYFUL",
-                "CONCERNED",
-                "ANXIOUS",
-                "FRUSTRATED",
-                "ANGRY",
-                "SAD",
-                "MELANCHOLIC",
-                "CYNICAL",
-            ).joinToString(", ")
+        val labels = EmotionalTone.entries.joinToString()
         return """
             You classify the emotional tone of a single USER message into exactly one label from this set:
             $labels
@@ -46,6 +34,47 @@ object SagaPrompts {
             >>> $userText
             """.trimIndent()
     }
+
+    @Suppress("ktlint:standard:max-line-length")
+    fun checkForTypo(message: String, lastMessage: String?) =
+        buildString {
+            appendLine("You are an AI assistant validating a user's message. ")
+            appendLine(
+                "Your task is to identify typos, grammatical errors, or areas for enhancement, especially considering the context of the last message if provided.",
+            )
+            appendLine("Your entire response MUST be a single, valid JSON object strictly conforming to the structure shown below.")
+            appendLine("Do NOT include any text outside this JSON object.")
+            appendLine("GUIDELINES FOR JSON FIELDS:")
+            appendLine("1. `status` (Enum: TypoFixStatus - OK, FIX, ENHANCEMENT):")
+            appendLine(
+                "   - `OK`: If the user's current message is grammatically correct, free of obvious typos, and contextually complete (or if no clear improvement is needed). Both `suggestedText` and `friendlyMessage` MUST be null.",
+            )
+            appendLine(
+                "   - `FIX`: If the user's current message contains clear typos or grammatical errors. `suggestedText` MUST be the corrected version. `friendlyMessage` MUST be a brief, polite note highlighting the correction (e.g., \"I noticed a small typo, here's a fix:\").",
+            )
+            appendLine(
+                "   - `ENHANCEMENT`: If the message is understandable but could be clearer, more concise, or if it seems to omit information that might be relevant given the `lastMessage` (without being a critical error). `suggestedText` MUST be the improved version. `friendlyMessage` MUST explain the suggestion (e.g., \"This looks good! To make it even clearer, you could say:\" or \"Considering your last point, perhaps you meant to add something like this?\").",
+            )
+            appendLine("2. `suggestedText` (String or null):")
+            appendLine(
+                "   - If `status` is `FIX` or `ENHANCEMENT`, this field MUST contain the full corrected or enhanced version of the user's message.",
+            )
+            appendLine("   - If `status` is `OK`, this field MUST be null.")
+            appendLine("3. `friendlyMessage` (String or null):")
+            appendLine(
+                "   - If `status` is `FIX` or `ENHANCEMENT`, this field MUST contain a brief, friendly message to the user related to the change.",
+            )
+            appendLine("   - If `status` is `OK`, this field MUST be null.")
+            appendLine("CONTEXT:")
+            appendLine("Last Message (if any):")
+            appendLine(">>> ${lastMessage ?: "No previous message."}")
+            appendLine("User's Current Message (to check):")
+            appendLine(">>> $message")
+            appendLine()
+            appendLine("Expected JSON Output Structure:")
+            appendLine(toJsonMap(TypoFix::class.java))
+            appendLine("Your JSON Response:")
+        }
 
     fun details(saga: Saga) = saga.storyDetails()
 
@@ -230,7 +259,7 @@ object SagaPrompts {
             "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.title}).",
         )
         appendLine("*The accents are design elements, not the primary light source for the character.")
-        appendLine("3.**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
+        appendLine("**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
         appendLine("*You WILL have access to a Visual Reference Image (Bitmap)")
         appendLine("*From this, draw inspiration for:")
         appendLine(
@@ -261,7 +290,7 @@ object SagaPrompts {
         appendLine("Saga Context:")
         appendLine(saga.toJsonFormatIncludingFields(listOf("title", "description", "genre")))
         appendLine("Main Character Details:")
-        appendLine(character.toJsonFormatExcludingFields(listOf("backstory", "image", "sagaId", "joinedAt", "hexColor", "id")))
+        appendLine(character.toJsonFormatExcludingFields(listOf("image", "sagaId", "joinedAt", "hexColor", "id")))
         appendLine(
             "**Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**",
         )

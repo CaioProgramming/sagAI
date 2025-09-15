@@ -9,37 +9,41 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.ilustris.sagai.core.media.MediaPlayerManager // Keep for isPlaying state
-import com.ilustris.sagai.core.media.MediaPlayerService // Import service
-import com.ilustris.sagai.core.media.model.PlaybackMetadata // Import model
+import com.ilustris.sagai.core.media.MediaPlayerManager
+import com.ilustris.sagai.core.media.MediaPlayerService
+import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
-import com.ilustris.sagai.core.utils.toJsonFormat // For PlaybackMetadata
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.mapper.SagaContentUIMapper
-import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
-import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
-import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
-import com.ilustris.sagai.features.characters.data.model.CharacterInfo
-import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
+import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow // Import for StateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-// import java.io.File // Not needed if lastKnownMusicFile is removed
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -68,8 +72,10 @@ class ChatViewModel
         val isPlaying: StateFlow<Boolean> = mediaPlayerManager.isPlaying
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
+        val inputValue = MutableStateFlow(emptyString())
+        val sendType = MutableStateFlow(SenderType.USER)
 
-        // private var lastKnownMusicFile: File? = null // No longer needed for direct control
+        val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
         private var currentActCountForService: Int = 0
@@ -109,6 +115,14 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
             }
+        }
+
+        fun updateInput(value: String) {
+            inputValue.value = value
+        }
+
+        fun updateSendType(type: SenderType) {
+            sendType.value = type
         }
 
         fun retryAiResponse(message: Message?) {
@@ -235,7 +249,6 @@ class ChatViewModel
             }
         }
 
-        // Renamed and repurposed for service control
         private fun observeAmbientMusicServiceControl() {
             viewModelScope.launch(Dispatchers.IO) {
                 if (content.value == null) return@launch
@@ -337,74 +350,82 @@ class ChatViewModel
             }
         }
 
-        private fun generateIntroduction(saga: SagaContent) {
-            viewModelScope.launch(Dispatchers.IO) {
-                val currentEvent = saga.currentActInfo?.currentChapterInfo?.currentEventInfo ?: return@launch
-                val isEmpty = currentEvent.messages.isNotEmpty()
-                if (isEmpty || isGenerating.value) {
-                    return@launch
-                }
-
-                if (sagaContentManager.isInDebugMode()) {
-                    sendMessage(
-                        Message(
-                            0,
-                            "Starting the debug saga!",
-                            senderType = SenderType.NARRATOR,
-                            timelineId = currentEvent.data.id,
-                        ),
-                    )
-                    sendSnackbarMessage(
-                        SnackBarState(
-                            "Debug saga iniciada!",
-                            "",
-                        ),
-                    )
-                    return@launch
-                } else {
-                    messageUseCase
-                        .generateIntroMessage(saga)
-                        .onSuccess { text ->
-                            sendMessage(
-                                Message(
-                                    text = text,
-                                    senderType = SenderType.NARRATOR,
-                                    characterId = saga.mainCharacter?.data?.id,
-                                    timelineId = currentEvent.data.id,
-                                ),
-                                false,
-                            )
-                        }.onFailure {
-                            sendError(it.message ?: "Unknown error")
-                        }
-                }
-
-                state.value = ChatState.Success
+        fun sendInput(userConfirmed: Boolean = false) {
+            if (inputValue.value.isBlank()) {
+                return
             }
-        }
 
-        fun sendInput(
-            text: String,
-            sendType: SenderType,
-        ) {
+            val text = inputValue.value
+            val sendType = sendType.value
+
             val currentTimeline = content.value?.getCurrentTimeLine()
             if (currentTimeline == null) {
                 sagaContentManager.checkNarrativeProgression(content.value)
                 return
             }
-            val message =
-                Message(
-                    text = text,
-                    speakerName = null,
-                    senderType = sendType,
-                    characterId =
+
+            isLoading.value = true
+            viewModelScope.launch(Dispatchers.IO) {
+                if (userConfirmed) {
+                    val message =
+                        Message(
+                            text = text,
+                            speakerName = null,
+                            senderType = sendType,
+                            characterId =
+                                content.value
+                                    ?.mainCharacter
+                                    ?.data
+                                    ?.id,
+                            timelineId = currentTimeline.data.id,
+                        )
+                    sendMessage(message, true)
+                    return@launch
+                }
+
+                val typoCheck =
+                    messageUseCase.checkMessageTypo(
+                        text,
                         content.value
-                            ?.mainCharacter
-                            ?.data
-                            ?.id,
-                    timelineId = currentTimeline.data.id,
-                )
-            sendMessage(message, true)
+                            ?.flatMessages()
+                            ?.lastOrNull()
+                            ?.joinMessage()
+                            ?.formatToString(true),
+                    )
+
+                if (typoCheck.getSuccess() != null) {
+                    typoFixMessage.value = typoCheck.getSuccess()
+                    if (typoCheck.getSuccess()?.getStatus() == TypoStatus.OK) {
+                        val message =
+                            Message(
+                                text = text,
+                                speakerName = null,
+                                senderType = sendType,
+                                characterId =
+                                    content.value
+                                        ?.mainCharacter
+                                        ?.data
+                                        ?.id,
+                                timelineId = currentTimeline.data.id,
+                            )
+                        sendMessage(message, true)
+                    }
+                } else {
+                    val message =
+                        Message(
+                            text = text,
+                            speakerName = null,
+                            senderType = sendType,
+                            characterId =
+                                content.value
+                                    ?.mainCharacter
+                                    ?.data
+                                    ?.id,
+                            timelineId = currentTimeline.data.id,
+                        )
+                    sendMessage(message, true)
+                }
+            }
         }
 
         private fun sendMessage(
@@ -436,6 +457,9 @@ class ChatViewModel
                         else -> characterReference?.id
                     }
 
+                inputValue.value = emptyString()
+                typoFixMessage.value = null
+                suggestions.value = emptyList()
                 messageUseCase
                     .saveMessage(
                         message.copy(
@@ -613,7 +637,7 @@ class ChatViewModel
                     sendMessage(fakeUserMessage, isFromUser = false)
                     delay(100)
                 }
-                Log.d("ChatViewModel", "[DEBUG] Finished enqueuing $count fake messages.")
+                Log.d("ChatViewModel", "Finished enqueuing $count fake messages.")
             }
         }
     }

@@ -48,74 +48,11 @@ class SagaDetailUseCaseImpl
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Exception, Saga> =
             executeRequest {
-                val styleReference =
-                    genreReferenceHelper
-                        .getGenreStyleReference(saga.data.genre)
-                        .getSuccess()
-                        ?.let {
-                            ImageReference(it, ImageGuidelines.styleReferenceGuidance)
-                        }
-
-                val iconReferenceComposition =
-                    genreReferenceHelper
-                        .getIconReference(saga.data.genre)
-                        .getSuccess()
-                        ?.let {
-                            ImageReference(
-                                it,
-                                ImageGuidelines.compositionReferenceGuidance,
-                            )
-                        }
-
-                val characterIcon =
-                    saga
-                        .mainCharacter
-                        ?.data
-                        ?.image
-                        ?.let {
-                            genreReferenceHelper.getFileBitmap(it).getSuccess()?.let { icon ->
-                                ImageReference(
-                                    icon,
-                                    ImageGuidelines.characterVisualReferenceGuidance(saga.mainCharacter.data.name),
-                                )
-                            }
-                        }
-
-                val references =
-                    listOfNotNull(styleReference, iconReferenceComposition, characterIcon)
-                val metaPrompt =
-                    gemmaClient.generate<String>(
-                        prompt =
-                            SagaPrompts
-                                .iconDescription(saga.data, saga.mainCharacter!!.data),
-                        references,
-                        requireTranslation = false,
-                    )!!
                 val newIcon =
-                    imageGenClient.generateImage(
-                        buildString {
-                            appendLine(GenrePrompts.artStyle(saga.data.genre))
-
-                            appendLine(metaPrompt)
-
-                            appendLine(GenrePrompts.getColorEmphasisDescription(saga.data.genre))
-                        },
-                        references,
-                    )!!
-
-                val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)
-
-                val file =
-                    fileHelper.saveFile(
-                        fileName = saga.data.title,
-                        data = newIcon,
-                        path = "${saga.data.id}",
-                    )
-
-                newIcon.recycle()
-                croppedIcon.recycle()
-                sagaRepository
-                    .updateChat(saga.data.copy(icon = file!!.absolutePath))
+                    sagaRepository
+                        .generateSagaIcon(saga.data, saga.mainCharacter!!.data)
+                        .getSuccess()!!
+                sagaRepository.updateChat(newIcon)
             }
 
         override suspend fun fetchSaga(sagaId: Int) = sagaRepository.getSagaById(sagaId)

@@ -139,6 +139,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
@@ -209,6 +210,9 @@ fun ChatView(
     val context = LocalContext.current
     var showRationaleDialog by remember { mutableStateOf(false) }
     val showTitle by viewModel.showTitle.collectAsStateWithLifecycle()
+    val input by viewModel.inputValue.collectAsStateWithLifecycle()
+    val senderType by viewModel.sendType.collectAsStateWithLifecycle()
+    val typoFix by viewModel.typoFixMessage.collectAsStateWithLifecycle()
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
@@ -319,6 +323,11 @@ fun ChatView(
                         ChatContent(
                             state = state.value,
                             content = cont,
+                            inputValue = input,
+                            actualSender = senderType,
+                            typoFix = typoFix,
+                            onUpdateInput = viewModel::updateInput,
+                            onUpdateSenders = viewModel::updateSendType,
                             characters = characters,
                             titleModifier = (
                                 sharedTransitionScope?.let { sts ->
@@ -341,7 +350,6 @@ fun ChatView(
                             updateProgress = loreProgress,
                             snackBar = snackBarMessage,
                             onSendMessage = viewModel::sendInput,
-                            onCreateCharacter = viewModel::createCharacter,
                             onBack = navHostController::popBackStack,
                             openSagaDetails = {
                                 navHostController.navigateToRoute(
@@ -468,6 +476,9 @@ fun ChatContent(
     state: ChatState = ChatState.Loading,
     content: SagaContent,
     characters: List<Character> = emptyList(),
+    inputValue: String,
+    actualSender: SenderType,
+    typoFix: TypoFix?,
     titleModifier: Modifier = Modifier,
     messagesList: List<ActDisplayData> = emptyList(),
     suggestions: List<Suggestion> = emptyList(),
@@ -477,8 +488,9 @@ fun ChatContent(
     isPlaying: Boolean = false,
     updateProgress: Float = 0f,
     snackBar: SnackBarState? = null,
-    onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
-    onCreateCharacter: (CharacterInfo) -> Unit = {},
+    onSendMessage: (Boolean) -> Unit = { },
+    onUpdateInput: (String) -> Unit = { },
+    onUpdateSenders: (SenderType) -> Unit = { },
     onBack: () -> Unit = {},
     openSagaDetails: (Saga) -> Unit = {},
     onInjectFakeMessages: (Int) -> Unit = {},
@@ -627,8 +639,12 @@ fun ChatContent(
                             Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(),
+                        typoFix = typoFix,
+                        inputValue = inputValue,
+                        sendType = actualSender,
                         onSendMessage = onSendMessage,
-                        onCreateNewCharacter = onCreateCharacter,
+                        onUpdateInput = onUpdateInput,
+                        onUpdateSender = onUpdateSenders,
                         suggestions = suggestions,
                     )
                 }

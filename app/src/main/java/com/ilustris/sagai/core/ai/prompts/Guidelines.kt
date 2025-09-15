@@ -56,7 +56,8 @@ object ImageGuidelines {
          * **Color & Saturation:** Determine the overall color palette's philosophy. Are the colors vibrant and saturated, muted and desaturated, or does it use a specific color harmony (e.g., warm sunset tones, cool industrial blues)? How does this palette contribute to the mood?
          * **Lighting & Shadow Style:** Analyze how light and shadow are used to create form and atmosphere (e.g., high-contrast and dramatic, soft and diffused, rim lighting). How does the lighting enhance the mood?
          * **Overall Mood & Vibe:** Discern the overarching feeling the style evokes (e.g., dark and ominous, bright and uplifting, mysterious and ethereal, gritty and realistic, dreamy and nostalgic).
-         **Crucial Application:** Apply the *essence of this artistic style and its emotional tone* to the new image. **DO NOT replicate the specific content, characters, objects, or background elements from this Style Reference Image.** Instead, use the identified stylistic and atmospheric qualities to *render a completely new scene* as described in the main prompt, ensuring the new image is consistent *in style and mood* with the reference, but *original in its depiction*.
+         **Crucial Application:** Apply the *essence of this artistic style and its emotional tone* to the new image. **DO NOT replicate the specific content, characters, objects, or background elements from this Style Reference Image.** Instead, use the identified stylistic and atmospheric qualities to *render a completely new scene* as described in the main prompt,
+         ensuring the new image is consistent *in style and mood* with the reference, but *original in its depiction*.
         """.trimIndent()
 
     val compositionReferenceGuidance: String =

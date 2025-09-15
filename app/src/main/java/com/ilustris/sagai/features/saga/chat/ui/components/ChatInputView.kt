@@ -86,6 +86,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.data.model.Details
@@ -98,6 +99,8 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -109,12 +112,14 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -125,11 +130,15 @@ fun ChatInputView(
     isGenerating: Boolean,
     suggestions: List<Suggestion>,
     modifier: Modifier = Modifier,
-    onSendMessage: (String, SenderType) -> Unit,
-    onCreateNewCharacter: (CharacterInfo) -> Unit, // Added callback
+    inputValue: String,
+    sendType: SenderType,
+    typoFix: TypoFix?,
+    onUpdateInput: (String) -> Unit,
+    onUpdateSender: (SenderType) -> Unit,
+    onSendMessage: (Boolean) -> Unit,
 ) {
-    var action by remember { mutableStateOf(SenderType.USER) }
-    var inputField by remember { mutableStateOf(TextFieldValue("")) }
+    val action = sendType
+    var inputField = TextFieldValue(inputValue, TextRange(inputValue.length))
     val inputBrush =
         if (isGenerating) {
             content.data.genre.gradient(
@@ -145,27 +154,18 @@ fun ChatInputView(
         mutableStateOf(false)
     }
 
-    var actionsExpanded by remember {
-        mutableStateOf(false)
-    }
     val glowRadius by animateFloatAsState(
         if (isGenerating.not()) 0f else 30f,
     )
     val inputShape = RoundedCornerShape(content.data.genre.cornerSize())
 
-    var showNewCharacterSheet by remember { mutableStateOf(false) }
-    val newCharacterSheetState =
-        rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    val scope = rememberCoroutineScope()
+    rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    fun sendMessage(
-        text: String,
-        action: SenderType,
-    ) {
-        onSendMessage(text, action)
-        inputField = TextFieldValue("")
+    fun sendMessage(confirmed: Boolean = false) {
+        onSendMessage(confirmed)
         charactersExpanded = false
         focusManager.clearFocus()
         keyboardController?.hide()
@@ -236,8 +236,8 @@ fun ChatInputView(
                 items(suggestions) {
                     Button(
                         onClick = {
-                            inputField = TextFieldValue(it.text, selection = TextRange(it.text.length))
-                            action = it.type
+                            onUpdateInput(it.text)
+                            onUpdateSender(it.type)
                         },
                         shape = inputShape,
                         modifier =
@@ -254,12 +254,16 @@ fun ChatInputView(
                             painterResource(it.type.icon()),
                             contentDescription = it.type.description(),
                             modifier =
-                                Modifier.padding(4.dp).size(12.dp).reactiveShimmer(
-                                    true,
-                                    content.data.genre.color
-                                        .darkerPalette()
-                                        .plus(Color.Transparent),
-                                ),
+                                Modifier
+                                    .padding(4.dp)
+                                    .size(12.dp)
+                                    .reactiveShimmer(
+                                        true,
+                                        content.data.genre.color
+                                            .darkerPalette()
+                                            .plus(Color.Transparent),
+                                        duration = 5.seconds,
+                                    ),
                         )
 
                         Text(
@@ -275,232 +279,312 @@ fun ChatInputView(
                 }
             }
         }
+        val tooltipState =
+            rememberTooltipState(
+                isPersistent = true,
+            )
+        val tooltipPositionProvider =
+            TooltipDefaults.rememberPlainTooltipPositionProvider(
+                spacingBetweenTooltipAndAnchor = 8.dp,
+            )
 
-        BlurredGlowContainer(
-            modifier =
-                Modifier
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .fillMaxWidth()
-                    .padding(8.dp),
-            inputBrush,
-            glowRadius,
-            shape = inputShape,
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .border(1.dp, inputBrush, inputShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
-                        .padding(4.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth(),
-                ) {
-                    val textStyle =
-                        MaterialTheme.typography.labelLarge.copy(
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontFamily = content.data.genre.bodyFont(),
-                        )
-                    val maxLength = 500
-                    val tagBackgroundColor = MaterialTheme.colorScheme.background
+        LaunchedEffect(typoFix) {
+            if (typoFix != null && typoFix.getStatus() != TypoStatus.OK) {
+                tooltipState.show()
+            } else {
+                if (tooltipState.isVisible) {
+                    tooltipState.dismiss()
+                }
+            }
+        }
 
-                    BasicTextField(
-                        inputField,
-                        enabled = isGenerating.not(),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                        keyboardActions =
-                            KeyboardActions(onSend = {
-                                if (isGenerating.not() && inputField.text.isNotEmpty()) {
-                                    sendMessage(
-                                        inputField.text,
-                                        action,
-                                    )
-                                }
-                            }),
-                        onValueChange = {
-                            if (it.text.length <= maxLength) {
-                                inputField = it
-
-                                charactersExpanded = it.text.isNotEmpty() &&
-                                    it.text.last().toString() == "@" &&
-                                    it.text.length <= (maxLength - 20)
-                            }
-                        },
-                        textStyle = textStyle,
-                        visualTransformation = {
-                            transformTextWithContent(
-                                content.data.genre,
-                                content.mainCharacter?.data,
-                                content.getCharacters(),
-                                content.wikis,
-                                inputField.text,
-                                tagBackgroundColor,
-                            )
-                        },
-                        cursorBrush =
-                            Brush.verticalGradient(
-                                content.data.genre.color
-                                    .darkerPalette(),
-                            ),
-                        decorationBox = { innerTextField ->
-                            val boxPadding = 12.dp
-                            Box(
-                                contentAlignment = Alignment.CenterStart,
-                                modifier =
-                                    Modifier.reactiveShimmer(
-                                        isGenerating,
-                                        content.data.genre.shimmerColors(),
-                                    ),
-                            ) {
-                                if (inputField.text.isEmpty()) {
-                                    AnimatedContent(action) {
-                                        Text(
-                                            it.hint(),
-                                            style = textStyle,
-                                            maxLines = 1,
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(boxPadding)
-                                                    .alpha(.4f),
-                                        )
-                                    }
-                                } else {
-                                    Box(Modifier.padding(boxPadding)) {
-                                        innerTextField()
-                                    }
-                                }
-                            }
-                        },
+        TooltipBox(
+            positionProvider = tooltipPositionProvider,
+            state = tooltipState,
+            tooltip = {
+                val genre = content.data.genre
+                typoFix?.let {
+                    Column(
                         modifier =
                             Modifier
-                                .weight(1f)
-                                .animateContentSize(),
-                    )
-
-                    AnimatedVisibility(
-                        inputField.text.isNotEmpty(),
-                        enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
-                        exit = scaleOut(animationSpec = tween(easing = EaseIn)),
+                                .border(1.dp, genre.color.gradientFade(), genre.shape())
+                                .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
+                                .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        val buttonColor by animateColorAsState(
-                            if (isGenerating.not()) {
-                                content.data.genre.color
-                            } else {
-                                Color.Transparent
-                            },
+                        Text(
+                            it.friendlyMessage ?: emptyString(),
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                            modifier = Modifier.alpha(.4f),
                         )
-                        IconButton(
-                            onClick = {
-                                if (isGenerating) return@IconButton
-                                onSendMessage(inputField.text, action)
-                                inputField = TextFieldValue("")
-                                charactersExpanded = false
-                            },
+
+                        Text(
+                            it.suggestedText ?: emptyString(),
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    brush = genre.gradient(),
+                                ),
                             modifier =
-                                Modifier
-                                    .padding(4.dp)
-                                    .background(
-                                        buttonColor,
-                                        CircleShape,
-                                    ).size(32.dp),
-                        ) {
-                            val icon = R.drawable.ic_arrow_up
-                            Icon(
-                                painterResource(icon),
-                                contentDescription = "Send Message",
-                                modifier =
-                                    Modifier
-                                        .padding(2.dp)
-                                        .fillMaxSize(),
-                                tint = content.data.genre.iconColor,
-                            )
+                                Modifier.reactiveShimmer(
+                                    true,
+                                    genre.shimmerColors(),
+                                ),
+                        )
+
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = {
+                                it.suggestedText?.let { text ->
+                                    onUpdateInput(it.suggestedText)
+                                }
+                                sendMessage(true)
+                            }, colors = ButtonDefaults.buttonColors().copy(containerColor = genre.color)) {
+                                Text(
+                                    "Corrigir",
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color = genre.iconColor,
+                                        ),
+                                )
+                            }
+
+                            Button(
+                                onClick = {
+                                    sendMessage(true)
+                                },
+                                colors =
+                                    ButtonDefaults.textButtonColors().copy(
+                                        contentColor = genre.color,
+                                    ),
+                            ) {
+                                Text(
+                                    "Continuar",
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color = genre.iconColor,
+                                        ),
+                                )
+                            }
                         }
                     }
                 }
-
-                AnimatedVisibility(isImeVisible) {
-                    val suggestionsState = rememberLazyListState()
-
-                    LaunchedEffect(action) {
-                        suggestionsState.animateScrollToItem(0)
-                    }
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        state = suggestionsState,
+            },
+        ) {
+            BlurredGlowContainer(
+                modifier =
+                    Modifier
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                inputBrush,
+                glowRadius,
+                shape = inputShape,
+            ) {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, inputBrush, inputShape)
+                            .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
+                            .padding(4.dp),
+                ) {
+                    Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth(),
                     ) {
-                        val inputs =
-                            SenderType.filterUserInputTypes().sortedByDescending {
-                                it == action
-                            }
-                        items(inputs) {
-                            val alpha by animateFloatAsState(
-                                if (it == action) 1f else .5f,
-                                tween(300),
+                        val textStyle =
+                            MaterialTheme.typography.labelLarge.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontFamily = content.data.genre.bodyFont(),
                             )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        val maxLength = 500
+                        val tagBackgroundColor = MaterialTheme.colorScheme.background
+
+                        BasicTextField(
+                            inputField,
+                            enabled = isGenerating.not(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions =
+                                KeyboardActions(onSend = {
+                                    if (isGenerating.not() && inputField.text.isNotEmpty()) {
+                                        sendMessage()
+                                    }
+                                }),
+                            onValueChange = {
+                                if (it.text.length <= maxLength) {
+                                    onUpdateInput(it.text)
+
+                                    charactersExpanded = it.text.isNotEmpty() &&
+                                        it.text.last().toString() == "@" &&
+                                        it.text.length <= (maxLength - 20)
+                                }
+                            },
+                            textStyle = textStyle,
+                            visualTransformation = {
+                                transformTextWithContent(
+                                    content.data.genre,
+                                    content.mainCharacter?.data,
+                                    content.getCharacters(),
+                                    content.wikis,
+                                    inputField.text,
+                                    tagBackgroundColor,
+                                )
+                            },
+                            cursorBrush =
+                                Brush.verticalGradient(
+                                    content.data.genre.color
+                                        .darkerPalette(),
+                                ),
+                            decorationBox = { innerTextField ->
+                                val boxPadding = 12.dp
+                                Box(
+                                    contentAlignment = Alignment.CenterStart,
+                                    modifier =
+                                        Modifier.reactiveShimmer(
+                                            isGenerating,
+                                            content.data.genre.shimmerColors(),
+                                        ),
+                                ) {
+                                    if (inputField.text.isEmpty()) {
+                                        AnimatedContent(action) {
+                                            Text(
+                                                it.hint(),
+                                                style = textStyle,
+                                                maxLines = 1,
+                                                modifier =
+                                                    Modifier
+                                                        .fillMaxWidth()
+                                                        .padding(boxPadding)
+                                                        .alpha(.4f),
+                                            )
+                                        }
+                                    } else {
+                                        Box(Modifier.padding(boxPadding)) {
+                                            innerTextField()
+                                        }
+                                    }
+                                }
+                            },
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .animateContentSize(),
+                        )
+
+                        AnimatedVisibility(
+                            inputField.text.isNotEmpty(),
+                            enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
+                            exit = scaleOut(animationSpec = tween(easing = EaseIn)),
+                        ) {
+                            val buttonColor by animateColorAsState(
+                                if (isGenerating.not()) {
+                                    content.data.genre.color
+                                } else {
+                                    Color.Transparent
+                                },
+                            )
+                            IconButton(
+                                onClick = {
+                                    if (isGenerating) return@IconButton
+                                    sendMessage()
+                                    charactersExpanded = false
+                                },
                                 modifier =
                                     Modifier
-                                        .animateItem()
-                                        .reactiveShimmer(it == action)
-                                        .alpha(alpha)
-                                        .wrapContentSize()
-                                        .clip(content.data.genre.shape())
-                                        .gradientFill(content.data.genre.gradient())
-                                        .clickable {
-                                            action = it
-                                        }.padding(16.dp),
+                                        .padding(4.dp)
+                                        .background(
+                                            buttonColor,
+                                            CircleShape,
+                                        ).size(32.dp),
                             ) {
-                                val weight = if (it == action) FontWeight.Bold else FontWeight.Normal
-                                it.icon().let { icon ->
-                                    Image(
+                                AnimatedContent(
+                                    isGenerating,
+                                    modifier =
+                                        Modifier
+                                            .reactiveShimmer(
+                                                isGenerating,
+                                                content.data.genre.shimmerColors(),
+                                            ).padding(2.dp)
+                                            .fillMaxSize(),
+                                ) {
+                                    val icon =
+                                        if (it) R.drawable.ic_spark else R.drawable.ic_arrow_up
+                                    Icon(
                                         painterResource(icon),
-                                        null,
-                                        modifier = Modifier.size(12.dp),
-                                    )
-
-                                    Text(
-                                        it.title(),
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = weight,
-                                                fontFamily = content.data.genre.bodyFont(),
-                                            ),
+                                        contentDescription = "Send Message",
+                                        modifier =
+                                            Modifier
+                                                .padding(2.dp)
+                                                .fillMaxSize(),
+                                        tint = content.data.genre.iconColor,
                                     )
                                 }
                             }
                         }
+                    }
 
-                        item {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier =
-                                    Modifier
-                                        .clip(content.data.genre.shape())
-                                        .gradientFill(gradientAnimation(holographicGradient, gradientType = GradientType.VERTICAL))
-                                        .clickable {
-                                            showNewCharacterSheet = true
-                                        }.padding(16.dp),
-                            ) {
-                                Image(
-                                    painterResource(R.drawable.character_icon),
-                                    null,
-                                    modifier = Modifier.size(12.dp),
-                                )
+                    AnimatedVisibility(isImeVisible) {
+                        val suggestionsState = rememberLazyListState()
 
-                                Text(
-                                    SenderType.NEW_CHARACTER.title(),
-                                    style = MaterialTheme.typography.labelSmall,
+                        LaunchedEffect(action) {
+                            suggestionsState.animateScrollToItem(0)
+                        }
+                        LazyRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            state = suggestionsState,
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            val inputs =
+                                SenderType.filterUserInputTypes().sortedByDescending {
+                                    it == action
+                                }
+                            items(inputs) {
+                                val alpha by animateFloatAsState(
+                                    if (it == action) 1f else .5f,
+                                    tween(300),
                                 )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    modifier =
+                                        Modifier
+                                            .animateItem()
+                                            .reactiveShimmer(it == action)
+                                            .alpha(alpha)
+                                            .wrapContentSize()
+                                            .clip(content.data.genre.shape())
+                                            .gradientFill(content.data.genre.gradient())
+                                            .clickable {
+                                                onUpdateSender(it)
+                                            }.padding(16.dp),
+                                ) {
+                                    val weight =
+                                        if (it == action) FontWeight.Bold else FontWeight.Normal
+                                    it.icon().let { icon ->
+                                        Image(
+                                            painterResource(icon),
+                                            null,
+                                            modifier = Modifier.size(12.dp),
+                                        )
+
+                                        Text(
+                                            it.title(),
+                                            style =
+                                                MaterialTheme.typography.labelSmall.copy(
+                                                    fontWeight = weight,
+                                                    fontFamily = content.data.genre.bodyFont(),
+                                                ),
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -510,128 +594,6 @@ fun ChatInputView(
 
         if (isImeVisible) {
             Spacer(Modifier.height(50.dp))
-        }
-    }
-
-    if (showNewCharacterSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showNewCharacterSheet = false },
-            sheetState = newCharacterSheetState,
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    stringResource(R.string.sender_type_new_character_title),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = content.data.genre.bodyFont(),
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
-
-                SimpleCharacterForm(
-                    content.data.genre,
-                    Modifier
-                        .fillMaxSize(),
-                ) {
-                    onCreateNewCharacter(it)
-
-                    scope.launch { newCharacterSheetState.hide() }.invokeOnCompletion {
-                        if (!newCharacterSheetState.isVisible) {
-                            showNewCharacterSheet = false
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp)) // Padding at the bottom
-            }
-        }
-    }
-}
-
-@Composable
-private fun MainCharacterInputButton(
-    saga: Saga,
-    character: Character,
-    currentAction: SenderType,
-    onClickAction: () -> Unit = {},
-) {
-    val tooltipState = rememberTooltipState()
-
-    TooltipBox(
-        positionProvider =
-            TooltipDefaults.rememberRichTooltipPositionProvider(
-                spacingBetweenTooltipAndAnchor = 8.dp,
-            ),
-        tooltip = {
-            RichTooltip(
-                title = { Text(currentAction.title()) },
-                caretSize = DpSize(12.dp, 12.dp),
-                shape = RoundedCornerShape(saga.genre.cornerSize()),
-            ) {
-                Text(currentAction.description())
-            }
-        },
-        state = tooltipState,
-    ) {
-        Box(
-            Modifier.size(24.dp),
-        ) {
-            CharacterAvatar(
-                character,
-                borderSize = 1.dp,
-                genre = saga.genre,
-                innerPadding = 0.dp,
-                modifier =
-                    Modifier
-                        .clip(CircleShape)
-                        .fillMaxSize()
-                        .clickable {
-                            onClickAction()
-                        }.effectForGenre(
-                            saga.genre,
-                            focusRadius = .3f,
-                            customGrain = .2f,
-                        ),
-            )
-
-            AnimatedContent(
-                currentAction,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 2.dp, y = 2.dp),
-                transitionSpec = {
-                    scaleIn() + fadeIn(tween(300)) togetherWith scaleOut() + fadeOut()
-                },
-            ) {
-                it.icon()?.let { icon ->
-                    Box(
-                        modifier =
-                            Modifier
-                                .border(1.dp, MaterialTheme.colorScheme.background, CircleShape)
-                                .background(saga.genre.color, CircleShape)
-                                .size(12.dp)
-                                .padding(3.dp),
-                    ) {
-                        Icon(
-                            painterResource(icon),
-                            null,
-                            tint = saga.genre.iconColor,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .fillMaxSize(),
-                        )
-                    }
-                }
-            }
         }
     }
 }

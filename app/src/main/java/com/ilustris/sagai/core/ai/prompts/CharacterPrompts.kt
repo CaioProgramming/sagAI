@@ -39,7 +39,7 @@ object CharacterPrompts {
             appendLine(
                 "YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.",
             )
-            /*appendLine("**CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**")
+            appendLine("**CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**")
             appendLine("1.  **Foundational Art Style:**")
             appendLine("he primary rendering style for the portrait MUST be:")
             appendLine(GenrePrompts.artStyle(genre))
@@ -75,7 +75,7 @@ object CharacterPrompts {
             )
             appendLine(
                 "Your goal is to translate the *vibe, style, and compositional cues* of BOTH reference images into a rich textual description. Do not just say 'replicate the references'; instead, *describe WHAT defining characteristics to replicate and adapt* in vivid textual detail, ensuring these are rendered within the **Foundational Art Style** and adhere to the **Color Application Instructions**.",
-            )*/
+            )
             appendLine(
                 "1.  **Character Fidelity**: The character's own details (name, backstory, personality, race, gender, specific appearance details, clothing, weapons from the `Character Context` below) define *WHO* or *WHAT* is being depicted. This is the primary subject.",
             )
@@ -85,12 +85,13 @@ object CharacterPrompts {
             appendLine(
                 "3.  **Dramatic Portrait Framing**: The final image should still be a 'Dramatic Portrait,' conveying the character's essence and mood. This is the overall goal, even when adapting a non-portrait composition reference.",
             )
-            /*appendLine("5.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
-            appendLine(ImagePrompts.conversionGuidelines(genre))*/
+
+            appendLine("5.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
+            appendLine(ImagePrompts.conversionGuidelines(genre))
             appendLine("**Image Generation Model Inputs Overview (for your awareness when crafting the text prompt):**")
             appendLine("*   **Text Prompt:** (The string you will generate)")
-            /*appendLine("*   **Style Reference Image:** (Direct Bitmap input to the image model)")
-            appendLine("*   **Composition Reference Image:** (Direct Bitmap input to the image model)")*/
+            appendLine("*   **Style Reference Image:** (Direct Bitmap input to the image model)")
+            appendLine("*   **Composition Reference Image:** (Direct Bitmap input to the image model)")
             appendLine("**Character Context:**")
             appendLine(
                 character.toJsonFormatExcludingFields(
@@ -102,6 +103,9 @@ object CharacterPrompts {
                         "backstory",
                     ),
                 ),
+            )
+            appendLine(
+                "*CRITICAL RULE*: ENSURE THAT NO BORDER ARE RENDERED ONLY FULL ART COMPOSITION",
             )
         }
 

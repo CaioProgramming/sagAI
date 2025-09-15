@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
@@ -39,6 +40,14 @@ class MessageUseCaseImpl
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
+        override suspend fun checkMessageTypo(message: String, lastMessage: String?): RequestResult<Exception, TypoFix?> =
+            executeRequest {
+                gemmaClient.generate<TypoFix>(
+                    SagaPrompts.checkForTypo(message, lastMessage),
+                    requireTranslation = true,
+                )!!
+            }
+
         override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
 
         override suspend fun saveMessage(
@@ -48,7 +57,11 @@ class MessageUseCaseImpl
             val tone =
                 if (isFromUser) {
                     val prompt = SagaPrompts.emotionalToneExtraction(message.text)
-                    val raw = gemmaClient.generate<String>(prompt, requireTranslation = false)?.trim()?.uppercase()
+                    val raw =
+                        gemmaClient
+                            .generate<String>(prompt, requireTranslation = false)
+                            ?.trim()
+                            ?.uppercase()
                     EmotionalTone.getTone(raw)
                 } else {
                     EmotionalTone.NEUTRAL
@@ -56,7 +69,7 @@ class MessageUseCaseImpl
 
             messageRepository.saveMessage(
                 message.copy(
-                    // emotionalTone = tone,
+                    emotionalTone = tone,
                 ),
             )!!
         }
@@ -119,7 +132,10 @@ class MessageUseCaseImpl
                     textGenClient.generate<MessageGen>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
-                            message = message.joinMessage(showType = true).formatToString(showSender = true),
+                            message =
+                                message
+                                    .joinMessage(showType = true)
+                                    .formatToString(showSender = true),
                             lastMessages =
                                 saga
                                     .flatMessages()

@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
@@ -96,64 +97,19 @@ class NewSagaUseCaseImpl
         override suspend fun generateSagaIcon(
             sagaForm: Saga,
             character: Character,
-        ): RequestResult<Exception, Saga> =
-            try {
-                val characterOperation =
-                    characterUseCase.generateCharacterImage(
-                        character = character,
-                        saga = sagaForm,
-                    )
-                val characterIcon =
-                    characterOperation
-                        .getSuccess()
-                        ?.first
-                        ?.image
-                        ?.let { genreReferenceHelper.getFileBitmap(it) }
-                        ?.getSuccess()
-                        ?.let {
-                            ImageReference(
-                                it,
-                                ImageGuidelines.characterVisualReferenceGuidance(character.name),
-                            )
-                        }
-                val reference =
-                    genreReferenceHelper.getIconReference(sagaForm.genre).getSuccess()?.let {
-                        ImageReference(
-                            it,
-                            ImageGuidelines.compositionReferenceGuidance,
-                        )
-                    }
+        ) = executeRequest {
+            val characterOperation =
+                characterUseCase.generateCharacterImage(
+                    character = character,
+                    saga = sagaForm,
+                )
 
-                val style =
-                    genreReferenceHelper.getGenreStyleReference(sagaForm.genre).getSuccess()?.let {
-                        ImageReference(it, ImageGuidelines.styleReferenceGuidance)
-                    }
-                val metaPromptCover =
-                    gemmaClient.generate<String>(
-                        SagaPrompts.iconDescription(
-                            sagaForm,
-                            character,
-                        ),
-                        references = listOf(style, reference, characterIcon),
-                        requireTranslation = false,
-                    )!!
-
-                val file =
-                    fileHelper.saveFile(
-                        fileName = sagaForm.title,
-                        data =
-                            imageGenClient.generateImage(metaPromptCover).apply {
-                                imageCropHelper.cropToPortraitBitmap(this!!)
-                            },
-                        path = "${sagaForm.id}",
-                    )
-
-                sagaRepository
-                    .updateChat(sagaForm.copy(icon = file!!.absolutePath))
-                    .asSuccess()
-            } catch (e: Exception) {
-                e.asError()
-            }
+            sagaRepository
+                .generateSagaIcon(
+                    sagaForm,
+                    characterOperation.getSuccess()!!.first,
+                ).getSuccess()!!
+        }
 
         override suspend fun replyAiForm(
             currentMessages: List<ChatMessage>,
