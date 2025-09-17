@@ -4,7 +4,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.chapter.data.model.ChapterGen
+import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -35,5 +35,5 @@ interface ChapterUseCase {
     suspend fun generateChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,
-    ): RequestResult<Exception, Chapter>
+    ): RequestResult<Exception, ChapterGeneration>
 }

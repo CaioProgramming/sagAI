@@ -21,5 +21,5 @@ interface TimelineUseCase {
     suspend fun createTimelineReview(
         content: SagaContent,
         timelineContent: TimelineContent,
-    ): RequestResult<Exception, Unit>
+    ): RequestResult<Exception, String>
 }

@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
@@ -95,8 +96,10 @@ object ChapterPrompts {
             ChapterConclusionContext(
                 sagaData = sagaContent.data,
                 mainCharacter = sagaContent.mainCharacter?.data,
-                eventsOfThisChapter = currentChapterContent.events.filter { it.isComplete() }
-                    .map { it.data },
+                eventsOfThisChapter =
+                    currentChapterContent.events
+                        .filter { it.isComplete() }
+                        .map { it.data },
                 previousChaptersInCurrentAct = currentChapters.map { it.data },
                 previousActData = previousAct?.data,
             )
@@ -120,18 +123,7 @@ object ChapterPrompts {
 
         val chapterOutput =
             toJsonMap(
-                Chapter::class.java,
-                filteredFields =
-                    listOf(
-                        "coverImage",
-                        "currentEventId",
-                        "createdAt",
-                        "featuredCharacters",
-                        "emotionalReview",
-                        "id",
-                        "actId",
-                        "introduction",
-                    ),
+                ChapterGeneration::class.java,
             )
 
         appendLine("Context:")
@@ -155,6 +147,10 @@ object ChapterPrompts {
         appendLine(
             "2. Generate a fitting title for this chapter that accurately reflects its core content or theme as derived from the events. **The title should be short (ideally 2-5 words) and impactful, creating intrigue or summarizing the chapter's essence memorably.**",
         )
+        appendLine(
+            "3. Extract 1 - 3 most important characters to include in featuredCharacters array.",
+        )
+
         appendLine("Consider the `SAGA_DATA` for overall tone and style, and the `MAIN_CHARACTER`'s perspective if relevant to the events.")
         appendLine("EXPECTED OUTPUT FORMAT:")
         appendLine(chapterOutput)
@@ -170,37 +166,15 @@ object ChapterPrompts {
                 "sagaTitle" to content.data.title,
                 "sagaGenre" to content.data.genre.title,
                 "chapterTitle" to chapter.title,
+                "chapterDescription" to chapter.overview,
                 "charactersInvolved" to characters,
             )
         val fieldsToExcludeForCover =
             listOf(
-                "sagaId",
                 "joinedAt",
-                "actId",
-                "events",
-                "currentEventId",
-                "synopsis",
-                "fullContent",
-                "soundTrack",
-                "isEnded",
-                "endedAt",
-                "isDebug",
-                "endMessage",
-                "review",
-                "mainCharacterId",
-                "currentActId",
                 "id",
                 "image",
                 "hexColor",
-                "backstory",
-                "featuredCharacters",
-                "createdAt",
-                "coverImage",
-                "personality",
-                "overview",
-                "emotionalReview",
-                "content",
-                "order",
             )
         val coverContextJson = coverContext.toJsonFormatExcludingFields(fieldsToExcludeForCover)
 
@@ -217,12 +191,9 @@ object ChapterPrompts {
              1.  **Foundational Art Style:**
                  *   The primary rendering style for the cover MUST be: `${GenrePrompts.artStyle(content.data.genre)}`.
              2.  **Specific Color Application Instructions:**
-                 *   The following rules dictate how the genre's key colors (derived from `${content.data.genre.title}`)
-                 are applied: `${GenrePrompts.getColorEmphasisDescription(content.data.genre)}`.
+                 *   The following rules dictate the color palette and light composition for the image generation, are applied:
+                 `${GenrePrompts.getColorEmphasisDescription(content.data.genre)}`.
                  *   **Important Clarification on Color:**
-                     *   These color rules are primarily for:
-                         *   A **MINIMALISTIC background** with a dominant color theme derived from the genre.
-                         *   **Small, discrete, isolated accents ON THE CHARACTERS**.
                      *   **CRUCIAL: DO NOT use these genre colors to tint the overall image, characters' base skin tones, hair (beyond tiny accents), or main clothing areas.** Characters' base colors should be preserved and appear natural.
                      *   Lighting on characters should be primarily dictated by the foundational art style, not an overall color cast from the genre accents.
 
@@ -231,16 +202,13 @@ object ChapterPrompts {
 
              The description must:
              1.  **Prioritize Character Depiction:**
-                 *   Focus EXCLUSIVELY on the character(s) listed in `charactersInvolved` from the JSON context.
+                 *   High Focus on the character(s) listed in `charactersInvolved` from the JSON context. Incorporate them on the mood and environment.
                  *   Ensure their appearance and expression are primarily inspired by their individual Visual Reference Images. **Their POSE, however, should be DRAMATIC and EXPRESSIVE, derived from their context within the chapter (implied by the 'chapterTitle' and 'sagaGenre') or their inherent character traits, rather than a direct copy from any visual reference.** The overall compositional Visual Reference Image can inspire the *framing* of these dynamic poses.
                  *   If multiple characters are present, their interaction or composition should be clear and engaging, suitable for a cover.
-             2.  **Minimalistic Background:**
-                 *   Describe a SIMPLE and MINIMALISTIC background.
-                 *   The background should primarily feature the dominant color theme derived from the `sagaGenre` as per the `Specific Color Application Instructions`. Avoid complex scenes or detailed environmental elements from the chapter's specific content. The focus is on the characters against a stylized, genre-appropriate backdrop.
-             3.  **Adherence to Directives:**
+                 *   Ensure to place characters in dramatic and dynamic poses providing more emotion on the generated image.
+            3.  **Adherence to Directives:**
                  *   Render the scene in the **Foundational Art Style**.
-                 *   Explicitly describe the **background color theme** and any **specific character accents** using the genre colors as per the `Specific Color Application Instructions`.
-                 *   Ensure the description implies that characters' base colors (skin, hair, main clothing) are preserved.
+                 *   Ensure the description implies that characters characteristics are preserved and follow the visual reference provided.
              4.  **Visual Reference Synthesis:**
                  *   **Heavily rely on the general Visual Reference Image for overall art style, compositional framing (suitable for a minimalistic character-focused cover), character pose *inspiration* (not direct replication), and mood.**
                  *   The specific CHARACTERS are dictated by the `charactersInvolved` in the JSON. Their individual appearances are inspired by their respective Visual Reference Images.
@@ -249,6 +217,6 @@ object ChapterPrompts {
              5.  **No Text or borders: **
                  *   Focus entirely on the art description, ensure that no text from the context is described in the final result.
              YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
-             """.trimIndent()
+            """.trimIndent()
     }
 }

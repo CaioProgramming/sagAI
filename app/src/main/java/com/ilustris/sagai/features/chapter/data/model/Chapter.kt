@@ -23,3 +23,9 @@ data class Chapter(
     val actId: Int,
     val featuredCharacters: List<Int> = emptyList(),
 )
+
+data class ChapterGeneration(
+    val title: String,
+    val overview: String,
+    val featuredCharacters: List<String>,
+)

@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
@@ -72,7 +74,7 @@ class ChatViewModel
         val isPlaying: StateFlow<Boolean> = mediaPlayerManager.isPlaying
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
-        val inputValue = MutableStateFlow(emptyString())
+        val inputValue = MutableStateFlow(TextFieldValue())
         val sendType = MutableStateFlow(SenderType.USER)
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
@@ -117,7 +119,7 @@ class ChatViewModel
             }
         }
 
-        fun updateInput(value: String) {
+        fun updateInput(value: TextFieldValue) {
             inputValue.value = value
         }
 
@@ -351,13 +353,15 @@ class ChatViewModel
         }
 
         fun sendInput(userConfirmed: Boolean = false) {
-            if (inputValue.value.isBlank()) {
+            if (inputValue.value.text.isBlank()) {
                 return
             }
 
             val text = inputValue.value
             val sendType = sendType.value
 
+            val saga = content.value ?: return
+            val mainCharacter = saga.mainCharacter ?: return
             val currentTimeline = content.value?.getCurrentTimeLine()
             if (currentTimeline == null) {
                 sagaContentManager.checkNarrativeProgression(content.value)
@@ -369,14 +373,10 @@ class ChatViewModel
                 if (userConfirmed) {
                     val message =
                         Message(
-                            text = text,
-                            speakerName = null,
+                            text = text.text,
+                            speakerName = mainCharacter.data.name,
                             senderType = sendType,
-                            characterId =
-                                content.value
-                                    ?.mainCharacter
-                                    ?.data
-                                    ?.id,
+                            characterId = mainCharacter.data.id,
                             timelineId = currentTimeline.data.id,
                         )
                     sendMessage(message, true)
@@ -385,7 +385,8 @@ class ChatViewModel
 
                 val typoCheck =
                     messageUseCase.checkMessageTypo(
-                        text,
+                        saga.data.genre,
+                        text.text,
                         content.value
                             ?.flatMessages()
                             ?.lastOrNull()
@@ -393,37 +394,26 @@ class ChatViewModel
                             ?.formatToString(true),
                     )
 
-                if (typoCheck.getSuccess() != null) {
-                    typoFixMessage.value = typoCheck.getSuccess()
-                    if (typoCheck.getSuccess()?.getStatus() == TypoStatus.OK) {
-                        val message =
-                            Message(
-                                text = text,
-                                speakerName = null,
-                                senderType = sendType,
-                                characterId =
-                                    content.value
-                                        ?.mainCharacter
-                                        ?.data
-                                        ?.id,
-                                timelineId = currentTimeline.data.id,
-                            )
-                        sendMessage(message, true)
+                typoCheck.getSuccess()?.let {
+                    val shouldDisplay = it.suggestedText != text.text
+                    if (shouldDisplay) {
+                        typoFixMessage.value = typoCheck.getSuccess()
+                        when (it.status) {
+                            TypoStatus.OK -> {
+                                sendInput(true)
+                            }
+                            TypoStatus.FIX -> {
+                                delay(5.seconds)
+                                if (typoFixMessage.value != null) {
+                                    inputValue.value = TextFieldValue(it.suggestedText ?: inputValue.value.text)
+                                    sendInput(true)
+                                }
+                            }
+                            TypoStatus.ENHANCEMENT -> doNothing()
+                        }
                     }
-                } else {
-                    val message =
-                        Message(
-                            text = text,
-                            speakerName = null,
-                            senderType = sendType,
-                            characterId =
-                                content.value
-                                    ?.mainCharacter
-                                    ?.data
-                                    ?.id,
-                            timelineId = currentTimeline.data.id,
-                        )
-                    sendMessage(message, true)
+                } ?: run {
+                    sendInput(true)
                 }
             }
         }
@@ -441,37 +431,28 @@ class ChatViewModel
                         message.speakerName?.contains(it.name, true) == true ||
                             (mainCharacter != null && message.characterId == mainCharacter.id)
                     }
-                val sendType =
-                    if (mainCharacter != null &&
-                        (characterReference?.id == mainCharacter.id || message.speakerName == mainCharacter.name)
-                    ) {
-                        SenderType.USER
-                    } else {
-                        message.senderType
-                    }
-                val speakerId =
-                    when (sendType) {
-                        SenderType.NARRATOR -> message.characterId
-                        SenderType.USER,
-                        -> mainCharacter?.id
-                        else -> characterReference?.id
-                    }
 
-                inputValue.value = emptyString()
-                typoFixMessage.value = null
-                suggestions.value = emptyList()
+                inputValue.value =
+                    inputValue.value.copy(
+                        text = emptyString(),
+                    )
+
+                isLoading.value = true
                 messageUseCase
                     .saveMessage(
                         message.copy(
                             sagaId = saga.data.id,
-                            characterId = speakerId,
+                            characterId = message.characterId ?: characterReference?.id,
                         ),
                         isFromUser,
                     ).onSuccess {
                         isLoading.value = false
+                        typoFixMessage.value = null
+                        suggestions.value = emptyList()
                         handleNewMessage(it, isFromUser)
                     }.onFailure {
                         sendError("Ocorreu um erro ao salvar a mensagem")
+                        typoFixMessage.value = null
                     }
             }
         }
@@ -528,7 +509,7 @@ class ChatViewModel
         private fun replyMessage(message: Message) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
-                val timeline = saga.getCurrentTimeLine() ?: return@launch
+                val timeline = saga.getCurrentTimeLine()
                 if (timeline == null) {
                     sagaContentManager.checkNarrativeProgression(saga)
                     return@launch

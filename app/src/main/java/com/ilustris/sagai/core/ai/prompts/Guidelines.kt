@@ -50,14 +50,16 @@ object ImageGuidelines {
     val styleReferenceGuidance: String =
         """
         **Analyzing Style Reference Image (for Artistic Vibe & Execution):**
-         Analyze the uploaded image to understand its core artistic style, mood, and technical execution. Focus on these key visual characteristics as *inspiration for the new image's aesthetic*:
-         * **Rendering Technique:** Identify the dominant medium and rendering style (e.g., painterly with visible brush strokes, clean digital illustration with crisp lines, textured photorealistic render, simplified cel-shaded design).
-         * **Linework:** Observe how lines are used. Are they bold and dominant, thin and subtle, or are forms primarily defined by color and light with minimal to no outlines?
-         * **Color & Saturation:** Determine the overall color palette's philosophy. Are the colors vibrant and saturated, muted and desaturated, or does it use a specific color harmony (e.g., warm sunset tones, cool industrial blues)? How does this palette contribute to the mood?
-         * **Lighting & Shadow Style:** Analyze how light and shadow are used to create form and atmosphere (e.g., high-contrast and dramatic, soft and diffused, rim lighting). How does the lighting enhance the mood?
-         * **Overall Mood & Vibe:** Discern the overarching feeling the style evokes (e.g., dark and ominous, bright and uplifting, mysterious and ethereal, gritty and realistic, dreamy and nostalgic).
-         **Crucial Application:** Apply the *essence of this artistic style and its emotional tone* to the new image. **DO NOT replicate the specific content, characters, objects, or background elements from this Style Reference Image.** Instead, use the identified stylistic and atmospheric qualities to *render a completely new scene* as described in the main prompt,
-         ensuring the new image is consistent *in style and mood* with the reference, but *original in its depiction*.
+        Analyze the uploaded image to understand its core artistic style, mood, and technical execution. Focus on these key visual characteristics as *inspiration for the new image's aesthetic*:
+        * **Rendering Technique:** Identify the dominant medium and rendering style (e.g., painterly with visible brush strokes, clean digital illustration with crisp lines, textured photorealistic render, simplified cel-shaded design).
+        * **Linework:** Observe how lines are used. Are they bold and dominant, thin and subtle, or are forms primarily defined by color and light with minimal to no outlines?
+        * **Color & Saturation:** Determine the overall color palette's philosophy. Are the colors vibrant and saturated, muted and desaturated, or does it use a specific color harmony (e.g., warm sunset tones, cool industrial blues)? How does this palette contribute to the mood?
+        * **Lighting & Shadow Style:** Analyze how light and shadow are used to create form and atmosphere (e.g., high-contrast and dramatic, soft and diffused, rim lighting). How does the lighting enhance the mood?
+        * **Overall Mood & Vibe:** Discern the overarching feeling the style evokes (e.g., dark and ominous, bright and uplifting, mysterious and ethereal, gritty and realistic, dreamy and nostalgic).
+        **Crucial Application:** Apply the *essence of this artistic style and its emotional tone* to the new image.
+        **DO NOT replicate the specific content, characters, objects, or background elements from this Style Reference Image.
+        ** Instead, use the identified stylistic and atmospheric qualities to *render a completely new scene* as described in the main prompt, ensuring the new image is consistent *in style and mood* with the reference, but *original in its depiction*.
+        
         """.trimIndent()
 
     val compositionReferenceGuidance: String =
@@ -70,7 +72,7 @@ object ImageGuidelines {
         * **Depth of Field:** Analyze the use of focus and blur (e.g., shallow depth of field with blurred background, deep focus).
         * **Pose & Staging:** Understand the nature of the pose (e.g., dynamic, static, contemplative) and adapt this to the new character. DO NOT copy the pose directly.
         **Objective:** The goal is to replicate the *compositional feel and structure* of this reference. **Do not** copy the content, characters, or specific pose.
-        Extract this compositions and use to to define aspect ratio, lighting, and composition.
+        This is a guide for the composition of the new image only.
         """.trimIndent()
 
     fun characterVisualReferenceGuidance(characterName: String): String =
@@ -84,9 +86,4 @@ object ImageGuidelines {
         Do not copy the pose, expression, or lighting from this reference.
         * **Adaptation:** Apply these features to the character's new action and pose as described in the main prompt, integrating them seamlessly with the scene's art style, lighting, and composition.
         """.trimIndent()
-
-    val fullImage =
-        """
-        FULL IMAGE RENDERING NO BORDERS AT ALL.    
-        """
 }

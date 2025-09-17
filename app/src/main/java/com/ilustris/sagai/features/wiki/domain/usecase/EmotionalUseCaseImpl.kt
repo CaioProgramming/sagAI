@@ -15,9 +15,12 @@ class EmotionalUseCaseImpl
     constructor(
         private val gemmaClient: GemmaClient,
     ) : EmotionalUseCase {
-        override suspend fun generateEmotionalReview(content: List<String>): RequestResult<Exception, String> =
+        override suspend fun generateEmotionalReview(
+            content: List<String>,
+            emotionalRanking: Map<String, Int>,
+        ): RequestResult<Exception, String> =
             try {
-                val prompt = EmotionalPrompt.generateEmotionalReview(content)
+                val prompt = EmotionalPrompt.generateEmotionalReview(content, emotionalRanking)
                 gemmaClient
                     .generate<String>(
                         prompt = prompt,

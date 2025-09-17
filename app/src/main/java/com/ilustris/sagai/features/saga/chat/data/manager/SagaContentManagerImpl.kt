@@ -190,7 +190,6 @@ class SagaContentManagerImpl
             chapter: ChapterContent,
         ): RequestResult<Exception, Chapter> =
             try {
-                delay(200L)
                 val chapterGen =
                     chapterUseCase
                         .generateChapter(
@@ -198,12 +197,22 @@ class SagaContentManagerImpl
                             chapter,
                         ).success.value
 
+                val genChapterCharacters =
+                    chapterGen.featuredCharacters.mapNotNull { charactersNames ->
+                        saga.characters
+                            .find { it.data.name.equals(charactersNames, ignoreCase = true) }
+                            ?.data
+                            ?.id
+                    }
+
                 val featuredCharacters =
-                    chapter
-                        .fetchChapterMessages()
-                        .rankTopCharacters(saga.getCharacters())
-                        .take(3)
-                        .map { it.first.id }
+                    genChapterCharacters.ifEmpty {
+                        chapter
+                            .fetchChapterMessages()
+                            .rankTopCharacters(saga.getCharacters())
+                            .take(3)
+                            .map { it.first.id }
+                    }
 
                 val emotionalReview =
                     generateEmotionalReview(
@@ -213,6 +222,11 @@ class SagaContentManagerImpl
                             ${event.data.emotionalReview}   
                             """.trimIndent()
                         },
+                        emotionalRanking =
+                            chapter.events
+                                .map { it.emotionalRanking(saga.mainCharacter?.data) }
+                                .flatMap { it.entries }
+                                .associate { it.key to it.value },
                     )
 
                 chapterUseCase
@@ -267,10 +281,12 @@ class SagaContentManagerImpl
                 e.asError()
             }
 
-        private suspend fun generateEmotionalReview(content: List<String>) =
-            emotionalUseCase
-                .generateEmotionalReview(content.filter { it.isNotEmpty() })
-                .getSuccess()
+        private suspend fun generateEmotionalReview(
+            content: List<String>,
+            emotionalRanking: Map<String, Int>,
+        ) = emotionalUseCase
+            .generateEmotionalReview(content.filter { it.isNotEmpty() }, emotionalRanking)
+            .getSuccess()
 
         private suspend fun updateTimeline(
             saga: SagaContent,
@@ -286,7 +302,11 @@ class SagaContentManagerImpl
             val userMessages =
                 content.messages.map { it.joinMessage(showType = true).formatToString(true) }
 
-            val emotionalReview = generateEmotionalReview(userMessages)
+            val emotionalReview =
+                generateEmotionalReview(
+                    userMessages,
+                    content.emotionalRanking(saga.mainCharacter?.data),
+                )
 
             val newEvent =
                 timelineUseCase
@@ -337,6 +357,16 @@ class SagaContentManagerImpl
                     } else {
                         actUseCase.generateAct(saga).success.value
                     }
+                val emotionalRanking =
+                    currentAct.chapters
+                        .map { it.events }
+                        .map {
+                            it.map { event ->
+                                event.emotionalRanking(saga.mainCharacter?.data)
+                            }
+                        }.flatten()
+                        .flatMap { it.entries }
+                        .associate { it.key to it.value }
                 val emotionalReview =
                     generateEmotionalReview(
                         currentAct.chapters.mapIndexed { i, chapter ->
@@ -345,6 +375,7 @@ class SagaContentManagerImpl
                         ${chapter.data.emotionalReview}    
                         """
                         },
+                        emotionalRanking,
                     )
                 val updatedActData =
                     currentAct.data.copy(

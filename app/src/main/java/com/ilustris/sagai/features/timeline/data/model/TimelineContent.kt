@@ -3,10 +3,12 @@ package com.ilustris.sagai.features.timeline.data.model
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 
 data class TimelineContent(
     @Embedded
@@ -30,4 +32,11 @@ data class TimelineContent(
         isFull() &&
             data.title.isNotEmpty() &&
             data.content.isNotEmpty()
+
+    fun emotionalRanking(mainCharacter: Character?) =
+        messages
+            .filter {
+                it.message.senderType == SenderType.USER || it.message.characterId == mainCharacter?.id
+            }.groupBy { it.message.emotionalTone.toString() }
+            .mapValues { entry -> entry.value.size }
 }

@@ -67,7 +67,7 @@ class ActUseCaseImpl
                     saga.acts
                         .first()
                         .data.id == act.id
-            val previousAct = if (isFirst) null else saga.acts[saga.acts.indexOfFirst { it.data.id == act.id } - 1]
+            val previousAct = if (isFirst) null else saga.acts.lastOrNull()
             val prompt = ActPrompts.actIntroductionPrompt(saga.data, previousAct)
             val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
             val updated = currentAct.copy(introduction = intro)

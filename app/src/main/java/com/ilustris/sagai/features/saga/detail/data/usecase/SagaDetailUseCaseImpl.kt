@@ -14,6 +14,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
+import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -133,12 +134,16 @@ class SagaDetailUseCaseImpl
             content: SagaContent,
             timelineContent: TimelineContent,
         ): RequestResult<Exception, Unit> =
-            try {
+            executeRequest {
                 characterUseCase.generateCharactersUpdate(timelineContent.data, content)
                 delay(300)
-                timelineUseCase.createTimelineReview(content, timelineContent)
-            } catch (e: Exception) {
-                e.asError()
+                val review =
+                    timelineUseCase.createTimelineReview(content, timelineContent).getSuccess()!!
+                timelineUseCase.updateTimeline(
+                    timelineContent.data.copy(
+                        emotionalReview = review,
+                    ),
+                )
             }
 
         override suspend fun createSagaEmotionalReview(currentSaga: SagaContent) =

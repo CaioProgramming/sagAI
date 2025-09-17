@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
@@ -40,10 +41,14 @@ class MessageUseCaseImpl
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
-        override suspend fun checkMessageTypo(message: String, lastMessage: String?): RequestResult<Exception, TypoFix?> =
+        override suspend fun checkMessageTypo(
+            genre: Genre,
+            message: String,
+            lastMessage: String?,
+        ): RequestResult<Exception, TypoFix?> =
             executeRequest {
                 gemmaClient.generate<TypoFix>(
-                    SagaPrompts.checkForTypo(message, lastMessage),
+                    SagaPrompts.checkForTypo(genre, message, lastMessage),
                     requireTranslation = true,
                 )!!
             }

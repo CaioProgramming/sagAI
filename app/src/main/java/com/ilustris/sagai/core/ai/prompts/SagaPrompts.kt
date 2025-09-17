@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.EmotionalTone
@@ -36,45 +37,53 @@ object SagaPrompts {
     }
 
     @Suppress("ktlint:standard:max-line-length")
-    fun checkForTypo(message: String, lastMessage: String?) =
-        buildString {
-            appendLine("You are an AI assistant validating a user's message. ")
-            appendLine(
-                "Your task is to identify typos, grammatical errors, or areas for enhancement, especially considering the context of the last message if provided.",
-            )
-            appendLine("Your entire response MUST be a single, valid JSON object strictly conforming to the structure shown below.")
-            appendLine("Do NOT include any text outside this JSON object.")
-            appendLine("GUIDELINES FOR JSON FIELDS:")
-            appendLine("1. `status` (Enum: TypoFixStatus - OK, FIX, ENHANCEMENT):")
-            appendLine(
-                "   - `OK`: If the user's current message is grammatically correct, free of obvious typos, and contextually complete (or if no clear improvement is needed). Both `suggestedText` and `friendlyMessage` MUST be null.",
-            )
-            appendLine(
-                "   - `FIX`: If the user's current message contains clear typos or grammatical errors. `suggestedText` MUST be the corrected version. `friendlyMessage` MUST be a brief, polite note highlighting the correction (e.g., \"I noticed a small typo, here's a fix:\").",
-            )
-            appendLine(
-                "   - `ENHANCEMENT`: If the message is understandable but could be clearer, more concise, or if it seems to omit information that might be relevant given the `lastMessage` (without being a critical error). `suggestedText` MUST be the improved version. `friendlyMessage` MUST explain the suggestion (e.g., \"This looks good! To make it even clearer, you could say:\" or \"Considering your last point, perhaps you meant to add something like this?\").",
-            )
-            appendLine("2. `suggestedText` (String or null):")
-            appendLine(
-                "   - If `status` is `FIX` or `ENHANCEMENT`, this field MUST contain the full corrected or enhanced version of the user's message.",
-            )
-            appendLine("   - If `status` is `OK`, this field MUST be null.")
-            appendLine("3. `friendlyMessage` (String or null):")
-            appendLine(
-                "   - If `status` is `FIX` or `ENHANCEMENT`, this field MUST contain a brief, friendly message to the user related to the change.",
-            )
-            appendLine("   - If `status` is `OK`, this field MUST be null.")
-            appendLine("CONTEXT:")
-            appendLine("Last Message (if any):")
-            appendLine(">>> ${lastMessage ?: "No previous message."}")
-            appendLine("User's Current Message (to check):")
-            appendLine(">>> $message")
-            appendLine()
-            appendLine("Expected JSON Output Structure:")
-            appendLine(toJsonMap(TypoFix::class.java))
-            appendLine("Your JSON Response:")
-        }
+    fun checkForTypo(
+        genre: Genre,
+        message: String,
+        lastMessage: String?,
+    ) = buildString {
+        appendLine("You are an AI assistant validating a user's message with a high bar for suggesting changes.")
+        appendLine(
+            "Your primary task is to identify clear typos, significant grammatical errors that hinder understanding, or critical omissions of information, especially considering the context of the last message if provided.",
+        )
+        appendLine("Your entire response MUST be a single, valid JSON object strictly conforming to the structure shown below.")
+        appendLine("Do NOT include any text outside this JSON object.")
+        appendLine()
+        appendLine("GUIDELINES FOR JSON FIELDS:")
+        appendLine("1. `status` (Enum: TypoFixStatus - OK, FIX, ENHANCEMENT):")
+        appendLine(
+            "   - `OK`: If the user's current message is grammatically sound, free of obvious typos, clearly understandable, and contextually complete. It should be the default if the message is functional, even if you could word it slightly differently. Both `suggestedText` and `friendlyMessage` MUST be null.",
+        )
+        appendLine(
+            "   - `FIX`: If the user's current message contains clear typos or grammatical errors that significantly impact readability or meaning. `suggestedText` MUST be the corrected version. `friendlyMessage` MUST be a brief, polite note highlighting the correction (e.g., \"I noticed a small typo, here's a fix:\").",
+        )
+        appendLine(
+            "   - `ENHANCEMENT`: Use this sparingly. Only if the message, while perhaps understandable, is critically unclear, or if it omits essential information directly implied as necessary by the `lastMessage` or core gameplay context, leading to a potential misunderstanding or breakdown in the narrative flow. Do NOT use for minor stylistic preferences, slight conciseness improvements if the original is clear, or if the user is simply being brief. `suggestedText` MUST be the improved version. `friendlyMessage` MUST clearly explain why the enhancement is crucial (e.g., \"To ensure we're on the same page given your last action, could you clarify [specific point]? Perhaps like this:\" or \"Considering you just mentioned [X], it seems important to also state [Y]. How about this?\").",
+        )
+        appendLine("2. `suggestedText` (String or null):")
+        appendLine(
+            "   - If `status` is `FIX` or `ENHANCEMENT`, this field MUST contain the full corrected or enhanced version of the user's message.",
+        )
+        appendLine("   - If `status` is `OK`, this field MUST be null.")
+        appendLine("3. `friendlyMessage` (String or null):")
+        appendLine(
+            "   - If `status` is `FIX` or `ENHANCEMENT`, this field MUST contain a brief, friendly message to the user related to the change, justifying it as per the guidelines above.",
+        )
+        appendLine("   - If `status` is `OK`, this field MUST be null.")
+        appendLine()
+        appendLine("PRINCIPLE: If the user's message is functional and understandable, prefer `OK`. Only suggest `FIX` for clear errors and `ENHANCEMENT` for critical clarity or crucial missing information directly relevant to the immediate context. Avoid being overly corrective.")
+        appendLine()
+        appendLine("CONTEXT:")
+        appendLine("Last Message (if any):")
+        appendLine(">>> ${lastMessage ?: "No previous message."}")
+        appendLine("User's Current Message (to check):")
+        appendLine(">>> $message")
+        appendLine("Consider the theme ${genre.name} context for better suggestions.")
+        appendLine(GenrePrompts.conversationDirective(genre))
+        appendLine("Expected JSON Output Structure:")
+        appendLine(toJsonMap(TypoFix::class.java))
+        appendLine("Your JSON Response:")
+    }.trimIndent()
 
     fun details(saga: Saga) = saga.storyDetails()
 
