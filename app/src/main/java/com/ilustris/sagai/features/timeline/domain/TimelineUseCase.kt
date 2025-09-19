@@ -12,6 +12,11 @@ interface TimelineUseCase {
 
     suspend fun getTimeline(id: String): Flow<Timeline>
 
+    suspend fun generateTimeline(
+        saga: SagaContent,
+        currentTimeline: TimelineContent,
+    ): RequestResult<Timeline>
+
     suspend fun saveTimeline(timeline: Timeline): Timeline
 
     suspend fun updateTimeline(timeline: Timeline): Timeline
@@ -21,5 +26,5 @@ interface TimelineUseCase {
     suspend fun createTimelineReview(
         content: SagaContent,
         timelineContent: TimelineContent,
-    ): RequestResult<Exception, String>
+    ): RequestResult<Timeline>
 }

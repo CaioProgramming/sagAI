@@ -301,7 +301,11 @@ fun CharacterDetailsContent(
 
             item {
                 LazyRow {
-                    items(characterContent.relationships.sortedByDescending { it.data.lastUpdated }) { relationContent ->
+                    items(
+                        characterContent.relationships
+                            .filter { it.relationshipEvents.isNotEmpty() }
+                            .sortedByDescending { it.relationshipEvents.last().timestamp },
+                    ) { relationContent ->
                         val currentId = character.id
                         val relatedCharacter =
                             when (currentId) {
@@ -309,13 +313,18 @@ fun CharacterDetailsContent(
                                 relationContent.characterTwo.id -> relationContent.characterOne
                                 else -> null
                             }
-                        if (relatedCharacter != null) {
-                            SingleRelationShipCard(
-                                character = relatedCharacter,
-                                relation = relationContent.data,
-                                genre = genre,
-                                modifier = Modifier.padding(16.dp).requiredWidthIn(max = 300.dp),
-                            )
+                        relationContent.relationshipEvents.lastOrNull()?.let {
+                            if (relatedCharacter != null) {
+                                SingleRelationShipCard(
+                                    saga = sagaContent,
+                                    character = relatedCharacter,
+                                    content = relationContent,
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .requiredWidthIn(max = 300.dp),
+                                )
+                            }
                         }
                     }
                 }

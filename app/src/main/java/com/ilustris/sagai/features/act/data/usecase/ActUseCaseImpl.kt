@@ -5,13 +5,16 @@ import com.ilustris.sagai.core.ai.prompts.ActPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.ActPurpose
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 class ActUseCaseImpl
     @Inject
@@ -33,12 +36,10 @@ class ActUseCaseImpl
             actRepository.deleteActsForSaga(sagaId)
         }
 
-        override suspend fun generateAct(saga: SagaContent): RequestResult<Exception, Act> =
-            try {
+        override suspend fun generateAct(saga: SagaContent): RequestResult<Act> =
+            executeRequest {
                 val titlePrompt = generateActPrompt(saga)
-                gemmaClient.generate<Act>(titlePrompt, skipRunning = true)!!.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                gemmaClient.generate<Act>(titlePrompt, skipRunning = true)!!
             }
 
         private fun generateActPrompt(saga: SagaContent) =
@@ -60,19 +61,13 @@ class ActUseCaseImpl
         override suspend fun generateActIntroduction(
             saga: SagaContent,
             act: Act,
-        ) = try {
-            val currentAct = act
-            val isFirst =
-                saga.acts.isEmpty() ||
-                    saga.acts
-                        .first()
-                        .data.id == act.id
-            val previousAct = if (isFirst) null else saga.acts.lastOrNull()
+        ) = executeRequest {
+            delay(1.seconds)
+            val isFirst = saga.acts.isEmpty()
+            val previousAct = if (isFirst) null else saga.acts.last()
             val prompt = ActPrompts.actIntroductionPrompt(saga.data, previousAct)
             val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
-            val updated = currentAct.copy(introduction = intro)
-            actRepository.updateAct(updated).asSuccess()
-        } catch (e: Exception) {
-            e.asError()
+            actRepository
+                .updateAct(act.copy(introduction = intro))
         }
     }

@@ -187,7 +187,7 @@ class CreateSagaViewModel
                     "handleGeneratedContent: Saving saga ${form.value}",
                 )
                 when (saveOperation) {
-                    is RequestResult.Error<Exception> -> sendErrorState(saveOperation.value)
+                    is RequestResult.Error -> sendErrorState(saveOperation.value)
 
                     is RequestResult.Success<Pair<Saga, Character>> -> {
                         val operationData = saveOperation.success.value
@@ -288,7 +288,7 @@ class CreateSagaViewModel
             sendChatMessage(chatMessages.value.last().text)
         }
 
-    fun updateGenre(genre: Genre) {
-        form.update { it.copy(saga = it.saga.copy(genre = genre)) }
+        fun updateGenre(genre: Genre) {
+            form.update { it.copy(saga = it.saga.copy(genre = genre)) }
+        }
     }
-}

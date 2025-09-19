@@ -7,22 +7,22 @@ import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
 
 interface SagaDetailUseCase {
-    suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Exception, Saga>
+    suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga>
 
     suspend fun fetchSaga(sagaId: Int): Flow<SagaContent?>
 
     suspend fun deleteSaga(saga: Saga)
 
-    suspend fun createReview(content: SagaContent): RequestResult<Exception, Saga>
+    suspend fun createReview(content: SagaContent): RequestResult<Saga>
 
     suspend fun resetReview(content: SagaContent)
 
-    suspend fun createEmotionalReview(content: SagaContent): RequestResult<Exception, Saga>
+    suspend fun createEmotionalReview(content: SagaContent): RequestResult<Saga>
 
     suspend fun createTimelineReview(
         content: SagaContent,
         timelineContent: TimelineContent,
-    ): RequestResult<Exception, Unit>
+    ): RequestResult<Unit>
 
-    suspend fun createSagaEmotionalReview(currentSaga: SagaContent): RequestResult<Exception, Saga>
+    suspend fun createSagaEmotionalReview(currentSaga: SagaContent): RequestResult<Saga>
 }

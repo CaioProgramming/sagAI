@@ -49,7 +49,7 @@ object NarrativeCheck {
             currentChapter == null -> NarrativeStep.StartChapter(currentAct)
             currentChapter.isFull() -> NarrativeStep.GenerateChapter(currentChapter)
             currentTimeline == null -> NarrativeStep.StartTimeline(currentChapter)
-            currentTimeline.isFull() -> NarrativeStep.GenerateTimeLine(currentTimeline)
+            currentTimeline.isFull() && currentChapter.isComplete().not() -> NarrativeStep.GenerateTimeLine(currentTimeline)
             else -> NarrativeStep.NoActionNeeded
         }
     }

@@ -787,19 +787,13 @@ fun WikiContent(
         val genre = saga.data.genre
         LazyVerticalGrid(columns = GridCells.Fixed(2), state = gridState) {
             item(span = { GridItemSpan(2) }) {
-                LargeHorizontalHeader(
+                Text(
                     titleAndSubtitle.first,
-                    titleAndSubtitle.second,
-                    titleStyle =
+                    style =
                         MaterialTheme.typography.displayMedium.copy(
                             fontFamily = genre.headerFont(),
                         ),
-                    subtitleStyle =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    titleModifier = titleModifier,
+                    modifier = titleModifier.padding(16.dp).fillMaxWidth(),
                 )
             }
             items(saga.wikis) { wiki ->
@@ -1389,10 +1383,14 @@ private fun SagaDetailInitialView(
 
                                     item(span = { GridItemSpan(columnCount) }) {
                                         LazyRow {
-                                            items(saga.relationships.sortedByDescending { it.data.lastUpdated }) { relation ->
+                                            items(
+                                                saga.relationships
+                                                    .filter { it.relationshipEvents.isNotEmpty() }
+                                                    .sortedByDescending { it.relationshipEvents.last().timestamp },
+                                            ) { relation ->
                                                 RelationShipCard(
                                                     content = relation,
-                                                    genre = saga.data.genre,
+                                                    saga = saga,
                                                     modifier =
                                                         Modifier
                                                             .padding(16.dp)

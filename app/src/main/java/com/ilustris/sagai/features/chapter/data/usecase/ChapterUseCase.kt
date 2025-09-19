@@ -15,7 +15,7 @@ interface ChapterUseCase {
         saga: SagaContent,
         chapterContent: Chapter,
         act: ActContent,
-    ): RequestResult<Exception, Chapter>
+    ): RequestResult<Chapter>
 
     suspend fun saveChapter(chapter: Chapter): Chapter
 
@@ -30,10 +30,10 @@ interface ChapterUseCase {
     suspend fun generateChapterCover(
         chapter: ChapterContent,
         saga: SagaContent,
-    ): RequestResult<Exception, Chapter>
+    ): RequestResult<Chapter>
 
     suspend fun generateChapter(
         saga: SagaContent,
         chapterContent: ChapterContent,
-    ): RequestResult<Exception, ChapterGeneration>
+    ): RequestResult<ChapterGeneration>
 }

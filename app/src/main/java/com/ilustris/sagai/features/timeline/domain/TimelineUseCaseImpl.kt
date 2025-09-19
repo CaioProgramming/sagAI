@@ -1,19 +1,17 @@
 package com.ilustris.sagai.features.timeline.domain
 
-import androidx.compose.foundation.layout.size
+import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.prompts.LorePrompts
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asError
-import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.domain.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
-import com.ilustris.sagai.features.wiki.domain.usecase.EmotionalUseCase
+import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import javax.inject.Inject
 
 class TimelineUseCaseImpl
@@ -21,10 +19,33 @@ class TimelineUseCaseImpl
     constructor(
         private val timelineRepository: TimelineRepository,
         private val emotionalUseCase: EmotionalUseCase,
+        private val gemmaClient: GemmaClient,
     ) : TimelineUseCase {
         override suspend fun getAllTimelines() = timelineRepository.getAllTimelines()
 
         override suspend fun getTimeline(id: String) = timelineRepository.getTimeline(id)
+
+        override suspend fun generateTimeline(
+            saga: SagaContent,
+            currentTimeline: TimelineContent,
+        ) = executeRequest {
+            val newLore =
+                gemmaClient
+                    .generate<Timeline>(
+                        LorePrompts.loreGeneration(
+                            saga,
+                            currentTimeline,
+                        ),
+                        skipRunning = true,
+                    )!!
+
+            updateTimeline(
+                currentTimeline.data.copy(
+                    title = newLore.title,
+                    content = newLore.content,
+                ),
+            )
+        }
 
         override suspend fun saveTimeline(timeline: Timeline) = timelineRepository.saveTimeline(timeline)
 
@@ -40,7 +61,7 @@ class TimelineUseCaseImpl
         override suspend fun createTimelineReview(
             content: SagaContent,
             timelineContent: TimelineContent,
-        ): RequestResult<Exception, String> =
+        ): RequestResult<Timeline> =
             executeRequest {
                 val userMessages =
                     timelineContent.messages.map { it.joinMessage(showType = true).formatToString() }
@@ -48,14 +69,22 @@ class TimelineUseCaseImpl
                 val emotionalToneRanking: Map<String, Int> =
                     timelineContent.messages
                         .filter {
-                            it.message.senderType == SenderType.USER || it.message.characterId == content.mainCharacter?.data?.id
+                            it.message.senderType == SenderType.USER ||
+                                it.message.characterId == content.mainCharacter?.data?.id
                         }.groupBy { it.message.emotionalTone.toString() }
                         .mapValues { entry -> entry.value.size }
 
-                emotionalUseCase
-                    .generateEmotionalReview(
-                        userMessages,
-                        emotionalToneRanking,
-                    ).getSuccess()!!
+                val emotionalReview =
+                    emotionalUseCase
+                        .generateEmotionalReview(
+                            userMessages,
+                            emotionalToneRanking,
+                        ).getSuccess()!!
+
+                updateTimeline(
+                    timelineContent.data.copy(
+                        emotionalReview = emotionalReview,
+                    ),
+                )
             }
     }

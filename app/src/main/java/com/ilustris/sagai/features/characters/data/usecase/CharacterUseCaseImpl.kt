@@ -37,8 +37,6 @@ import javax.inject.Inject
 class CharacterUseCaseImpl
     @Inject
     constructor(
-        @ApplicationContext
-        private val context: Context,
         private val repository: CharacterRepository,
         private val eventsRepository: CharacterEventRepository,
         private val characterRelationUseCase: CharacterRelationUseCase,
@@ -69,7 +67,7 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacterImage(
             character: Character,
             saga: Saga,
-        ): RequestResult<Exception, Pair<Character, String>> =
+        ): RequestResult<Pair<Character, String>> =
             executeRequest {
                 val styleReferenceBitmap =
                     ImageReference(
@@ -114,8 +112,8 @@ class CharacterUseCaseImpl
         override suspend fun generateCharacter(
             sagaContent: SagaContent,
             description: String,
-        ): RequestResult<Exception, Character> =
-            try {
+        ): RequestResult<Character> =
+            executeRequest {
                 val newCharacter =
                     textGenClient.generate<Character>(
                         CharacterPrompts.characterGeneration(
@@ -126,7 +124,7 @@ class CharacterUseCaseImpl
 
                 val character = sagaContent.getCharacters().find { it.name.equals(newCharacter.name, true) }
                 if (character != null) {
-                    throw Exception("Character already exists")
+                    error("Character already exists")
                 }
                 val characterTransaction =
                     insertCharacter(
@@ -135,16 +133,14 @@ class CharacterUseCaseImpl
                             joinedAt = System.currentTimeMillis(),
                         ),
                     )
-                characterTransaction.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                characterTransaction
             }
 
         override suspend fun generateCharactersUpdate(
             timeline: Timeline,
             saga: SagaContent,
-        ): RequestResult<Exception, Unit> =
-            try {
+        ): RequestResult<Unit> =
+            executeRequest {
                 val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
                 val request = gemmaClient.generate<List<CharacterUpdate>>(prompt)!!
 
@@ -163,12 +159,10 @@ class CharacterUseCaseImpl
                     }
 
                 eventsRepository.insertCharacterEvents(updatedCharacters).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
             }
 
         override suspend fun generateCharacterRelations(
             timeline: Timeline,
             saga: SagaContent,
-        ): RequestResult<Exception, Unit> = characterRelationUseCase.generateCharacterRelation(timeline, saga)
+        ): RequestResult<Unit> = characterRelationUseCase.generateCharacterRelation(timeline, saga)
     }

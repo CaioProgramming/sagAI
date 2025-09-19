@@ -13,27 +13,27 @@ interface NewSagaUseCase {
     suspend fun saveSaga(
         saga: Saga,
         characterDescription: CharacterInfo?,
-    ): RequestResult<Exception, Pair<Saga, Character>>
+    ): RequestResult<Pair<Saga, Character>>
 
     suspend fun generateSaga(
         sagaForm: SagaForm,
         miniChatContent: List<ChatMessage>,
-    ): RequestResult<Exception, SagaGen>
+    ): RequestResult<SagaGen>
 
     suspend fun generateSagaIcon(
         sagaForm: Saga,
         character: Character,
-    ): RequestResult<Exception, Saga>
+    ): RequestResult<Saga>
 
     suspend fun replyAiForm(
         currentMessages: List<ChatMessage>,
         currentFormData: SagaForm,
-    ): RequestResult<Exception, SagaCreationGen>
+    ): RequestResult<SagaCreationGen>
 
-    suspend fun generateIntroduction(): RequestResult<Exception, SagaCreationGen>
+    suspend fun generateIntroduction(): RequestResult<SagaCreationGen>
 
     suspend fun generateCharacterSavedMark(
         character: Character,
         saga: Saga,
-    ): RequestResult<Exception, String>
+    ): RequestResult<String>
 }

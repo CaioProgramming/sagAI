@@ -30,6 +30,7 @@ data class Wiki(
     val createdAt: Long = Calendar.getInstance().timeInMillis,
     @ColumnInfo(index = true)
     val sagaId: Int,
+    val timelineId: Int? = null,
 )
 
 data class WikiGen(

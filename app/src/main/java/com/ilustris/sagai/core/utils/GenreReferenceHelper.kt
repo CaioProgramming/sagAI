@@ -30,7 +30,7 @@ class GenreReferenceHelper(
             )
         }
 
-    suspend fun getIconReference(genre: Genre): RequestResult<Exception, Bitmap> =
+    suspend fun getIconReference(genre: Genre): RequestResult<Bitmap> =
         try {
             val flag = "${genre.name.lowercase()}$ICON_FLAG"
             Log.d(javaClass.simpleName, "getIconReference: fetching flag from firebase $flag")
@@ -52,7 +52,7 @@ class GenreReferenceHelper(
             e.asError()
         }
 
-    suspend fun getCoverReference(genre: Genre): RequestResult<Exception, Bitmap> =
+    suspend fun getCoverReference(genre: Genre): RequestResult<Bitmap> =
         try {
             val flag = "${genre.name.lowercase()}$COVER_FLAG"
             Log.d(javaClass.simpleName, "getCoverReference: fetching flag from firebase $flag")
@@ -74,7 +74,7 @@ class GenreReferenceHelper(
             e.asError()
         }
 
-    suspend fun getPortraitReference(): RequestResult<Exception, Bitmap> =
+    suspend fun getPortraitReference(): RequestResult<Bitmap> =
         try {
             val flag = PORTRAIT_REFERENCE
             Log.d(javaClass.simpleName, "getPortraitReference: fetching flag from firebase $flag")

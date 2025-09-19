@@ -17,4 +17,10 @@ data class RelationshipContent(
         entityColumn = "id",
     )
     val characterTwo: Character,
+    @Relation(
+        parentColumn = "id", // This refers to CharacterRelation.id (via the @Embedded data field)
+        entityColumn = "relationId",
+        entity = RelationshipUpdateEvent::class,
+    )
+    val relationshipEvents: List<RelationshipUpdateEvent> = emptyList(),
 )

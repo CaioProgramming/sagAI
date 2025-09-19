@@ -18,9 +18,9 @@ interface SagaContentManager {
 
     suspend fun loadSaga(sagaId: String)
 
-    suspend fun generateCharacter(description: String): RequestResult<Exception, Character>
+    suspend fun generateCharacter(description: String): RequestResult<Character>
 
-    suspend fun generateCharacterImage(character: Character): RequestResult<Exception, Character>
+    suspend fun generateCharacterImage(character: Character): RequestResult<Character>
 
     fun getDirective(): String
 

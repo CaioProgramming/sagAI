@@ -259,9 +259,11 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
 fun doNothing() = {}
 
 enum class DateFormatOption(val pattern: String) {
+
     SIMPLE_DD_MM_YYYY("dd/MM/yyyy"),
     DAY_OF_WEEK_DD_MM_YYYY("EEE, dd/MM/yyyy"),
     FULL_DAY_MONTH_YEAR("dd 'of' MMMM yyyy"),
+    HOUR_MINUTE_DAY_OF_MONTH_YEAR("HH:mm 'of' dd 'of' MMMM"),
     ISO_DATE("yyyy-MM-dd"),
     MONTH_DAY_YEAR("MM/dd/yyyy");
 }

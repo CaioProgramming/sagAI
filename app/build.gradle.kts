@@ -16,7 +16,6 @@ android {
     namespace = "com.ilustris.sagai"
     compileSdk = 36
 
-    // Load version from version.properties (MAJOR.MINOR.PATCH)
     val versionPropsFile = rootProject.file("version.properties")
     val versionProps = Properties()
     if (versionPropsFile.exists()) {
@@ -28,7 +27,6 @@ android {
     val minor = (versionProps.getProperty("MINOR") ?: "0").toInt()
     val patch = (versionProps.getProperty("PATCH") ?: "0").toInt()
     val computedVersionName = "$major.$minor.$patch"
-    // A simple versionCode calculation to keep it increasing with semantic parts
     val computedVersionCode = major * 10000 + minor * 100 + patch
 
     defaultConfig {
@@ -125,11 +123,7 @@ dependencies {
     implementation(libs.coil.network)
     implementation(libs.gson)
     implementation(libs.lottie.compose)
-    implementation(libs.compose.cloudy)
     implementation(libs.face.detection)
-    implementation(libs.skydoves.balloon)
-    implementation(libs.chrisbanes.haze)
-    implementation(libs.chrisbanes.haze.materials)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.ai)
     implementation(libs.firebase.config.ktx)

@@ -629,12 +629,11 @@ fun ReviewDetails(saga: SagaContent) {
                     items(saga.relationships) { relation ->
                         RelationShipCard(
                             content = relation,
-                            genre = genre,
+                            saga = saga,
                             modifier = Modifier.padding(16.dp).requiredWidthIn(max = 300.dp),
                         )
                     }
                 }
-
             }
 
             item {
@@ -710,7 +709,6 @@ fun ReviewDetails(saga: SagaContent) {
             }
 
             saga.data.emotionalReview?.let {
-
                 item {
                     Text(
                         "Sobre você",
@@ -735,7 +733,6 @@ fun ReviewDetails(saga: SagaContent) {
                     )
                 }
             }
-
 
             item {
                 Spacer(Modifier.height(50.dp))

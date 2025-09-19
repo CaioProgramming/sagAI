@@ -1,36 +1,19 @@
 package com.ilustris.sagai.features.chapter.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
@@ -39,22 +22,14 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
-import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.headerFont
 import effectForGenre
 
 @Composable
@@ -66,18 +41,20 @@ fun ChapterCardView(
     val genre = saga.data.genre
     val shape = RoundedCornerShape(genre.cornerSize())
     Column(modifier) {
-            AsyncImage(
-                chapter.coverImage,
-                contentDescription = chapter.title,
-                contentScale = ContentScale.Crop,
-                placeholder = painterResource( R.drawable.ic_spark),
-                fallback = painterResource(R.drawable.ic_spark),
-                modifier = Modifier.clip(shape)
+        AsyncImage(
+            chapter.coverImage,
+            contentDescription = chapter.title,
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(R.drawable.ic_spark),
+            fallback = painterResource(R.drawable.ic_spark),
+            modifier =
+                Modifier
+                    .clip(shape)
                     .fillMaxWidth()
                     .weight(1f)
                     .effectForGenre(genre)
-                    .selectiveColorHighlight(genre.selectiveHighlight())
-            )
+                    .selectiveColorHighlight(genre.selectiveHighlight()),
+        )
 
         Text(
             text = chapter.title,
@@ -87,7 +64,7 @@ fun ChapterCardView(
                     fontFamily = genre.bodyFont(),
                     textAlign = TextAlign.Start,
                 ),
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
         )
     }
 }

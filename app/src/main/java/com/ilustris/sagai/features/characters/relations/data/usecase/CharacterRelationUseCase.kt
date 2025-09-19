@@ -8,5 +8,5 @@ interface CharacterRelationUseCase {
     suspend fun generateCharacterRelation(
         timeline: Timeline,
         saga: SagaContent,
-    ): RequestResult<Exception, Unit>
+    ): RequestResult<Unit>
 }

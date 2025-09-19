@@ -17,12 +17,12 @@ interface ActUseCase {
 
     suspend fun deleteActsForSaga(sagaId: Int)
 
-    suspend fun generateAct(saga: SagaContent): RequestResult<Exception, Act>
+    suspend fun generateAct(saga: SagaContent): RequestResult<Act>
 
     suspend fun generateActIntroduction(
         saga: SagaContent,
         act: Act,
-    ): RequestResult<Exception, Act>
+    ): RequestResult<Act>
 
     fun getActContent(actId: Int): Flow<ActContent?>
 }

@@ -24,5 +24,5 @@ interface SagaRepository {
     suspend fun generateSagaIcon(
         saga: Saga,
         character: Character,
-    ): RequestResult<Exception, Saga>
+    ): RequestResult<Saga>
 }

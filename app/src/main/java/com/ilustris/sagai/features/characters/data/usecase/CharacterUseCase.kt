@@ -21,20 +21,20 @@ interface CharacterUseCase {
     suspend fun generateCharacterImage(
         character: Character,
         saga: Saga,
-    ): RequestResult<Exception, Pair<Character, String>>
+    ): RequestResult<Pair<Character, String>>
 
     suspend fun generateCharacter(
         sagaContent: SagaContent,
         description: String,
-    ): RequestResult<Exception, Character>
+    ): RequestResult<Character>
 
     suspend fun generateCharactersUpdate(
         timeline: Timeline,
         saga: SagaContent,
-    ): RequestResult<Exception, Unit>
+    ): RequestResult<Unit>
 
     suspend fun generateCharacterRelations(
         timeline: Timeline,
         saga: SagaContent,
-    ): RequestResult<Exception, Unit>
+    ): RequestResult<Unit>
 }

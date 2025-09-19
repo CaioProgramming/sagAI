@@ -60,45 +60,31 @@ fun transformTextWithContent(
 
 fun buildCharactersAnnotatedString(
     text: String,
-    characters: List<Character>,
-) = buildAnnotatedString {
-    append(text)
-    characters.forEach { character ->
-        val characterName = character.name
-        val characterColor = character.hexColor.hexToColor() ?: Color.LightGray
-        var startIndex = text.indexOf(characterName)
-        while (startIndex != -1) {
-            val endIndex = startIndex + characterName.length
-            addStyle(
-                style =
-                    SpanStyle(
-                        color = characterColor,
-                        fontWeight = FontWeight.Bold,
-                        background = characterColor.copy(alpha = .2f),
-                    ),
-                start = startIndex,
-                end = endIndex,
-            )
-            addStringAnnotation(
-                tag = "character_tag",
-                annotation = character.id.toString(),
-                start = startIndex,
-                end = endIndex,
-            )
-            startIndex = text.indexOf(characterName, startIndex + 1)
-        }
-    }
-}
-
-fun buildWikiAndCharactersAnnotation(
-    text: String,
-    genre: Genre,
     mainCharacter: Character?,
     characters: List<Character>,
-    wiki: List<Wiki>,
+    genre: Genre
+) = buildAnnotatedString {
+    val annotationRules = charactersStyleRules(
+        mainCharacter,
+        characters,
+        genre
+    )
+    val annotationStyleGroup = AnnotationStyleGroup(
+        tag = "character_tag",
+        rules = annotationRules
+    )
+    return buildStyleAnnotation(
+        text,
+        listOf(annotationStyleGroup)
+    )
+}
+
+fun charactersStyleRules(
+    mainCharacter: Character?,
+    characters: List<Character>,
+    genre: Genre,
     shadowColor: Color = Color.Black,
-): AnnotatedString {
-    val characterRules =
+    ) =
         characters.map { character ->
             val characterColor = character.hexColor.hexToColor() ?: genre.color.lighter(.3f)
             val shadow =
@@ -124,10 +110,26 @@ fun buildWikiAndCharactersAnnotation(
                 spanStyle = span,
             )
         }
+
+
+fun buildWikiAndCharactersAnnotation(
+    text: String,
+    genre: Genre,
+    mainCharacter: Character?,
+    characters: List<Character>,
+    wiki: List<Wiki>,
+    shadowColor: Color = Color.Black,
+): AnnotatedString {
+
     val characterStyleGroup =
         AnnotationStyleGroup(
             tag = "character_tag",
-            rules = characterRules,
+            rules = charactersStyleRules(
+                mainCharacter,
+                characters,
+                genre,
+                shadowColor,
+            ),
         )
 
     val wikiRules =

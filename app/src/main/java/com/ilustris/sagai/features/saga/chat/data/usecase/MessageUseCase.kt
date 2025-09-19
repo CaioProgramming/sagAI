@@ -15,20 +15,18 @@ interface MessageUseCase {
     suspend fun saveMessage(
         message: Message,
         isFromUser: Boolean,
-    ): RequestResult<Exception, Message>
+    ): RequestResult<Message>
 
     suspend fun deleteMessage(messageId: Long)
 
     suspend fun getLastMessage(sagaId: Int): Message?
 
-    suspend fun generateIntroMessage(saga: SagaContent): RequestResult<Exception, String>
-
     suspend fun generateMessage(
         saga: SagaContent,
         message: MessageContent,
-    ): RequestResult<Exception, MessageGen>
+    ): RequestResult<MessageGen>
 
-    suspend fun updateMessage(message: Message): RequestResult<Exception, Unit>
+    suspend fun updateMessage(message: Message): RequestResult<Message>
 
     fun setDebugMode(enabled: Boolean)
 
@@ -38,5 +36,5 @@ interface MessageUseCase {
         genre: Genre,
         message: String,
         lastMessage: String?,
-    ): RequestResult<Exception, TypoFix?>
+    ): RequestResult<TypoFix?>
 }

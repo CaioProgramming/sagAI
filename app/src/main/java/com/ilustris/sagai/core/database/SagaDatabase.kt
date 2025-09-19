@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -13,7 +14,10 @@ import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.source.CharacterEventDao
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
+// Import the new DAO
+import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.domain.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
@@ -34,10 +38,12 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Act::class,
         CharacterEvent::class,
         CharacterRelation::class,
+        RelationshipUpdateEvent::class,
     ],
-    version = 46,
+    version = 47,
     autoMigrations = [
         androidx.room.AutoMigration(from = 45, to = 46),
+        androidx.room.AutoMigration(from = 46, to = 47),
     ],
     exportSchema = true,
 )
@@ -60,4 +66,6 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun characterEventDao(): CharacterEventDao
 
     abstract fun characterRelationDao(): CharacterRelationDao
+
+    abstract fun relationshipUpdateEventDao(): RelationshipUpdateEventDao
 }

@@ -13,7 +13,7 @@ interface MessageRepository {
 
     suspend fun deleteMessages(sagaId: String)
 
-    suspend fun updateMessage(message: Message)
+    suspend fun updateMessage(message: Message): Message
 
     suspend fun getLastMessage(sagaId: Int): Message?
 }

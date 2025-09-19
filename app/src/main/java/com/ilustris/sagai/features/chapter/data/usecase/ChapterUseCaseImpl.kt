@@ -67,8 +67,8 @@ class ChapterUseCaseImpl
         override suspend fun generateChapterCover(
             chapter: ChapterContent,
             saga: SagaContent,
-        ): RequestResult<Exception, Chapter> =
-            try {
+        ): RequestResult<Chapter> =
+            executeRequest {
                 val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
                 val coverBitmap = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
                 val coverReference =
@@ -126,9 +126,7 @@ class ChapterUseCaseImpl
                         coverImage = coverFile?.path ?: emptyString(),
                     )
 
-                chapterRepository.updateChapter(newChapter).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                chapterRepository.updateChapter(newChapter)
             }
 
         private fun generateChapterPrompt(
@@ -140,7 +138,7 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             chapter: Chapter,
             act: ActContent,
-        ): RequestResult<Exception, Chapter> =
+        ): RequestResult<Chapter> =
             executeRequest {
                 delay(2.seconds)
                 val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)

@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.chat.domain.usecase
+package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -11,5 +11,5 @@ interface GetInputSuggestionsUseCase {
         chatHistory: List<MessageContent>,
         currentUserCharacter: Character?,
         saga: Saga,
-    ): RequestResult<Exception, List<Suggestion>>
+    ): RequestResult<List<Suggestion>>
 }

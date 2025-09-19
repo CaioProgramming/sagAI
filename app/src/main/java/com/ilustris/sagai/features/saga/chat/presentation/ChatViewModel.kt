@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -28,6 +27,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
+import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.mapper.SagaContentUIMapper
@@ -36,7 +36,6 @@ import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
-import com.ilustris.sagai.features.saga.chat.domain.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -45,6 +44,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -135,40 +135,42 @@ class ChatViewModel
 
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
-                content.collectLatest { sagaContent ->
-                    val isFirstLoading = content.value == null
-                    if (sagaContent == null) {
-                        if (loadFinished) {
-                            state.value = ChatState.Error("Saga not found.")
+                content
+                    .debounce(300)
+                    .collectLatest { sagaContent ->
+                        val isFirstLoading = content.value == null
+                        if (sagaContent == null) {
+                            if (loadFinished) {
+                                state.value = ChatState.Error("Saga not found.")
+                            }
+                            return@collectLatest
                         }
-                        return@collectLatest
+
+                        val allMessages = messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
+
+                        if (allMessages.size != sagaContent.flatMessages().size && isGenerating.value.not() && isLoading.value.not()) {
+                            generateSuggestions()
+                        }
+
+                        messages.value =
+                            SagaContentUIMapper
+                                .mapToActDisplayData(sagaContent.acts)
+
+                        characters.value =
+                            sortCharactersByMessageCount(sagaContent.getCharacters(), sagaContent.flatMessages())
+
+                        checkIfUpdatesService(sagaContent)
+
+                        validateCharacterMessageUpdates(sagaContent)
+                        updateProgress(sagaContent)
+                        notifyIfNeeded()
+                        state.value = ChatState.Success
+                        loadFinished
+                        if (isFirstLoading) {
+                            delay(3.seconds)
+                            showTitle.emit(false)
+                        }
                     }
-
-                    val allMessages = messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
-
-                    if (allMessages.size != sagaContent.flatMessages().size) {
-                        generateSuggestions()
-                    }
-
-                    messages.value =
-                        SagaContentUIMapper
-                            .mapToActDisplayData(sagaContent.acts)
-
-                    characters.value =
-                        sortCharactersByMessageCount(sagaContent.getCharacters(), sagaContent.flatMessages())
-
-                    checkIfUpdatesService(sagaContent)
-
-                    validateCharacterMessageUpdates(sagaContent)
-                    updateProgress(sagaContent)
-                    notifyIfNeeded()
-                    state.value = ChatState.Success
-                    loadFinished
-                    if (isFirstLoading) {
-                        delay(3.seconds)
-                        showTitle.emit(false)
-                    }
-                }
             }
         }
 

@@ -44,8 +44,9 @@ class MessageRepositoryImpl
             messageDao.deleteMessages(sagaId)
         }
 
-        override suspend fun updateMessage(message: Message) {
+        override suspend fun updateMessage(message: Message): Message {
             messageDao.updateMessage(message)
+            return message
         }
 
         override suspend fun getLastMessage(sagaId: Int): Message? = messageDao.getLastMessage(sagaId)

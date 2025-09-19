@@ -1,15 +1,11 @@
-package com.ilustris.sagai.features.wiki.domain.usecase
+package com.ilustris.sagai.features.wiki.data.usecase
 
+import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import kotlinx.coroutines.flow.Flow
 
 interface WikiUseCase {
-    fun getWikisBySaga(sagaId: Int): Flow<List<Wiki>>
-
-    suspend fun getWikiById(wikiId: Int): Wiki?
-
     suspend fun saveWiki(wiki: Wiki): Long
 
     suspend fun updateWiki(wiki: Wiki)
@@ -20,6 +16,6 @@ interface WikiUseCase {
 
     suspend fun generateWiki(
         saga: SagaContent,
-        events: List<Timeline>,
-    ): List<Wiki>
+        event: Timeline,
+    ): RequestResult<List<Wiki>>
 }

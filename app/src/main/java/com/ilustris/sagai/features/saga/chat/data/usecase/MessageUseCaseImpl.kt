@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.chat.domain.usecase
+package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
@@ -6,9 +6,9 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -22,6 +22,7 @@ import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import javax.inject.Inject
 
@@ -45,7 +46,7 @@ class MessageUseCaseImpl
             genre: Genre,
             message: String,
             lastMessage: String?,
-        ): RequestResult<Exception, TypoFix?> =
+        ): RequestResult<TypoFix?> =
             executeRequest {
                 gemmaClient.generate<TypoFix>(
                     SagaPrompts.checkForTypo(genre, message, lastMessage),
@@ -85,32 +86,11 @@ class MessageUseCaseImpl
 
         override suspend fun getLastMessage(sagaId: Int): Message? = messageRepository.getLastMessage(sagaId)
 
-        override suspend fun generateIntroMessage(saga: SagaContent): RequestResult<Exception, String> {
-            if (isDebugModeEnabled) {
-                Log.d(
-                    "MessageUseCaseImpl",
-                    "[DEBUG MODE] Generating fake intro message for saga: ${saga.data.title}",
-                )
-                return RequestResult.Success("Welcome to the debug chronicles of '${saga.data.title}'! Adventure awaits... or does it?")
-            }
-            val genText =
-                gemmaClient.generate<String>(
-                    generateSagaIntroductionPrompt(saga),
-                    requireTranslation = true,
-                )
-
-            return try {
-                genText!!.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
-            }
-        }
-
         override suspend fun generateMessage(
             saga: SagaContent,
             message: MessageContent,
-        ): RequestResult<Exception, MessageGen> =
-            try {
+        ): RequestResult<MessageGen> =
+            executeRequest {
                 if (isDebugModeEnabled) {
                     Log.d(
                         "MessageUseCaseImpl",
@@ -118,8 +98,8 @@ class MessageUseCaseImpl
                     )
                     val fakeReply =
                         Message(
-                            text = "[Debug AI]: I see you said '${message.joinMessage().second}'. That's... interesting.",
-                            senderType = SenderType.CHARACTER, // Or could be NARRATOR or a specific character if needed
+                            text = "[Debug AI]: I see you said '${message.joinMessage().second}'.",
+                            senderType = SenderType.CHARACTER,
                             sagaId = saga.data.id,
                             timelineId = saga.getCurrentTimeLine()!!.data.id,
                         )
@@ -144,27 +124,18 @@ class MessageUseCaseImpl
                             lastMessages =
                                 saga
                                     .flatMessages()
-                                    .takeLast(10)
+                                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
                                     .map { it.joinMessage(true).formatToString() },
                             directive = saga.getDirective(),
                         ),
                         true,
                     )
 
-                genText!!.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                genText!!
             }
 
-        override suspend fun updateMessage(message: Message): RequestResult<Exception, Unit> =
-            try {
-                messageRepository.updateMessage(message).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+        override suspend fun updateMessage(message: Message): RequestResult<Message> =
+            executeRequest {
+                messageRepository.updateMessage(message)
             }
     }
-
-private fun generateSagaIntroductionPrompt(saga: SagaContent): String =
-    SagaPrompts.introductionGeneration(
-        saga,
-    )

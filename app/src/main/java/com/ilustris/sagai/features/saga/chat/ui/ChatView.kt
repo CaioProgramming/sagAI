@@ -1,7 +1,6 @@
 @file:OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class,
-    ExperimentalHazeMaterialsApi::class,
 )
 
 package com.ilustris.sagai.features.saga.chat.ui
@@ -166,9 +165,6 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.rememberHazeState
 import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -191,7 +187,6 @@ fun ChatView(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
     val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
-    val contentHaze = rememberHazeState()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val loreProgress by viewModel.loreUpdateProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -290,7 +285,6 @@ fun ChatView(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .hazeSource(contentHaze),
         ) {
             when (it) {
                 is ChatState.Error ->
@@ -695,16 +689,17 @@ fun ChatContent(
                             width = Dimension.fillToConstraints
                         },
                 ) {
+
+
                     LinearProgressIndicator(
                         modifier =
                             Modifier
                                 .alpha(alpha)
                                 .height(2.dp)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .gradientFill(content.data.genre.gradient(isGenerating)),
                         progress = { progress },
-                        drawStopIndicator = {
-                        },
-                        color = progressColor,
+                        color = MaterialTheme.colorScheme.onBackground,
                         trackColor = Color.Transparent,
                     )
 

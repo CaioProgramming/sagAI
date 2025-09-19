@@ -38,18 +38,14 @@ class NewSagaUseCaseImpl
     @Inject
     constructor(
         private val textGenClient: TextGenClient,
-        private val imageGenClient: ImagenClient,
         private val sagaRepository: SagaRepository,
         private val characterUseCase: CharacterUseCase,
         private val gemmaClient: GemmaClient,
-        private val fileHelper: FileHelper,
-        private val imageCropHelper: ImageCropHelper,
-        private val genreReferenceHelper: GenreReferenceHelper,
     ) : NewSagaUseCase {
         override suspend fun saveSaga(
             sagaData: Saga,
             characterDescription: CharacterInfo?,
-        ): RequestResult<Exception, Pair<Saga, Character>> =
+        ): RequestResult<Pair<Saga, Character>> =
             try {
                 val saga =
                     sagaRepository.saveChat(
@@ -82,7 +78,7 @@ class NewSagaUseCaseImpl
         override suspend fun generateSaga(
             sagaForm: SagaForm,
             miniChatContent: List<ChatMessage>,
-        ): RequestResult<Exception, SagaGen> =
+        ): RequestResult<SagaGen> =
             try {
                 val saga =
                     textGenClient.generate<SagaGen>(
@@ -114,8 +110,8 @@ class NewSagaUseCaseImpl
         override suspend fun replyAiForm(
             currentMessages: List<ChatMessage>,
             currentFormData: SagaForm,
-        ): RequestResult<Exception, SagaCreationGen> =
-            try {
+        ): RequestResult<SagaCreationGen> =
+            executeRequest {
                 val delayDefaultTime = 700L
 
                 val extractedDataPrompt =
@@ -163,13 +159,11 @@ class NewSagaUseCaseImpl
                                 action = callBackAction,
                                 data = extractedDataPrompt,
                             ),
-                    ).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                    )
             }
 
-        override suspend fun generateIntroduction(): RequestResult<Exception, SagaCreationGen> =
-            try {
+        override suspend fun generateIntroduction(): RequestResult<SagaCreationGen> =
+            executeRequest {
                 val prompt = NewSagaPrompts.formIntroductionPrompt()
 
                 val aiRequest =
@@ -178,16 +172,14 @@ class NewSagaUseCaseImpl
                         requireTranslation = true,
                     )
 
-                aiRequest!!.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                aiRequest!!
             }
 
         override suspend fun generateCharacterSavedMark(
             character: Character,
             saga: Saga,
-        ): RequestResult<Exception, String> =
-            try {
+        ): RequestResult<String> =
+            executeRequest {
                 val prompt =
                     NewSagaPrompts.characterCreatedPrompt(
                         character,
@@ -200,9 +192,7 @@ class NewSagaUseCaseImpl
                         requireTranslation = true,
                     )
 
-                aiRequest!!.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                aiRequest!!
             }
 
         private fun generateSagaPrompt(

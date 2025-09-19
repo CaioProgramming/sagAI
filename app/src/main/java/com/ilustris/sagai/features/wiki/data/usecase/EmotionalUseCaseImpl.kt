@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.wiki.domain.usecase
+package com.ilustris.sagai.features.wiki.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
@@ -18,20 +18,17 @@ class EmotionalUseCaseImpl
         override suspend fun generateEmotionalReview(
             content: List<String>,
             emotionalRanking: Map<String, Int>,
-        ): RequestResult<Exception, String> =
-            try {
+        ): RequestResult<String> =
+            executeRequest {
                 val prompt = EmotionalPrompt.generateEmotionalReview(content, emotionalRanking)
                 gemmaClient
                     .generate<String>(
                         prompt = prompt,
                         requireTranslation = true,
                     )!!
-                    .asSuccess()
-            } catch (e: Exception) {
-                e.asError()
             }
 
-        override suspend fun generateEmotionalProfile(saga: SagaContent): RequestResult<Exception, String> =
+        override suspend fun generateEmotionalProfile(saga: SagaContent): RequestResult<String> =
             executeRequest {
                 gemmaClient.generate<String>(
                     prompt = EmotionalPrompt.generateEmotionalProfile(saga.emotionalSummary()),
