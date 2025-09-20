@@ -9,6 +9,7 @@ import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
+import com.ilustris.sagai.features.home.data.model.filterCharacterMessages
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
@@ -51,20 +52,19 @@ class SagaDetailUseCaseImpl
                 val characters = content.getCharacters(true)
                 val prompt =
                     SagaPrompts.reviewGeneration(
-                        content,
-                        messages
-                            .filterCharacterMessages(
-                                content.mainCharacter!!.data,
-                            ).size,
-                        messages.rankMessageTypes(),
-                        messages
-                            .rankTopCharacters(
-                                characters,
-                            ).take(3),
-                        messages
-                            .rankMentions(
-                                characters,
-                            ).take(3),
+                        saga = content,
+                        playerMessageCount =
+                            messages
+                                .filterCharacterMessages(
+                                    content.mainCharacter?.data,
+                                ).size,
+                        messageTypesRanking = messages.rankMessageTypes(),
+                        topInteractiveCharacters =
+                            messages
+                                .rankTopCharacters(
+                                    characters,
+                                ).take(3),
+                        overallPlayerEmotionalSummary = content.emotionalSummary().toString(),
                     )
 
                 val review =

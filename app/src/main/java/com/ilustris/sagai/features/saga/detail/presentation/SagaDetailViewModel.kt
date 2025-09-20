@@ -33,6 +33,7 @@ class SagaDetailViewModel
         val isGenerating = MutableStateFlow(false)
         val emotionalCardReference = MutableStateFlow<String>(emptyString())
         val showIntro = MutableStateFlow(false)
+        val showReview = MutableStateFlow(false)
 
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -66,6 +67,10 @@ class SagaDetailViewModel
             }
         }
 
+        fun closeReview() {
+            showReview.value = false
+        }
+
         fun createReview() {
             if (isGenerating.value) {
                 return
@@ -75,11 +80,17 @@ class SagaDetailViewModel
                 isGenerating.value = false
                 return
             }
+            if (currentSaga.data.review != null) {
+                isGenerating.value = false
+                showReview.value = true
+                return
+            }
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
                     .createReview(currentSaga)
                 isGenerating.value = false
+                showReview.emit(true)
             }
         }
 

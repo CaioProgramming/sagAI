@@ -81,19 +81,18 @@ fun RelationShipCard(
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val relation = content.relationshipEvents.last()
+        val firstCharacter =
+            remember {
+                content.characterOne
+            }
+        val secondCharacter =
+            remember {
+                content.characterTwo
+            }
         Row(
             horizontalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxWidth().height(150.dp).padding(16.dp),
         ) {
-            val firstCharacter =
-                remember {
-                    content.characterOne
-                }
-            val secondCharacter =
-                remember {
-                    content.characterTwo
-                }
             CharacterAvatar(
                 firstCharacter,
                 firstCharacter.hexColor.hexToColor(),
@@ -110,32 +109,36 @@ fun RelationShipCard(
                 modifier = Modifier.size(avatarSize).offset(x = (-15).dp),
             )
         }
-        Text(
-            relation.emoji,
-            style =
-                MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                ),
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .background(MaterialTheme.colorScheme.background.copy(alpha = .3f), CircleShape)
-                    .padding(8.dp),
-        )
+        val relation = content.relationshipEvents.lastOrNull()
+        relation?.let {
+            Text(
+                relation.emoji,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                textAlign = TextAlign.Center,
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.background.copy(alpha = .3f), CircleShape)
+                        .padding(8.dp),
+            )
 
-        Text(
-            relation.title,
-            style = MaterialTheme.typography.titleMedium.copy(fontFamily = genre.bodyFont()),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+            Text(
+                relation.title,
+                style = MaterialTheme.typography.titleMedium.copy(fontFamily = genre.bodyFont()),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
 
-        Text(
-            relation.description,
-            style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+            Text(
+                relation.description,
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
     }
 
     if (showDetailSheet) {
@@ -154,6 +157,7 @@ fun SingleRelationShipCard(
     saga: SagaContent,
     character: Character,
     content: RelationshipContent,
+    showText: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val genre = saga.data.genre
@@ -164,7 +168,9 @@ fun SingleRelationShipCard(
         modifier =
             modifier
                 .clip(genre.shape())
-                .border(1.dp, genre.color.copy(alpha = .3f), genre.shape())
+                .clickable {
+                    showDetailSheet = true
+                }.border(1.dp, genre.color.copy(alpha = .3f), genre.shape())
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -193,15 +199,17 @@ fun SingleRelationShipCard(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text(
-                relation.description,
-                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
-                textAlign = TextAlign.Center,
-            )
+            if (showText){
+                Text(
+                    relation.description,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 
-    if (showDetailSheet) {
+    if (showDetailSheet && content.relationshipEvents.isNotEmpty()) {
         ModalBottomSheet(
             onDismissRequest = { showDetailSheet = false },
             sheetState = rememberModalBottomSheetState(),
@@ -224,8 +232,10 @@ fun RelationShipSheet(
 
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item {
-            Column(horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(8.dp)) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(8.dp),
+            ) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     modifier =
@@ -290,81 +300,83 @@ fun RelationShipSheet(
             }
         }
 
-        items(content.relationshipEvents) {
-            Row(
-                modifier = Modifier.padding(8.dp).fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CharacterAvatar(
-                    firstCharacter,
-                    firstCharacter.hexColor.hexToColor(),
-                    genre = genre,
-                    innerPadding = 0.dp,
-                    modifier = Modifier.size(32.dp),
-                )
-
-                HorizontalDivider(
-                    color = firstCharacter.hexColor.hexToColor() ?: genre.color,
-                    thickness = 2.dp,
-                    modifier = Modifier.fillMaxHeight().weight(.2f),
-                )
-
-                val brush =
-                    Brush.linearGradient(
-                        listOf(
-                            firstCharacter.hexColor.hexToColor() ?: genre.color,
-                            secondCharacter.hexColor.hexToColor() ?: genre.color,
-                        ),
-                    )
-
-                Column(
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .clip(genre.shape())
-                            .border(2.dp, brush, genre.shape())
-                            .background(MaterialTheme.colorScheme.background, genre.shape())
-                            .padding(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
+        if (content.relationshipEvents.isNotEmpty()) {
+            items(content.relationshipEvents) {
+                Row(
+                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        it.emoji,
-                        style = MaterialTheme.typography.titleLarge,
-                        textAlign = TextAlign.Center,
+                    CharacterAvatar(
+                        firstCharacter,
+                        firstCharacter.hexColor.hexToColor(),
+                        genre = genre,
+                        innerPadding = 0.dp,
+                        modifier = Modifier.size(32.dp),
                     )
 
-                    Text(
-                        it.title,
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                                textAlign = TextAlign.Center,
-                            ),
+                    HorizontalDivider(
+                        color = firstCharacter.hexColor.hexToColor() ?: genre.color,
+                        thickness = 2.dp,
+                        modifier = Modifier.fillMaxHeight().weight(.2f),
                     )
 
-                    Text(
-                        it.description,
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = genre.bodyFont(),
-                                textAlign = TextAlign.Justify,
+                    val brush =
+                        Brush.linearGradient(
+                            listOf(
+                                firstCharacter.hexColor.hexToColor() ?: genre.color,
+                                secondCharacter.hexColor.hexToColor() ?: genre.color,
                             ),
-                        modifier = Modifier.alpha(.6f),
+                        )
+
+                    Column(
+                        modifier =
+                            Modifier
+                                .weight(1f)
+                                .clip(genre.shape())
+                                .border(2.dp, brush, genre.shape())
+                                .background(MaterialTheme.colorScheme.background, genre.shape())
+                                .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            it.emoji,
+                            style = MaterialTheme.typography.titleLarge,
+                            textAlign = TextAlign.Center,
+                        )
+
+                        Text(
+                            it.title,
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Center,
+                                ),
+                        )
+
+                        Text(
+                            it.description,
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Justify,
+                                ),
+                            modifier = Modifier.alpha(.6f),
+                        )
+                    }
+
+                    HorizontalDivider(
+                        color = secondCharacter.hexColor.hexToColor() ?: genre.color,
+                        thickness = 2.dp,
+                        modifier = Modifier.fillMaxHeight().weight(.2f),
+                    )
+
+                    CharacterAvatar(
+                        secondCharacter,
+                        genre = genre,
+                        innerPadding = 0.dp,
+                        modifier = Modifier.size(32.dp),
                     )
                 }
-
-                HorizontalDivider(
-                    color = secondCharacter.hexColor.hexToColor() ?: genre.color,
-                    thickness = 2.dp,
-                    modifier = Modifier.fillMaxHeight().weight(.2f),
-                )
-
-                CharacterAvatar(
-                    secondCharacter,
-                    genre = genre,
-                    innerPadding = 0.dp,
-                    modifier = Modifier.size(32.dp),
-                )
             }
         }
     }

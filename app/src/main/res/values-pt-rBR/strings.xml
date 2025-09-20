@@ -181,4 +181,20 @@
     <string name="starring">Estrelando</string>
     <string name="emotional_card_title">Review emocional</string>
 
+    <!-- Títulos dos Tons Emocionais -->
+    <string name="tone_neutral">Neutro</string>
+    <string name="tone_calm">Calmo</string>
+    <string name="tone_curious">Curioso</string>
+    <string name="tone_hopeful">Esperançoso</string>
+    <string name="tone_determined">Determinado</string>
+    <string name="tone_empathetic">Empático</string>
+    <string name="tone_joyful">Alegre</string>
+    <string name="tone_concerned">Preocupado</string>
+    <string name="tone_anxious">Ansioso</string>
+    <string name="tone_frustrated">Frustrado</string>
+    <string name="tone_angry">Zangado</string>
+    <string name="tone_sad">Triste</string>
+    <string name="tone_melancholic">Melancólico</string>
+    <string name="tone_cynical">Cínico</string>
+
 </resources>

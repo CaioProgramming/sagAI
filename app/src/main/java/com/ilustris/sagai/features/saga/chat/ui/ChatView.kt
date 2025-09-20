@@ -203,8 +203,6 @@ fun ChatView(
                 Log.i("ChatView", "POST_NOTIFICATIONS permission GRANTED by user.")
             } else {
                 Log.w("ChatView", "POST_NOTIFICATIONS permission DENIED by user.")
-                // Optionally, show a message indicating that notifications will be disabled,
-                // or guide the user on how to enable them later from app settings.
             }
         }
 
@@ -238,7 +236,6 @@ fun ChatView(
                     context,
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    // Permission is already granted
                     Log.i("ChatView", "POST_NOTIFICATIONS permission already granted.")
                 }
 
@@ -246,13 +243,11 @@ fun ChatView(
                     context as Activity, // Context needs to be an Activity for this check
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) -> {
-                    // Show your custom rationale UI (e.g., the dialog)
                     Log.i("ChatView", "Showing rationale for POST_NOTIFICATIONS permission.")
                     showRationaleDialog = true
                 }
 
                 else -> {
-                    // Permission has not been granted yet, request it.
                     Log.i(
                         "ChatView",
                         "Requesting POST_NOTIFICATIONS permission (first time or no rationale needed).",
@@ -284,7 +279,7 @@ fun ChatView(
             },
             modifier =
                 Modifier
-                    .fillMaxSize()
+                    .fillMaxSize(),
         ) {
             when (it) {
                 is ChatState.Error ->
@@ -689,8 +684,6 @@ fun ChatContent(
                             width = Dimension.fillToConstraints
                         },
                 ) {
-
-
                     LinearProgressIndicator(
                         modifier =
                             Modifier

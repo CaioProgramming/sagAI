@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.SagaEndCreditsContext
 import com.ilustris.sagai.core.ai.models.SagaGenerationContext
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -10,12 +9,15 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.generateActLevelEmotionalFlowText
+import com.ilustris.sagai.features.home.data.model.generateCharacterRelationsSummary
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-import com.ilustris.sagai.features.saga.chat.domain.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.detail.data.model.Review
 import kotlin.jvm.java
 import kotlin.text.appendLine
 
@@ -58,7 +60,10 @@ object SagaPrompts {
             "   - `FIX`: If the user's current message contains clear typos or grammatical errors that significantly impact readability or meaning. `suggestedText` MUST be the corrected version. `friendlyMessage` MUST be a brief, polite note highlighting the correction (e.g., \"I noticed a small typo, here's a fix:\").",
         )
         appendLine(
-            "   - `ENHANCEMENT`: Use this sparingly. Only if the message, while perhaps understandable, is critically unclear, or if it omits essential information directly implied as necessary by the `lastMessage` or core gameplay context, leading to a potential misunderstanding or breakdown in the narrative flow. Do NOT use for minor stylistic preferences, slight conciseness improvements if the original is clear, or if the user is simply being brief. `suggestedText` MUST be the improved version. `friendlyMessage` MUST clearly explain why the enhancement is crucial (e.g., \"To ensure we're on the same page given your last action, could you clarify [specific point]? Perhaps like this:\" or \"Considering you just mentioned [X], it seems important to also state [Y]. How about this?\").",
+            "   - `ENHANCEMENT`: Use this sparingly. Only if the message, while perhaps understandable, is critically unclear, or if it omits essential information directly implied as necessary by the `lastMessage` or core gameplay context, leading to a potential misunderstanding or breakdown in the narrative flow.",
+        )
+        appendLine(
+            "Do NOT use for minor stylistic preferences, slight conciseness improvements if the original is clear, or if the user is simply being brief. `suggestedText` MUST be the improved version. `friendlyMessage` MUST clearly explain why the enhancement is crucial (e.g., \"To ensure we're on the same page given your last action, could you clarify [specific point]? Perhaps like this:\" or \"Considering you just mentioned [X], it seems important to also state [Y]. How about this?\").",
         )
         appendLine("2. `suggestedText` (String or null):")
         appendLine(
@@ -71,7 +76,9 @@ object SagaPrompts {
         )
         appendLine("   - If `status` is `OK`, this field MUST be null.")
         appendLine()
-        appendLine("PRINCIPLE: If the user's message is functional and understandable, prefer `OK`. Only suggest `FIX` for clear errors and `ENHANCEMENT` for critical clarity or crucial missing information directly relevant to the immediate context. Avoid being overly corrective.")
+        appendLine(
+            "PRINCIPLE: If the user's message is functional and understandable, prefer `OK`. Only suggest `FIX` for clear errors and `ENHANCEMENT` for critical clarity or crucial missing information directly relevant to the immediate context. Avoid being overly corrective.",
+        )
         appendLine()
         appendLine("CONTEXT:")
         appendLine("Last Message (if any):")
@@ -192,7 +199,8 @@ object SagaPrompts {
         The introduction should encourage the player to start the adventure.
         
         **Saga and Character Context**
-        ${saga.toJsonFormat()}
+        ${saga.toJsonFormatExcludingFields(listOf("relationships", "wikis", "acts", "characters"))} 
+        // Made SagaContent less verbose for this prompt
         
         The introduction should include:
         1.  Main character introduction.
@@ -290,7 +298,7 @@ object SagaPrompts {
             "*   **Character Focus and Framing:** Ensure the character is the primary subject, framed as a close-up or medium close-up shot (e.g., from the chest up or waist up). The character should dominate the icon and be the clear focal point, with dynamic posing.",
         )
         appendLine(
-            "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character's Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
+            "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character\'s Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
         )
         appendLine(
             "***CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.",
@@ -319,15 +327,17 @@ object SagaPrompts {
         appendLine("Desired Output: A single, striking icon image. NO TEXT SHOULD BE GENERATED ON THE IMAGE ITSELF.")
     }
 
+    // UPDATED SagaReviewContext
     private data class SagaReviewContext(
         val playerCharacter: Character?,
         val sagaInfo: Saga,
         val playerMessageCount: Int,
-        val messageTypeCountsText: String,
-        val dominantMessageType: String,
-        val sagaActsStructure: List<ActContent>,
+        val messageTypeCountsText: String, // Kept for now
+        val overallPlayerEmotionalSummary: String, // NEW: Player's main emotional tone
+        val sagaActsStructure: List<ActContent>, // Kept for milestones/chapter recap
+        val emotionalJourneyThroughActs: String, // NEW: Act/Chapter emotional flow
         val topInteractiveCharactersText: String,
-        val topMentionedCharactersText: String,
+        val characterRelationsHighlights: String, // NEW: Summary of key relationships
         val totalUniqueNPCsEncountered: Int,
         val languageDirective: String,
     )
@@ -342,19 +352,26 @@ object SagaPrompts {
         saga: SagaContent,
         playerMessageCount: Int,
         messageTypesRanking: List<Pair<SenderType, Int>>,
-        topCharacters: List<Pair<Character, Int>>,
-        topMentions: List<Pair<Character, Int>>,
+        topInteractiveCharacters: List<Pair<Character, Int>>,
+        overallPlayerEmotionalSummary: String,
     ): String {
+        val characterRelationsSummary = saga.generateCharacterRelationsSummary()
+        val actLevelEmotionalFlowText = saga.generateActLevelEmotionalFlowText()
+
         val reviewContextData =
             SagaReviewContext(
                 playerCharacter = saga.mainCharacter?.data,
                 sagaInfo = saga.data,
                 playerMessageCount = playerMessageCount,
                 messageTypeCountsText = messageTypesRanking.joinToString(";") { "${it.first.name} : ${it.second}" },
-                dominantMessageType = messageTypesRanking.firstOrNull()?.first?.name ?: "N/A",
+                overallPlayerEmotionalSummary = overallPlayerEmotionalSummary, // Use new parameter
                 sagaActsStructure = saga.acts,
-                topInteractiveCharactersText = topCharacters.joinToString(";") { "name: ${it.first.name}, messageCount: ${it.second}" },
-                topMentionedCharactersText = topMentions.joinToString(";") { "name: ${it.first.name}, mentions: ${it.second}" },
+                emotionalJourneyThroughActs = actLevelEmotionalFlowText, // Use new summary
+                topInteractiveCharactersText =
+                    topInteractiveCharacters.joinToString(";") {
+                        "name: ${it.first.name}, messageCount: ${ it.second}"
+                    },
+                characterRelationsHighlights = characterRelationsSummary, // Use new summary
                 totalUniqueNPCsEncountered = saga.characters.size,
                 languageDirective = GenrePrompts.conversationDirective(saga.data.genre),
             )
@@ -386,7 +403,7 @@ object SagaPrompts {
 
         return """
             Your task is to act as a **Saga Journey Reviewer and Analyst** for the saga detailed in the SAGA_INFO within the CONTEXT_JSON.
-            Your goal is to generate a deeply personal, engaging, and celebratory textual review of the player's completed saga, in the style of a "Spotify Wrapped" year-end summary.
+            Your goal is to generate a deeply personal, engaging, and celebratory textual review of the player's completed saga, in the style of a personal 'Wrapped' or 'Rewind' year-end summary.
 
             You will receive pre-analyzed statistics and key insights about the player's journey within the CONTEXT_JSON.
             Your output MUST be a **single JSON object** containing distinct named keys, each holding the narrative text for a specific section of the player's review.
@@ -405,9 +422,38 @@ object SagaPrompts {
                 Congratulate them on completing the saga.
                 Briefly tell them you will now overview their achievements.
                 Set the celebratory tone.
-                * **`playStyle`**: Based on your analysis of the player's DOMINANT_MESSAGE_TYPE and MESSAGE_TYPE_COUNTS_TEXT (using the provide
+                * **`playStyle`**: Analyze the player's OVERALL_PLAYER_EMOTIONAL_SUMMARY. Describe the overarching emotional tone of their journey. Did they navigate the saga with hope, caution, pragmatism, empathy, determination, etc.? This should reflect their general emotional disposition observed from their messages throughout the adventure.
+                * **`milestones`**: (Based on SAGA_ACTS_STRUCTURE for key plot points. Review current instructions for this, no direct change requested here but ensure it's still relevant).
+                * **`keyAllies`**: Based on TOP_INTERACTIVE_CHARACTERS_TEXT (who they talked to most) and CHARACTER_RELATIONS_HIGHLIGHTS (the nature of their established bonds), highlight key relationships. Don't just list names; describe the *nature* of these connections (e.g., "Your bond with [Character X] was clearly one of deep trust, as seen in your established camaraderie, while your frequent interactions with [Character Y] suggest a mentorship dynamic.").
+                * **`discoveries`**: (Based on TOTAL_UNIQUE_NPCS_ENCOUNTERED and possibly other elements. Review current instructions for this, no direct change requested here).
+                * **`chaptersRecap`**: (Uses SAGA_ACTS_STRUCTURE. Review current instructions for this, no direct change requested here).
+                * **`conclusionText`**: Craft a thoughtful conclusion that reflects on the player's entire journey. This section MUST be significantly guided by their OVERALL_PLAYER_EMOTIONAL_SUMMARY and the EMOTIONAL_JOURNEY_THROUGH_ACTS. Synthesize these emotional insights to offer a personalized and resonant final word on their adventure, perhaps touching on themes of growth, the emotional impact of their choices, or the lasting feeling derived from the emotional arc of the saga.
+                * **`language`**: Ensure the entire review is in the language specified by LANGUAGE_DIRECTIVE.
+
+            2.  **Tone & Style:**
+                *   Celebratory, personal, engaging, insightful.
+                *   Like a personal 'Wrapped' recap, a 'Throwback Thursday (TBT)' style reflection, or a personalized game-ending summary.
+                *   Directly address the player (e.g., "you," "your journey").
+
+            3.  **JSON Structure:**
+                *   Output a single, valid JSON structure:
+                    ${toJsonMap(Review::class.java)}
+
+            4.  **Important Considerations:**
+                *   If PLAYER_CHARACTER is null or their name is unavailable, address the player more generically (e.g., "Adventurer," "Pathfinder").
+                *   Ground your analysis in the provided CONTEXT_JSON. Do not invent statistics or events not supported by the data.
+                *   The narratives for each key should be distinct but flow together as part of a cohesive review.
+
+            Example for `playStyle` if OVERALL_PLAYER_EMOTIONAL_SUMMARY was "Often approached situations with DETERMINED resolve, yet showed EMPATHETIC concern for others.":
+            "Throughout your adventure in SAGA_INFO.title, a strong sense of determination was your hallmark. You faced challenges head-on, yet always with a notable empathy for those you encountered, making your journey one of principled strength."
+
+            Example for `keyAllies` using CHARACTER_RELATIONS_HIGHLIGHTS like "CharacterA and CharacterB: Trusted Comrades; CharacterA and CharacterC: Mentorship" and TOP_INTERACTIVE_CHARACTERS_TEXT indicating many messages with CharacterB:
+            "Your journey was not a solo endeavor. You forged a deep camaraderie with CharacterB, evident in your many interactions and their role as a trusted comrade. With CharacterC, the bond of mentorship clearly guided your path, shaping your decisions."
+
+            Example for `conclusionText` using EMOTIONAL_JOURNEY_THROUGH_ACTS like "Act 'The Beginning': predominantly HOPEFUL, Act 'The Climax': predominantly ANXIOUS but ending DETERMINED" and OVERALL_PLAYER_EMOTIONAL_SUMMARY:
+            "Looking back, your path through SAGA_INFO.title was a rich tapestry of emotion. From the HOPEFUL beginnings of your first act, through the ANXIOUS moments leading to the climax where your DETERMINED spirit ultimately shone, your journey was uniquely yours.
+            This adventure, characterized by your overall [OVERALL_PLAYER_EMOTIONAL_SUMMARY], will surely leave a lasting impression."
             """.trimIndent()
-        // This trimIndent() might be misaligned if the content above is not fully pasted.
     }
 
     fun emotionalGeneration(

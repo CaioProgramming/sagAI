@@ -171,6 +171,7 @@ fun SagaDetailView(
     }
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val emotionalCardReference by viewModel.emotionalCardReference.collectAsStateWithLifecycle()
+    val showReview by viewModel.showReview.collectAsStateWithLifecycle()
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
             showDeleteConfirmation = false
@@ -192,6 +193,7 @@ fun SagaDetailView(
             state,
             section,
             paddingValues,
+            showReview = showReview,
             showTitleOnly = showIntro,
             emotionalCardReference = emotionalCardReference,
             onChangeSection = {
@@ -215,7 +217,10 @@ fun SagaDetailView(
                 viewModel.createReview()
             },
             openReview = {
-                // viewModel.resetReview()
+                viewModel.createReview()
+            },
+            closeReview = {
+                viewModel.closeReview()
             },
             createEmotionalReview = {
                 if (saga?.data?.emotionalReview == null) {
@@ -489,12 +494,14 @@ fun SagaDetailContentView(
     state: State,
     currentSection: DetailAction = DetailAction.BACK,
     paddingValues: PaddingValues,
+    showReview: Boolean = false,
     generatingReview: Boolean = false,
     emotionalCardReference: String,
     onChangeSection: (DetailAction) -> Unit = {},
     onBackClick: (DetailAction) -> Unit = {},
     createReview: () -> Unit,
     openReview: () -> Unit,
+    closeReview: () -> Unit,
     createTimelineReview: (TimelineContent) -> Unit,
     createEmotionalReview: () -> Unit,
     showTitleOnly: Boolean = false,
@@ -503,7 +510,6 @@ fun SagaDetailContentView(
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    var showReview by remember { mutableStateOf(false) }
     var showEmotionalReview by remember { mutableStateOf(false) }
 
     saga?.let { sagaContent ->
@@ -538,11 +544,7 @@ fun SagaDetailContentView(
                                         )
                                     }
                                     SagaDrawerContent(sagaContent) {
-                                        if (sagaContent.data.review == null && sagaContent.data.isEnded) {
-                                            createReview.invoke()
-                                        } else {
-                                            showReview = true
-                                        }
+                                        openReview()
                                     }
                                 }
                             }
@@ -675,11 +677,7 @@ fun SagaDetailContentView(
                                                     }
                                                 },
                                                 openReview = {
-                                                    if (sagaContent.data.review != null) {
-                                                        showReview = true
-                                                    } else {
-                                                        createReview()
-                                                    }
+                                                    createReview()
                                                 },
                                                 onBackClick = {
                                                     onBackClick.invoke(currentSection)
@@ -703,7 +701,7 @@ fun SagaDetailContentView(
                             if (showReview) {
                                 ModalBottomSheet(
                                     onDismissRequest = {
-                                        showReview = false
+                                        closeReview()
                                     },
                                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                     modifier =
@@ -771,6 +769,7 @@ fun SagaDetailContentViewPreview() {
         openReview = {},
         createEmotionalReview = {},
         createTimelineReview = {},
+        closeReview = {},
     )
 }
 

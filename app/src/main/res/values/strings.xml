@@ -203,4 +203,20 @@
     <string name="starring">Starring</string>
     <string name="emotional_card_title">Emotional Review</string>
 
+    <!-- Emotional Tone Titles -->
+    <string name="tone_neutral">Neutral</string>
+    <string name="tone_calm">Calm</string>
+    <string name="tone_curious">Curious</string>
+    <string name="tone_hopeful">Hopeful</string>
+    <string name="tone_determined">Determined</string>
+    <string name="tone_empathetic">Empathetic</string>
+    <string name="tone_joyful">Joyful</string>
+    <string name="tone_concerned">Concerned</string>
+    <string name="tone_anxious">Anxious</string>
+    <string name="tone_frustrated">Frustrated</string>
+    <string name="tone_angry">Angry</string>
+    <string name="tone_sad">Sad</string>
+    <string name="tone_melancholic">Melancholic</string>
+    <string name="tone_cynical">Cynical</string>
+
 </resources>

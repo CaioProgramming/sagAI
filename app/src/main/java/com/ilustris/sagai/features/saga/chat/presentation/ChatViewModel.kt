@@ -165,7 +165,7 @@ class ChatViewModel
                         updateProgress(sagaContent)
                         notifyIfNeeded()
                         state.value = ChatState.Success
-                        loadFinished
+                        loadFinished = true
                         if (isFirstLoading) {
                             delay(3.seconds)
                             showTitle.emit(false)

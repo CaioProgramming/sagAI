@@ -19,7 +19,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SagAI"
-        android:windowSoftInputMode="adjustPan"
         tools:targetApi="36">
 
         <activity

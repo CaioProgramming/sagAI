@@ -290,10 +290,10 @@ class SagaContentManagerImpl
             content: TimelineContent,
         ) = executeRequest {
             if (content.isComplete()) {
-                Log.w(javaClass.simpleName, "Timeline is already updated.")
-                content.data
+                endTimeline(saga.currentActInfo?.currentChapterInfo)
+                error("Timeline already completed")
             } else {
-                timelineUseCase.generateTimeline(saga, content)
+                return@executeRequest timelineUseCase.generateTimeline(saga, content)
             }
         }
 
@@ -539,7 +539,11 @@ class SagaContentManagerImpl
             generateEmotionalReview(
                 userMessages,
                 content.emotionalRanking(saga.mainCharacter?.data),
-            )
+            ).onSuccessAsync {
+                timelineUseCase.updateTimeline(
+                    timeline.copy(emotionalReview = it),
+                )
+            }
             updateCharacters(timeline, saga)
             updateWikis(timeline)
         }

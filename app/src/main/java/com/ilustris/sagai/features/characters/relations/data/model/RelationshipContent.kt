@@ -23,4 +23,11 @@ data class RelationshipContent(
         entity = RelationshipUpdateEvent::class,
     )
     val relationshipEvents: List<RelationshipUpdateEvent> = emptyList(),
-)
+) {
+    fun getCharacterExcluding(character: Character?): Character =
+        if (characterOne.id == character?.id) {
+            characterTwo
+        } else {
+            characterOne
+        }
+}

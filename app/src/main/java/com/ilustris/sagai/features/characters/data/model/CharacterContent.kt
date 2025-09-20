@@ -38,4 +38,6 @@ data class CharacterContent(
             relationshipsAsSecond.forEach { byId[it.data.id] = it }
             return byId.values.toList()
         }
+
+    fun rankRelationships() = relationships.sortedByDescending { it.relationshipEvents.size }
 }

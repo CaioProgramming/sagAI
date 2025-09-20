@@ -579,7 +579,11 @@ fun TimeLineCard(
                                 fontFamily = genre.headerFont(),
                                 textAlign = TextAlign.Center,
                             ),
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     )
                 }
 
@@ -612,8 +616,10 @@ fun TimeLineCard(
                                     Modifier
                                         .padding(16.dp)
                                         .shadow(3.dp, genre.shape(), spotColor = genre.color)
-                                        .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
-                                        .fillMaxWidth(),
+                                        .background(
+                                            MaterialTheme.colorScheme.surfaceContainer,
+                                            genre.shape(),
+                                        ).fillMaxWidth(),
                                 true,
                             )
                         }
