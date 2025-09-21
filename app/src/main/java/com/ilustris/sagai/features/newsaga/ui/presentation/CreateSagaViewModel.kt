@@ -4,8 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
@@ -67,12 +67,14 @@ class CreateSagaViewModel
         fun sendChatMessage(userInput: String) {
             updateGenerating(true)
             viewModelScope.launch(Dispatchers.IO) {
+                val latestMessage = chatMessages.value.lastOrNull()
                 val userMessage = ChatMessage(text = userInput, isUser = true)
                 chatMessages.update { it + userMessage }
 
                 newSagaUseCase
                     .replyAiForm(
                         currentMessages = chatMessages.value,
+                        latestMessage = latestMessage?.text ?: emptyString(),
                         currentFormData = form.value,
                     ).onSuccess { response ->
 
@@ -129,7 +131,7 @@ class CreateSagaViewModel
                                     form.value.character.copy(
                                         name = it.character.name,
                                         gender = it.character.gender,
-                                        briefDescription = it.character.briefDescription,
+                                        description = it.character.description,
                                     ),
                             )
                     }
@@ -152,7 +154,7 @@ class CreateSagaViewModel
                                     form.value.character.copy(
                                         name = it.character.name,
                                         gender = it.character.gender,
-                                        briefDescription = it.character.briefDescription,
+                                        description = it.character.description,
                                     ),
                             )
                     }

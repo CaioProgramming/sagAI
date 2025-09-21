@@ -41,7 +41,7 @@ object CharacterPrompts {
             )
             appendLine("**CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**")
             appendLine("1.  **Foundational Art Style:**")
-            appendLine("he primary rendering style for the portrait MUST be:")
+            appendLine("The primary rendering style for the portrait MUST be:")
             appendLine(GenrePrompts.artStyle(genre))
             appendLine("2.  **Specific Color Application Instructions:**")
             appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.title}\") are applied:")
@@ -85,8 +85,16 @@ object CharacterPrompts {
             appendLine(
                 "3.  **Dramatic Portrait Framing**: The final image should still be a 'Dramatic Portrait,' conveying the character's essence and mood. This is the overall goal, even when adapting a non-portrait composition reference.",
             )
+            // --- RACE & ETHNICITY FIDELITY (MANDATORY) ---
+            appendLine(
+                "4.  **Race and Ethnicity Fidelity (MANDATORY)**: Explicitly restate the character's race and ethnicity from the Character Context early in the prompt and prioritize them over any style, color, or genre cues. Skin tone, hair texture, and facial anatomy must clearly match the specified race/ethnicity. Do NOT lighten, change, or neutralize the skin tone; do NOT default to Eurocentric features; do NOT translate or replace the provided race/ethnicity terms—use them verbatim. If both race and ethnicity are present, include both.",
+            )
+            // --- ASPECT RATIO / FRAMING ---
+            appendLine(
+                "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body unless explicitly required.",
+            )
 
-            appendLine("5.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
+            appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
             appendLine(ImagePrompts.conversionGuidelines(genre))
             appendLine("**Image Generation Model Inputs Overview (for your awareness when crafting the text prompt):**")
             appendLine("*   **Text Prompt:** (The string you will generate)")
@@ -100,7 +108,7 @@ object CharacterPrompts {
                         "image",
                         "sagaId",
                         "joinedAt",
-                        "backstory",
+                        "appearance",
                     ),
                 ),
             )

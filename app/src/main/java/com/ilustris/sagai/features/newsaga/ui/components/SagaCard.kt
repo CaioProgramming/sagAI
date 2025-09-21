@@ -82,18 +82,11 @@ fun SagaCard(
             },
             modifier =
                 Modifier
-                    .blur(5.dp)
                     .background(backgroundColor)
                     .fillMaxWidth()
                     .fillMaxHeight(imageSize)
                     .zoomAnimation()
                     .clipToBounds(),
-        )
-
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background.copy(alpha = .6f)),
         )
 
         Column(

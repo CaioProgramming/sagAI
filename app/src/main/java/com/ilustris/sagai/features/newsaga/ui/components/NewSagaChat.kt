@@ -174,7 +174,7 @@ fun NewSagaChat(
 
         val isValidCharacter =
             currentForm?.character?.name?.isNotEmpty() == true &&
-                currentForm.character.briefDescription.length > 20
+                currentForm.character.description.length > 20
 
         reviewEnabled = isValidSaga && isValidCharacter
     }
@@ -320,7 +320,7 @@ fun NewSagaChat(
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 )
                                                 Text(
-                                                    currentForm?.character?.briefDescription ?: "No description yet",
+                                                    currentForm?.character?.description ?: "No description yet",
                                                     style =
                                                         MaterialTheme.typography.bodySmall.copy(
                                                             fontFamily = animatedGenre.bodyFont(),
@@ -502,7 +502,7 @@ fun NewSagaChat(
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     )
                                                     Text(
-                                                        "${sagaForm.character?.briefDescription}",
+                                                        "${sagaForm.character?.description}",
                                                         style =
                                                             MaterialTheme.typography.bodySmall.copy(
                                                                 fontFamily = animatedGenre.bodyFont(),

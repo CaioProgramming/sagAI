@@ -98,10 +98,8 @@ class CharacterUseCaseImpl
 
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription, listOfNotNull(portraitReference))!!
-                        .apply {
-                            imageCropHelper.cropToPortraitBitmap(this, centerCropZoomFactor = .6f)
-                        }
+                        .generateImage(translatedDescription, listOfNotNull(styleReferenceBitmap, portraitReference))!!
+
                 val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)
                 repository.updateCharacter(newCharacter)

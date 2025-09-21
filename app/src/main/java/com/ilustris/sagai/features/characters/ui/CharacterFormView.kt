@@ -199,10 +199,10 @@ fun SimpleCharacterForm(
 
         FormSection(title = stringResource(R.string.character_form_title_backstory)) {
             TextField(
-                value = currentCharacter.briefDescription,
+                value = currentCharacter.description,
                 onValueChange = { newBackstory ->
                     if (newBackstory.length <= CharacterFormRules.MAX_BACKSTORY_LENGTH) {
-                        syncCharacterState(currentCharacter.copy(briefDescription = newBackstory))
+                        syncCharacterState(currentCharacter.copy(description = newBackstory))
                     }
                 },
                 placeholder = {
@@ -226,7 +226,7 @@ fun SimpleCharacterForm(
         AnimatedVisibility(
             currentCharacter.name.isNotEmpty() &&
                 currentCharacter.gender.isNotEmpty() &&
-                currentCharacter.briefDescription.isNotEmpty(),
+                currentCharacter.description.isNotEmpty(),
         ) {
             Button(
                 onClick = {

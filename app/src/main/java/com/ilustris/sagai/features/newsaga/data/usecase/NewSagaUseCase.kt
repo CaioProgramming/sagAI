@@ -27,6 +27,7 @@ interface NewSagaUseCase {
 
     suspend fun replyAiForm(
         currentMessages: List<ChatMessage>,
+        latestMessage: String,
         currentFormData: SagaForm,
     ): RequestResult<SagaCreationGen>
 

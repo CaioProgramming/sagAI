@@ -429,7 +429,7 @@ class SagaContentManagerImpl
                             updateTimeline(
                                 saga,
                                 narrativeStep.timeline,
-                            )
+                            ).getSuccess()!!
 
                         NarrativeStep.NoActionNeeded -> skipNarrative()
                     }

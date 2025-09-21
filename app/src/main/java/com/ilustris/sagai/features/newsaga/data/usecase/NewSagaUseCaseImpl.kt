@@ -109,6 +109,7 @@ class NewSagaUseCaseImpl
 
         override suspend fun replyAiForm(
             currentMessages: List<ChatMessage>,
+            latestMessage: String,
             currentFormData: SagaForm,
         ): RequestResult<SagaCreationGen> =
             executeRequest {
@@ -117,8 +118,9 @@ class NewSagaUseCaseImpl
                 val extractedDataPrompt =
                     gemmaClient.generate<SagaForm>(
                         NewSagaPrompts.extractDataFromUserInputPrompt(
-                            currentFormData,
-                            currentMessages.last().text,
+                            currentSagaForm = currentFormData,
+                            userInput = currentMessages.last().text,
+                            lastMessage = latestMessage,
                         ),
                         requireTranslation = true,
                     )!!

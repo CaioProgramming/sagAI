@@ -5,26 +5,18 @@
 
 package com.ilustris.sagai.features.newsaga.ui.components
 
-import ReviewCard
 import SagaFormCards
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInBounce
-import androidx.compose.animation.core.EaseInCubic
-import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.EaseInOutSine
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.RepeatMode.Reverse
-import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -34,7 +26,6 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,7 +35,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -55,7 +45,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
@@ -66,27 +55,19 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,15 +80,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -115,50 +90,35 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
-import androidx.graphics.shapes.toPath
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
-import com.ilustris.sagai.features.newsaga.data.model.isValid
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.ui.presentation.FormState
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.MorphPolygonShape
-import com.ilustris.sagai.ui.theme.RoundedPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.Typography
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.math.min
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -209,7 +169,7 @@ fun NewSagaAIForm(
     }
 
     LaunchedEffect(aiState.message) {
-        showText = aiState.message != null
+        showText = aiState.message != null && aiState.readyToSave.not()
     }
 
     val infiniteTransition = rememberInfiniteTransition()
@@ -290,8 +250,6 @@ fun NewSagaAIForm(
                     .fillMaxWidth()
                     .weight(1f),
             ) {
-
-
                 // Orbit-like bubbles around the center with AnimatedVisibility and floating animation
                 val character = sagaForm.character
                 val density = androidx.compose.ui.platform.LocalDensity.current
@@ -350,8 +308,7 @@ fun NewSagaAIForm(
                                     .background(
                                         Brush.verticalGradient(g.color.darkerPalette()),
                                         CircleShape,
-                                    )
-                                    .clip(CircleShape)
+                                    ).clip(CircleShape)
                                     .effectForGenre(g, customGrain = 0f)
                                     .selectiveColorHighlight(g.selectiveHighlight()),
                         )
@@ -561,13 +518,11 @@ fun NewSagaAIForm(
                             Modifier
                                 .clickable {
                                     input = it
-                                }
-                                .fillMaxWidth(.5f)
+                                }.fillMaxWidth(.5f)
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     inputShape,
-                                )
-                                .padding(8.dp),
+                                ).padding(8.dp),
                     )
                 }
             }
@@ -687,8 +642,7 @@ fun NewSagaAIForm(
                                         .background(
                                             MaterialTheme.colorScheme.surface,
                                             RoundedCornerShape(12.dp),
-                                        )
-                                        .padding(12.dp),
+                                        ).padding(12.dp),
                             ) {
                                 Text(
                                     text = character.name,
@@ -699,9 +653,9 @@ fun NewSagaAIForm(
                                             fontWeight = FontWeight.Bold,
                                         ),
                                 )
-                                if (character.briefDescription.isNotEmpty()) {
+                                if (character.description.isNotEmpty()) {
                                     Text(
-                                        text = character.briefDescription,
+                                        text = character.description,
                                         style =
                                             MaterialTheme.typography.bodySmall.copy(
                                                 fontFamily = genre?.bodyFont(),
@@ -718,91 +672,90 @@ fun NewSagaAIForm(
                         onClick = {
                             scope.launch {
                                 if (character.name.isNotEmpty()) {
-                                    characterTooltipState.show() }
+                                    characterTooltipState.show()
+                                }
                             }
                         },
                         modifier =
                             Modifier
-                                .size(50.dp).padding(8.dp),
+                                .size(50.dp)
+                                .padding(8.dp),
                         colors =
                             IconButtonDefaults.iconButtonColors().copy(
                                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
                                 contentColor = MaterialTheme.colorScheme.onBackground,
                             ),
                     ) {
-
-                            AnimatedContent(
-                                character,
-                                modifier = Modifier.fillMaxSize(),
-                            ) {
-
-                                Box(Modifier.fillMaxSize().gradientFill(brush), contentAlignment = Alignment.Center) {
-                                    if (it.name.isEmpty()) {
-                                        Icon(Icons.Rounded.Person, "Character")
-                                    } else {
-                                        Text(
-                                            it.name.first().toString(),
-                                            style =
-                                                MaterialTheme.typography.bodySmall.copy(
-                                                    fontFamily = genre?.headerFont(),
-                                                    textAlign = TextAlign.Center,
-                                                ),
-                                            modifier = Modifier.align(Alignment.Center),
-                                        )
-                                    }
+                        AnimatedContent(
+                            character,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            Box(Modifier.fillMaxSize().gradientFill(brush), contentAlignment = Alignment.Center) {
+                                if (it.name.isEmpty()) {
+                                    Icon(Icons.Rounded.Person, "Character")
+                                } else {
+                                    Text(
+                                        it.name.first().toString(),
+                                        style =
+                                            MaterialTheme.typography.bodySmall.copy(
+                                                fontFamily = genre?.headerFont(),
+                                                textAlign = TextAlign.Center,
+                                            ),
+                                        modifier = Modifier.align(Alignment.Center),
+                                    )
                                 }
                             }
-                            }
-                        
-                    }
-                }
-            }
-        }
-
-        if (showThemes) {
-            ModalBottomSheet(
-                { coroutineScope.launch { showThemes = false } },
-                sheetState = sheetState,
-                containerColor = MaterialTheme.colorScheme.background,
-            ) {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    modifier = Modifier.padding(16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        Text(
-                            "Temas",
-                            style =
-                                MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                ),
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                        )
-                    }
-
-                    items(Genre.entries) { genre ->
-                        GenreCard(
-                            genre = genre,
-                            isSelected = sagaForm.saga.genre == genre,
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(4.dp)
-                                    .aspectRatio(.5f),
-                        ) {
-                            showThemes = false
-                            selectGenre(genre)
                         }
                     }
                 }
             }
         }
     }
+
+    if (showThemes) {
+        ModalBottomSheet(
+            { coroutineScope.launch { showThemes = false } },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier.padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    Text(
+                        "Temas",
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
+                }
+
+                items(Genre.entries) { genre ->
+                    GenreCard(
+                        genre = genre,
+                        isSelected = sagaForm.saga.genre == genre,
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(4.dp)
+                                .aspectRatio(.5f),
+                    ) {
+                        showThemes = false
+                        selectGenre(genre)
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Preview(uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL)
 @Composable
