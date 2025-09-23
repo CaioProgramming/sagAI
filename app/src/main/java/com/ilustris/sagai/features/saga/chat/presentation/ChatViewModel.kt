@@ -146,7 +146,8 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        val allMessages = messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
+                        val allMessages =
+                            messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
 
                         if (allMessages.size != sagaContent.flatMessages().size && isGenerating.value.not() && isLoading.value.not()) {
                             generateSuggestions()
@@ -157,7 +158,10 @@ class ChatViewModel
                                 .mapToActDisplayData(sagaContent.acts)
 
                         characters.value =
-                            sortCharactersByMessageCount(sagaContent.getCharacters(), sagaContent.flatMessages())
+                            sortCharactersByMessageCount(
+                                sagaContent.getCharacters(),
+                                sagaContent.flatMessages(),
+                            )
 
                         checkIfUpdatesService(sagaContent)
 
@@ -186,6 +190,7 @@ class ChatViewModel
                         val maxCount = UpdateRules.LORE_UPDATE_LIMIT
                         messageCount.toFloat() / maxCount.toFloat()
                     }
+
                     else -> 0f
                 }
         }
@@ -329,7 +334,9 @@ class ChatViewModel
                     messageContent.character == null &&
                         messageContent.message.senderType == SenderType.CHARACTER &&
                         messageContent.message.speakerName != null &&
-                        content.getCharacters().find { it.name == messageContent.message.speakerName } != null
+                        content
+                            .getCharacters()
+                            .find { it.name == messageContent.message.speakerName } != null
                 }
 
             updatableMessages.forEach { message ->
@@ -404,13 +411,16 @@ class ChatViewModel
                             TypoStatus.OK -> {
                                 sendInput(true)
                             }
+
                             TypoStatus.FIX -> {
                                 delay(5.seconds)
                                 if (typoFixMessage.value != null) {
-                                    inputValue.value = TextFieldValue(it.suggestedText ?: inputValue.value.text)
+                                    inputValue.value =
+                                        TextFieldValue(it.suggestedText ?: inputValue.value.text)
                                     sendInput(true)
                                 }
                             }
+
                             TypoStatus.ENHANCEMENT -> doNothing()
                         }
                     }
@@ -485,7 +495,10 @@ class ChatViewModel
                 return
             }
 
-            Log.d(javaClass.simpleName, "generateSuggestions: checking if is generating -> $isGenerating")
+            Log.d(
+                javaClass.simpleName,
+                "generateSuggestions: checking if is generating -> $isGenerating",
+            )
             val currentSaga = content.value ?: return
             if (currentSaga.data.isEnded) return
             val currentTimeline = currentSaga.getCurrentTimeLine()
@@ -529,7 +542,10 @@ class ChatViewModel
                         message = newMessage,
                     ).onSuccessAsync { genMessage ->
                         if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
-                            createCharacter(genMessage.newCharacter)
+                            createCharacter(
+                                genMessage.newCharacter,
+                                saga.flatMessages().last().message,
+                            )
                         }
                         sendMessage(
                             genMessage.message.copy(
@@ -551,11 +567,19 @@ class ChatViewModel
             }
         }
 
-        fun createCharacter(newCharacter: CharacterInfo) {
+        fun createCharacter(
+            newCharacter: CharacterInfo,
+            newMessage: Message,
+        ) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager
                     .generateCharacter(
-                        newCharacter.toJsonFormat(),
+                        buildString {
+                            appendLine("New character context:")
+                            appendLine(newCharacter.toJsonFormat())
+                            appendLine("Previous Message context:")
+                            appendLine(newMessage.toJsonFormat())
+                        },
                     ).onSuccessAsync {
                         sendSnackbarMessage(
                             SnackBarState(

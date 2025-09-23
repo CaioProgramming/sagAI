@@ -275,16 +275,10 @@ object SagaPrompts {
         appendLine(
             "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.title}).",
         )
+        appendLine("Ensure to render this art style description matching with the reference image")
+        appendLine(GenrePrompts.artStyle(saga.genre))
         appendLine("*The accents are design elements, not the primary light source for the character.")
-        appendLine("**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
-        appendLine("*You WILL have access to a Visual Reference Image (Bitmap)")
-        appendLine("*From this, draw inspiration for:")
-        appendLine(
-            "***Overall Compositional Framing & Mood:** Adapt for an icon. The character's specific pose should be dramatic and derived from their details, not a direct copy of a pose from any visual reference.",
-        )
-        appendLine("**Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured")
-        appendLine("Adapt for a simple icon background")
-        appendLine("Compatible Visual Details & Mood:")
+        appendLine(GenrePrompts.getColorEmphasisDescription(saga.genre))
         appendLine("* Also you will have access to character visual reference to provide a more precise description.")
         appendLine("4.  **Character Details (Provided Below):** The character to be depicted.")
         appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
@@ -292,7 +286,7 @@ object SagaPrompts {
         appendLine("This description must:")
         appendLine("*   Integrate the **Character Details**.")
         appendLine(
-            "*   Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
+            "*Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
         )
         appendLine(
             "*   **Character Focus and Framing:** Ensure the character is the primary subject, framed as a close-up or medium close-up shot (e.g., from the chest up or waist up). The character should dominate the icon and be the clear focal point, with dynamic posing.",
@@ -309,7 +303,16 @@ object SagaPrompts {
         appendLine("Main Character Details:")
         appendLine(character.toJsonFormatExcludingFields(listOf("image", "sagaId", "joinedAt", "hexColor", "id")))
         appendLine(
-            "**Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**",
+            "    - **Looks:** Describe the character's facial features and physical build (e.g., 'a rugged man with a lean physique', 'a Latina woman with a sophisticated haircut').",
+        )
+        appendLine(
+            "    - **Clothing:** Detail their attire, including style, color, and accessories (e.g., 'a vibrant Hawaiian-style shirt', 'a sleek two-piece swimsuit').",
+        )
+        appendLine(
+            "    - **Expression:** The face should not be neutral. It must convey a strong emotion or intention. Use terms like 'a hardened, protective gaze', 'a piercing, fatal stare', 'a sardonic smile'.",
+        )
+        appendLine(
+            "    - **Pose & Body Language:** Describe their posture and how they interact with the environment. Use dynamic phrases like 'relaxed yet alert posture', 'casually lounging on a car hood', 'body language exuding confidence'.",
         )
         appendLine(
             "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].",

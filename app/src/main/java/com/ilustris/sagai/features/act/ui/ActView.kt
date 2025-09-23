@@ -102,7 +102,7 @@ fun ActComponent(
                             .background(MaterialTheme.colorScheme.background)
                             .weight(1f)
                             .fillMaxWidth()
-                            .effectForGenre(genre),
+                            .effectForGenre(genre, useFallBack = true),
                     contentScale = ContentScale.Crop,
                 )
             }

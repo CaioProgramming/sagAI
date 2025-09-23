@@ -306,7 +306,7 @@ private fun ChatList(
             }
         }
 
-        items(sagas) {
+        items(sagas.sortedByDescending { it.flatMessages().lastOrNull()?.message?.timestamp }) {
             ChatCard(it, isEnabled = showDebugButton) {
                 onSelectSaga(it.data)
             }

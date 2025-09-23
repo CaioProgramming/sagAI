@@ -383,18 +383,14 @@ fun ChatInputView(
                                         CircleShape,
                                     ).size(32.dp),
                         ) {
-                            AnimatedContent(
-                                isGenerating,
+                            AnimatedVisibility(
+                                isGenerating.not(),
                                 modifier =
                                     Modifier
-                                        .reactiveShimmer(
-                                            isGenerating,
-                                            content.data.genre.shimmerColors(),
-                                        ).padding(2.dp)
+                                        .padding(2.dp)
                                         .fillMaxSize(),
                             ) {
-                                val icon =
-                                    if (it) R.drawable.ic_spark else R.drawable.ic_arrow_up
+                                val icon = R.drawable.ic_arrow_up
                                 Icon(
                                     painterResource(icon),
                                     contentDescription = "Send Message",

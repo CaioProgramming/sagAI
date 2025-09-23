@@ -27,6 +27,7 @@ import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -128,6 +129,7 @@ class CharacterUseCaseImpl
                     insertCharacter(
                         newCharacter.copy(
                             sagaId = sagaContent.data.id,
+                            firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
                         ),
                     )

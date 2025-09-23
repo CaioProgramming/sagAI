@@ -107,7 +107,7 @@ class SagaRepositoryImpl
                     buildString {
                         appendLine(metaPrompt)
                     },
-                    references,
+                    listOfNotNull(characterIcon),
                 )!!
 
             val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)

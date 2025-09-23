@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,6 +24,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,6 +42,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -53,10 +57,12 @@ import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnot
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.shape
@@ -138,7 +144,6 @@ fun RelationShipCard(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-
     }
 
     if (showDetailSheet) {
@@ -199,7 +204,7 @@ fun SingleRelationShipCard(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
-            if (showText){
+            if (showText) {
                 Text(
                     relation.description,
                     style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
@@ -230,17 +235,16 @@ fun RelationShipSheet(
     val firstCharacter = content.characterOne
     val secondCharacter = content.characterTwo
 
-    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+    LazyColumn(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         item {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(16.dp),
             ) {
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     modifier =
                         Modifier
-                            .fillMaxWidth()
                             .padding(vertical = 8.dp),
                 ) {
                     val firstCharacter =
@@ -302,82 +306,16 @@ fun RelationShipSheet(
 
         if (content.relationshipEvents.isNotEmpty()) {
             items(content.relationshipEvents) {
-                Row(
-                    modifier = Modifier.padding(8.dp).fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    CharacterAvatar(
-                        firstCharacter,
-                        firstCharacter.hexColor.hexToColor(),
-                        genre = genre,
-                        innerPadding = 0.dp,
-                        modifier = Modifier.size(32.dp),
-                    )
-
-                    HorizontalDivider(
-                        color = firstCharacter.hexColor.hexToColor() ?: genre.color,
-                        thickness = 2.dp,
-                        modifier = Modifier.fillMaxHeight().weight(.2f),
-                    )
-
-                    val brush =
-                        Brush.linearGradient(
-                            listOf(
-                                firstCharacter.hexColor.hexToColor() ?: genre.color,
-                                secondCharacter.hexColor.hexToColor() ?: genre.color,
-                            ),
-                        )
-
-                    Column(
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .clip(genre.shape())
-                                .border(2.dp, brush, genre.shape())
-                                .background(MaterialTheme.colorScheme.background, genre.shape())
-                                .padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            it.emoji,
-                            style = MaterialTheme.typography.titleLarge,
-                            textAlign = TextAlign.Center,
-                        )
-
-                        Text(
-                            it.title,
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    textAlign = TextAlign.Center,
-                                ),
-                        )
-
-                        Text(
-                            it.description,
-                            style =
-                                MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    textAlign = TextAlign.Justify,
-                                ),
-                            modifier = Modifier.alpha(.6f),
-                        )
-                    }
-
-                    HorizontalDivider(
-                        color = secondCharacter.hexColor.hexToColor() ?: genre.color,
-                        thickness = 2.dp,
-                        modifier = Modifier.fillMaxHeight().weight(.2f),
-                    )
-
-                    CharacterAvatar(
-                        secondCharacter,
-                        genre = genre,
-                        innerPadding = 0.dp,
-                        modifier = Modifier.size(32.dp),
-                    )
-                }
+                RelationshipEventCard(
+                    relationshipEvent = it,
+                    content = content,
+                    genre = genre,
+                )
             }
+        }
+
+        item {
+            Spacer(Modifier.size(32.dp))
         }
     }
 }
@@ -567,5 +505,116 @@ fun RelationShipSheetPreview() {
         )
     SagAITheme {
         RelationShipSheet(saga = saga, content = content)
+    }
+}
+
+@Composable
+fun RelationshipEventCard(
+    relationshipEvent: RelationshipUpdateEvent,
+    content: RelationshipContent,
+    genre: Genre,
+) {
+    val firstCharacter = content.characterOne
+    val secondCharacter = content.characterTwo
+    val charactersColors = listOf(firstCharacter.hexColor.hexToColor() ?: genre.color,
+        secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last())
+    ConstraintLayout {
+        val (avatarsRow, relationshipCard, relationshipEmoji, divider) = createRefs()
+
+        val brush =
+            Brush.linearGradient(
+                listOf(
+                    firstCharacter.hexColor.hexToColor() ?: genre.color,
+                    secondCharacter.hexColor.hexToColor() ?: genre.color,
+                ),
+            )
+
+        Column(
+            modifier =
+                Modifier
+                    .constrainAs(relationshipCard) {
+                        top.linkTo(parent.top)
+                        end.linkTo(parent.end)
+                        start.linkTo(parent.start)
+                        width = Dimension.fillToConstraints
+                    }.padding(horizontal = 16.dp)
+                    .clip(genre.shape())
+                    .border(2.dp, brush, genre.shape())
+                    .background(MaterialTheme.colorScheme.background, genre.shape())
+                    .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                relationshipEvent.emoji,
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center,
+            )
+
+            Text(
+                relationshipEvent.title,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = genre.bodyFont(),
+                        textAlign = TextAlign.Center,
+                    ),
+            )
+
+            Text(
+                relationshipEvent.description,
+                style =
+                    MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = genre.bodyFont(),
+                        textAlign = TextAlign.Justify,
+                    ),
+                modifier = Modifier.alpha(.6f),
+            )
+        }
+
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            modifier =
+                Modifier
+                    .constrainAs(avatarsRow) {
+                        top.linkTo(relationshipCard.top, margin = (-16).dp)
+                        end.linkTo(parent.end)
+                        start.linkTo(parent.start)
+                        width = Dimension.matchParent
+                    },
+        ) {
+            CharacterAvatar(
+                firstCharacter,
+                firstCharacter.hexColor.hexToColor(),
+                genre = genre,
+                innerPadding = 0.dp,
+                modifier = Modifier.size(32.dp).offset(x = 5.dp).zIndex(1f),
+            )
+
+            CharacterAvatar(
+                secondCharacter,
+                secondCharacter.hexColor.hexToColor(),
+                innerPadding = 0.dp,
+                genre = genre,
+                modifier = Modifier.size(32.dp).offset(x = (-5).dp),
+            )
+        }
+
+        if (relationshipEvent != content.relationshipEvents.last()) {
+            val verticalBrush = Brush.verticalGradient(
+                charactersColors
+            )
+            VerticalDivider(
+                color = MaterialTheme.colorScheme.onBackground,
+                thickness = 2.dp,
+                modifier =
+                    Modifier
+                        .constrainAs(divider) {
+                            top.linkTo(relationshipCard.bottom)
+                            end.linkTo(avatarsRow.end)
+                            start.linkTo(avatarsRow.start)
+                        }
+                        .gradientFill(verticalBrush)
+                        .height(50.dp),
+            )
+        }
     }
 }

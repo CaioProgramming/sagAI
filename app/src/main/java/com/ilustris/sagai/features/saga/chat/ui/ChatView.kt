@@ -692,8 +692,9 @@ fun ChatContent(
                                 .fillMaxWidth()
                                 .gradientFill(content.data.genre.gradient(isGenerating)),
                         progress = { progress },
+                        drawStopIndicator = {},
                         color = MaterialTheme.colorScheme.onBackground,
-                        trackColor = Color.Transparent,
+                        trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                     )
 
                     AnimatedVisibility(

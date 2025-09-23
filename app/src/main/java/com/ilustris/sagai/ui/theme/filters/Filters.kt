@@ -102,26 +102,21 @@ fun Modifier.effectForGenre(
     val crimePalette = CrimeColorTones.MIAMI_NEON_SUNSET
     val uniformValues =
         remember(genre, pixelSize) {
-            // Add pixelSize as a key for remember
-            // Recalculate only when genre or pixelSize changes
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
                         grainIntensity = customGrain ?: .2f,
-                        bloomThreshold = .6f,
-                        bloomIntensity = .1f,
-                        bloomRadius = 1.3f,
-                        softFocusRadius = focusRadius ?: .7f,
-                        saturation = .7f,
-                        contrast = 1.5f,
-                        brightness = 0f,
+                        softFocusRadius = focusRadius ?: .4f,
+                        saturation = .4f,
+                        contrast = 1.3f,
+                        brightness = -0.05f,
                         highlightTint = fantasyPalette.highlightTint,
                         shadowTint = fantasyPalette.shadowTint,
                         tintStrength = fantasyPalette.defaultTintStrength,
                         vignetteStrength = 0.2f,
                         vignetteSoftness = 0.7f,
                         pixelationBlockSize = 0f,
-                        colorTemperature = .1f, // Slightly warm for Fantasy
+                        colorTemperature = .1f,
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
@@ -144,17 +139,17 @@ fun Modifier.effectForGenre(
                 Genre.HORROR ->
                     ShaderParams(
                         grainIntensity = .1f,
-                        bloomThreshold = 0.4f, // Less bloom for horror
+                        bloomThreshold = 0.4f,
                         bloomIntensity = 0.1f,
                         bloomRadius = 1.0f,
-                        softFocusRadius = 0f, // Subtle soft focus
-                        saturation = .5f, // Very desaturated
-                        contrast = 1.5f, // High contrast
-                        brightness = .1f.unaryMinus(), // Darker mood
-                        highlightTint = horrorPalette.highlightTint, // From MOONLIGHT_MYSTIQUE
-                        shadowTint = horrorPalette.shadowTint, // From MOONLIGHT_MYSTIQUE
-                        tintStrength = horrorPalette.defaultTintStrength, // From MOONLIGHT_MYSTIQUE
-                        vignetteStrength = 1f, // Stronger vignette
+                        softFocusRadius = 0f,
+                        saturation = .5f,
+                        contrast = 1.5f,
+                        brightness = .1f.unaryMinus(),
+                        highlightTint = horrorPalette.highlightTint,
+                        shadowTint = horrorPalette.shadowTint,
+                        tintStrength = horrorPalette.defaultTintStrength,
+                        vignetteStrength = 1f,
                         vignetteSoftness = 0.8f,
                         pixelationBlockSize = pixelSize ?: 3.5f,
                         colorTemperature = .3f.unaryMinus(),
@@ -181,20 +176,17 @@ fun Modifier.effectForGenre(
                 Genre.CRIME ->
                     ShaderParams(
                         grainIntensity = customGrain ?: .1f,
-                        bloomThreshold = .2f,
-                        bloomIntensity = .1f,
-                        bloomRadius = 1.3f,
-                        softFocusRadius = focusRadius ?: .0f,
+                        softFocusRadius = focusRadius ?: 1f,
                         saturation = .7f,
-                        contrast = 1.7f,
-                        brightness = .05f.unaryMinus(),
+                        contrast = 1.4f,
+                        brightness = .05f,
                         highlightTint = crimePalette.highlightTint,
                         shadowTint = crimePalette.shadowTint,
                         tintStrength = crimePalette.defaultTintStrength,
                         vignetteStrength = .1f,
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = .05f.unaryMinus(),
+                        colorTemperature = .1f.unaryMinus(),
                     )
                 else ->
                     ShaderParams()
@@ -268,9 +260,9 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
         when (genre) {
             Genre.FANTASY -> .6f
             Genre.SCI_FI -> .4f
-            Genre.HORROR -> 0.1f
-            Genre.HEROES -> .9f
-            Genre.CRIME -> .85f
+            Genre.HORROR -> .1f
+            Genre.HEROES -> .7f
+            Genre.CRIME -> .7f
             else -> 1.0f
         }
 
@@ -290,7 +282,7 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
             Genre.SCI_FI -> 1.4f
             Genre.HORROR -> 1.6f
             Genre.HEROES -> 1.3f
-            Genre.CRIME -> 1.35f
+            Genre.CRIME -> 1.2f
             else -> 1.0f
         }
 

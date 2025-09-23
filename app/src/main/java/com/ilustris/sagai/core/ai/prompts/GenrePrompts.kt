@@ -64,13 +64,14 @@ object GenrePrompts {
 
             Genre.CRIME ->
                 """
-                highly detailed video game key art, in the style of stylized photorealistic digital painting.
-                rendered with very subtle and strategic linework, primarily defined by very dramatic,
-                high-contrast directional lighting and pronounced shadow gradients.
-                features a rich, vibrant yet slightly desaturated color palette.
-                character with natural, unidealized human features,
-                anatomically accurate and expressive,
-                with detailed textures and a strong, determined expression.
+                A vibrant tropical crime city environment with an overall glamorous, decadent, and overtly dangerous mood.
+                The scene is infused with elements of sublime luxury and opulent living,
+                such as high-end sports cars, extravagant yachts, or lavish beachfront villas.
+                The color palette is dominated by vivid neon pinks, oranges, and deep purples, accented with teal blues.
+                The lighting is dramatic and cinematic, with neon highlights casting a surreal glow on the scene.
+                The background is either a detailed urban streetscape with city neon signs, or a desolate beachfront at dusk.
+                Both environments should have a sense of underlying tension and lawlessness.
+
                 """
         }
 

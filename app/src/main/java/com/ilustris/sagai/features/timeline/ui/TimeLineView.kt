@@ -453,7 +453,9 @@ fun TimeLineCard(
                                 )
 
                                 Text(
-                                    eventContent.updatedRelationshipDetails.size.toString(),
+                                    eventContent
+                                        .updatedRelationshipDetails
+                                        .size.toString(),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
                                             fontFamily = genre.bodyFont(),
