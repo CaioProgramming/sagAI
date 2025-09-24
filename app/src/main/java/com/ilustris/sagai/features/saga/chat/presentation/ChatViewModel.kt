@@ -28,6 +28,7 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
+import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.mapper.SagaContentUIMapper
@@ -36,7 +37,6 @@ import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
-import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers

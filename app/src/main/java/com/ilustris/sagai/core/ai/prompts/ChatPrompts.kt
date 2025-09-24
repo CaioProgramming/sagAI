@@ -20,6 +20,8 @@ object ChatPrompts {
             "isDebug",
             "endMessage",
             "review",
+            "messages",
+            "acts",
         )
 
     private val characterExclusions =
@@ -29,6 +31,10 @@ object ChatPrompts {
             "sagaId",
             "joinedAt",
             "details",
+            "events",
+            "relationshipsAsFirst",
+            "relationshipsAsSecond",
+            "physicalTraits",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -59,17 +65,16 @@ object ChatPrompts {
         appendLine("SAGA CONTEXT:")
         appendLine(saga.data.toJsonFormatExcludingFields(sagaExclusions))
         appendLine("PLAYER CONTEXT DATA:")
+        appendLine("Main Character Context:")
         appendLine(saga.mainCharacter.toJsonFormatExcludingFields(characterExclusions))
         appendLine(CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }))
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
 
-        // 6. Directives and progression rules
         appendLine(ActPrompts.actDirective(directive))
 
-        // === INSERTED NEW NPC GUIDELINES HERE ===
         appendLine()
         appendLine("NPC Actions and Thoughts Guidelines:")
-        appendLine("- NPCs can now perform actions or have thoughts expressed via the `ACTION` and `THOUGHT` senderTypes.")
+        appendLine("- NPCs can perform actions or have thoughts expressed via the `ACTION` and `THOUGHT` senderTypes.")
         appendLine(
             "- **CRITICAL**: If an NPC uses `ACTION` or `THOUGHT`, you **MUST** set the `speakerName` field in the `Message` object to the name of the NPC performing the action or having the thought.",
         )
@@ -86,8 +91,18 @@ object ChatPrompts {
         appendLine(
             "- While you can now generate `ACTION` and `THOUGHT` for NPCs (with `speakerName`), you should **NOT** generate `ACTION` or `THOUGHT` messages that represent the *player's* actions or thoughts. Those are initiated by the player.",
         )
-        appendLine()
-        // === END OF INSERTED NPC GUIDELINES ===
+
+        // Adiciona uma regra explícita para evitar respostas diretas aos pensamentos do jogador
+        appendLine("IMPORTANT RULE REGARDING PLAYER THOUGHTS:")
+        appendLine(
+            "- Under NO circumstances should you reply directly to the player's THOUGHT messages. Do NOT generate NPC dialogue or narration that acknowledges, responds to, or references the player's internal thoughts as if they were spoken aloud.",
+        )
+        appendLine(
+            "- Instead, use NARRATOR messages to describe the scene, the player's internal state, or the consequences of their reflections. NPCs should only react to explicit actions or spoken dialogue from the player, never to their internal thoughts.",
+        )
+        appendLine(
+            "- If the last message is a THOUGHT from the player, your response must move the story forward naturally, without referencing or replying to that thought.",
+        )
 
         appendLine(SagaDirective.namingDirective(saga.data.genre))
         appendLine(conversationStyleAndPacing())

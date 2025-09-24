@@ -300,8 +300,8 @@ fun ChatBubble(
                         starAlpha,
                         tween(1000, easing = FastOutSlowInEasing),
                     )
-                    val blurAnimation by animateDpAsState(
-                        if (starAlpha == 1f) 15.dp else 0.dp,
+                    val blurAnimation by animateFloatAsState(
+                        if (starAlpha == 1f) 0f else 1f,
                     )
                     TypewriterText(
                         text = message.text,
@@ -328,7 +328,7 @@ fun ChatBubble(
                                     MaterialTheme.colorScheme.background.copy(alpha = .4f),
                                     RoundedCornerShape(genre.cornerSize()),
                                 ).padding(16.dp)
-                                .blur(blurAnimation, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+                                .alpha(blurAnimation)
                                 .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(

@@ -24,10 +24,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
 
-// Shader source string (can be loaded from assets)
-// For simplicity here, let's assume it's loaded.
-// In a real app, load this once, perhaps in a ViewModel or a top-level singleton.
-
 @Composable
 fun loadShaderFromAssetsOnce(assetFileName: String): String? {
     val context = LocalContext.current
@@ -177,9 +173,9 @@ fun Modifier.effectForGenre(
                     ShaderParams(
                         grainIntensity = customGrain ?: .1f,
                         softFocusRadius = focusRadius ?: 1f,
-                        saturation = .7f,
-                        contrast = 1.4f,
-                        brightness = .05f,
+                        saturation = 1f,
+                        contrast = 1.6f,
+                        brightness = .02f,
                         highlightTint = crimePalette.highlightTint,
                         shadowTint = crimePalette.shadowTint,
                         tintStrength = crimePalette.defaultTintStrength,

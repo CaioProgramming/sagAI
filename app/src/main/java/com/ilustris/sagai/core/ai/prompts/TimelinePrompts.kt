@@ -15,8 +15,16 @@ object TimelinePrompts {
                 appendLine("**CURRENT CHAPTER TIMELINE (Most Recent Events):**")
                 appendLine("// This section provides the most recent events from the chapter's timeline.")
                 appendLine("// Use this to understand the immediate plot progression and current situation.")
-                appendLine(events?.formatToJsonArray())
+                appendLine(
+                    events?.filter { it.isComplete() }?.map { it.data }?.formatToJsonArray(
+                        listOf(
+                            "emotionalReview",
+                            "chapterId",
+                            "id",
+                            "createdAt",
+                        ),
+                    ),
+                )
             }
-
         }
 }

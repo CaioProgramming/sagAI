@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.prompts.GenrePrompts // Added import
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts // Added import
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -118,25 +119,23 @@ object CharacterPrompts {
         }
 
     fun charactersOverview(characters: List<Character>): String =
-
-        """
-        CURRENT SAGA CAST:
-        [ 
-        ${
-            characters.joinToString(",\n") {
-                it.toJsonFormatExcludingFields(
-                    listOf(
-                        "id",
-                        "image",
-                        "sagaId",
-                        "joinedAt",
-                        "details",
-                    ),
+        buildString {
+            val characterExclusions =
+                listOf(
+                    "id",
+                    "image",
+                    "sagaId",
+                    "joinedAt",
+                    "details",
+                    "events",
+                    "relationshipEvents",
+                    "relationshipsAsFirst",
+                    "relationshipsAsSecond",
+                    "physicalTraits",
                 )
-            }
+            appendLine("CURRENT SAGA CAST OVERVIEW:")
+            appendLine(characters.formatToJsonArray(characterExclusions))
         }
-        ]
-        """.trimIndent()
 
     fun characterGeneration(
         saga: SagaContent,

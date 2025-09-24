@@ -99,7 +99,7 @@ class CharacterUseCaseImpl
 
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription, listOfNotNull(styleReferenceBitmap, portraitReference))!!
+                        .generateImage(translatedDescription, listOfNotNull(portraitReference))!!
 
                 val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path)

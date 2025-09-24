@@ -10,7 +10,6 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 
 object ActPrompts {
-
     @Suppress("ktlint:standard:max-line-length")
     fun generateActConclusion(
         sagaContent: SagaContent,
@@ -149,7 +148,6 @@ object ActPrompts {
             appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
         }
 
-
     fun actsOverview(saga: SagaContent) =
         buildString {
             appendLine("## SAGA ACTS OVERVIEW")
@@ -158,9 +156,11 @@ object ActPrompts {
             if (saga.acts.isEmpty()) {
                 appendLine("No acts created yet.")
             } else {
-                appendLine(saga.acts.formatToJsonArray(
-                    excludingFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
-                ))
+                appendLine(
+                    saga.acts.filter { it.isComplete() }.map { it.data }.formatToJsonArray(
+                        excludingFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
+                    ),
+                )
             }
         }
 }

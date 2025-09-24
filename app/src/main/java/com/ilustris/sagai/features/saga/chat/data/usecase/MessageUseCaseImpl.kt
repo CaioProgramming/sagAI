@@ -22,7 +22,6 @@ import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
-import com.ilustris.sagai.features.saga.chat.domain.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import javax.inject.Inject
 
@@ -70,7 +69,7 @@ class MessageUseCaseImpl
                             ?.uppercase()
                     EmotionalTone.getTone(raw)
                 } else {
-                    EmotionalTone.NEUTRAL
+                    message.emotionalTone
                 }
 
             messageRepository.saveMessage(

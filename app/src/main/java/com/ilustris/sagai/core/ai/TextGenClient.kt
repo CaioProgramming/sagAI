@@ -12,6 +12,7 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toFirebaseSchema
+import com.ilustris.sagai.core.utils.toJsonFormat
 
 class TextGenClient(
     private val firebaseRemoteConfig: FirebaseRemoteConfig,
@@ -70,6 +71,7 @@ class TextGenClient(
                 }
             Log.i(javaClass.simpleName, "prompt: $fullPrompt")
             Log.i(javaClass.simpleName, "generated(${modelName()}): ${content.text}")
+            Log.d(javaClass.simpleName, "Token usage: ${content.usageMetadata.toJsonFormat()}")
             val contentData =
                 if (T::class.java == String::class.java) {
                     content.text as? T

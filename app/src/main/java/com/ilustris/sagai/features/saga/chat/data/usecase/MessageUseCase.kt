@@ -1,4 +1,4 @@
-package com.ilustris.sagai.features.saga.chat.domain.usecase
+package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.SagaContent
