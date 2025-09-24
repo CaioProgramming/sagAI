@@ -549,8 +549,6 @@ class ChatViewModel
                         }
                         sendMessage(
                             genMessage.message.copy(
-                                chapterId = null,
-                                actId = null,
                                 characterId = null,
                                 timelineId = timeline.data.id,
                                 id = 0,

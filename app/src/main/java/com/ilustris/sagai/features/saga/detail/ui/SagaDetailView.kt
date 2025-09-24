@@ -1152,18 +1152,11 @@ private fun SagaDetailInitialView(
                                                 selectSection(DetailAction.CHARACTERS)
                                             },
                                     ) {
-                                        val characterModifier =
-                                            this@with.sharedTransitionActionItemModifier(
-                                                DetailAction.CHARACTERS,
-                                                animationScopes.second,
-                                                saga.data.id,
-                                                saga.data.id,
-                                            )
                                         AsyncImage(
                                             it.data.image,
                                             contentDescription = it.data.name,
                                             modifier =
-                                                characterModifier
+                                                Modifier
                                                     .fillMaxSize()
                                                     .effectForGenre(genre)
                                                     .selectiveColorHighlight(genre.selectiveHighlight()),
@@ -1329,7 +1322,7 @@ private fun SagaDetailInitialView(
                                             Column(
                                                 Modifier
                                                     .padding(8.dp)
-                                                    .clip(RoundedCornerShape(saga.data.genre.cornerSize()))
+                                                    .clip(saga.data.genre.shape())
                                                     .clickable {
                                                         selectSection(DetailAction.CHARACTERS)
                                                     },
@@ -1349,9 +1342,7 @@ private fun SagaDetailInitialView(
                                                     modifier =
                                                         characterModifier
                                                             .padding(8.dp)
-                                                            .clip(CircleShape)
-                                                            .size(120.dp)
-                                                            .padding(8.dp),
+                                                            .size(100.dp),
                                                 )
 
                                                 Text(

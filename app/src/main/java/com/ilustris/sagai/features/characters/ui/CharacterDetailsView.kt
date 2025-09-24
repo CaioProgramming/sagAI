@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,7 +32,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -42,29 +40,19 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.data.model.Details
-import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
-import com.ilustris.sagai.features.characters.ui.components.CharacterSection
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
-import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -212,7 +200,7 @@ fun CharacterDetailsContent(
 
         item {
             Text(
-                character.details.occupation,
+                character.profile.occupation,
                 style =
                     MaterialTheme.typography.titleSmall.copy(
                         fontFamily = genre.bodyFont(),
@@ -256,27 +244,43 @@ fun CharacterDetailsContent(
         }
 
         item {
-            CharacterSection(
-                title = "Backstory",
-                content = character.backstory,
-                genre = genre,
-            )
+            Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                Text(
+                    stringResource(R.string.character_form_title_backstory),
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                )
+
+                Text(
+                    character.backstory,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                )
+            }
         }
 
         item {
-            CharacterSection(
-                title = "Personality",
-                content = character.details.personality,
-                genre = genre,
-            )
-        }
+            Column(Modifier.padding(16.dp).fillMaxWidth()) {
+                Text(
+                    stringResource(R.string.personality_title),
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                )
 
-        item {
-            CharacterSection(
-                title = "Appearance",
-                content = character.details.appearance,
-                genre = genre,
-            )
+                Text(
+                    character.profile.personality,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                )
+            }
         }
 
         if (characterContent.relationships.isNotEmpty()) {
@@ -380,36 +384,5 @@ fun CharacterDetailsContent(
                 modifier = Modifier.fillMaxSize().gradientFill(genre.gradient(true)),
             )
         }
-    }
-}
-
-@Preview
-@Composable
-fun CharacterDetailsDialogPreview() {
-    val character =
-        CharacterContent(
-            Character(
-                name = "Character Name",
-                backstory = "Character backstory",
-                image = "https://www.example.com/image.jpg",
-                details = Details(occupation = "Occupation", race = "Human"),
-            ),
-        )
-    val genre = Genre.FANTASY
-    SagAIScaffold {
-        CharacterDetailsContent(
-            SagaContent(
-                data =
-                    Saga(
-                        title = "Saga Title",
-                        description = "Saga Description",
-                        genre = genre,
-                    ),
-                mainCharacter = character,
-                acts = emptyList(),
-                characters = emptyList(),
-            ),
-            character,
-        )
     }
 }

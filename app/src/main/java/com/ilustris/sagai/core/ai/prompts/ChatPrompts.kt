@@ -31,6 +31,7 @@ object ChatPrompts {
             "details",
         )
 
+    @Suppress("ktlint:standard:max-line-length")
     fun replyMessagePrompt(
         saga: SagaContent,
         message: String,
@@ -38,23 +39,64 @@ object ChatPrompts {
         directive: String,
     ) = buildString {
         appendLine()
-        appendLine(Core.roleDefinition(saga.data))
 
+        // 1. Role definition and output rules
+        appendLine(Core.roleDefinition(saga.data))
+        appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
+        appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trimIndent())
+
+        // 2. Context of the current chapter
+        appendLine("CURRENT CHAPTER CONTEXT:")
+        appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
+
+        // 3. Overview of previous chapters in the current act
+        appendLine(ChapterPrompts.chapterSummary(saga))
+
+        // 4. Overview of previous acts
+        appendLine(ActPrompts.actsOverview(saga))
+
+        // 5. Filtered context of the saga and relevant characters
         appendLine("SAGA CONTEXT:")
         appendLine(saga.data.toJsonFormatExcludingFields(sagaExclusions))
         appendLine("PLAYER CONTEXT DATA:")
         appendLine(saga.mainCharacter.toJsonFormatExcludingFields(characterExclusions))
         appendLine(CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }))
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
-        appendLine(TimelinePrompts.timeLineDetails(saga.flatEvents().filter { it.isComplete() }.map { it.data }))
+
+        // 6. Directives and progression rules
         appendLine(ActPrompts.actDirective(directive))
-        appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
-        appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trimIndent())
+
+        // === INSERTED NEW NPC GUIDELINES HERE ===
+        appendLine()
+        appendLine("NPC Actions and Thoughts Guidelines:")
+        appendLine("- NPCs can now perform actions or have thoughts expressed via the `ACTION` and `THOUGHT` senderTypes.")
+        appendLine(
+            "- **CRITICAL**: If an NPC uses `ACTION` or `THOUGHT`, you **MUST** set the `speakerName` field in the `Message` object to the name of the NPC performing the action or having the thought.",
+        )
+        appendLine(
+            "- `ACTION` (for NPC): Use to describe a distinct physical action performed by an NPC. The `text` should be a concise description of this action (e.g., 'Elara unsheathes her dagger.'). The `NARRATOR` should still describe the broader scene or consequences.",
+        )
+        appendLine(
+            "- `THOUGHT` (for NPC): Use this **SPARINGLY** and only for moments of significant narrative insight or to reveal critical internal conflict/realization of an NPC. The `text` is the NPC's internal thought (e.g., 'He doesn't suspect a thing...'). Do not overuse NPC thoughts; prefer showing their state through narration or dialogue when possible.",
+        )
+        appendLine("Clarification on Player vs. NPC message types:")
+        appendLine(
+            "- You, as the AI, will primarily generate messages with `senderType: NARRATOR` (for descriptions, non-verbal cues, and general storytelling) and `senderType: CHARACTER` (for NPC dialogue).",
+        )
+        appendLine(
+            "- While you can now generate `ACTION` and `THOUGHT` for NPCs (with `speakerName`), you should **NOT** generate `ACTION` or `THOUGHT` messages that represent the *player's* actions or thoughts. Those are initiated by the player.",
+        )
+        appendLine()
+        // === END OF INSERTED NPC GUIDELINES ===
+
         appendLine(SagaDirective.namingDirective(saga.data.genre))
         appendLine(conversationStyleAndPacing())
         appendLine(GenrePrompts.conversationDirective(saga.data.genre))
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
+
+        // 7. Conversation history
         appendLine(conversationHistory(saga.mainCharacter?.data, lastMessages))
+
         appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:** //")
         appendLine("{ $message }")
         appendLine()

@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ActConclusionContext
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.act.data.model.Act
@@ -146,5 +147,20 @@ object ActPrompts {
                 )
             }
             appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
+        }
+
+
+    fun actsOverview(saga: SagaContent) =
+        buildString {
+            appendLine("## SAGA ACTS OVERVIEW")
+            appendLine("// This overview provides a summary of all acts in the saga to inform narrative consistency and progression.")
+            appendLine("// Use this information to maintain continuity and reference past events as needed.")
+            if (saga.acts.isEmpty()) {
+                appendLine("No acts created yet.")
+            } else {
+                appendLine(saga.acts.formatToJsonArray(
+                    excludingFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
+                ))
+            }
         }
 }

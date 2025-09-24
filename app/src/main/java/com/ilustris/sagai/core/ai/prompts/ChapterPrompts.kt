@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -13,6 +14,31 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 
 object ChapterPrompts {
+
+    fun chapterSummary(
+        sagaContent: SagaContent
+    ) =
+        if (sagaContent.currentActInfo?.chapters?.isEmpty() == true) {
+            "No chapters written yet on this act,"
+        } else
+
+        """
+        **CURRENT ACT CHAPTERS (Most Recent First):**
+        // This section provides the summaries of chapters already written in the current act.
+        // Use this to understand the immediate narrative progression and context within the act.
+        ${sagaContent.currentActInfo?.chapters?.filter { it.isComplete() }?.map { it.data }?.reversed()?.formatToJsonArray(
+            listOf(
+                "id",
+                "emotionalReview",
+                "actId",
+                "currentEventId",
+                "coverImage",
+                "createdAt",
+                "featuredCharacters",
+            ),
+        )}
+            
+        """
     fun chapterIntroductionPrompt(
         sagaContent: SagaContent,
         currentChapter: Chapter,

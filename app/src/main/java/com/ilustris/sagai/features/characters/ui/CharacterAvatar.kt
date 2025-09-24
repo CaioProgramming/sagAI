@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
@@ -34,6 +35,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
@@ -63,8 +65,7 @@ fun CharacterAvatar(
                 borderSize,
                 borderColor ?: characterColor,
                 CircleShape,
-            )
-            .clip(CircleShape)
+            ).clip(CircleShape)
             .padding(innerPadding)
             .background(
                 characterColor.darker(.3f),
@@ -78,7 +79,6 @@ fun CharacterAvatar(
             model = character.image,
             contentDescription = character.name,
             contentScale = ContentScale.Crop,
-            placeholder = painterResource(R.drawable.ic_spark),
             error = null,
             onError = {
                 painterState = it
@@ -86,8 +86,10 @@ fun CharacterAvatar(
             modifier =
                 Modifier
                     .clip(CircleShape)
-                    .fillMaxSize()
-                    .background(characterColor.darker(.3f), CircleShape)
+                    .background(
+                        characterColor,
+                        CircleShape,
+                    ).fillMaxSize()
                     .effectForGenre(
                         genre,
                         focusRadius = softFocusRadius,
@@ -102,7 +104,10 @@ fun CharacterAvatar(
                 style =
                     textStyle.copy(
                         fontFamily = genre.headerFont(),
-                        brush = characterColor.darker().gradientFade(),
+                        brush =
+                            Brush.verticalGradient(
+                                characterColor.darkerPalette(factor = .2f),
+                            ),
                     ),
                 fontWeight = FontWeight.Black,
                 modifier = Modifier.align(Alignment.Center),

@@ -11,28 +11,8 @@ data class MessageContent(
     @Embedded
     val message: Message,
     @Relation(
-        parentColumn = "chapterId",
-        entityColumn = "id",
-    )
-    val chapter: Chapter? = null,
-    @Relation(
         parentColumn = "characterId",
         entityColumn = "id",
     )
     val character: Character? = null,
-    @Relation(
-        parentColumn = "actId",
-        entityColumn = "id",
-        entity = Act::class,
-    )
-    val act: Act? = null,
 )
-
-fun senderDescription(
-    senderType: SenderType,
-    showSender: Boolean,
-) = if (showSender) {
-    "(${senderType.name})"
-} else {
-    emptyString()
-}

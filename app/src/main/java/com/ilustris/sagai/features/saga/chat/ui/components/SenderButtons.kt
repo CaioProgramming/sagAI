@@ -108,7 +108,6 @@ fun SenderType.icon() =
         NARRATOR -> R.drawable.ic_feather
         THOUGHT -> R.drawable.think_icon
         ACTION -> R.drawable.action_icon
-        NEW_CHARACTER -> R.drawable.character_icon
         else -> R.drawable.ic_spark
     }
 
@@ -119,7 +118,6 @@ fun SenderType.title() =
         NARRATOR -> stringResource(R.string.sender_type_narrator_title)
         THOUGHT -> stringResource(R.string.sender_type_thought_title)
         ACTION -> stringResource(R.string.sender_type_action_title)
-        NEW_CHARACTER -> stringResource(R.string.sender_type_new_character_title)
         CHARACTER -> "Personagem"
     }
 
@@ -130,7 +128,6 @@ fun SenderType.description() =
         THOUGHT -> stringResource(R.string.sender_type_thought_description)
         ACTION -> stringResource(R.string.sender_type_action_description)
         NARRATOR -> stringResource(R.string.sender_type_narrator_description)
-        NEW_CHARACTER -> stringResource(R.string.sender_type_new_character_description)
         CHARACTER -> stringResource(R.string.sender_type_character_description)
     }
 
@@ -141,6 +138,5 @@ fun SenderType.hint() =
         NARRATOR -> stringResource(R.string.sender_type_narrator_hint)
         THOUGHT -> stringResource(R.string.sender_type_thought_hint)
         ACTION -> stringResource(R.string.sender_type_action_hint)
-        NEW_CHARACTER -> stringResource(R.string.sender_type_new_character_hint)
         CHARACTER -> stringResource(R.string.sender_type_character_hint)
     }

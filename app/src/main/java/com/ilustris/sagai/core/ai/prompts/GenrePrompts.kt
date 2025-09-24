@@ -64,14 +64,15 @@ object GenrePrompts {
 
             Genre.CRIME ->
                 """
-                A vibrant tropical crime city environment with an overall glamorous, decadent, and overtly dangerous mood.
-                The scene is infused with elements of sublime luxury and opulent living,
-                such as high-end sports cars, extravagant yachts, or lavish beachfront villas.
-                The color palette is dominated by vivid neon pinks, oranges, and deep purples, accented with teal blues.
-                The lighting is dramatic and cinematic, with neon highlights casting a surreal glow on the scene.
-                The background is either a detailed urban streetscape with city neon signs, or a desolate beachfront at dusk.
-                Both environments should have a sense of underlying tension and lawlessness.
-
+                highly detailed comic book cover art, in the style of stylized gritty realism.
+                rendered with strong, defined contours and very expressive linework.
+                The aesthetic is dream-like and luxurious, with soft, diffused lighting creating a hazy, glowing atmosphere.
+                **A subtle vintage glow effect overlays the entire image, reminiscent of analog photography from the 1980s, adding a layer of nostalgia and warmth.
+                ** The color palette is dominated by ethereal pinks, lavenders, and muted oranges, accented with teal blues.
+                The scene is infused with elements of sublime luxury and opulent living, such as high-end sports cars, extravagant yachts, or lavish beachfront villas.
+                The background is either a detailed urban streetscape with city neon signs, or a desolate beachfront at dusk. Both environments should have a sense of underlying tension and lawlessness.
+                The visual framing gives significant emphasis to the expansive sky, ensuring a prominent display of the sunset colors.
+                The backdrop is a vibrant Miami Vice/Vice City-inspired sunset, with the sky dominated by unsettling neon pinks and oranges, blending into deep, ominous purples and teals over a turbulent ocean.
                 """
         }
 

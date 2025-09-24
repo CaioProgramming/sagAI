@@ -117,13 +117,6 @@ object CharacterPrompts {
             )
         }
 
-    fun appearance(character: Character) =
-        """
-        ${character.details.race},${character.details.gender},${character.details.ethnicity}
-        ${character.details.facialDetails}, ${character.details.clothing}."
-        ${character.details.appearance}
-        """.trimIndent()
-
     fun charactersOverview(characters: List<Character>): String =
 
         """

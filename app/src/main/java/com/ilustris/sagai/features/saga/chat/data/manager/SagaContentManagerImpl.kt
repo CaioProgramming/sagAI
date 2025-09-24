@@ -270,13 +270,13 @@ class SagaContentManagerImpl
 
         private suspend fun endTimeline(currentChapter: ChapterContent?) =
             executeRequest {
-                setNarrativeProcessingStatus(false)
                 chapterUseCase
                     .updateChapter(
                         currentChapter!!.data.copy(
                             currentEventId = null,
                         ),
                     )
+                setNarrativeProcessingStatus(false)
             }
 
         private suspend fun generateEmotionalReview(
@@ -539,11 +539,12 @@ class SagaContentManagerImpl
             generateEmotionalReview(
                 userMessages,
                 content.emotionalRanking(saga.mainCharacter?.data),
-            ).onSuccessAsync {
+            ).getSuccess()?.let {
                 timelineUseCase.updateTimeline(
                     timeline.copy(emotionalReview = it),
                 )
             }
+
             updateCharacters(timeline, saga)
             updateWikis(timeline)
         }
@@ -606,11 +607,11 @@ class SagaContentManagerImpl
                 return
             }
 
-            delay(1.seconds)
+            delay(500)
 
             characterUseCase.generateCharactersUpdate(timeline, currentSaga)
 
-            delay(1.seconds)
+            delay(500)
 
             characterUseCase.generateCharacterRelations(timeline, currentSaga)
         }

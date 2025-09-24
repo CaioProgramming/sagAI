@@ -1222,7 +1222,10 @@ fun ChatList(
                             content = saga,
                             alreadyAnimatedMessages = animatedMessages,
                             canAnimate = timeline.messages.lastOrNull() == it,
-                            modifier = Modifier.animateItem(),
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = tween(400, easing = EaseIn),
+                                fadeOutSpec = tween(400, easing = EaseIn),
+                            ),
                             openCharacters = { char -> openCharacter(char) },
                             openWiki = { openWiki() },
                         )

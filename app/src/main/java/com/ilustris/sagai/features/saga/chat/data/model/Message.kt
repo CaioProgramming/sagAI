@@ -24,21 +24,9 @@ import java.util.Calendar
             onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
-            entity = Chapter::class,
-            parentColumns = ["id"],
-            childColumns = ["chapterId"],
-            onDelete = ForeignKey.CASCADE,
-        ),
-        ForeignKey(
             entity = Character::class,
             parentColumns = ["id"],
             childColumns = ["characterId"],
-            onDelete = ForeignKey.CASCADE,
-        ),
-        ForeignKey(
-            entity = Act::class,
-            parentColumns = ["id"],
-            childColumns = ["actId"],
             onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
@@ -59,11 +47,7 @@ data class Message(
     @ColumnInfo(index = true)
     val sagaId: Int = 0,
     @ColumnInfo(index = true)
-    val chapterId: Int? = null,
-    @ColumnInfo(index = true)
     val characterId: Int? = null,
-    @ColumnInfo(index = true)
-    val actId: Int? = null,
     @ColumnInfo(index = true)
     val timelineId: Int,
     val emotionalTone: EmotionalTone? = null,
@@ -81,7 +65,6 @@ enum class SenderType {
     THOUGHT,
     ACTION,
     NARRATOR,
-    NEW_CHARACTER,
     CHARACTER,
     ;
 
@@ -107,8 +90,12 @@ fun SenderType.rules() =
             Narration should describe actions, environments, and non-verbal reactions only.
             All character speech must be in a '''CHARACTER''' senderType.**
         """
-        SenderType.NEW_CHARACTER,
-        SenderType.THOUGHT,
+        SenderType.THOUGHT ->
+            """
+            Use when the player's character is thinking and not talking directly.
+            OR Use RARELY for an impactful **NPC** internal thought. If used for an NPC, the `speakerName` field will identify the NPC.
+            The AI should not generate this type for the player.
+            """
         SenderType.USER,
         ->
             """
@@ -117,42 +104,7 @@ fun SenderType.rules() =
         """
         SenderType.CHARACTER ->
             """
-        Use for characters(NPCS) who is already established in the story or listed in '''CURRENT SAGA CAST'''.'
-        """
-    }
-
-fun SenderType.meaning() =
-    when (this) {
-        SenderType.USER ->
-            """
-            Represents a message sent by the player.
-            """
-        SenderType.CHARACTER ->
-            """
-            Use for dialogue spoken by an existing NPC (Non-Player Character) 
-            who is already established in the story or listed in '''CURRENT SAGA CAST'''.'
-            """
-        SenderType.NARRATOR ->
-            """
-            Use for general story narration,
-            scene descriptions, or prompting the player for action.
-            
-            """
-        SenderType.NEW_CHARACTER ->
-            """
-            Use for creating a new character on the story.    
-            """
-
-        SenderType.THOUGHT ->
-            """
-            Use when Character its thinking and not talking directly with other NPC.
-            You, as the AI, must NEVER generate a message with this '''Type'''.
-            This type is only for input from the player.
-            """
-        SenderType.ACTION ->
-            """
-            Use to describe a character action.
-            You, as the AI, must NEVER generate a message with this '''Type'''.
-            This type is only for input from the player.
+            Use for characters(NPCS) who is already
+            established in the story or listed in '''CURRENT SAGA CAST'''.' 
             """
     }
