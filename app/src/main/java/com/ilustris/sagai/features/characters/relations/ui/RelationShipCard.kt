@@ -77,12 +77,13 @@ fun RelationShipCard(
 ) {
     var showDetailSheet by remember { mutableStateOf(false) }
     val genre = saga.data.genre
+    val brush = content.getBrush(genre)
     Column(
         modifier =
             modifier
                 .clip(genre.shape())
                 .clickable { showDetailSheet = true }
-                .border(1.dp, genre.color.copy(alpha = .3f), genre.shape())
+                .border(1.dp, brush, genre.shape())
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -126,8 +127,10 @@ fun RelationShipCard(
                 textAlign = TextAlign.Center,
                 modifier =
                     Modifier
-                        .background(MaterialTheme.colorScheme.background.copy(alpha = .3f), CircleShape)
-                        .padding(8.dp),
+                        .background(
+                            MaterialTheme.colorScheme.background.copy(alpha = .3f),
+                            CircleShape,
+                        ).padding(8.dp),
             )
 
             Text(
@@ -140,8 +143,7 @@ fun RelationShipCard(
             Text(
                 relation.description,
                 style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+                textAlign = TextAlign.Start,
             )
         }
     }
@@ -150,7 +152,7 @@ fun RelationShipCard(
         ModalBottomSheet(
             onDismissRequest = { showDetailSheet = false },
             sheetState = rememberModalBottomSheetState(),
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ) {
             RelationShipSheet(saga = saga, content = content)
         }
@@ -168,14 +170,14 @@ fun SingleRelationShipCard(
     val genre = saga.data.genre
 
     var showDetailSheet by remember { mutableStateOf(false) }
-
+    val brush = content.getBrush(genre)
     Column(
         modifier =
             modifier
                 .clip(genre.shape())
                 .clickable {
                     showDetailSheet = true
-                }.border(1.dp, genre.color.copy(alpha = .3f), genre.shape())
+                }.border(1.dp, brush, genre.shape())
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -235,57 +237,71 @@ fun RelationShipSheet(
     val firstCharacter = content.characterOne
     val secondCharacter = content.characterTwo
 
-    LazyColumn(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        item {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier =
+                    Modifier
+                        .padding(vertical = 8.dp),
+            ) {
+                val firstCharacter =
+                    remember {
+                        content.characterOne
+                    }
+                val secondCharacter =
+                    remember {
+                        content.characterTwo
+                    }
+                CharacterAvatar(
+                    firstCharacter,
+                    firstCharacter.hexColor.hexToColor(),
+                    genre = genre,
+                    innerPadding = 0.dp,
+                    modifier = Modifier.size(64.dp).offset(x = 15.dp).zIndex(1f),
+                )
+
+                CharacterAvatar(
+                    secondCharacter,
+                    secondCharacter.hexColor.hexToColor(),
+                    innerPadding = 0.dp,
+                    genre = genre,
+                    modifier = Modifier.size(64.dp).offset(x = (-15).dp),
+                )
+            }
+        }
+
+        stickyHeader {
+            Text(
+                buildCharactersAnnotatedString(
+                    "${firstCharacter.name} & ${secondCharacter.name}",
+                    saga.mainCharacter?.data,
+                    listOf(firstCharacter, secondCharacter),
+                    genre,
+                ),
+                style =
+                    MaterialTheme.typography.titleLarge
+                        .copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Center,
+                        ),
+                modifier =
+                    Modifier
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .fillMaxWidth()
+                        .padding(16.dp),
+            )
+        }
+
         item {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(16.dp),
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp),
-                ) {
-                    val firstCharacter =
-                        remember {
-                            content.characterOne
-                        }
-                    val secondCharacter =
-                        remember {
-                            content.characterTwo
-                        }
-                    CharacterAvatar(
-                        firstCharacter,
-                        firstCharacter.hexColor.hexToColor(),
-                        genre = genre,
-                        innerPadding = 0.dp,
-                        modifier = Modifier.size(64.dp).offset(x = 15.dp).zIndex(1f),
-                    )
 
-                    CharacterAvatar(
-                        secondCharacter,
-                        secondCharacter.hexColor.hexToColor(),
-                        innerPadding = 0.dp,
-                        genre = genre,
-                        modifier = Modifier.size(64.dp).offset(x = (-15).dp),
-                    )
-                }
-
-                Text(
-                    buildCharactersAnnotatedString(
-                        "${firstCharacter.name} & ${secondCharacter.name}",
-                        saga.mainCharacter?.data,
-                        listOf(firstCharacter, secondCharacter),
-                        genre,
-                    ),
-                    style =
-                        MaterialTheme.typography.titleLarge
-                            .copy(
-                                fontFamily = genre.headerFont(),
-                                textAlign = TextAlign.Center,
-                            ),
-                )
 
                 Text(
                     "Última atualização",
@@ -516,8 +532,11 @@ fun RelationshipEventCard(
 ) {
     val firstCharacter = content.characterOne
     val secondCharacter = content.characterTwo
-    val charactersColors = listOf(firstCharacter.hexColor.hexToColor() ?: genre.color,
-        secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last())
+    val charactersColors =
+        listOf(
+            firstCharacter.hexColor.hexToColor() ?: genre.color,
+            secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last(),
+        )
     ConstraintLayout {
         val (avatarsRow, relationshipCard, relationshipEmoji, divider) = createRefs()
 
@@ -599,9 +618,10 @@ fun RelationshipEventCard(
         }
 
         if (relationshipEvent != content.relationshipEvents.last()) {
-            val verticalBrush = Brush.verticalGradient(
-                charactersColors
-            )
+            val verticalBrush =
+                Brush.verticalGradient(
+                    charactersColors.reversed(),
+                )
             VerticalDivider(
                 color = MaterialTheme.colorScheme.onBackground,
                 thickness = 2.dp,
@@ -611,8 +631,7 @@ fun RelationshipEventCard(
                             top.linkTo(relationshipCard.bottom)
                             end.linkTo(avatarsRow.end)
                             start.linkTo(avatarsRow.start)
-                        }
-                        .gradientFill(verticalBrush)
+                        }.gradientFill(verticalBrush)
                         .height(50.dp),
             )
         }

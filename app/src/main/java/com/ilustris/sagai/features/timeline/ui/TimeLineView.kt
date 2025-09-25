@@ -11,6 +11,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -455,7 +456,8 @@ fun TimeLineCard(
                                 Text(
                                     eventContent
                                         .updatedRelationshipDetails
-                                        .size.toString(),
+                                        .size
+                                        .toString(),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
                                             fontFamily = genre.bodyFont(),
@@ -570,7 +572,7 @@ fun TimeLineCard(
                 timelineSheet = null
             },
             sheetState = rememberModalBottomSheetState(),
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
         ) {
             LazyColumn {
                 stickyHeader {
@@ -583,7 +585,7 @@ fun TimeLineCard(
                             ),
                         modifier =
                             Modifier
-                                .background(MaterialTheme.colorScheme.background)
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
                                 .padding(16.dp)
                                 .fillMaxWidth(),
                     )
@@ -619,7 +621,7 @@ fun TimeLineCard(
                                         .padding(16.dp)
                                         .shadow(3.dp, genre.shape(), spotColor = genre.color)
                                         .background(
-                                            MaterialTheme.colorScheme.surfaceContainer,
+                                            MaterialTheme.colorScheme.background,
                                             genre.shape(),
                                         ).fillMaxWidth(),
                                 true,
@@ -654,7 +656,8 @@ fun TimeLineSimpleCard(
         modifier
             .border(2.dp, genre.color.copy(alpha = .3f), genre.shape())
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f), genre.shape())
-            .padding(16.dp),
+            .padding(16.dp)
+            .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Row(
@@ -698,11 +701,13 @@ fun TimeLineSimpleCard(
             )
         }
 
-        CharactersTopIcons(
-            eventContent.characterEventDetails.map { it.character },
-            genre,
-            false,
-        )
+        AnimatedVisibility(eventContent.characterEventDetails.isNotEmpty()) {
+            CharactersTopIcons(
+                eventContent.characterEventDetails.map { it.character },
+                genre,
+                false,
+            )
+        }
 
         Text(
             event.createdAt.formatDate(),

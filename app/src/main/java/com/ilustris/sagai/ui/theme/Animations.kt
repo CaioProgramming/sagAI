@@ -144,7 +144,7 @@ fun Modifier.zoomAnimation(): Modifier {
     val infiniteTransition = rememberInfiniteTransition(label = "infinite zoom")
     val scale by infiniteTransition.animateFloat(
         initialValue = 1f,
-        targetValue = 1.5f,
+        targetValue = 1.3f,
         animationSpec =
             infiniteRepeatable(
                 animation = tween(durationMillis = 1.minutes.toInt(DurationUnit.MILLISECONDS)),

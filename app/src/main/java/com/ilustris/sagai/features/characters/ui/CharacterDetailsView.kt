@@ -2,6 +2,8 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,8 +28,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -51,6 +56,7 @@ import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradient
@@ -115,262 +121,274 @@ fun CharacterDetailsContent(
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
+    val listState = rememberLazyListState()
+    Box {
+        LazyColumn(
+            modifier =
+                Modifier.fillMaxSize(),
+            listState,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            if (character.image.isNotEmpty()) {
+                item {
+                    val size = if (character.image.isNotEmpty()) 350.dp else 100.dp
 
-    LazyColumn(
-        modifier =
-            Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        if (character.image.isNotEmpty()) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(size)
+                            .clipToBounds(),
+                    ) {
+                        AsyncImage(
+                            character.image,
+                            contentDescription = character.name,
+                            contentScale = ContentScale.Crop,
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .zoomAnimation()
+                                    .clipToBounds()
+                                    .effectForGenre(genre),
+                        )
+
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .fillMaxHeight(.7f)
+                                .background(fadeGradientBottom()),
+                        )
+
+                        Text(
+                            character.name,
+                            textAlign = TextAlign.Center,
+                            style =
+                                MaterialTheme.typography.displaySmall.copy(
+                                    fontFamily = genre.headerFont(),
+                                    brush = Brush.verticalGradient(characterColor.darkerPalette()),
+                                ),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(16.dp)
+                                    .reactiveShimmer(true)
+                                    .fillMaxWidth(),
+                        )
+                    }
+                }
+            } else {
+                item {
+                    Image(
+                        painterResource(R.drawable.ic_spark),
+                        null,
+                        Modifier
+                            .clickable {
+                                viewModel.regenerate(
+                                    sagaContent,
+                                    character,
+                                )
+                            }.padding(16.dp)
+                            .size(100.dp)
+                            .gradientFill(characterColor.gradientFade()),
+                    )
+                }
+            }
+
             item {
-                val size = if (character.image.isNotEmpty()) 350.dp else 100.dp
+                Text(
+                    character.profile.occupation,
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = characterColor,
+                        ),
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
 
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(size)
-                        .clipToBounds(),
+            item { CharacterStats(character = character, genre = genre) }
+
+            item {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp),
                 ) {
-                    AsyncImage(
-                        character.image,
-                        contentDescription = character.name,
-                        contentScale = ContentScale.Crop,
+                    Text(
+                        messageCount.toString(),
+                        style =
+                            MaterialTheme.typography.displaySmall.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.Normal,
+                                textAlign = TextAlign.Center,
+                            ),
                         modifier =
                             Modifier
-                                .fillMaxSize()
-                                .zoomAnimation()
-                                .clipToBounds()
-                                .effectForGenre(genre),
+                                .padding(8.dp)
+                                .fillMaxWidth(),
                     )
 
-                    Box(
-                        Modifier
-                            .align(Alignment.TopCenter)
-                            .background(
-                                fadeGradientTop(),
-                            ).height(size * .5f)
-                            .fillMaxWidth(),
-                    )
-                    Box(
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .fillMaxHeight(.05f)
-                            .background(
-                                fadeGradientBottom(),
+                    Text(
+                        "Mensagens",
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.Light,
+                                textAlign = TextAlign.Center,
                             ),
                     )
                 }
             }
-        } else {
+
             item {
-                Image(
-                    painterResource(R.drawable.ic_spark),
-                    null,
-                    Modifier
-                        .clickable {
-                            viewModel.regenerate(
-                                sagaContent,
-                                character,
-                            )
-                        }.padding(16.dp)
-                        .size(100.dp)
-                        .gradientFill(characterColor.gradientFade()),
-                )
-            }
-        }
+                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                    Text(
+                        stringResource(R.string.character_form_title_backstory),
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
 
-        stickyHeader {
-            Text(
-                character.name,
-                textAlign = TextAlign.Center,
-                style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        fontFamily = genre.headerFont(),
-                        brush = characterColor.gradientFade(),
-                    ),
-                modifier =
-                    Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(vertical = 24.dp)
-                        .reactiveShimmer(true)
-                        .fillMaxWidth(),
-            )
-        }
-
-        item {
-            Text(
-                character.profile.occupation,
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = characterColor,
-                    ),
-                modifier = Modifier.padding(16.dp),
-            )
-        }
-
-        item { CharacterStats(character = character, genre = genre) }
-
-        item {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(16.dp),
-            ) {
-                Text(
-                    messageCount.toString(),
-                    style =
-                        MaterialTheme.typography.displaySmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontWeight = FontWeight.Normal,
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(),
-                )
-
-                Text(
-                    "Mensagens",
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontWeight = FontWeight.Light,
-                            textAlign = TextAlign.Center,
-                        ),
-                )
-            }
-        }
-
-        item {
-            Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                Text(
-                    stringResource(R.string.character_form_title_backstory),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                )
-
-                Text(
-                    character.backstory,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                )
-            }
-        }
-
-        item {
-            Column(Modifier.padding(16.dp).fillMaxWidth()) {
-                Text(
-                    stringResource(R.string.personality_title),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                )
-
-                Text(
-                    character.profile.personality,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                )
-            }
-        }
-
-        if (characterContent.relationships.isNotEmpty()) {
-            item {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(.1f),
-                    modifier = Modifier.fillMaxWidth(),
-                    thickness = 1.dp,
-                )
+                    Text(
+                        character.backstory,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
+                }
             }
 
             item {
-                Text(
-                    stringResource(R.string.saga_detail_relationships_section_title),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                )
+                Column(Modifier.padding(16.dp).fillMaxWidth()) {
+                    Text(
+                        stringResource(R.string.personality_title),
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
+
+                    Text(
+                        character.profile.personality,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
+                }
             }
 
-            item {
-                LazyRow {
-                    items(
-                        characterContent.relationships
-                            .filter { it.relationshipEvents.isNotEmpty() }
-                            .sortedByDescending { it.relationshipEvents.last().timestamp },
-                    ) { relationContent ->
-                        val currentId = character.id
-                        val relatedCharacter =
-                            when (currentId) {
-                                relationContent.characterOne.id -> relationContent.characterTwo
-                                relationContent.characterTwo.id -> relationContent.characterOne
-                                else -> null
-                            }
-                        relationContent.relationshipEvents.lastOrNull()?.let {
-                            if (relatedCharacter != null) {
-                                SingleRelationShipCard(
-                                    saga = sagaContent,
-                                    character = relatedCharacter,
-                                    content = relationContent,
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .requiredWidthIn(max = 300.dp),
-                                )
+            if (characterContent.relationships.isNotEmpty()) {
+                item {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(.1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 1.dp,
+                    )
+                }
+
+                item {
+                    Text(
+                        stringResource(R.string.saga_detail_relationships_section_title),
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    )
+                }
+
+                item {
+                    LazyRow {
+                        items(
+                            characterContent.relationships
+                                .filter { it.relationshipEvents.isNotEmpty() }
+                                .sortedByDescending { it.relationshipEvents.last().timestamp },
+                        ) { relationContent ->
+                            val currentId = character.id
+                            val relatedCharacter =
+                                when (currentId) {
+                                    relationContent.characterOne.id -> relationContent.characterTwo
+                                    relationContent.characterTwo.id -> relationContent.characterOne
+                                    else -> null
+                                }
+                            relationContent.relationshipEvents.lastOrNull()?.let {
+                                if (relatedCharacter != null) {
+                                    SingleRelationShipCard(
+                                        saga = sagaContent,
+                                        character = relatedCharacter,
+                                        content = relationContent,
+                                        modifier =
+                                            Modifier
+                                                .padding(16.dp)
+                                                .requiredWidthIn(max = 300.dp),
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
+            if (characterContent.events.isNotEmpty()) {
+                item {
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.onSurface.copy(.1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        thickness = 1.dp,
+                    )
+                }
+                item {
+                    Text(
+                        stringResource(R.string.saga_detail_timeline_section_title),
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.bodyFont(),
+                            ),
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    )
+                }
+
+                items(characterContent.events.sortedBy { it.timeline?.createdAt }) {
+                    TimelineCharacterAttachment(
+                        it,
+                        sagaContent,
+                        showIndicator = true,
+                        showSpark = character == sagaContent.mainCharacter,
+                        isLast = it == characterContent.events.last(),
+                        onSelectReference = {
+                            openEvent(it)
+                        },
+                        modifier =
+                            Modifier.padding(horizontal = 16.dp).clip(genre.shape()),
+                    )
+                }
+            }
         }
 
-        if (characterContent.events.isNotEmpty()) {
-            item {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onSurface.copy(.1f),
-                    modifier = Modifier.fillMaxWidth(),
-                    thickness = 1.dp,
-                )
-            }
-            item {
-                Text(
-                    stringResource(R.string.saga_detail_timeline_section_title),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                )
-            }
-
-            items(characterContent.events.sortedBy { it.timeline?.createdAt }) {
-                TimelineCharacterAttachment(
-                    it,
-                    sagaContent,
-                    showIndicator = true,
-                    showSpark = character == sagaContent.mainCharacter,
-                    isLast = it == characterContent.events.last(),
-                    onSelectReference = {
-                        openEvent(it)
-                    },
-                    modifier =
-                        Modifier.padding(horizontal = 16.dp).clip(genre.shape()),
-                )
-            }
-        }
+        val alpha by animateFloatAsState(
+            if (listState.canScrollBackward.not()) 0f else 1f,
+            animationSpec = tween(1500),
+        )
+        Text(
+            character.name,
+            style =
+                MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = genre.headerFont(),
+                    textAlign = TextAlign.Center,
+                    color = characterColor,
+                ),
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .alpha(alpha)
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(16.dp)
+                    .reactiveShimmer(true)
+                    .fillMaxWidth(),
+        )
     }
-
     if (isGenerating) {
         Dialog(
             onDismissRequest = { },

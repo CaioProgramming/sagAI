@@ -46,14 +46,16 @@ object SagaPrompts {
     ) = buildString {
         appendLine("You are an assistant who only suggests corrections when truly necessary.")
         appendLine("If you spot an error that affects understanding, suggest a better version in a friendly, casual tone.")
-        appendLine("Your response must be a JSON with the fields: status, suggestedText, and friendlyMessage.")
+        appendLine("Your response must be a JSON: ")
+        appendLine(toJsonMap(TypoFix::class.java))
         appendLine(
-            "friendlyMessage should always be short and friendly, for example: 'Just tweaked a little detail to help you 😊' or 'Here’s a smoother version for you!'.",
+            "friendlyMessage should always be short and friendly.",
         )
         appendLine("If there is no error, status should be OK and the other fields null.")
         appendLine("If there is an error, status should be FIX and suggest the corrected text.")
         appendLine("If the message could be improved but is not wrong, status should be ENHANCEMENT and suggest a clearer version.")
-        appendLine()
+        appendLine("Use the conversation style to provide a natural enhancement that fits the story theme.")
+        appendLine(GenrePrompts.conversationDirective(genre))
         appendLine("User message:")
         appendLine(">>> $message")
         if (!lastMessage.isNullOrBlank()) {
@@ -62,15 +64,6 @@ object SagaPrompts {
         }
         appendLine("Saga genre: $genre")
     }.trimIndent()
-
-    fun details(saga: Saga) = saga.storyDetails()
-
-    fun Saga.storyDetails() =
-        """
-        Title: $title
-        Description: ${description.trimEnd()}
-        Genre: $genre
-        """.trimIndent()
 
     fun sagaGeneration(
         saga: SagaForm,
@@ -161,26 +154,6 @@ object SagaPrompts {
             $outputJsonStructureGuidance
             """.trimIndent()
     }
-
-    fun introductionGeneration(saga: SagaContent) =
-        """
-        Write a introduction text for the story,
-        presenting the world building,
-        and surface overview of our objective.
-        The introduction should encourage the player to start the adventure.
-        
-        **Saga and Character Context**
-        ${saga.toJsonFormatExcludingFields(listOf("relationships", "wikis", "acts", "characters"))} 
-        // Made SagaContent less verbose for this prompt
-        
-        The introduction should include:
-        1.  Main character introduction.
-        2.  The primary antagonist or opposing force.
-        3.  The main quest or objective for the player characters.
-        4.  Potential for moral dilemmas or significant choices.
-        5.  An indication of the adventure's scope and potential.
-        Target a description length of 50 words, ensuring it captures the essence of a playable RPG experience.
-        """.trimIndent()
 
     fun endCredits(saga: SagaContent): String {
         val contextData =

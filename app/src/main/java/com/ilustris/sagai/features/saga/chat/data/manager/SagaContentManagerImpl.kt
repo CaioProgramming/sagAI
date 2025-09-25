@@ -293,7 +293,7 @@ class SagaContentManagerImpl
                 endTimeline(saga.currentActInfo?.currentChapterInfo)
                 error("Timeline already completed")
             } else {
-                return@executeRequest timelineUseCase.generateTimeline(saga, content)
+                timelineUseCase.generateTimeline(saga, content).getSuccess()!!
             }
         }
 
@@ -425,11 +425,7 @@ class SagaContentManagerImpl
                             )
 
                         is NarrativeStep.StartTimeline -> startTimeline(narrativeStep.chapter)
-                        is NarrativeStep.GenerateTimeLine ->
-                            updateTimeline(
-                                saga,
-                                narrativeStep.timeline,
-                            ).getSuccess()!!
+                        is NarrativeStep.GenerateTimeLine -> updateTimeline(saga, narrativeStep.timeline)
 
                         NarrativeStep.NoActionNeeded -> skipNarrative()
                     }

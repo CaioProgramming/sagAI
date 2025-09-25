@@ -1,8 +1,12 @@
 package com.ilustris.sagai.features.characters.relations.data.model
 
+import androidx.compose.ui.graphics.Brush
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.ui.theme.hexToColor
 
 data class RelationshipContent(
     @Embedded
@@ -30,4 +34,14 @@ data class RelationshipContent(
         } else {
             characterOne
         }
+
+    fun getBrush(genre : Genre): Brush {
+        val firstCharacter = characterOne
+        val secondCharacter = characterTwo
+        val charactersColors = listOf(firstCharacter.hexColor.hexToColor() ?: genre.color,
+            secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last())
+        return Brush.linearGradient(
+                charactersColors,
+            )
+    }
 }
