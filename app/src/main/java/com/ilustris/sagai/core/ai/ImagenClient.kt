@@ -10,6 +10,8 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.recordException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.network.FreePikApiService
@@ -109,6 +111,9 @@ class ImagenClientImpl
                 service.generateImage(request)
             } catch (e: Exception) {
                 e.printStackTrace()
+                FirebaseCrashlytics.getInstance().recordException(e, {
+                    key("model", modelName)
+                })
                 null
             }
     }

@@ -118,7 +118,10 @@ class ChapterUseCaseImpl
                     )
                 val genCover =
                     imagenClient
-                        .generateImage(promptGeneration!!.plus(ImageRules.TEXTUAL_ELEMENTS), imageReferences)
+                        .generateImage(
+                            promptGeneration!!.plus(ImageRules.TEXTUAL_ELEMENTS),
+                            listOfNotNull(coverReference).plus(charactersIcons),
+                        )
                 val coverFile =
                     fileHelper.saveFile(chapter.data.title, genCover, path = "${saga.data.id}/chapters/")
                 val newChapter =

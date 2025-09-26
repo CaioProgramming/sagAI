@@ -8,6 +8,8 @@ import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.recordException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
@@ -81,6 +83,9 @@ class TextGenClient(
             return contentData
         } catch (e: Exception) {
             e.printStackTrace()
+            FirebaseCrashlytics.getInstance().recordException(e, {
+                key("model", modelName())
+            })
             return null
         }
     }

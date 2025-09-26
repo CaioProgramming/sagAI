@@ -10,6 +10,8 @@ import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.content
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.recordException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken // <-- ADDED IMPORT
@@ -124,6 +126,9 @@ class GemmaClient
                 return Gson().fromJson(cleanedJsonString, typeToken.type)
             } catch (e: Exception) {
                 Log.e(this::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)
+                FirebaseCrashlytics.getInstance().recordException(e, {
+                    key("model", modelName())
+                })
                 return null
             } finally {
                 if (!skipRunning && acquired) {
