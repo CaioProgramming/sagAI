@@ -22,7 +22,7 @@ data class RelationshipContent(
     )
     val characterTwo: Character,
     @Relation(
-        parentColumn = "id", // This refers to CharacterRelation.id (via the @Embedded data field)
+        parentColumn = "id",
         entityColumn = "relationId",
         entity = RelationshipUpdateEvent::class,
     )
@@ -35,13 +35,16 @@ data class RelationshipContent(
             characterOne
         }
 
-    fun getBrush(genre : Genre): Brush {
+    fun getBrush(genre: Genre): Brush {
         val firstCharacter = characterOne
         val secondCharacter = characterTwo
-        val charactersColors = listOf(firstCharacter.hexColor.hexToColor() ?: genre.color,
-            secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last())
-        return Brush.linearGradient(
-                charactersColors,
+        val charactersColors =
+            listOf(
+                firstCharacter.hexColor.hexToColor() ?: genre.color,
+                secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last(),
             )
+        return Brush.linearGradient(
+            charactersColors,
+        )
     }
 }

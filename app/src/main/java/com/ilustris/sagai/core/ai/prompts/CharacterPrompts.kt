@@ -132,6 +132,8 @@ object CharacterPrompts {
                     "relationshipsAsFirst",
                     "relationshipsAsSecond",
                     "physicalTraits",
+                    "hexColor",
+                    "firstSceneId",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
             appendLine(characters.formatToJsonArray(characterExclusions))

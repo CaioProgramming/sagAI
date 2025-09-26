@@ -16,11 +16,12 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import javax.inject.Inject
@@ -112,6 +113,18 @@ class MessageUseCaseImpl
                     fakeMessageGen.asSuccess()
                 }
 
+                val sceneSummary =
+                    gemmaClient.generate<SceneSummary>(
+                        ChatPrompts.sceneSummarizationPrompt(
+                            saga = saga,
+                            recentMessages =
+                                saga
+                                    .flatMessages()
+                                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                                    .map { it.joinMessage(true).formatToString() },
+                        ),
+                    )!!
+
                 val genText =
                     textGenClient.generate<MessageGen>(
                         ChatPrompts.replyMessagePrompt(
@@ -126,6 +139,7 @@ class MessageUseCaseImpl
                                     .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
                                     .map { it.joinMessage(true).formatToString() },
                             directive = saga.getDirective(),
+                            sceneSummary = sceneSummary,
                         ),
                         true,
                     )

@@ -143,7 +143,7 @@ class ChapterUseCaseImpl
             act: ActContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                delay(2.seconds)
+                delay(400)
                 val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
                 val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
                 val updated = chapter.copy(introduction = intro)

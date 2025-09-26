@@ -1,10 +1,14 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
 object ChatPrompts {
     val sagaExclusions =
@@ -20,8 +24,6 @@ object ChatPrompts {
             "isDebug",
             "endMessage",
             "review",
-            "messages",
-            "acts",
         )
 
     private val characterExclusions =
@@ -31,10 +33,6 @@ object ChatPrompts {
             "sagaId",
             "joinedAt",
             "details",
-            "events",
-            "relationshipsAsFirst",
-            "relationshipsAsSecond",
-            "physicalTraits",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -43,30 +41,22 @@ object ChatPrompts {
         message: String,
         lastMessages: List<String> = emptyList(),
         directive: String,
+        sceneSummary: SceneSummary,
     ) = buildString {
         appendLine()
 
-        // 1. Role definition and output rules
         appendLine(Core.roleDefinition(saga.data))
         appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
         appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trimIndent())
 
-        // 2. Context of the current chapter
-        appendLine("CURRENT CHAPTER CONTEXT:")
-        appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
+        appendLine("CURRENT Progression context:")
+        appendLine("Use this context to guide your responses and ensure they align with the story's progression.")
+        appendLine(sceneSummary.toJsonFormat())
 
-        // 3. Overview of previous chapters in the current act
-        appendLine(ChapterPrompts.chapterSummary(saga))
-
-        // 4. Overview of previous acts
-        appendLine(ActPrompts.actsOverview(saga))
-
-        // 5. Filtered context of the saga and relevant characters
         appendLine("SAGA CONTEXT:")
         appendLine(saga.data.toJsonFormatExcludingFields(sagaExclusions))
         appendLine("PLAYER CONTEXT DATA:")
-        appendLine("Main Character Context:")
-        appendLine(saga.mainCharacter.toJsonFormatExcludingFields(characterExclusions))
+        appendLine(saga.mainCharacter?.data.toJsonFormatExcludingFields(characterExclusions))
         appendLine(CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }))
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
 
@@ -74,7 +64,7 @@ object ChatPrompts {
 
         appendLine()
         appendLine("NPC Actions and Thoughts Guidelines:")
-        appendLine("- NPCs can perform actions or have thoughts expressed via the `ACTION` and `THOUGHT` senderTypes.")
+        appendLine("- NPCs can now perform actions or have thoughts expressed via the `ACTION` and `THOUGHT` senderTypes.")
         appendLine(
             "- **CRITICAL**: If an NPC uses `ACTION` or `THOUGHT`, you **MUST** set the `speakerName` field in the `Message` object to the name of the NPC performing the action or having the thought.",
         )
@@ -91,18 +81,7 @@ object ChatPrompts {
         appendLine(
             "- While you can now generate `ACTION` and `THOUGHT` for NPCs (with `speakerName`), you should **NOT** generate `ACTION` or `THOUGHT` messages that represent the *player's* actions or thoughts. Those are initiated by the player.",
         )
-
-        // Adiciona uma regra explícita para evitar respostas diretas aos pensamentos do jogador
-        appendLine("IMPORTANT RULE REGARDING PLAYER THOUGHTS:")
-        appendLine(
-            "- Under NO circumstances should you reply directly to the player's THOUGHT messages. Do NOT generate NPC dialogue or narration that acknowledges, responds to, or references the player's internal thoughts as if they were spoken aloud.",
-        )
-        appendLine(
-            "- Instead, use NARRATOR messages to describe the scene, the player's internal state, or the consequences of their reflections. NPCs should only react to explicit actions or spoken dialogue from the player, never to their internal thoughts.",
-        )
-        appendLine(
-            "- If the last message is a THOUGHT from the player, your response must move the story forward naturally, without referencing or replying to that thought.",
-        )
+        appendLine()
 
         appendLine(SagaDirective.namingDirective(saga.data.genre))
         appendLine(conversationStyleAndPacing())
@@ -115,6 +94,64 @@ object ChatPrompts {
         appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:** //")
         appendLine("{ $message }")
         appendLine()
+    }.trimIndent()
+
+    fun sceneSummarizationPrompt(
+        saga: SagaContent,
+        recentMessages: List<String> = emptyList(),
+    ) = buildString {
+        appendLine("You task is generate a concise, AI-optimized summary of the current scene in an interactive story.")
+        appendLine("This summary will be used exclusively as context for subsequent AI requests and will NOT be shown to the user.")
+        appendLine()
+        appendLine("Your goal:")
+        appendLine(
+            "- Provide only the most relevant details needed to maintain accurate story progression and avoid misleading information.",
+        )
+        appendLine("- Avoid redundant or already established information.")
+        appendLine("- Focus on immediate context: location, characters present, current objective, active conflict, and mood.")
+        appendLine("- If any field is not relevant or unknown, omit it.")
+        appendLine()
+        appendLine("Saga Context:")
+        appendLine("Title: ${saga.data.title}")
+        appendLine("Description: ${saga.data.description}")
+        appendLine("Genre: ${saga.data.genre}")
+        appendLine("PLAYER CONTEXT DATA:")
+        appendLine(saga.mainCharacter?.data.toJsonFormatExcludingFields(characterExclusions))
+        appendLine("Player relationships:")
+        appendLine(
+            saga.mainCharacter?.relationships?.joinToString(";\n") {
+                val lastEvent = it.relationshipEvents.last()
+                "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}\n${lastEvent.description}"
+            },
+        )
+        appendLine("Player last events:")
+        appendLine(
+            saga.mainCharacter?.events?.map { it.event }?.takeLast(5)?.formatToJsonArray(
+                listOf("gameTimelineId", "characterId", "id", "createdAt"),
+            ),
+        )
+        appendLine("Current Saga Characters:")
+        appendLine(CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }))
+        appendLine("Current Chapter Context:")
+        appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
+        appendLine("Recent Chapter Summaries:")
+        appendLine(ChapterPrompts.chapterSummary(saga))
+        appendLine()
+        appendLine("Recent Acts Overview:")
+        appendLine(ActPrompts.actsOverview(saga))
+        appendLine()
+        appendLine("Recent Messages (for context, do NOT repeat):")
+        appendLine("[")
+        appendLine(recentMessages.joinToString(separator = ";\n"))
+        appendLine("]")
+        appendLine()
+        appendLine("Use the following structure (do NOT add extra commentary):")
+        appendLine(toJsonMap(SceneSummary::class.java))
+        appendLine()
+        appendLine("Only include details that are essential to understand the current scene and keep the story pacing.")
+        appendLine("Do NOT repeat information unless it is critical for context.")
+        appendLine("Do NOT speculate or invent details not present in the current context.")
+        appendLine("Output only the structured summary as specified above.")
     }.trimIndent()
 
     fun conversationStyleAndPacing() =

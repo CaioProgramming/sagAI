@@ -10,9 +10,9 @@ import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDe
 // Import RelationshipContent and RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 data class TimelineContent(

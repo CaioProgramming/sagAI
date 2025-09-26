@@ -1,5 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.domain.model
 
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+
 // Import the correct SenderType
 
 data class Suggestion(

@@ -21,7 +21,7 @@ import com.ilustris.sagai.core.utils.NotificationUtils.CHAT_NOTIFICATION_ID
 import com.ilustris.sagai.core.utils.cropBitmapToCircle
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.qualifiers.ApplicationContext

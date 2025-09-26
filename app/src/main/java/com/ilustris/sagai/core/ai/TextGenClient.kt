@@ -15,6 +15,7 @@ import com.google.gson.Gson
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 
 class TextGenClient(
     private val firebaseRemoteConfig: FirebaseRemoteConfig,
@@ -67,13 +68,15 @@ class TextGenClient(
                 } else {
                     prompt
                 }
-            val content =
-                model.generateContent(fullPrompt).also {
-                    Log.d(javaClass.simpleName, "Token count for request: ${it.usageMetadata?.totalTokenCount}")
-                }
+            val content = model.generateContent(fullPrompt)
+            Log.i(javaClass.simpleName, "generating with model: ${modelName()}")
+            Log.i(
+                javaClass.simpleName,
+                "content generation result: ${content.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}",
+            )
+
             Log.i(javaClass.simpleName, "prompt: $fullPrompt")
-            Log.i(javaClass.simpleName, "generated(${modelName()}): ${content.text}")
-            Log.d(javaClass.simpleName, "Token usage: ${content.usageMetadata.toJsonFormat()}")
+
             val contentData =
                 if (T::class.java == String::class.java) {
                     content.text as? T

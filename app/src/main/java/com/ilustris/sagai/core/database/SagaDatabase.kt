@@ -20,7 +20,7 @@ import com.ilustris.sagai.features.characters.relations.data.source.CharacterRel
 // Import the new DAO
 import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -41,7 +41,13 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
     ],
-    version = 50,
+    version = 51,
+    autoMigrations = [
+        AutoMigration(
+            from = 50,
+            to = 51,
+        ),
+    ],
     exportSchema = true,
 )
 @TypeConverters(IntListConverter::class)

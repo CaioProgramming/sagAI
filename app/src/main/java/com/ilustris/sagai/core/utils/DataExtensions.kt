@@ -132,39 +132,10 @@ fun Pair<String, String>.formatToString(showSender: Boolean = true) =
     buildString {
         if (showSender) {
             append(first)
-            append(":")
+            append(": ")
         }
         append(second)
     }
-
-fun Class<*>.toJsonString(): String {
-    val fields =
-        declaredFields
-            .filter { it.name != "\$stable" }
-            .joinToString(separator = ",\n") { field ->
-                val fieldName = field.name
-                val fieldType = field.type
-                val fieldValue =
-                    when {
-                        fieldType.isEnum -> "[ ${fieldType.enumConstants?.joinToString { it.toString() }} ]"
-                        fieldType == String::class.java -> "\"\""
-                        fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
-                        fieldType == Boolean::class.java -> "false"
-                        fieldType == Double::class.java -> "0.0"
-                        fieldType == Float::class.java -> "0.0f"
-                        fieldType == Long::class.java -> "0L"
-                        List::class.java.isAssignableFrom(fieldType) ||
-                            Array::class.java.isAssignableFrom(
-                                fieldType,
-                            )
-                        -> "[]"
-
-                        else -> "{}" // For nested objects, represent as empty JSON object
-                    }
-                "  \"$fieldName\": $fieldValue"
-            }
-    return "{\n$fields\n}"
-}
 
 fun toJsonMap(
     clazz: Class<*>,
@@ -258,14 +229,15 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
 
 fun doNothing() = {}
 
-enum class DateFormatOption(val pattern: String) {
-
+enum class DateFormatOption(
+    val pattern: String,
+) {
     SIMPLE_DD_MM_YYYY("dd/MM/yyyy"),
     DAY_OF_WEEK_DD_MM_YYYY("EEE, dd/MM/yyyy"),
     FULL_DAY_MONTH_YEAR("dd 'of' MMMM yyyy"),
     HOUR_MINUTE_DAY_OF_MONTH_YEAR("HH:mm 'of' dd 'of' MMMM"),
     ISO_DATE("yyyy-MM-dd"),
-    MONTH_DAY_YEAR("MM/dd/yyyy");
+    MONTH_DAY_YEAR("MM/dd/yyyy"),
 }
 
 fun Long.formatDate(
@@ -276,8 +248,6 @@ fun Long.formatDate(
     val format = SimpleDateFormat(option.pattern, locale)
     return format.format(date)
 }
-
-
 
 fun Long.formatHours(): String {
     val date = Date(this)
@@ -342,7 +312,6 @@ fun String?.sanitizeAndExtractJsonString(): String {
     }
     return cleanedJsonString
 }
-
 
 fun Int.toRoman(): String {
     val values = listOf(1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)

@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.saga.chat.repository
 
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import javax.inject.Inject
 

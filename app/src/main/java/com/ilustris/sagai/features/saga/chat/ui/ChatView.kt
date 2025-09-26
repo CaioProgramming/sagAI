@@ -130,9 +130,9 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChapterDisplayData
@@ -327,6 +327,7 @@ fun ChatView(
                             snackBar = snackBarMessage,
                             onSendMessage = viewModel::sendInput,
                             onBack = navHostController::popBackStack,
+                            onRetryMessage = viewModel::retryAiResponse,
                             openSagaDetails = {
                                 navHostController.navigateToRoute(
                                     Routes.SAGA_DETAIL,
@@ -471,6 +472,7 @@ fun ChatContent(
     openSagaDetails: (Saga) -> Unit = {},
     onInjectFakeMessages: (Int) -> Unit = {},
     onSnackAction: (Triple<ChatAction, String, Any?>) -> Unit = {},
+    onRetryMessage: (Message) -> Unit = {},
 ) {
     val saga = content.data
     val listState = rememberLazyListState()
@@ -1042,6 +1044,7 @@ fun ChatList(
     openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
+    onRetryMessage: (Message) -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
@@ -1124,9 +1127,7 @@ fun ChatList(
             }
         }
         actList.reversed().forEach { act ->
-            val isFirst = act == actList.firstOrNull()
             val genre = saga.data.genre
-            val shape = RoundedCornerShape(genre.cornerSize())
 
             if (act.isComplete) {
                 item {
@@ -1186,7 +1187,6 @@ fun ChatList(
                             modifier =
                                 Modifier
                                     .animateItem()
-                                    .clip(genre.shape())
                                     .fillMaxWidth()
                                     .clickable {
                                         openSaga()
@@ -1222,10 +1222,11 @@ fun ChatList(
                             content = saga,
                             alreadyAnimatedMessages = animatedMessages,
                             canAnimate = timeline.messages.lastOrNull() == it,
-                            modifier = Modifier.animateItem(
-                                fadeInSpec = tween(400, easing = EaseIn),
-                                fadeOutSpec = tween(400, easing = EaseIn),
-                            ),
+                            modifier =
+                                Modifier.animateItem(
+                                    fadeInSpec = tween(400, easing = EaseIn),
+                                    fadeOutSpec = tween(400, easing = EaseIn),
+                                ),
                             openCharacters = { char -> openCharacter(char) },
                             openWiki = { openWiki() },
                         )
