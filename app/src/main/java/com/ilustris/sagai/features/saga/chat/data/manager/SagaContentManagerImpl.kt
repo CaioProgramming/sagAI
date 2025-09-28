@@ -369,7 +369,10 @@ class SagaContentManagerImpl
                 sagaHistoryUseCase.updateSaga(saga.data.copy(currentActId = null)).asSuccess()
             }
 
-        override fun checkNarrativeProgression(saga: SagaContent?) {
+        override fun checkNarrativeProgression(
+            saga: SagaContent?,
+            isRetrying: Boolean,
+        ) {
             CoroutineScope(Dispatchers.IO).launch {
                 Log.d(javaClass.simpleName, "Starting narrative progression check")
                 progressionCounter++
@@ -451,6 +454,9 @@ class SagaContentManagerImpl
                         validatePostAction(saga, narrativeStep, action.success)
                     }.onFailure {
                         setNarrativeProcessingStatus(false)
+                        if (isRetrying.not()) {
+                            checkNarrativeProgression(saga, true)
+                        }
                     }
             }
         }

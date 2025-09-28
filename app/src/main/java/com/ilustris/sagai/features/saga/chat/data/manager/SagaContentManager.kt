@@ -30,5 +30,8 @@ interface SagaContentManager {
 
     fun setProcessing(bool: Boolean)
 
-    fun checkNarrativeProgression(saga: SagaContent?)
+    fun checkNarrativeProgression(
+        saga: SagaContent?,
+        isRetrying: Boolean = false,
+    )
 }

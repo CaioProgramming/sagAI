@@ -1245,10 +1245,10 @@ fun PlayStylePage(content: SagaContent) {
                 firstTone,
                 morphProgress,
                 rotation,
-                Brush.verticalGradient(
+                outlineBrush = Brush.verticalGradient(
                     firstTone.color.darkerPalette(factor = .3f),
                 ),
-                genre.gradient(false, targetValue = 300f),
+                 backgroundBrush = genre.gradient(false, targetValue = 300f),
                 glowColor = genre.color,
             )
 
