@@ -1,24 +1,17 @@
 @file:OptIn(ExperimentalSharedTransitionApi::class)
 
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,22 +24,20 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.constraintlayout.compose.ConstraintLayout
-import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
@@ -69,7 +60,7 @@ enum class CardFace(
 fun SagaFormCards(
     sagaForm: SagaForm,
     onDismiss: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     var cardFace by remember {
         mutableStateOf(CardFace.Front)
@@ -82,56 +73,30 @@ fun SagaFormCards(
         cardFace = cardFace.next
     }
 
-    val brush = sagaForm.saga.genre?.gradient(true) ?: Brush.verticalGradient(holographicGradient)
-        ConstraintLayout(modifier) {
-            val (reviewCard, spark) = createRefs()
-
-            FlipCard(
-                cardFace,
-                onClick = {
-                    cardFace = it.next
-                },
-                front = {
-                    ReviewCard(
-                        sagaForm.saga.title,
-                        sagaForm.saga.genre?.title ?: emptyString(),
-                        sagaForm.saga.description,
-                        sagaForm.saga.genre,
-                    )
-                },
-                back = {
-                    ReviewCard(
-                        sagaForm.character.name,
-                        sagaForm.character.gender,
-                        sagaForm.character.briefDescription,
-                        sagaForm.saga.genre,
-                    )
-                },
-                modifier =
-                    Modifier.fillMaxWidth(.8f).fillMaxHeight(.75f).constrainAs(reviewCard) {
-                        top.linkTo(parent.top)
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                    },
+    FlipCard(
+        cardFace,
+        onClick = {
+            cardFace = it.next
+        },
+        front = {
+            ReviewCard(
+                sagaForm.saga.title,
+                sagaForm.saga.genre?.title ?: emptyString(),
+                sagaForm.saga.description,
+                sagaForm.saga.genre,
             )
-
-            Image(
-                painter = painterResource(R.drawable.ic_spark),
-                null,
-                modifier =
-                    Modifier.constrainAs(spark) {
-                            top.linkTo(reviewCard.top)
-                            start.linkTo(reviewCard.start)
-                            end.linkTo(reviewCard.end)
-                        }.offset(y = 24.unaryMinus().dp)
-                        .gradientFill(brush)
-                        .size(64.dp)
-                        .clickable {
-                            onDismiss()
-                        },
+        },
+        back = {
+            ReviewCard(
+                sagaForm.character.name,
+                sagaForm.character.gender,
+                sagaForm.character.description,
+                sagaForm.saga.genre,
             )
-    }
+        },
+        modifier =
+            Modifier.fillMaxSize(),
+    )
 }
 
 @Composable
@@ -160,7 +125,8 @@ fun ReviewCard(
             .border(2.dp, brush, shape)
             .background(MaterialTheme.colorScheme.surfaceContainer, shape)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+            .padding(16.dp)
+            .reactiveShimmer(true),
     ) {
         Text(
             text = title,
@@ -177,8 +143,9 @@ fun ReviewCard(
             style =
                 MaterialTheme.typography.labelMedium.copy(
                     fontFamily = font,
+                    brush = brush,
                 ),
-            color = MaterialTheme.colorScheme.onBackground,
+            modifier = Modifier.alpha(.6f),
         )
 
         Text(

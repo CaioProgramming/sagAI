@@ -364,35 +364,3 @@ fun DescriptionPageView(
     )
 }
 
-@Preview(showBackground = true)
-@Composable
-fun CharacterFormPreview() {
-    val sampleCharacterDetails =
-        Details(
-            appearance = "Slender and agile, with long silver hair often tied back. Her movements are fluid and quiet.",
-            facialDetails = FacialFeatures(),
-            clothing = Clothing(body = "Wears practical, dark leather armor, a hooded cloak for stealth, and soft boots."),
-            occupation = "Forest Warden / Scout",
-            race = "Wood Elf", // Added race to preview
-            weapons = "A finely crafted longbow and a set of daggers. Carries a small satchel with herbs and survival gear.",
-            personality = "Reserved but kind",
-            height = 1.7,
-            weight = 60.0,
-            gender = "Feminine",
-            ethnicity = "Elven",
-        )
-
-    val sampleCharacter =
-        Character(
-            id = 0,
-            name = "Elara Moonwhisper",
-            backstory = "Orphaned at a young age, Elara was raised by the reclusive guardians of the Silverwood. She learned the ways of the forest and dedicated her life to protecting its secrets from those who would exploit them. A recent encroaching darkness has forced her to seek allies beyond her homeland.",
-            details = sampleCharacterDetails,
-            sagaId = 0,
-            image = "",
-            hexColor = "#3d98f7",
-            joinedAt = 0L,
-        )
-
-
-}

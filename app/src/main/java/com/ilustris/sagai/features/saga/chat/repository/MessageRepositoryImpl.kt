@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.saga.chat.repository
 
 import android.icu.util.Calendar
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import javax.inject.Inject
 
@@ -44,8 +44,9 @@ class MessageRepositoryImpl
             messageDao.deleteMessages(sagaId)
         }
 
-        override suspend fun updateMessage(message: Message) {
+        override suspend fun updateMessage(message: Message): Message {
             messageDao.updateMessage(message)
+            return message
         }
 
         override suspend fun getLastMessage(sagaId: Int): Message? = messageDao.getLastMessage(sagaId)

@@ -50,7 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.lifecycleScope // Added
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.utils.ConnectivityObserver
@@ -60,14 +60,12 @@ import com.ilustris.sagai.ui.navigation.SagaNavGraph
 import com.ilustris.sagai.ui.navigation.findRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.channels.Channel // Added
-import kotlinx.coroutines.flow.receiveAsFlow // Added
-import kotlinx.coroutines.launch // Added
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    // Channel to send new deep links from onNewIntent to Compose
     private val deepLinkChannel = Channel<String>(Channel.CONFLATED)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,7 +92,6 @@ class MainActivity : ComponentActivity() {
                     }
                 val snackbarHostState = remember { SnackbarHostState() }
 
-                // Handle initial deep link
                 LaunchedEffect(navController, initialDeepLinkString) {
                     if (initialDeepLinkString.isNullOrBlank()) {
                         return@LaunchedEffect

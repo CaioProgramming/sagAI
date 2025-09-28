@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.saga.chat.presentation
 
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
 sealed class ChatState {

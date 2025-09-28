@@ -2,8 +2,6 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Log
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.decodeToImageBitmap
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
@@ -12,7 +10,10 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig // Added
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.recordException
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.network.response.FreePikResponse
@@ -110,6 +111,9 @@ class ImagenClientImpl
                 service.generateImage(request)
             } catch (e: Exception) {
                 e.printStackTrace()
+                FirebaseCrashlytics.getInstance().recordException(e, {
+                    key("model", modelName)
+                })
                 null
             }
     }

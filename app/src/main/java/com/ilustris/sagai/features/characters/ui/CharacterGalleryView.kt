@@ -111,7 +111,7 @@ fun CharactersGalleryContent(
     animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
 ) {
     var showCharacter by remember {
-        mutableStateOf<CharacterContent?>(null)
+        mutableStateOf<Int?>(null)
     }
 
     val titleAndSubtitle =
@@ -170,7 +170,7 @@ fun CharactersGalleryContent(
                                 Modifier
                                     .clip(genre.shape())
                                     .clickable {
-                                        showCharacter = character
+                                        showCharacter = character.data.id
                                     },
                         )
                     }
@@ -179,22 +179,24 @@ fun CharactersGalleryContent(
                 val newCharacterSheetState =
                     rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-                showCharacter?.let { character ->
+                showCharacter?.let { id ->
                     ModalBottomSheet(
                         onDismissRequest = { showCharacter = null },
                         sheetState = newCharacterSheetState,
                         containerColor = MaterialTheme.colorScheme.background,
                         dragHandle = { Box {} },
                     ) {
-                        CharacterDetailsContent(
-                            saga,
-                            character,
-                            openEvent = { event ->
-                                event?.let {
-                                    onOpenEvent(event)
-                                }
-                            },
-                        )
+                        saga.characters.find { it.data.id == id }?.let { character ->
+                            CharacterDetailsContent(
+                                saga,
+                                character,
+                                openEvent = { event ->
+                                    event?.let {
+                                        onOpenEvent(event)
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
 
@@ -273,86 +275,6 @@ private fun CharacterVerticalItem(
     }
 }
 
-@Preview
-@Composable
-fun CharacterYearbookItemPreview() {
-    val character =
-        Character(
-            id = 1,
-            name = "Character Name",
-            backstory = "Character backstory",
-            image = "",
-            hexColor = "#FF0000",
-            sagaId = 1,
-            details =
-                Details(
-                    appearance = "Appearance",
-                    personality = "Personality",
-                    race = "Race",
-                    height = 1.80,
-                    weight = 70.0,
-                    gender = "Gender",
-                    occupation = "Occupation",
-                    ethnicity = "Ethnicity",
-                ),
-            joinedAt = System.currentTimeMillis(),
-        )
-    CharacterYearbookItem(character = character, genre = Genre.FANTASY)
-}
-
-@Preview
-@Composable
-fun CharacterVerticalItemPreview() {
-    val character =
-        Character(
-            id = 1,
-            name = "Character Name",
-            backstory = "Character backstory",
-            image = "",
-            hexColor = "#FF0000",
-            sagaId = 1,
-            details =
-                Details(
-                    appearance = "Appearance",
-                    personality = "Personality",
-                    race = "Race",
-                    height = 1.80,
-                    weight = 70.0,
-                    gender = "Gender",
-                    occupation = "Occupation",
-                    ethnicity = "Ethnicity",
-                ),
-            joinedAt = System.currentTimeMillis(),
-        )
-    CharacterVerticalItem(
-        modifier = Modifier,
-        character = character,
-        genre = Genre.FANTASY,
-        iconModifier = Modifier.size(100.dp),
-    )
-}
-
-@Preview
-@Composable
-fun CharacterHorizontalViewPreview() {
-    val character =
-        Character(
-            id = 1,
-            name = "Character Name",
-            backstory = "Character Backstory",
-            image = "",
-            hexColor = "#3d98f7",
-            sagaId = 1,
-            details =
-                Details(
-                    appearance = "Appearance",
-                    personality = "Personality",
-                    race = "Race",
-                ),
-            joinedAt = 0L,
-        )
-    CharacterHorizontalView(character = character, genre = Genre.FANTASY)
-}
 
 @Composable
 fun CharacterHorizontalView(

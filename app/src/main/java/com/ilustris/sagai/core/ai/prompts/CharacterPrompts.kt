@@ -4,6 +4,7 @@ import com.ilustris.sagai.core.ai.prompts.GenrePrompts // Added import
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts // Added import
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -39,10 +40,9 @@ object CharacterPrompts {
             appendLine(
                 "YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.",
             )
-            appendLine("")
             appendLine("**CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**")
             appendLine("1.  **Foundational Art Style:**")
-            appendLine("he primary rendering style for the portrait MUST be:")
+            appendLine("The primary rendering style for the portrait MUST be:")
             appendLine(GenrePrompts.artStyle(genre))
             appendLine("2.  **Specific Color Application Instructions:**")
             appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.title}\") are applied:")
@@ -78,15 +78,24 @@ object CharacterPrompts {
                 "Your goal is to translate the *vibe, style, and compositional cues* of BOTH reference images into a rich textual description. Do not just say 'replicate the references'; instead, *describe WHAT defining characteristics to replicate and adapt* in vivid textual detail, ensuring these are rendered within the **Foundational Art Style** and adhere to the **Color Application Instructions**.",
             )
             appendLine(
-                "2.  **Character Fidelity**: The character's own details (name, backstory, personality, race, gender, specific appearance details, clothing, weapons from the `Character Context` below) define *WHO* or *WHAT* is being depicted. This is the primary subject.",
+                "1.  **Character Fidelity**: The character's own details (name, backstory, personality, race, gender, specific appearance details, clothing, weapons from the `Character Context` below) define *WHO* or *WHAT* is being depicted. This is the primary subject.",
             )
             appendLine(
-                "3.  **Synthesis**: The character's details should be seamlessly integrated with the style derived from the Style Reference Image, the composition derived (and adapted, if necessary) from the Composition Reference Image, AND all rendered according to the **Foundational Art Style** and **Color Application Instructions**.",
+                "2.  **Synthesis**: The character's details should be seamlessly integrated with the style derived from the Style Reference Image, the composition derived (and adapted, if necessary) from the Composition Reference Image, AND all rendered according to the **Foundational Art Style** and **Color Application Instructions**.",
             )
             appendLine(
-                "4.  **Dramatic Portrait Framing**: The final image should still be a 'Dramatic Portrait,' conveying the character's essence and mood. This is the overall goal, even when adapting a non-portrait composition reference.",
+                "3.  **Dramatic Portrait Framing**: The final image should still be a 'Dramatic Portrait,' conveying the character's essence and mood. This is the overall goal, even when adapting a non-portrait composition reference.",
             )
-            appendLine("5.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
+            // --- RACE & ETHNICITY FIDELITY (MANDATORY) ---
+            appendLine(
+                "4.  **Race and Ethnicity Fidelity (MANDATORY)**: Explicitly restate the character's race and ethnicity from the Character Context early in the prompt and prioritize them over any style, color, or genre cues. Skin tone, hair texture, and facial anatomy must clearly match the specified race/ethnicity. Do NOT lighten, change, or neutralize the skin tone; do NOT default to Eurocentric features; do NOT translate or replace the provided race/ethnicity terms—use them verbatim. If both race and ethnicity are present, include both.",
+            )
+            // --- ASPECT RATIO / FRAMING ---
+            appendLine(
+                "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body unless explicitly required.",
+            )
+
+            appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
             appendLine(ImagePrompts.conversionGuidelines(genre))
             appendLine("**Image Generation Model Inputs Overview (for your awareness when crafting the text prompt):**")
             appendLine("*   **Text Prompt:** (The string you will generate)")
@@ -100,39 +109,35 @@ object CharacterPrompts {
                         "image",
                         "sagaId",
                         "joinedAt",
-                        "backstory",
+                        "appearance",
                     ),
                 ),
             )
+            appendLine(
+                "*CRITICAL RULE*: ENSURE THAT NO BORDER ARE RENDERED ONLY FULL ART COMPOSITION",
+            )
         }
-
-    fun appearance(character: Character) =
-        """
-        ${character.details.race},${character.details.gender},${character.details.ethnicity}
-        ${character.details.facialDetails}, ${character.details.clothing}."
-        ${character.details.appearance}
-        """.trimIndent()
 
     fun charactersOverview(characters: List<Character>): String =
-
-        """
-        CURRENT SAGA CAST:
-        [ 
-        ${
-            characters.joinToString(",\n") {
-                it.toJsonFormatExcludingFields(
-                    listOf(
-                        "id",
-                        "image",
-                        "sagaId",
-                        "joinedAt",
-                        "details",
-                    ),
+        buildString {
+            val characterExclusions =
+                listOf(
+                    "id",
+                    "image",
+                    "sagaId",
+                    "joinedAt",
+                    "details",
+                    "events",
+                    "relationshipEvents",
+                    "relationshipsAsFirst",
+                    "relationshipsAsSecond",
+                    "physicalTraits",
+                    "hexColor",
+                    "firstSceneId",
                 )
-            }
+            appendLine("CURRENT SAGA CAST OVERVIEW:")
+            appendLine(characters.formatToJsonArray(characterExclusions))
         }
-        ]
-        """.trimIndent()
 
     fun characterGeneration(
         saga: SagaContent,

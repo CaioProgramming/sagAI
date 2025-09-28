@@ -16,3 +16,4 @@ local.properties
 !/config.properties
 /app/config.properties
 /app/schemas/
+/.idea/

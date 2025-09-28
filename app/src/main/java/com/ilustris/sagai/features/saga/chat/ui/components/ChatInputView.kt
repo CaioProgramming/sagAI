@@ -2,7 +2,6 @@
 
 package com.ilustris.sagai.features.saga.chat.ui.components
 
-import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -11,11 +10,8 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,12 +27,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -54,13 +47,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
-import androidx.compose.material3.TooltipBox
-import androidx.compose.material3.TooltipDefaults
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -77,45 +65,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterInfo
-import com.ilustris.sagai.features.characters.data.model.Details
-import com.ilustris.sagai.features.characters.ui.CharacterAvatar
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
-import com.ilustris.sagai.features.characters.ui.SimpleCharacterForm
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.GradientType
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFill
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
-import effectForGenre
-import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -125,11 +100,14 @@ fun ChatInputView(
     isGenerating: Boolean,
     suggestions: List<Suggestion>,
     modifier: Modifier = Modifier,
-    onSendMessage: (String, SenderType) -> Unit,
-    onCreateNewCharacter: (CharacterInfo) -> Unit, // Added callback
+    inputField: TextFieldValue,
+    sendType: SenderType,
+    typoFix: TypoFix?,
+    onUpdateInput: (TextFieldValue) -> Unit,
+    onUpdateSender: (SenderType) -> Unit,
+    onSendMessage: (Boolean) -> Unit,
 ) {
-    var action by remember { mutableStateOf(SenderType.USER) }
-    var inputField by remember { mutableStateOf(TextFieldValue("")) }
+    val action = sendType
     val inputBrush =
         if (isGenerating) {
             content.data.genre.gradient(
@@ -145,27 +123,18 @@ fun ChatInputView(
         mutableStateOf(false)
     }
 
-    var actionsExpanded by remember {
-        mutableStateOf(false)
-    }
     val glowRadius by animateFloatAsState(
         if (isGenerating.not()) 0f else 30f,
     )
     val inputShape = RoundedCornerShape(content.data.genre.cornerSize())
 
-    var showNewCharacterSheet by remember { mutableStateOf(false) }
-    val newCharacterSheetState =
-        rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    val scope = rememberCoroutineScope()
+    rememberModalBottomSheetState(skipPartiallyExpanded = false)
+    rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    fun sendMessage(
-        text: String,
-        action: SenderType,
-    ) {
-        onSendMessage(text, action)
-        inputField = TextFieldValue("")
+    fun sendMessage(confirmed: Boolean = false) {
+        onSendMessage(confirmed)
         charactersExpanded = false
         focusManager.clearFocus()
         keyboardController?.hide()
@@ -204,11 +173,7 @@ fun ChatInputView(
                                         newText,
                                     )
 
-                                inputField =
-                                    TextFieldValue(
-                                        textReplacement,
-                                        TextRange(textReplacement.length),
-                                    )
+                                onUpdateInput(TextFieldValue(textReplacement, TextRange(textReplacement.length)))
 
                                 charactersExpanded = false
                             },
@@ -236,8 +201,13 @@ fun ChatInputView(
                 items(suggestions) {
                     Button(
                         onClick = {
-                            inputField = TextFieldValue(it.text, selection = TextRange(it.text.length))
-                            action = it.type
+                            onUpdateInput(
+                                TextFieldValue(
+                                    it.text,
+                                    TextRange(it.text.length),
+                                ),
+                            )
+                            onUpdateSender(it.type)
                         },
                         shape = inputShape,
                         modifier =
@@ -254,12 +224,16 @@ fun ChatInputView(
                             painterResource(it.type.icon()),
                             contentDescription = it.type.description(),
                             modifier =
-                                Modifier.padding(4.dp).size(12.dp).reactiveShimmer(
-                                    true,
-                                    content.data.genre.color
-                                        .darkerPalette()
-                                        .plus(Color.Transparent),
-                                ),
+                                Modifier
+                                    .padding(4.dp)
+                                    .size(12.dp)
+                                    .reactiveShimmer(
+                                        true,
+                                        content.data.genre.color
+                                            .darkerPalette()
+                                            .plus(Color.Transparent),
+                                        duration = 5.seconds,
+                                    ),
                         )
 
                         Text(
@@ -279,7 +253,7 @@ fun ChatInputView(
         BlurredGlowContainer(
             modifier =
                 Modifier
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(8.dp)
                     .fillMaxWidth()
                     .padding(8.dp),
             inputBrush,
@@ -315,15 +289,12 @@ fun ChatInputView(
                         keyboardActions =
                             KeyboardActions(onSend = {
                                 if (isGenerating.not() && inputField.text.isNotEmpty()) {
-                                    sendMessage(
-                                        inputField.text,
-                                        action,
-                                    )
+                                    sendMessage()
                                 }
                             }),
                         onValueChange = {
                             if (it.text.length <= maxLength) {
-                                inputField = it
+                                onUpdateInput(it)
 
                                 charactersExpanded = it.text.isNotEmpty() &&
                                     it.text.last().toString() == "@" &&
@@ -397,8 +368,7 @@ fun ChatInputView(
                         IconButton(
                             onClick = {
                                 if (isGenerating) return@IconButton
-                                onSendMessage(inputField.text, action)
-                                inputField = TextFieldValue("")
+                                sendMessage()
                                 charactersExpanded = false
                             },
                             modifier =
@@ -409,16 +379,24 @@ fun ChatInputView(
                                         CircleShape,
                                     ).size(32.dp),
                         ) {
-                            val icon = R.drawable.ic_arrow_up
-                            Icon(
-                                painterResource(icon),
-                                contentDescription = "Send Message",
+                            AnimatedVisibility(
+                                isGenerating.not(),
                                 modifier =
                                     Modifier
                                         .padding(2.dp)
                                         .fillMaxSize(),
-                                tint = content.data.genre.iconColor,
-                            )
+                            ) {
+                                val icon = R.drawable.ic_arrow_up
+                                Icon(
+                                    painterResource(icon),
+                                    contentDescription = "Send Message",
+                                    modifier =
+                                        Modifier
+                                            .padding(2.dp)
+                                            .fillMaxSize(),
+                                    tint = content.data.genre.iconColor,
+                                )
+                            }
                         }
                     }
                 }
@@ -456,10 +434,11 @@ fun ChatInputView(
                                         .clip(content.data.genre.shape())
                                         .gradientFill(content.data.genre.gradient())
                                         .clickable {
-                                            action = it
+                                            onUpdateSender(it)
                                         }.padding(16.dp),
                             ) {
-                                val weight = if (it == action) FontWeight.Bold else FontWeight.Normal
+                                val weight =
+                                    if (it == action) FontWeight.Bold else FontWeight.Normal
                                 it.icon().let { icon ->
                                     Image(
                                         painterResource(icon),
@@ -478,31 +457,6 @@ fun ChatInputView(
                                 }
                             }
                         }
-
-                        item {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier =
-                                    Modifier
-                                        .clip(content.data.genre.shape())
-                                        .gradientFill(gradientAnimation(holographicGradient, gradientType = GradientType.VERTICAL))
-                                        .clickable {
-                                            showNewCharacterSheet = true
-                                        }.padding(16.dp),
-                            ) {
-                                Image(
-                                    painterResource(R.drawable.character_icon),
-                                    null,
-                                    modifier = Modifier.size(12.dp),
-                                )
-
-                                Text(
-                                    SenderType.NEW_CHARACTER.title(),
-                                    style = MaterialTheme.typography.labelSmall,
-                                )
-                            }
-                        }
                     }
                 }
             }
@@ -513,122 +467,108 @@ fun ChatInputView(
         }
     }
 
-    if (showNewCharacterSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showNewCharacterSheet = false },
-            sheetState = newCharacterSheetState,
-        ) {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    stringResource(R.string.sender_type_new_character_title),
-                    style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = content.data.genre.bodyFont(),
-                            fontWeight = FontWeight.Bold,
-                        ),
-                    modifier = Modifier.padding(bottom = 16.dp),
-                )
+    val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-                SimpleCharacterForm(
-                    content.data.genre,
-                    Modifier
-                        .fillMaxSize(),
-                ) {
-                    onCreateNewCharacter(it)
-
-                    scope.launch { newCharacterSheetState.hide() }.invokeOnCompletion {
-                        if (!newCharacterSheetState.isVisible) {
-                            showNewCharacterSheet = false
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(8.dp)) // Padding at the bottom
+    LaunchedEffect(typoFix) {
+        if (typoFix != null && typoFix.status != TypoStatus.OK) {
+            bottomSheetState.show()
+        } else {
+            if (bottomSheetState.isVisible) {
+                bottomSheetState.hide()
             }
         }
     }
-}
 
-@Composable
-private fun MainCharacterInputButton(
-    saga: Saga,
-    character: Character,
-    currentAction: SenderType,
-    onClickAction: () -> Unit = {},
-) {
-    val tooltipState = rememberTooltipState()
-
-    TooltipBox(
-        positionProvider =
-            TooltipDefaults.rememberRichTooltipPositionProvider(
-                spacingBetweenTooltipAndAnchor = 8.dp,
-            ),
-        tooltip = {
-            RichTooltip(
-                title = { Text(currentAction.title()) },
-                caretSize = DpSize(12.dp, 12.dp),
-                shape = RoundedCornerShape(saga.genre.cornerSize()),
-            ) {
-                Text(currentAction.description())
-            }
-        },
-        state = tooltipState,
-    ) {
-        Box(
-            Modifier.size(24.dp),
-        ) {
-            CharacterAvatar(
-                character,
-                borderSize = 1.dp,
-                genre = saga.genre,
-                innerPadding = 0.dp,
-                modifier =
-                    Modifier
-                        .clip(CircleShape)
-                        .fillMaxSize()
-                        .clickable {
-                            onClickAction()
-                        }.effectForGenre(
-                            saga.genre,
-                            focusRadius = .3f,
-                            customGrain = .2f,
-                        ),
-            )
-
-            AnimatedContent(
-                currentAction,
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .offset(x = 2.dp, y = 2.dp),
-                transitionSpec = {
-                    scaleIn() + fadeIn(tween(300)) togetherWith scaleOut() + fadeOut()
+    typoFix?.let {
+        if (it.status != TypoStatus.OK) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    sendMessage(true)
                 },
+                sheetState = bottomSheetState,
+                dragHandle = { },
+                shape = content.data.genre.shape(),
+                containerColor = Color.Transparent,
             ) {
-                it.icon()?.let { icon ->
-                    Box(
+                val genre = content.data.genre
+                var isEnabled by remember { mutableStateOf(true) }
+                typoFix.let {
+                    Column(
                         modifier =
                             Modifier
-                                .border(1.dp, MaterialTheme.colorScheme.background, CircleShape)
-                                .background(saga.genre.color, CircleShape)
-                                .size(12.dp)
-                                .padding(3.dp),
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
+                                .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Icon(
-                            painterResource(icon),
-                            null,
-                            tint = saga.genre.iconColor,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .fillMaxSize(),
+                        Text(
+                            it.friendlyMessage ?: emptyString(),
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Light,
+                                ),
+                            modifier = Modifier.alpha(.4f),
                         )
+
+                        Text(
+                            it.suggestedText ?: emptyString(),
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    brush = genre.gradient(gradientType = GradientType.LINEAR),
+                                ),
+                            modifier =
+                                Modifier.reactiveShimmer(
+                                    true,
+                                ),
+                        )
+
+                        AnimatedVisibility(it.status != TypoStatus.FIX) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Button(enabled = isEnabled, onClick = {
+                                    it.suggestedText?.let { text ->
+                                        onUpdateInput(
+                                            TextFieldValue(
+                                                it.suggestedText,
+                                                TextRange(it.suggestedText.length),
+                                            ),
+                                        )
+                                    }
+                                    sendMessage(true)
+                                    isEnabled = false
+                                }, colors = ButtonDefaults.buttonColors().copy(containerColor = genre.color)) {
+                                    Text(
+                                        "Corrigir",
+                                        style =
+                                            MaterialTheme.typography.labelMedium.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                color = genre.iconColor,
+                                            ),
+                                    )
+                                }
+
+                                Button(
+                                    enabled = isEnabled,
+                                    onClick = {
+                                        sendMessage(true)
+                                        isEnabled = false
+                                    },
+                                    colors =
+                                        ButtonDefaults.textButtonColors().copy(
+                                            contentColor = genre.color,
+                                        ),
+                                ) {
+                                    Text(
+                                        "Continuar",
+                                        style =
+                                            MaterialTheme.typography.labelMedium.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                color = genre.iconColor,
+                                            ),
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

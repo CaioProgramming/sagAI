@@ -23,11 +23,11 @@ fun CharacterStats(
     genre: Genre,
 ) {
     LazyRow(modifier = Modifier.padding(16.dp)) {
-        item { VerticalLabel(character.details.gender, "Gênero", genre) }
-        item { VerticalLabel("${character.details.height}cm", "Altura", genre) }
-        item { VerticalLabel(character.details.race, "Raça", genre) }
-        item { VerticalLabel(character.details.ethnicity, "Etnia", genre) }
-        item { VerticalLabel("${character.details.weight}kg", "Peso", genre) }
+        item { VerticalLabel(character.details.physicalTraits.gender, "Gênero", genre) }
+        item { VerticalLabel("${character.details.physicalTraits.height}cm", "Altura", genre) }
+        item { VerticalLabel("${character.details.physicalTraits.weight}kg", "Peso", genre) }
+        item { VerticalLabel(character.details.physicalTraits.race, "Raça", genre) }
+        item { VerticalLabel(character.details.physicalTraits.ethnicity, "Etnia", genre) }
     }
 }
 

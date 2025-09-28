@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 interface HomeUseCase {
     fun getSagas(): Flow<List<SagaContent>>
 
-    suspend fun fetchDynamicNewSagaTexts(): RequestResult<Exception, DynamicSagaPrompt>
+    suspend fun fetchDynamicNewSagaTexts(): RequestResult<DynamicSagaPrompt>
 
-    suspend fun createFakeSaga(): RequestResult<Exception, Saga> // Added this line
+    suspend fun createFakeSaga(): RequestResult<Saga> // Added this line
 }

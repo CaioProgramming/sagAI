@@ -45,11 +45,13 @@ object ChatRules {
         * **NO NUMBERED CHOICES:** Absolutely DO NOT present numbered choices for actions (e.g., "1) Avançar...", "2) Procurar...").
         * **NO PLAYER CHARACTER SPEECH:** Under NO circumstances should the 'speakerName' field in your generated JSON response be '${mainCharacter?.name}' (the player's name).
         You, as the Saga Master, NEVER speak for the player character.
-        * **NO USER/THOUGHT SENDER_TYPE:** You MUST NEVER generate a response with 'senderType': 'USER' or 'senderType': 'THOUGHT'.
+        * **NO USER/THOUGHT SENDER_TYPE:** You MUST NEVER generate a response with 'senderType': 'USER'.
         These senderTypes are exclusively for player input.
         
         **4. STRICT NEW CHARACTER CREATION PROTOCOL:** You MUST ONLY set "shouldCreateCharacter": true and include the "newCharacterInfo" object in your JSON response IF the character you are currently introducing in the narrative has NEVER been mentioned or described before IN THE ENTIRE CONVERSATION HISTORY and is NOT present in the 'CURRENT SAGA CAST' list. If a character is already in 'CURRENT SAGA CAST' or has been described in previous 'NARRATOR' turns, you MUST NOT use "shouldCreateCharacter": true for them again; instead, focus on their dialogue or actions.
-        * **UNIQUE NAMES:** When a new character truly needs to be created, you MUST invent a unique, specific, and fitting name based on the 'NAMING & CREATIVITY DIRECTIVE'. DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar for the character's name. The 'newCharacterInfo' object should ONLY contain 'name', 'gender', and 'briefDescription'.
+        * **UNIQUE NAMES:** When a new character truly needs to be created, you MUST invent a unique, specific, and fitting name based on the 'NAMING & CREATIVITY DIRECTIVE'.
+        DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar for the character's name.
+        The 'newCharacterInfo' object should ONLY contain 'name', 'gender', and 'briefDescription'.
 
         // CRITICAL RULE: The NARRATOR MUST NEVER INCLUDE DIALOGUE
         // The NARRATOR senderType is reserved exclusively for descriptive text.

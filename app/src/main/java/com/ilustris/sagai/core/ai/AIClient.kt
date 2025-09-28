@@ -12,3 +12,12 @@ abstract class AIClient {
         return "All responses must be in ${locale.displayLanguage} (${locale.language})."
     }
 }
+
+val AI_EXCLUDED_FIELDS =
+    listOf(
+        "text\$delegate",
+        "functionResponse\$delegate",
+        "functionCall\$delegate",
+        "functionCalls\$delegate",
+        "\"inlineDataParts\$delegate",
+    )

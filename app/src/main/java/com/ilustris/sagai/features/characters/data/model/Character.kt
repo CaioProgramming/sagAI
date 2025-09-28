@@ -29,35 +29,60 @@ data class Character(
     val sagaId: Int = 0,
     @Embedded
     val details: Details,
+    @Embedded
+    val profile: CharacterProfile = CharacterProfile(),
     val joinedAt: Long = 0L,
+    @ColumnInfo(index = true)
+    val firstSceneId: Int? = null,
 )
 
+data class Abilities(
+    val skillsAndProficiencies: String = "",
+    val uniqueOrSignatureTalents: String = "",
+)
 
 data class Details(
-    val appearance: String = "",
+    @Embedded
+    val physicalTraits: PhysicalTraits = PhysicalTraits(),
+    @Embedded
+    val clothing: Clothing = Clothing(),
+    @Embedded
+    val abilities: Abilities = Abilities(),
+)
+
+data class CharacterProfile(
+    val occupation: String = "",
     val personality: String = "",
+)
+
+data class PhysicalTraits(
     val race: String = "",
+    val gender: String = "",
+    val ethnicity: String = "",
     val height: Double = 0.0,
     val weight: Double = 0.0,
-    val gender: String = "",
-    val occupation: String = "",
-    val ethnicity: String = "",
     @Embedded
     val facialDetails: FacialFeatures = FacialFeatures(),
     @Embedded
-    val clothing: Clothing = Clothing(),
-    val weapons: String = "",
+    val bodyFeatures: BodyFeatures = BodyFeatures(),
+)
+
+data class BodyFeatures(
+    val buildAndPosture: String = "",
+    val skinAppearance: String = "",
+    val distinguishFeatures: String = "",
 )
 
 data class Clothing(
-    val body: String = "",
+    val outfitDescription: String = "",
     val accessories: String = "",
-    val footwear: String = "",
+    val carriedItems: String = "",
 )
 
 data class FacialFeatures(
     val hair: String = "",
     val eyes: String = "",
     val mouth: String = "",
-    val scars: String = "",
+    val distinctiveMarks: String = "",
+    val jawline: String = "",
 )

@@ -11,4 +11,4 @@ fun SagaForm.isValid() =
     saga.title.isNotEmpty() &&
         saga.description.isNotEmpty() &&
         character.name.isNotEmpty() &&
-        character.briefDescription.isNotEmpty()
+        character.description.isNotEmpty()

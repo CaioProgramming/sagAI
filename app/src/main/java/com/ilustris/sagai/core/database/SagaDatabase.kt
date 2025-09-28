@@ -1,8 +1,10 @@
 package com.ilustris.sagai.core.database
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.sqlite.db.SupportSQLiteDatabase // Added for MigrationSpec
 import com.ilustris.sagai.core.database.converters.IntListConverter
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.source.ActDao
@@ -13,9 +15,12 @@ import com.ilustris.sagai.features.characters.data.source.CharacterDao
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.source.CharacterEventDao
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
+// Import the new DAO
+import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.datasource.MessageDao
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -34,15 +39,16 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         Act::class,
         CharacterEvent::class,
         CharacterRelation::class,
+        RelationshipUpdateEvent::class,
     ],
-    version = 45,
-   /* autoMigrations = [
-        androidx.room.AutoMigration(from = 41, to = 42),
-        androidx.room.AutoMigration(from = 42, to = 43),
-        androidx.room.AutoMigration(from = 43, to = 44),
-        androidx.room.AutoMigration(from = 44, to = 45),
+    version = 51,
+    autoMigrations = [
+        AutoMigration(
+            from = 50,
+            to = 51,
+        ),
     ],
-    exportSchema = true,*/
+    exportSchema = true,
 )
 @TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {
@@ -63,4 +69,16 @@ abstract class SagaDatabase : RoomDatabase() {
     abstract fun characterEventDao(): CharacterEventDao
 
     abstract fun characterRelationDao(): CharacterRelationDao
+
+    abstract fun relationshipUpdateEventDao(): RelationshipUpdateEventDao
+
+    // ADDED MIGRATION SPEC CLASS
+    @androidx.room.ProvidedAutoMigrationSpec
+    class Migration48To49 : androidx.room.migration.AutoMigrationSpec {
+        override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            super.onPostMigrate(db)
+            // Update existing "NEW_CHARACTER" SenderType values to "CHARACTER"
+            db.execSQL("UPDATE messages SET senderType = 'CHARACTER' WHERE senderType = 'NEW_CHARACTER'")
+        }
+    }
 }

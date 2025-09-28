@@ -76,10 +76,17 @@ jobs:
           name: apk-${{ env.BUILD_VARIANT }}
           path: ${{ steps.build_apk.outputs.apk }}
 
+      - name: Firebase App Distribution Action
+        uses: hasretsariyer/firebase-app-distribution-github-action@v1.0.0
+        with:
+          firebase_token: $ {{ secrets.FIREBASE_CI }}
+          app_id: ${{ secrets.FIREBASE_ID }}
+          path: ${{ steps.build_apk.outputs.apk }}
+          testers: alpha-testers
       - name: Delivering artifact 🚚
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
         with:
-          comment-body: 'Your APK is ready 📦️ — [Download it here](${{ steps.upload_artifact.outputs.artifact-url }})'
+          comment-body: 'Beta test ready to test! 📦️ — [Download it here](${{ steps.upload_artifact.outputs.artifact-url }})'
           comment-title: '${{ github.event.pull_request.title }} APK Delivered! 🎉'
           remove-comment-if-no-output: true
           github_token: ${{ secrets.GITHUB_TOKEN }}

@@ -12,7 +12,8 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
-import com.ilustris.sagai.features.characters.relations.domain.data.RelationshipContent
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlin.jvm.javaClass
@@ -103,9 +104,7 @@ fun SagaContent.flatChapters() = acts.flatMap { it.chapters }
 
 fun SagaContent.getCurrentTimeLine() = currentActInfo?.currentChapterInfo?.currentEventInfo
 
-fun SagaContent.getCurrentMessages() = getCurrentTimeLine()?.messages
-
-fun SagaContent.getCurrentChapter() = currentActInfo?.currentChapterInfo
+fun SagaContent.getCurrentMessages(): List<Message>? = getCurrentTimeLine()?.messages?.map { it.message }
 
 fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
 
@@ -136,7 +135,6 @@ fun SagaContent.rankByHour() =
         }.toSortedMap()
 
 fun SagaContent.emotionalSummary() =
-
     acts
         .map {
             """
@@ -146,3 +144,56 @@ fun SagaContent.emotionalSummary() =
             ) { chapter -> "${chapterNumber(chapter.data)} Chapter ${chapter.data.title}: ${chapter.data.emotionalReview}" } }
             """.trimIndent()
         }
+
+@Suppress("ktlint:standard:max-line-length")
+fun SagaContent.generateCharacterRelationsSummary(): String {
+    if (relationships.isEmpty()) return "No specific character relationships were formally established or tracked."
+    return relationships.joinToString("; ") { relationContent ->
+        val char1Name =
+            characters.find { it.data.id == relationContent.data.characterOneId }?.data?.name
+                ?: "Character ${relationContent.data.characterOneId}"
+        val char2Name =
+            characters.find { it.data.id == relationContent.data.characterTwoId }?.data?.name
+                ?: "Character ${relationContent.data.characterTwoId}"
+        val relationDesc = relationContent.data.title.takeIf { it.isNotBlank() } ?: "Unnamed relationship"
+        "$char1Name and $char2Name: $relationDesc"
+    }
+}
+
+fun List<Message>.filterCharacterMessages(characterId: Int?): List<Message> {
+    if (characterId == null) return emptyList()
+    return this.filter { it.characterId == characterId }
+}
+
+fun SagaContent.generateActLevelEmotionalFlowText(): String {
+    if (acts.isEmpty()) return "The emotional flow through the acts and chapters was not explicitly tracked for the player."
+
+    val playerCharacterId = this.mainCharacter?.data?.id
+
+    return acts.joinToString("") { actContent ->
+        val actTitle = actContent.data.title
+        if (actContent.chapters.isEmpty()) {
+            "Act '$actTitle': No chapter data to analyze player's emotional flow."
+        } else {
+            val chapterFeelings =
+                actContent.chapters.joinToString(", ") { chapterContent ->
+                    val chapterTitle = chapterContent.data.title
+                    val playerMessagesInChapter =
+                        chapterContent.events
+                            .flatMap { event -> event.messages.map { it.message } }
+                            .filterCharacterMessages(playerCharacterId)
+
+                    val emotionalTonesInChapter = playerMessagesInChapter.mapNotNull { it.emotionalTone }
+
+                    if (emotionalTonesInChapter.isEmpty()) {
+                        "Chapter '$chapterTitle': No player emotional tones recorded in messages."
+                    } else {
+                        val toneCounts = emotionalTonesInChapter.groupingBy { it.name }.eachCount()
+                        val dominantTone = toneCounts.maxByOrNull { it.value }?.key ?: "varied"
+                        "Chapter '$chapterTitle': player predominantly felt $dominantTone"
+                    }
+                }
+            "Act '$actTitle': $chapterFeelings"
+        }
+    }
+}

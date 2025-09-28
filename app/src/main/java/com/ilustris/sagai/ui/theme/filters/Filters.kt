@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.IntSize
 import com.ilustris.sagai.features.newsaga.data.model.Genre // Your Genre class
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
+import com.ilustris.sagai.ui.theme.filters.CrimeColorTones
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
 import com.ilustris.sagai.ui.theme.filters.HeroColorTones
 import com.ilustris.sagai.ui.theme.filters.HorrorColorTones // Import HorrorColorTones
@@ -22,10 +23,6 @@ import com.ilustris.sagai.ui.theme.grayScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.InputStreamReader
-
-// Shader source string (can be loaded from assets)
-// For simplicity here, let's assume it's loaded.
-// In a real app, load this once, perhaps in a ViewModel or a top-level singleton.
 
 @Composable
 fun loadShaderFromAssetsOnce(assetFileName: String): String? {
@@ -98,28 +95,24 @@ fun Modifier.effectForGenre(
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
     val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
     val heroPalette = HeroColorTones.URBAN_COMIC_VIBRANCY
+    val crimePalette = CrimeColorTones.MIAMI_NEON_SUNSET
     val uniformValues =
         remember(genre, pixelSize) {
-            // Add pixelSize as a key for remember
-            // Recalculate only when genre or pixelSize changes
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
                         grainIntensity = customGrain ?: .2f,
-                        bloomThreshold = .6f,
-                        bloomIntensity = .1f,
-                        bloomRadius = 1.3f,
-                        softFocusRadius = focusRadius ?: .7f,
-                        saturation = .7f,
-                        contrast = 1.5f,
-                        brightness = 0f,
+                        softFocusRadius = focusRadius ?: .4f,
+                        saturation = .4f,
+                        contrast = 1.3f,
+                        brightness = -0.05f,
                         highlightTint = fantasyPalette.highlightTint,
                         shadowTint = fantasyPalette.shadowTint,
                         tintStrength = fantasyPalette.defaultTintStrength,
                         vignetteStrength = 0.2f,
                         vignetteSoftness = 0.7f,
                         pixelationBlockSize = 0f,
-                        colorTemperature = .1f, // Slightly warm for Fantasy
+                        colorTemperature = .1f,
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
@@ -142,17 +135,17 @@ fun Modifier.effectForGenre(
                 Genre.HORROR ->
                     ShaderParams(
                         grainIntensity = .1f,
-                        bloomThreshold = 0.4f, // Less bloom for horror
+                        bloomThreshold = 0.4f,
                         bloomIntensity = 0.1f,
                         bloomRadius = 1.0f,
-                        softFocusRadius = 0f, // Subtle soft focus
-                        saturation = .5f, // Very desaturated
-                        contrast = 1.5f, // High contrast
-                        brightness = .1f.unaryMinus(), // Darker mood
-                        highlightTint = horrorPalette.highlightTint, // From MOONLIGHT_MYSTIQUE
-                        shadowTint = horrorPalette.shadowTint, // From MOONLIGHT_MYSTIQUE
-                        tintStrength = horrorPalette.defaultTintStrength, // From MOONLIGHT_MYSTIQUE
-                        vignetteStrength = 1f, // Stronger vignette
+                        softFocusRadius = 0f,
+                        saturation = .5f,
+                        contrast = 1.5f,
+                        brightness = .1f.unaryMinus(),
+                        highlightTint = horrorPalette.highlightTint,
+                        shadowTint = horrorPalette.shadowTint,
+                        tintStrength = horrorPalette.defaultTintStrength,
+                        vignetteStrength = 1f,
                         vignetteSoftness = 0.8f,
                         pixelationBlockSize = pixelSize ?: 3.5f,
                         colorTemperature = .3f.unaryMinus(),
@@ -176,6 +169,21 @@ fun Modifier.effectForGenre(
                         colorTemperature = .15f,
                     )
                 }
+                Genre.CRIME ->
+                    ShaderParams(
+                        grainIntensity = customGrain ?: .1f,
+                        softFocusRadius = focusRadius ?: 1f,
+                        saturation = 1f,
+                        contrast = 1.6f,
+                        brightness = .01f,
+                        highlightTint = crimePalette.highlightTint,
+                        shadowTint = crimePalette.shadowTint,
+                        tintStrength = crimePalette.defaultTintStrength,
+                        vignetteStrength = .2f,
+                        vignetteSoftness = 1f,
+                        pixelationBlockSize = 0.0f,
+                        colorTemperature = .15f.unaryMinus(),
+                    )
                 else ->
                     ShaderParams()
             }
@@ -248,7 +256,9 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
         when (genre) {
             Genre.FANTASY -> .6f
             Genre.SCI_FI -> .4f
-            Genre.HORROR -> 0.1f
+            Genre.HORROR -> .1f
+            Genre.HEROES -> .7f
+            Genre.CRIME -> .7f
             else -> 1.0f
         }
 
@@ -257,6 +267,8 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
             Genre.FANTASY -> .02f
             Genre.SCI_FI -> -0.01f
             Genre.HORROR -> -0.1f
+            Genre.HEROES -> .03f
+            Genre.CRIME -> .02f
             else -> 0f
         }
 
@@ -265,6 +277,8 @@ fun Modifier.fallbackEffect(genre: Genre): Modifier {
             Genre.FANTASY -> 1.2f
             Genre.SCI_FI -> 1.4f
             Genre.HORROR -> 1.6f
+            Genre.HEROES -> 1.3f
+            Genre.CRIME -> 1.2f
             else -> 1.0f
         }
 

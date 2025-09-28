@@ -5,7 +5,7 @@ import androidx.room.Relation
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
-import com.ilustris.sagai.features.characters.relations.domain.data.RelationshipContent
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import kotlin.collections.LinkedHashMap
 
 data class CharacterContent(
@@ -38,4 +38,6 @@ data class CharacterContent(
             relationshipsAsSecond.forEach { byId[it.data.id] = it }
             return byId.values.toList()
         }
+
+    fun rankRelationships() = relationships.sortedByDescending { it.relationshipEvents.size }
 }

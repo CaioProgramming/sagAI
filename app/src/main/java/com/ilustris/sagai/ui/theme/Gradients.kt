@@ -192,7 +192,7 @@ fun genresGradient(): List<Color> =
 fun Genre.gradient(
     animated: Boolean = false,
     duration: Duration = 3.seconds,
-    targetValue: Float = 500f,
+    targetValue: Float = 1000f,
     gradientType: GradientType = GradientType.VERTICAL,
 ) = if (animated) {
     gradientAnimation(this.colorPalette(), duration, targetValue, gradientType)
@@ -272,7 +272,7 @@ fun Modifier.reactiveShimmer(
             Color.White.copy(alpha = 0.1f),
             Color.White.copy(alpha = 0.0f),
         ),
-    duration: Duration = 4.seconds,
+    duration: Duration = 5.seconds,
     targetValue: Float = 500f,
 ): Modifier {
     val infiniteTransition = rememberInfiniteTransition()

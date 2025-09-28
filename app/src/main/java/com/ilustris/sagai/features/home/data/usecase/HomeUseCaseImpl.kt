@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.prompts.HomePrompts // Added import
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -27,8 +28,8 @@ class HomeUseCaseImpl
                 processSagaContent(content)
             }
 
-        override suspend fun fetchDynamicNewSagaTexts(): RequestResult<Exception, DynamicSagaPrompt> =
-            try {
+        override suspend fun fetchDynamicNewSagaTexts(): RequestResult<DynamicSagaPrompt> =
+            executeRequest {
                 Log.d("HomeUseCaseImpl", "Fetching new dynamic saga texts...")
                 val prompt = HomePrompts.dynamicSagaCreationPrompt()
 
@@ -38,13 +39,11 @@ class HomeUseCaseImpl
                         temperatureRandomness = 0.7f,
                         requireTranslation = true,
                     )
-                result!!.asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                result!!
             }
 
-        override suspend fun createFakeSaga(): RequestResult<Exception, Saga> =
-            try {
+        override suspend fun createFakeSaga(): RequestResult<Saga> =
+            executeRequest {
                 sagaRepository
                     .saveChat(
                         Saga(
@@ -53,9 +52,7 @@ class HomeUseCaseImpl
                             genre = Genre.entries.random(),
                             isDebug = true,
                         ),
-                    ).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                    )
             }
 
         private fun processSagaContent(content: List<SagaContent>): List<SagaContent> =

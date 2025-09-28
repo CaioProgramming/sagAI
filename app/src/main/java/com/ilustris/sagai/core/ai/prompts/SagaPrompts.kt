@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.ai.models.SagaEndCreditsContext
+import com.ilustris.sagai.core.ai.models.SagaGenerationContext
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -8,24 +9,61 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.generateActLevelEmotionalFlowText
+import com.ilustris.sagai.features.home.data.model.generateCharacterRelationsSummary
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
+import com.ilustris.sagai.features.saga.detail.data.model.Review
+import kotlin.jvm.java
+import kotlin.text.appendLine
 
 object SagaPrompts {
-    fun details(saga: Saga) = saga.storyDetails()
+    fun emotionalToneExtraction(userText: String): String {
+        val labels = EmotionalTone.entries.joinToString()
+        return """
+            You classify the emotional tone of a single USER message into exactly one label from this set:
+            $labels
+            
+            Rules:
+            - Output ONLY the label, uppercase, with no punctuation or extra text.
+            - If uncertain, output NEUTRAL.
+            - Focus on the user's expressed feeling/stance, not plot.
+            
+            USER MESSAGE:
+            >>> $userText
+            """.trimIndent()
+    }
 
-    fun Saga.storyDetails() =
-        """
-        Title: $title
-        Description: ${description.trimEnd()}
-        Genre: $genre
-        """.trimIndent()
-
-    private data class SagaGenerationContext(
-        val sagaSetup: SagaForm,
-        val initialPlayerInteractionLog: String,
-    )
+    @Suppress("ktlint:standard:max-line-length")
+    fun checkForTypo(
+        genre: Genre,
+        message: String,
+        lastMessage: String?,
+    ) = buildString {
+        appendLine("You are an assistant who only suggests corrections when truly necessary.")
+        appendLine("If you spot an error that affects understanding, suggest a better version in a friendly, casual tone.")
+        appendLine("Your response must be a JSON: ")
+        appendLine(toJsonMap(TypoFix::class.java))
+        appendLine(
+            "friendlyMessage should always be short and friendly.",
+        )
+        appendLine("If there is no error, status should be OK and the other fields null.")
+        appendLine("If there is an error, status should be FIX and suggest the corrected text.")
+        appendLine("If the message could be improved but is not wrong, status should be ENHANCEMENT and suggest a clearer version.")
+        appendLine("Use the conversation style to provide a natural enhancement that fits the story theme.")
+        appendLine(GenrePrompts.conversationDirective(genre))
+        appendLine("User message:")
+        appendLine(">>> $message")
+        if (!lastMessage.isNullOrBlank()) {
+            appendLine("Previous message for context:")
+            appendLine(">>> $lastMessage")
+        }
+        appendLine("Saga genre: $genre")
+    }.trimIndent()
 
     fun sagaGeneration(
         saga: SagaForm,
@@ -117,31 +155,6 @@ object SagaPrompts {
             """.trimIndent()
     }
 
-    fun introductionGeneration(saga: SagaContent) =
-        """
-        Write a introduction text for the story,
-        presenting the world building,
-        and surface overview of our objective.
-        The introduction should encourage the player to start the adventure.
-        
-        **Saga and Character Context**
-        ${saga.toJsonFormat()}
-        
-        The introduction should include:
-        1.  Main character introduction.
-        2.  The primary antagonist or opposing force.
-        3.  The main quest or objective for the player characters.
-        4.  Potential for moral dilemmas or significant choices.
-        5.  An indication of the adventure's scope and potential.
-        Target a description length of 50 words, ensuring it captures the essence of a playable RPG experience.
-        """.trimIndent()
-
-    private data class SagaEndCreditsContext(
-        val sagaTitle: String,
-        val playerInfo: Character?,
-        val fullSagaStructure: List<ActContent>,
-    )
-
     fun endCredits(saga: SagaContent): String {
         val contextData =
             SagaEndCreditsContext(
@@ -206,35 +219,10 @@ object SagaPrompts {
         appendLine(
             "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.title}).",
         )
-        appendLine("**CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**")
-        appendLine("1.**Foundational Art Style (Mandatory):**")
-        appendLine(" *The primary rendering style for the icon MUST be:")
+        appendLine("Ensure to render this art style description matching with the reference image")
         appendLine(GenrePrompts.artStyle(saga.genre))
-        appendLine("2.**Specific Color Application Instructions (Mandatory):**")
-        appendLine("*The following rules dictate how the genre's key colors are applied:")
+        appendLine("*The accents are design elements, not the primary light source for the character.")
         appendLine(GenrePrompts.getColorEmphasisDescription(saga.genre))
-        appendLine("**Important Clarification on Color:**")
-        appendLine("*The color rules from `getColorEmphasisDescription` are primarily for:")
-        appendLine("*The **background's dominant color**.")
-        appendLine(
-            "***Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).",
-        )
-        appendLine(
-            "***CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural.",
-        )
-        appendLine(
-            "*Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents.",
-        )
-        appendLine("*The genre accents are design elements, not the primary light source for the character.")
-        appendLine("3.**Visual Reference Image (Your Inspiration for Composition & Details - Not for Direct Mention in Output):**")
-        appendLine("*You WILL have access to a Visual Reference Image (Bitmap)")
-        appendLine("*From this, draw inspiration for:")
-        appendLine(
-            "***Overall Compositional Framing & Mood:** Adapt for an icon. The character's specific pose should be dramatic and derived from their details, not a direct copy of a pose from any visual reference.",
-        )
-        appendLine("**Background Characteristics (to be colored by genre rules):** (e.g., solid, abstract, subtly textured")
-        appendLine("Adapt for a simple icon background")
-        appendLine("Compatible Visual Details & Mood:")
         appendLine("* Also you will have access to character visual reference to provide a more precise description.")
         appendLine("4.  **Character Details (Provided Below):** The character to be depicted.")
         appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
@@ -242,23 +230,13 @@ object SagaPrompts {
         appendLine("This description must:")
         appendLine("*   Integrate the **Character Details**.")
         appendLine(
-            "*   Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
+            "*Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
         )
         appendLine(
             "*   **Character Focus and Framing:** Ensure the character is the primary subject, framed as a close-up or medium close-up shot (e.g., from the chest up or waist up). The character should dominate the icon and be the clear focal point, with dynamic posing.",
         )
-        appendLine("*   Render the scene in the **Foundational Art Style**.")
         appendLine(
-            "*Explicitly describe the **background color** and the **specific character accents** using the genre colors using the provided color rules.",
-        )
-        appendLine(
-            "*Ensure the description implies that the character's base colors (skin, hair, main clothing) are preserved and not tinted by the accent colors.",
-        )
-        appendLine(
-            "*Lighting on the character should be consistent with the art style, with genre colors applied as specific, non-overwhelming details.",
-        )
-        appendLine(
-            "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character's Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
+            "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character\'s Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
         )
         appendLine(
             "***CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.",
@@ -267,9 +245,18 @@ object SagaPrompts {
         appendLine("Saga Context:")
         appendLine(saga.toJsonFormatIncludingFields(listOf("title", "description", "genre")))
         appendLine("Main Character Details:")
-        appendLine(character.toJsonFormatExcludingFields(listOf("backstory", "image", "sagaId", "joinedAt", "hexColor", "id")))
+        appendLine(character.toJsonFormatExcludingFields(listOf("image", "sagaId", "joinedAt", "hexColor", "id")))
         appendLine(
-            "**Example of how your output prompt for the image generator might start (VARY BASED ON YOUR ANALYSIS AND THE SPECIFIC GENRE/CHARACTER):**",
+            "    - **Looks:** Describe the character's facial features and physical build (e.g., 'a rugged man with a lean physique', 'a Latina woman with a sophisticated haircut').",
+        )
+        appendLine(
+            "    - **Clothing:** Detail their attire, including style, color, and accessories (e.g., 'a vibrant Hawaiian-style shirt', 'a sleek two-piece swimsuit').",
+        )
+        appendLine(
+            "    - **Expression:** The face should not be neutral. It must convey a strong emotion or intention. Use terms like 'a hardened, protective gaze', 'a piercing, fatal stare', 'a sardonic smile'.",
+        )
+        appendLine(
+            "    - **Pose & Body Language:** Describe their posture and how they interact with the environment. Use dynamic phrases like 'relaxed yet alert posture', 'casually lounging on a car hood', 'body language exuding confidence'.",
         )
         appendLine(
             "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].",
@@ -287,15 +274,17 @@ object SagaPrompts {
         appendLine("Desired Output: A single, striking icon image. NO TEXT SHOULD BE GENERATED ON THE IMAGE ITSELF.")
     }
 
+    // UPDATED SagaReviewContext
     private data class SagaReviewContext(
         val playerCharacter: Character?,
         val sagaInfo: Saga,
         val playerMessageCount: Int,
-        val messageTypeCountsText: String,
-        val dominantMessageType: String,
-        val sagaActsStructure: List<ActContent>,
+        val messageTypeCountsText: String, // Kept for now
+        val overallPlayerEmotionalSummary: String, // NEW: Player's main emotional tone
+        val sagaActsStructure: List<ActContent>, // Kept for milestones/chapter recap
+        val emotionalJourneyThroughActs: String, // NEW: Act/Chapter emotional flow
         val topInteractiveCharactersText: String,
-        val topMentionedCharactersText: String,
+        val characterRelationsHighlights: String, // NEW: Summary of key relationships
         val totalUniqueNPCsEncountered: Int,
         val languageDirective: String,
     )
@@ -310,19 +299,26 @@ object SagaPrompts {
         saga: SagaContent,
         playerMessageCount: Int,
         messageTypesRanking: List<Pair<SenderType, Int>>,
-        topCharacters: List<Pair<Character, Int>>,
-        topMentions: List<Pair<Character, Int>>,
+        topInteractiveCharacters: List<Pair<Character, Int>>,
+        overallPlayerEmotionalSummary: String,
     ): String {
+        val characterRelationsSummary = saga.generateCharacterRelationsSummary()
+        val actLevelEmotionalFlowText = saga.generateActLevelEmotionalFlowText()
+
         val reviewContextData =
             SagaReviewContext(
                 playerCharacter = saga.mainCharacter?.data,
                 sagaInfo = saga.data,
                 playerMessageCount = playerMessageCount,
                 messageTypeCountsText = messageTypesRanking.joinToString(";") { "${it.first.name} : ${it.second}" },
-                dominantMessageType = messageTypesRanking.firstOrNull()?.first?.name ?: "N/A",
+                overallPlayerEmotionalSummary = overallPlayerEmotionalSummary, // Use new parameter
                 sagaActsStructure = saga.acts,
-                topInteractiveCharactersText = topCharacters.joinToString(";") { "name: ${it.first.name}, messageCount: ${it.second}" },
-                topMentionedCharactersText = topMentions.joinToString(";") { "name: ${it.first.name}, mentions: ${it.second}" },
+                emotionalJourneyThroughActs = actLevelEmotionalFlowText, // Use new summary
+                topInteractiveCharactersText =
+                    topInteractiveCharacters.joinToString(";") {
+                        "name: ${it.first.name}, messageCount: ${ it.second}"
+                    },
+                characterRelationsHighlights = characterRelationsSummary, // Use new summary
                 totalUniqueNPCsEncountered = saga.characters.size,
                 languageDirective = GenrePrompts.conversationDirective(saga.data.genre),
             )
@@ -354,7 +350,7 @@ object SagaPrompts {
 
         return """
             Your task is to act as a **Saga Journey Reviewer and Analyst** for the saga detailed in the SAGA_INFO within the CONTEXT_JSON.
-            Your goal is to generate a deeply personal, engaging, and celebratory textual review of the player's completed saga, in the style of a "Spotify Wrapped" year-end summary.
+            Your goal is to generate a deeply personal, engaging, and celebratory textual review of the player's completed saga, in the style of a personal 'Wrapped' or 'Rewind' year-end summary.
 
             You will receive pre-analyzed statistics and key insights about the player's journey within the CONTEXT_JSON.
             Your output MUST be a **single JSON object** containing distinct named keys, each holding the narrative text for a specific section of the player's review.
@@ -373,9 +369,38 @@ object SagaPrompts {
                 Congratulate them on completing the saga.
                 Briefly tell them you will now overview their achievements.
                 Set the celebratory tone.
-                * **`playStyle`**: Based on your analysis of the player's DOMINANT_MESSAGE_TYPE and MESSAGE_TYPE_COUNTS_TEXT (using the provide
+                * **`playStyle`**: Analyze the player's OVERALL_PLAYER_EMOTIONAL_SUMMARY. Describe the overarching emotional tone of their journey. Did they navigate the saga with hope, caution, pragmatism, empathy, determination, etc.? This should reflect their general emotional disposition observed from their messages throughout the adventure.
+                * **`milestones`**: (Based on SAGA_ACTS_STRUCTURE for key plot points. Review current instructions for this, no direct change requested here but ensure it's still relevant).
+                * **`keyAllies`**: Based on TOP_INTERACTIVE_CHARACTERS_TEXT (who they talked to most) and CHARACTER_RELATIONS_HIGHLIGHTS (the nature of their established bonds), highlight key relationships. Don't just list names; describe the *nature* of these connections (e.g., "Your bond with [Character X] was clearly one of deep trust, as seen in your established camaraderie, while your frequent interactions with [Character Y] suggest a mentorship dynamic.").
+                * **`discoveries`**: (Based on TOTAL_UNIQUE_NPCS_ENCOUNTERED and possibly other elements. Review current instructions for this, no direct change requested here).
+                * **`chaptersRecap`**: (Uses SAGA_ACTS_STRUCTURE. Review current instructions for this, no direct change requested here).
+                * **`conclusionText`**: Craft a thoughtful conclusion that reflects on the player's entire journey. This section MUST be significantly guided by their OVERALL_PLAYER_EMOTIONAL_SUMMARY and the EMOTIONAL_JOURNEY_THROUGH_ACTS. Synthesize these emotional insights to offer a personalized and resonant final word on their adventure, perhaps touching on themes of growth, the emotional impact of their choices, or the lasting feeling derived from the emotional arc of the saga.
+                * **`language`**: Ensure the entire review is in the language specified by LANGUAGE_DIRECTIVE.
+
+            2.  **Tone & Style:**
+                *   Celebratory, personal, engaging, insightful.
+                *   Like a personal 'Wrapped' recap, a 'Throwback Thursday (TBT)' style reflection, or a personalized game-ending summary.
+                *   Directly address the player (e.g., "you," "your journey").
+
+            3.  **JSON Structure:**
+                *   Output a single, valid JSON structure:
+                    ${toJsonMap(Review::class.java)}
+
+            4.  **Important Considerations:**
+                *   If PLAYER_CHARACTER is null or their name is unavailable, address the player more generically (e.g., "Adventurer," "Pathfinder").
+                *   Ground your analysis in the provided CONTEXT_JSON. Do not invent statistics or events not supported by the data.
+                *   The narratives for each key should be distinct but flow together as part of a cohesive review.
+
+            Example for `playStyle` if OVERALL_PLAYER_EMOTIONAL_SUMMARY was "Often approached situations with DETERMINED resolve, yet showed EMPATHETIC concern for others.":
+            "Throughout your adventure in SAGA_INFO.title, a strong sense of determination was your hallmark. You faced challenges head-on, yet always with a notable empathy for those you encountered, making your journey one of principled strength."
+
+            Example for `keyAllies` using CHARACTER_RELATIONS_HIGHLIGHTS like "CharacterA and CharacterB: Trusted Comrades; CharacterA and CharacterC: Mentorship" and TOP_INTERACTIVE_CHARACTERS_TEXT indicating many messages with CharacterB:
+            "Your journey was not a solo endeavor. You forged a deep camaraderie with CharacterB, evident in your many interactions and their role as a trusted comrade. With CharacterC, the bond of mentorship clearly guided your path, shaping your decisions."
+
+            Example for `conclusionText` using EMOTIONAL_JOURNEY_THROUGH_ACTS like "Act 'The Beginning': predominantly HOPEFUL, Act 'The Climax': predominantly ANXIOUS but ending DETERMINED" and OVERALL_PLAYER_EMOTIONAL_SUMMARY:
+            "Looking back, your path through SAGA_INFO.title was a rich tapestry of emotion. From the HOPEFUL beginnings of your first act, through the ANXIOUS moments leading to the climax where your DETERMINED spirit ultimately shone, your journey was uniquely yours.
+            This adventure, characterized by your overall [OVERALL_PLAYER_EMOTIONAL_SUMMARY], will surely leave a lasting impression."
             """.trimIndent()
-        // This trimIndent() might be misaligned if the content above is not fully pasted.
     }
 
     fun emotionalGeneration(

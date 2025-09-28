@@ -13,10 +13,9 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
-import com.ilustris.sagai.features.timeline.data.model.LoreGen
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
@@ -34,22 +33,8 @@ class SagaHistoryUseCaseImpl
 
         override suspend fun updateSaga(saga: Saga) = sagaRepository.updateChat(saga)
 
-        override suspend fun generateLore(
-            saga: SagaContent,
-            currentTimeline: TimelineContent,
-        ): RequestResult<Exception, Timeline> =
+        override suspend fun createFakeSaga(): RequestResult<Saga> =
             executeRequest {
-                gemmaClient
-                    .generate<Timeline>(
-                        LorePrompts.loreGeneration(
-                            saga,
-                            currentTimeline,
-                        ),
-                    )!!
-            }
-
-        override suspend fun createFakeSaga(): RequestResult<Exception, Saga> =
-            try {
                 sagaRepository
                     .saveChat(
                         Saga(
@@ -58,12 +43,10 @@ class SagaHistoryUseCaseImpl
                             genre = Genre.entries.random(),
                             isDebug = true,
                         ),
-                    ).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                    )
             }
 
-        override suspend fun generateEndMessage(saga: SagaContent): RequestResult<Exception, String> =
+        override suspend fun generateEndMessage(saga: SagaContent): RequestResult<String> =
             executeRequest {
                 textGenClient
                     .generate<String>(

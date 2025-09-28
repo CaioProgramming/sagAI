@@ -16,7 +16,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -33,10 +32,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,11 +50,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -78,30 +71,19 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.components.SparkLoader
-import com.ilustris.sagai.ui.theme.fadeColors
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
@@ -219,15 +201,18 @@ private fun ChatList(
             }
         }
         item {
+            val shimmerColors =
+                remember {
+                    Genre.entries.random().colorPalette()
+                }
             Row(
                 modifier =
                     Modifier
                         .padding(16.dp)
                         .reactiveShimmer(
                             true,
-                            targetValue = 300f,
-                            shimmerColors = holographicGradient.plus(Color.Transparent),
-                            duration = 5.seconds,
+                            shimmerColors = shimmerColors,
+                            duration = 10.seconds,
                         ).clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
@@ -264,6 +249,7 @@ private fun ChatList(
                     ) {
                         if (isLoading) {
                             StarryTextPlaceholder(
+                                starCount = 100,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -302,7 +288,15 @@ private fun ChatList(
             }
         }
 
-        items(sagas) {
+        items(
+            sagas.sortedByDescending {
+                it
+                    .flatMessages()
+                    .lastOrNull()
+                    ?.message
+                    ?.timestamp
+            },
+        ) {
             ChatCard(it, isEnabled = showDebugButton) {
                 onSelectSaga(it.data)
             }
@@ -351,7 +345,7 @@ fun ChatCard(
                                 .padding(8.dp)
                                 .border(
                                     2.dp,
-                                    borderBrush,
+                                    saga.data.genre.color,
                                     CircleShape,
                                 ).padding(4.dp)
                                 .background(
@@ -417,9 +411,12 @@ fun ChatCard(
                                 sagaData.genre.color,
                             ),
                         modifier =
-                            Modifier.offset(y = 6.dp).size(24.dp).align(
-                                Alignment.BottomCenter,
-                            ).reactiveShimmer(true),
+                            Modifier
+                                .offset(y = 6.dp)
+                                .size(24.dp)
+                                .align(
+                                    Alignment.BottomCenter,
+                                ).reactiveShimmer(true),
                     )
                 }
             }

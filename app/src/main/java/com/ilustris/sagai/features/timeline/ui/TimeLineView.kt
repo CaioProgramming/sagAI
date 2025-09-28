@@ -11,6 +11,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -39,8 +40,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -51,9 +56,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,6 +79,9 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
+import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
@@ -85,6 +95,8 @@ import com.ilustris.sagai.features.saga.detail.ui.titleAndSubtitle
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
+import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -102,6 +114,7 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
+import ir.ehsannarmani.compose_charts.extensions.split
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -246,6 +259,29 @@ fun TimeLineContent(
     }
 }
 
+sealed interface TimelineSheet {
+    data class WikiSheet(
+        val items: List<Wiki>,
+    ) : TimelineSheet
+
+    data class CharacterSheet(
+        val items: List<Character>,
+    ) : TimelineSheet
+
+    data class RelationSheet(
+        val relations: List<RelationshipContent>,
+    ) : TimelineSheet
+}
+
+@Composable
+fun TimelineSheet.sheetTitle() =
+    when (this) {
+        is TimelineSheet.CharacterSheet -> stringResource(R.string.saga_detail_section_title_characters)
+        is TimelineSheet.RelationSheet -> stringResource(R.string.saga_detail_relationships_section_title)
+        is TimelineSheet.WikiSheet -> stringResource(R.string.saga_detail_section_title_wiki)
+    }
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TimeLineCard(
     eventContent: TimelineContent,
@@ -266,6 +302,8 @@ fun TimeLineCard(
             delayMillis = 2.seconds.toInt(DurationUnit.MILLISECONDS),
         ),
     )
+
+    var timelineSheet by remember { mutableStateOf<TimelineSheet?>(null) }
     var showCharacterEvents by remember { mutableStateOf(false) }
 
     ConstraintLayout(
@@ -343,17 +381,122 @@ fun TimeLineCard(
             }
 
             AnimatedVisibility(showText) {
-                Text(
-                    if (showText) event.content else emptyString(),
-                    modifier =
-                        Modifier.padding(vertical = 8.dp),
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = textColor,
-                            textAlign = TextAlign.Start,
-                        ),
-                )
+                Column {
+                    Text(
+                        if (showText) event.content else emptyString(),
+                        modifier =
+                            Modifier.padding(vertical = 8.dp),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                color = textColor,
+                                textAlign = TextAlign.Start,
+                            ),
+                    )
+
+                    Row(
+                        modifier =
+                            Modifier
+                                .alpha(.5f)
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        if (eventContent.updatedWikis.isNotEmpty()) {
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 8.dp)
+                                        .clip(genre.shape())
+                                        .clickable {
+                                            timelineSheet =
+                                                TimelineSheet.WikiSheet(eventContent.updatedWikis)
+                                        },
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Image(
+                                    painterResource(R.drawable.ic_note),
+                                    null,
+                                    colorFilter = ColorFilter.tint(genre.color),
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.size(24.dp),
+                                )
+
+                                Text(
+                                    eventContent.updatedWikis.size.toString(),
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = genre.bodyFont(),
+                                        ),
+                                )
+                            }
+                        }
+
+                        if (eventContent.updatedRelationshipDetails.isNotEmpty()) {
+                            Row(
+                                Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .clip(genre.shape())
+                                    .clickable {
+                                        timelineSheet =
+                                            TimelineSheet.RelationSheet(eventContent.updatedRelationshipDetails)
+                                    },
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            ) {
+                                Image(
+                                    painterResource(R.drawable.ic_relationship),
+                                    null,
+                                    colorFilter = ColorFilter.tint(genre.color),
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.size(24.dp).padding(4.dp),
+                                )
+
+                                Text(
+                                    eventContent
+                                        .updatedRelationshipDetails
+                                        .size
+                                        .toString(),
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = genre.bodyFont(),
+                                        ),
+                                )
+                            }
+                        }
+
+                        if (eventContent.newlyAppearedCharacters.isNotEmpty()) {
+                            Row(
+                                Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .clip(genre.shape())
+                                    .clickable {
+                                        timelineSheet =
+                                            TimelineSheet.CharacterSheet(eventContent.newlyAppearedCharacters)
+                                    },
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Image(
+                                    painterResource(R.drawable.ic_eye_mask),
+                                    null,
+                                    colorFilter = ColorFilter.tint(genre.color),
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.size(24.dp),
+                                )
+
+                                Text(
+                                    eventContent.newlyAppearedCharacters.size.toString(),
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = genre.bodyFont(),
+                                        ),
+                                )
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.height(32.dp))
@@ -422,6 +565,73 @@ fun TimeLineCard(
             }
         }
     }
+
+    timelineSheet?.let { sheet ->
+        ModalBottomSheet(
+            onDismissRequest = {
+                timelineSheet = null
+            },
+            sheetState = rememberModalBottomSheetState(),
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        ) {
+            LazyColumn {
+                stickyHeader {
+                    Text(
+                        sheet.sheetTitle(),
+                        style =
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.headerFont(),
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier =
+                            Modifier
+                                .background(MaterialTheme.colorScheme.surfaceContainer)
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                    )
+                }
+
+                when (sheet) {
+                    is TimelineSheet.CharacterSheet -> {
+                        items(sheet.items) {
+                            CharacterHorizontalView(
+                                modifier =
+                                    Modifier
+                                        .padding(vertical = 8.dp)
+                                        .fillMaxWidth(),
+                                it,
+                                genre,
+                            )
+                        }
+                    }
+
+                    is TimelineSheet.RelationSheet -> {
+                        items(sheet.relations) {
+                            RelationShipCard(saga, it, modifier = Modifier.padding(16.dp))
+                        }
+                    }
+
+                    is TimelineSheet.WikiSheet -> {
+                        items(sheet.items) {
+                            WikiCard(
+                                it,
+                                genre,
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .shadow(3.dp, genre.shape(), spotColor = genre.color)
+                                        .background(
+                                            MaterialTheme.colorScheme.background,
+                                            genre.shape(),
+                                        ).fillMaxWidth(),
+                                true,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -446,10 +656,14 @@ fun TimeLineSimpleCard(
         modifier
             .border(2.dp, genre.color.copy(alpha = .3f), genre.shape())
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f), genre.shape())
-            .padding(16.dp),
+            .padding(16.dp)
+            .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             AvatarTimelineIcon(
                 saga.data.icon,
                 true,
@@ -487,11 +701,13 @@ fun TimeLineSimpleCard(
             )
         }
 
-        CharactersTopIcons(
-            eventContent.characterEventDetails.map { it.character },
-            genre,
-            false,
-        )
+        AnimatedVisibility(eventContent.characterEventDetails.isNotEmpty()) {
+            CharactersTopIcons(
+                eventContent.characterEventDetails.map { it.character },
+                genre,
+                false,
+            )
+        }
 
         Text(
             event.createdAt.formatDate(),
@@ -832,7 +1048,9 @@ fun TimelineCharacterAttachment(
 
                 val timelineReference =
                     remember {
-                        sagaContent.flatEvents().find { it.data.id == eventDetails.event.gameTimelineId }
+                        sagaContent
+                            .flatEvents()
+                            .find { it.data.id == eventDetails.event.gameTimelineId }
                     }
 
                 timelineReference?.let {
@@ -865,7 +1083,12 @@ fun TimeLineContentPreview() {
                 ),
         )
     SharedTransitionLayout {
-        AnimatedContent(content) { TimeLineContent(it, animationScopes = this@SharedTransitionLayout to this) }
+        AnimatedContent(content) {
+            TimeLineContent(
+                it,
+                animationScopes = this@SharedTransitionLayout to this,
+            )
+        }
     }
 }
 

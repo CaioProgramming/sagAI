@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -10,7 +11,7 @@ import com.ilustris.sagai.features.wiki.data.model.WikiType
 object WikiPrompts {
     fun generateWiki(
         saga: SagaContent,
-        events: List<Timeline>,
+        event: Timeline,
     ) = """
         
         
@@ -32,7 +33,7 @@ object WikiPrompts {
         and to avoid creating duplicate entries for information already known or to update existing entries with new details.
          ${saga.wikis.formatToJsonArray()}
         Always follow that structure: 
-        [ 
+        [
          ${toJsonMap(Wiki::class.java)}
         ]
         // **REMINDER:** FOR 'FACTIONS' TYPE, ONLY INCLUDE GROUPS OR ORGANIZATIONS, NOT SINGLE INDIVIDUALS.
@@ -47,9 +48,7 @@ object WikiPrompts {
         // Extract all relevant NEW entities (locations, items, technologies, organizations, plot points, concepts, events)
         or significant UPDATES to existing entities from these events.
         // **CRITICAL:** DO NOT EXTRACT OR INCLUDE ANY INDIVIDUAL CHARACTERS IN THE WIKI OUTPUT.
-         ${events.formatToJsonArray(
-        excludingFields = listOf("createdAt", "chapterId", "emotionalReview"),
-    )}
+         ${event.toJsonFormatExcludingFields(fieldsToExclude = listOf("createdAt", "chapterId", "emotionalReview"))}
         **FINAL AND CRITICAL RULE:** **DO NOT GENERATE WIKI ENTRIES FOR INDIVIDUAL CHARACTERS.
         Ensure 'FACTION' type is used ONLY for groups or ILLEGAL organizations.**
         """

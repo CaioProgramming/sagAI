@@ -2,7 +2,7 @@ package com.ilustris.sagai.features.saga.datasource
 
 import android.util.Log
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import javax.inject.Inject
 
 class MessageDaoImpl

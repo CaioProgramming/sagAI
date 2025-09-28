@@ -10,11 +10,16 @@ import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.content
+import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.crashlytics.recordException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken // <-- ADDED IMPORT
 import com.ilustris.sagai.BuildConfig
+import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString // <-- ADDED IMPORT FOR EXTENSION
+import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -29,6 +34,7 @@ class GemmaClient
         @PublishedApi
         internal val requestRunning = AtomicBoolean(false)
         val isRequestRunning: Boolean get() = requestRunning.get()
+
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
 
@@ -72,7 +78,7 @@ class GemmaClient
                 } else if (isRequestRunning) {
                     delay(DEFAULT_DELAY)
                 }
-                delay(300)
+                delay(700)
 
                 val client =
                     com.google.ai.client.generativeai.GenerativeModel(
@@ -86,7 +92,7 @@ class GemmaClient
                 val fullPrompt =
                     (if (requireTranslation) "$prompt ${modelLanguage()}" else prompt)
 
-                Log.i(this::class.java.simpleName, "Summarization(${modelName()}) prompt: $fullPrompt")
+                Log.i(this::class.java.simpleName, "Requesting ${modelName()}")
 
                 val contentParts =
                     listOf(TextPart(fullPrompt)).plus(
@@ -105,23 +111,29 @@ class GemmaClient
                 val content = client.generateContent(inputContent)
 
                 val response = content.text
-                Log.i(this::class.java.simpleName, "Summarization received raw: $response") // Log raw response
-                Log.d(
-                    this::class.java.simpleName,
-                    "Token count for request: ${content.usageMetadata?.totalTokenCount}",
+
+                Log.i(
+                    javaClass.simpleName,
+                    "Generation content: ${content.toJsonFormatExcludingFields(
+                        AI_EXCLUDED_FIELDS,
+                    )}",
                 )
+
+                Log.d(javaClass.simpleName, "Full prompt: $fullPrompt")
 
                 if (T::class == String::class) {
                     return response as T
                 }
 
                 val cleanedJsonString = response.sanitizeAndExtractJsonString()
-                Log.i(this::class.java.simpleName, "Using cleaned JSON for parsing: $cleanedJsonString")
-
                 val typeToken = object : TypeToken<T>() {}
                 return Gson().fromJson(cleanedJsonString, typeToken.type)
             } catch (e: Exception) {
                 Log.e(this::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)
+                FirebaseCrashlytics.getInstance().recordException(e, {
+                    key("model", modelName())
+                })
+                Log.e(javaClass.simpleName, "failed to generate content for prompt: $prompt")
                 return null
             } finally {
                 if (!skipRunning && acquired) {

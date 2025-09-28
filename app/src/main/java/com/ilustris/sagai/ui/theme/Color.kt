@@ -9,18 +9,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.Genre.*
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.model.isCharacter
-
-val Purple80 = Color(0xff11283b)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
-
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+import androidx.core.graphics.toColorInt
 
 fun Color.adjust(factor: Float): Color {
     val red = (this.red * 255 * factor).toInt().coerceIn(0, 255)
@@ -48,13 +37,8 @@ fun String.hexToColor(): Color? {
     if (!hex.matches(Regex("^[0-9A-Fa-f]{6}$|^[0-9A-Fa-f]{8}$"))) {
         return null
     }
-    val color = android.graphics.Color.parseColor("#$hex")
+    val color = "#$hex".toColorInt()
     return Color(color)
-}
-
-fun String.isValidHexColor(): Boolean {
-    val hex = this.removePrefix("#")
-    return hex.matches(Regex("^[0-9A-Fa-f]{6}$|^[0-9A-Fa-f]{8}$"))
 }
 
 fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {
@@ -136,12 +120,6 @@ fun Modifier.brightness(brightnessFactor: Float): Modifier {
         }
     }
 }
-
-fun Genre.bubbleTextColors(sender: SenderType) =
-    when (this) {
-        FANTASY -> if (sender.isCharacter()) Color.Black else Color.White
-        else -> Color.White
-    }
 
 fun Modifier.contrast(contrastFactor: Float): Modifier {
     val contrastMatrix =

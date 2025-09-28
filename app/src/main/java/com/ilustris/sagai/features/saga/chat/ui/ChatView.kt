@@ -1,7 +1,6 @@
 @file:OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class,
-    ExperimentalHazeMaterialsApi::class,
 )
 
 package com.ilustris.sagai.features.saga.chat.ui
@@ -9,7 +8,6 @@ package com.ilustris.sagai.features.saga.chat.ui
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -17,10 +15,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -30,15 +28,12 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -101,6 +96,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -121,26 +117,22 @@ import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
-import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChapterDisplayData
@@ -148,19 +140,15 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.SnackBarState
-import com.ilustris.sagai.features.saga.chat.presentation.TimelineSummaryData
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
-import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
@@ -177,9 +165,6 @@ import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
-import dev.chrisbanes.haze.rememberHazeState
 import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
@@ -192,7 +177,7 @@ fun ChatView(
     sagaId: String? = null,
     isDebug: Boolean = false,
     viewModel: ChatViewModel = hiltViewModel(),
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope? = null,
+    sharedTransitionScope: SharedTransitionScope? = null,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val content by viewModel.content.collectAsStateWithLifecycle()
@@ -202,12 +187,14 @@ fun ChatView(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
     val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
-    val contentHaze = rememberHazeState()
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val loreProgress by viewModel.loreUpdateProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showRationaleDialog by remember { mutableStateOf(false) }
-
+    val showTitle by viewModel.showTitle.collectAsStateWithLifecycle()
+    val input by viewModel.inputValue.collectAsStateWithLifecycle()
+    val senderType by viewModel.sendType.collectAsStateWithLifecycle()
+    val typoFix by viewModel.typoFixMessage.collectAsStateWithLifecycle()
     val requestPermissionLauncher =
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
@@ -216,8 +203,6 @@ fun ChatView(
                 Log.i("ChatView", "POST_NOTIFICATIONS permission GRANTED by user.")
             } else {
                 Log.w("ChatView", "POST_NOTIFICATIONS permission DENIED by user.")
-                // Optionally, show a message indicating that notifications will be disabled,
-                // or guide the user on how to enable them later from app settings.
             }
         }
 
@@ -251,7 +236,6 @@ fun ChatView(
                     context,
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) == PackageManager.PERMISSION_GRANTED -> {
-                    // Permission is already granted
                     Log.i("ChatView", "POST_NOTIFICATIONS permission already granted.")
                 }
 
@@ -259,13 +243,11 @@ fun ChatView(
                     context as Activity, // Context needs to be an Activity for this check
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) -> {
-                    // Show your custom rationale UI (e.g., the dialog)
                     Log.i("ChatView", "Showing rationale for POST_NOTIFICATIONS permission.")
                     showRationaleDialog = true
                 }
 
                 else -> {
-                    // Permission has not been granted yet, request it.
                     Log.i(
                         "ChatView",
                         "Requesting POST_NOTIFICATIONS permission (first time or no rationale needed).",
@@ -297,8 +279,7 @@ fun ChatView(
             },
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .hazeSource(contentHaze),
+                    .fillMaxSize(),
         ) {
             when (it) {
                 is ChatState.Error ->
@@ -318,13 +299,18 @@ fun ChatView(
                         ChatContent(
                             state = state.value,
                             content = cont,
+                            inputValue = input,
+                            actualSender = senderType,
+                            typoFix = typoFix,
+                            onUpdateInput = viewModel::updateInput,
+                            onUpdateSenders = viewModel::updateSendType,
                             characters = characters,
                             titleModifier = (
                                 sharedTransitionScope?.let { sts ->
                                     with(sts) {
                                         Modifier.sharedElement(
                                             rememberSharedContentState(
-                                                key = DetailAction.BACK.sharedElementTitleKey(cont.data.id)!!,
+                                                key = DetailAction.BACK.sharedElementTitleKey(cont.data.id),
                                             ),
                                             animatedVisibilityScope = this@AnimatedContent,
                                         )
@@ -340,8 +326,8 @@ fun ChatView(
                             updateProgress = loreProgress,
                             snackBar = snackBarMessage,
                             onSendMessage = viewModel::sendInput,
-                            onCreateCharacter = viewModel::createCharacter,
                             onBack = navHostController::popBackStack,
+                            onRetryMessage = viewModel::retryAiResponse,
                             openSagaDetails = {
                                 navHostController.navigateToRoute(
                                     Routes.SAGA_DETAIL,
@@ -467,6 +453,9 @@ fun ChatContent(
     state: ChatState = ChatState.Loading,
     content: SagaContent,
     characters: List<Character> = emptyList(),
+    inputValue: TextFieldValue,
+    actualSender: SenderType,
+    typoFix: TypoFix?,
     titleModifier: Modifier = Modifier,
     messagesList: List<ActDisplayData> = emptyList(),
     suggestions: List<Suggestion> = emptyList(),
@@ -476,12 +465,14 @@ fun ChatContent(
     isPlaying: Boolean = false,
     updateProgress: Float = 0f,
     snackBar: SnackBarState? = null,
-    onSendMessage: (String, SenderType) -> Unit = { _, _ -> },
-    onCreateCharacter: (CharacterInfo) -> Unit = {},
+    onSendMessage: (Boolean) -> Unit = { },
+    onUpdateInput: (TextFieldValue) -> Unit = { },
+    onUpdateSenders: (SenderType) -> Unit = { },
     onBack: () -> Unit = {},
     openSagaDetails: (Saga) -> Unit = {},
     onInjectFakeMessages: (Int) -> Unit = {},
     onSnackAction: (Triple<ChatAction, String, Any?>) -> Unit = {},
+    onRetryMessage: (Message) -> Unit = {},
 ) {
     val saga = content.data
     val listState = rememberLazyListState()
@@ -537,7 +528,7 @@ fun ChatContent(
                 null,
                 colorFilter =
                     ColorFilter.tint(
-                        saga.genre.color,
+                        MaterialTheme.colorScheme.background,
                     ),
                 modifier =
                     Modifier
@@ -546,6 +537,7 @@ fun ChatContent(
                             isPlaying,
                             shimmerColors = saga.genre.colorPalette(),
                             duration = 10.seconds,
+                            targetValue = 200f,
                         ).fillMaxSize(.5f)
                         .alpha(.6f),
             )
@@ -625,8 +617,12 @@ fun ChatContent(
                             Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(),
+                        typoFix = typoFix,
+                        inputField = inputValue,
+                        sendType = actualSender,
                         onSendMessage = onSendMessage,
-                        onCreateNewCharacter = onCreateCharacter,
+                        onUpdateInput = onUpdateInput,
+                        onUpdateSender = onUpdateSenders,
                         suggestions = suggestions,
                     )
                 }
@@ -695,12 +691,12 @@ fun ChatContent(
                             Modifier
                                 .alpha(alpha)
                                 .height(2.dp)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .gradientFill(content.data.genre.gradient(isGenerating)),
                         progress = { progress },
-                        drawStopIndicator = {
-                        },
-                        color = progressColor,
-                        trackColor = Color.Transparent,
+                        drawStopIndicator = {},
+                        color = MaterialTheme.colorScheme.onBackground,
+                        trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                     )
 
                     AnimatedVisibility(
@@ -1048,6 +1044,7 @@ fun ChatList(
     openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
+    onRetryMessage: (Message) -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
@@ -1130,20 +1127,18 @@ fun ChatList(
             }
         }
         actList.reversed().forEach { act ->
-            val isFirst = act == actList.firstOrNull()
             val genre = saga.data.genre
-            val shape = RoundedCornerShape(genre.cornerSize())
 
             if (act.isComplete) {
                 item {
                     ActComponent(
-                        act.content.data,
+                        act.content,
                         saga.acts.indexOf(act.content) + 1,
                         saga,
                         modifier =
                             Modifier
                                 .animateItem()
-                                .fillMaxWidth()
+                                .fillParentMaxSize()
                                 .background(MaterialTheme.colorScheme.background),
                     )
                 }
@@ -1192,7 +1187,6 @@ fun ChatList(
                             modifier =
                                 Modifier
                                     .animateItem()
-                                    .clip(genre.shape())
                                     .fillMaxWidth()
                                     .clickable {
                                         openSaga()
@@ -1228,7 +1222,11 @@ fun ChatList(
                             content = saga,
                             alreadyAnimatedMessages = animatedMessages,
                             canAnimate = timeline.messages.lastOrNull() == it,
-                            modifier = Modifier.animateItem(),
+                            modifier =
+                                Modifier.animateItem(
+                                    fadeInSpec = tween(400, easing = EaseIn),
+                                    fadeOutSpec = tween(400, easing = EaseIn),
+                                ),
                             openCharacters = { char -> openCharacter(char) },
                             openWiki = { openWiki() },
                         )

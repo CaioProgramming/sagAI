@@ -33,6 +33,7 @@ object NewSagaPrompts {
     fun extractDataFromUserInputPrompt(
         currentSagaForm: SagaForm,
         userInput: String,
+        lastMessage: String,
     ): String =
         """
         You are an AI assistant helping a user fill a SagaForm.
@@ -40,6 +41,9 @@ object NewSagaPrompts {
         ${currentSagaForm.toJsonFormat()}
     
         User's latest input: "$userInput"
+        
+        Consider the latest message to extract user input information:
+        
     
         Your task is to analyze the user's input and update the Current SagaForm data.
         Only fill fields that are empty or can be clearly improved by the user's input.
@@ -70,19 +74,19 @@ object NewSagaPrompts {
         val fieldGuidance = fieldToAsk.description
 
         return """
-                                    The user needs to provide information for the field: $fieldNameForPrompt.
-                                    (Guidance for this field: "$fieldGuidance")
+                                                The user needs to provide information for the field: $fieldNameForPrompt.
+                                                (Guidance for this field: "$fieldGuidance")
 
-                                    Current Saga Data (for context only, focus your question on $fieldNameForPrompt):
-                                    ${currentSagaForm.toJsonFormat()}
+                                                Current Saga Data (for context only, focus your question on $fieldNameForPrompt):
+                                                ${currentSagaForm.toJsonFormat()}
 
-                                    Craft a SHORT, direct question about '$fieldNameForPrompt' with no self-introduction. Use imperative, action-oriented phrasing that moves the story forward. Keep the question under 140 characters.
-                                    Include a concise hint and 2-3 diverse, creative suggestions relevant to '$fieldNameForPrompt'. Suggestions must be distinct in tone/setting, avoid generic tropes, and must not include raw genre enum names (${Genre.entries.joinToString {
+                                                Craft a SHORT, direct question about '$fieldNameForPrompt' with no self-introduction. Use imperative, action-oriented phrasing that moves the story forward. Keep the question under 140 characters.
+                                                Include a concise hint and 2-3 diverse, creative suggestions relevant to '$fieldNameForPrompt'. Suggestions must be distinct in tone/setting, avoid generic tropes, and must not include raw genre enum names (${Genre.entries.joinToString {
             it.name
         }}).
-                                    Keep the tone encouraging and playful, but concise. Output in the user's language if evident; otherwise default to English.
-                                    YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:
-                                    ${toJsonMap(SagaCreationGen::class.java)}
+                                                Keep the tone encouraging and playful, but concise. Output in the user's language if evident; otherwise default to English.
+                                                YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:
+                                                ${toJsonMap(SagaCreationGen::class.java)}
             """.trimIndent()
     }
 

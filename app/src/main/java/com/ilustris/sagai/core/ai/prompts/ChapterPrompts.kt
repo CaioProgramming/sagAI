@@ -1,23 +1,43 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
-import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.features.home.data.model.getDirective
 
 object ChapterPrompts {
+    fun chapterSummary(sagaContent: SagaContent) =
+        if (sagaContent.currentActInfo?.chapters?.isEmpty() == true) {
+            "No chapters written yet on this act,"
+        } else {
+            """
+        **CURRENT ACT CHAPTERS (Most Recent First):**
+        // This section provides the summaries of chapters already written in the current act.
+        // Use this to understand the immediate narrative progression and context within the act.
+        ${sagaContent.currentActInfo?.chapters?.filter { it.isComplete() }?.map { it.data }?.reversed()?.formatToJsonArray(
+                listOf(
+                    "id",
+                    "emotionalReview",
+                    "actId",
+                    "currentEventId",
+                    "coverImage",
+                    "createdAt",
+                    "featuredCharacters",
+                ),
+            )}
+            
+        """
+        }
+
     fun chapterIntroductionPrompt(
         sagaContent: SagaContent,
         currentChapter: Chapter,
@@ -25,7 +45,7 @@ object ChapterPrompts {
     ): String =
         buildString {
             val actContent = sagaContent.findChapterAct(currentChapter)
-            val chaptersInAct = currentAct.chapters.map { it.data }
+            val chaptersInAct = currentAct.chapters.filter { it.isComplete() }.map { it.data }
             val isFirst = chaptersInAct.isEmpty()
             val excludedFields =
                 listOf(
@@ -35,6 +55,8 @@ object ChapterPrompts {
                     "sagaId",
                     "joinedAt",
                     "id",
+                    "firstSceneId",
+                    "createdAt",
                 )
             val sagaExclusion =
                 listOf(
@@ -50,40 +72,47 @@ object ChapterPrompts {
                     "emotionalReview",
                     "isEnded",
                 )
-            appendLine("CONTEXT:")
-            appendLine("You are an AI assistant helping to write a saga chapter.")
+
+            val chapterExclusions =
+                listOf(
+                    "id",
+                    "emotionalReview",
+                    "actId",
+                    "currentEventId",
+                    "coverImage",
+                    "createdAt",
+                    "featuredCharacters",
+                )
+
+            appendLine("Your task is write a introduction to engage the player to continue the story.")
+            appendLine("Use the context provided to create a relevant and compelling introduction paragraph.")
+            appendLine("Keep the introduction around 40-60 words.")
+            appendLine("Do not reference the chapter title or any characters by name.")
+            appendLine("Do not include any quotes or dialogue.")
+            appendLine("Do not include any text other than the introduction paragraph.")
             appendLine("Saga context:")
             appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusion))
-            appendLine("Main character: ")
-            appendLine(sagaContent.mainCharacter.toJsonFormatExcludingFields(excludedFields))
+            appendLine("Main character Context:")
+            appendLine(sagaContent.mainCharacter?.data.toJsonFormatExcludingFields(excludedFields))
 
-            if (isFirst) {
-                val actDescription = actContent?.data?.content
-                appendLine("Act Description: \"$actDescription\"")
-                appendLine("TASK:")
-                appendLine("Generate a single, compelling introductory paragraph (around 40-60 words) for the FIRST CHAPTER of this act.")
-                appendLine("Base the introduction on the act's description to set the immediate context and hook the reader to continue.")
-            } else {
-                val previous = chaptersInAct.lastOrNull()
-                val prevTitle = previous?.title ?: ""
-                val prevOverview = previous?.overview
-                appendLine("Previous Chapter Title: \"$prevTitle\"")
-                appendLine("Previous Chapter Overview: \"$prevOverview\"")
-                appendLine("\nTASK:")
-                appendLine("Generate a single, compelling introductory paragraph (around 40-60 words) for the NEXT CHAPTER of this act.")
-                appendLine("Use the previous chapter's title and overview to smoothly transition")
-                appendLine("contextualize, and engage the reader to continue the story.")
+            val description =
+                actContent?.data?.introduction?.ifEmpty {
+                    sagaContent.data.description
+                }
+
+            appendLine("Use this description to understand current context of the saga and act.")
+            appendLine(description)
+
+            if (chaptersInAct.isNotEmpty()) {
+                appendLine("Use the following chapters in this act to understand the immediate context:")
+                appendLine(chaptersInAct.filter { it.id != currentChapter.id }.formatToJsonArray(chapterExclusions))
             }
+
+            appendLine("Use this directive to understand the improve the introduction:")
+            appendLine(sagaContent.getDirective())
+
             appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
         }
-
-    private data class ChapterConclusionContext(
-        val sagaData: Saga,
-        val mainCharacter: Character?,
-        val eventsOfThisChapter: List<Timeline>,
-        val previousActData: Act?,
-        val previousChaptersInCurrentAct: List<Chapter>,
-    )
 
     @Suppress("ktlint:standard:max-line-length")
     fun chapterGeneration(
@@ -109,7 +138,10 @@ object ChapterPrompts {
             ChapterConclusionContext(
                 sagaData = sagaContent.data,
                 mainCharacter = sagaContent.mainCharacter?.data,
-                eventsOfThisChapter = currentChapterContent.events.filter { it.isComplete() }.map { it.data },
+                eventsOfThisChapter =
+                    currentChapterContent.events
+                        .filter { it.isComplete() }
+                        .map { it.data },
                 previousChaptersInCurrentAct = currentChapters.map { it.data },
                 previousActData = previousAct?.data,
             )
@@ -133,18 +165,7 @@ object ChapterPrompts {
 
         val chapterOutput =
             toJsonMap(
-                Chapter::class.java,
-                filteredFields =
-                    listOf(
-                        "coverImage",
-                        "currentEventId",
-                        "createdAt",
-                        "featuredCharacters",
-                        "emotionalReview",
-                        "id",
-                        "actId",
-                        "introduction",
-                    ),
+                ChapterGeneration::class.java,
             )
 
         appendLine("Context:")
@@ -168,6 +189,10 @@ object ChapterPrompts {
         appendLine(
             "2. Generate a fitting title for this chapter that accurately reflects its core content or theme as derived from the events. **The title should be short (ideally 2-5 words) and impactful, creating intrigue or summarizing the chapter's essence memorably.**",
         )
+        appendLine(
+            "3. Extract 1 - 3 most important characters to include in featuredCharacters array.",
+        )
+
         appendLine("Consider the `SAGA_DATA` for overall tone and style, and the `MAIN_CHARACTER`'s perspective if relevant to the events.")
         appendLine("EXPECTED OUTPUT FORMAT:")
         appendLine(chapterOutput)
@@ -183,38 +208,15 @@ object ChapterPrompts {
                 "sagaTitle" to content.data.title,
                 "sagaGenre" to content.data.genre.title,
                 "chapterTitle" to chapter.title,
+                "chapterDescription" to chapter.overview,
                 "charactersInvolved" to characters,
             )
         val fieldsToExcludeForCover =
             listOf(
-                "sagaId",
                 "joinedAt",
-                "actId",
-                "events",
-                "currentEventId",
-                "synopsis",
-                "fullContent",
-                "soundTrack",
-                "isEnded",
-                "endedAt",
-                "isDebug",
-                "endMessage",
-                "review",
-                "mainCharacterId",
-                "currentActId",
                 "id",
-                "image", // Character image is handled by visual reference
+                "image",
                 "hexColor",
-                "backstory", // Character backstory is too detailed for cover prompt
-                "featuredCharacters", // This is passed via the `characters` parameter directly
-                "createdAt",
-                "coverImage",
-                "personality", // Character personality is too detailed for cover prompt
-                "overview", // Chapter overview excluded
-                "emotionalReview", // Chapter emotional review excluded
-                // Fields from Chapter data class that might imply setting or plot:
-                "content",
-                "order",
             )
         val coverContextJson = coverContext.toJsonFormatExcludingFields(fieldsToExcludeForCover)
 
@@ -231,12 +233,9 @@ object ChapterPrompts {
              1.  **Foundational Art Style:**
                  *   The primary rendering style for the cover MUST be: `${GenrePrompts.artStyle(content.data.genre)}`.
              2.  **Specific Color Application Instructions:**
-                 *   The following rules dictate how the genre's key colors (derived from `${content.data.genre.title}`)
-                 are applied: `${GenrePrompts.getColorEmphasisDescription(content.data.genre)}`.
+                 *   The following rules dictate the color palette and light composition for the image generation, are applied:
+                 `${GenrePrompts.getColorEmphasisDescription(content.data.genre)}`.
                  *   **Important Clarification on Color:**
-                     *   These color rules are primarily for:
-                         *   A **MINIMALISTIC background** with a dominant color theme derived from the genre.
-                         *   **Small, discrete, isolated accents ON THE CHARACTERS**.
                      *   **CRUCIAL: DO NOT use these genre colors to tint the overall image, characters' base skin tones, hair (beyond tiny accents), or main clothing areas.** Characters' base colors should be preserved and appear natural.
                      *   Lighting on characters should be primarily dictated by the foundational art style, not an overall color cast from the genre accents.
 
@@ -245,16 +244,13 @@ object ChapterPrompts {
 
              The description must:
              1.  **Prioritize Character Depiction:**
-                 *   Focus EXCLUSIVELY on the character(s) listed in `charactersInvolved` from the JSON context.
+                 *   High Focus on the character(s) listed in `charactersInvolved` from the JSON context. Incorporate them on the mood and environment.
                  *   Ensure their appearance and expression are primarily inspired by their individual Visual Reference Images. **Their POSE, however, should be DRAMATIC and EXPRESSIVE, derived from their context within the chapter (implied by the 'chapterTitle' and 'sagaGenre') or their inherent character traits, rather than a direct copy from any visual reference.** The overall compositional Visual Reference Image can inspire the *framing* of these dynamic poses.
                  *   If multiple characters are present, their interaction or composition should be clear and engaging, suitable for a cover.
-             2.  **Minimalistic Background:**
-                 *   Describe a SIMPLE and MINIMALISTIC background.
-                 *   The background should primarily feature the dominant color theme derived from the `sagaGenre` as per the `Specific Color Application Instructions`. Avoid complex scenes or detailed environmental elements from the chapter's specific content. The focus is on the characters against a stylized, genre-appropriate backdrop.
-             3.  **Adherence to Directives:**
+                 *   Ensure to place characters in dramatic and dynamic poses providing more emotion on the generated image.
+            3.  **Adherence to Directives:**
                  *   Render the scene in the **Foundational Art Style**.
-                 *   Explicitly describe the **background color theme** and any **specific character accents** using the genre colors as per the `Specific Color Application Instructions`.
-                 *   Ensure the description implies that characters' base colors (skin, hair, main clothing) are preserved.
+                 *   Ensure the description implies that characters characteristics are preserved and follow the visual reference provided.
              4.  **Visual Reference Synthesis:**
                  *   **Heavily rely on the general Visual Reference Image for overall art style, compositional framing (suitable for a minimalistic character-focused cover), character pose *inspiration* (not direct replication), and mood.**
                  *   The specific CHARACTERS are dictated by the `charactersInvolved` in the JSON. Their individual appearances are inspired by their respective Visual Reference Images.
@@ -263,6 +259,6 @@ object ChapterPrompts {
              5.  **No Text or borders: **
                  *   Focus entirely on the art description, ensure that no text from the context is described in the final result.
              YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
-             """.trimIndent()
+            """.trimIndent()
     }
 }

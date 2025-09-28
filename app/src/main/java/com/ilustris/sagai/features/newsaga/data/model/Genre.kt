@@ -31,15 +31,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.ui.components.WordArtText
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.headerFont
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 enum class
 Genre(
     val title: String,
-    val icon: Int,
     val color: Color,
     val iconColor: Color,
     @DrawableRes
@@ -48,7 +49,6 @@ Genre(
 ) {
     FANTASY(
         title = "Fantasia",
-        icon = R.drawable.fantasy_icon,
         color = MaterialColor.Red800,
         iconColor = Color.White,
         background = R.drawable.fantasy,
@@ -56,7 +56,6 @@ Genre(
     ),
     SCI_FI(
         title = "Cyberpunk",
-        icon = R.drawable.scifi_icon,
         color = MaterialColor.DeepPurpleA200,
         iconColor = Color.White,
         background = R.drawable.scifi,
@@ -65,7 +64,6 @@ Genre(
 
     HORROR(
         title = "Terror",
-        icon = R.drawable.ic_spark,
         color = MaterialColor.BlueGray200,
         iconColor = Color.Black,
         background = R.drawable.horror,
@@ -74,11 +72,17 @@ Genre(
 
     HEROES(
         title = "Heróis",
-        icon = R.drawable.ic_spark,
         color = MaterialColor.Blue900,
         iconColor = Color.White,
         background = R.drawable.hero,
         ambientMusicConfigKey = "heroes_ambient_music_url",
+    ),
+    CRIME(
+        title = "Crime City",
+        color = MaterialColor.PinkA100,
+        iconColor = Color.White,
+        background = R.drawable.crime,
+        ambientMusicConfigKey = "crime_ambient_music_url",
     ),
 }
 
@@ -97,9 +101,9 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 targetColor = color,
                 hueTolerance = 1f,
                 saturationThreshold = .5f,
-                lightnessThreshold = .4f,
+                lightnessThreshold = .5f,
                 highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .5f,
+                desaturationFactorNonTarget = .4f,
             )
 
         Genre.SCI_FI ->
@@ -127,8 +131,18 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 hueTolerance = .3f,
                 saturationThreshold = .45f,
                 lightnessThreshold = .25f,
-                highlightSaturationBoost = 1.2f,
+                highlightSaturationBoost = 1.4f,
                 desaturationFactorNonTarget = .5f,
+            )
+
+        Genre.CRIME ->
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = 1f,
+                saturationThreshold = .52f,
+                lightnessThreshold = .46f,
+                highlightSaturationBoost = 3f,
+                desaturationFactorNonTarget = .3f,
             )
     }
 
@@ -138,6 +152,7 @@ fun Genre.defaultHeaderImage() =
         Genre.SCI_FI -> R.drawable.scifi_card
         Genre.HORROR -> R.drawable.horror_card
         Genre.HEROES -> R.drawable.hero_card
+        Genre.CRIME -> R.drawable.crime_card
     }
 
 fun Genre.shimmerColors() =
@@ -178,7 +193,15 @@ fun Genre.colorPalette() =
             listOf(
                 MaterialColor.Blue500,
                 MaterialColor.Blue900,
-                MaterialColor.LightBlue600,
-                MaterialColor.LightBlueA700,
+                MaterialColor.LightBlue300,
+                MaterialColor.RedA200,
+            )
+
+        Genre.CRIME ->
+            listOf(
+                MaterialColor.PinkA200,
+                MaterialColor.PinkA100,
+                MaterialColor.Amber300,
+                MaterialColor.YellowA200,
             )
     }

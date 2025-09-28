@@ -2,18 +2,22 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInOutCubic
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode.Reverse
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -21,7 +25,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,10 +37,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -75,10 +80,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.graphics.shapes.CornerRounding
+import androidx.graphics.shapes.Morph
+import androidx.graphics.shapes.RoundedPolygon
+import androidx.graphics.shapes.star
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
+import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -89,8 +99,11 @@ import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
+import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankMentions
 import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
@@ -106,8 +119,6 @@ import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.fadeColors
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
@@ -115,13 +126,12 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.rememberAnimatedShuffledGradientBrush
 import com.ilustris.sagai.ui.theme.solidGradient
+import com.ilustris.sagai.ui.theme.toEasing
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import ir.ehsannarmani.compose_charts.ColumnChart
 import ir.ehsannarmani.compose_charts.LineChart
-import ir.ehsannarmani.compose_charts.PieChart
 import ir.ehsannarmani.compose_charts.RowChart
 import ir.ehsannarmani.compose_charts.models.AnimationMode
 import ir.ehsannarmani.compose_charts.models.BarProperties
@@ -133,12 +143,9 @@ import ir.ehsannarmani.compose_charts.models.HorizontalIndicatorProperties
 import ir.ehsannarmani.compose_charts.models.LabelHelperProperties
 import ir.ehsannarmani.compose_charts.models.LabelProperties
 import ir.ehsannarmani.compose_charts.models.Line
-import ir.ehsannarmani.compose_charts.models.Pie
 import ir.ehsannarmani.compose_charts.models.PopupProperties
-import ir.ehsannarmani.compose_charts.models.VerticalIndicatorProperties
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlin.collections.flatten
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -162,25 +169,23 @@ fun SagaReview(
     val pagerState = rememberPagerState { ReviewPages.entries.size }
     val genre = content.data.genre
     var showIndicators by remember { mutableStateOf(true) }
-
+    var bottomTint by remember {
+        mutableStateOf(genre.colorPalette().random())
+    }
+    val tintAnimation by animateColorAsState(
+        targetValue = bottomTint,
+        animationSpec = tween(1000),
+        label = "colorAnimation",
+    )
     val animatedGradientBrush =
         if (showIndicators) {
-            rememberAnimatedShuffledGradientBrush(
-                pagerState = pagerState,
-                colorPalette = genre.colorPalette(),
-                animationDurationMillis = 1500,
-            )
+            genre.color.gradientFade()
         } else {
             MaterialTheme.colorScheme.background.solidGradient()
         }
 
     var currentProgress by remember { mutableFloatStateOf(0f) }
     var isPlaying by remember { mutableStateOf(true) }
-    val animatedProgress by animateFloatAsState(
-        targetValue = currentProgress,
-        label = "progressAnimation",
-        animationSpec = tween(durationMillis = if (isPlaying) 10000 else 0),
-    )
 
     LaunchedEffect(pagerState.currentPage) {
         showIndicators = pagerState.currentPage != ReviewPages.entries.size - 1
@@ -281,6 +286,10 @@ fun SagaReview(
                     }
                 }
 
+                val indicatorsAlpha by animateFloatAsState(
+                    if (showIndicators) 1f else 0f,
+                )
+
                 Box(
                     Modifier
                         .constrainAs(topFade) {
@@ -288,23 +297,8 @@ fun SagaReview(
                             start.linkTo(parent.start)
                             end.linkTo(parent.end)
                         }.fillMaxWidth()
-                        .fillMaxHeight(.3f)
+                        .fillMaxHeight(.5f)
                         .background(fadeGradientTop()),
-                )
-
-                Box(
-                    Modifier
-                        .constrainAs(bottomFade) {
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }.fillMaxWidth()
-                        .fillMaxHeight(.3f)
-                        .background(fadeGradientBottom()),
-                )
-
-                val indicatorsAlpha by animateFloatAsState(
-                    if (showIndicators) 1f else 0f,
                 )
 
                 Column(
@@ -485,7 +479,10 @@ fun ReviewDetails(saga: SagaContent) {
             item {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                 ) {
                     Text(
                         messageCount.toString(),
@@ -524,14 +521,21 @@ fun ReviewDetails(saga: SagaContent) {
                 MessagesRankChart(
                     saga,
                     messageTypeRanking,
-                    modifier = Modifier.padding(16.dp).fillMaxWidth().fillParentMaxHeight(.5f),
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .fillParentMaxHeight(.5f),
                 )
             }
 
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 8.dp)
+                            .fillMaxWidth(),
                     thickness = 1.dp,
                 )
             }
@@ -539,7 +543,10 @@ fun ReviewDetails(saga: SagaContent) {
             item {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                 ) {
                     Text(
                         mentionsCount.toString(),
@@ -629,18 +636,23 @@ fun ReviewDetails(saga: SagaContent) {
                     items(saga.relationships) { relation ->
                         RelationShipCard(
                             content = relation,
-                            genre = genre,
-                            modifier = Modifier.padding(16.dp).requiredWidthIn(max = 300.dp),
+                            saga = saga,
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .requiredWidthIn(max = 300.dp),
                         )
                     }
                 }
-
             }
 
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 8.dp)
+                            .fillMaxWidth(),
                     thickness = 1.dp,
                 )
             }
@@ -672,7 +684,10 @@ fun ReviewDetails(saga: SagaContent) {
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier = Modifier.padding(vertical = 12.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 12.dp)
+                            .fillMaxWidth(),
                     thickness = 1.dp,
                 )
             }
@@ -692,7 +707,10 @@ fun ReviewDetails(saga: SagaContent) {
             item {
                 HorizontalDivider(
                     color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 8.dp)
+                            .fillMaxWidth(),
                     thickness = 1.dp,
                 )
             }
@@ -710,7 +728,6 @@ fun ReviewDetails(saga: SagaContent) {
             }
 
             saga.data.emotionalReview?.let {
-
                 item {
                     Text(
                         "Sobre você",
@@ -735,7 +752,6 @@ fun ReviewDetails(saga: SagaContent) {
                     )
                 }
             }
-
 
             item {
                 Spacer(Modifier.height(50.dp))
@@ -1134,10 +1150,6 @@ fun PlayStylePage(content: SagaContent) {
     val genre = content.data.genre
     val coroutineScope = rememberCoroutineScope()
 
-    var counting by remember {
-        mutableIntStateOf(0)
-    }
-
     var showText by remember {
         mutableStateOf(false)
     }
@@ -1146,19 +1158,10 @@ fun PlayStylePage(content: SagaContent) {
         mutableStateOf(false)
     }
 
-    val countAnimation by animateIntAsState(
-        counting,
-        animationSpec = tween(4.seconds.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
-        label = "countAnimation",
-        finishedListener = {
-            showText = true
-        },
-    )
-
     LaunchedEffect(Unit) {
         coroutineScope.launch {
-            delay(1000)
-            counting = content.flatMessages().size
+            delay(2.seconds)
+            showText = true
         }
     }
     Column(
@@ -1173,44 +1176,90 @@ fun PlayStylePage(content: SagaContent) {
                     animationSpec = tween(500, easing = EaseIn),
                 ),
     ) {
-        Text(
-            countAnimation.toString(),
-            style =
-                MaterialTheme.typography.displayLarge.copy(
-                    fontFamily = genre.headerFont(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Black,
-                ),
-            modifier = Modifier.padding(2.dp),
-        )
-
-        Text(
-            stringResource(R.string.review_page_messages_label),
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Justify,
-                ),
-        )
-
-        val cardAlpha by animateFloatAsState(
-            if (showCards) 1f else 0f,
-            animationSpec = tween(500, easing = EaseIn),
-            label = "cardAlphaAnimation",
-        )
-
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .background(
-                        MaterialTheme.colorScheme.background.copy(alpha = cardAlpha),
-                    ).animateContentSize()
+                    .animateContentSize()
                     .padding(16.dp),
         ) {
-            val messagesRanking = content.flatMessages().rankMessageTypes().filter { it.second > 0 }
+            val topTone =
+                remember {
+                    content
+                        .flatMessages()
+                        .filterCharacterMessages(content.mainCharacter?.data)
+                        .rankEmotionalTone()
+                }
+            val infiniteTransition = rememberInfiniteTransition()
+            val firstTone = remember { topTone.first().first }
+            val shapeA =
+                remember {
+                    RoundedPolygon.star(
+                        4,
+                        rounding = CornerRounding(5f),
+                    )
+                }
+            val shapeB =
+                remember {
+                    firstTone.starShape()
+                }
+
+            val morph =
+                remember {
+                    Morph(shapeA, shapeB)
+                }
+
+            val morphProgress by
+                infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec =
+                        infiniteRepeatable(
+                            tween(
+                                3.seconds.toInt(DurationUnit.MILLISECONDS),
+                                easing = firstTone.toEasing(),
+                            ),
+                            repeatMode = Reverse,
+                        ),
+                    label = "morph",
+                )
+
+            val rotation by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec =
+                    infiniteRepeatable(
+                        tween(
+                            easing = firstTone.toEasing(),
+                            durationMillis = 3.seconds.toInt(DurationUnit.MILLISECONDS),
+                        ),
+                    ),
+            )
+
+            AnimatedEmotionalShape(
+                Modifier
+                    .size(200.dp)
+                    .reactiveShimmer(true),
+                firstTone,
+                morphProgress,
+                rotation,
+                outlineBrush = Brush.verticalGradient(
+                    firstTone.color.darkerPalette(factor = .3f),
+                ),
+                 backgroundBrush = genre.gradient(false, targetValue = 300f),
+                glowColor = genre.color,
+            )
+
+            Text(
+                topTone.first().first.getTitle(),
+                style =
+                    MaterialTheme.typography.displaySmall.copy(
+                        fontFamily = genre.headerFont(),
+                        color = genre.iconColor,
+                    ),
+            )
 
             AnimatedVisibility(showText, enter = fadeIn() + slideInVertically(), exit = fadeOut()) {
                 content.data.review?.playstyle?.let {
@@ -1249,24 +1298,25 @@ fun PlayStylePage(content: SagaContent) {
                                 .fillMaxWidth(),
                     )
 
-                    messagesRanking.forEach {
+                    topTone.forEach {
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            val position = messagesRanking.indexOf(it)
+                            val position = topTone.indexOf(it)
 
                             Text(
-                                "${position + 1}. ${it.first.title()}",
+                                "${position + 1}. ${it.first.getTitle()}",
                                 style =
                                     MaterialTheme.typography.titleMedium.copy(
                                         fontFamily = genre.bodyFont(),
                                         fontWeight = FontWeight.Bold,
+                                        color = it.first.color,
                                     ),
                             )
 
                             Text(
-                                it.second.toString(),
+                                it.second.size.toString(),
                                 style =
                                     MaterialTheme.typography.bodyLarge.copy(
                                         fontFamily = genre.bodyFont(),
@@ -1286,7 +1336,7 @@ fun PlayStylePage(content: SagaContent) {
 
 @Composable
 fun MentionsPage(content: SagaContent) {
-    val genre = content.data.genre
+    val genre = remember { content.data.genre }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -1302,9 +1352,9 @@ fun MentionsPage(content: SagaContent) {
         mutableStateOf(false)
     }
 
-    var ranking by remember {
-        mutableStateOf<List<Pair<Character, Int>>>(emptyList())
-    }
+    val mainCharacter = remember { content.mainCharacter }
+
+    val ranking = remember { content.mainCharacter?.rankRelationships() ?: emptyList() }
 
     val countAnimation by animateIntAsState(
         counting,
@@ -1322,252 +1372,155 @@ fun MentionsPage(content: SagaContent) {
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             delay(1000)
-
-            val rankingList =
-                content
-                    .flatMessages()
-                    .rankMentions(content.getCharacters(true))
-            ranking = rankingList
-            counting =
-                rankingList.sumOf {
-                    it.second
-                }
+            counting = content.relationships.size
         }
     }
-    Column(
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier =
-            Modifier
-                .padding(top = 100.dp)
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.Center,
     ) {
-        Text(
-            countAnimation.toString(),
-            style =
-                MaterialTheme.typography.displayLarge.copy(
-                    fontFamily = genre.headerFont(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontWeight = FontWeight.Black,
-                ),
-            modifier = Modifier.padding(4.dp),
-        )
-
-        Text(
-            stringResource(R.string.review_page_character_mentions_label),
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    fontFamily = genre.bodyFont(),
-                    color = MaterialTheme.colorScheme.onBackground,
-                    textAlign = TextAlign.Justify,
-                ),
-        )
-
-        val cardAlpha by animateFloatAsState(
-            if (showCards) 1f else 0f,
-            animationSpec = tween(500, easing = EaseIn),
-            label = "cardAlphaAnimation",
-        )
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        MaterialTheme.colorScheme.background.copy(cardAlpha),
-                    ).padding(16.dp)
-                    .animateContentSize(
-                        animationSpec = tween(1000, easing = EaseIn),
-                    ),
-        ) {
-            AnimatedVisibility(
-                showText,
-                enter = fadeIn(),
-                exit = scaleOut(),
+        item(span = { GridItemSpan(2) }) {
+            Column(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                Text(
+                    countAnimation.toString(),
+                    style =
+                        MaterialTheme.typography.displayLarge.copy(
+                            fontFamily = genre.headerFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.Black,
+                        ),
+                    modifier = Modifier.padding(4.dp),
+                )
+
+                Text(
+                    stringResource(R.string.saga_detail_relationships_section_title),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Justify,
+                        ),
+                )
+
                 content.data.review?.topCharacters?.let {
-                    SimpleTypewriterText(
-                        it,
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                textAlign = TextAlign.Justify,
-                            ),
-                        onAnimationFinished = {
-                            coroutineScope.launch {
-                                delay(500)
-                                showCards = true
-                            }
-                        },
-                        modifier =
-                            Modifier.padding(vertical = 8.dp),
-                    )
+                    AnimatedVisibility(showText) {
+                        SimpleTypewriterText(
+                            it,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    textAlign = TextAlign.Justify,
+                                ),
+                            onAnimationFinished = {
+                                coroutineScope.launch {
+                                    delay(500)
+                                    showCards = true
+                                }
+                            },
+                            isAnimated = showCards.not(),
+                            modifier =
+                                Modifier.padding(vertical = 8.dp),
+                        )
+                    }
                 }
             }
+        }
 
-            AnimatedVisibility(
-                showCards,
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
-                Column {
-                    Text(
-                        stringResource(R.string.review_page_characters_rank_title),
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.headerFont(),
-                                fontWeight = FontWeight.Bold,
-                            ),
-                        modifier = Modifier.padding(vertical = 8.dp),
-                    )
+        if (showCards) {
+            item(span = { GridItemSpan(2) }) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .animateItem(),
+                ) {
+                    Column {
+                        Text(
+                            stringResource(R.string.review_page_characters_rank_title),
+                            style =
+                                MaterialTheme.typography.titleMedium.copy(
+                                    fontFamily = genre.headerFont(),
+                                    fontWeight = FontWeight.Bold,
+                                ),
+                            modifier = Modifier.padding(vertical = 8.dp),
+                        )
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier =
-                            Modifier
-                                .padding(16.dp),
-                    ) {
-                        val topCharacters = ranking.take(3)
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp),
+                        ) {
+                            val topCharacters = ranking.take(3)
 
-                        if (topCharacters.size == 3) {
-                            CharacterAvatar(
-                                topCharacters.last().first,
-                                genre = genre,
-                                modifier =
-                                    Modifier
-                                        .size(80.dp)
-                                        .effectForGenre(
-                                            genre,
-                                            useFallBack = true,
-                                        ),
-                            )
-
-                            CharacterAvatar(
-                                topCharacters.first().first,
-                                genre = genre,
-                                modifier =
-                                    Modifier
-                                        .size(100.dp)
-                                        .effectForGenre(
-                                            genre,
-                                            useFallBack = true,
-                                        ),
-                            )
-
-                            CharacterAvatar(
-                                topCharacters[1].first,
-                                genre = genre,
-                                modifier =
-                                    Modifier
-                                        .size(80.dp)
-                                        .effectForGenre(
-                                            genre,
-                                            useFallBack = true,
-                                        ),
-                            )
-                        }
-                    }
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        Column(Modifier.fillMaxWidth(.5f)) {
-                            Text(
-                                stringResource(R.string.review_page_most_present_title),
-                                style =
-                                    MaterialTheme.typography.titleSmall.copy(
-                                        fontFamily = genre.headerFont(),
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .padding(vertical = 8.dp)
-                                        .fillMaxWidth(),
-                            )
-                            ranking.forEach {
-                                val position = ranking.indexOf(it)
-                                Text(
-                                    "${position + 1}. ${it.first.name}",
-                                    style =
-                                        MaterialTheme.typography.bodyLarge.copy(
-                                            fontFamily = genre.bodyFont(),
-                                            color =
-                                                it.first.hexColor.hexToColor()
-                                                    ?: MaterialTheme.colorScheme.onBackground,
-                                        ),
-                                )
-                            }
-
-                            Column(Modifier.weight(1f)) {
-                                val messagesRanking =
-                                    content
-                                        .flatMessages()
-                                        .rankMentions(content.getCharacters(true))
-                                        .filter { it.second > 0 }
-                                Text(
-                                    stringResource(R.string.review_page_most_mentioned_title),
-                                    style =
-                                        MaterialTheme.typography.titleSmall.copy(
-                                            fontFamily = genre.headerFont(),
-                                        ),
+                            if (topCharacters.size == 3) {
+                                CharacterAvatar(
+                                    topCharacters.last().getCharacterExcluding(mainCharacter?.data),
+                                    genre = genre,
                                     modifier =
                                         Modifier
-                                            .padding(vertical = 8.dp)
-                                            .fillMaxWidth(),
+                                            .size(80.dp),
                                 )
 
-                                messagesRanking.forEach {
-                                    val position = messagesRanking.indexOf(it)
-                                    Text(
-                                        "${position + 1}. ${it.first.name}",
-                                        style =
-                                            MaterialTheme.typography.bodyLarge.copy(
-                                                fontFamily = genre.bodyFont(),
-                                                color =
-                                                    it.first.hexColor.hexToColor()
-                                                        ?: MaterialTheme.colorScheme.onBackground,
-                                            ),
-                                    )
-                                }
-                            }
-                        }
-                        Column(Modifier.weight(1f)) {
-                            val messagesRanking =
-                                content
-                                    .flatMessages()
-                                    .rankMentions(content.getCharacters(true))
-                                    .filter { it.second > 0 }
-                            Text(
-                                stringResource(R.string.review_page_most_mentioned_title),
-                                style =
-                                    MaterialTheme.typography.titleSmall.copy(
-                                        fontFamily = genre.headerFont(),
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .padding(vertical = 8.dp)
-                                        .fillMaxWidth(),
-                            )
+                                CharacterAvatar(
+                                    topCharacters
+                                        .first()
+                                        .getCharacterExcluding(mainCharacter?.data),
+                                    genre = genre,
+                                    modifier =
+                                        Modifier
+                                            .size(100.dp),
+                                )
 
-                            messagesRanking.forEach {
-                                val position = messagesRanking.indexOf(it)
-                                Text(
-                                    "${position + 1}. ${it.first.name}",
-                                    style =
-                                        MaterialTheme.typography.bodyLarge.copy(
-                                            fontFamily = genre.bodyFont(),
-                                            color =
-                                                it.first.hexColor.hexToColor()
-                                                    ?: MaterialTheme.colorScheme.onBackground,
-                                        ),
+                                CharacterAvatar(
+                                    topCharacters[1].getCharacterExcluding(mainCharacter?.data),
+                                    genre = genre,
+                                    modifier =
+                                        Modifier
+                                            .size(80.dp),
                                 )
                             }
                         }
+
+                        Spacer(Modifier.height(50.dp))
                     }
+                }
+            }
+        }
 
-                    Spacer(Modifier.height(50.dp))
+        if (showCards) {
+            mainCharacter?.let { character ->
+                items(mainCharacter.relationships.sortedByDescending { it.relationshipEvents.size }) {
+                    Column(
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .animateItem(),
+                    ) {
+                        SingleRelationShipCard(
+                            content,
+                            it.getCharacterExcluding(character.data),
+                            it,
+                            false,
+                            Modifier.fillMaxWidth(),
+                        )
+
+                        Text(
+                            "${it.relationshipEvents.size} Atualizações",
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                        )
+                    }
                 }
             }
         }
@@ -1630,7 +1583,10 @@ fun ActsInsightPage(content: SagaContent) {
                         brush = genre.gradient(),
                         textAlign = TextAlign.Center,
                     ),
-                modifier = Modifier.padding(vertical = 8.dp).reactiveShimmer(true),
+                modifier =
+                    Modifier
+                        .padding(vertical = 8.dp)
+                        .reactiveShimmer(true),
             )
             content.data.review?.actsInsight?.let {
                 if (showText) {
@@ -1649,7 +1605,11 @@ fun ActsInsightPage(content: SagaContent) {
                 }
             }
 
-            Spacer(Modifier.fillMaxWidth().height(50.dp))
+            Spacer(
+                Modifier
+                    .fillMaxWidth()
+                    .height(50.dp),
+            )
         }
     }
 }

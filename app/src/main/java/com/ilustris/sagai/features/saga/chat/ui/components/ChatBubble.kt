@@ -6,12 +6,16 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +23,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -28,18 +33,24 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -48,28 +59,33 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.core.utils.formatHours
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
-import com.ilustris.sagai.features.saga.chat.domain.model.Message
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.domain.model.SenderType
+import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.isUser
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.saturate
+import com.ilustris.sagai.ui.theme.shape
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -83,6 +99,7 @@ fun ChatBubble(
     modifier: Modifier = Modifier,
     openCharacters: (CharacterContent?) -> Unit = {},
     openWiki: () -> Unit = {},
+    onRetry: (Message) -> Unit = {},
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -125,7 +142,7 @@ fun ChatBubble(
                         .animateContentSize(),
             ) {
                 val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
-                val (messageText, characterAvatar, messageTime) = createRefs()
+                val (messageText, characterAvatar, messageTime, retryButton) = createRefs()
                 val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
                 Box(
                     Modifier
@@ -162,6 +179,7 @@ fun ChatBubble(
                                 .padding(16.dp)
                                 .align(alignment)
                                 .animateContentSize()
+                                .padding(4.dp)
                                 .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
@@ -262,6 +280,38 @@ fun ChatBubble(
                         }
                     }
                 }
+
+                AnimatedVisibility(message.status != MessageStatus.ERROR) {
+                    IconButton(
+                        onClick = {
+                            onRetry(message)
+                        },
+                        modifier =
+                            Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .border(2.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                                .constrainAs(retryButton) {
+                                    bottom.linkTo(messageText.bottom)
+                                    if (isUser) {
+                                        end.linkTo(messageText.start)
+                                    } else {
+                                        start.linkTo(messageText.end)
+                                    }
+                                },
+                        colors =
+                            IconButtonDefaults.iconButtonColors().copy(
+                                containerColor = genre.color.darker(),
+                                contentColor = genre.iconColor,
+                            ),
+                    ) {
+                        Icon(
+                            Icons.Rounded.Refresh,
+                            "Tentar novamente",
+                            tint = genre.iconColor,
+                        )
+                    }
+                }
             }
         }
 
@@ -270,30 +320,23 @@ fun ChatBubble(
                 modifier
                     .fillMaxWidth(),
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                ConstraintLayout(
                     modifier =
                         Modifier
                             .padding(16.dp)
                             .align(Alignment.Center)
                             .padding(16.dp),
                 ) {
-                    messageContent.character?.let {
-                        CharacterAvatar(
-                            it,
-                            isLoading = isLoading,
-                            borderSize = 2.dp,
-                            genre = genre,
-                            pixelation = 0f,
-                            modifier =
-                                Modifier
-                                    .clip(CircleShape)
-                                    .size(32.dp)
-                                    .clickable {
-                                        openCharacters(characters.find { c -> c.data.id == it.id })
-                                    },
-                        )
-                    }
+                    val (characterAvatar, text, starPlaceHolder) = createRefs()
+
+                    var starAlpha by remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
+                    val alphaAnimation by animateFloatAsState(
+                        starAlpha,
+                        tween(1000, easing = FastOutSlowInEasing),
+                    )
+                    val blurAnimation by animateFloatAsState(
+                        if (starAlpha == 1f) 0f else 1f,
+                    )
                     TypewriterText(
                         text = message.text,
                         isAnimated = isAnimated,
@@ -304,6 +347,12 @@ fun ChatBubble(
                         wiki = wiki,
                         modifier =
                             Modifier
+                                .constrainAs(text) {
+                                    top.linkTo(parent.top)
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                }.clip(genre.shape())
                                 .dashedBorder(
                                     1.dp,
                                     MaterialTheme.colorScheme.onBackground,
@@ -313,6 +362,7 @@ fun ChatBubble(
                                     MaterialTheme.colorScheme.background.copy(alpha = .4f),
                                     RoundedCornerShape(genre.cornerSize()),
                                 ).padding(16.dp)
+                                .alpha(blurAnimation)
                                 .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
                             MaterialTheme.typography.bodyMedium.copy(
@@ -323,6 +373,49 @@ fun ChatBubble(
                             ),
                         onTextClick = {},
                     )
+
+                    StarryTextPlaceholder(
+                        modifier =
+                            Modifier
+                                .alpha(alphaAnimation)
+                                .clip(genre.shape())
+                                .clickable {
+                                    starAlpha = 0f
+                                }.background(
+                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
+                                    genre.shape(),
+                                ).constrainAs(starPlaceHolder) {
+                                    top.linkTo(text.top)
+                                    bottom.linkTo(text.bottom)
+                                    start.linkTo(text.start)
+                                    end.linkTo(text.end)
+                                    width = Dimension.fillToConstraints
+                                    height = Dimension.fillToConstraints
+                                },
+                        starColor = genre.color,
+                    )
+
+                    messageContent.character?.let {
+                        CharacterAvatar(
+                            it,
+                            isLoading = isLoading,
+                            borderSize = 2.dp,
+                            genre = genre,
+                            pixelation = 0f,
+                            modifier =
+                                Modifier
+                                    .constrainAs(characterAvatar) {
+                                        top.linkTo(text.top)
+                                        start.linkTo(text.start)
+                                        end.linkTo(text.end)
+                                    }.offset(y = 16.unaryMinus().dp)
+                                    .clip(CircleShape)
+                                    .size(32.dp)
+                                    .clickable {
+                                        openCharacters(characters.find { c -> c.data.id == it.id })
+                                    },
+                        )
+                    }
                 }
             }
         }
@@ -386,34 +479,34 @@ fun ChatBubble(
         }
 
         SenderType.NARRATOR -> {
-            Column {
-                TypewriterText(
-                    text = message.text,
-                    isAnimated = false,
-                    duration = duration,
-                    genre = genre,
-                    mainCharacter = mainCharacter?.data,
-                    characters = content.getCharacters(),
-                    wiki = wiki,
-                    modifier =
-                        modifier
-                            .background(
-                                MaterialTheme.colorScheme.background.copy(
-                                    alpha = .7f,
-                                ),
-                            ).padding(16.dp)
-                            .reactiveShimmer(isLoading, genre.shimmerColors())
-                            .fillMaxWidth(),
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontStyle = FontStyle.Italic,
-                            textAlign = TextAlign.Justify,
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    onTextClick = { },
-                )
-            }
+            TypewriterText(
+                text = message.text,
+                isAnimated = false,
+                duration = duration,
+                genre = genre,
+                mainCharacter = mainCharacter?.data,
+                characters = content.getCharacters(),
+                wiki = wiki,
+                modifier =
+                    modifier
+                        .padding(16.dp)
+                        .reactiveShimmer(isLoading, genre.shimmerColors())
+                        .fillMaxWidth(),
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontStyle = FontStyle.Italic,
+                        textAlign = TextAlign.Justify,
+                        fontFamily = genre.bodyFont(),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        shadow =
+                            Shadow(
+                                color = genre.color,
+                                offset = Offset(4f, 4f),
+                                blurRadius = 10f,
+                            ),
+                    ),
+                onTextClick = { },
+            )
         }
 
         else -> Box {}
@@ -430,6 +523,11 @@ fun ChatBubblePreview() {
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val character =
+                Character(
+                    name = "John",
+                    details = Details(),
+                )
             Genre.entries.forEach { genre ->
                 stickyHeader {
                     Text(
@@ -455,6 +553,7 @@ fun ChatBubblePreview() {
                                     sagaId = 0,
                                     timelineId = 0,
                                 ),
+                                character = character,
                             ),
                         content =
                             SagaContent(

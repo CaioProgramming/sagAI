@@ -82,53 +82,11 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient(true))
                     .padding(16.dp),
             )
-        }
-
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(50.dp)
-                .background(fadeGradientBottom()),
-        )
-
-        var imageSize by remember {
-            mutableStateOf(imageSize)
-        }
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(imageSize)
-                    .animateContentSize(),
-        ) {
-            AsyncImage(
-                model = chapter.coverImage,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                onError = {
-                    imageSize = 0.dp
-                },
-                modifier =
-                    Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .fillMaxSize()
-                        .effectForGenre(genre)
-                        .selectiveColorHighlight(genre.selectiveHighlight()),
-            )
-
-            Box(
-                Modifier
-                    .fillMaxSize()
-                    .background(fadedGradientTopAndBottom())
-                    .align(Alignment.BottomCenter),
-            )
 
             AutoResizeText(
                 text = chapter.title,
                 modifier =
                     Modifier
-                        .align(Alignment.BottomCenter)
                         .fillMaxWidth()
                         .padding(16.dp)
                         .reactiveShimmer(isLast),
@@ -139,6 +97,56 @@ fun ChapterContentView(
                         textAlign = TextAlign.Center,
                     ),
             )
+        } else {
+            var imageSize by remember {
+                mutableStateOf(imageSize)
+            }
+
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(imageSize)
+                        .animateContentSize(),
+            ) {
+                AsyncImage(
+                    model = chapter.coverImage,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    onError = {
+                        imageSize = 0.dp
+                    },
+                    modifier =
+                        Modifier
+                            .background(MaterialTheme.colorScheme.background)
+                            .fillMaxSize()
+                            .effectForGenre(genre)
+                            .selectiveColorHighlight(genre.selectiveHighlight()),
+                )
+
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(fadedGradientTopAndBottom())
+                        .align(Alignment.BottomCenter),
+                )
+
+                AutoResizeText(
+                    text = chapter.title,
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                            .reactiveShimmer(isLast),
+                    style =
+                        MaterialTheme.typography.displaySmall.copy(
+                            fontFamily = genre.headerFont(),
+                            brush = genre.gradient(true),
+                            textAlign = TextAlign.Center,
+                        ),
+                )
+            }
         }
 
         TypewriterText(
@@ -168,12 +176,6 @@ fun ChapterContentView(
 
         if (chapter.emotionalReview?.isNotEmpty() == true) {
             EmotionalCard(chapter.emotionalReview, genre, true, modifier = Modifier.padding(16.dp))
-        }
-
-        if (isLast) {
-            Box(
-                Modifier.background(fadeGradientTop()).fillMaxWidth().height(50.dp),
-            )
         }
     }
 }
