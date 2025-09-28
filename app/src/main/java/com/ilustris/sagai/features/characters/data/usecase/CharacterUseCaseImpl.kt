@@ -45,7 +45,6 @@ class CharacterUseCaseImpl
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
-        private val imageCropHelper: ImageCropHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()

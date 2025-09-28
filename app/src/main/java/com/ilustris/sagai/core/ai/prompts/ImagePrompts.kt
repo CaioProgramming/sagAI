@@ -1,6 +1,8 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts.artStyle
+import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
@@ -51,4 +53,28 @@ object ImagePrompts {
 
         9.Negative Prompts: full body, standing, sitting, legs, feet, wide shot, medium shot, landscape, scenery.
         """.trimIndent()
+
+    fun simpleEmojiRendering(
+        backgroundHexCode: String,
+        character: Character,
+    ) = buildString {
+        appendLine(
+            "Create a high-quality, vibrant, and detailed digital illustration of a single character in a simple emoji style.",
+        )
+        appendLine("Character details: ${character.toJsonFormat()}")
+        appendLine(
+            "The rendering style must be identical to Apple Memojis:",
+        )
+        appendLine(
+            "vibrant and saturated colors, soft shading for a subtle 3D effect, soft and rounded surfaces, and clean edges.",
+        )
+
+        appendLine(
+            "Character must be centered and occupy most of the image space with a clear focus on the face and expression.",
+        )
+
+        appendLine(
+            "Smooth gradient background with color $backgroundHexCode.",
+        )
+    }
 }

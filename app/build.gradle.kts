@@ -134,6 +134,7 @@ dependencies {
     implementation(libs.hypnoticcanvas.shaders)
     implementation(libs.google.generativeai)
     implementation(libs.face.detection)
+    implementation(libs.billing.ktx)
 
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
