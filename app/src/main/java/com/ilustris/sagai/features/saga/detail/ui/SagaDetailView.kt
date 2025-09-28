@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalSharedTransitionApi::class)
+@file:OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 
 package com.ilustris.sagai.features.saga.detail.ui
 
@@ -48,6 +48,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -56,6 +57,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
@@ -65,6 +67,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -81,7 +84,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -98,6 +103,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.narrative.UpdateRules
@@ -837,10 +843,11 @@ fun ActContent(saga: SagaContent) {
 fun SimpleSlider(
     title: String,
     maxValue: Float = 10f,
+    value: Float = 0f,
     onValueChange: (Float) -> Unit = {},
 ) {
     Column(Modifier.padding(16.dp)) {
-        var sliderPosition by remember { mutableFloatStateOf(0f) }
+        var sliderPosition by remember { mutableFloatStateOf(value) }
 
         Text(
             "$title - $sliderPosition",
@@ -906,6 +913,10 @@ private fun SagaDetailInitialView(
                     }
                 } else {
                     Box(Modifier.fillMaxSize()) {
+                        val genreHighlight = saga.data.genre.selectiveHighlight()
+                        var highlightParams by remember {
+                            mutableStateOf(genreHighlight)
+                        }
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(columnCount),
                             modifier = modifier,
@@ -919,19 +930,6 @@ private fun SagaDetailInitialView(
                                 GridItemSpan(columnCount)
                             }) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    var highlightParams by
-                                        remember {
-                                            mutableStateOf(
-                                                SelectiveColorParams(
-                                                    targetColor = saga.data.genre.color,
-                                                    hueTolerance = .5f,
-                                                    saturationThreshold = .5f,
-                                                    highlightSaturationBoost = 1.6f,
-                                                    desaturationFactorNonTarget = .7f,
-                                                ),
-                                            )
-                                        }
-
                                     if (saga.data.icon.isNotEmpty()) {
                                         Box(
                                             modifier =
@@ -948,7 +946,7 @@ private fun SagaDetailInitialView(
                                                         .background(MaterialTheme.colorScheme.background)
                                                         .fillMaxSize()
                                                         .effectForGenre(saga.data.genre)
-                                                        .selectiveColorHighlight(saga.data.genre.selectiveHighlight())
+                                                        .selectiveColorHighlight(highlightParams)
                                                         .zoomAnimation(),
                                                 contentScale = ContentScale.Crop,
                                             )
@@ -1025,48 +1023,6 @@ private fun SagaDetailInitialView(
                                                     ).reactiveShimmer(true, duration = 10.seconds),
                                         )
                                     }
-
-                                    /*SimpleSlider(
-                                        "Hue tolerance",
-                                        maxValue = 1f,
-                                    ) { value ->
-                                        highlightParams = highlightParams.copy(hueTolerance = value)
-                                    }
-
-                                    SimpleSlider(
-                                        "Saturation threshold",
-                                        maxValue = 1f,
-                                    ) { value ->
-                                        highlightParams = highlightParams.copy(saturationThreshold = value)
-                                    }
-
-                                    SimpleSlider(
-                                        "Lightness threshold",
-                                        maxValue = 1f,
-                                    ) { value ->
-                                        highlightParams = highlightParams.copy(lightnessThreshold = value)
-                                    }
-
-                                    SimpleSlider(
-                                        "Highlight boost",
-                                        maxValue = 2f,
-                                    ) { value ->
-                                        highlightParams = highlightParams.copy(highlightSaturationBoost = value)
-                                    }
-
-                                    SimpleSlider(
-                                        "Highlight lightness boost",
-                                        maxValue = 1f,
-                                    ) { value ->
-                                        highlightParams = highlightParams.copy(highlightLightnessBoost = value)
-                                    }
-
-                                    SimpleSlider(
-                                        "Desaturation Factor",
-                                        maxValue = 1f,
-                                    ) { value ->
-                                        highlightParams = highlightParams.copy(desaturationFactorNonTarget = value)
-                                    }*/
                                 }
                             }
 
@@ -1159,7 +1115,7 @@ private fun SagaDetailInitialView(
                                                 Modifier
                                                     .fillMaxSize()
                                                     .effectForGenre(genre)
-                                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                                                    .selectiveColorHighlight(highlightParams),
                                             contentScale = ContentScale.Crop,
                                         )
 
@@ -1667,14 +1623,14 @@ private fun SagaDetailInitialView(
                                         Modifier
                                             .padding(16.dp)
                                             .clip(
-                                                RoundedCornerShape(saga.data.genre.cornerSize()),
+                                                genre.shape(),
                                             ).border(
                                                 1.dp,
-                                                MaterialTheme.colorScheme.onBackground.copy(alpha = .2f),
-                                                saga.data.genre.shape(),
+                                                MaterialTheme.colorScheme.onBackground.gradientFade(),
+                                                genre.shape(),
                                             ).background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
-                                                saga.data.genre.shape(),
+                                                genre.shape(),
                                             ).fillMaxWidth()
                                             .height(200.dp)
                                             .clickable {
@@ -1684,6 +1640,11 @@ private fun SagaDetailInitialView(
                                         AsyncImage(
                                             emotionalReviewIconUrl,
                                             null,
+                                            colorFilter =
+                                                ColorFilter.tint(
+                                                    genre.color,
+                                                    blendMode = BlendMode.Multiply,
+                                                ),
                                             modifier =
                                                 Modifier
                                                     .fillMaxSize()
@@ -1696,9 +1657,7 @@ private fun SagaDetailInitialView(
                                                 Modifier
                                                     .align(Alignment.BottomCenter)
                                                     .background(
-                                                        fadeGradientBottom(
-                                                            saga.data.genre.color,
-                                                        ),
+                                                        fadeGradientBottom(),
                                                     ).fillMaxWidth()
                                                     .padding(horizontal = 16.dp, vertical = 24.dp),
                                         ) {
@@ -1807,6 +1766,113 @@ private fun SagaDetailInitialView(
                                         .fillMaxWidth()
                                         .padding(top = 50.dp, start = 16.dp),
                             )
+                        }
+
+                        val tooltipState = androidx.compose.material3.rememberTooltipState(isPersistent = true)
+                        val tooltipPositionProvider =
+                            androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
+                                spacingBetweenTooltipAndAnchor = 8.dp,
+                            )
+                        val coroutineScope = rememberCoroutineScope()
+                        if (BuildConfig.DEBUG) {
+                           Box(Modifier.align(Alignment.BottomEnd)) {
+                                TooltipBox(
+                                    tooltipPositionProvider,
+                                    state = tooltipState,
+                                    tooltip = {
+                                        Column(
+                                            Modifier
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceContainer,
+                                                    genre.shape(),
+                                                ).padding(8.dp),
+                                        ) {
+                                            Text("Ajuste de imagem")
+
+                                            SimpleSlider(
+                                                "Hue tolerance",
+                                                maxValue = 1f,
+                                                value = highlightParams.hueTolerance,
+                                            ) { value ->
+                                                highlightParams =
+                                                    highlightParams.copy(hueTolerance = value)
+                                            }
+
+                                            SimpleSlider(
+                                                "Saturation threshold",
+                                                maxValue = 1f,
+                                                value = highlightParams.saturationThreshold,
+                                            ) { value ->
+                                                highlightParams =
+                                                    highlightParams.copy(saturationThreshold = value)
+                                            }
+
+                                            SimpleSlider(
+                                                "Lightness threshold",
+                                                maxValue = 1f,
+                                                value = highlightParams.lightnessThreshold,
+                                            ) { value ->
+                                                highlightParams =
+                                                    highlightParams.copy(lightnessThreshold = value)
+                                            }
+
+                                            SimpleSlider(
+                                                "Highlight boost",
+                                                maxValue = 2f,
+                                                value = highlightParams.highlightSaturationBoost,
+                                            ) { value ->
+                                                highlightParams =
+                                                    highlightParams.copy(highlightSaturationBoost = value)
+                                            }
+
+                                            SimpleSlider(
+                                                "Highlight lightness boost",
+                                                maxValue = 2f,
+                                                value = highlightParams.highlightLightnessBoost,
+                                            ) { value ->
+                                                highlightParams =
+                                                    highlightParams.copy(highlightLightnessBoost = value)
+                                            }
+
+                                            SimpleSlider(
+                                                "Desaturation Factor",
+                                                maxValue = 1f,
+                                                value = highlightParams.desaturationFactorNonTarget,
+                                            ) { value ->
+                                                highlightParams =
+                                                    highlightParams.copy(desaturationFactorNonTarget = value)
+                                            }
+                                        }
+                                    },
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .align(Alignment.BottomCenter),
+                                ) {
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                tooltipState.show()
+                                            }
+                                        },
+                                        colors =
+                                            IconButtonDefaults.iconButtonColors().copy(
+                                                genre.color,
+                                                genre.iconColor,
+                                            ),
+                                        modifier =
+                                            Modifier
+                                                .size(48.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Build,
+                                            null,
+                                            tint = MaterialTheme.colorScheme.onBackground,
+                                            modifier = Modifier.size(24.dp),
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

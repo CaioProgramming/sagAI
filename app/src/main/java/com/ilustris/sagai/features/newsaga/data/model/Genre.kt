@@ -139,10 +139,10 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = 1f,
-                saturationThreshold = .4f,
-                lightnessThreshold = 1f,
+                saturationThreshold = .52f,
+                lightnessThreshold = .46f,
                 highlightSaturationBoost = 3f,
-                desaturationFactorNonTarget = .9f,
+                desaturationFactorNonTarget = .3f,
             )
     }
 

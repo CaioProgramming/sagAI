@@ -175,14 +175,14 @@ fun Modifier.effectForGenre(
                         softFocusRadius = focusRadius ?: 1f,
                         saturation = 1f,
                         contrast = 1.6f,
-                        brightness = .02f,
+                        brightness = .01f,
                         highlightTint = crimePalette.highlightTint,
                         shadowTint = crimePalette.shadowTint,
                         tintStrength = crimePalette.defaultTintStrength,
-                        vignetteStrength = .1f,
+                        vignetteStrength = .2f,
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = .1f.unaryMinus(),
+                        colorTemperature = .15f.unaryMinus(),
                     )
                 else ->
                     ShaderParams()
