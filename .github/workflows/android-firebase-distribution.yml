@@ -79,10 +79,10 @@ jobs:
       - name: Firebase App Distribution Action
         uses: hasretsariyer/firebase-app-distribution-github-action@v1.0.0
         with:
-          firebase_token: $ {{ secrets.FIREBASE_CI }}
+          firebase_token: ${{ secrets.FIREBASE_CI }}
           app_id: ${{ secrets.FIREBASE_ID }}
-          path: ${{ steps.build_apk.outputs.apk }}
-          testers: alpha-testers
+          app_file: ${{ steps.build_apk.outputs.apk }}
+          tester_groups: alpha-testers
       - name: Delivering artifact 🚚
         uses: OrjanSkarnes/pull-request-commenter@1.2.3
         with:
