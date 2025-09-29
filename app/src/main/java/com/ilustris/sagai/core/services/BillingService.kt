@@ -48,8 +48,13 @@ class BillingService
             BillingClient
                 .newBuilder(context)
                 .setListener(listener)
-                .enablePendingPurchases(PendingPurchasesParams.newBuilder().build())
-                .enableAutoServiceReconnection()
+                .enablePendingPurchases(
+                    PendingPurchasesParams
+                        .newBuilder()
+                        .enablePrepaidPlans()
+                        .enableOneTimeProducts()
+                        .build(),
+                ).enableAutoServiceReconnection()
                 .build()
         }
 
@@ -120,7 +125,6 @@ class BillingService
         }
 
         fun isPremium() = BuildConfig.DEBUG || state.value is BillingState.SignatureEnabled
-
     }
 
 sealed interface BillingState {

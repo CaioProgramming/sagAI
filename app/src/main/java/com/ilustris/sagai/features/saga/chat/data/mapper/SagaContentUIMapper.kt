@@ -1,9 +1,8 @@
-package com.ilustris.sagai.features.saga.chat.domain.mapper
+package com.ilustris.sagai.features.saga.chat.data.mapper
 
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChapterDisplayData
-import com.ilustris.sagai.features.saga.chat.presentation.TimelineSummaryData
 
 object SagaContentUIMapper {
     fun mapToActDisplayData(domainActs: List<ActContent>): List<ActDisplayData> =
@@ -14,7 +13,7 @@ object SagaContentUIMapper {
                 chapters =
                     actContentDomain.chapters.map { chapterContentDomain ->
                         ChapterDisplayData(
-                            chapter = chapterContentDomain.data,
+                            chapter = chapterContentDomain,
                             isComplete = chapterContentDomain.isComplete(),
                             timelineSummaries =
                                 chapterContentDomain.events.map {

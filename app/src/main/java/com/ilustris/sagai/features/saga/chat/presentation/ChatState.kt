@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.presentation
 
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
@@ -35,7 +36,7 @@ data class ActDisplayData(
 )
 
 data class ChapterDisplayData(
-    val chapter: Chapter,
+    val chapter: ChapterContent,
     val isComplete: Boolean,
     val timelineSummaries: List<TimelineContent>,
 )

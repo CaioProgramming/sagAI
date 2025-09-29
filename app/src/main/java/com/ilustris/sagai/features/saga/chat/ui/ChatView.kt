@@ -376,76 +376,6 @@ fun ChatView(
     }
 }
 
-@Preview
-@Composable
-fun ChatListPreview() {
-    val saga =
-        SagaContent(
-            data =
-                Saga(
-                    id = 0,
-                    title = "Saga Title",
-                    description = "Saga Description",
-                    icon = "icon_url",
-                    createdAt = System.currentTimeMillis(),
-                    genre = Genre.FANTASY,
-                    mainCharacterId = 1,
-                    currentActId = 1,
-                    isEnded = false,
-                    endedAt = 0L,
-                    isDebug = false,
-                    endMessage = "Saga Ended",
-                    review = null,
-                ),
-            mainCharacter = null,
-            currentActInfo = null,
-            characters = emptyList(),
-            wikis = emptyList(),
-            acts = emptyList(),
-        )
-    val actList =
-        listOf(
-            ActDisplayData(
-                content =
-                    ActContent(
-                        data =
-                            Act(
-                                id = 1,
-                                title = "Act 1",
-                                content = "Act 1 content",
-                                sagaId = 0,
-                                currentChapterId = 1,
-                            ),
-                    ),
-                isComplete = true,
-                chapters =
-                    listOf(
-                        ChapterDisplayData(
-                            isComplete = true,
-                            chapter =
-                                Chapter(
-                                    id = 1,
-                                    title = "Chapter 1",
-                                    overview = "Chapter 1 overview",
-                                    coverImage = "cover_image_url",
-                                    actId = 1,
-                                ),
-                            timelineSummaries =
-                                emptyList(),
-                        ),
-                    ),
-            ),
-        )
-    ChatList(
-        saga = saga,
-        actList = actList,
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .padding(bottom = 64.dp),
-        listState = rememberLazyListState(),
-    )
-}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -1233,10 +1163,10 @@ fun ChatList(
                     }
                 }
 
-                if (chapter.chapter.introduction.isNotEmpty()) {
+                if (chapter.chapter.data.introduction.isNotEmpty()) {
                     item {
                         Text(
-                            chapter.chapter.introduction,
+                            chapter.chapter.data.introduction,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     fontFamily = genre.bodyFont(),
@@ -1253,9 +1183,9 @@ fun ChatList(
 
                 item {
                     val title =
-                        chapter.chapter.title.ifEmpty {
+                        chapter.chapter.data.title.ifEmpty {
                             "Capitulo ${
-                                saga.chapterNumber(chapter.chapter).toRoman()
+                                saga.chapterNumber(chapter.chapter.data).toRoman()
                             }"
                         }
                     Text(

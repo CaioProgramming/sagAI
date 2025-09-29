@@ -34,12 +34,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.TypewriterText
@@ -57,34 +65,38 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun ChapterContentView(
-    chapter: Chapter,
+    chapter: ChapterContent,
     content: SagaContent,
     modifier: Modifier,
     isLast: Boolean = false,
     imageSize: Dp = 250.dp,
     openCharacters: () -> Unit = {},
-    regenerateCover: (Chapter) -> Unit = {},
+    viewModel: ChapterViewModel = hiltViewModel(),
 ) {
+    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val genre = content.data.genre
 
-        if (chapter.coverImage.isEmpty()) {
+        if (chapter.data.coverImage.isEmpty()) {
             Image(
                 painterResource(R.drawable.ic_spark),
                 null,
                 Modifier
                     .clickable {
-                        regenerateCover(chapter)
+                        viewModel.generateIcon(
+                            content,
+                            chapter,
+                        )
                     }.size(50.dp)
                     .gradientFill(genre.gradient(true))
                     .padding(16.dp),
             )
 
             AutoResizeText(
-                text = chapter.title,
+                text = chapter.data.title,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -110,7 +122,7 @@ fun ChapterContentView(
                         .animateContentSize(),
             ) {
                 AsyncImage(
-                    model = chapter.coverImage,
+                    model = chapter.data.coverImage,
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     onError = {
@@ -132,7 +144,7 @@ fun ChapterContentView(
                 )
 
                 AutoResizeText(
-                    text = chapter.title,
+                    text = chapter.data.title,
                     modifier =
                         Modifier
                             .align(Alignment.BottomCenter)
@@ -150,7 +162,7 @@ fun ChapterContentView(
         }
 
         TypewriterText(
-            text = chapter.overview,
+            text = chapter.data.overview,
             modifier =
                 Modifier
                     .background(MaterialTheme.colorScheme.background)
@@ -174,8 +186,28 @@ fun ChapterContentView(
             onTextClick = openCharacters,
         )
 
-        if (chapter.emotionalReview?.isNotEmpty() == true) {
-            EmotionalCard(chapter.emotionalReview, genre, true, modifier = Modifier.padding(16.dp))
+        if (chapter.data.emotionalReview?.isNotEmpty() == true) {
+            EmotionalCard(
+                chapter.data.emotionalReview,
+                genre,
+                true,
+                modifier = Modifier.padding(16.dp),
+            )
+        }
+    }
+
+    if (isGenerating) {
+        Dialog(
+            onDismissRequest = { },
+            properties =
+                DialogProperties(
+                    dismissOnBackPress = false,
+                    dismissOnClickOutside = false,
+                ),
+        ) {
+            StarryTextPlaceholder(
+                modifier = Modifier.fillMaxSize().gradientFill(content.data.genre.gradient(true)),
+            )
         }
     }
 }
