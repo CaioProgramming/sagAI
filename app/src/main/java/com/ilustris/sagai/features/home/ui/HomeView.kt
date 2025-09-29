@@ -35,6 +35,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -43,6 +44,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -63,6 +65,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -72,6 +75,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -103,6 +107,8 @@ fun HomeView(
     val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
     val dynamicNewSagaTexts by viewModel.dynamicNewSagaTexts.collectAsStateWithLifecycle()
     val isLoadingDynamicPrompts by viewModel.isLoadingDynamicPrompts.collectAsStateWithLifecycle()
+    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
+    var showPremiumSheet by remember { mutableStateOf(false) }
     ChatList(
         sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
         padding = padding,
@@ -113,13 +119,29 @@ fun HomeView(
             navController.navigateToRoute(Routes.NEW_SAGA)
         },
         onSelectSaga = { sagaData ->
-            navController.navigateToRoute(
-                Routes.CHAT,
-                mapOf(
-                    "sagaId" to sagaData.id.toString(),
-                    "isDebug" to sagaData.isDebug.toString(),
-                ),
-            )
+            val isPremium = billingState is BillingState.SignatureEnabled
+            if (isPremium) {
+                navController.navigateToRoute(
+                    Routes.CHAT,
+                    mapOf(
+                        "sagaId" to sagaData.id.toString(),
+                        "isDebug" to sagaData.isDebug.toString(),
+                    ),
+                )
+            } else {
+                val freeSagasCount = sagas.count { !it.data.isDebug }
+                if (freeSagasCount <= 2) {
+                    navController.navigateToRoute(
+                        Routes.CHAT,
+                        mapOf(
+                            "sagaId" to sagaData.id.toString(),
+                            "isDebug" to sagaData.isDebug.toString(),
+                        ),
+                    )
+                } else {
+                    showPremiumSheet = true
+                }
+            }
         },
         createFakeSaga = {
             viewModel.createFakeSaga()
@@ -134,6 +156,15 @@ fun HomeView(
                     "isDebug" to "true",
                 ),
             )
+        }
+    }
+
+    if (showPremiumSheet) {
+        ModalBottomSheet(onDismissRequest = {
+            showPremiumSheet = false
+
+        }) {
+            PremiumView()
         }
     }
 }

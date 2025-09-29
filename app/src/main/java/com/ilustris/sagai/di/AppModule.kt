@@ -20,6 +20,7 @@ import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.network.FreePikApiService
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
@@ -168,6 +169,12 @@ object AppModule {
     fun provideMediaPlayerManager(
         @ApplicationContext context: Context,
     ): MediaPlayerManager = MediaPlayerManagerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideBillingService(
+        @ApplicationContext context: Context,
+    ): BillingService = BillingService(context)
 }
 
 @InstallIn(ViewModelComponent::class)

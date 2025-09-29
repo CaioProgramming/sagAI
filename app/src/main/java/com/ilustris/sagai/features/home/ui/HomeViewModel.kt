@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
@@ -36,6 +37,7 @@ class HomeViewModel
 
         private val _isLoadingDynamicPrompts = MutableStateFlow(false)
         val isLoadingDynamicPrompts: StateFlow<Boolean> = _isLoadingDynamicPrompts.asStateFlow()
+        val billingState = homeUseCase.billingState.asStateFlow()
 
         init {
             loadRemoteConfigFlag()

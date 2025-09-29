@@ -7,6 +7,8 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -22,6 +24,7 @@ class HomeUseCaseImpl
     constructor(
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
+        private val billingService: BillingService,
     ) : HomeUseCase {
         override fun getSagas(): Flow<List<SagaContent>> =
             sagaRepository.getChats().map { content ->
@@ -54,6 +57,8 @@ class HomeUseCaseImpl
                         ),
                     )
             }
+
+        override val billingState = billingService.state
 
         private fun processSagaContent(content: List<SagaContent>): List<SagaContent> =
             content.sortedByDescending { saga ->

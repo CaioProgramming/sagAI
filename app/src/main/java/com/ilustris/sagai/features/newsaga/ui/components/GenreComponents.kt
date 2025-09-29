@@ -161,6 +161,7 @@ fun GenreCard(
     genre: Genre,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
+    showText: Boolean = true,
     onClick: (Genre) -> Unit,
 ) {
     val saturation by animateFloatAsState(
@@ -204,21 +205,22 @@ fun GenreCard(
         )
 
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
-
-        AutoResizeText(
-            genre.title,
-            style =
-                MaterialTheme.typography.headlineMedium.copy(
-                    textAlign = TextAlign.Center,
-                    fontFamily = genre.headerFont(),
-                    brush = genre.gradient(true, 1.seconds, 300f),
-                ),
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(2.dp)
-                    .align(Alignment.Center),
-        )
+        if (showText){
+            AutoResizeText(
+                genre.title,
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        textAlign = TextAlign.Center,
+                        fontFamily = genre.headerFont(),
+                        brush = genre.gradient(true, 1.seconds, 300f),
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(2.dp)
+                        .align(Alignment.Center),
+            )
+        }
     }
 }
 
