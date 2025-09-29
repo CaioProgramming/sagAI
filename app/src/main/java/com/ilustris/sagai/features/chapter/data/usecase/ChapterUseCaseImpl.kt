@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
 import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -15,6 +16,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.emptyString
@@ -36,6 +38,7 @@ class ChapterUseCaseImpl
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
+        private val billingService: BillingService
     ) : ChapterUseCase {
         override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
@@ -69,6 +72,15 @@ class ChapterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<Chapter> =
             executeRequest {
+                val isPremium = billingService.isPremium()
+                if (isPremium.not()) {
+                    Log.w(javaClass.simpleName, "generateChapterCover: Premium not enabled skipping image generation")
+                    return@executeRequest chapterRepository.updateChapter(
+                        chapter.data.copy(
+                            coverImage = emptyString()
+                        )
+                    )
+                }
                 val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
                 val coverBitmap = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
                 val coverReference =

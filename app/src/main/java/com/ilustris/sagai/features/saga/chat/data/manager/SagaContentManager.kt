@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.domain.manager
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -34,4 +35,7 @@ interface SagaContentManager {
         saga: SagaContent?,
         isRetrying: Boolean = false,
     )
+
+    fun generateChapterIcon(chapter: Chapter)
+
 }

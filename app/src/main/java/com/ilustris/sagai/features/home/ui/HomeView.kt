@@ -116,32 +116,22 @@ fun HomeView(
         dynamicNewSagaTexts = dynamicNewSagaTexts,
         isLoadingDynamicPrompts = isLoadingDynamicPrompts,
         onCreateNewChat = {
-            navController.navigateToRoute(Routes.NEW_SAGA)
+            val isPremium = billingState == BillingState.SignatureEnabled
+            val freeSagasCount = sagas.count { !it.data.isDebug }
+            if (freeSagasCount <= 2 || isPremium) {
+                navController.navigateToRoute(Routes.NEW_SAGA)
+            } else {
+                showPremiumSheet = true
+            }
         },
         onSelectSaga = { sagaData ->
-            val isPremium = billingState is BillingState.SignatureEnabled
-            if (isPremium) {
-                navController.navigateToRoute(
-                    Routes.CHAT,
-                    mapOf(
-                        "sagaId" to sagaData.id.toString(),
-                        "isDebug" to sagaData.isDebug.toString(),
-                    ),
-                )
-            } else {
-                val freeSagasCount = sagas.count { !it.data.isDebug }
-                if (freeSagasCount <= 2) {
-                    navController.navigateToRoute(
-                        Routes.CHAT,
-                        mapOf(
-                            "sagaId" to sagaData.id.toString(),
-                            "isDebug" to sagaData.isDebug.toString(),
-                        ),
-                    )
-                } else {
-                    showPremiumSheet = true
-                }
-            }
+            navController.navigateToRoute(
+                Routes.CHAT,
+                mapOf(
+                    "sagaId" to sagaData.id.toString(),
+                    "isDebug" to sagaData.isDebug.toString(),
+                ),
+            )
         },
         createFakeSaga = {
             viewModel.createFakeSaga()
@@ -162,7 +152,6 @@ fun HomeView(
     if (showPremiumSheet) {
         ModalBottomSheet(onDismissRequest = {
             showPremiumSheet = false
-
         }) {
             PremiumView()
         }
@@ -366,7 +355,8 @@ fun ChatCard(
                         .clip(CircleShape),
             ) {
                 if (saga.data.isDebug.not()) {
-                    val borderBrush = if (sagaData.isEnded) sagaData.genre.gradient() else sagaData.genre.color.solidGradient()
+                    val borderBrush =
+                        if (sagaData.isEnded) sagaData.genre.gradient() else sagaData.genre.color.solidGradient()
                     AsyncImage(
                         sagaData.icon,
                         contentDescription = sagaData.title,

@@ -14,6 +14,8 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
@@ -29,6 +31,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.ui.theme.toHex
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
@@ -46,6 +49,7 @@ class CharacterUseCaseImpl
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
+        private val billingService: BillingService
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
 
@@ -69,6 +73,8 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest {
+                val isPremium = billingService.state.value is BillingState.SignatureEnabled
+
                 val styleReferenceBitmap =
                     ImageReference(
                         genreReferenceHelper.getGenreStyleReference(saga.genre).getSuccess()!!,
@@ -78,33 +84,37 @@ class CharacterUseCaseImpl
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
                         ImageReference(it, ImageGuidelines.compositionReferenceGuidance)
                     }
-                val references =
+                val references = if (isPremium)
                     listOfNotNull(
                         portraitReference,
                         styleReferenceBitmap,
-                    )
+                    ) else emptyList()
+
+                val descriptionPrompt = if (isPremium) CharacterPrompts.descriptionTranslationPrompt(
+                    character,
+                    saga.genre,
+                ) else ImagePrompts.simpleEmojiRendering(
+                    saga.genre.color.toHex(),
+                    character
+                )
                 val translatedDescription =
                     gemmaClient.generate<String>(
-                        CharacterPrompts.descriptionTranslationPrompt(
-                            character,
-                            saga.genre,
-                        ),
+                        descriptionPrompt,
                         references = references,
                         requireTranslation = false,
-                    )
-                val prompt =
-                    ImagePrompts
-                        .generateImage(translatedDescription!!)
+                    )!!
+
+
 
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription, listOfNotNull(portraitReference))!!
+                        .generateImage(translatedDescription)!!
 
                 val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
-                val newCharacter = character.copy(image = file!!.path)
+                val newCharacter = character.copy(image = file!!.path, emojified = isPremium.not())
                 repository.updateCharacter(newCharacter)
                 image.recycle()
-                newCharacter to prompt
+                newCharacter to translatedDescription
             }
 
         override suspend fun generateCharacter(

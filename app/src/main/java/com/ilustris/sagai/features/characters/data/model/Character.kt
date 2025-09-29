@@ -34,6 +34,7 @@ data class Character(
     val joinedAt: Long = 0L,
     @ColumnInfo(index = true)
     val firstSceneId: Int? = null,
+    val emojified: Boolean? = false,
 )
 
 data class Abilities(

@@ -13,6 +13,7 @@ import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -117,6 +118,9 @@ class BillingService
             val products = productDetailsResult.productDetailsList ?: emptyList()
             state.emit(BillingState.SignatureDisabled(products))
         }
+
+        fun isPremium() = BuildConfig.DEBUG || state.value is BillingState.SignatureEnabled
+
     }
 
 sealed interface BillingState {

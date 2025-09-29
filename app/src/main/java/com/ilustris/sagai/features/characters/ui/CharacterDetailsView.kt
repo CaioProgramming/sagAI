@@ -82,8 +82,6 @@ fun CharacterDetailsView(
 ) {
     val saga by viewModel.saga.collectAsStateWithLifecycle()
     val character by viewModel.character.collectAsStateWithLifecycle()
-    val messageCount by viewModel.messageCount.collectAsStateWithLifecycle()
-    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
 
     LaunchedEffect(saga) {
         if (saga == null) {
@@ -145,6 +143,13 @@ fun CharacterDetailsContent(
                             contentScale = ContentScale.Crop,
                             modifier =
                                 Modifier
+                                    .clickable(enabled = character.emojified == true) {
+
+                                        viewModel.regenerate(
+                                            sagaContent,
+                                            character,
+                                        )
+                                    }
                                     .fillMaxSize()
                                     .zoomAnimation()
                                     .clipToBounds()

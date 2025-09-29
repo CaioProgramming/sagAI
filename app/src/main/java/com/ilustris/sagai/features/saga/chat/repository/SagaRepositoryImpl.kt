@@ -10,9 +10,11 @@ import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -29,6 +31,7 @@ class SagaRepositoryImpl
         private val imageCropHelper: ImageCropHelper,
         private val fileHelper: FileHelper,
         private val imagenClient: ImagenClient,
+        private val billingService: BillingService
     ) : SagaRepository {
         private val sagaDao: SagaDao by lazy {
             database.sagaDao()
@@ -61,6 +64,14 @@ class SagaRepositoryImpl
             saga: Saga,
             character: Character,
         ) = executeRequest {
+            val isPremium = billingService.isPremium()
+            if (isPremium.not()) {
+               return@executeRequest updateChat(
+                    saga.copy(
+                        icon = emptyString(),
+                    ),
+                )
+            }
             val styleReference =
                 genreReferenceHelper
                     .getGenreStyleReference(saga.genre)
