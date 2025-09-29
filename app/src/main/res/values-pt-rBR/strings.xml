@@ -197,4 +197,11 @@
     <string name="tone_melancholic">Melancólico</string>
     <string name="tone_cynical">Cínico</string>
 
+    <!-- Saga Genres -->
+    <string name="genre_fantasy">Fantasia</string>
+    <string name="genre_scifi">Cyberpunk</string>
+    <string name="genre_horror">Terror</string>
+    <string name="genre_heroes">Heróis</string>
+    <string name="genre_crime">Crime City</string>
+    <string name="genre_space_opera">Ópera Espacial</string>
 </resources>

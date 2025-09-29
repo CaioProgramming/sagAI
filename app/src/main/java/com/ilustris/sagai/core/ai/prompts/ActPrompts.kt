@@ -119,7 +119,7 @@ object ActPrompts {
             appendLine("CONTEXT:")
             appendLine("You are an AI assistant helping to write a saga.")
             appendLine("Saga Title: \"${saga.title}\"")
-            appendLine("Saga Genre: ${saga.genre.title}")
+            appendLine("Saga Genre: ${saga.genre.name}")
 
             if (previousAct == null) {
                 // First Act

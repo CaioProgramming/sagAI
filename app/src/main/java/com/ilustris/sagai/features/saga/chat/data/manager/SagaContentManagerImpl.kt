@@ -19,6 +19,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -689,6 +690,7 @@ class SagaContentManagerImpl
                             backstory = "Generated in debug mode.",
                             sagaId = currentSaga.data.id,
                             details = Details(),
+                            profile = CharacterProfile()
                         )
                     characterUseCase.insertCharacter(fakeCharacter)
                 } else {

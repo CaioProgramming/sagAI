@@ -93,9 +93,10 @@ fun Modifier.effectForGenre(
     // Define shader parameters based on Genre
     val fantasyPalette = FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
-    val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
+    val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE
     val heroPalette = HeroColorTones.URBAN_COMIC_VIBRANCY
     val crimePalette = CrimeColorTones.MIAMI_NEON_SUNSET
+    val spaceOperaPalette = FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
     val uniformValues =
         remember(genre, pixelSize) {
             when (genre) {
@@ -184,6 +185,23 @@ fun Modifier.effectForGenre(
                         pixelationBlockSize = 0.0f,
                         colorTemperature = .15f.unaryMinus(),
                     )
+                Genre.SPACE_OPERA -> ShaderParams(
+                    grainIntensity = customGrain ?: .2f,
+                    bloomThreshold = .3f,
+                    bloomIntensity = .15f,
+                    bloomRadius = 1.0f,
+                    softFocusRadius = focusRadius ?: .3f,
+                    saturation = .6f,
+                    contrast = 1.4f,
+                    brightness = 0f,
+                    highlightTint = spaceOperaPalette.highlightTint,
+                    shadowTint = spaceOperaPalette.shadowTint,
+                    tintStrength = 0.25f,
+                    vignetteStrength = .25f,
+                    vignetteSoftness = 0.9f,
+                    pixelationBlockSize = 0.0f,
+                    colorTemperature = 0f,
+                )
                 else ->
                     ShaderParams()
             }

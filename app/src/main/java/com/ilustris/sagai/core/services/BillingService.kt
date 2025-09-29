@@ -124,7 +124,9 @@ class BillingService
             state.emit(BillingState.SignatureDisabled(products))
         }
 
-        fun isPremium() = BuildConfig.DEBUG || state.value is BillingState.SignatureEnabled
+
+
+        fun isPremium() = state.value is BillingState.SignatureEnabled
     }
 
 sealed interface BillingState {

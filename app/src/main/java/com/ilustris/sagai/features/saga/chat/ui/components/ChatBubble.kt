@@ -61,6 +61,7 @@ import androidx.constraintlayout.compose.Dimension
 import com.ilustris.sagai.core.utils.formatHours
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -527,6 +528,7 @@ fun ChatBubblePreview() {
                 Character(
                     name = "John",
                     details = Details(),
+                    profile = CharacterProfile()
                 )
             Genre.entries.forEach { genre ->
                 stickyHeader {

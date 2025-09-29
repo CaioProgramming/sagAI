@@ -30,6 +30,7 @@ fun Genre.headerFont(): FontFamily {
             Genre.HORROR -> R.font.pixelwarden
             Genre.HEROES -> R.font.super_energy
             Genre.CRIME -> R.font.broadway
+            Genre.SPACE_OPERA -> R.font.space_runner
             else -> null
         }
     return if (fontResource != null) {

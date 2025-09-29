@@ -217,7 +217,7 @@ object SagaPrompts {
             "Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.",
         )
         appendLine(
-            "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.title}).",
+            "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.name}).",
         )
         appendLine("Ensure to render this art style description matching with the reference image")
         appendLine(GenrePrompts.artStyle(saga.genre))

@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts.artStyle
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -59,9 +60,39 @@ object ImagePrompts {
         character: Character,
     ) = buildString {
         appendLine(
-            "Create a high-quality, vibrant, and detailed digital illustration of a single character in a simple emoji style.",
+            "Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Apple Memoji Headshots**.",
         )
-        appendLine("Character details: ${character.toJsonFormat()}")
+        appendLine(
+            "Make sure to instruct the render style to be **EXACTLY** identical to **Apple Memojis**.",
+        )
+        appendLine(
+            "Focus **ONLY** on the **single character's head and face**, isolated from any body, neck, or shoulders, with a **dynamic expression or pose**. **Strictly exclude all details related to body, torso, neck, and clothing (spacesuit, gloves, belt, height, weight)**. The output must be a head-only composition, as if it were a detached emoji head.",
+        )
+        appendLine(
+            "Your goal is to convert the character's description and context below into a single, highly detailed, unambiguous, and visually rich English text description.",
+        )
+        appendLine(
+            "This text description will be used by an AI image generation model, IN CONJUNCTION with the aforementioned image references.",
+        )
+        appendLine(
+            "The generated prompt must be optimized to leverage the visual information from the character details, ensuring the final output image captures the character's face, hair, expression, **head pose (e.g., tilted, looking sideways, slightly angled)**, and a **subtly dynamic camera angle (e.g., slightly from below/above, slight rotation)**, while strictly adhering to the specified **Apple Memoji style** and **isolated head-only composition**.",
+        )
+
+        appendLine("**Character Context:**")
+        appendLine(
+            character.toJsonFormatExcludingFields(
+                listOf(
+                    "id",
+                    "image",
+                    "sagaId",
+                    "joinedAt",
+                ),
+            ),
+        )
+
+        appendLine(
+            "YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.",
+        )
         appendLine(
             "The rendering style must be identical to Apple Memojis:",
         )
@@ -70,7 +101,7 @@ object ImagePrompts {
         )
 
         appendLine(
-            "Character must be centered and occupy most of the image space with a clear focus on the face and expression.",
+            "Character must be an **ISOLATED FLOATING HEAD**, centered and occupying most of the image space with a clear focus on the **face and expression, without any neck or shoulders visible**.",
         )
 
         appendLine(

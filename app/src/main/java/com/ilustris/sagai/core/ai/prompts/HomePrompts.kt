@@ -10,8 +10,7 @@ object HomePrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun dynamicSagaCreationPrompt(): String {
         val genreEnumNames = Genre.entries.joinToString(", ") { it.name }
-        val genreDisplayTitles =
-            Genre.entries.joinToString(", ") { it.title }
+
 
         return buildString {
             appendLine(
@@ -22,7 +21,7 @@ object HomePrompts {
             )
 
             appendLine("Core Task for THIS Generation:")
-            appendLine("- Lean into EXACTLY ONE vibe inspired by these genres: $genreDisplayTitles.")
+            appendLine("- Lean into EXACTLY ONE vibe inspired by these genres: $genreEnumNames.")
             appendLine(
                 "- Adapt language and imagery to that single vibe without naming the genre directly or using enum names ($genreEnumNames).",
             )

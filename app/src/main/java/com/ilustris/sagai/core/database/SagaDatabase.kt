@@ -41,13 +41,7 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
     ],
-    version = 52,
-    autoMigrations = [
-        AutoMigration(
-            from = 51,
-            to = 52,
-        ),
-    ],
+    version = 54,
     exportSchema = true,
 )
 @TypeConverters(IntListConverter::class)

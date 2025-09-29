@@ -45,7 +45,7 @@ object CharacterPrompts {
             appendLine("The primary rendering style for the portrait MUST be:")
             appendLine(GenrePrompts.artStyle(genre))
             appendLine("2.  **Specific Color Application Instructions:**")
-            appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.title}\") are applied:")
+            appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.name}\") are applied:")
             appendLine(GenrePrompts.getColorEmphasisDescription(genre))
             appendLine("**Important Clarification on Color:**")
             appendLine("*These color rules are primarily for:")
@@ -95,7 +95,7 @@ object CharacterPrompts {
                 "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body unless explicitly required.",
             )
 
-            appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
+            appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.name}).")
             appendLine(ImagePrompts.conversionGuidelines(genre))
             appendLine("**Image Generation Model Inputs Overview (for your awareness when crafting the text prompt):**")
             appendLine("*   **Text Prompt:** (The string you will generate)")
@@ -109,7 +109,6 @@ object CharacterPrompts {
                         "image",
                         "sagaId",
                         "joinedAt",
-                        "appearance",
                     ),
                 ),
             )
@@ -153,7 +152,7 @@ object CharacterPrompts {
         appendLine("// This is the ONLY source for the character to be created .")
         appendLine(description)
         appendLine(CharacterGuidelines.creationGuideline)
-        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE THEME ${saga.data.genre.title}.")
+        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE THEME ${saga.data.genre.name}.")
     }.trimIndent()
 
     fun characterLoreGeneration(

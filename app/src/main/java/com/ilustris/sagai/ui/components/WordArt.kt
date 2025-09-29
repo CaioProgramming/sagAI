@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -120,15 +121,20 @@ fun WordArtText(
 
                     // 1. Extrusion Layers
                     for (i in numberOfExtrusionLayers downTo 1) {
-                        val shadow = if (i == numberOfExtrusionLayers) {
-                            if (glowColor != null) {
-                                Shadow(
-                                    glowColor,
-                                    offset = Offset(0f, 0f),
-                                    blurRadius = glowRadiusFactor
-                                )
-                            } else null
-                        } else null
+                        val shadow =
+                            if (i == numberOfExtrusionLayers) {
+                                if (glowColor != null) {
+                                    Shadow(
+                                        glowColor,
+                                        offset = Offset(0f, 0f),
+                                        blurRadius = glowRadiusFactor,
+                                    )
+                                } else {
+                                    null
+                                }
+                            } else {
+                                null
+                            }
                         drawText(
                             textLayoutResult = textLayoutResult,
                             color = extrusionColor,
@@ -253,6 +259,26 @@ fun Genre.stylisedText(
                 rotationX = 10f,
             )
         }
+        Genre.SPACE_OPERA -> {
+            val palette = this.colorPalette()
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = color,
+                bottomColor = palette.last(),
+                extrusionColor = palette.first().darker(.5f),
+                extrusionDepthFactor = 0.04f,
+                numberOfExtrusionLayers = 8,
+                outlineColor = iconColor,
+                outlineWidthFactor = 0.08f,
+                rotationX = 20f,
+                glowColor = color,
+                glowRadiusFactor = 8f,
+                glowAlpha = .7f,
+            )
+        }
         else -> {
             // Default fallback using palette
             val palette = this.colorPalette()
@@ -268,8 +294,6 @@ fun Genre.stylisedText(
     }
 }
 
-
-
 @Preview(
     showBackground = true,
     uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,
@@ -280,7 +304,7 @@ fun WordArtTextPreview() {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Genre.entries.forEach {
                 it.stylisedText(
-                    it.title,
+                    stringResource(it.title),
                 )
             }
         }

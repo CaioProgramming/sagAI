@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.premium
 import android.content.res.Configuration
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.RepeatMode.*
 import androidx.compose.animation.core.animateFloat
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -44,23 +46,22 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.core.services.BillingState
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
-import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun PremiumView(
-    premiumViewModel: PremiumViewModel = viewModel()
-) {
+fun PremiumView(premiumViewModel: PremiumViewModel = hiltViewModel()) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         val brush = Brush.verticalGradient(holographicGradient)
         val genres = Genre.entries
@@ -76,76 +77,58 @@ fun PremiumView(
             }
         }
 
-        Box(Modifier.fillMaxWidth().fillMaxHeight(.3f)) {
+        Image(
+            painterResource(R.drawable.ic_spark),
+            null,
+            modifier =
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .reactiveShimmer(true)
+                    .size(64.dp)
+                    .gradientFill(brush)
+        )
+
+        Box(Modifier.fillMaxWidth().padding(8.dp)) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
-                modifier = Modifier.animateContentSize(),
             ) {
                 items(genres.size) { index ->
                     val scale by animateFloatAsState(
-                        targetValue = if (index == currentIndex) 1f else .85f,
-                        animationSpec = tween(durationMillis = 600, easing = EaseInBounce),
+                        targetValue = if (index == currentIndex) 1f else .8f,
+                        animationSpec = tween(durationMillis = 600, easing = EaseIn),
                     )
-                    val infiniteTransition = rememberInfiniteTransition()
-                    val offsetY by infiniteTransition.animateFloat(
-                        initialValue = .85f,
-                        targetValue = 1f,
-                        animationSpec =
-                            infiniteRepeatable( tween(
-                                 durationMillis = 4000,
-                                 easing = EaseInBounce,
-                             ),
-                                repeatMode = Reverse,
-                            ),
-                    )
-                    val offsetX by infiniteTransition.animateFloat(
-                        initialValue = .9f,
-                        targetValue = 1f,
-                        animationSpec =
-                            infiniteRepeatable(tween(
-                                durationMillis = 5000,
-                                easing = EaseInBounce),
-                                repeatMode = Reverse,
-                            ),
-                    )
-                    val levitateY = (kotlin.math.sin(offsetY * 2 * Math.PI) * 12).dp
-                    val levitateX = (kotlin.math.cos(offsetX * 2 * Math.PI) * 8).dp
+
                     GenreCard(
                         genres[index],
-                        false,
+                        index == currentIndex,
                         Modifier
-                            .reactiveShimmer(true)
+                            .fillMaxHeight(.2f)
                             .aspectRatio(1f)
                             .scale(scale)
-                            .offset(x = levitateX, y = levitateY)
-                            .padding(8.dp)
-                        ,
+                            .padding(4.dp),
                         false,
                     ) { }
                 }
             }
 
-            Image(
-                painterResource(R.drawable.ic_spark),
-                null,
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .size(64.dp)
-                        .gradientFill(brush)
-                        .reactiveShimmer(true),
-            )
         }
 
         Text(
-            "Vá além com o Sagas Pro",
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            "Conheça o",
+            style = MaterialTheme.typography.labelMedium,
+            modifier = Modifier.alpha(.4f)
+        )
+
+        Text(
+            "Sagas Pro",
+            modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally),
             style =
-                MaterialTheme.typography.titleLarge.copy(
+                MaterialTheme.typography.headlineMedium.copy(
                     textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = FontWeight.Black,
                     brush = brush,
                 ),
+
         )
 
         Text(
@@ -172,16 +155,17 @@ fun PremiumView(
                 }
             },
             shape = RoundedCornerShape(10.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.onBackground,
-                contentColor = MaterialTheme.colorScheme.background,
-            ),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.onBackground,
+                    contentColor = MaterialTheme.colorScheme.background,
+                ),
             modifier = Modifier.padding(16.dp).fillMaxWidth(),
             enabled = productDetails != null && offerToken.isNotEmpty(),
         ) {
             Text(
                 if (billingState is BillingState.SignatureEnabled) "Assinatura ativa" else "Continuar",
-                modifier = Modifier.gradientFill(brush).padding(8.dp)
+                modifier = Modifier.gradientFill(brush).padding(8.dp),
             )
         }
 
@@ -192,8 +176,13 @@ fun PremiumView(
                     textAlign = TextAlign.Center,
                 ),
             modifier =
-                Modifier.alpha(.4f).padding(16.dp).fillMaxWidth().clickable {
-                },
+                Modifier.alpha(.4f)
+                    .clickable {
+                        premiumViewModel.restorePurchases()
+                    }
+                    .align(Alignment.CenterHorizontally)
+                    .padding(16.dp)
+                    .fillMaxWidth(),
         )
     }
 }

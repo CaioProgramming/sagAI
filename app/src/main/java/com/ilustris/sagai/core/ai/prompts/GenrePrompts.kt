@@ -74,6 +74,13 @@ object GenrePrompts {
                 The visual framing gives significant emphasis to the expansive sky, ensuring a prominent display of the sunset colors.
                 The backdrop is a vibrant Miami Vice/Vice City-inspired sunset, with the sky dominated by unsettling neon pinks and oranges, blending into deep, ominous purples and teals over a turbulent ocean.
                 """
+            Genre.SPACE_OPERA ->
+                """
+                Classic 1960s/70s American comic book art style.
+                Characterized by bold, consistent black outlines, flat and solid colors, and a clean, vibrant aesthetic.
+                The character's face and figure display stronger, more mature and defined features with realistic comic proportions,
+                avoiding any childlike rendering.    
+                """
         }
 
     fun getColorEmphasisDescription(genre: Genre): String =
@@ -124,6 +131,13 @@ object GenrePrompts {
                 The color palette is dominated by vivid pink and orange, accented with teal blues.
                 The background is a detailed beach at a sunset, with a sense of calm and tranquility.
                 In a  Miami Vice aesthetic with pink highlights at the sky and dramatic cinematic lights.
+                """
+
+            Genre.SPACE_OPERA ->
+                """
+               The background, a deep black starry space background with subtle cyan and purple highlights.
+               The composition is highly engaging, capturing a moment of profound,
+               aspirational contemplation and cosmic beauty.     
                 """
         }.trimIndent()
 
@@ -176,6 +190,13 @@ object GenrePrompts {
                 // - Consider influences from 80s Miami/LA crime fiction, Latin and Anglo names common in ${currentLanguage()} locales.
                 // - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
                 // - Avoid overtly sci-fi or fantasy elements.
+                """
+            Genre.SPACE_OPERA ->
+                """
+                Concept: Evoke exploration, cosmic significance, advanced scientific concepts, or ancient, wise origins.
+                Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
+                Avoid: Overtly aggressive or militaristic names, overly "hard" sci-fi jargon (unless for specific tech), modern slang.
+                Try: Names with soft vowels and unique consonant combinations (e.g., Lyra, Orion, Xylos, Aetheria).    
                 """
         }.plus("Try common names in ${currentLanguage()}").trimIndent()
 
@@ -292,6 +313,14 @@ object GenrePrompts {
                     * Visual metaphors that evoke neon nights, ocean breeze, and rumbling engines.
                     * Emphasize rim lighting, silhouettes against pink-yellow dusk, and reflective wet streets.
                     * Keep descriptions cinematic but slightly imperfect and gritty.
+                """
+            Genre.SPACE_OPERA ->
+                """
+                Vocabulary: Galactic exploration, profound discoveries, cosmic phenomena,
+                ancient alien civilizations, advanced technology, philosophical ponderings about existence.
+                Formality: Varies from adventurous and eloquent (explorers, scientists) to mysterious and ancient (alien entities).
+                Phrasing: Evocative and grand, with a sense of wonder and epic scope.
+                Tone: Aspirational, mysterious, awe-inspiring, adventurous, contemplative.
                 """
         }.trimIndent()
 }

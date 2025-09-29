@@ -558,21 +558,6 @@ fun NewSagaAIForm(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                         ),
-                    leadingIcon = {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            colorFilter =
-                                ColorFilter.tint(
-                                    genre?.color ?: MaterialTheme.colorScheme.onBackground,
-                                ),
-                            modifier =
-                                Modifier
-                                    .alpha(.5f)
-                                    .size(32.dp)
-                                    .reactiveShimmer(isLoading),
-                        )
-                    },
                     shape = inputShape,
                     textStyle =
                         MaterialTheme.typography.labelSmall.copy(

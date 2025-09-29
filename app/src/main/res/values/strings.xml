@@ -219,4 +219,12 @@
     <string name="tone_melancholic">Melancholic</string>
     <string name="tone_cynical">Cynical</string>
 
+    <!-- Genre Titles -->
+    <string name="genre_fantasy">Fantasy</string>
+    <string name="genre_scifi">Cyberpunk</string>
+    <string name="genre_horror">Horror</string>
+    <string name="genre_heroes">Heroes</string>
+    <string name="genre_crime">Crime City</string>
+    <string name="genre_space_opera">Space Opera</string>
+
 </resources>

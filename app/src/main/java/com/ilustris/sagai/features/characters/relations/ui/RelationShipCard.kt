@@ -48,6 +48,7 @@ import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
@@ -301,8 +302,6 @@ fun RelationShipSheet(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(16.dp),
             ) {
-
-
                 Text(
                     "Última atualização",
                     style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
@@ -344,15 +343,15 @@ fun RelationShipCardPreview() {
             data = Saga(id = 1, title = "My Saga", genre = Genre.FANTASY),
             mainCharacter =
                 CharacterContent(
-                    data = Character(id = 1, name = "Main Hero", details = Details()),
+                    data = Character(id = 1, name = "Main Hero", details = Details(), profile = CharacterProfile()),
                 ),
             characters =
                 listOf(
                     CharacterContent(
-                        data = Character(id = 1, name = "Main Hero", details = Details()),
+                        data = Character(id = 1, name = "Main Hero", details = Details(), profile = CharacterProfile()),
                     ),
                     CharacterContent(
-                        data = Character(id = 2, name = "Sidekick", details = Details()),
+                        data = Character(id = 2, name = "Sidekick", details = Details(), profile = CharacterProfile()),
                     ),
                 ),
         )
@@ -374,6 +373,7 @@ fun RelationShipCardPreview() {
                     name = "Main Hero",
                     details = Details(),
                     hexColor = "#FF0000",
+                    profile = CharacterProfile(),
                 ),
             characterTwo =
                 Character(
@@ -381,6 +381,7 @@ fun RelationShipCardPreview() {
                     name = "Sidekick",
                     details = Details(),
                     hexColor = "#00FF00",
+                    profile = CharacterProfile(),
                 ),
             relationshipEvents =
                 listOf(
@@ -417,11 +418,11 @@ fun SingleRelationShipCardPreview() {
             data = Saga(id = 1, title = "My Saga", genre = Genre.SCI_FI),
             mainCharacter =
                 CharacterContent(
-                    data = Character(id = 1, name = "Space Captain", details = Details()),
+                    data = Character(id = 1, name = "Space Captain", details = Details(), profile = CharacterProfile()),
                 ),
         )
     val character =
-        Character(id = 2, name = "Alien Ally", details = Details(), hexColor = "#0000FF")
+        Character(id = 2, name = "Alien Ally", details = Details(), hexColor = "#0000FF", profile = CharacterProfile())
     val content =
         RelationshipContent(
             data =
@@ -434,7 +435,7 @@ fun SingleRelationShipCardPreview() {
                     description = "They fight for the galaxy.",
                     emoji = "🚀",
                 ),
-            characterOne = Character(id = 1, name = "Space Captain", details = Details()),
+            characterOne = Character(id = 1, name = "Space Captain", details = Details(), profile = CharacterProfile()),
             characterTwo = character,
             relationshipEvents =
                 listOf(
@@ -467,6 +468,7 @@ fun RelationShipSheetPreview() {
                             id = 1,
                             name = "Survivor",
                             details = Details(),
+                            profile = CharacterProfile(),
                         ),
                 ),
         )
@@ -488,6 +490,7 @@ fun RelationShipSheetPreview() {
                     name = "Survivor",
                     details = Details(),
                     hexColor = "#AABBCC",
+                    profile = CharacterProfile(),
                 ),
             characterTwo =
                 Character(
@@ -495,6 +498,7 @@ fun RelationShipSheetPreview() {
                     name = "Ghost",
                     details = Details(),
                     hexColor = "#CCBBAA",
+                    profile = CharacterProfile(),
                 ),
             relationshipEvents =
                 listOf(

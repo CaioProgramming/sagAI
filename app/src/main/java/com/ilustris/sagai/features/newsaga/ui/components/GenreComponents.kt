@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -115,7 +116,7 @@ fun GenreAvatar(
         val backgroundBrush = Brush.verticalGradient(backgroundColor.darkerPalette())
         Image(
             painterResource(genre.defaultHeaderImage()),
-            genre.name,
+            stringResource(genre.title),
             contentScale = ContentScale.Crop,
             modifier =
                 Modifier
@@ -134,7 +135,7 @@ fun GenreAvatar(
 
         if (showText) {
             Text(
-                genre.title,
+                stringResource(genre.title),
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground,
@@ -206,8 +207,9 @@ fun GenreCard(
 
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
         if (showText){
-            AutoResizeText(
-                genre.title,
+            Text(
+                stringResource(genre.title),
+                maxLines = 2,
                 style =
                     MaterialTheme.typography.headlineMedium.copy(
                         textAlign = TextAlign.Center,

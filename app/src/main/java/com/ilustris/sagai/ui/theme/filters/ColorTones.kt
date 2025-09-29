@@ -133,11 +133,14 @@ object CrimeColorTones {
     val allTones = listOf(MIAMI_NEON_SUNSET)
 }
 
-// You might also want a data class if not already defined elsewhere,
-// or ensure it's imported if it exists in another file.
-// data class ColorTonePalette(
-//     val name: String,
-//     val highlightTint: Triple<Float, Float, Float>, // R, G, B (0.0 to 1.0)
-//     val shadowTint: Triple<Float, Float, Float>,    // R, G, B (0.0 to 1.0)
-//     val defaultTintStrength: Float                 // 0.0 (no tint) to 1.0 (full tint)
-// )
+object SpaceOperaTones {
+    val COSMIC_TWILIGHT =
+        ColorTonePalette(
+            name = "Cosmic Twilight",
+            highlightTint = Triple(0.9f, 0.85f, 1.0f),
+            shadowTint = Triple(0.2f, 0.25f, 0.4f),
+            defaultTintStrength = 0.3f,
+        )
+
+    val allTones = listOf(COSMIC_TWILIGHT)
+}

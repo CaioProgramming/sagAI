@@ -88,6 +88,7 @@ import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
@@ -117,8 +118,8 @@ fun HomeView(
         isLoadingDynamicPrompts = isLoadingDynamicPrompts,
         onCreateNewChat = {
             val isPremium = billingState == BillingState.SignatureEnabled
-            val freeSagasCount = sagas.count { !it.data.isDebug }
-            if (freeSagasCount <= 2 || isPremium) {
+            val freeSagasCount = sagas.count { !it.data.isDebug && !it.data.isEnded }
+            if (freeSagasCount <= 3 || isPremium) {
                 navController.navigateToRoute(Routes.NEW_SAGA)
             } else {
                 showPremiumSheet = true
@@ -152,7 +153,7 @@ fun HomeView(
     if (showPremiumSheet) {
         ModalBottomSheet(onDismissRequest = {
             showPremiumSheet = false
-        }) {
+        }, dragHandle = { Box {} }) {
             PremiumView()
         }
     }
@@ -166,6 +167,7 @@ private fun ChatList(
     showDebugButton: Boolean,
     dynamicNewSagaTexts: DynamicSagaPrompt?,
     isLoadingDynamicPrompts: Boolean,
+    isPremium: Boolean = false,
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
@@ -174,7 +176,7 @@ private fun ChatList(
         modifier =
             Modifier.padding(padding),
     ) {
-        if (showDebugButton) { // Condition updated
+        if (showDebugButton) {
             item {
                 val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
                 Row(
@@ -506,7 +508,11 @@ fun ChatCard(
                         ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth().alpha(.8f),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 4.dp)
+                            .fillMaxWidth()
+                            .alpha(.8f),
                 )
             }
         }

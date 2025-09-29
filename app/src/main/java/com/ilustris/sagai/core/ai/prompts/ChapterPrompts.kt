@@ -206,7 +206,7 @@ object ChapterPrompts {
         val coverContext =
             mapOf(
                 "sagaTitle" to content.data.title,
-                "sagaGenre" to content.data.genre.title,
+                "sagaGenre" to content.data.genre.name,
                 "chapterTitle" to chapter.title,
                 "chapterDescription" to chapter.overview,
                 "charactersInvolved" to characters,

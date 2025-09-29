@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
@@ -277,8 +278,10 @@ fun NewSagaChat(
                                                         ),
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 )
+                                                val title = stringResource(genre.title)
+
                                                 Text(
-                                                    "Genre: ${currentForm?.saga?.genre?.title ?: "Not set"}",
+                                                    "Genre: $title",
                                                     style =
                                                         MaterialTheme.typography.bodySmall.copy(
                                                             fontFamily = animatedGenre.bodyFont(),
@@ -391,7 +394,10 @@ fun NewSagaChat(
                                                 Modifier
                                                     .size(170.dp),
                                             onClick = { selectedGenre ->
-                                                inputField = TextFieldValue(selectedGenre.title)
+                                                inputField =
+                                                    TextFieldValue(
+                                                        selectedGenre.name,
+                                                    )
                                             },
                                         )
                                     }
@@ -445,7 +451,7 @@ fun NewSagaChat(
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     )
                                                     Text(
-                                                        "Genre: ${sagaForm.saga?.genre?.title ?: "Not set"}",
+                                                        "Genre: ${stringResource(genre.title)}",
                                                         style =
                                                             MaterialTheme.typography.bodySmall.copy(
                                                                 fontFamily = animatedGenre.bodyFont(),

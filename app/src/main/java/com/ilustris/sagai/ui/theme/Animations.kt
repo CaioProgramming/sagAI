@@ -20,6 +20,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -173,7 +174,7 @@ fun TypewriterTextPreview() {
             Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-        characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f", details = Details())),
+        characters = listOf(Character(name = "test bro", hexColor = "#fe2a2f", profile = CharacterProfile(), details = Details())),
         wiki =
             listOf(
                 Wiki(title = "wiki test", sagaId = 0),
