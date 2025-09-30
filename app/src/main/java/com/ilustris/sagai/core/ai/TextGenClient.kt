@@ -70,7 +70,7 @@ class TextGenClient(
                 }
             val content = model.generateContent(fullPrompt)
             Log.i(javaClass.simpleName, "generating with model: ${modelName()}")
-            Log.i(
+            Log.d(
                 javaClass.simpleName,
                 "content generation result: ${content.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}",
             )

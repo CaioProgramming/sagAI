@@ -143,17 +143,15 @@ fun CharacterDetailsContent(
                             contentScale = ContentScale.Crop,
                             modifier =
                                 Modifier
-                                    .clickable(enabled = character.emojified == true) {
-
+                                    .clickable(enabled = character.emojified) {
                                         viewModel.regenerate(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .fillMaxSize()
+                                    }.fillMaxSize()
                                     .zoomAnimation()
                                     .clipToBounds()
-                                    .effectForGenre(genre),
+                                    .effectForGenre(genre, useFallBack = character.emojified),
                         )
 
                         Box(
