@@ -32,6 +32,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.theme.toHex
+import com.slowmac.autobackgroundremover.removeBackground
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import java.util.Calendar
@@ -48,8 +49,11 @@ class CharacterUseCaseImpl
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
         private val fileHelper: FileHelper,
+        private val imageCropHelper: ImageCropHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
-        private val billingService: BillingService
+        private val billingService: BillingService,
+        @ApplicationContext
+        private val context: Context,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
 
@@ -84,19 +88,29 @@ class CharacterUseCaseImpl
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
                         ImageReference(it, ImageGuidelines.compositionReferenceGuidance)
                     }
-                val references = if (isPremium)
-                    listOfNotNull(
-                        portraitReference,
-                        styleReferenceBitmap,
-                    ) else emptyList()
+                val references =
+                    if (isPremium) {
+                        listOfNotNull(
+                            portraitReference,
+                            styleReferenceBitmap,
+                        )
+                    } else {
+                        emptyList()
+                    }
 
-                val descriptionPrompt = if (isPremium) CharacterPrompts.descriptionTranslationPrompt(
-                    character,
-                    saga.genre,
-                ) else ImagePrompts.simpleEmojiRendering(
-                    saga.genre.color.toHex(),
-                    character
-                )
+                val descriptionPrompt =
+                    if (isPremium) {
+                        CharacterPrompts.descriptionTranslationPrompt(
+                            character,
+                            saga.genre,
+                        )
+                    } else {
+                        ImagePrompts.simpleEmojiRendering(
+                            saga.genre.color.toHex(),
+                            character,
+                        )
+                    }
+
                 val translatedDescription =
                     gemmaClient.generate<String>(
                         descriptionPrompt,
@@ -104,13 +118,19 @@ class CharacterUseCaseImpl
                         requireTranslation = false,
                     )!!
 
-
-
                 val image =
                     imagenClient
                         .generateImage(translatedDescription)!!
+                        .apply {
+                            if (isPremium.not()) {
+                                this.removeBackground(context, true)
+                            } else {
+                                imageCropHelper.cropToPortraitBitmap(this)
+                            }
+                        }
 
-                val file = fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
+                val file =
+                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path, emojified = isPremium.not())
                 repository.updateCharacter(newCharacter)
                 image.recycle()

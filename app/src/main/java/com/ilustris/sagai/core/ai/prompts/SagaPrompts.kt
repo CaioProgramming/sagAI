@@ -48,6 +48,7 @@ object SagaPrompts {
         appendLine("If you spot an error that affects understanding, suggest a better version in a friendly, casual tone.")
         appendLine("Your response must be a JSON: ")
         appendLine(toJsonMap(TypoFix::class.java))
+        appendLine("Saga theme: ${genre.name}")
         appendLine(
             "friendlyMessage should always be short and friendly.",
         )
@@ -62,7 +63,6 @@ object SagaPrompts {
             appendLine("Previous message for context:")
             appendLine(">>> $lastMessage")
         }
-        appendLine("Saga genre: $genre")
     }.trimIndent()
 
     fun sagaGeneration(

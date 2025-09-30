@@ -49,6 +49,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +58,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -104,6 +106,7 @@ import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
@@ -329,6 +332,9 @@ fun TimeLineCard(
                 saga.data.icon,
                 showSpark,
                 genre,
+                saga.data.title
+                    .first()
+                    .uppercase(),
                 Modifier
                     .size(50.dp)
                     .border(2.dp, genre.color, CircleShape),
@@ -668,6 +674,9 @@ fun TimeLineSimpleCard(
                 saga.data.icon,
                 true,
                 genre,
+                saga.data.title
+                    .first()
+                    .uppercase(),
                 Modifier
                     .size(32.dp)
                     .border(1.dp, genre.color, CircleShape),
@@ -727,18 +736,43 @@ private fun AvatarTimelineIcon(
     icon: String,
     showSpark: Boolean,
     genre: Genre,
+    placeHolderChar: String = "S",
     modifier: Modifier = Modifier,
 ) {
     Box(modifier) {
+        var textVisible by remember {
+            mutableFloatStateOf(0f)
+        }
+
         AsyncImage(
             model = icon,
             contentDescription = null,
             contentScale = ContentScale.Crop,
+            onState = {
+                if (it !is coil3.compose.AsyncImagePainter.State.Success) {
+                    textVisible = 1f
+                } else {
+                    textVisible = 0f
+                }
+            },
             modifier =
                 Modifier
                     .clip(CircleShape)
                     .fillMaxSize()
                     .effectForGenre(genre),
+        )
+
+        Text(
+            placeHolderChar,
+            style =
+                MaterialTheme.typography.titleSmall.copy(
+                    fontFamily = genre.headerFont(),
+                    brush =
+                        Brush.verticalGradient(
+                            genre.color.darkerPalette(factor = .2f),
+                        ),
+                ),
+            modifier = Modifier.alpha(textVisible).align(Alignment.Center),
         )
 
         if (showSpark) {
@@ -807,6 +841,9 @@ fun TimeLineCard(
                     eventDetails.character.image,
                     showSpark,
                     genre,
+                    eventDetails.character.name
+                        .first()
+                        .uppercase(),
                     Modifier
                         .size(50.dp)
                         .border(2.dp, genre.color, CircleShape)
@@ -967,6 +1004,9 @@ fun TimelineCharacterAttachment(
                     eventDetails.character.image,
                     true,
                     genre,
+                    eventDetails.character.name
+                        .first()
+                        .uppercase(),
                     Modifier
                         .size(32.dp)
                         .border(2.dp, genre.color, CircleShape)

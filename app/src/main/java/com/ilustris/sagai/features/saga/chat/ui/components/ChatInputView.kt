@@ -525,18 +525,26 @@ fun ChatInputView(
 
                         AnimatedVisibility(it.status != TypoStatus.FIX) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(enabled = isEnabled, onClick = {
-                                    it.suggestedText?.let { text ->
-                                        onUpdateInput(
-                                            TextFieldValue(
-                                                it.suggestedText,
-                                                TextRange(it.suggestedText.length),
-                                            ),
-                                        )
-                                    }
-                                    sendMessage(true)
-                                    isEnabled = false
-                                }, colors = ButtonDefaults.buttonColors().copy(containerColor = genre.color)) {
+                                Button(
+                                    enabled = isEnabled,
+                                    onClick = {
+                                        it.suggestedText?.let { text ->
+                                            onUpdateInput(
+                                                TextFieldValue(
+                                                    it.suggestedText,
+                                                    TextRange(it.suggestedText.length),
+                                                ),
+                                            )
+                                        }
+                                        sendMessage(true)
+                                        isEnabled = false
+                                    },
+                                    colors =
+                                        ButtonDefaults.buttonColors().copy(
+                                            containerColor = genre.color,
+                                            contentColor = genre.iconColor,
+                                        ),
+                                ) {
                                     Text(
                                         "Corrigir",
                                         style =
@@ -555,7 +563,10 @@ fun ChatInputView(
                                     },
                                     colors =
                                         ButtonDefaults.textButtonColors().copy(
-                                            contentColor = genre.color,
+                                            contentColor =
+                                                MaterialTheme.colorScheme.onBackground.copy(
+                                                    alpha = .5f,
+                                                ),
                                         ),
                                 ) {
                                     Text(
@@ -563,7 +574,6 @@ fun ChatInputView(
                                         style =
                                             MaterialTheme.typography.labelMedium.copy(
                                                 fontFamily = genre.bodyFont(),
-                                                color = genre.iconColor,
                                             ),
                                     )
                                 }

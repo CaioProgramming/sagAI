@@ -48,6 +48,7 @@ fun Genre.bodyFont(): FontFamily {
             Genre.HORROR -> R.font.jersey
             Genre.HEROES -> R.font.comic_book
             Genre.CRIME -> R.font.retro_neon
+            Genre.SPACE_OPERA -> R.font.eightgon
             else -> null
         }
     return if (fontResource != null) {

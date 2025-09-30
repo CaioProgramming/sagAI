@@ -92,6 +92,7 @@ fun CharacterAvatar(
                     ).fillMaxSize()
                     .effectForGenre(
                         genre,
+                        useFallBack = character.emojified,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
                         pixelSize = pixelation,

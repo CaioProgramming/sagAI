@@ -68,6 +68,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -109,6 +110,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.compose.charts)
+    implementation(libs.auto.background.remover)
 
     // Retrofit & OkHttp
     implementation(libs.retrofit.core)

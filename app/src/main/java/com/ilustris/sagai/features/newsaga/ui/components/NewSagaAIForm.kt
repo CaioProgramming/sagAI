@@ -54,8 +54,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -677,7 +675,7 @@ fun NewSagaAIForm(
                         ) {
                             Box(Modifier.fillMaxSize().gradientFill(brush), contentAlignment = Alignment.Center) {
                                 if (it.name.isEmpty()) {
-                                    Icon(Icons.Rounded.Person, "Character")
+                                    Icon(painterResource(R.drawable.ic_eye_mask), "Character")
                                 } else {
                                     Text(
                                         it.name.first().toString(),

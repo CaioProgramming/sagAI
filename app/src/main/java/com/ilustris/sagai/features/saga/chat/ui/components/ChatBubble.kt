@@ -31,9 +31,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Info
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -51,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +56,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatHours
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -273,7 +272,7 @@ fun ChatBubble(
                             openWiki()
                         }, modifier = Modifier.size(12.dp)) {
                             Icon(
-                                Icons.Rounded.Info,
+                                painterResource(R.drawable.round_info_outline_24),
                                 contentDescription = null,
                                 tint = genre.iconColor,
                                 modifier = Modifier.fillMaxSize(),
@@ -307,7 +306,7 @@ fun ChatBubble(
                             ),
                     ) {
                         Icon(
-                            Icons.Rounded.Refresh,
+                            painterResource(R.drawable.baseline_refresh_24),
                             "Tentar novamente",
                             tint = genre.iconColor,
                         )

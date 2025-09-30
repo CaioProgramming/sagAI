@@ -49,7 +49,9 @@ class CharacterDetailsViewModel
             selectedCharacter: Character,
         ) {
             Log.i(javaClass.simpleName, "regenerate: Regenerating character icon")
-
+            if (selectedCharacter.image.isNotEmpty()) {
+                return
+            }
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase.generateCharacterImage(

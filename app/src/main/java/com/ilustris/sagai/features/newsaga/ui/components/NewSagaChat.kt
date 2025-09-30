@@ -19,9 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -235,7 +232,7 @@ fun NewSagaChat(
                                     IconButton(onClick = {
                                         reviewSaga = false
                                     }) {
-                                        Icon(Icons.Rounded.Close, contentDescription = "close")
+                                        Icon(painterResource(R.drawable.round_close_24), contentDescription = "close")
                                     }
                                     repeat(2) {
                                         val backgroundAlpha by animateFloatAsState(
@@ -530,7 +527,7 @@ fun NewSagaChat(
                                     IconButton(onClick = {
                                         onRetry.invoke()
                                     }, modifier = Modifier.size(24.dp)) {
-                                        Icon(Icons.Rounded.Refresh, contentDescription = "retry")
+                                        Icon(painterResource(R.drawable.baseline_refresh_24), contentDescription = "retry")
                                     }
 
                                     Text(

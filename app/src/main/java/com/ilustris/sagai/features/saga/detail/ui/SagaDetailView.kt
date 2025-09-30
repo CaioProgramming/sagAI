@@ -46,9 +46,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -1259,7 +1256,7 @@ private fun SagaDetailInitialView(
                                             selectSection(DetailAction.CHARACTERS)
                                         }, modifier = Modifier.size(24.dp)) {
                                             Icon(
-                                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                painterResource(R.drawable.round_arrow_forward_ios_24),
                                                 contentDescription = stringResource(R.string.saga_detail_view_characters_action),
                                             )
                                         }
@@ -1382,7 +1379,7 @@ private fun SagaDetailInitialView(
                                                 )
                                             }, modifier = Modifier.size(24.dp)) {
                                                 Icon(
-                                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                    painterResource(R.drawable.round_arrow_forward_ios_24),
                                                     contentDescription = stringResource(R.string.saga_detail_view_timeline_action),
                                                 )
                                             }
@@ -1459,7 +1456,7 @@ private fun SagaDetailInitialView(
                                                 selectSection(DetailAction.WIKI)
                                             }, modifier = Modifier.size(24.dp)) {
                                                 Icon(
-                                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                    painterResource(R.drawable.round_arrow_forward_ios_24),
                                                     contentDescription = stringResource(R.string.saga_detail_view_wiki_action),
                                                 )
                                             }
@@ -1529,7 +1526,7 @@ private fun SagaDetailInitialView(
                                             )
                                         }, modifier = Modifier.size(24.dp)) {
                                             Icon(
-                                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                painterResource(R.drawable.round_arrow_forward_ios_24),
                                                 contentDescription = stringResource(R.string.saga_detail_view_chapters_action),
                                             )
                                         }
@@ -1775,7 +1772,7 @@ private fun SagaDetailInitialView(
                             )
                         val coroutineScope = rememberCoroutineScope()
                         if (BuildConfig.DEBUG) {
-                           Box(Modifier.align(Alignment.BottomEnd)) {
+                            Box(Modifier.align(Alignment.BottomEnd)) {
                                 TooltipBox(
                                     tooltipPositionProvider,
                                     state = tooltipState,
@@ -1865,7 +1862,7 @@ private fun SagaDetailInitialView(
                                                 .size(48.dp),
                                     ) {
                                         Icon(
-                                            Icons.Rounded.Build,
+                                            painterResource(R.drawable.outline_filter_vintage_24),
                                             null,
                                             tint = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.size(24.dp),

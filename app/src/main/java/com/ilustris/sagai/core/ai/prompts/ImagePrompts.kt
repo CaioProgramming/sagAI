@@ -91,6 +91,10 @@ object ImagePrompts {
         )
 
         appendLine(
+            "Remember to consider any accessories or unique features mentioned in the character description, such as glasses, hats, piercings, or distinctive hairstyles, and incorporate them into the headshot rendering.",
+        )
+
+        appendLine(
             "YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.",
         )
         appendLine(
@@ -105,7 +109,7 @@ object ImagePrompts {
         )
 
         appendLine(
-            "Smooth gradient background with color $backgroundHexCode.",
+            "Apply a solid black background.",
         )
     }
 }
