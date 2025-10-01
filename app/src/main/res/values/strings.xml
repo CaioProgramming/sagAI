@@ -226,5 +226,11 @@
     <string name="genre_heroes">Heroes</string>
     <string name="genre_crime">Crime City</string>
     <string name="genre_space_opera">Space Opera</string>
+    <string name="settings_title">Settings</string>
+    <string name="memory_usage">Storage Usage</string>
+    <string name="premium_first_title">Dive into unique universes and turn your ideas into unforgettable stories. With Sagas Pro, your creativity comes alive and every chapter becomes a visually immersive experience.</string>
+    <string name="premium_description">Create deep narratives, explore new worlds, and bring your characters to life with features that take your saga to the next level. Feel the difference of storytelling with unlimited freedom and inspiration.</string>
+    <string name="premium_sign_up">Try now</string>
+    <string name="sagas_storage">Your Sagas usage</string>
 
 </resources>

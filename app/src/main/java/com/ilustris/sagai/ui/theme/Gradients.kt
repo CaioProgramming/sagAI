@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.theme
 
+import ai.atick.material.MaterialColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.LinearEasing
@@ -171,13 +172,13 @@ fun Color.darkerPalette(
 
 val holographicGradient =
     listOf(
-        Color(0xfffcc5e4),
-        Color(0xfffda34b),
-        Color(0xffff7882),
-        Color(0xffc8699e),
-        Color(0xff7046aa),
-        Color(0xff3e52ee),
-        Color(0xffd3a7ff),
+        MaterialColor.Pink100,
+        MaterialColor.Orange400,
+        MaterialColor.PinkA200,
+        MaterialColor.Pink900,
+        MaterialColor.Purple800,
+        MaterialColor.Blue900,
+        MaterialColor.Purple200,
     )
 
 @Composable

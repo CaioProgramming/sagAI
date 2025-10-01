@@ -137,7 +137,7 @@ dependencies {
     implementation(libs.google.generativeai)
     implementation(libs.face.detection)
     implementation(libs.billing.ktx)
-
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

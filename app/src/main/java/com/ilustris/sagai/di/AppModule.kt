@@ -15,6 +15,8 @@ import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.datastore.DataStorePreferencesImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
@@ -46,13 +48,13 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManagerImpl
-import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
@@ -60,6 +62,8 @@ import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
+import com.ilustris.sagai.features.settings.domain.SettingsUseCase
+import com.ilustris.sagai.features.settings.domain.SettingsUseCaseImpl
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -175,6 +179,12 @@ object AppModule {
     fun provideBillingService(
         @ApplicationContext context: Context,
     ): BillingService = BillingService(context)
+
+    @Provides
+    @Singleton
+    fun provideDataStorePreferences(
+        @ApplicationContext context: Context,
+    ): DataStorePreferences = DataStorePreferencesImpl(context)
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -223,6 +233,9 @@ abstract class UseCaseModule {
     abstract fun providesGetInputSuggestionsUseCase(
         getInputSuggestionsUseCaseImpl: GetInputSuggestionsUseCaseImpl,
     ): GetInputSuggestionsUseCase
+
+    @Binds
+    abstract fun provideSettingsUseCase(getSettingsUseCaseImpl: SettingsUseCaseImpl): SettingsUseCase
 }
 
 @InstallIn(ViewModelComponent::class)

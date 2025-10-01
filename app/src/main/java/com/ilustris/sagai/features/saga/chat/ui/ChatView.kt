@@ -376,7 +376,6 @@ fun ChatView(
     }
 }
 
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChatContent(
@@ -576,7 +575,7 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             }.background(MaterialTheme.colorScheme.background)
-                            .padding(top = 50.dp, start = 16.dp, end = 16.dp)
+                            .padding(16.dp)
                             .fillMaxWidth()
                             .clickable {
                                 openSagaDetails(saga)
@@ -1163,7 +1162,9 @@ fun ChatList(
                     }
                 }
 
-                if (chapter.chapter.data.introduction.isNotEmpty()) {
+                if (chapter.chapter.data.introduction
+                        .isNotEmpty()
+                ) {
                     item {
                         Text(
                             chapter.chapter.data.introduction,

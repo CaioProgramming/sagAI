@@ -15,9 +15,8 @@ class FileCacheService(
     private val context: Context,
 ) {
     private val cacheDirName = "file_cache"
-    private val TAG = "FileCacheService" // Added for logging
 
-    private fun getFileCacheDir(): File {
+    fun getFileCacheDir(): File {
         val directory = File(context.filesDir, cacheDirName)
         if (!directory.exists()) {
             directory.mkdirs()
@@ -66,7 +65,7 @@ class FileCacheService(
                 null
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to save file to cache: ${file.absolutePath}", e)
+            Log.e(javaClass.simpleName, "Failed to save file to cache: ${file.absolutePath}", e)
             if (file.exists()) file.delete() // Clean up on exception
             null
         }
@@ -77,11 +76,11 @@ class FileCacheService(
         desiredExtension: String = "mp3",
     ): File? {
         getCachedFile(url, desiredExtension)?.let {
-            Log.d(TAG, "File found in cache: ${it.absolutePath}")
+            Log.d(javaClass.simpleName, "File found in cache: ${it.absolutePath}")
             return it
         }
 
-        Log.d(TAG, "File not in cache. Downloading from: $url")
+        Log.d(javaClass.simpleName, "File not in cache. Downloading from: $url")
         return try {
             // Ensure network operations are on a background thread
             val downloadedData: ByteArray? =
@@ -101,13 +100,13 @@ class FileCacheService(
                             inputStream.readBytes()
                         } else {
                             Log.e(
-                                TAG,
+                                javaClass.simpleName,
                                 "Download failed: Server responded with code ${connection.responseCode} for URL $url",
                             )
                             null
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Download failed for URL $url", e)
+                        Log.e(javaClass.simpleName, "Download failed for URL $url", e)
                         null
                     } finally {
                         inputStream?.close()
@@ -116,15 +115,15 @@ class FileCacheService(
                 }
 
             if (downloadedData != null && downloadedData.isNotEmpty()) {
-                Log.d(TAG, "Download successful, ${downloadedData.size} bytes received.")
+                Log.d(javaClass.simpleName, "Download successful, ${downloadedData.size} bytes received.")
                 saveFileToCache(url, downloadedData, desiredExtension)
             } else {
-                Log.e(TAG, "Downloaded data is null or empty for URL $url.")
+                Log.e(javaClass.simpleName, "Downloaded data is null or empty for URL $url.")
                 null
             }
         } catch (e: Exception) {
             // Catch any unexpected errors during the process
-            Log.e(TAG, "Exception in getFile for URL $url", e)
+            Log.e(javaClass.simpleName, "Exception in getFile for URL $url", e)
             null
         }
     }
@@ -133,7 +132,7 @@ class FileCacheService(
         val cacheDir = getFileCacheDir()
         if (cacheDir.exists()) {
             val deleted = cacheDir.deleteRecursively()
-            Log.d(TAG, "Cache cleared: $deleted")
+            Log.d(javaClass.simpleName, "Cache cleared: $deleted")
         }
     }
 }

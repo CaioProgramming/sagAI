@@ -104,4 +104,15 @@ class FileHelper(
             directory.deleteRecursively()
         }
     }
+
+    fun getDirectorySize(directory: File?): Long {
+        if (directory == null || !directory.exists()) return 0L
+        return directory
+            .walkTopDown()
+            .filter { it.isFile }
+            .map { it.length() }
+            .sum()
+    }
+
+    fun getDirectorySize(path: String): Long = getDirectorySize(File(path))
 }

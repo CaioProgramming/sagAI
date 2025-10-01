@@ -732,7 +732,7 @@ fun TimeLineSimpleCard(
 }
 
 @Composable
-private fun AvatarTimelineIcon(
+fun AvatarTimelineIcon(
     icon: String,
     showSpark: Boolean,
     genre: Genre,

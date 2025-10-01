@@ -42,6 +42,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -88,7 +89,9 @@ fun PremiumView(premiumViewModel: PremiumViewModel = hiltViewModel()) {
                     .gradientFill(brush)
         )
 
-        Box(Modifier.fillMaxWidth().padding(8.dp)) {
+        Box(Modifier
+            .fillMaxWidth()
+            .padding(8.dp)) {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),
             ) {
@@ -121,7 +124,9 @@ fun PremiumView(premiumViewModel: PremiumViewModel = hiltViewModel()) {
 
         Text(
             "Sagas Pro",
-            modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally),
+            modifier = Modifier
+                .padding(8.dp)
+                .align(Alignment.CenterHorizontally),
             style =
                 MaterialTheme.typography.headlineMedium.copy(
                     textAlign = TextAlign.Center,
@@ -132,13 +137,13 @@ fun PremiumView(premiumViewModel: PremiumViewModel = hiltViewModel()) {
         )
 
         Text(
-            "Mergulhe em universos únicos e transforme suas ideias em histórias inesquecíveis. Com Sagas Pro, sua criatividade ganha vida e cada capítulo se torna uma experiência envolvente e visualmente imersiva.",
+            stringResource(R.string.premium_first_title),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(16.dp),
         )
 
         Text(
-            "Crie narrativas profundas, explore novos mundos e dê vida aos seus personagens com recursos que elevam sua saga a outro nível. Sinta a diferença de contar histórias com liberdade e inspiração ilimitada.",
+            stringResource(R.string.premium_description),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(16.dp),
         )
@@ -160,12 +165,16 @@ fun PremiumView(premiumViewModel: PremiumViewModel = hiltViewModel()) {
                     containerColor = MaterialTheme.colorScheme.onBackground,
                     contentColor = MaterialTheme.colorScheme.background,
                 ),
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
             enabled = productDetails != null && offerToken.isNotEmpty(),
         ) {
             Text(
                 if (billingState is BillingState.SignatureEnabled) "Assinatura ativa" else "Continuar",
-                modifier = Modifier.gradientFill(brush).padding(8.dp),
+                modifier = Modifier
+                    .gradientFill(brush)
+                    .padding(8.dp),
             )
         }
 
@@ -176,7 +185,8 @@ fun PremiumView(premiumViewModel: PremiumViewModel = hiltViewModel()) {
                     textAlign = TextAlign.Center,
                 ),
             modifier =
-                Modifier.alpha(.4f)
+                Modifier
+                    .alpha(.4f)
                     .clickable {
                         premiumViewModel.restorePurchases()
                     }

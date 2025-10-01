@@ -37,6 +37,7 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -60,6 +62,7 @@ class ChatViewModel
         private val suggestionUseCase: GetInputSuggestionsUseCase,
         private val notificationManager: ChatNotificationManager,
         mediaPlayerManager: MediaPlayerManager,
+        private val settingsUseCase: SettingsUseCase, // Injected SettingsUseCase
     ) : ViewModel(),
         DefaultLifecycleObserver {
         val state = MutableStateFlow<ChatState>(ChatState.Loading)
@@ -81,6 +84,21 @@ class ChatViewModel
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
         private var currentActCountForService: Int = 0
+
+        val notificationsEnabled =
+            settingsUseCase.getNotificationsEnabled().stateIn(
+                viewModelScope,
+                kotlinx.coroutines.flow.SharingStarted
+                    .WhileSubscribed(5000),
+                true,
+            )
+        val smartSuggestionsEnabled =
+            settingsUseCase.getSmartSuggestionsEnabled().stateIn(
+                viewModelScope,
+                kotlinx.coroutines.flow.SharingStarted
+                    .WhileSubscribed(5000),
+                true,
+            )
 
         private fun sendError(
             errorMessage: String,
@@ -220,17 +238,19 @@ class ChatViewModel
         }
 
         private fun notifyIfNeeded() {
-            val currentSaga = content.value ?: return
-            if (currentSaga.data.isEnded) {
-                return
-            }
-            viewModelScope.launch(Dispatchers.IO) {
-                val messages = currentSaga.flatMessages()
-                if (messages.isNotEmpty()) {
-                    notificationManager.sendMessageNotification(
-                        currentSaga,
-                        currentSaga.flatMessages().last(),
-                    )
+            if (notificationsEnabled.value) {
+                val currentSaga = content.value ?: return
+                if (currentSaga.data.isEnded) {
+                    return
+                }
+                viewModelScope.launch(Dispatchers.IO) {
+                    val messages = currentSaga.flatMessages()
+                    if (messages.isNotEmpty()) {
+                        notificationManager.sendMessageNotification(
+                            currentSaga,
+                            currentSaga.flatMessages().last(),
+                        )
+                    }
                 }
             }
         }
@@ -389,6 +409,11 @@ class ChatViewModel
                             timelineId = currentTimeline.data.id,
                         )
                     sendMessage(message, true)
+                    return@launch
+                }
+
+                if (smartSuggestionsEnabled.value.not()) {
+                    sendInput(true)
                     return@launch
                 }
 
