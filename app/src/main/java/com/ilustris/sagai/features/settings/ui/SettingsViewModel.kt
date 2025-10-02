@@ -2,14 +2,13 @@ package com.ilustris.sagai.features.settings.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
+import com.ilustris.sagai.features.settings.domain.StorageBreakdown
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -32,7 +31,7 @@ class SettingsViewModel
         private val _sagaStorageInfo = MutableStateFlow<List<SagaStorageInfo>>(emptyList())
         val sagaStorageInfo = _sagaStorageInfo.asStateFlow()
 
-        private val _storageBreakdown = MutableStateFlow(SettingsUseCase.StorageBreakdown(0L, 0L, 0L))
+        private val _storageBreakdown = MutableStateFlow(StorageBreakdown(0L, 0L, 0L))
         val storageBreakdown = _storageBreakdown.asStateFlow()
 
         init {
@@ -40,6 +39,14 @@ class SettingsViewModel
             checkUserPro()
             loadSagaStorageInfo()
             loadStorageBreakdown()
+        }
+
+        fun clearCache() {
+            viewModelScope.launch {
+                settingsUseCase.clearCache()
+                loadMemoryUsage()
+                loadStorageBreakdown()
+            }
         }
 
         fun loadMemoryUsage() {
@@ -89,6 +96,7 @@ class SettingsViewModel
                                 icon = sagaIcon,
                                 genre = sagaContent.data.genre,
                                 sizeBytes = size,
+                                createdAt = sagaContent.data.createdAt.formatDate(),
                             )
                         }
                     _sagaStorageInfo.value = sagaInfoList
@@ -109,4 +117,5 @@ data class SagaStorageInfo(
     val icon: String,
     val sizeBytes: Long,
     val genre: Genre,
+    val createdAt: String,
 )

@@ -24,7 +24,7 @@ class PremiumViewModel
 
         init {
             viewModelScope.launch {
-                billingService.loadSignatureProduct()
+                billingService.checkPurchases()
                 billingService.state.collect {
                     _billingState.value = it
                 }
@@ -44,6 +44,12 @@ class PremiumViewModel
         fun restorePurchases() {
             viewModelScope.launch {
                 billingService.loadSignatureProduct()
+            }
+        }
+
+        fun cancelSubscription() {
+            viewModelScope.launch {
+                // TODO implement cancel subscription
             }
         }
     }

@@ -77,7 +77,7 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest {
-                val isPremium = billingService.state.value is BillingState.SignatureEnabled
+                val isPremium = billingService.isPremium()
 
                 val styleReferenceBitmap =
                     ImageReference(

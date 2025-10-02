@@ -59,6 +59,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -114,6 +115,7 @@ import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
@@ -335,9 +337,10 @@ fun TimeLineCard(
                 saga.data.title
                     .first()
                     .uppercase(),
-                Modifier
-                    .size(50.dp)
-                    .border(2.dp, genre.color, CircleShape),
+                modifier =
+                    Modifier
+                        .size(50.dp)
+                        .border(2.dp, genre.color, CircleShape),
             )
 
             if (isLast.not()) {
@@ -677,9 +680,10 @@ fun TimeLineSimpleCard(
                 saga.data.title
                     .first()
                     .uppercase(),
-                Modifier
-                    .size(32.dp)
-                    .border(1.dp, genre.color, CircleShape),
+                modifier =
+                    Modifier
+                        .size(32.dp)
+                        .border(1.dp, genre.color, CircleShape),
             )
 
             Text(
@@ -737,9 +741,20 @@ fun AvatarTimelineIcon(
     showSpark: Boolean,
     genre: Genre,
     placeHolderChar: String = "S",
+    backgroundColor: Color? = null,
+    borderColor: Color? = null,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier) {
+    val border = borderColor ?: genre.color
+    val background = backgroundColor?.gradientFade() ?: genre.color.gradientFade()
+    Box(
+        modifier
+            .border(1.dp, border, CircleShape)
+            .background(
+                background,
+                CircleShape,
+            ),
+    ) {
         var textVisible by remember {
             mutableFloatStateOf(0f)
         }
@@ -749,11 +764,12 @@ fun AvatarTimelineIcon(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             onState = {
-                if (it !is coil3.compose.AsyncImagePainter.State.Success) {
-                    textVisible = 1f
-                } else {
-                    textVisible = 0f
-                }
+                textVisible =
+                    if (it !is coil3.compose.AsyncImagePainter.State.Success) {
+                        1f
+                    } else {
+                        0f
+                    }
             },
             modifier =
                 Modifier
@@ -844,12 +860,12 @@ fun TimeLineCard(
                     eventDetails.character.name
                         .first()
                         .uppercase(),
-                    Modifier
-                        .size(50.dp)
-                        .border(2.dp, genre.color, CircleShape)
-                        .clickable {
-                            onSelectCharacter(eventDetails.character)
-                        },
+                    modifier =
+                        Modifier
+                            .size(50.dp)
+                            .clickable {
+                                onSelectCharacter(eventDetails.character)
+                            },
                 )
 
                 if (showIndicator && isLast.not()) {
@@ -1007,12 +1023,14 @@ fun TimelineCharacterAttachment(
                     eventDetails.character.name
                         .first()
                         .uppercase(),
-                    Modifier
-                        .size(32.dp)
-                        .border(2.dp, genre.color, CircleShape)
-                        .clickable {
-                            onSelectCharacter(eventDetails.character)
-                        },
+                    backgroundColor = eventDetails.character.hexColor.hexToColor(),
+                    modifier =
+                        Modifier
+                            .size(32.dp)
+                            .border(2.dp, genre.color, CircleShape)
+                            .clickable {
+                                onSelectCharacter(eventDetails.character)
+                            },
                 )
 
                 if (showIndicator && isLast.not()) {

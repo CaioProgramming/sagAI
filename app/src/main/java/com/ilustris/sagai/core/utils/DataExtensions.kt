@@ -307,3 +307,15 @@ fun Int.toRoman(): String {
     }
     return result.toString()
 }
+
+fun Long.formatFileSize(): String {
+    val kb = this / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1 -> String.format(Locale.getDefault(), "%.2f GB", gb)
+        mb >= 1 -> String.format(Locale.getDefault(), "%.2f MB", mb)
+        kb >= 1 -> String.format(Locale.getDefault(), "%.2f KB", kb)
+        else -> String.format(Locale.getDefault(), "%d B", this)
+    }
+}

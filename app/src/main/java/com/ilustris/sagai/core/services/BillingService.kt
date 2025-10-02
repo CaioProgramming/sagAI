@@ -59,7 +59,7 @@ class BillingService
         }
 
         suspend fun checkPurchases() {
-            /*if (BuildConfig.DEBUG) {
+         /*   if (BuildConfig.DEBUG) {
                 state.emit(BillingState.SignatureEnabled)
                 return
             }*/
@@ -70,16 +70,14 @@ class BillingService
                     .build()
             val purchasesResult = billingClient.queryPurchasesAsync(params)
             val hasActiveSignature =
-                purchasesResult.purchasesList?.any { purchase ->
+                purchasesResult.purchasesList.any { purchase ->
                     purchase.products.contains(SAGA_SIGNATURE_ID) && purchase.isAcknowledged
-                } == true
-            state.emit(
-                if (purchasesResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK && hasActiveSignature) {
-                    BillingState.SignatureEnabled
-                } else {
-                    BillingState.SignatureDisabled(emptyList())
-                },
-            )
+                }
+            if (purchasesResult.billingResult.responseCode == BillingClient.BillingResponseCode.OK && hasActiveSignature) {
+                state.emit(BillingState.SignatureEnabled)
+            } else {
+                loadSignatureProduct()
+            }
         }
 
         suspend fun purchaseSignature(

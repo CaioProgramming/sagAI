@@ -75,9 +75,11 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
@@ -116,9 +118,10 @@ fun HomeView(
         showDebugButton = showDebugButton,
         dynamicNewSagaTexts = dynamicNewSagaTexts,
         isLoadingDynamicPrompts = isLoadingDynamicPrompts,
+        isPremium = billingState is BillingState.SignatureEnabled,
         onCreateNewChat = {
             val isPremium = billingState == BillingState.SignatureEnabled
-            val freeSagasCount = sagas.count { !it.data.isDebug && !it.data.isEnded }
+            val freeSagasCount = sagas.count { it.data.isEnded.not() }
             if (freeSagasCount <= 3 || isPremium) {
                 navController.navigateToRoute(Routes.NEW_SAGA)
             } else {
@@ -137,6 +140,9 @@ fun HomeView(
         createFakeSaga = {
             viewModel.createFakeSaga()
         },
+        openPremiumSheet = {
+            showPremiumSheet = true
+        },
     )
     LaunchedEffect(startFakeSaga) {
         startFakeSaga?.let {
@@ -150,13 +156,12 @@ fun HomeView(
         }
     }
 
-    if (showPremiumSheet) {
-        ModalBottomSheet(onDismissRequest = {
+    PremiumView(
+        isVisible = showPremiumSheet,
+        onDismiss = {
             showPremiumSheet = false
-        }, dragHandle = { Box {} }) {
-            PremiumView()
-        }
-    }
+        },
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -171,6 +176,7 @@ private fun ChatList(
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
+    openPremiumSheet: () -> Unit = {},
 ) {
     LazyColumn(
         modifier =
@@ -323,6 +329,10 @@ private fun ChatList(
                 onSelectSaga(it.data)
             }
         }
+
+        item {
+            PremiumCard(isPremium, onClick = openPremiumSheet, modifier = Modifier.padding(16.dp))
+        }
     }
 }
 
@@ -346,103 +356,15 @@ fun ChatCard(
                     .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val imageLoaded =
-                remember {
-                    mutableStateOf(false)
-                }
-            Box(
-                modifier =
-                    Modifier
-                        .size(64.dp)
-                        .clip(CircleShape),
-            ) {
-                if (saga.data.isDebug.not()) {
-                    val borderBrush =
-                        if (sagaData.isEnded) sagaData.genre.gradient() else sagaData.genre.color.solidGradient()
-                    AsyncImage(
-                        sagaData.icon,
-                        contentDescription = sagaData.title,
-                        contentScale = ContentScale.Crop,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .border(
-                                    2.dp,
-                                    saga.data.genre.color,
-                                    CircleShape,
-                                ).padding(4.dp)
-                                .background(
-                                    sagaData.genre.color,
-                                    CircleShape,
-                                ).clip(CircleShape)
-                                .fillMaxSize()
-                                .effectForGenre(
-                                    sagaData.genre,
-                                    pixelSize = 1.3f,
-                                ).selectiveColorHighlight(
-                                    sagaData.genre.selectiveHighlight(),
-                                ),
-                        onSuccess = {
-                            imageLoaded.value = true
-                        },
-                    )
-                } else {
-                    Image(
-                        painterResource(R.drawable.ic_bug),
-                        contentDescription = null,
-                        colorFilter =
-                            ColorFilter.tint(
-                                sagaData.genre.iconColor,
-                            ),
-                        contentScale = ContentScale.Fit,
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .border(2.dp, sagaData.genre.color, CircleShape)
-                                .padding(4.dp),
-                    )
-
-                    LaunchedEffect(Unit) {
-                        imageLoaded.value = true
-                    }
-                }
-
-                this@Row.AnimatedVisibility(
-                    imageLoaded.value.not(),
-                    modifier = Modifier.align(Alignment.Center),
-                ) {
-                    Text(
-                        sagaData.title
-                            .first()
-                            .uppercaseChar()
-                            .toString(),
-                        style =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = sagaData.genre.headerFont(),
-                                color = sagaData.genre.iconColor,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-                }
-
-                if (saga.data.isEnded) {
-                    Image(
-                        painterResource(R.drawable.ic_spark),
-                        contentDescription = null,
-                        colorFilter =
-                            ColorFilter.tint(
-                                sagaData.genre.color,
-                            ),
-                        modifier =
-                            Modifier
-                                .offset(y = 6.dp)
-                                .size(24.dp)
-                                .align(
-                                    Alignment.BottomCenter,
-                                ).reactiveShimmer(true),
-                    )
-                }
-            }
+            AvatarTimelineIcon(
+                saga.data.icon,
+                saga.data.isEnded,
+                saga.data.genre,
+                saga.data.title
+                    .first()
+                    .uppercase(),
+                modifier = Modifier.size(48.dp),
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 

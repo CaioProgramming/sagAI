@@ -79,7 +79,7 @@ enum class Routes(
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier.padding(
-                    vertical = 24.dp,
+                    vertical = 32.dp,
                     horizontal = 16.dp,
                 ),
         ) {
@@ -91,11 +91,12 @@ enum class Routes(
             )
             IconButton(onClick = {
                 it.navigateToRoute(SETTINGS)
-            }) {
+            }, modifier = Modifier.size(32.dp)) {
                 Icon(
-                    painterResource(R.drawable.round_settings_24),
+                    painterResource(R.drawable.ic_settings),
                     contentDescription = stringResource(R.string.settings_title),
                     tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
         }

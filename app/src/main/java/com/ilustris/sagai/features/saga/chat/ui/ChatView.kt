@@ -575,11 +575,11 @@ fun ChatContent(
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             }.background(MaterialTheme.colorScheme.background)
-                            .padding(16.dp)
                             .fillMaxWidth()
                             .clickable {
                                 openSagaDetails(saga)
-                            },
+                            }.padding(horizontal = 16.dp)
+                    ,
                     titleModifier = titleModifier,
                     actionContent = {
                         AnimatedContent(characters, transitionSpec = {

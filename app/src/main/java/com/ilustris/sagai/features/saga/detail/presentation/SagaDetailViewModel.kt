@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -26,6 +27,7 @@ class SagaDetailViewModel
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val remoteConfig: FirebaseRemoteConfig,
+        private val billingService: BillingService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Loading)
         val state: StateFlow<State> = _state.asStateFlow()
@@ -35,11 +37,17 @@ class SagaDetailViewModel
         val showIntro = MutableStateFlow(false)
         val showReview = MutableStateFlow(false)
 
+        val showPremiumSheet = MutableStateFlow(false)
+
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
                 remoteConfig.fetchAndActivate()
                 emotionalCardReference.value = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
             }
+        }
+
+        fun togglePremiumSheet() {
+            showPremiumSheet.value = !showPremiumSheet.value
         }
 
         fun fetchSagaDetails(sagaId: String) {
@@ -96,6 +104,11 @@ class SagaDetailViewModel
 
         fun regenerateIcon() {
             val currentSaga = saga.value ?: return
+            val isPremium = billingService.isPremium()
+            if (isPremium.not()) {
+                showPremiumSheet.value = true
+                return
+            }
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase.regenerateSagaIcon(

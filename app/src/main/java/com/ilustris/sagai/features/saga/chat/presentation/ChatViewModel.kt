@@ -46,6 +46,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -85,20 +86,8 @@ class ChatViewModel
         private var currentSagaIdForService: String? = null
         private var currentActCountForService: Int = 0
 
-        val notificationsEnabled =
-            settingsUseCase.getNotificationsEnabled().stateIn(
-                viewModelScope,
-                kotlinx.coroutines.flow.SharingStarted
-                    .WhileSubscribed(5000),
-                true,
-            )
-        val smartSuggestionsEnabled =
-            settingsUseCase.getSmartSuggestionsEnabled().stateIn(
-                viewModelScope,
-                kotlinx.coroutines.flow.SharingStarted
-                    .WhileSubscribed(5000),
-                true,
-            )
+        val notificationsEnabled = MutableStateFlow(true)
+        val smartSuggestionsEnabled = MutableStateFlow(true)
 
         private fun sendError(
             errorMessage: String,
@@ -132,8 +121,21 @@ class ChatViewModel
             enableDebugMode(isDebug)
             observeSaga()
             observeAmbientMusicServiceControl()
+            observePreferences()
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
+            }
+        }
+
+        private fun observePreferences() {
+            viewModelScope.launch {
+                settingsUseCase.getSmartSuggestionsEnabled().collect {
+                    smartSuggestionsEnabled.emit(it)
+                }
+
+                settingsUseCase.getNotificationsEnabled().collect {
+                    notificationsEnabled.emit(it)
+                }
             }
         }
 
@@ -238,19 +240,23 @@ class ChatViewModel
         }
 
         private fun notifyIfNeeded() {
-            if (notificationsEnabled.value) {
-                val currentSaga = content.value ?: return
-                if (currentSaga.data.isEnded) {
-                    return
-                }
-                viewModelScope.launch(Dispatchers.IO) {
-                    val messages = currentSaga.flatMessages()
-                    if (messages.isNotEmpty()) {
-                        notificationManager.sendMessageNotification(
-                            currentSaga,
-                            currentSaga.flatMessages().last(),
-                        )
+            viewModelScope.launch(Dispatchers.IO) {
+                if (notificationsEnabled.value) {
+                    val currentSaga = content.value ?: return@launch
+                    if (currentSaga.data.isEnded) {
+                        return@launch
                     }
+                    viewModelScope.launch(Dispatchers.IO) {
+                        val messages = currentSaga.flatMessages()
+                        if (messages.isNotEmpty()) {
+                            notificationManager.sendMessageNotification(
+                                currentSaga,
+                                currentSaga.flatMessages().last(),
+                            )
+                        }
+                    }
+                } else {
+                    Log.w(javaClass.simpleName, "notifyIfNeeded: Notifications disabled by user")
                 }
             }
         }
@@ -383,6 +389,7 @@ class ChatViewModel
 
         fun sendInput(userConfirmed: Boolean = false) {
             if (inputValue.value.text.isBlank()) {
+                Log.e(javaClass.simpleName, "sendInput: Input is empty")
                 return
             }
 
@@ -397,9 +404,11 @@ class ChatViewModel
                 return
             }
 
+            Log.d(javaClass.simpleName, "Smart Suggestions status: ${smartSuggestionsEnabled.value}")
+
             isLoading.value = true
             viewModelScope.launch(Dispatchers.IO) {
-                if (userConfirmed) {
+                if (userConfirmed || smartSuggestionsEnabled.value.not()) {
                     val message =
                         Message(
                             text = text.text,
@@ -409,11 +418,6 @@ class ChatViewModel
                             timelineId = currentTimeline.data.id,
                         )
                     sendMessage(message, true)
-                    return@launch
-                }
-
-                if (smartSuggestionsEnabled.value.not()) {
-                    sendInput(true)
                     return@launch
                 }
 

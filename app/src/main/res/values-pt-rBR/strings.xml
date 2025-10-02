@@ -209,5 +209,23 @@
     <string name="premium_first_title">Mergulhe em universos únicos e transforme suas ideias em histórias inesquecíveis. Com Sagas Pro, sua criatividade ganha vida e cada capítulo se torna uma experiência envolvente e visualmente imersiva.</string>
     <string name="premium_description">Crie narrativas profundas, explore novos mundos e dê vida aos seus personagens com recursos que elevam sua saga a outro nível. Sinta a diferença de contar histórias com liberdade e inspiração ilimitada.</string>
     <string name="premium_sign_up">Experimente agora</string>
-    <string name="sagas_storage">Armazenamento de suas sagas</string>
+    <string name="premium_cancel_sign_up">Cancelar Assinatura</string>
+    <string name="sagas_storage">Dados de sagas</string>
+    <string name="cache">Dados em Cache</string>
+    <string name="other">Outros dados</string>
+    <string name="preferences">Preferências</string>
+    <string name="notifications">Notificações</string>
+    <string name="notifications_description">Receba notificações de atualizações de suas sagas enquanto estiver fora do app.  Suas notificações não serão rastreadas e serão enviadas diretamente do seu dispositivo.</string>
+    <string name="smart_fix_description">Receba sugestões de correção automática de IA com base na sua história e tema as sugestoes ajudam a enriquecer o vocabulário e dar profundidade à narrativa.</string>
+    <string name="clear_data_button">Limpar dados</string>
+
+    <!-- Clear Data Confirmation Dialog Strings -->
+    <string name="clear_data_dialog_title">Apagar todos os dados</string>
+    <string name="clear_data_dialog_message">Isso irá apagar todas as suas histórias e configurações. Tem certeza que deseja continuar? Você sempre pode começar do zero!</string>
+    <string name="clear_data_dialog_confirm">Sim, apagar tudo</string>
+    <string name="clear_data_dialog_cancel">Não, manter meus dados</string>
+    <string name="clear_cache">Limpar cache</string>
+    <string name="restore_purchases">Restaurar compras</string>
+    <string name="not_premium_title_label">Junte-se ao</string>
+    <string name="premium_label_title">Você é</string>
 </resources>

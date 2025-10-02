@@ -143,7 +143,7 @@ fun CharacterDetailsContent(
                             contentScale = ContentScale.Crop,
                             modifier =
                                 Modifier
-                                    .clickable(enabled = character.emojified) {
+                                    .clickable(enabled = character.emojified || character.image.isEmpty()) {
                                         viewModel.regenerate(
                                             sagaContent,
                                             character,

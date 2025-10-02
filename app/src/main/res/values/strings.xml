@@ -231,6 +231,25 @@
     <string name="premium_first_title">Dive into unique universes and turn your ideas into unforgettable stories. With Sagas Pro, your creativity comes alive and every chapter becomes a visually immersive experience.</string>
     <string name="premium_description">Create deep narratives, explore new worlds, and bring your characters to life with features that take your saga to the next level. Feel the difference of storytelling with unlimited freedom and inspiration.</string>
     <string name="premium_sign_up">Try now</string>
-    <string name="sagas_storage">Your Sagas usage</string>
+    <string name="premium_cancel_sign_up">Cancel signature</string>
+    <string name="sagas_storage">Sagas data</string>
+    <string name="cache">Cache data</string>
+    <string name="other">Other Data</string>
+    <string name="preferences">Preferences</string>
+    <string name="notifications">Notifications</string>
 
+    <string name="notifications_description">Receive notifications about updates to your sagas while you are outside the app.\nYour notifications will not be tracked and will be sent directly from your device.</string>
+    <string name="smart_fix" translatable="false">Smart Fix</string>
+
+    <string name="smart_fix_description">Receive automatic AI correction suggestions based on your story and theme. The suggestions help to enrich the vocabulary and add depth to the narrative.</string>
+    <string name="clear_data_button">Clear Data</string>
+    <string name="clear_data_dialog_title">Clear All Data</string>
+    <string name="clear_data_dialog_message">This will erase all your stories and settings. Are you sure you want to continue? You can always start fresh!</string>
+    <string name="clear_data_dialog_confirm">Yes, wipe everything</string>
+    <string name="clear_data_dialog_cancel">No, keep my data</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="restore_purchases">Restore purchases</string>
+    <string name="not_premium_title_label">Join</string>
+    <string name="premium_label_title">You are</string>
+    <string name="subscribe">Assinar</string>
 </resources>

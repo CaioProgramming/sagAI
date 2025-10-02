@@ -17,7 +17,7 @@ class FileCacheService(
     private val cacheDirName = "file_cache"
 
     fun getFileCacheDir(): File {
-        val directory = File(context.filesDir, cacheDirName)
+        val directory = File(context.cacheDir, cacheDirName)
         if (!directory.exists()) {
             directory.mkdirs()
         }

@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -123,6 +124,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
@@ -175,6 +177,7 @@ fun SagaDetailView(
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val emotionalCardReference by viewModel.emotionalCardReference.collectAsStateWithLifecycle()
     val showReview by viewModel.showReview.collectAsStateWithLifecycle()
+    val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
             showDeleteConfirmation = false
@@ -309,6 +312,8 @@ fun SagaDetailView(
             )
         }
     }
+
+    PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
 
     LaunchedEffect(Unit) {
         viewModel.fetchSagaDetails(sagaId)
@@ -825,7 +830,7 @@ fun WikiContent(
                     Modifier
                         .background(MaterialTheme.colorScheme.background)
                         .fillMaxWidth()
-                        .padding(top = 50.dp, start = 16.dp),
+                        .padding(horizontal = 16.dp),
             )
         }
     }
@@ -970,7 +975,7 @@ private fun SagaDetailInitialView(
                                                             animatedVisibilityScope = this@AnimatedContent,
                                                         ).reactiveShimmer(
                                                             true,
-                                                            duration = 10.seconds,
+                                                            duration = 5.seconds,
                                                         ),
                                             )
                                         }
@@ -980,6 +985,9 @@ private fun SagaDetailInitialView(
                                             null,
                                             modifier =
                                                 Modifier
+                                                    .align(Alignment.CenterHorizontally)
+                                                    .padding(32.dp)
+                                                    .size(100.dp)
                                                     .clickable {
                                                         if (saga.data.icon.isEmpty()) {
                                                             selectSection(DetailAction.REGENERATE)
@@ -989,35 +997,28 @@ private fun SagaDetailInitialView(
                                                     ),
                                         )
 
-                                        AutoResizeText(
+                                        Text(
                                             saga.data.title,
-                                            maxLines = 1,
+                                            maxLines = 2,
                                             style =
                                                 MaterialTheme.typography.displayMedium.copy(
                                                     fontFamily = saga.data.genre.headerFont(),
                                                     brush = saga.data.genre.gradient(true),
-                                                    shadow =
-                                                        Shadow(
-                                                            Color.Black,
-                                                            offset = Offset(0f, 1f),
-                                                            blurRadius = .5f,
-                                                        ),
                                                     textAlign = TextAlign.Center,
                                                 ),
                                             modifier =
                                                 Modifier
-                                                    .background(fadeGradientBottom())
-                                                    .fillMaxWidth()
                                                     .padding(16.dp)
+                                                    .fillMaxWidth()
                                                     .sharedElement(
                                                         rememberSharedContentState(
-                                                            key =
-                                                                DetailAction.BACK.sharedElementTitleKey(
-                                                                    saga.data.id,
-                                                                ),
+                                                            key = "saga-style-header",
                                                         ),
-                                                        animatedVisibilityScope = animationScopes.second,
-                                                    ).reactiveShimmer(true, duration = 10.seconds),
+                                                        animatedVisibilityScope = this@AnimatedContent,
+                                                    ).reactiveShimmer(
+                                                        true,
+                                                        duration = 5.seconds,
+                                                    ),
                                         )
                                     }
                                 }
@@ -1083,15 +1084,15 @@ private fun SagaDetailInitialView(
                                 }
                             }
 
-                            item(span = { GridItemSpan(columnCount) }) {
-                                Text(
-                                    stringResource(R.string.starring),
-                                    style = sectionStyle,
-                                    modifier = Modifier.padding(16.dp),
-                                )
-                            }
-
                             saga.mainCharacter?.let {
+                                item(span = { GridItemSpan(columnCount) }) {
+                                    Text(
+                                        stringResource(R.string.starring),
+                                        style = sectionStyle,
+                                        modifier = Modifier.padding(16.dp),
+                                    )
+                                }
+
                                 item(span = { GridItemSpan(columnCount) }) {
                                     Box(
                                         Modifier
@@ -1111,18 +1112,18 @@ private fun SagaDetailInitialView(
                                             modifier =
                                                 Modifier
                                                     .fillMaxSize()
-                                                    .effectForGenre(genre)
-                                                    .selectiveColorHighlight(highlightParams),
+                                                    .effectForGenre(genre, useFallBack = true),
                                             contentScale = ContentScale.Crop,
                                         )
 
                                         Box(
                                             Modifier
                                                 .align(Alignment.BottomCenter)
+                                                .fillMaxWidth()
+                                                .fillMaxHeight(.8f)
                                                 .background(
                                                     fadeGradientBottom(genre.color),
-                                                ).fillMaxWidth()
-                                                .fillMaxHeight(),
+                                                ),
                                         )
 
                                         Column(
@@ -1136,16 +1137,15 @@ private fun SagaDetailInitialView(
                                             Text(
                                                 it.data.name,
                                                 style =
-                                                    MaterialTheme.typography.titleLarge.copy(
+                                                    MaterialTheme.typography.titleMedium.copy(
                                                         fontFamily = genre.headerFont(),
-                                                        textAlign = TextAlign.Center,
                                                         color = genre.iconColor,
                                                     ),
                                                 modifier =
                                                     Modifier.reactiveShimmer(
                                                         true,
                                                         genre.shimmerColors(),
-                                                        duration = 15.seconds,
+                                                        duration = 10.seconds,
                                                     ),
                                             )
 
@@ -1153,9 +1153,8 @@ private fun SagaDetailInitialView(
                                                 it.data.backstory,
                                                 maxLines = 4,
                                                 style =
-                                                    MaterialTheme.typography.bodyMedium.copy(
+                                                    MaterialTheme.typography.labelMedium.copy(
                                                         fontFamily = genre.bodyFont(),
-                                                        textAlign = TextAlign.Justify,
                                                         color = genre.iconColor,
                                                     ),
                                             )
@@ -1765,7 +1764,8 @@ private fun SagaDetailInitialView(
                             )
                         }
 
-                        val tooltipState = androidx.compose.material3.rememberTooltipState(isPersistent = true)
+                        val tooltipState =
+                            androidx.compose.material3.rememberTooltipState(isPersistent = true)
                         val tooltipPositionProvider =
                             androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
                                 spacingBetweenTooltipAndAnchor = 8.dp,

@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.settings.domain
 import android.content.Context
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -33,13 +32,9 @@ interface SettingsUseCase {
 
     suspend fun getSagas(): Flow<List<SagaContent>>
 
-    data class StorageBreakdown(
-        val cacheSize: Long,
-        val sagaContentSize: Long,
-        val otherSize: Long,
-    )
-
     suspend fun getStorageBreakdown(): StorageBreakdown
+
+    suspend fun clearCache()
 }
 
 class SettingsUseCaseImpl
@@ -83,13 +78,17 @@ class SettingsUseCaseImpl
 
         override suspend fun getSagas() = sagaRepository.getChats()
 
-        override suspend fun getStorageBreakdown(): SettingsUseCase.StorageBreakdown =
+        override suspend fun getStorageBreakdown(): StorageBreakdown =
             withContext(Dispatchers.IO) {
                 val cacheSize = fileHelper.getDirectorySize(context.cacheDir)
                 val sagaRoot = File(context.filesDir, "sagas")
                 val sagaContentSize = fileHelper.getDirectorySize(sagaRoot)
                 val totalSize = getAppStorageUsage()
                 val otherSize = totalSize - cacheSize - sagaContentSize
-                SettingsUseCase.StorageBreakdown(cacheSize, sagaContentSize, otherSize)
+                StorageBreakdown(cacheSize, sagaContentSize, otherSize)
             }
+
+        override suspend fun clearCache() {
+            context.cacheDir.deleteRecursively()
+        }
     }
