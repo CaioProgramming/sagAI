@@ -99,7 +99,8 @@ fun ChatBubble(
     modifier: Modifier = Modifier,
     openCharacters: (CharacterContent?) -> Unit = {},
     openWiki: () -> Unit = {},
-    onRetry: (Message) -> Unit = {},
+    onRetry: (MessageContent) -> Unit = {},
+    onReactionsClick: (MessageContent) -> Unit = {},
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -142,7 +143,7 @@ fun ChatBubble(
                         .animateContentSize(),
             ) {
                 val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
-                val (messageText, characterAvatar, messageTime, retryButton) = createRefs()
+                val (messageText, characterAvatar, messageTime, retryButton, reactions) = createRefs()
                 val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
                 Box(
                     Modifier
@@ -191,7 +192,10 @@ fun ChatBubble(
                         onTextUpdate = {
                         },
                         onAnimationFinished = {
-                            if (alreadyAnimatedMessages.contains(message.id).not()) {
+                            if (alreadyAnimatedMessages
+                                    .contains(message.id)
+                                    .not()
+                            ) {
                                 alreadyAnimatedMessages.add(message.id)
                             }
                         },
@@ -215,9 +219,12 @@ fun ChatBubble(
                         .size(avatarSize),
                 ) {
                     messageContent.character?.let { character ->
-                        AnimatedContent(character, transitionSpec = {
-                            fadeIn() + scaleIn() togetherWith scaleOut()
-                        }) {
+                        AnimatedContent(
+                            character,
+                            transitionSpec = {
+                                fadeIn() + scaleIn() togetherWith scaleOut()
+                            },
+                        ) {
                             CharacterAvatar(
                                 it,
                                 isLoading = isLoading,
@@ -268,9 +275,12 @@ fun ChatBubble(
                         exit = fadeOut(),
                         modifier = Modifier.alpha(.4f),
                     ) {
-                        IconButton(onClick = {
-                            openWiki()
-                        }, modifier = Modifier.size(12.dp)) {
+                        IconButton(
+                            onClick = {
+                                openWiki()
+                            },
+                            modifier = Modifier.size(12.dp),
+                        ) {
                             Icon(
                                 painterResource(R.drawable.round_info_outline_24),
                                 contentDescription = null,
@@ -281,34 +291,55 @@ fun ChatBubble(
                     }
                 }
 
-                AnimatedVisibility(message.status != MessageStatus.ERROR) {
+                AnimatedVisibility(
+                    visible = messageContent.reactions.isNotEmpty(),
+                    modifier =
+                        Modifier.constrainAs(reactions) {
+                            top.linkTo(messageText.bottom, margin = (-12).dp)
+                            if (isUser.not()) {
+                                end.linkTo(messageText.end, margin = 8.dp)
+                            } else {
+                                start.linkTo(messageText.start, margin = 8.dp)
+                            }
+                        },
+                ) {
+                    ReactionsView(reactions = messageContent.reactions) {
+                        onReactionsClick(messageContent)
+                    }
+                }
+
+                AnimatedVisibility(
+                    message.status == MessageStatus.ERROR,
+                    modifier =
+                        Modifier.constrainAs(retryButton) {
+                            top.linkTo(messageText.top, margin = (-4).dp)
+                            if (isUser) {
+                                end.linkTo(messageText.start, margin = (-12).dp)
+                            } else {
+                                start.linkTo(messageText.end, margin = (-12).dp)
+                            }
+                        },
+                ) {
                     IconButton(
                         onClick = {
-                            onRetry(message)
+                            onRetry(messageContent)
                         },
                         modifier =
                             Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .border(2.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
-                                .constrainAs(retryButton) {
-                                    bottom.linkTo(messageText.bottom)
-                                    if (isUser) {
-                                        end.linkTo(messageText.start)
-                                    } else {
-                                        start.linkTo(messageText.end)
-                                    }
-                                },
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .size(24.dp),
                         colors =
-                            IconButtonDefaults.iconButtonColors().copy(
-                                containerColor = genre.color.darker(),
-                                contentColor = genre.iconColor,
-                            ),
+                            IconButtonDefaults
+                                .iconButtonColors()
+                                .copy(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
                     ) {
                         Icon(
                             painterResource(R.drawable.baseline_refresh_24),
                             "Tentar novamente",
-                            tint = genre.iconColor,
+                            modifier = Modifier.padding(4.dp).fillMaxSize(),
                         )
                     }
                 }
@@ -474,42 +505,62 @@ fun ChatBubble(
                             ),
                         onTextClick = { },
                     )
+
+                    AnimatedVisibility(
+                        visible = messageContent.reactions.isNotEmpty(),
+                        modifier =
+                            Modifier.padding(vertical = 8.dp).align(Alignment.CenterHorizontally),
+                    ) {
+                        ReactionsView(reactions = messageContent.reactions) {
+                            onReactionsClick(messageContent)
+                        }
+                    }
                 }
             }
         }
 
         SenderType.NARRATOR -> {
-            TypewriterText(
-                text = message.text,
-                isAnimated = false,
-                duration = duration,
-                genre = genre,
-                mainCharacter = mainCharacter?.data,
-                characters = content.getCharacters(),
-                wiki = wiki,
-                modifier =
-                    modifier
-                        .padding(16.dp)
-                        .reactiveShimmer(isLoading, genre.shimmerColors())
-                        .fillMaxWidth(),
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontStyle = FontStyle.Italic,
-                        textAlign = TextAlign.Justify,
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        shadow =
-                            Shadow(
-                                color = genre.color,
-                                offset = Offset(4f, 4f),
-                                blurRadius = 10f,
-                            ),
-                    ),
-                onTextClick = { },
-            )
-        }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TypewriterText(
+                    text = message.text,
+                    isAnimated = false,
+                    duration = duration,
+                    genre = genre,
+                    mainCharacter = mainCharacter?.data,
+                    characters = content.getCharacters(),
+                    wiki = wiki,
+                    modifier =
+                        modifier
+                            .padding(16.dp)
+                            .reactiveShimmer(isLoading, genre.shimmerColors())
+                            .fillMaxWidth(),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            textAlign = TextAlign.Justify,
+                            fontFamily = genre.bodyFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            shadow =
+                                Shadow(
+                                    color = genre.color,
+                                    offset = Offset(4f, 4f),
+                                    blurRadius = 10f,
+                                ),
+                        ),
+                    onTextClick = { },
+                )
 
-        else -> Box {}
+                AnimatedVisibility(
+                    visible = messageContent.reactions.isNotEmpty(),
+                    modifier =
+                        Modifier.padding(vertical = 8.dp),
+                ) {
+                    ReactionsView(reactions = messageContent.reactions) {
+                        onReactionsClick(messageContent)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -527,7 +578,7 @@ fun ChatBubblePreview() {
                 Character(
                     name = "John",
                     details = Details(),
-                    profile = CharacterProfile()
+                    profile = CharacterProfile(),
                 )
             Genre.entries.forEach { genre ->
                 stickyHeader {
@@ -555,6 +606,7 @@ fun ChatBubblePreview() {
                                     timelineId = 0,
                                 ),
                                 character = character,
+                                reactions = emptyList(),
                             ),
                         content =
                             SagaContent(

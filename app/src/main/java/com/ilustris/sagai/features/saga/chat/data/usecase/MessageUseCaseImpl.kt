@@ -12,24 +12,33 @@ import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.Reaction
+import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
+import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 class MessageUseCaseImpl
     @Inject
     constructor(
         private val messageRepository: MessageRepository,
+        private val reactionRepository: ReactionRepository,
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
     ) : MessageUseCase {
@@ -144,8 +153,73 @@ class MessageUseCaseImpl
                         true,
                     )
 
+                if (message.message.senderType != SenderType.THOUGHT) {
+                    withContext(Dispatchers.IO) {
+                        generateReaction(saga, message, sceneSummary)
+                    }
+                }
+
+
                 genText!!
             }
+
+        suspend fun generateReaction(
+            saga: SagaContent,
+            message: MessageContent,
+            sceneSummary: SceneSummary,
+        ) = executeRequest {
+            delay(2.seconds)
+            if (sceneSummary.charactersPresent.isEmpty()) {
+                Log.w(javaClass.simpleName, "generateReaction: No characters related to react")
+                return@executeRequest
+            }
+
+            val charactersIds =
+                sceneSummary.charactersPresent
+                    .filter {
+                        it.lowercase() !=
+                            saga.mainCharacter
+                                ?.data
+                                ?.name
+                                ?.lowercase()
+                    }.mapNotNull {
+                        saga.characters
+                            .find { character ->
+                                character.data.name.equals(it, ignoreCase = true)
+                            }?.data
+                            ?.id
+                    }
+
+            val relationships =
+                saga.mainCharacter!!.relationships.filter {
+                    it.characterOne.id in charactersIds || it.characterTwo.id in charactersIds
+                }
+
+            val prompt =
+                ChatPrompts.generateReactionPrompt(
+                    saga = saga.data,
+                    summary = sceneSummary,
+                    mainCharacter = saga.mainCharacter,
+                    relationships = relationships,
+                    messageToReact = message.joinMessage().formatToString(),
+                )
+
+            val reaction = gemmaClient.generate<ReactionGen>(prompt)
+
+            reaction?.reactions?.forEach { reaction ->
+                saga.characters
+                    .find { it.data.name.equals(reaction.character, ignoreCase = true) }
+                    ?.let {
+                        reactionRepository.saveReaction(
+                            Reaction(
+                                messageId = message.message.id,
+                                characterId = it.data.id,
+                                emoji = reaction.reaction,
+                            ),
+                        )
+                    }
+            }
+        }
 
         override suspend fun updateMessage(message: Message): RequestResult<Message> =
             executeRequest {

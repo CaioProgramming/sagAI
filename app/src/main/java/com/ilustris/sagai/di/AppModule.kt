@@ -58,8 +58,10 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationMana
 import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
+import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
+import com.ilustris.sagai.features.saga.datasource.ReactionRepositoryImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
@@ -269,6 +271,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsActRepository(actRepositoryImpl: ActRepositoryImpl): ActRepository
+
+    @Binds
+    abstract fun bindsReactionRepository(reactionRepositoryImpl: ReactionRepositoryImpl): ReactionRepository
 }
 
 @Module

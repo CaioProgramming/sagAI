@@ -5,9 +5,13 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
 object ChatPrompts {
@@ -94,6 +98,38 @@ object ChatPrompts {
         appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:** //")
         appendLine("{ $message }")
         appendLine()
+    }.trimIndent()
+
+    fun generateReactionPrompt(
+        summary: SceneSummary,
+        saga: Saga,
+        mainCharacter: CharacterContent,
+        messageToReact: String,
+        relationships: List<RelationshipContent>,
+    ) = buildString {
+        appendLine("Your task is to generate relatable reactions to the player message in the saga")
+        appendLine("Saga context:")
+        appendLine(saga.toJsonFormatExcludingFields(sagaExclusions))
+        appendLine("History current context:")
+        appendLine(summary.toJsonFormat())
+        appendLine("Player context:")
+        appendLine(mainCharacter.data.toJsonFormatExcludingFields(characterExclusions))
+        appendLine("Player relationships with present characters:")
+        appendLine(
+            relationships.joinToString(";\n") {
+                val lastEvent = it.relationshipEvents.last()
+                "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}\n${lastEvent.description}"
+            },
+        )
+
+        appendLine("Generate reactions only to characters present in the scene summary.")
+        appendLine("React properly to the message and the scene summary.")
+        appendLine("Your reaction must be only a single emoji, no text nor descriptions.")
+        appendLine("The last message in the conversation was:")
+        appendLine("'$messageToReact'")
+        appendLine("Base your reactions on characters personality and relationship with the player.")
+        appendLine("Your output needs to be: ")
+        appendLine(toJsonMap(ReactionGen::class.java))
     }.trimIndent()
 
     fun sceneSummarizationPrompt(

@@ -563,6 +563,7 @@ class ChatViewModel
                     MessageContent(
                         message = message,
                         character = saga.getCharacters().find { it.id == message.characterId },
+                        reactions = emptyList(),
                     )
 
                 messageUseCase
@@ -581,6 +582,7 @@ class ChatViewModel
                                 characterId = null,
                                 timelineId = timeline.data.id,
                                 id = 0,
+                                status = MessageStatus.OK
                             ),
                         )
                         if (newMessage.message.status == MessageStatus.ERROR) {

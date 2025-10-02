@@ -17,11 +17,12 @@ import com.ilustris.sagai.features.characters.events.data.source.CharacterEventD
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.source.CharacterRelationDao
-// Import the new DAO
 import com.ilustris.sagai.features.characters.relations.data.source.RelationshipUpdateEventDao
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.Reaction
 import com.ilustris.sagai.features.saga.datasource.MessageDao
+import com.ilustris.sagai.features.saga.datasource.ReactionDao
 import com.ilustris.sagai.features.saga.datasource.SagaDao
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.source.TimelineDao
@@ -40,9 +41,13 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         CharacterEvent::class,
         CharacterRelation::class,
         RelationshipUpdateEvent::class,
+        Reaction::class,
     ],
-    version = 54,
+    version = 55,
     exportSchema = true,
+    autoMigrations = [
+        AutoMigration(from = 54, to = 55),
+    ],
 )
 @TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {
@@ -66,13 +71,5 @@ abstract class SagaDatabase : RoomDatabase() {
 
     abstract fun relationshipUpdateEventDao(): RelationshipUpdateEventDao
 
-    // ADDED MIGRATION SPEC CLASS
-    @androidx.room.ProvidedAutoMigrationSpec
-    class Migration48To49 : androidx.room.migration.AutoMigrationSpec {
-        override fun onPostMigrate(db: SupportSQLiteDatabase) {
-            super.onPostMigrate(db)
-            // Update existing "NEW_CHARACTER" SenderType values to "CHARACTER"
-            db.execSQL("UPDATE messages SET senderType = 'CHARACTER' WHERE senderType = 'NEW_CHARACTER'")
-        }
-    }
+    abstract fun reactionDao(): ReactionDao
 }

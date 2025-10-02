@@ -5,6 +5,7 @@
 
 package com.ilustris.sagai.features.saga.chat.ui
 
+import ReactionContent
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
@@ -131,6 +132,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
@@ -142,6 +144,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.SnackBarState
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
@@ -416,6 +419,9 @@ fun ChatContent(
     var showCharacter by remember {
         mutableStateOf<CharacterContent?>(null)
     }
+    var showReactions by remember {
+        mutableStateOf<MessageContent?>(null)
+    }
 
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     ModalNavigationDrawer(drawerContent = {
@@ -504,6 +510,9 @@ fun ChatContent(
                             drawerState.open()
                         }
                     },
+                    openReactions = {
+                        showReactions = it
+                    },
                 )
 
                 Box(
@@ -578,8 +587,7 @@ fun ChatContent(
                             .fillMaxWidth()
                             .clickable {
                                 openSagaDetails(saga)
-                            }.padding(horizontal = 16.dp)
-                    ,
+                            }.padding(horizontal = 16.dp),
                     titleModifier = titleModifier,
                     actionContent = {
                         AnimatedContent(characters, transitionSpec = {
@@ -829,6 +837,12 @@ fun ChatContent(
             )
         }
     }
+
+    showReactions?.let {
+        ReactionsBottomSheet(it, content) {
+            showReactions = null
+        }
+    }
 }
 
 @Composable
@@ -974,6 +988,7 @@ fun ChatList(
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
     onRetryMessage: (Message) -> Unit = {},
+    openReactions: (MessageContent) -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
@@ -1158,6 +1173,7 @@ fun ChatList(
                                 ),
                             openCharacters = { char -> openCharacter(char) },
                             openWiki = { openWiki() },
+                            onReactionsClick = { openReactions(it) },
                         )
                     }
                 }
