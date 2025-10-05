@@ -11,6 +11,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -129,7 +130,7 @@ object ChatPrompts {
         appendLine("'$messageToReact'")
         appendLine("Base your reactions on characters personality and relationship with the player.")
         appendLine("Your output needs to be: ")
-        appendLine(toJsonMap(ReactionGen::class.java))
+        appendLine("{ reactions: [ ${toJsonMap(AIReaction::class.java)} ]  }")
     }.trimIndent()
 
     fun sceneSummarizationPrompt(

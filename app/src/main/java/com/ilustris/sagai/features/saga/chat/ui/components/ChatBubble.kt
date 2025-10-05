@@ -83,6 +83,7 @@ import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.saturate
 import com.ilustris.sagai.ui.theme.shape
@@ -142,7 +143,7 @@ fun ChatBubble(
                         .fillMaxWidth()
                         .animateContentSize(),
             ) {
-                val avatarSize = if (messageContent.character == null) 12.dp else 32.dp
+                val avatarSize = if (messageContent.character == null) 12.dp else 50.dp
                 val (messageText, characterAvatar, messageTime, retryButton, reactions) = createRefs()
                 val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
                 Box(
@@ -211,11 +212,7 @@ fun ChatBubble(
                             } else {
                                 start.linkTo(parent.start)
                             }
-                        }.padding(8.dp)
-                        .background(
-                            genre.color.copy(alpha = if (messageContent.character == null) .4f else 0f),
-                            CircleShape,
-                        ).clip(CircleShape)
+                        }.clip(CircleShape)
                         .size(avatarSize),
                 ) {
                     messageContent.character?.let { character ->
@@ -233,11 +230,43 @@ fun ChatBubble(
                                 pixelation = 0f,
                                 modifier =
                                     Modifier
+                                        .padding(8.dp)
                                         .fillMaxSize()
                                         .clickable {
                                             openCharacters(characters.find { c -> c.data.id == character.id })
                                         },
                             )
+                        }
+
+                        val relationWithMainCharacter =
+                            mainCharacter
+                                ?.relationships
+                                ?.find {
+                                    it.characterOne.id == character.id ||
+                                        it.characterTwo.id == character.id
+                                }?.relationshipEvents
+                                ?.lastOrNull()
+
+                        if (isUser.not()) {
+                            relationWithMainCharacter?.let {
+                                Text(
+                                    it.emoji,
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            shadow =
+                                                Shadow(
+                                                    color = character.hexColor.hexToColor() ?: genre.color,
+                                                    offset = Offset(2f, 2f),
+                                                    blurRadius = 0f,
+                                                ),
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .animateContentSize()
+                                            .align(Alignment.BottomCenter)
+                                            .padding(2.dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -435,6 +464,7 @@ fun ChatBubble(
                             pixelation = 0f,
                             modifier =
                                 Modifier
+                                    .padding(4.dp)
                                     .constrainAs(characterAvatar) {
                                         top.linkTo(text.top)
                                         start.linkTo(text.start)

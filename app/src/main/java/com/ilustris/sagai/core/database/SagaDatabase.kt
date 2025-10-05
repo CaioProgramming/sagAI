@@ -43,10 +43,10 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         RelationshipUpdateEvent::class,
         Reaction::class,
     ],
-    version = 55,
+    version = 56,
     exportSchema = true,
     autoMigrations = [
-        AutoMigration(from = 54, to = 55),
+        AutoMigration(from = 55, to = 56),
     ],
 )
 @TypeConverters(IntListConverter::class)

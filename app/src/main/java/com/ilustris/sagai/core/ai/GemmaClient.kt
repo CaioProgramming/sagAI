@@ -78,7 +78,7 @@ class GemmaClient
                 } else if (isRequestRunning) {
                     delay(DEFAULT_DELAY)
                 }
-                delay(700)
+                delay(200)
 
                 val client =
                     com.google.ai.client.generativeai.GenerativeModel(

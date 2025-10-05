@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.timeline.domain
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -27,4 +28,6 @@ interface TimelineUseCase {
         content: SagaContent,
         timelineContent: TimelineContent,
     ): RequestResult<Timeline>
+
+    suspend fun getTimelineObjective(currentChapterContent: ChapterContent): RequestResult<String>
 }

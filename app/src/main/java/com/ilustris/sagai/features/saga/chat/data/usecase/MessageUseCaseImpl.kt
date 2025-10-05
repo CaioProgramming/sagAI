@@ -159,7 +159,6 @@ class MessageUseCaseImpl
                     }
                 }
 
-
                 genText!!
             }
 
@@ -204,19 +203,21 @@ class MessageUseCaseImpl
                     messageToReact = message.joinMessage().formatToString(),
                 )
 
-            val reaction = gemmaClient.generate<ReactionGen>(prompt)
+            val reaction = gemmaClient.generate<ReactionGen>(prompt, skipRunning = true)
 
             reaction?.reactions?.forEach { reaction ->
                 saga.characters
                     .find { it.data.name.equals(reaction.character, ignoreCase = true) }
                     ?.let {
-                        reactionRepository.saveReaction(
-                            Reaction(
-                                messageId = message.message.id,
-                                characterId = it.data.id,
-                                emoji = reaction.reaction,
-                            ),
-                        )
+                        if (it.data.id != saga.mainCharacter.data.id) {
+                            reactionRepository.saveReaction(
+                                Reaction(
+                                    messageId = message.message.id,
+                                    characterId = it.data.id,
+                                    emoji = reaction.reaction,
+                                ),
+                            )
+                        }
                     }
             }
         }

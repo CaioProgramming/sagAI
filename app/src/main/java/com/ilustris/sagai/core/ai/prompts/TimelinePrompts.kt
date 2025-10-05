@@ -27,4 +27,26 @@ object TimelinePrompts {
                 )
             }
         }
+
+    fun generateCurrentObjectivePrompt(
+        chapterIntroduction: String,
+        recentEvents: List<Timeline>,
+    ): String =
+        buildString {
+            appendLine(
+                "ROLE: You are an intelligent system tasked with summarizing the current chapter's main objective for story progression.",
+            )
+            appendLine("INPUT: The chapter introduction and the most recent timeline events.")
+            appendLine("TASK:")
+            appendLine("- Analyze the chapter introduction and recent events.")
+            appendLine("- Identify the core objective or goal that drives the story forward at this point.")
+            appendLine("- Summarize this objective in a single, clear sentence suitable for guiding the next story actions.")
+            appendLine("- Avoid redundant details; focus on the main goal or challenge for the characters.")
+            appendLine("")
+            appendLine("CHAPTER INTRODUCTION:")
+            appendLine(chapterIntroduction)
+            appendLine("")
+            appendLine("RECENT EVENTS:")
+            appendLine(recentEvents.map { it.content }.joinToString(separator = "\n"))
+        }
 }

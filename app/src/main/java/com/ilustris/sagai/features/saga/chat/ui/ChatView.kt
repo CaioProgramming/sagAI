@@ -1,6 +1,7 @@
 @file:OptIn(
     ExperimentalMaterial3Api::class,
     ExperimentalAnimationApi::class,
+    ExperimentalSharedTransitionApi::class,
 )
 
 package com.ilustris.sagai.features.saga.chat.ui
@@ -16,30 +17,39 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -85,8 +95,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -128,9 +140,11 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -163,6 +177,7 @@ import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -180,7 +195,7 @@ fun ChatView(
     sagaId: String? = null,
     isDebug: Boolean = false,
     viewModel: ChatViewModel = hiltViewModel(),
-    sharedTransitionScope: SharedTransitionScope? = null,
+    sharedTransitionScope: SharedTransitionScope,
 ) {
     val state = viewModel.state.collectAsStateWithLifecycle()
     val content by viewModel.content.collectAsStateWithLifecycle()
@@ -309,16 +324,14 @@ fun ChatView(
                             onUpdateSenders = viewModel::updateSendType,
                             characters = characters,
                             titleModifier = (
-                                sharedTransitionScope?.let { sts ->
-                                    with(sts) {
-                                        Modifier.sharedElement(
-                                            rememberSharedContentState(
-                                                key = DetailAction.BACK.sharedElementTitleKey(cont.data.id),
-                                            ),
-                                            animatedVisibilityScope = this@AnimatedContent,
-                                        )
-                                    }
-                                } ?: Modifier
+                                with(sharedTransitionScope) {
+                                    Modifier.sharedElement(
+                                        rememberSharedContentState(
+                                            key = DetailAction.BACK.sharedElementTitleKey(cont.data.id),
+                                        ),
+                                        animatedVisibilityScope = this@AnimatedContent,
+                                    )
+                                }
                             ),
                             messagesList = messages,
                             suggestions = suggestions,
@@ -326,6 +339,7 @@ fun ChatView(
                             padding = padding,
                             isDebug = isDebug,
                             isPlaying = isPlaying,
+                            sharedTransitionScope = sharedTransitionScope,
                             updateProgress = loreProgress,
                             snackBar = snackBarMessage,
                             onSendMessage = viewModel::sendInput,
@@ -397,6 +411,7 @@ fun ChatContent(
     isPlaying: Boolean = false,
     updateProgress: Float = 0f,
     snackBar: SnackBarState? = null,
+    sharedTransitionScope: SharedTransitionScope,
     onSendMessage: (Boolean) -> Unit = { },
     onUpdateInput: (TextFieldValue) -> Unit = { },
     onUpdateSenders: (SenderType) -> Unit = { },
@@ -423,7 +438,26 @@ fun ChatContent(
         mutableStateOf<MessageContent?>(null)
     }
 
+    var objectiveExpanded by remember {
+        mutableStateOf(true)
+    }
+    val imeState = WindowInsets.isImeVisible
     val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val progress by animateFloatAsState(
+        if (content.data.isEnded.not()) updateProgress else 1f,
+    )
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress && objectiveExpanded) {
+            objectiveExpanded = false
+        }
+    }
+
+    LaunchedEffect(imeState) {
+        if (imeState && objectiveExpanded) {
+            objectiveExpanded = false
+        }
+    }
+
     ModalNavigationDrawer(drawerContent = {
         ModalDrawerSheet(
             drawerShape =
@@ -457,362 +491,482 @@ fun ChatContent(
             }
         }
     }, drawerState = drawerState) {
-        Box(Modifier.background(MaterialTheme.colorScheme.background)) {
-            Image(
-                painterResource(saga.genre.background),
-                null,
-                colorFilter =
-                    ColorFilter.tint(
-                        MaterialTheme.colorScheme.background,
-                    ),
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .reactiveShimmer(
-                            isPlaying,
-                            shimmerColors = saga.genre.colorPalette(),
-                            duration = 10.seconds,
-                            targetValue = 200f,
-                        ).fillMaxSize(.5f)
-                        .alpha(.6f),
-            )
-
-            ConstraintLayout(
-                Modifier
-                    .padding(
-                        top = padding.calculateTopPadding(),
-                    ).fillMaxSize(),
-            ) {
-                val coroutineScope = rememberCoroutineScope()
-                val (debugControls, messages, chatInput, topBar, bottomFade, topFade, loreProgress) = createRefs()
-
-                ChatList(
-                    saga = content,
-                    actList = messagesList,
-                    listState = listState,
-                    isLoading = isGenerating,
-                    modifier =
-                        Modifier
-                            .constrainAs(messages) {
-                                top.linkTo(parent.top)
-                                bottom.linkTo(parent.bottom, 50.dp)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                                width = Dimension.fillToConstraints
-                                height = Dimension.fillToConstraints
-                            },
-                    openCharacter = {
-                        showCharacter = it
-                    },
-                    openSaga = { openSagaDetails(saga) },
-                    openWiki = {
-                        coroutineScope.launch {
-                            drawerState.open()
-                        }
-                    },
-                    openReactions = {
-                        showReactions = it
-                    },
+        with(sharedTransitionScope) {
+            Box {
+                val blur by animateDpAsState(
+                    if (objectiveExpanded) 10.dp else 0.dp,
                 )
-
                 Box(
                     Modifier
-                        .constrainAs(bottomFade) {
-                            bottom.linkTo(parent.bottom)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }.fillMaxWidth()
-                        .fillMaxHeight(.2f)
-                        .background(fadeGradientBottom()),
+                        .background(MaterialTheme.colorScheme.background)
+                        .blur(blur),
                 ) {
-                    StarryTextPlaceholder(
-                        starCount = 100,
+                    Image(
+                        painterResource(saga.genre.background),
+                        null,
+                        colorFilter =
+                            ColorFilter.tint(
+                                MaterialTheme.colorScheme.background,
+                            ),
                         modifier =
                             Modifier
-                                .fillMaxSize()
-                                .gradientFill(content.data.genre.gradient()),
+                                .align(Alignment.Center)
+                                .reactiveShimmer(
+                                    isPlaying,
+                                    shimmerColors = saga.genre.colorPalette(),
+                                    duration = 10.seconds,
+                                    targetValue = 200f,
+                                ).fillMaxSize(.5f)
+                                .alpha(.6f),
                     )
-                }
 
-                AnimatedVisibility(
-                    state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not(),
-                    modifier =
+                    ConstraintLayout(
                         Modifier
-                            .constrainAs(chatInput) {
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                                width = Dimension.fillToConstraints
-                            }.padding(vertical = padding.calculateBottomPadding())
-                            .animateContentSize(),
-                    enter = slideInVertically(),
-                    exit = fadeOut(),
-                ) {
-                    ChatInputView(
-                        content = content,
-                        isGenerating = isGenerating,
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight(),
-                        typoFix = typoFix,
-                        inputField = inputValue,
-                        sendType = actualSender,
-                        onSendMessage = onSendMessage,
-                        onUpdateInput = onUpdateInput,
-                        onUpdateSender = onUpdateSenders,
-                        suggestions = suggestions,
-                    )
-                }
-
-                val alpha by animateFloatAsState(
-                    if (listState.canScrollForward.not()) 0f else 1f,
-                    animationSpec = tween(450, easing = EaseIn),
-                )
-
-                SagaTopBar(
-                    saga.title,
-                    "${content.flatMessages().size} mensagens",
-                    saga.genre,
-                    isLoading = isGenerating,
-                    onBackClick = onBack,
-                    modifier =
-                        Modifier
-                            .graphicsLayer(alpha = alpha)
-                            .constrainAs(topBar) {
-                                top.linkTo(parent.top)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                            }.background(MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
-                            .clickable {
-                                openSagaDetails(saga)
-                            }.padding(horizontal = 16.dp),
-                    titleModifier = titleModifier,
-                    actionContent = {
-                        AnimatedContent(characters, transitionSpec = {
-                            slideInVertically() + fadeIn() with fadeOut()
-                        }) { chars ->
-                            CharactersTopIcons(
-                                chars,
-                                saga.genre,
-                                isLoading = isGenerating,
-                            ) { _ -> openSagaDetails(saga) }
-                        }
-                    },
-                )
-
-                val progress by animateFloatAsState(
-                    if (content.data.isEnded.not()) updateProgress else 1f,
-                )
-                val backgroundColor by animateColorAsState(
-                    if (snackBar != null) saga.genre.color else Color.Transparent,
-                )
-                val progressColor by animateColorAsState(
-                    if (snackBar == null) saga.genre.color else content.data.genre.iconColor,
-                )
-
-                Column(
-                    Modifier
-                        .background(
-                            backgroundColor,
-                        ).constrainAs(loreProgress) {
-                            top.linkTo(topBar.bottom)
-                            start.linkTo(topBar.start)
-                            end.linkTo(topBar.end)
-                            width = Dimension.fillToConstraints
-                        },
-                ) {
-                    LinearProgressIndicator(
-                        modifier =
-                            Modifier
-                                .alpha(alpha)
-                                .height(2.dp)
-                                .fillMaxWidth()
-                                .gradientFill(content.data.genre.gradient(isGenerating)),
-                        progress = { progress },
-                        drawStopIndicator = {},
-                        color = MaterialTheme.colorScheme.onBackground,
-                        trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                    )
-
-                    AnimatedVisibility(
-                        snackBar != null,
-                        modifier = Modifier.fillMaxWidth(),
-                        enter = slideInVertically { +it } + fadeIn(),
-                        exit = fadeOut() + slideOutVertically { it },
+                            .padding(
+                                top = padding.calculateTopPadding(),
+                            ).fillMaxSize(),
                     ) {
-                        snackBar?.let { snackBar ->
-                            var isExpanded by remember {
-                                mutableStateOf(false)
-                            }
+                        val coroutineScope = rememberCoroutineScope()
+                        val (debugControls, messages, chatInput, topBar, bottomFade, topFade, loreProgress) = createRefs()
 
-                            val shape = RoundedCornerShape(content.data.genre.cornerSize())
-                            Column(
+                        ChatList(
+                            saga = content,
+                            actList = messagesList,
+                            listState = listState,
+                            isLoading = isGenerating,
+                            modifier =
+                                Modifier
+                                    .constrainAs(messages) {
+                                        top.linkTo(parent.top)
+                                        bottom.linkTo(parent.bottom, 50.dp)
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                        width = Dimension.fillToConstraints
+                                        height = Dimension.fillToConstraints
+                                    },
+                            openCharacter = {
+                                showCharacter = it
+                            },
+                            openSaga = { openSagaDetails(saga) },
+                            openWiki = {
+                                coroutineScope.launch {
+                                    drawerState.open()
+                                }
+                            },
+                            openReactions = {
+                                showReactions = it
+                            },
+                            onRetryMessage = onRetryMessage,
+                        )
+
+                        Box(
+                            Modifier
+                                .constrainAs(bottomFade) {
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                }.fillMaxWidth()
+                                .fillMaxHeight(.2f)
+                                .background(fadeGradientBottom()),
+                        ) {
+                            StarryTextPlaceholder(
+                                starCount = 100,
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize()
+                                        .gradientFill(content.data.genre.gradient()),
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not(),
+                            modifier =
+                                Modifier
+                                    .constrainAs(chatInput) {
+                                        bottom.linkTo(parent.bottom)
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                        width = Dimension.fillToConstraints
+                                    }.padding(vertical = padding.calculateBottomPadding())
+                                    .animateContentSize(),
+                            enter = slideInVertically(),
+                            exit = fadeOut(),
+                        ) {
+                            ChatInputView(
+                                content = content,
+                                isGenerating = isGenerating,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(),
+                                typoFix = typoFix,
+                                inputField = inputValue,
+                                sendType = actualSender,
+                                onSendMessage = onSendMessage,
+                                onUpdateInput = onUpdateInput,
+                                onUpdateSender = onUpdateSenders,
+                                suggestions = suggestions,
+                            )
+                        }
+
+                        val alpha by animateFloatAsState(
+                            if (listState.canScrollForward.not()) 0f else 1f,
+                            animationSpec = tween(450, easing = EaseIn),
+                        )
+                        Column(
+                            modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .animateContentSize(
-                                        animationSpec = tween(200, easing = EaseIn),
-                                    ),
+                                    .graphicsLayer(alpha = alpha)
+                                    .animateContentSize()
+                                    .constrainAs(topBar) {
+                                        top.linkTo(parent.top)
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                    }.background(MaterialTheme.colorScheme.background),
+                        ) {
+                            AnimatedVisibility(
+                                objectiveExpanded.not(),
+                                modifier =
+                                    Modifier.align(Alignment.CenterHorizontally),
+                                enter = scaleIn() + fadeIn(),
+                                exit = fadeOut() + slideOutVertically { -it },
                             ) {
-                                Button(
-                                    onClick = {
-                                        isExpanded = isExpanded.not()
-                                    },
-                                    colors =
-                                        ButtonDefaults.textButtonColors().copy(
-                                            contentColor = content.data.genre.iconColor,
-                                        ),
-                                    shape = shape,
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    Icon(
-                                        painterResource(R.drawable.ic_spark),
-                                        null,
-                                        modifier = Modifier.size(12.dp),
-                                        tint = content.data.genre.iconColor,
-                                    )
-                                    Text(
-                                        snackBar.title,
-                                        style =
-
-                                            MaterialTheme.typography.bodySmall.copy(
-                                                color = content.data.genre.iconColor,
+                                Image(
+                                    painterResource(R.drawable.ic_spark),
+                                    contentDescription = null,
+                                    colorFilter = ColorFilter.tint(content.data.genre.color),
+                                    modifier =
+                                        Modifier
+                                            .clip(CircleShape)
+                                            .clickable {
+                                                objectiveExpanded = true
+                                            }.size(24.dp)
+                                            .sharedElement(
+                                                rememberSharedContentState(
+                                                    key = "current_objective_${content.data.id}",
+                                                ),
+                                                animatedVisibilityScope = this@AnimatedVisibility,
                                             ),
-                                        fontFamily = content.data.genre.headerFont(),
-                                        textAlign = TextAlign.Start,
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .weight(1f),
-                                    )
-                                }
+                                )
+                            }
 
-                                AnimatedVisibility(
-                                    visible = isExpanded,
-                                    enter = fadeIn(),
-                                    exit = fadeOut(),
-                                ) {
-                                    Text(
-                                        snackBar.text,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontFamily = content.data.genre.bodyFont(),
-                                        textAlign = TextAlign.Justify,
-                                        color = content.data.genre.iconColor,
-                                        modifier =
-                                            Modifier
-                                                .padding(horizontal = 16.dp)
-                                                .fillMaxWidth(),
-                                    )
-                                }
+                            SagaTopBar(
+                                saga.title,
+                                "${content.flatMessages().size} mensagens",
+                                saga.genre,
+                                isLoading = isGenerating,
+                                onBackClick = onBack,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(start = 8.dp),
+                                titleModifier =
+                                    titleModifier.clickable {
+                                        openSagaDetails(saga)
+                                    },
+                                actionContent = {
+                                    AnimatedContent(characters, transitionSpec = {
+                                        slideInVertically() + fadeIn() with fadeOut()
+                                    }) { chars ->
+                                        CharactersTopIcons(
+                                            chars,
+                                            saga.genre,
+                                            isLoading = isGenerating,
+                                        ) { _ -> openSagaDetails(saga) }
+                                    }
+                                },
+                            )
+                        }
 
-                                AnimatedVisibility(isExpanded) {
-                                    if (snackBar.redirectAction != null) {
+                        val backgroundColor by animateColorAsState(
+                            if (snackBar != null) saga.genre.color else Color.Transparent,
+                        )
+                        val progressColor by animateColorAsState(
+                            if (snackBar == null) saga.genre.color else content.data.genre.iconColor,
+                        )
+
+                        Column(
+                            Modifier
+                                .background(
+                                    backgroundColor,
+                                ).constrainAs(loreProgress) {
+                                    top.linkTo(topBar.bottom)
+                                    start.linkTo(topBar.start)
+                                    end.linkTo(topBar.end)
+                                    width = Dimension.fillToConstraints
+                                },
+                        ) {
+                            AnimatedVisibility(objectiveExpanded.not()) {
+                                LinearProgressIndicator(
+                                    modifier =
+                                        Modifier
+                                            .sharedElement(
+                                                rememberSharedContentState(
+                                                    key = "lore_progress_${content.data.id}",
+                                                ),
+                                                animatedVisibilityScope = this,
+                                            ).alpha(alpha)
+                                            .height(1.dp)
+                                            .fillMaxWidth(),
+                                    progress = { progress },
+                                    drawStopIndicator = {},
+                                    color = content.data.genre.color,
+                                    trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+                                )
+                            }
+
+                            AnimatedVisibility(
+                                snackBar != null,
+                                modifier = Modifier.fillMaxWidth(),
+                                enter = slideInVertically { +it } + fadeIn(),
+                                exit = fadeOut() + slideOutVertically { it },
+                            ) {
+                                snackBar?.let { snackBar ->
+                                    var isExpanded by remember {
+                                        mutableStateOf(false)
+                                    }
+
+                                    val shape = RoundedCornerShape(content.data.genre.cornerSize())
+                                    Column(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .animateContentSize(
+                                                animationSpec = tween(200, easing = EaseIn),
+                                            ),
+                                    ) {
                                         Button(
                                             onClick = {
-                                                onSnackAction(snackBar.redirectAction)
+                                                isExpanded = isExpanded.not()
                                             },
                                             colors =
-                                                ButtonDefaults.textButtonColors(
+                                                ButtonDefaults.textButtonColors().copy(
                                                     contentColor = content.data.genre.iconColor,
                                                 ),
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth(),
+                                            shape = shape,
+                                            modifier = Modifier.fillMaxWidth(),
+                                        ) {
+                                            Icon(
+                                                painterResource(R.drawable.ic_spark),
+                                                null,
+                                                modifier = Modifier.size(12.dp),
+                                                tint = content.data.genre.iconColor,
+                                            )
+                                            Text(
+                                                snackBar.title,
+                                                style =
+
+                                                    MaterialTheme.typography.bodySmall.copy(
+                                                        color = content.data.genre.iconColor,
+                                                    ),
+                                                fontFamily = content.data.genre.headerFont(),
+                                                textAlign = TextAlign.Start,
+                                                modifier =
+                                                    Modifier
+                                                        .padding(8.dp)
+                                                        .weight(1f),
+                                            )
+                                        }
+
+                                        AnimatedVisibility(
+                                            visible = isExpanded,
+                                            enter = fadeIn(),
+                                            exit = fadeOut(),
                                         ) {
                                             Text(
-                                                snackBar.redirectAction.second,
-                                                style = MaterialTheme.typography.bodyMedium,
+                                                snackBar.text,
+                                                style = MaterialTheme.typography.labelMedium,
                                                 fontFamily = content.data.genre.bodyFont(),
+                                                textAlign = TextAlign.Justify,
+                                                color = content.data.genre.iconColor,
+                                                modifier =
+                                                    Modifier
+                                                        .padding(horizontal = 16.dp)
+                                                        .fillMaxWidth(),
                                             )
+                                        }
+
+                                        AnimatedVisibility(isExpanded) {
+                                            if (snackBar.redirectAction != null) {
+                                                Button(
+                                                    onClick = {
+                                                        onSnackAction(snackBar.redirectAction)
+                                                    },
+                                                    colors =
+                                                        ButtonDefaults.textButtonColors(
+                                                            contentColor = content.data.genre.iconColor,
+                                                        ),
+                                                    modifier =
+                                                        Modifier
+                                                            .fillMaxWidth(),
+                                                ) {
+                                                    Text(
+                                                        snackBar.redirectAction.second,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        fontFamily = content.data.genre.bodyFont(),
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        if (isDebug && saga.isEnded.not()) {
+                            var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
+                            val blurRadius by animateFloatAsState(
+                                if (isGenerating) 40f else 0f,
+                            )
+                            val shape = RoundedCornerShape(content.data.genre.cornerSize())
+                            BlurredGlowContainer(
+                                Modifier
+                                    .padding(16.dp)
+                                    .constrainAs(debugControls) {
+                                        bottom.linkTo(parent.bottom)
+                                        start.linkTo(parent.start)
+                                        end.linkTo(parent.end)
+                                        width = Dimension.fillToConstraints
+                                        height = Dimension.wrapContent
+                                    },
+                                content.data.genre.gradient(isGenerating),
+                                shape = shape,
+                                blurSigma = blurRadius,
+                            ) {
+                                val textStyle =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                    )
+                                TextField(
+                                    value = fakeMessageCountText,
+                                    textStyle = textStyle,
+                                    onValueChange = { fakeMessageCountText = it },
+                                    label = {
+                                        Text(
+                                            "Debug controls",
+                                            style = textStyle,
+                                            modifier = Modifier.scale(.9f),
+                                        )
+                                    },
+                                    placeholder = {
+                                        Text(
+                                            "Number of Fake Messages",
+                                            style = textStyle,
+                                            modifier = Modifier.alpha(.7f),
+                                        )
+                                    },
+                                    shape = shape,
+                                    modifier =
+                                        Modifier
+                                            .padding(2.dp)
+                                            .background(
+                                                MaterialTheme.colorScheme.surfaceContainer,
+                                                shape,
+                                            ).fillMaxWidth(),
+                                    trailingIcon = {
+                                        IconButton(
+                                            onClick = {
+                                                val count = fakeMessageCountText.toIntOrNull() ?: 0
+                                                if (count > 0) {
+                                                    onInjectFakeMessages(count)
+                                                }
+                                            },
+                                            modifier =
+                                                Modifier
+                                                    .background(
+                                                        content.data.genre.color,
+                                                        CircleShape,
+                                                    ).size(32.dp)
+                                                    .padding(4.dp),
+                                        ) {
+                                            Icon(
+                                                painterResource(R.drawable.ic_inject),
+                                                null,
+                                                tint = content.data.genre.iconColor,
+                                            )
+                                        }
+                                    },
+                                    colors =
+                                        TextFieldDefaults.colors().copy(
+                                            focusedIndicatorColor = Color.Transparent,
+                                            unfocusedIndicatorColor = Color.Transparent,
+                                            disabledIndicatorColor = Color.Transparent,
+                                        ),
+                                )
+                            }
+                        }
                     }
                 }
 
-                if (isDebug && saga.isEnded.not()) {
-                    var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
-                    val blurRadius by animateFloatAsState(
-                        if (isGenerating) 40f else 0f,
-                    )
-                    val shape = RoundedCornerShape(content.data.genre.cornerSize())
-                    BlurredGlowContainer(
-                        Modifier
-                            .padding(16.dp)
-                            .constrainAs(debugControls) {
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                                width = Dimension.fillToConstraints
-                                height = Dimension.wrapContent
-                            },
-                        content.data.genre.gradient(isGenerating),
-                        shape = shape,
-                        blurSigma = blurRadius,
-                    ) {
-                        val textStyle =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = content.data.genre.bodyFont(),
+                val currentObjective = content.getCurrentTimeLine()?.data?.currentObjective
+
+                currentObjective?.let {
+                    AnimatedVisibility(objectiveExpanded, enter = slideInVertically { +it }, exit = fadeOut()) {
+                        val genre = content.data.genre
+                        Column(
+                            Modifier
+                                .align(Alignment.TopCenter)
+                                .padding(vertical = 32.dp, horizontal = 16.dp)
+                                .clip(genre.shape())
+                                .fillMaxWidth()
+                                .border(1.dp, genre.color.gradientFade(), genre.shape())
+                                .background(MaterialTheme.colorScheme.background, genre.shape())
+                                .clickable {
+                                    objectiveExpanded = false
+                                }.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                null,
+                                colorFilter = ColorFilter.tint(content.data.genre.color),
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .size(32.dp)
+                                        .sharedElement(
+                                            rememberSharedContentState(
+                                                key = "current_objective_${content.data.id}",
+                                            ),
+                                            animatedVisibilityScope = this@AnimatedVisibility,
+                                        ),
                             )
-                        TextField(
-                            value = fakeMessageCountText,
-                            textStyle = textStyle,
-                            onValueChange = { fakeMessageCountText = it },
-                            label = {
-                                Text(
-                                    "Debug controls",
-                                    style = textStyle,
-                                    modifier = Modifier.scale(.9f),
-                                )
-                            },
-                            placeholder = {
-                                Text(
-                                    "Number of Fake Messages",
-                                    style = textStyle,
-                                    modifier = Modifier.alpha(.7f),
-                                )
-                            },
-                            shape = shape,
-                            modifier =
-                                Modifier
-                                    .padding(2.dp)
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceContainer,
-                                        shape,
-                                    ).fillMaxWidth(),
-                            trailingIcon = {
-                                IconButton(
-                                    onClick = {
-                                        val count = fakeMessageCountText.toIntOrNull() ?: 0
-                                        if (count > 0) {
-                                            onInjectFakeMessages(count)
-                                        }
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .background(
-                                                content.data.genre.color,
-                                                CircleShape,
-                                            ).size(32.dp)
-                                            .padding(4.dp),
-                                ) {
-                                    Icon(
-                                        painterResource(R.drawable.ic_inject),
-                                        null,
-                                        tint = content.data.genre.iconColor,
-                                    )
-                                }
-                            },
-                            colors =
-                                TextFieldDefaults.colors().copy(
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                    disabledIndicatorColor = Color.Transparent,
-                                ),
-                        )
+                            Text(
+                                "Objetivo atual",
+                                style =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                    ),
+                                modifier = Modifier.alpha(.6f),
+                            )
+
+                            Text(
+                                it,
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                    ),
+                            )
+
+                            LinearProgressIndicator(
+                                modifier =
+                                    Modifier
+                                        .sharedElement(
+                                            rememberSharedContentState(
+                                                key = "lore_progress_${content.data.id}",
+                                            ),
+                                            animatedVisibilityScope = this@AnimatedVisibility,
+                                        ).clip(genre.shape())
+                                        .height(4.dp)
+                                        .fillMaxWidth()
+                                        .reactiveShimmer(true, shimmerColors = genre.shimmerColors()),
+                                gapSize = 0.dp,
+                                progress = { progress },
+                                drawStopIndicator = {},
+                                color = genre.color,
+                                trackColor = Color.Transparent,
+                            )
+                        }
                     }
                 }
             }
@@ -1280,14 +1434,14 @@ fun CharactersTopIcons(
     isLoading: Boolean = false,
     onCharacterSelected: (Character?) -> Unit = {},
 ) {
-    val overlapAmount = (-10).dp
+    val overlapAmount = (-12).dp
     val density = LocalDensity.current
     val charactersToDisplay =
         characters.take(3)
     LazyRow(
         Modifier
             .clip(RoundedCornerShape(genre.cornerSize()))
-            .fillMaxWidth(.2f),
+            .fillMaxWidth(.15f),
         userScrollEnabled = false,
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,

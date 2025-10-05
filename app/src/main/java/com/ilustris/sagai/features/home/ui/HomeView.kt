@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -180,7 +181,7 @@ private fun ChatList(
 ) {
     LazyColumn(
         modifier =
-            Modifier.padding(padding),
+            Modifier.animateContentSize().padding(padding),
     ) {
         if (showDebugButton) {
             item {
@@ -236,6 +237,7 @@ private fun ChatList(
             Row(
                 modifier =
                     Modifier
+                        .animateItem()
                         .padding(16.dp)
                         .reactiveShimmer(
                             true,
@@ -325,13 +327,22 @@ private fun ChatList(
                     ?.timestamp
             },
         ) {
-            ChatCard(it, isEnabled = showDebugButton) {
-                onSelectSaga(it.data)
-            }
+            ChatCard(
+                it,
+                Modifier.animateItem().clickable {
+                    if (!it.data.isDebug || showDebugButton) {
+                        onSelectSaga(it.data)
+                    }
+                },
+            )
         }
 
         item {
-            PremiumCard(isPremium, onClick = openPremiumSheet, modifier = Modifier.padding(16.dp))
+            PremiumCard(
+                isPremium,
+                onClick = openPremiumSheet,
+                modifier = Modifier.animateItem().padding(16.dp),
+            )
         }
     }
 }
@@ -339,19 +350,14 @@ private fun ChatList(
 @Composable
 fun ChatCard(
     saga: SagaContent,
-    isEnabled: Boolean = false,
-    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     val sagaData = saga.data
     Column {
         Row(
             modifier =
-                Modifier
-                    .clickable {
-                        if (!saga.data.isDebug || isEnabled) {
-                            onClick()
-                        }
-                    }.fillMaxWidth()
+                modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(15.dp))
                     .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,

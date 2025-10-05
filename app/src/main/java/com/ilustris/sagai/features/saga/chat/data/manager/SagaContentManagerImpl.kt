@@ -1,7 +1,8 @@
-package com.ilustris.sagai.features.saga.chat.domain.manager
+package com.ilustris.sagai.features.saga.chat.data.manager
 
 import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
+import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
@@ -27,9 +28,10 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
-import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
+import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -232,6 +234,14 @@ class SagaContentManagerImpl
                                 .associate { it.key to it.value },
                     ).getSuccess()
 
+                withContext(Dispatchers.IO) {
+                    delay(2.seconds)
+                    mergeWiki(
+                        saga,
+                        chapter,
+                    )
+                }
+
                 chapterUseCase
                     .generateChapterCover(
                         chapter.copy(
@@ -246,6 +256,14 @@ class SagaContentManagerImpl
                     ).getSuccess()!!
             }
 
+        private suspend fun mergeWiki(
+            saga: SagaContent,
+            chapter: ChapterContent,
+        ) = wikiUseCase.mergeWikis(
+            saga,
+            chapter,
+        )
+
         private suspend fun endChapter(currentAct: ActContent?) =
             executeRequest {
                 actUseCase
@@ -256,9 +274,9 @@ class SagaContentManagerImpl
                     )
             }
 
-        private suspend fun startTimeline(currentChapter: ChapterContent?) =
+        private suspend fun startTimeline(currentChapter: ChapterContent) =
             executeRequest {
-                val lastTimeline = currentChapter!!.events.lastOrNull()
+                val lastTimeline = currentChapter.events.lastOrNull()
                 if (lastTimeline?.isComplete()?.not() == true) {
                     chapterUseCase.updateChapter(
                         currentChapter.data.copy(
@@ -267,7 +285,9 @@ class SagaContentManagerImpl
                     )
                     throw IllegalArgumentException("Timeline already set at this chapter")
                 }
-                timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter.data.id))
+
+                val objective = timelineUseCase.getTimelineObjective(currentChapter).getSuccess()
+                timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter.data.id, currentObjective = objective))
             }
 
         private suspend fun endTimeline(currentChapter: ChapterContent?) =
@@ -690,7 +710,7 @@ class SagaContentManagerImpl
                             backstory = "Generated in debug mode.",
                             sagaId = currentSaga.data.id,
                             details = Details(),
-                            profile = CharacterProfile()
+                            profile = CharacterProfile(),
                         )
                     characterUseCase.insertCharacter(fakeCharacter)
                 } else {
