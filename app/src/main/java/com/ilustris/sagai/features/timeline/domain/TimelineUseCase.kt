@@ -29,5 +29,5 @@ interface TimelineUseCase {
         timelineContent: TimelineContent,
     ): RequestResult<Timeline>
 
-    suspend fun getTimelineObjective(currentChapterContent: ChapterContent): RequestResult<String>
+    suspend fun getTimelineObjective(saga: SagaContent): RequestResult<String>
 }

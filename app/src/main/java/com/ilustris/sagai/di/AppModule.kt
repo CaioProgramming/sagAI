@@ -166,9 +166,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImagenClient(
-        freePikApiService: FreePikApiService,
         firebaseRemoteConfig: FirebaseRemoteConfig,
-    ): ImagenClient = ImagenClientImpl(freePikApiService, firebaseRemoteConfig)
+        billingService: BillingService,
+    ): ImagenClient = ImagenClientImpl(billingService, firebaseRemoteConfig)
 
     @Provides
     @Singleton

@@ -1,13 +1,17 @@
 package com.ilustris.sagai.features.timeline.domain
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.LorePrompts
 import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -90,19 +94,15 @@ class TimelineUseCaseImpl
                 )
             }
 
-        override suspend fun getTimelineObjective(currentChapterContent: ChapterContent): RequestResult<String> =
+        override suspend fun getTimelineObjective(saga: SagaContent): RequestResult<String> =
             executeRequest {
-                val chapterIntroduction = currentChapterContent.data.introduction
-                val recentEvents =
-                    currentChapterContent.events
-                        .filter { it.isComplete() }
-                        .map { it.data }
-                        .sortedByDescending { it.createdAt }
                 val objectivePrompt =
-                    TimelinePrompts.generateCurrentObjectivePrompt(
-                        chapterIntroduction,
-                        recentEvents,
+                    ChatPrompts.sceneSummarizationPrompt(
+                        saga,
+                        saga.flatMessages().takeLast(UpdateRules.LORE_UPDATE_LIMIT).map {
+                            it.joinMessage(true).formatToString(true)
+                        },
                     )
-                gemmaClient.generate<String>(objectivePrompt, skipRunning = true)!!
+                gemmaClient.generate<SceneSummary>(objectivePrompt, skipRunning = true)!!.immediateObjective!!
             }
     }

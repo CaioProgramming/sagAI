@@ -7,15 +7,12 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
@@ -120,7 +117,7 @@ class CharacterUseCaseImpl
 
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription)!!
+                        .generateImage(translatedDescription, canByPass = true)!!
                         .apply {
                             if (isPremium.not()) {
                                 this.removeBackground(context, true)

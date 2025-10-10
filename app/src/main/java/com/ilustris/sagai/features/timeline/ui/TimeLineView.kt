@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,11 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -64,17 +59,14 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
@@ -90,36 +82,25 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedTransitionActionItemModifier
 import com.ilustris.sagai.features.saga.detail.ui.titleAndSubtitle
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.components.EmotionalCard
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.components.SparkLoader
-import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
-import ir.ehsannarmani.compose_charts.extensions.split
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -519,6 +500,7 @@ fun TimeLineCard(
                             showText = true,
                             showReference = false,
                             showSpark = it.character.id == saga.mainCharacter?.data?.id,
+                            iconSize = 32.dp,
                             modifier = Modifier.padding(top = 8.dp),
                             onSelectCharacter = {
                                 openCharacters.invoke()
@@ -821,6 +803,7 @@ fun TimeLineCard(
     showIndicator: Boolean = false,
     isLast: Boolean = false,
     modifier: Modifier = Modifier,
+    iconSize: Dp = 50.dp,
     onSelectCharacter: (Character) -> Unit = {},
     onSelectReference: (Timeline) -> Unit = {},
 ) {
@@ -862,7 +845,7 @@ fun TimeLineCard(
                         .uppercase(),
                     modifier =
                         Modifier
-                            .size(50.dp)
+                            .size(iconSize)
                             .clickable {
                                 onSelectCharacter(eventDetails.character)
                             },
@@ -882,9 +865,9 @@ fun TimeLineCard(
             Column(
                 modifier =
                     Modifier
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp)
                         .constrainAs(contentView) {
-                            top.linkTo(parent.top)
+                            top.linkTo(iconView.top)
                             start.linkTo(iconView.end)
                             end.linkTo(parent.end)
                             width = Dimension.fillToConstraints
@@ -966,7 +949,7 @@ fun TimeLineCard(
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = genre.bodyFont(),
                                 color = textColor,
-                                textAlign = TextAlign.Justify,
+                                textAlign = TextAlign.Start,
                             ),
                     )
                 }
@@ -1100,7 +1083,7 @@ fun TimelineCharacterAttachment(
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),
                             color = textColor,
-                            textAlign = TextAlign.Justify,
+                            textAlign = TextAlign.Start,
                         ),
                 )
 

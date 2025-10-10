@@ -9,12 +9,18 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.MergeWikiGen
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
+import kotlin.collections.flatten
 
 object WikiPrompts {
     fun generateWiki(
         saga: SagaContent,
         event: Timeline,
     ) = buildString {
+        val wikis =
+            saga.currentActInfo
+                ?.currentChapterInfo
+                ?.events
+                ?.flatMap { it.updatedWikis } ?: emptyList()
         appendLine(
             "ROLE: You are an intelligent system tasked with extracting, structuring and creating a emoji for new or updated information from a provided list of recent timeline events to populate a game wiki.",
         )
@@ -32,7 +38,24 @@ object WikiPrompts {
         appendLine(
             "// Use this list to understand existing entities and their structure, and to avoid creating duplicate entries for information already known or to update existing entries with new details.",
         )
-        appendLine(saga.wikis.formatToJsonArray())
+        if (wikis.isEmpty()) {
+            appendLine("// No existing wiki entries in the current chapter.")
+        } else {
+            appendLine(
+                wikis.formatToJsonArray(
+                    excludingFields =
+                        listOf(
+                            "createdAt",
+                            "sagaId",
+                            "id",
+                            "emojiTag",
+                            "timelineId",
+                            "type",
+                        ),
+                ),
+            )
+        }
+
         appendLine("Always follow that structure:")
         appendLine("[")
         appendLine(" ${toJsonMap(Wiki::class.java)}")

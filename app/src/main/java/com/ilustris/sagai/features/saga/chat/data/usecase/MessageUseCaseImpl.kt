@@ -58,7 +58,7 @@ class MessageUseCaseImpl
         ): RequestResult<TypoFix?> =
             executeRequest {
                 gemmaClient.generate<TypoFix>(
-                    SagaPrompts.checkForTypo(genre, message, lastMessage),
+                    ChatPrompts.checkForTypo(genre, message, lastMessage),
                     requireTranslation = true,
                 )!!
             }
@@ -139,19 +139,28 @@ class MessageUseCaseImpl
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
                             message =
-                                message
-                                    .joinMessage(showType = true)
-                                    .formatToString(showSender = true),
+                                message.message,
                             lastMessages =
                                 saga
                                     .flatMessages()
                                     .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                    .map { it.joinMessage(true).formatToString() },
+                                    .map { it.message },
                             directive = saga.getDirective(),
                             sceneSummary = sceneSummary,
                         ),
                         true,
                     )
+
+                val messageTranslation =
+                    checkMessageTypo(
+                        saga.data.genre,
+                        genText!!.message.text,
+                        saga
+                            .flatMessages()
+                            .lastOrNull()
+                            ?.joinMessage(true)
+                            ?.formatToString(true),
+                    ).getSuccess()?.suggestedText
 
                 if (message.message.senderType != SenderType.THOUGHT) {
                     withContext(Dispatchers.IO) {
@@ -159,7 +168,7 @@ class MessageUseCaseImpl
                     }
                 }
 
-                genText!!
+                genText.copy(message = genText.message.copy(text = messageTranslation ?: genText.message.text))
             }
 
         suspend fun generateReaction(

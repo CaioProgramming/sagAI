@@ -187,7 +187,7 @@ import effectForGenre
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ChatView(
     navHostController: NavHostController,
@@ -209,7 +209,6 @@ fun ChatView(
     val loreProgress by viewModel.loreUpdateProgress.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var showRationaleDialog by remember { mutableStateOf(false) }
-    val showTitle by viewModel.showTitle.collectAsStateWithLifecycle()
     val input by viewModel.inputValue.collectAsStateWithLifecycle()
     val senderType by viewModel.sendType.collectAsStateWithLifecycle()
     val typoFix by viewModel.typoFixMessage.collectAsStateWithLifecycle()
@@ -533,7 +532,6 @@ fun ChatContent(
                             saga = content,
                             actList = messagesList,
                             listState = listState,
-                            isLoading = isGenerating,
                             modifier =
                                 Modifier
                                     .constrainAs(messages) {
@@ -632,6 +630,8 @@ fun ChatContent(
                                 enter = scaleIn() + fadeIn(),
                                 exit = fadeOut() + slideOutVertically { -it },
                             ) {
+                                val currentObjective = content.getCurrentTimeLine()?.data?.currentObjective
+
                                 Image(
                                     painterResource(R.drawable.ic_spark),
                                     contentDescription = null,
@@ -639,7 +639,7 @@ fun ChatContent(
                                     modifier =
                                         Modifier
                                             .clip(CircleShape)
-                                            .clickable {
+                                            .clickable(enabled = currentObjective?.isNotEmpty() == true) {
                                                 objectiveExpanded = true
                                             }.size(24.dp)
                                             .sharedElement(
@@ -659,12 +659,12 @@ fun ChatContent(
                                 onBackClick = onBack,
                                 modifier =
                                     Modifier
-                                        .fillMaxWidth()
+                                        .clickable {
+                                            openSagaDetails(saga)
+                                        }.fillMaxWidth()
                                         .padding(start = 8.dp),
                                 titleModifier =
-                                    titleModifier.clickable {
-                                        openSagaDetails(saga)
-                                    },
+                                titleModifier,
                                 actionContent = {
                                     AnimatedContent(characters, transitionSpec = {
                                         slideInVertically() + fadeIn() with fadeOut()
@@ -710,7 +710,7 @@ fun ChatContent(
                                             .height(1.dp)
                                             .fillMaxWidth(),
                                     progress = { progress },
-                                    drawStopIndicator = {},
+                                    gapSize = 0.dp,
                                     color = content.data.genre.color,
                                     trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                                 )
@@ -1137,7 +1137,6 @@ fun ChatList(
     actList: List<ActDisplayData>,
     modifier: Modifier,
     listState: LazyListState,
-    isLoading: Boolean = false,
     openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
@@ -1146,7 +1145,7 @@ fun ChatList(
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
-    LaunchedEffect(saga) {
+    LaunchedEffect(saga.messagesSize()) {
         listState.animateScrollToItem(0)
     }
 
@@ -1328,6 +1327,9 @@ fun ChatList(
                             openCharacters = { char -> openCharacter(char) },
                             openWiki = { openWiki() },
                             onReactionsClick = { openReactions(it) },
+                            onRetry = {
+                                onRetryMessage(it.message)
+                            },
                         )
                     }
                 }

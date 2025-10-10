@@ -193,8 +193,8 @@ fun genresGradient(): List<Color> =
 fun Genre.gradient(
     animated: Boolean = false,
     duration: Duration = 3.seconds,
-    targetValue: Float = 1000f,
-    gradientType: GradientType = GradientType.VERTICAL,
+    targetValue: Float = 500f,
+    gradientType: GradientType = GradientType.LINEAR,
 ) = if (animated) {
     gradientAnimation(this.colorPalette(), duration, targetValue, gradientType)
 } else {

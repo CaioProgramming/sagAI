@@ -31,7 +31,7 @@ class SagaRepositoryImpl
         private val imageCropHelper: ImageCropHelper,
         private val fileHelper: FileHelper,
         private val imagenClient: ImagenClient,
-        private val billingService: BillingService
+        private val billingService: BillingService,
     ) : SagaRepository {
         private val sagaDao: SagaDao by lazy {
             database.sagaDao()
@@ -64,14 +64,6 @@ class SagaRepositoryImpl
             saga: Saga,
             character: Character,
         ) = executeRequest {
-            val isPremium = billingService.isPremium()
-            if (isPremium.not()) {
-               return@executeRequest updateChat(
-                    saga.copy(
-                        icon = emptyString(),
-                    ),
-                )
-            }
             val styleReference =
                 genreReferenceHelper
                     .getGenreStyleReference(saga.genre)

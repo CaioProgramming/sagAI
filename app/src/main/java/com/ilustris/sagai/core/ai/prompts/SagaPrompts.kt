@@ -38,33 +38,6 @@ object SagaPrompts {
             """.trimIndent()
     }
 
-    @Suppress("ktlint:standard:max-line-length")
-    fun checkForTypo(
-        genre: Genre,
-        message: String,
-        lastMessage: String?,
-    ) = buildString {
-        appendLine("You are an assistant who only suggests corrections when truly necessary.")
-        appendLine("If you spot an error that affects understanding, suggest a better version in a friendly, casual tone.")
-        appendLine("Your response must be a JSON: ")
-        appendLine(toJsonMap(TypoFix::class.java))
-        appendLine("Saga theme: ${genre.name}")
-        appendLine(
-            "friendlyMessage should always be short and friendly.",
-        )
-        appendLine("If there is no error, status should be OK and the other fields null.")
-        appendLine("If there is an error, status should be FIX and suggest the corrected text.")
-        appendLine("If the message could be improved but is not wrong, status should be ENHANCEMENT and suggest a clearer version.")
-        appendLine("Use the conversation style to provide a natural enhancement that fits the story theme.")
-        appendLine(GenrePrompts.conversationDirective(genre))
-        appendLine("User message:")
-        appendLine(">>> $message")
-        if (!lastMessage.isNullOrBlank()) {
-            appendLine("Previous message for context:")
-            appendLine(">>> $lastMessage")
-        }
-    }.trimIndent()
-
     fun sagaGeneration(
         saga: SagaForm,
         miniChatContent: List<ChatMessage>,

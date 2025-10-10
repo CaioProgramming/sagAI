@@ -65,7 +65,10 @@ class CharacterRelationUseCaseImpl
         ) = executeRequest {
             checkNotNull(firstCharacter)
             checkNotNull(secondCharacter)
-            assert(firstCharacter.id != secondCharacter.id)
+            if (firstCharacter.id == secondCharacter.id) {
+                Log.e(javaClass.simpleName, "A character cannot have a relationship with themselves")
+                return@executeRequest null
+            }
 
             val existingRelationshipContent =
                 saga.relationships.find { rc ->

@@ -47,6 +47,16 @@ object TimelinePrompts {
             appendLine(chapterIntroduction)
             appendLine("")
             appendLine("RECENT EVENTS:")
-            appendLine(recentEvents.map { it.content }.joinToString(separator = "\n"))
+            appendLine(
+                recentEvents.formatToJsonArray(
+                    excludingFields =
+                        listOf(
+                            "createdAt",
+                            "chapterId",
+                            "emotionalReview",
+                            "id",
+                        ),
+                ),
+            )
         }
 }

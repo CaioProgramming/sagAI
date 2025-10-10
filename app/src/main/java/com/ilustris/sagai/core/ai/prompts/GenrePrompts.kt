@@ -30,15 +30,12 @@ object GenrePrompts {
 
             SCI_FI ->
                 """
-                **True 80s-90s Retro Anime Cel Art Style.**
-                Think classic theatrical anime features and OVAs: bold, clean inked outlines with varied line weight.
-                **Distinct Cel Shading:** Hard-edged shadows, flat color fills, and a limited but impactful color palette. Avoid overly smooth gradients or photorealistic textures.
-                Subtle film grain or animation cel artifacting is desirable.
-                Inspired by the visual aesthetics of works like Akira, Ghost in the Shell (1995), and Bubblegum Crisis.
-                The character rendering should strictly adhere to this classic cel animation look.
-                Cyberpunk elements should be integrated within this specific retro anime framework.
-                Backgrounds can be detailed yet stylized, often with a melancholic or industrial feel, fitting the era. **For character icons, however, the background inspired by these elements should be significantly simplified, perhaps to bold graphic shapes, a minimalist abstract texture, or a tastefully blurred representation, ensuring the character remains the dominant focus and the icon is uncluttered.**
-                """
+               retro anime, 80s anime, 90s anime, cel shading,
+               cel art, anime cel, bold outlines, varied line weight,
+               limited color palette, Akira, Ghost in the Shell (1995),
+               Bubblegum Crisis, theatrical anime, OVA, film grain, animation cel artifacting,
+               stylized backgrounds, industrial aesthetic, melancholic atmosphere
+               """
 
             HORROR ->
                 """
@@ -76,10 +73,13 @@ object GenrePrompts {
                 """
             Genre.SPACE_OPERA ->
                 """
-                Classic 1960s/70s American comic book art style.
-                Characterized by bold, consistent black outlines, flat and solid colors, and a clean, vibrant aesthetic.
-                The character's face and figure display stronger, more mature and defined features with realistic comic proportions,
-                avoiding any childlike rendering.    
+                **1960s POP ART, inspired by Roy Lichtenstein's dramatic comic book illustrations, rendered with the aesthetic of VINTAGE OFFSET PRINTING**.
+                Characterized by **heavy black inking, flat solid colors, coarse Ben-Day dots APPLIED TO THE CHARACTER'S FACE AND CLOTHING**, and a limited color palette.
+                Emphasize **extreme chiaroscuro** lighting, **with shadows rendered in solid black shapes**, high contrast, and stylized features.
+                The character's face and figure display stronger, more **defined features with realistic proportions**, **evocando a youthful, determined appearance** while **avoiding any childlike rendering**.
+                
+                CRITICAL STYLIZATION DIRECTIVE: Since the style is 1960s POP ART, the translated expression MUST be dramatic, stylized, and slightly exaggerated to match the aesthetic of classic comic book panels, ensuring the emotional state is visually explicit.
+                Example Translation: "Calma, observadora, mas sobrecarregada" → Intense, reserved gaze, slight frown of profound weariness emphasized by comic book exaggeration of eyebrows and mouth curve.
                 """
         }
 
@@ -96,19 +96,22 @@ object GenrePrompts {
 
             SCI_FI ->
                 """
-                The overall scene should capture a moody, retro-anime cyberpunk aesthetic, with a strong emphasis on purple, drawing inspiration from visuals like a character in a neon-lit city at dusk.
+                **Specific Color Application Instructions:**
+                *The following rules dictate how the genre's key color (purple) is applied.  Imagine a striking visual effect where purple is used as a focused accent, similar to how a brightly colored detail might stand out against a muted background – think a vibrant neon sign in a dark alley.*
+                
 
                 **Background & Ambient Lighting:**
-                The background should evoke a cyberpunk city at dusk or night, featuring sources of **subtle ambient purple neon lighting** that cast a moody glow. This could manifest as reflections off wet surfaces, distant city lights, or atmospheric haze, creating an environment rich with purple hues without being uniformly purple. For character icons, this background should be significantly simplified to bold graphic shapes, a minimalist abstract texture, or a tastefully blurred representation, still retaining the purple atmospheric feel and ensuring the character remains the dominant focus.
-
-                **Character Purple Highlights & Details:**
-                While the character's primary clothing, skin, and hair colors must remain distinct and true to their base design (as per the CRUCIAL rule below), integrate **more pronounced and thoughtfully placed purple light details and highlights** in the following ways:
-                *   **Reflective Surfaces:** Catch subtle but clear purple reflections on metallic parts of clothing (zippers, buckles), cybernetics, weapons, or accessories.
-                *   **Edge Lighting/Rim Lighting:** Use sharp purple rim lighting to define parts of the character's silhouette against the darker background, suggesting they are being hit by distinct purple light sources from the environment.
-                *   **Emissive Details:** Enhance or add elements like glowing purple cybernetic eye details (irises, small implants), thin luminous purple circuit patterns on clothing (not coloring the whole garment), subtle purple light strips on gear, or faint highlights on individual small pieces of tech. These elements should feel like they are emitting a soft purple light.
-                *   **Subtle Cast Light:** Allow a *very subtle* and localized cast of purple light onto areas of the character immediately adjacent to strong purple light sources or their own emissive details. Avoid tinting large surfaces or the character's overall complexion.
-
-                **CRUCIAL:** The character's overall skin tone, hair color (apart from specific, small glowing accents like streaks or cybernetic parts), and primary clothing colors MUST retain their natural, distinct hues and NOT be globally tinted purple. The purple elements should be targeted highlights, reflections, and light sources, enhancing the cyberpunk feel without altering the character's core color palette. The goal is a sophisticated interplay of light, not a purple wash.
+                Establish a subtle cyberpunk atmosphere with **ambient purple neon lighting** and atmospheric haze.
+                The background should be suggestive of a city at dusk, but remain *subdued and out of focus* to ensure the character remains the dominant element. 
+                **The primary focus of the image MUST be the character's face and upper body.**
+                
+                **Character Purple Highlights:** Integrate **pronounced purple light details and highlights** to create a visually arresting effect. Think of purple as a "pop" of color that draws the eye:
+                *   **Focused Accents:** Use purple for key accent elements – glowing cybernetic implants, illuminated details on clothing, or a striking purple light source casting shadows.
+                *   **Rim Lighting:** Apply subtle purple rim lighting to define the character's silhouette.
+                *   **Emissive Details:** Enhance details like cybernetic eyes or circuit patterns with a purple glow.
+                
+                **CRUCIAL:** Maintain the character's natural skin tone, hair color, and clothing colors. **Do NOT globally tint the character purple.** Purple should be used for *focused, impactful highlights* – not as an overall color wash.  The goal is to create a visually striking contrast, where the purple elements immediately capture the viewer's attention. **Do not add any new accessories or items to the character that are not already described in the Character Context.**
+                                
                 """
 
             HORROR ->
@@ -135,9 +138,12 @@ object GenrePrompts {
 
             Genre.SPACE_OPERA ->
                 """
-               The background, a deep black starry space background with subtle cyan and purple highlights.
-               The composition is highly engaging, capturing a moment of profound,
-               aspirational contemplation and cosmic beauty.     
+                **Background & Ambient Lighting:**
+                Establish a subtle, dark, and atmospheric starry sky background.
+                The background should be:
+                ** minimalist, out of focus, and stylized, resembling a simple painted backdrop with soft, ethereal cosmic dust and small, sparkling stars**.
+                Use soft gradients and subtle textures to create a sense of depth without being overly detailed.
+                The primary focus of the image MUST be the character's face and upper body.
                 """
         }.trimIndent()
 

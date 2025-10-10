@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -142,7 +143,8 @@ fun ChatInputView(
 
     Column(
         modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .imePadding(),
     ) {
         AnimatedVisibility(charactersExpanded && content.characters.isNotEmpty()) {
             LazyColumn(
@@ -461,10 +463,6 @@ fun ChatInputView(
                 }
             }
         }
-
-        if (isImeVisible) {
-            Spacer(Modifier.height(50.dp))
-        }
     }
 
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -496,7 +494,9 @@ fun ChatInputView(
                     Column(
                         modifier =
                             Modifier
+                                .padding(16.dp)
                                 .fillMaxWidth()
+                                .border(1.dp, genre.gradient(true), genre.shape())
                                 .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
                                 .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -527,6 +527,7 @@ fun ChatInputView(
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Button(
                                     enabled = isEnabled,
+                                    shape = genre.shape(),
                                     onClick = {
                                         it.suggestedText?.let { text ->
                                             onUpdateInput(
@@ -561,6 +562,7 @@ fun ChatInputView(
                                         sendMessage(true)
                                         isEnabled = false
                                     },
+                                    shape = genre.shape(),
                                     colors =
                                         ButtonDefaults.textButtonColors().copy(
                                             contentColor =

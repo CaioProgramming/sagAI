@@ -17,6 +17,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,9 +56,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -77,6 +80,7 @@ import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -268,14 +272,17 @@ fun PremiumView(
 }
 
 @Composable
-fun PremiumTitle(titleStyle: TextStyle = MaterialTheme.typography.titleLarge) {
+fun PremiumTitle(
+    titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
+    brush: Brush = Brush.horizontalGradient(holographicGradient),
+) {
     Row(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         modifier =
             Modifier
                 .reactiveShimmer(true)
-                .gradientFill(Brush.linearGradient(holographicGradient)),
+                .gradientFill(brush),
     ) {
         SagaTitle(
             textStyle = titleStyle,
@@ -297,10 +304,11 @@ fun PremiumCard(
     Column(
         modifier =
             modifier
+                .clickable { onClick() }
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
-                    RoundedCornerShape(15.dp),
-                ).padding(8.dp),
+                    RoundedCornerShape(10.dp),
+                ).padding(16.dp),
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -308,13 +316,19 @@ fun PremiumCard(
             Image(
                 painterResource(R.drawable.ic_spark),
                 null,
-                Modifier
-                    .size(24.dp)
-                    .gradientFill(Brush.linearGradient(holographicGradient)),
+                colorFilter = ColorFilter.tint(Color.White),
+                modifier =
+                    Modifier
+                        .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(.1f), RoundedCornerShape(10.dp))
+                        .background(Brush.verticalGradient(holographicGradient), RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(10.dp))
+                        .size(24.dp)
+                        .padding(4.dp),
             )
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 PremiumTitle(
                     titleStyle = MaterialTheme.typography.labelLarge,
+                    brush = MaterialTheme.colorScheme.onBackground.solidGradient(),
                 )
 
                 Text(

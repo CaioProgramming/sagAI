@@ -286,7 +286,7 @@ class SagaContentManagerImpl
                     throw IllegalArgumentException("Timeline already set at this chapter")
                 }
 
-                val objective = timelineUseCase.getTimelineObjective(currentChapter).getSuccess()
+                val objective = timelineUseCase.getTimelineObjective(content.value!!).getSuccess()
                 timelineUseCase.saveTimeline(Timeline(chapterId = currentChapter.data.id, currentObjective = objective))
             }
 
@@ -543,7 +543,10 @@ class SagaContentManagerImpl
                         cleanUpEmptyTimeLines(step.chapter)
                         setNarrativeProcessingStatus(false)
                     }
-
+                    is NarrativeStep.NoActionNeeded -> {
+                        checkObjective()
+                        setNarrativeProcessingStatus(false)
+                    }
                     else -> setNarrativeProcessingStatus(false)
                 }
             } catch (e: Exception) {
@@ -551,6 +554,24 @@ class SagaContentManagerImpl
                 setNarrativeProcessingStatus(false)
             }
         }
+
+        private suspend fun checkObjective() =
+            executeRequest {
+                content.value?.currentActInfo?.currentChapterInfo?.currentEventInfo?.let { currentTimeline ->
+                    if (currentTimeline.data.currentObjective.isNullOrEmpty()) {
+                        timelineUseCase
+                            .getTimelineObjective(content.value!!)
+                            .getSuccess()
+                            ?.let { newObjective ->
+                                timelineUseCase.updateTimeline(
+                                    currentTimeline.data.copy(
+                                        currentObjective = newObjective,
+                                    ),
+                                )
+                            }
+                    }
+                }
+            }
 
         private suspend fun generateTimelineContent(
             timeline: Timeline,

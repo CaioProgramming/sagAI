@@ -24,28 +24,34 @@ object ImagePrompts {
         **Guidelines for Conversion and Expansion:**
         // Section 1: Artistic Style - Highest Priority
         ${artStyle(genre)}
-        2.  **Translate Accurately:** Translate all Portuguese values from the input fields into precise English.
-        3. Filter Physical Attributes:
-        Critically evaluate the Character Description and exclude any physical attributes that cannot
-        be seen in a portrait framed from the shoulders up.
-        Ignore details like height, weight, pants, shoes, and any clothing or items below the chest level.
-        4. Infer Visuals from Context: This is critical.
-            From the Character Description and Current Mood/Situation, infer and elaborate on:
+        2.  **Translate Accurately:** Translate all values from the input fields into precise English. Remove redundant adverbs and adjectives
+        3. Filter Physical Attributes: Strictly exclude any accessories or clothing details that cannot be clearly seen in the 'Extreme Close-Up' focus area (e.g., items clipped to the belt or below the neck).
+        **Exclusion Rule (ABSOLUTE):** Strictly exclude **ALL** accessories and clothing details that are not fully visible in a head-and-face close-up. **Specifically exclude** any mention of: communicator on wrist, tablet on belt, gloves, shoes, pants, and anything below the clavicle.
+        **Literal Fidelity (MANDATORY TRANSLATION):**
+        The agent MUST perform a direct and literal English translation of the full description provided in the facialDetails context (Hair, Eyes, Jawline, Mouth, Distinguishing Marks) and include it in Segment C.
+        NO ADAPTATION RULE: The agent must not infer, shorten, adapt, simplify, or modify any characteristic, especially color, length, texture, or style. If the input says 'long', the output MUST include 'long'. If the input mentions a specific texture (e.g., straight, wavy), it must be included.
 
-            Key Pose/Expression: Based on the Current Mood/Situation, generate a clear and distinct facial expression that directly reflects the character's personality.
-            The pose must include a dynamic element to avoid a straight-on, static portrait. This should involve:
+        Example (Literal): "Cabelos longos e lisos, de um tom platinado" MUST become "Long, straight platinum blonde hair."
+        
+        4. Infer Visuals from Context: This is critical.
+            Expression Translation (MANDATORY): From the Character Context fields (personality, backstory, and Current Mood/Situation), CRITICALLY infer the primary dramatic emotion that the character is experiencing. This emotion MUST be translated into a clear and distinct facial expression that directly reflects the character's internal state.
+
+            Example Translation: "Calma, observadora, mas sobrecarregada" → Intense, reserved gaze, slight frown of profound weariness.
             
-            Head Angle Variation: A slight tilt of the head, a look over the shoulder, or a gaze directed slightly off-camera.
+            Example Translation: "Empatia, resolvendo conflito" → Focused, empathetic expression, hint of concern.
             
-            Shoulder and Body Language: A subtle turn of the shoulders or torso, suggesting movement or a specific posture.
+            Dynamic Pose (Refined): The pose must include a dynamic element to avoid a straight-on, static portrait. This should involve:
             
-            Hand Placement (if included): A hand gently touching the face, chin, or hair to add a personal touch.
+            Head Angle Variation: A strong tilt of the head, a worried look down, or a resolute gaze directed slightly off-camera.
             
+            Shoulder and Body Language: A subtle tense turn of the shoulders or torso, suggesting readiness, conflict, or apprehension, matching the inferred dramatic emotion.
+                        
             Important Objects/Elements: Include relevant objects only if they can be shown concisely in the shoulders-up area, without obscuring the face.
-        5. **Integrate Character (Dominant Central Focus & Red Accents):** The primary character **MUST be the absolute central and dominant focus of the image, filling a significant portion of the frame.** Frame the character as a **close-up portrait** (e.g., headshot to waist-up, or very close full body if the pose demands it, but always prioritizing the character's face/expression). 
-        6. Composition for Avatar (Face Focus, Shoulders Up): Formulate the prompt to ensure a 1:1 aspect ratio (square), with the character centralized and the framing strictly on the shoulders and face.
-           Absolutely no full-body, wide, or medium shots.
-           Suggested terms to use: "avatar," "profile picture," "shoulders up portrait," "close-up on face," "emphasizing facial features," "dynamic pose," "head tilted," "looking over shoulder," "slight smirk," "engaging expression," "1:1 aspect ratio," "square crop," "central composition," "minimalist background."       
+        5. **Integrate Character (Dominant Central Focus & Red Accents):
+           The final framing (Headshot, Bust-Up, or Extreme Close-up) MUST be derived from and match the overall Composition Reference Image provided to the model.
+           The character MUST fill a significant portion of the frame, with the primary emphasis always on the facial features and the dramatic expression.
+        6. Composition Fidelity (1:1 Portrait Focus):
+        Analyze the Composition Reference Image to determine the appropriate framing (e.g., Bust-Up, Waist-Up, or Headshot). Formulate the prompt to ensure a 1:1 aspect ratio (square), with the character centralized, and the framing must match the reference while adapting it to a compelling square portrait.
         7.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.    
         8.  **Art Style & Mood (CRITICAL - Reference Image Dictates Style)**:
             *   **The provided reference image is the ABSOLUTE and DEFINITIVE source for the entire art style.** This includes, but is not limited to: art medium (e.g., oil painting, digital art, pixel art, anime cel shading), rendering technique (e.g., brushstrokes, line work, shading style), color palette, lighting scheme, overall mood, and aesthetic.
@@ -86,6 +92,7 @@ object ImagePrompts {
                     "image",
                     "sagaId",
                     "joinedAt",
+                    "emojified",
                 ),
             ),
         )

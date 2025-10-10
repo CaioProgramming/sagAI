@@ -59,10 +59,10 @@ class BillingService
         }
 
         suspend fun checkPurchases() {
-         /*   if (BuildConfig.DEBUG) {
+            if (BuildConfig.DEBUG) {
                 state.emit(BillingState.SignatureEnabled)
                 return
-            }*/
+            }
             val params =
                 QueryPurchasesParams
                     .newBuilder()

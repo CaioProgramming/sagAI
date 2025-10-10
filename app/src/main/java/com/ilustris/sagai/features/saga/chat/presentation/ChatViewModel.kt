@@ -190,10 +190,7 @@ class ChatViewModel
                         notifyIfNeeded()
                         state.value = ChatState.Success
                         loadFinished = true
-                        if (isFirstLoading) {
-                            delay(3.seconds)
-                            showTitle.emit(false)
-                        }
+                        sagaContentManager.checkNarrativeProgression(sagaContent)
                     }
             }
         }
@@ -530,19 +527,18 @@ class ChatViewModel
             )
             val currentSaga = content.value ?: return
             if (currentSaga.data.isEnded) return
-            val currentTimeline = currentSaga.getCurrentTimeLine()
-            if (currentTimeline == null) return
+            val currentTimeline = currentSaga.getCurrentTimeLine() ?: return
             if (currentTimeline.messages.isEmpty()) return
             viewModelScope.launch(Dispatchers.IO) {
                 content.value?.data?.let { saga ->
                     suggestions.value = emptyList()
 
-                    delay(500L)
+                    delay(1.seconds)
                     suggestionUseCase
                         .invoke(
                             currentTimeline.messages,
                             currentSaga.mainCharacter?.data,
-                            saga,
+                            currentSaga,
                         ).onSuccess {
                             suggestions.value = it
                         }
@@ -582,7 +578,7 @@ class ChatViewModel
                                 characterId = null,
                                 timelineId = timeline.data.id,
                                 id = 0,
-                                status = MessageStatus.OK
+                                status = MessageStatus.OK,
                             ),
                         )
                         if (newMessage.message.status == MessageStatus.ERROR) {
