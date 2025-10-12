@@ -58,7 +58,18 @@ object WikiPrompts {
 
         appendLine("Always follow that structure:")
         appendLine("[")
-        appendLine(" ${toJsonMap(Wiki::class.java)}")
+        appendLine(
+            " ${toJsonMap(
+                Wiki::class.java,
+                filteredFields =
+                    listOf(
+                        "id",
+                        "sagaId",
+                        "timelineId",
+                        "createdAt",
+                    ),
+            )}",
+        )
         appendLine("]")
         appendLine("// REMINDER: FOR 'FACTIONS' TYPE, ONLY INCLUDE GROUPS OR ORGANIZATIONS, NOT SINGLE INDIVIDUALS.")
         appendLine("// REMINDER: WRITE SHORT TITLES.")

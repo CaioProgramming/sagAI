@@ -77,6 +77,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SagaTitle
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -319,8 +320,8 @@ fun PremiumCard(
                 colorFilter = ColorFilter.tint(Color.White),
                 modifier =
                     Modifier
-                        .border(1.dp, MaterialTheme.colorScheme.onBackground.copy(.1f), RoundedCornerShape(10.dp))
-                        .background(Brush.verticalGradient(holographicGradient), RoundedCornerShape(10.dp))
+                        .border(1.dp, Color.White.gradientFade(), RoundedCornerShape(5.dp))
+                        .background(Brush.verticalGradient(holographicGradient, endY = 150f), RoundedCornerShape(5.dp))
                         .clip(RoundedCornerShape(10.dp))
                         .size(24.dp)
                         .padding(4.dp),
@@ -331,8 +332,11 @@ fun PremiumCard(
                     brush = MaterialTheme.colorScheme.onBackground.solidGradient(),
                 )
 
+                val premiumText = if (isUserPro) R.string.premium_already else R.string.premium_first_title
+
                 Text(
-                    stringResource(R.string.premium_first_title),
+                   stringResource(premiumText),
+                    modifier = Modifier.alpha(.4f),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.Light,
@@ -368,5 +372,20 @@ fun PremiumCard(
 fun PremiumViewPreview() {
     SagAIScaffold {
         PremiumView()
+    }
+}
+
+@Preview(name = "Premium Card Light", showBackground = true)
+@Preview(name = "Premium Card Night", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun PremiumCardPreview() {
+    SagAIScaffold {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(16.dp)
+        ) {
+            PremiumCard(isUserPro = false)
+            PremiumCard(isUserPro = true)
+        }
     }
 }

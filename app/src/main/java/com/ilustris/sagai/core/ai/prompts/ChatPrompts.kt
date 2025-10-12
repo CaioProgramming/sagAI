@@ -188,23 +188,46 @@ object ChatPrompts {
         appendLine("PLAYER CONTEXT DATA:")
         appendLine(saga.mainCharacter?.data.toJsonFormatExcludingFields(characterExclusions))
         appendLine("Player relationships:")
-        appendLine(
-            saga.mainCharacter?.relationships?.joinToString(";\n") {
-                val lastEvent = it.relationshipEvents.last()
-                "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}\n${lastEvent.description}"
-            },
-        )
+        if (saga.mainCharacter?.relationships.isNullOrEmpty()) {
+            appendLine("No relationships yet.")
+        } else {
+            appendLine(
+                saga.mainCharacter?.relationships?.joinToString(";\n") {
+                    val lastEvent = it.relationshipEvents.last()
+                    "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}\n${lastEvent.description}"
+                },
+            )
+        }
+
         appendLine("Player last events:")
-        appendLine(
-            saga.mainCharacter?.events?.map { it.event }?.takeLast(5)?.formatToJsonArray(
-                listOf("gameTimelineId", "characterId", "id", "createdAt"),
-            ),
-        )
+        if (saga.mainCharacter?.events.isNullOrEmpty()) {
+            appendLine("No events yet.")
+        } else {
+            appendLine(
+                saga.mainCharacter?.events?.map { it.event }?.takeLast(5)?.formatToJsonArray(
+                    listOf("gameTimelineId", "characterId", "id", "createdAt"),
+                ),
+            )
+        }
         appendLine("Current Saga Characters:")
-        appendLine(
-            CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }),
-        )
+        val characters = saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }
+        if (characters.isEmpty()) {
+            appendLine("No other characters yet.")
+        } else {
+            appendLine(
+                characters.joinToString(";\n") {
+                    it.toJsonFormatExcludingFields(characterExclusions)
+                },
+            )
+        }
         appendLine("Current Chapter Context:")
+        appendLine("Introduction: ")
+        appendLine(
+            saga.currentActInfo
+                ?.currentChapterInfo
+                ?.data
+                ?.introduction ?: "No introduction available.",
+        )
         appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
         appendLine("Recent Chapter Summaries:")
         appendLine(ChapterPrompts.chapterSummary(saga))

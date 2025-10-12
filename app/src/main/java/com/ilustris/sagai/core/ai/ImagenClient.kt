@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Log
+import com.google.firebase.BuildConfig
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend

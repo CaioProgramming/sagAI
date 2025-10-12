@@ -158,8 +158,6 @@ fun ChatBubble(
                                 start.linkTo(characterAvatar.end)
                                 end.linkTo(parent.end, margin = 50.dp)
                             }
-
-                            width = Dimension.fillToConstraints
                         }.fillMaxWidth(),
                 ) {
                     TypewriterText(
@@ -383,7 +381,7 @@ fun ChatBubble(
                 ConstraintLayout(
                     modifier =
                         Modifier
-                            .padding(16.dp)
+                            .padding(8.dp)
                             .align(Alignment.Center)
                             .padding(16.dp),
                 ) {

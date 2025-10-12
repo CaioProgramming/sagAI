@@ -74,7 +74,7 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest {
-                val isPremium = billingService.isPremium()
+                val isPremium = true // billingService.isPremium()
 
                 val styleReferenceBitmap =
                     ImageReference(
@@ -117,7 +117,7 @@ class CharacterUseCaseImpl
 
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription, canByPass = true)!!
+                        .generateImage(translatedDescription, canByPass = false)!!
                         .apply {
                             if (isPremium.not()) {
                                 this.removeBackground(context, true)

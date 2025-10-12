@@ -112,7 +112,7 @@ class SagaContentManagerImpl
             try {
                 sagaHistoryUseCase
                     .getSagaById(sagaId.toInt())
-                    .debounce(500L)
+                    .debounce(200)
                     .collectLatest { saga ->
                         Log.d(
                             javaClass.simpleName,
@@ -245,12 +245,13 @@ class SagaContentManagerImpl
                 chapterUseCase
                     .generateChapterCover(
                         chapter.copy(
-                            chapter.data.copy(
-                                title = chapterGen.title,
-                                overview = chapterGen.overview,
-                                emotionalReview = emotionalReview ?: emptyString(),
-                                featuredCharacters = featuredCharacters,
-                            ),
+                            data =
+                                chapter.data.copy(
+                                    title = chapterGen.title,
+                                    overview = chapterGen.overview,
+                                    emotionalReview = emotionalReview ?: emptyString(),
+                                    featuredCharacters = featuredCharacters,
+                                ),
                         ),
                         saga,
                     ).getSuccess()!!
@@ -563,11 +564,13 @@ class SagaContentManagerImpl
                             .getTimelineObjective(content.value!!)
                             .getSuccess()
                             ?.let { newObjective ->
-                                timelineUseCase.updateTimeline(
-                                    currentTimeline.data.copy(
-                                        currentObjective = newObjective,
-                                    ),
-                                )
+                                if (newObjective.isNotEmpty()) {
+                                    timelineUseCase.updateTimeline(
+                                        currentTimeline.data.copy(
+                                            currentObjective = newObjective,
+                                        ),
+                                    )
+                                }
                             }
                     }
                 }

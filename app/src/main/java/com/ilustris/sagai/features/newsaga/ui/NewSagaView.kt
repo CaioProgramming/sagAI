@@ -98,7 +98,7 @@ fun NewSagaView(
     }
 
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 50.dp).fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Box(Modifier.size(32.dp))
 
             Box(Modifier.weight(1f)) {
@@ -140,4 +140,3 @@ fun NewSagaView(
         )
     }
 }
-

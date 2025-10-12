@@ -251,5 +251,6 @@
     <string name="restore_purchases">Restore purchases</string>
     <string name="not_premium_title_label">Join</string>
     <string name="premium_label_title">You are</string>
-    <string name="subscribe">Assinar</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="premium_already">Subscription active</string>
 </resources>

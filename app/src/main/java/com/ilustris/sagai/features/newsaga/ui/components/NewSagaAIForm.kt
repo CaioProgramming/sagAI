@@ -80,7 +80,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -101,6 +100,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.ui.presentation.FormState
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.MorphPolygonShape
@@ -111,6 +111,7 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -149,10 +150,6 @@ fun NewSagaAIForm(
     val textFont = genre?.bodyFont()
     var showReview by remember { mutableStateOf(false) }
     var showText by remember { mutableStateOf(false) }
-    val blurRadius by animateDpAsState(
-        targetValue = if (showText) 50.dp else 0.dp,
-        label = "BlurRadius",
-    )
 
     LaunchedEffect(isLoading) {
         if (isLoading) {
@@ -230,7 +227,7 @@ fun NewSagaAIForm(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .gradientFill(gradientAnimation(holographicGradient)),
+                        .reactiveShimmer(true, genre?.shimmerColors() ?: holographicGradient.plus(Color.Transparent)),
             )
         }
         Column(
@@ -277,17 +274,12 @@ fun NewSagaAIForm(
                     label = "themeScale",
                 )
 
-                val backBlur by animateDpAsState(
-                    if (showText) 25.dp else 0.dp,
-                )
-
                 this@Column.AnimatedVisibility(
                     genre != null,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut(),
                     modifier =
                         Modifier
-                            .blur(backBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                             .align(Alignment.Center),
                 ) {
                     val (dx, dy) = polarOffsetDp(80.dp, 45f)
@@ -319,7 +311,6 @@ fun NewSagaAIForm(
                     exit = fadeOut() + scaleOut(),
                     modifier =
                         Modifier
-                            .blur(backBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                             .align(Alignment.Center),
                 ) {
                     val (dx, dy) = polarOffsetDp(96.dp, 220f)
@@ -355,8 +346,7 @@ fun NewSagaAIForm(
                     modifier =
                         Modifier
                             .align(Alignment.Center)
-                            .wrapContentSize()
-                            .blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded),
+                            .wrapContentSize(),
                 ) {
                     if (it) {
                         BlurredGlowContainer(
@@ -385,21 +375,14 @@ fun NewSagaAIForm(
                             }
                         }
                     } else {
-                        val fullStarCount = Genre.entries.size * 100
-                        val starCount = if (showText) 0 else fullStarCount
-                        val blurStar by animateDpAsState(
-                            if (showText) 25.dp else 0.dp,
-                        )
-                        val background by animateColorAsState(
-                            if (showText) color else Color.Transparent,
-                        )
+                        val starCount = Genre.entries.size * 100
+
+                        val background = Color.Transparent
                         Box(
                             modifier =
                                 Modifier
-                                    .blur(blurStar)
                                     .align(Alignment.Center)
                                     .clip(shape)
-                                    .background(background)
                                     .size(100.dp),
                         ) {
                             StarryTextPlaceholder(
@@ -413,36 +396,35 @@ fun NewSagaAIForm(
                         }
                     }
                 }
+            }
 
-                this@Column.AnimatedVisibility(
-                    showText,
-                    modifier = Modifier.align(Alignment.Center),
-                ) {
-                    AnimatedContent(aiState.message, transitionSpec = {
-                        slideInVertically() + fadeIn(tween(400)) togetherWith scaleOut() +
-                            fadeOut(
-                                tween(200),
-                            )
-                    }) {
-                        it?.let { _ ->
-                            Text(
-                                aiState.message ?: emptyString(),
-                                style =
-                                    MaterialTheme.typography.bodyLarge.copy(
-                                        brush = brush,
-                                        fontFamily = textFont,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .animateContentSize(tween(500, easing = EaseIn))
-                                        .clickable {
-                                            showText = false
-                                        },
-                            )
-                        }
-                    }
+            AnimatedContent(
+                aiState.message,
+                modifier = Modifier.fillMaxWidth(),
+                transitionSpec = {
+                    slideInVertically() + fadeIn(tween(400)) togetherWith scaleOut() +
+                        fadeOut(
+                            tween(200),
+                        )
+                },
+            ) {
+                it?.let { _ ->
+                    Text(
+                        aiState.message ?: emptyString(),
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                brush = brush,
+                                fontFamily = textFont,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier =
+                            Modifier
+                                .animateContentSize(tween(500, easing = EaseIn))
+                                .clickable {
+                                    showText = false
+                                },
+                    )
                 }
             }
 

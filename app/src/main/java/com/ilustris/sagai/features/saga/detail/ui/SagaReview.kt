@@ -305,7 +305,7 @@ fun SagaReview(
                     modifier =
                         Modifier
                             .constrainAs(reviewIndicators) {
-                                top.linkTo(parent.top, margin = 50.dp)
+                                top.linkTo(parent.top)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
                             }.alpha(indicatorsAlpha),
@@ -1245,10 +1245,11 @@ fun PlayStylePage(content: SagaContent) {
                 firstTone,
                 morphProgress,
                 rotation,
-                outlineBrush = Brush.verticalGradient(
-                    firstTone.color.darkerPalette(factor = .3f),
-                ),
-                 backgroundBrush = genre.gradient(false, targetValue = 300f),
+                outlineBrush =
+                    Brush.verticalGradient(
+                        firstTone.color.darkerPalette(factor = .3f),
+                    ),
+                backgroundBrush = genre.gradient(false, targetValue = 300f),
                 glowColor = genre.color,
             )
 

@@ -438,7 +438,13 @@ fun ChatContent(
     }
 
     var objectiveExpanded by remember {
-        mutableStateOf(true)
+        mutableStateOf(
+            content
+                .getCurrentTimeLine()
+                ?.data
+                ?.currentObjective
+                ?.isNotEmpty() == true,
+        )
     }
     val imeState = WindowInsets.isImeVisible
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -710,6 +716,7 @@ fun ChatContent(
                                             .height(1.dp)
                                             .fillMaxWidth(),
                                     progress = { progress },
+                                    drawStopIndicator = {},
                                     gapSize = 0.dp,
                                     color = content.data.genre.color,
                                     trackColor = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
@@ -915,6 +922,7 @@ fun ChatContent(
                                     objectiveExpanded = false
                                 }.padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Image(
                                 painterResource(R.drawable.ic_spark),

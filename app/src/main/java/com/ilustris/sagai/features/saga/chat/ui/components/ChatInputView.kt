@@ -130,7 +130,6 @@ fun ChatInputView(
     val inputShape = RoundedCornerShape(content.data.genre.cornerSize())
 
     rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 

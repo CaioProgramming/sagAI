@@ -228,4 +228,6 @@
     <string name="restore_purchases">Restaurar compras</string>
     <string name="not_premium_title_label">Junte-se ao</string>
     <string name="premium_label_title">Você é</string>
+    <string name="subscribe">Assinar</string>
+    <string name="premium_already">Assinatura ativa</string>
 </resources>

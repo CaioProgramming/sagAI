@@ -51,9 +51,9 @@ class CharacterDetailsViewModel
             selectedCharacter: Character,
         ) {
             Log.i(javaClass.simpleName, "regenerate: Regenerating character icon")
-            if (selectedCharacter.image.isNotEmpty() && selectedCharacter.emojified && billingService.isPremium().not()) {
+            /*if (selectedCharacter.image.isNotEmpty() && selectedCharacter.emojified && billingService.isPremium().not()) {
                 return
-            }
+            }*/
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase.generateCharacterImage(

@@ -190,7 +190,6 @@ class ChatViewModel
                         notifyIfNeeded()
                         state.value = ChatState.Success
                         loadFinished = true
-                        sagaContentManager.checkNarrativeProgression(sagaContent)
                     }
             }
         }

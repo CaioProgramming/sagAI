@@ -228,6 +228,11 @@ class CreateSagaViewModel
                                         isLoading = false,
                                         saga = saveOperation.success.value.first,
                                     )
+
+                                viewModelScope.launch {
+                                    delay(10.seconds)
+                                    navigateToSaga(saveOperation.success.value.first)
+                                }
                             }
                     }
                 }

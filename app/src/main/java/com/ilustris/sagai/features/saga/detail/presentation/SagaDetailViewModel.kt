@@ -107,7 +107,6 @@ class SagaDetailViewModel
             val isPremium = billingService.isPremium()
             if (isPremium.not()) {
                 showPremiumSheet.value = true
-                return
             }
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
