@@ -151,24 +151,13 @@ class MessageUseCaseImpl
                         true,
                     )
 
-                val messageTranslation =
-                    checkMessageTypo(
-                        saga.data.genre,
-                        genText!!.message.text,
-                        saga
-                            .flatMessages()
-                            .lastOrNull()
-                            ?.joinMessage(true)
-                            ?.formatToString(true),
-                    ).getSuccess()?.suggestedText
-
                 if (message.message.senderType != SenderType.THOUGHT) {
                     withContext(Dispatchers.IO) {
                         generateReaction(saga, message, sceneSummary)
                     }
                 }
 
-                genText.copy(message = genText.message.copy(text = messageTranslation ?: genText.message.text))
+                genText!!
             }
 
         suspend fun generateReaction(

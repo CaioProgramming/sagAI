@@ -40,7 +40,8 @@ object ImagePrompts {
             
             Example Translation: "Empatia, resolvendo conflito" → Focused, empathetic expression, hint of concern.
             
-            Dynamic Pose (Refined): The pose must include a dynamic element to avoid a straight-on, static portrait. This should involve:
+            Dynamic Pose (CINEMATIC & ANGULAR - MANDATORY): The composition MUST incorporate a dramatic, non-straight-on camera angle (e.g., Low-Angle Shot, Dutch Angle, or High-Angle Shot). The pose and action must be intensely dynamic, suggesting imminent conflict or high tension, and the description MUST use cinematic terms to define this angle (e.g., Shot from below, Worm's-eye perspective, Angular composition).
+            The characters' body language (torso, arms, shoulders) should convey maximum action and readiness for battle.
             
             Head Angle Variation: A strong tilt of the head, a worried look down, or a resolute gaze directed slightly off-camera.
             

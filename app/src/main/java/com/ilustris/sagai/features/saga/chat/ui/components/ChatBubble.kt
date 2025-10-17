@@ -158,7 +158,8 @@ fun ChatBubble(
                                 start.linkTo(characterAvatar.end)
                                 end.linkTo(parent.end, margin = 50.dp)
                             }
-                        }.fillMaxWidth(),
+                            width = Dimension.fillToConstraints
+                        },
                 ) {
                     TypewriterText(
                         text = message.text,

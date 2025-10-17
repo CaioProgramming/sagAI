@@ -71,7 +71,8 @@ class ChapterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
+                val characters =
+                    chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
                 val coverBitmap = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
                 val coverReference =
                     coverBitmap?.let {
@@ -107,13 +108,15 @@ class ChapterUseCaseImpl
                     listOf(coverReference, styleReference)
                         .plus(charactersIcons)
                         .filterNotNull()
+                val coverPrompt =
+                    ChapterPrompts.coverDescription(
+                        saga,
+                        chapter.data,
+                        characters,
+                    )
                 val promptGeneration =
                     gemmaClient.generate<String>(
-                        ChapterPrompts.coverDescription(
-                            saga,
-                            chapter.data,
-                            characters,
-                        ),
+                        coverPrompt,
                         references = imageReferences,
                         requireTranslation = false,
                         skipRunning = true,
@@ -125,7 +128,11 @@ class ChapterUseCaseImpl
                             listOfNotNull(coverReference).plus(charactersIcons),
                         )
                 val coverFile =
-                    fileHelper.saveFile(chapter.data.title, genCover, path = "${saga.data.id}/chapters/")
+                    fileHelper.saveFile(
+                        chapter.data.title,
+                        genCover,
+                        path = "${saga.data.id}/chapters/",
+                    )
                 val newChapter =
                     chapter.data.copy(
                         coverImage = coverFile?.path ?: emptyString(),
@@ -147,7 +154,12 @@ class ChapterUseCaseImpl
             executeRequest {
                 delay(400)
                 val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
-                val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
+                val intro =
+                    gemmaClient.generate<String>(
+                        prompt,
+                        requireTranslation = true,
+                        skipRunning = true,
+                    )!!
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)
             }

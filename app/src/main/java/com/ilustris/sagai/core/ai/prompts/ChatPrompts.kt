@@ -100,6 +100,8 @@ object ChatPrompts {
         appendLine(SagaDirective.namingDirective(saga.data.genre))
         appendLine(conversationStyleAndPacing())
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
+        appendLine("Use the conversation style to provide a natural dialogue")
+        appendLine(GenrePrompts.conversationDirective(saga.data.genre))
 
         appendLine(conversationHistory(lastMessages))
 

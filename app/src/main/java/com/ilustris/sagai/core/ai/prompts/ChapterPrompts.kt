@@ -217,6 +217,9 @@ object ChapterPrompts {
                 "id",
                 "image",
                 "hexColor",
+                "sagaId",
+                "abilities",
+                "emojified",
             )
         val coverContextJson = coverContext.toJsonFormatExcludingFields(fieldsToExcludeForCover)
 
@@ -242,23 +245,26 @@ object ChapterPrompts {
              **YOUR TASK (Output a single text string for the Image Generation Model):**
              Generate a single, highly detailed, unambiguous, and visually rich English text description for an AI image generation model. This description MUST create a **MINIMALISTIC CHAPTER COVER FOCUSED ON THE CHARACTERS**.
 
-             The description must:
-             1.  **Prioritize Character Depiction:**
-                 *   High Focus on the character(s) listed in `charactersInvolved` from the JSON context. Incorporate them on the mood and environment.
-                 *   Ensure their appearance and expression are primarily inspired by their individual Visual Reference Images. **Their POSE, however, should be DRAMATIC and EXPRESSIVE, derived from their context within the chapter (implied by the 'chapterTitle' and 'sagaGenre') or their inherent character traits, rather than a direct copy from any visual reference.** The overall compositional Visual Reference Image can inspire the *framing* of these dynamic poses.
-                 *   If multiple characters are present, their interaction or composition should be clear and engaging, suitable for a cover.
-                 *   Ensure to place characters in dramatic and dynamic poses providing more emotion on the generated image.
-            3.  **Adherence to Directives:**
+            The description must:
+            1. Prioritize Character Depiction:
+             * High Focus on the character(s) listed in charactersInvolved from the JSON context. Incorporate them on the mood and environment.
+             * Ensure their appearance and expression are primarily inspired by their individual Visual Reference Images.
+             * Their POSE must be INTENSELY DYNAMIC and reflect the chapter's core theme. The final **cinematic framing** must prioritize **emotional impact and narrative significance**. The composition can utilize a **dynamic non-standard camera perspective** (e.g., extreme close-up, low-angle, dutch angle, or eye-level shot with creative staging) to maximize drama. 
+             *   If the chapter involves **direct, intense confrontation**, include a strong **foreground element** (like a weapon hilt, a character's hand, or a close-up section of a face) to convey immediate danger and scale. However, if the chapter emphasizes **alliance, mystery, dialogue, or emotional reflection**, the composition **MUST AVOID foreground obstruction, especially weapons.** Instead, prioritize **expressive interaction** and **dynamic character staging** (e.g., side-by-side, one observing another, shared gaze, or focused on a shared object of narrative importance) that highlights their connection, emotions, or the chapter's central theme. The dramatic scale in these cases should come from **character expressions, dramatic lighting, and environmental mood, NOT from a foreground object.**             * Ensure facial expressions are described with vivid, high-intensity emotional language (e.g., "vengeful stare", "strained defiance", "visible terror") to capture the essence of the chapter's conflict.
+             * If multiple characters are present, their interaction or composition should be clear and engaging, suitable for a cover.
+             * Ensure to place characters in dramatic and dynamic poses providing more emotion on the generated image.
+               Narrative Fidelity (MANDATORY MINIMALISM CHECK): The agent MUST cross-reference the chapterDescription to identify the **2 most critical characters** driving the central conflict, alliance, or emotional beat of the chapter. To maintain a **MINIMALISTIC** and high-impact cover, the final image **MUST FOCUS ONLY ON THESE 2 CHARACTERS** in the main composition. All other characters from the JSON, even if briefly mentioned, must be **EXCLUDED** from the image prompt to ensure maximum dramatic focus on the central duo.             * Ensure their appearance and expression are primarily inspired by their individual Visual Reference Images. Their POSE, however, should be INTENSELY DYNAMIC AND ACTION-ORIENTED, derived from their context within the chapter (Implants and Revelation) or their inherent traits. The action description must maximize the perceived urgency and confrontation. The overall compositional Visual Reference Image can inspire the framing, but the final composition MUST prioritize the cinematic angle dictated by the Dynamic Pose Rule
+            2.  **Adherence to Directives:**
                  *   Render the scene in the **Foundational Art Style**.
                  *   Ensure the description implies that characters characteristics are preserved and follow the visual reference provided.
-             4.  **Visual Reference Synthesis:**
+             3.  **Visual Reference Synthesis:**
                  *   **Heavily rely on the general Visual Reference Image for overall art style, compositional framing (suitable for a minimalistic character-focused cover), character pose *inspiration* (not direct replication), and mood.**
                  *   The specific CHARACTERS are dictated by the `charactersInvolved` in the JSON. Their individual appearances are inspired by their respective Visual Reference Images.
                  *   Synthesize these character appearances into the artistic and compositional framework derived from the general Visual Reference Image, **ensuring the poses are dynamic and narratively suggestive for the chapter cover.** Describe these poses vividly.
                  *   The prompt must NOT mention any Visual Reference Image directly. It must be a self-contained description.
-             5.  **No Text or borders: **
+             4.  **No Text or borders: **
                  *   Focus entirely on the art description, ensure that no text from the context is described in the final result.
-             YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
+            YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
             """.trimIndent()
     }
 }

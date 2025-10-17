@@ -113,7 +113,7 @@ object CharacterPrompts {
             )
             // --- ASPECT RATIO / FRAMING ---
             appendLine(
-                "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body unless explicitly required.",
+                "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body.",
             )
 
             appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.name}).")
@@ -131,6 +131,7 @@ object CharacterPrompts {
                         "sagaId",
                         "joinedAt",
                         "emojified",
+                        "abilities",
                     ),
                 ),
             )
@@ -182,55 +183,55 @@ object CharacterPrompts {
         timeline: Timeline,
         characters: List<Character>,
     ) = """
-                                                                     You are a narrative AI assistant tasked with tracking individual character progression based on specific timeline events.
-                                                                     The 'Current Timeline Event' below describes a recent occurrence in the saga.
-                                                                     The 'List of Characters in Saga' provides context on all characters currently part of the story.
+                                                                                             You are a narrative AI assistant tasked with tracking individual character progression based on specific timeline events.
+                                                                                             The 'Current Timeline Event' below describes a recent occurrence in the saga.
+                                                                                             The 'List of Characters in Saga' provides context on all characters currently part of the story.
 
-                                                                     // CORE OBJECTIVE: Extract and summarize individual character events from a narrative.
+                                                                                             // CORE OBJECTIVE: Extract and summarize individual character events from a narrative.
 
-                                                                     // --- CONTEXT ---
-                                                                     // TimelineContext: ${
+                                                                                             // --- CONTEXT ---
+                                                                                             // TimelineContext: ${
         timeline.toJsonFormatExcludingFields(
             listOf("id", "emotionalReview", "chapterId"),
         )
     }
 
-                                                                     // Characters Context: ${
+                                                                                             // Characters Context: ${
         characters.toJsonFormatExcludingFields(
             fieldsToExclude = listOf("details", "id", "image", "hexColor", "sagaId", "joinedAt"),
         )
     }
 
-                                                                     // --- MANDATORY OUTPUT STRUCTURE ---
-                                                                     // The output MUST be a JSON array. The response must NOT include any additional text, explanations, or parentheses.
-                                                                     // The structure of each object in the array MUST follow this exact format:
-                                                                     /*
-                                                                     [
-                                                                       {
-                                                                         "characterName": "Character Name",
-                                                                         "description": "A concise update (1-2 sentences) about the character's actions or impact in this event.",
-                                                                         "title": "Short, descriptive title for the character's event."
-                                                                       },
-                                                                       {
-                                                                         "characterName": "Another Character",
-                                                                         "description": "Update about the second character.",
-                                                                         "title": "Event title for this character."
-                                                                       }
-                                                                     ]
-                                                                     */
+                                                                                             // --- MANDATORY OUTPUT STRUCTURE ---
+                                                                                             // The output MUST be a JSON array. The response must NOT include any additional text, explanations, or parentheses.
+                                                                                             // The structure of each object in the array MUST follow this exact format:
+                                                                                             /*
+                                                                                             [
+                                                                                               {
+                                                                                                 "characterName": "Character Name",
+                                                                                                 "description": "A concise update (1-2 sentences) about the character's actions or impact in this event.",
+                                                                                                 "title": "Short, descriptive title for the character's event."
+                                                                                               },
+                                                                                               {
+                                                                                                 "characterName": "Another Character",
+                                                                                                 "description": "Update about the second character.",
+                                                                                                 "title": "Event title for this character."
+                                                                                               }
+                                                                                             ]
+                                                                                             */
 
-                                                                     // --- STEP-BY-STEP INSTRUCTIONS ---
-                                                                     // Follow these steps rigorously to generate the JSON array:
+                                                                                             // --- STEP-BY-STEP INSTRUCTIONS ---
+                                                                                             // Follow these steps rigorously to generate the JSON array:
 
-                                                                     // 1. ANALYSIS: Carefully read the 'TimelineContext' and identify which characters from the 'Characters Context' were **directly involved** or **significantly impacted** by the event.
-                                                                     // 
-                                                                    2. FILTERING: Exclude characters that had no discernible role.
-                                                                     // 3. GENERATION: For EACH identified character, write a brief 'description' and a relevant 'title', focusing ONLY on the events described in the 'TimelineContext'.
-                                                                     // 4. ASSEMBLY: Construct the JSON array with the character objects.
+                                                                                             // 1. ANALYSIS: Carefully read the 'TimelineContext' and identify which characters from the 'Characters Context' were **directly involved** or **significantly impacted** by the event.
+                                                                                             // 
+                                                                                            2. FILTERING: Exclude characters that had no discernible role.
+                                                                                             // 3. GENERATION: For EACH identified character, write a brief 'description' and a relevant 'title', focusing ONLY on the events described in the 'TimelineContext'.
+                                                                                             // 4. ASSEMBLY: Construct the JSON array with the character objects.
 
-                                                                     // --- CURRENT EVENT ---
-                                                                     // TimelineContext:
-                                                                     ${
+                                                                                             // --- CURRENT EVENT ---
+                                                                                             // TimelineContext:
+                                                                                             ${
         timeline.toJsonFormatExcludingFields(
             listOf(
                 "id",
@@ -241,13 +242,13 @@ object CharacterPrompts {
     }
 
 
-                                                                     // Characters Context:
-                                                                     ${
+                                                                                             // Characters Context:
+                                                                                             ${
         characters.toJsonFormatExcludingFields(
             fieldsToExclude = listOf("details", "id", "image", "hexColor", "sagaId", "joinedAt"),
         )
     }
-                                                                  
+                                                                                          
         """.trimIndent()
 
     fun generateCharacterRelation(

@@ -117,21 +117,21 @@ fun Modifier.effectForGenre(
                     )
                 Genre.SCI_FI ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .1f,
+                        grainIntensity = customGrain ?: .15f,
                         bloomThreshold = .3f,
                         bloomIntensity = .2f,
                         bloomRadius = 1.3f,
                         softFocusRadius = focusRadius ?: .2f,
-                        saturation = .65f,
-                        contrast = 1.7f,
-                        brightness = -.05f,
+                        saturation = .5f,
+                        contrast = 1.8f,
+                        brightness = -.02f,
                         highlightTint = cyberpunkPalette.highlightTint,
                         shadowTint = cyberpunkPalette.shadowTint,
                         tintStrength = cyberpunkPalette.defaultTintStrength,
                         vignetteStrength = .3f,
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = 1f.unaryMinus(), // Slightly cool for Sci-Fi
+                        colorTemperature = .05f.unaryMinus(), // Slightly cool for Sci-Fi
                     )
                 Genre.HORROR ->
                     ShaderParams(
@@ -185,23 +185,24 @@ fun Modifier.effectForGenre(
                         pixelationBlockSize = 0.0f,
                         colorTemperature = .15f.unaryMinus(),
                     )
-                Genre.SPACE_OPERA -> ShaderParams(
-                    grainIntensity = customGrain ?: .2f,
-                    bloomThreshold = .3f,
-                    bloomIntensity = .15f,
-                    bloomRadius = 1.0f,
-                    softFocusRadius = focusRadius ?: .3f,
-                    saturation = .6f,
-                    contrast = 1.4f,
-                    brightness = 0f,
-                    highlightTint = spaceOperaPalette.highlightTint,
-                    shadowTint = spaceOperaPalette.shadowTint,
-                    tintStrength = 0.25f,
-                    vignetteStrength = .25f,
-                    vignetteSoftness = 0.9f,
-                    pixelationBlockSize = 0.0f,
-                    colorTemperature = 0f,
-                )
+                Genre.SPACE_OPERA ->
+                    ShaderParams(
+                        grainIntensity = customGrain ?: .2f,
+                        bloomThreshold = .3f,
+                        bloomIntensity = .15f,
+                        bloomRadius = 1.0f,
+                        softFocusRadius = focusRadius ?: .3f,
+                        saturation = .6f,
+                        contrast = 1.4f,
+                        brightness = 0f,
+                        highlightTint = spaceOperaPalette.highlightTint,
+                        shadowTint = spaceOperaPalette.shadowTint,
+                        tintStrength = 0.25f,
+                        vignetteStrength = .25f,
+                        vignetteSoftness = 0.9f,
+                        pixelationBlockSize = 0.0f,
+                        colorTemperature = 0f,
+                    )
                 else ->
                     ShaderParams()
             }

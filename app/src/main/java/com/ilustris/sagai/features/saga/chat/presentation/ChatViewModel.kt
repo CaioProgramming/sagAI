@@ -474,7 +474,8 @@ class ChatViewModel
                         text = emptyString(),
                     )
 
-                isLoading.value = true
+                isLoading.value = isFromUser
+                sagaContentManager.setProcessing(isFromUser)
                 messageUseCase
                     .saveMessage(
                         message.copy(
@@ -490,6 +491,7 @@ class ChatViewModel
                     }.onFailure {
                         sendError("Ocorreu um erro ao salvar a mensagem")
                         typoFixMessage.value = null
+                        sagaContentManager.setProcessing(false)
                     }
             }
         }
@@ -506,7 +508,9 @@ class ChatViewModel
                         }
                     }
 
-                    else -> doNothing()
+                    else -> {
+                        sagaContentManager.setProcessing(false)
+                    }
                 }
             }
         }
@@ -553,6 +557,7 @@ class ChatViewModel
                     sagaContentManager.checkNarrativeProgression(saga)
                     return@launch
                 }
+                sagaContentManager.setProcessing(true)
                 isLoading.emit(true)
                 val newMessage =
                     MessageContent(
@@ -599,6 +604,7 @@ class ChatViewModel
                             message,
                             buttonText = "Tentar novamente",
                         )
+                        sagaContentManager.setProcessing(false)
                     }
             }
         }

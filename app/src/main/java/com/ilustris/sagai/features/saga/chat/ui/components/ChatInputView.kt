@@ -323,28 +323,31 @@ fun ChatInputView(
                             Box(
                                 contentAlignment = Alignment.CenterStart,
                                 modifier =
-                                    Modifier.reactiveShimmer(
+                                    Modifier.padding(boxPadding).reactiveShimmer(
                                         isGenerating,
                                         content.data.genre.shimmerColors(),
                                     ),
                             ) {
-                                if (inputField.text.isEmpty()) {
-                                    AnimatedContent(action) {
-                                        Text(
-                                            it.hint(),
-                                            style = textStyle,
-                                            maxLines = 1,
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(boxPadding)
-                                                    .alpha(.4f),
-                                        )
-                                    }
-                                } else {
-                                    Box(Modifier.padding(boxPadding)) {
-                                        innerTextField()
-                                    }
+                                val textAlpha by animateFloatAsState(
+                                    if (inputField.text.isEmpty()) 0f else 1f,
+                                )
+                                val hintAlpha by animateFloatAsState(
+                                    if (inputField.text.isEmpty()) 1f else 0f,
+                                )
+                                AnimatedContent(action, modifier = Modifier.alpha(hintAlpha)) {
+                                    Text(
+                                        it.hint(),
+                                        style = textStyle,
+                                        maxLines = 1,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .alpha(.4f),
+                                    )
+                                }
+
+                                Box(Modifier.alpha(textAlpha)) {
+                                    innerTextField()
                                 }
                             }
                         },
