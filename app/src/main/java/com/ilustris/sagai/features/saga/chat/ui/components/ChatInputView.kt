@@ -36,11 +36,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -264,6 +266,7 @@ fun ChatInputView(
             Column(
                 modifier =
                     Modifier
+                        .verticalScroll(rememberScrollState())
                         .fillMaxWidth()
                         .border(1.dp, inputBrush, inputShape)
                         .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
@@ -286,6 +289,7 @@ fun ChatInputView(
                     BasicTextField(
                         inputField,
                         enabled = isGenerating.not(),
+                        maxLines = if (isGenerating) 1 else Int.MAX_VALUE,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions =
                             KeyboardActions(onSend = {

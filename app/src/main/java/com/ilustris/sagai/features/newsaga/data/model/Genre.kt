@@ -79,11 +79,11 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.SCI_FI ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = 1f,
-                saturationThreshold = .5f,
-                lightnessThreshold = .7f,
+                hueTolerance = .11f,
+                saturationThreshold = .15f,
+                lightnessThreshold = .47f,
                 highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .7f,
+                desaturationFactorNonTarget = .5f,
             )
 
         Genre.HORROR ->

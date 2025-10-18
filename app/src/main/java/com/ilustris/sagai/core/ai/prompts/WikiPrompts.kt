@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.wiki.data.model.MergeWiki
 import com.ilustris.sagai.features.wiki.data.model.MergeWikiGen
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.model.WikiType
@@ -110,6 +111,6 @@ object WikiPrompts {
             appendLine("EXISTING WIKI ITEMS FROM CHAPTER:")
             appendLine(currentChapterContent.events.map { it.updatedWikis }.formatToJsonArray())
             appendLine("STRUCTURE EXAMPLE:")
-            appendLine(" ${toJsonMap(MergeWikiGen::class.java)}")
+            appendLine("{ \"mergedItems\": [  ${toJsonMap(MergeWiki::class.java)}  ] ")
         }
 }

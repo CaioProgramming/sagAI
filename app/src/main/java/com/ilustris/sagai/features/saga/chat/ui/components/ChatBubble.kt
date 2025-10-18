@@ -227,6 +227,7 @@ fun ChatBubble(
                                 genre = genre,
                                 borderSize = 2.dp,
                                 pixelation = 0f,
+                                grainRadius = 0f,
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
@@ -461,6 +462,7 @@ fun ChatBubble(
                             borderSize = 2.dp,
                             genre = genre,
                             pixelation = 0f,
+                            grainRadius = 0f,
                             modifier =
                                 Modifier
                                     .padding(4.dp)

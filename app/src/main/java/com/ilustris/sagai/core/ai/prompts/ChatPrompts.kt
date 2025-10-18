@@ -50,6 +50,8 @@ object ChatPrompts {
             "details",
             "emojified",
             "hexColor",
+            "firstSceneId",
+            "personality",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -154,7 +156,7 @@ object ChatPrompts {
         appendLine(
             relationships.joinToString(";\n") {
                 val lastEvent = it.relationshipEvents.last()
-                "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}\n${lastEvent.description}"
+                "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}"
             },
         )
 
@@ -194,9 +196,9 @@ object ChatPrompts {
             appendLine("No relationships yet.")
         } else {
             appendLine(
-                saga.mainCharacter?.relationships?.joinToString(";\n") {
+                saga.mainCharacter.relationships.joinToString(";\n") {
                     val lastEvent = it.relationshipEvents.last()
-                    "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}\n${lastEvent.description}"
+                    "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}: ${lastEvent.title}"
                 },
             )
         }

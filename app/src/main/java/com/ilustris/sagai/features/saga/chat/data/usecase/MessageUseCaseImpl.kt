@@ -151,7 +151,7 @@ class MessageUseCaseImpl
                         true,
                     )
 
-                if (message.message.senderType != SenderType.THOUGHT) {
+                if (message.message.senderType != SenderType.THOUGHT && genText != null) {
                     withContext(Dispatchers.IO) {
                         generateReaction(saga, message, sceneSummary)
                     }
