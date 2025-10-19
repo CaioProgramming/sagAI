@@ -50,9 +50,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -109,6 +115,7 @@ import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.features.share.ui.PlayStyleShareView
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
 import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -126,6 +133,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.toEasing
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -158,7 +166,11 @@ enum class ReviewPages {
     DETAILS,
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalComposeUiApi::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
+)
 @Composable
 fun SagaReview(
     content: SagaContent,
@@ -186,6 +198,7 @@ fun SagaReview(
 
     var currentProgress by remember { mutableFloatStateOf(0f) }
     var isPlaying by remember { mutableStateOf(true) }
+    var shareSaga by remember { mutableStateOf(false) }
 
     LaunchedEffect(pagerState.currentPage) {
         showIndicators = pagerState.currentPage != ReviewPages.entries.size - 1
@@ -236,7 +249,7 @@ fun SagaReview(
                         })
                     },
             ) {
-                val (reviewIndicators, contentView, topFade, bottomFade) = createRefs()
+                val (reviewIndicators, contentView, topFade, shareButton) = createRefs()
 
                 HorizontalPager(
                     pagerState,
@@ -375,7 +388,48 @@ fun SagaReview(
                         )
                     }
                 }
+
+                Button(
+                    onClick = {
+                        shareSaga = true
+                    },
+                    modifier =
+                        Modifier.constrainAs(shareButton) {
+                            bottom.linkTo(parent.bottom)
+                            end.linkTo(parent.end)
+                            start.linkTo(parent.start)
+                        },
+                    colors =
+                        ButtonDefaults.buttonColors().copy(
+                            containerColor = genre.color,
+                            contentColor = genre.iconColor,
+                        ),
+                    shape = genre.shape(),
+                ) {
+                    Text("Compartilhar")
+
+                    Icon(
+                        painterResource(R.drawable.ic_share),
+                        contentDescription = null,
+                        modifier = Modifier.padding(start = 8.dp),
+                    )
+                }
             }
+        }
+    }
+
+    if (shareSaga) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                shareSaga = false
+            },
+            sheetState = rememberModalBottomSheetState(true),
+            containerColor = MaterialTheme.colorScheme.background,
+        ) {
+            PlayStyleShareView(
+                content,
+                content.mainCharacter!!.data,
+            )
         }
     }
 }

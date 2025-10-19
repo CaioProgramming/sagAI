@@ -22,6 +22,16 @@
         tools:replace="android:theme"
         tools:targetApi="36">
 
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.ilustris.sagai.fileprovider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+              android:resource="@xml/filepaths" />
+        </provider>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

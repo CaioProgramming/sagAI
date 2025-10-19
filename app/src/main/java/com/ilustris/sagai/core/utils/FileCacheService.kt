@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.utils
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.util.Log // Added for logging
 import kotlinx.coroutines.Dispatchers // Added for IO Context
 import kotlinx.coroutines.withContext // Added for IO Context
@@ -66,6 +67,31 @@ class FileCacheService(
             }
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, "Failed to save file to cache: ${file.absolutePath}", e)
+            if (file.exists()) file.delete() // Clean up on exception
+            null
+        }
+    }
+
+    fun saveFile(
+        fileName: String,
+        data: Bitmap,
+    ): File? {
+        val directory = getFileCacheDir()
+        val currentDateTime = System.currentTimeMillis()
+        val file = directory.resolve(fileName.plus(currentDateTime).plus(".png").replace(" ", ""))
+        return try {
+            val fileOutputStream = FileOutputStream(file)
+            data.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+            fileOutputStream.flush()
+            fileOutputStream.close()
+            if (file.exists() && file.length() > 0) {
+                file
+            } else {
+                if (file.exists()) file.delete() // Clean up if file is empty after write attempt
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "Failed to save bitmap to cache: ${file.absolutePath}", e)
             if (file.exists()) file.delete() // Clean up on exception
             null
         }
