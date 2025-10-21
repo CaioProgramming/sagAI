@@ -2,13 +2,17 @@ package com.ilustris.sagai.features.share.presentation
 
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SharePrompts
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.share.domain.SaveShareBitmapUseCase
+import com.ilustris.sagai.features.share.domain.SharePlayUseCase
+import com.ilustris.sagai.features.share.domain.model.ShareText
+import com.ilustris.sagai.features.share.domain.model.ShareType
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,39 +24,56 @@ import javax.inject.Inject
 class SharePlayViewModel
     @Inject
     constructor(
-        private val gemmaClient: GemmaClient,
-        private val saveShareBitmapUseCase: SaveShareBitmapUseCase,
-    ) : ViewModel() {
-        val shareText = MutableStateFlow<String?>(null)
+        private val sharePlayUseCase: SharePlayUseCase,
+    ) : ViewModel(),
+        DefaultLifecycleObserver {
+        val shareText = MutableStateFlow<ShareText?>(null)
         val isLoading = MutableStateFlow(true)
-
-        // bitmap saving flows
         val isSaving = MutableStateFlow(false)
         val savedFilePath = MutableStateFlow<Uri?>(null)
 
-        fun generatePlayStyleText(
-            character: Character,
+        var shareFile: File? = null
+
+        fun generateShareText(
             sagaContent: SagaContent,
+            shareType: ShareType,
         ) {
             isLoading.value = true
             viewModelScope.launch(Dispatchers.IO) {
-                val prompt = SharePrompts.playStylePrompt(character, sagaContent)
-                val generatedText = gemmaClient.generate<String>(prompt)
-                shareText.value = generatedText
-                isLoading.value = false
+                sharePlayUseCase
+                    .generateShareMessage(sagaContent, shareType)
+                    .onSuccess {
+                        shareText.value = it
+                        isLoading.value = false
+                    }.onFailure {
+                        isLoading.value = false
+                    }
+            }
+        }
+
+        fun deleteSavedFile() {
+            viewModelScope.launch {
+                sharePlayUseCase.clearShareFolder()
             }
         }
 
         fun saveBitmap(
             bitmap: Bitmap?,
-            fileName: String = "saga_share",
+            fileName: String,
         ) {
             if (bitmap == null) return
+            deleteSavedFile()
             isSaving.value = true
             viewModelScope.launch(Dispatchers.IO) {
-                saveShareBitmapUseCase(bitmap, fileName).onSuccess {
-                    savedFilePath.value = it
+                sharePlayUseCase.saveBitmapToCache(bitmap, fileName).onSuccessAsync {
+                    shareFile = it
+                    savedFilePath.value = sharePlayUseCase.loadWithFileProvider(it).getSuccess()
                 }
             }
+        }
+
+        override fun onDestroy(owner: LifecycleOwner) {
+            super.onDestroy(owner)
+            deleteSavedFile()
         }
     }

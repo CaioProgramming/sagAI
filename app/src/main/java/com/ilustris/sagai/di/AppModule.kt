@@ -66,8 +66,8 @@ import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.SettingsUseCaseImpl
-import com.ilustris.sagai.features.share.domain.SaveShareBitmapUseCase
-import com.ilustris.sagai.features.share.domain.SaveShareBitmapUseCaseImpl
+import com.ilustris.sagai.features.share.domain.SharePlayUseCase
+import com.ilustris.sagai.features.share.domain.SharePlayUseCaseImpl
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -198,7 +198,7 @@ abstract class UseCaseModule {
     abstract fun providesNotificationManager(notificationManagerImpl: ChatNotificationManagerImpl): ChatNotificationManager
 
     @Binds
-    abstract fun providesSaveShare(saveShareBitmapUseCaseImpl: SaveShareBitmapUseCaseImpl): SaveShareBitmapUseCase
+    abstract fun providesSaveShare(sharePlayUseCaseImpl: SharePlayUseCaseImpl): SharePlayUseCase
 
     @Binds
     abstract fun providesEmotionalUseCase(emotionalUseCaseImpl: EmotionalUseCaseImpl): EmotionalUseCase

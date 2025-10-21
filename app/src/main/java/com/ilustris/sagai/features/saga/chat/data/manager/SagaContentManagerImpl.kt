@@ -112,7 +112,7 @@ class SagaContentManagerImpl
             try {
                 sagaHistoryUseCase
                     .getSagaById(sagaId.toInt())
-                    .debounce(200)
+                    .debounce(500)
                     .collectLatest { saga ->
                         Log.d(
                             javaClass.simpleName,

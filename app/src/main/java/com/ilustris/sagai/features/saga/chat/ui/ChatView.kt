@@ -6,7 +6,6 @@
 
 package com.ilustris.sagai.features.saga.chat.ui
 
-import ReactionContent
 import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
@@ -18,7 +17,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -29,7 +27,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
@@ -42,7 +39,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -98,7 +94,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -111,7 +106,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -125,11 +119,8 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatDate
-import com.ilustris.sagai.features.act.data.model.Act
-import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.act.ui.toRoman
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -151,7 +142,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
-import com.ilustris.sagai.features.saga.chat.presentation.ChapterDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
@@ -247,7 +237,7 @@ fun ChatView(
     }
 
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Check for Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             when {
                 ContextCompat.checkSelfPermission(
                     context,
@@ -257,7 +247,7 @@ fun ChatView(
                 }
 
                 ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity, // Context needs to be an Activity for this check
+                    context as Activity,
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) -> {
                     Log.i("ChatView", "Showing rationale for POST_NOTIFICATIONS permission.")

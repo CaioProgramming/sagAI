@@ -17,8 +17,8 @@ class FileCacheService(
 ) {
     private val cacheDirName = "file_cache"
 
-    fun getFileCacheDir(): File {
-        val directory = File(context.cacheDir, cacheDirName)
+    fun getFileCacheDir(customPath: String? = null): File {
+        val directory = File(context.cacheDir, if (customPath == null) cacheDirName else "$cacheDirName/$customPath")
         if (!directory.exists()) {
             directory.mkdirs()
         }
@@ -73,10 +73,11 @@ class FileCacheService(
     }
 
     fun saveFile(
+        path: String,
         fileName: String,
         data: Bitmap,
     ): File? {
-        val directory = getFileCacheDir()
+        val directory = getFileCacheDir(path)
         val currentDateTime = System.currentTimeMillis()
         val file = directory.resolve(fileName.plus(currentDateTime).plus(".png").replace(" ", ""))
         return try {
@@ -87,12 +88,12 @@ class FileCacheService(
             if (file.exists() && file.length() > 0) {
                 file
             } else {
-                if (file.exists()) file.delete() // Clean up if file is empty after write attempt
+                if (file.exists()) file.delete()
                 null
             }
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, "Failed to save bitmap to cache: ${file.absolutePath}", e)
-            if (file.exists()) file.delete() // Clean up on exception
+            if (file.exists()) file.delete()
             null
         }
     }
