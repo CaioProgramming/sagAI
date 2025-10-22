@@ -61,15 +61,29 @@ object GenrePrompts {
 
             Genre.CRIME ->
                 """
-                highly detailed comic book cover art, in the style of stylized gritty realism.
-                rendered with strong, defined contours and very expressive linework.
-                The aesthetic is dream-like and luxurious, with soft, diffused lighting creating a hazy, glowing atmosphere.
-                **A subtle vintage glow effect overlays the entire image, reminiscent of analog photography from the 1980s, adding a layer of nostalgia and warmth.
-                ** The color palette is dominated by ethereal pinks, lavenders, and muted oranges, accented with teal blues.
-                The scene is infused with elements of sublime luxury and opulent living, such as high-end sports cars, extravagant yachts, or lavish beachfront villas.
-                The background is either a detailed urban streetscape with city neon signs, or a desolate beachfront at dusk. Both environments should have a sense of underlying tension and lawlessness.
-                The visual framing gives significant emphasis to the expansive sky, ensuring a prominent display of the sunset colors.
-                The backdrop is a vibrant Miami Vice/Vice City-inspired sunset, with the sky dominated by unsettling neon pinks and oranges, blending into deep, ominous purples and teals over a turbulent ocean.
+                **CRITICAL: Mature, Expressive Comic Panel Illustration. Linework must be STRONG, AUSTERE, and DISTINCTIVELY GRAPHIC, avoiding any juvenile or cartoonish aesthetic.**
+                Linework must be **bold, confident, and highly stylized**, featuring **strong, varied line weights** that emphasize **functional narrative clarity** over aesthetic polish.
+                
+                **Anti-Idealization and Simplicity (BRUTAL SIMPLIFICATION):**
+                Facial features and anatomical details must be rendered with **austere simplification** and **minimalist precision**, like a direct snapshot from an internal comic page, **NOT** an idealized cover portrait.
+                **Hair must use brutal simplification**, rendered in **flat, contiguous ink blocks**, **AVOIDING** individual strand lines, volume definition, or any internal soft light/shadow rendering.
+                **Eyes must use a simplified, two-tone rendering: a flat, colored iris and a solid, black pupil.** CRITICALLY, they must **LACK ALL** highlights, catchlights, or complex reflective details, maintaining a mature, non-idealized appearance.
+                **CRITICAL:** Avoid any excessive luminosity, high-gloss shine, or idealized beauty filters on the skin, eyes, or hair.
+                
+                **Coloring and Shadow (BRUTALIST & FLAT):**
+                Coloring must use **flat, highly saturated color blocks** with **ZERO smooth gradients**.
+                Shadows must be **SOLID, black/dark ink-wash blocks** that are **graphic, high-contrast, and angular**, explicitly **avoiding soft light or any form of photorealistic rendering**.
+                
+                **Lighting and Texture:**
+                Lighting must be **extremely dramatic and high-contrast** (Chiaroscuro), prioritizing **strong light and deep, ink-block shadows** over mid-tones.
+                The final image must have the visual texture of **physical comic book printing and hand-inking**, not a clean digital vector.
+                
+                **Setting:**
+                The setting is a **tropical urban environment** at dusk or night; **subtle hints of palm trees and distant city lights** are sufficient. The background should be minimalist and stylized, allowing the character to dominate. The color palette of the setting should be vibrant and clean.
+                
+                **Composition Rules:**
+                The composition must look like a **standard, functional panel or close-up from an interior comic book page**, prioritizing **narrative focus** and **expressive emotion** over idealized composition.
+                DO NOT PLACE ANY TEXTUAL ELEMENT OR GRAPHICAL ELEMENT, RENDER ONLY THE REQUIRED IMAGE.
                 """
             Genre.SPACE_OPERA ->
                 """

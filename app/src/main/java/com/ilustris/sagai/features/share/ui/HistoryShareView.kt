@@ -1,7 +1,136 @@
 package com.ilustris.sagai.features.share.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
+import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.theme.SagaTitle
+import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.shape
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun HistoryShareView() {
+fun HistoryShareView(
+    saga: SagaContent,
+    viewModel: SharePlayViewModel = hiltViewModel(),
+) {
+    val shareText by viewModel.shareText.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
+    val genre = remember { saga.data.genre }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val savedPath by viewModel.savedFilePath.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
+    val graphicsLayer = rememberGraphicsLayer()
+    val context = LocalContext.current
+
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        AnimatedVisibility(isLoading.not() && shareText != null) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .clip(genre.shape())
+                        .clickable {
+                            coroutineScope.launch {
+                                delay(2.seconds)
+                                graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
+                                    viewModel.saveBitmap(bitmap, ShareType.EMOTIONS.name)
+                                }
+                            }
+                        }.drawWithContent {
+                            graphicsLayer.record {
+                                this@drawWithContent.drawContent()
+                            }
+                            drawLayer(graphicsLayer)
+                        }.fillMaxWidth()
+                        .padding(16.dp),
+            ) {
+                shareText?.let {
+                    GTAStyleCover(saga, it.text)
+
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .background(
+                                fadeGradientBottom(),
+                            ).padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "Crie Seu Universo. Baixe Agora.",
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                        )
+                        SagaTitle(textStyle = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+
+        AnimatedVisibility(isLoading) {
+            StarryTextPlaceholder(
+                starColor = genre.color,
+                starCount = saga.messagesSize(),
+            )
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.generateShareText(saga, ShareType.HISTORY)
+    }
+
+    LaunchedEffect(isLoading) {
+        if (isLoading.not() && isSaving.not()) {
+            coroutineScope.launch {
+                delay(2.seconds)
+                graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
+                    viewModel.saveBitmap(bitmap, ShareType.HISTORY.name)
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(savedPath) {
+        savedPath?.let {
+            launchShareActivity(it, context = context)
+        }
+    }
 }

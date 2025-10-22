@@ -13,6 +13,7 @@ interface MessageUseCase {
     suspend fun getMessages(sagaId: Int): Flow<List<MessageContent>>
 
     suspend fun saveMessage(
+        saga: SagaContent,
         message: Message,
         isFromUser: Boolean,
     ): RequestResult<Message>

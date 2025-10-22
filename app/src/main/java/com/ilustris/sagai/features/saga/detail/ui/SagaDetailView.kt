@@ -955,9 +955,9 @@ private fun SagaDetailInitialView(
 
                                             Text(
                                                 saga.data.title,
-                                                maxLines = 1,
+                                                maxLines = 2,
                                                 style =
-                                                    MaterialTheme.typography.displayMedium.copy(
+                                                    MaterialTheme.typography.displaySmall.copy(
                                                         fontFamily = saga.data.genre.headerFont(),
                                                         brush = saga.data.genre.gradient(true),
                                                         textAlign = TextAlign.Center,

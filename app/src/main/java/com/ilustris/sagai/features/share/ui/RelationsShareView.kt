@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.ColorFilter
@@ -106,17 +107,24 @@ fun RelationsShareView(
         ) {
             Box(
                 Modifier
-                    .fillMaxHeight(.7f)
+                    .weight(1f)
                     .fillMaxWidth(),
             ) {
                 LazyVerticalGrid(GridCells.Fixed(3), modifier = Modifier.fillMaxSize()) {
                     items(characters) {
+                        val index = characters.indexOf(it)
+                        val scale =
+                            when (index) {
+                                0, 1, 2 -> 1f
+                                else -> .8f
+                            }
                         AsyncImage(
                             model = it.data.image,
                             contentDescription = it.data.name,
                             modifier =
                                 Modifier
                                     .padding(2.dp)
+                                    .scale(scale)
                                     .clip(genre.shape())
                                     .aspectRatio(.8f)
                                     .effectForGenre(genre),
@@ -126,7 +134,7 @@ fun RelationsShareView(
                                     (
                                         it.data.hexColor.hexToColor()
                                             ?: genre.color
-                                    ).copy(alpha = .4f),
+                                    ).copy(alpha = .2f),
                                     blendMode = BlendMode.SrcOver,
                                 ),
                         )

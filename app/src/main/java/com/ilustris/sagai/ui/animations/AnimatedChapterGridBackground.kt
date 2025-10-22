@@ -96,8 +96,6 @@ fun AnimatedChapterGridBackground(
                 model = sagaIcon,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                placeholder = painterResource(id = R.drawable.ic_spark),
-                error = painterResource(id = R.drawable.ic_spark),
                 modifier =
                     Modifier
                         .effectForGenre(genre)

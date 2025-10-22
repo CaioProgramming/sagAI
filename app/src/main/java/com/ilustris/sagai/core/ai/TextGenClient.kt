@@ -22,7 +22,7 @@ class TextGenClient(
 ) : AIClient() {
     companion object {
         const val TEXT_GEN_MODEL_FLAG = "textGenModel"
-        const val DEFAULT_TEXT_GEN_MODEL = "gemini-2.5-flash"
+        const val DEFAULT_TEXT_GEN_MODEL = "gemini-2.5-flash-lite"
     }
 
     fun modelName() =

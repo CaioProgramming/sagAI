@@ -101,6 +101,7 @@ import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewDetails
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.EmotionShareView
+import com.ilustris.sagai.features.share.ui.HistoryShareView
 import com.ilustris.sagai.features.share.ui.PlayStyleShareView
 import com.ilustris.sagai.features.share.ui.RelationsShareView
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
@@ -415,7 +416,7 @@ fun SagaReview(
                     PlayStyleShareView(
                         content,
                     )
-
+                ShareType.HISTORY -> HistoryShareView(content)
                 ShareType.EMOTIONS -> EmotionShareView(content)
                 ShareType.RELATIONS -> RelationsShareView(content)
 

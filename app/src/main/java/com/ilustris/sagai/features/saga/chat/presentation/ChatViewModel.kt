@@ -478,6 +478,7 @@ class ChatViewModel
                 sagaContentManager.setProcessing(isFromUser)
                 messageUseCase
                     .saveMessage(
+                        saga,
                         message.copy(
                             sagaId = saga.data.id,
                             characterId = message.characterId ?: characterReference?.id,

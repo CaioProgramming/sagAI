@@ -86,7 +86,7 @@ class ImagenClientImpl
                     .firstNotNullOf { it.asImageOrNull() }
             } catch (e: Exception) {
                 Log.e(TAG, "generateImage: Image generation failed ${e.message}")
-                Log.e(TAG, "generateImage: Requested prompt $prompt")
+                Log.e(TAG, "generateImage: Requested prompt\n$prompt\n")
                 Log.e(TAG, "generateImage: ${references.size} references submitted")
                 e.printStackTrace()
                 null

@@ -66,6 +66,7 @@ class MessageUseCaseImpl
         override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
 
         override suspend fun saveMessage(
+            saga: SagaContent,
             message: Message,
             isFromUser: Boolean,
         ) = executeRequest {
@@ -81,6 +82,26 @@ class MessageUseCaseImpl
                 } else {
                     message.emotionalTone
                 }
+
+            withContext(Dispatchers.IO) {
+                delay(2.seconds)
+                val sceneSummary =
+                    gemmaClient.generate<SceneSummary>(
+                        ChatPrompts.sceneSummarizationPrompt(
+                            saga = saga,
+                            recentMessages =
+                                saga
+                                    .flatMessages()
+                                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                                    .map { it.joinMessage(true).formatToString() },
+                        ),
+                    )!!
+                generateReaction(
+                    saga,
+                    MessageContent(message, saga.getCharacters().find { it.id == message.characterId }, emptyList()),
+                    sceneSummary,
+                )
+            }
 
             messageRepository.saveMessage(
                 message.copy(
