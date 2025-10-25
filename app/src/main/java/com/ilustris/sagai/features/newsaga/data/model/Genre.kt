@@ -108,11 +108,11 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.CRIME ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = 1f,
-                saturationThreshold = .52f,
-                lightnessThreshold = .46f,
-                highlightSaturationBoost = 3f,
-                desaturationFactorNonTarget = .3f,
+                hueTolerance = .05f,
+                saturationThreshold = .13f,
+                lightnessThreshold = .10f,
+                highlightSaturationBoost = 1.4f,
+                desaturationFactorNonTarget = .4f,
             )
         Genre.SPACE_OPERA ->
             SelectiveColorParams(

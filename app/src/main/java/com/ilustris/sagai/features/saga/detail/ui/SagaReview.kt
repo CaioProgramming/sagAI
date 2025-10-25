@@ -18,6 +18,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -62,6 +63,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -78,11 +80,13 @@ import androidx.constraintlayout.compose.Dimension
 import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
+import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
@@ -100,6 +104,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.features.saga.detail.review.ui.ReviewDetails
 import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.features.share.ui.EmotionShareView
 import com.ilustris.sagai.features.share.ui.HistoryShareView
 import com.ilustris.sagai.features.share.ui.PlayStyleShareView
@@ -122,6 +127,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.toEasing
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -411,17 +417,19 @@ fun SagaReview(
             sheetState = rememberModalBottomSheetState(true),
             containerColor = MaterialTheme.colorScheme.background,
         ) {
-            when (shareType) {
-                ShareType.PLAYSTYLE ->
-                    PlayStyleShareView(
-                        content,
-                    )
-                ShareType.HISTORY -> HistoryShareView(content)
-                ShareType.EMOTIONS -> EmotionShareView(content)
-                ShareType.RELATIONS -> RelationsShareView(content)
+            AnimatedContent(shareType, transitionSpec = { fadeIn() togetherWith fadeOut() }) {
+                when (it) {
+                    ShareType.PLAYSTYLE ->
+                        PlayStyleShareView(
+                            content,
+                        )
+                    ShareType.HISTORY -> HistoryShareView(content)
+                    ShareType.EMOTIONS -> EmotionShareView(content)
+                    ShareType.RELATIONS -> RelationsShareView(content)
 
-                else -> {
-                    Text("Implementing..")
+                    else -> {
+                        Text("Implementing..")
+                    }
                 }
             }
         }
@@ -615,7 +623,11 @@ fun PlayStylePage(content: SagaContent) {
         columns = GridCells.Fixed(2),
         verticalArrangement = Arrangement.Center,
         horizontalArrangement = Arrangement.Center,
-        modifier = Modifier.padding(16.dp).fillMaxSize().animateContentSize(),
+        modifier =
+            Modifier
+                .padding(16.dp)
+                .fillMaxSize()
+                .animateContentSize(),
     ) {
         item(span = { GridItemSpan(2) }) {
             Spacer(Modifier.size(50.dp))
@@ -774,8 +786,15 @@ fun MentionsPage(content: SagaContent) {
         horizontalArrangement = Arrangement.Center,
     ) {
         item(span = { GridItemSpan(2) }) {
+            Spacer(Modifier.height(50.dp))
+        }
+
+        item(span = { GridItemSpan(2) }) {
             Column(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -842,7 +861,10 @@ fun MentionsPage(content: SagaContent) {
                                     fontFamily = genre.headerFont(),
                                     fontWeight = FontWeight.Bold,
                                 ),
-                            modifier = Modifier.padding(vertical = 8.dp),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(vertical = 8.dp),
                         )
 
                         Row(
@@ -854,30 +876,33 @@ fun MentionsPage(content: SagaContent) {
                             val topCharacters = ranking.take(3)
 
                             if (topCharacters.size == 3) {
-                                CharacterAvatar(
+                                CharacterYearbookItem(
                                     topCharacters.last().getCharacterExcluding(mainCharacter?.data),
-                                    genre = genre,
+                                    genre,
+                                    imageModifier = Modifier.size(80.dp),
                                     modifier =
                                         Modifier
-                                            .size(80.dp),
+                                            .clip(genre.shape()),
                                 )
 
-                                CharacterAvatar(
+                                CharacterYearbookItem(
                                     topCharacters
                                         .first()
                                         .getCharacterExcluding(mainCharacter?.data),
                                     genre = genre,
+                                    imageModifier = Modifier.size(100.dp),
                                     modifier =
                                         Modifier
-                                            .size(100.dp),
+                                            .clip(genre.shape()),
                                 )
 
-                                CharacterAvatar(
+                                CharacterYearbookItem(
                                     topCharacters[1].getCharacterExcluding(mainCharacter?.data),
                                     genre = genre,
+                                    imageModifier = Modifier.size(80.dp),
                                     modifier =
                                         Modifier
-                                            .size(80.dp),
+                                            .clip(genre.shape()),
                                 )
                             }
                         }
@@ -902,15 +927,8 @@ fun MentionsPage(content: SagaContent) {
                             it.getCharacterExcluding(character.data),
                             it,
                             false,
+                            showUpdates = true,
                             Modifier.fillMaxWidth(),
-                        )
-
-                        Text(
-                            "${it.relationshipEvents.size} Atualizações",
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                ),
                         )
                     }
                 }

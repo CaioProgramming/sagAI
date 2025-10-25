@@ -241,7 +241,9 @@ object ChapterPrompts {
                  *   **Important Clarification on Color:**
                      *   **CRUCIAL: DO NOT use these genre colors to tint the overall image, characters' base skin tones, hair (beyond tiny accents), or main clothing areas.** Characters' base colors should be preserved and appear natural.
                      *   Lighting on characters should be primarily dictated by the foundational art style, not an overall color cast from the genre accents.
-
+             3. **Cinematography & Composition Directives (Genre-Specific):**   
+             * The following rules dictate the composition and cinematography for the image generation, are applied:
+             `${GenrePrompts.cinematographyComposition(content.data.genre)}`.
              **YOUR TASK (Output a single text string for the Image Generation Model):**
              Generate a single, highly detailed, unambiguous, and visually rich English text description for an AI image generation model. This description MUST create a **MINIMALISTIC CHAPTER COVER FOCUSED ON THE CHARACTERS**.
 

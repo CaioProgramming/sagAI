@@ -61,14 +61,15 @@ object GenrePrompts {
 
             Genre.CRIME ->
                 """
-                **CRITICAL: Mature, Expressive Comic Panel Illustration. Linework must be STRONG, AUSTERE, and DISTINCTIVELY GRAPHIC, avoiding any juvenile or cartoonish aesthetic.**
-                Linework must be **bold, confident, and highly stylized**, featuring **strong, varied line weights** that emphasize **functional narrative clarity** over aesthetic polish.
+                
+                **CRITICAL: RAW, UNREFINED, FUNCTIONAL Comic Panel Illustration. The style must be AUSTERE and GRITTY, strongly avoiding any idealized, beautiful, or overly polished aesthetic commonly found on comic covers.**
+                Linework must be **FAST, IMPERFECT, and AUSTERE**, with a **raw, gestural sketch quality**, emphasizing **functional narrative clarity** over aesthetic polish. Avoid all forms of smooth, clean digital rendering.
                 
                 **Anti-Idealization and Simplicity (BRUTAL SIMPLIFICATION):**
-                Facial features and anatomical details must be rendered with **austere simplification** and **minimalist precision**, like a direct snapshot from an internal comic page, **NOT** an idealized cover portrait.
+                Facial features and anatomical details must be rendered with **austere simplification** and **minimalist precision**, deliberately resembling a **quickly-drawn internal comic page panel, NOT an idealized or beautiful cover portrait.**
                 **Hair must use brutal simplification**, rendered in **flat, contiguous ink blocks**, **AVOIDING** individual strand lines, volume definition, or any internal soft light/shadow rendering.
                 **Eyes must use a simplified, two-tone rendering: a flat, colored iris and a solid, black pupil.** CRITICALLY, they must **LACK ALL** highlights, catchlights, or complex reflective details, maintaining a mature, non-idealized appearance.
-                **CRITICAL:** Avoid any excessive luminosity, high-gloss shine, or idealized beauty filters on the skin, eyes, or hair.
+                **CRITICAL:** The final image must possess a **deliberate lack of polish**. Avoid any excessive luminosity, high-gloss shine, or idealized beauty filters on the skin, eyes, or hair.
                 
                 **Coloring and Shadow (BRUTALIST & FLAT):**
                 Coloring must use **flat, highly saturated color blocks** with **ZERO smooth gradients**.
@@ -84,6 +85,7 @@ object GenrePrompts {
                 **Composition Rules:**
                 The composition must look like a **standard, functional panel or close-up from an interior comic book page**, prioritizing **narrative focus** and **expressive emotion** over idealized composition.
                 DO NOT PLACE ANY TEXTUAL ELEMENT OR GRAPHICAL ELEMENT, RENDER ONLY THE REQUIRED IMAGE.
+                
                 """
             Genre.SPACE_OPERA ->
                 """
@@ -160,6 +162,33 @@ object GenrePrompts {
                 The primary focus of the image MUST be the character's face and upper body.
                 """
         }.trimIndent()
+
+    fun cinematographyComposition(genre: Genre) =
+        buildString {
+            when (genre) {
+                Genre.CRIME -> {
+                    appendLine(
+                        "*The composition MUST emphasize **intense psychological tension and dramatic observation**. Use **cinematic staging** to create emotional distance or scrutiny, such as **observing a character from behind a pane of glass (like a luxury car window) or through heavy shadow/neon reflection**. Focus on aesthetic of **decadent tropical luxury** and urban grit.",
+                    )
+                    appendLine(
+                        "*  The framing should prioritize **emotional reaction and narrative stage setting** (e.g., dual portrait with visual barrier) over direct physical confrontation.",
+                    )
+                }
+
+                Genre.SCI_FI -> {
+                    appendLine(
+                        "The composition MUST emphasize tension and dramatic melancholy. With high focus on characters emotions and world building.",
+                    )
+                    appendLine("Focus on **cinematic staging** to create emotional distance or scrutiny")
+                    appendLine("Paying attention to futuristic details and intense emotions.")
+                }
+
+                else -> {
+                    appendLine("Focus on characters involved")
+                    appendLine("Creating angles that focus on their conflicts and emotions")
+                }
+            }
+        }
 
     fun nameDirectives(genre: Genre) =
 

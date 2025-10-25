@@ -337,12 +337,14 @@ private fun ChatList(
             )
         }
 
-        item {
-            PremiumCard(
-                isPremium,
-                onClick = openPremiumSheet,
-                modifier = Modifier.animateItem().padding(16.dp),
-            )
+        if (isLoadingDynamicPrompts.not()) {
+            item {
+                PremiumCard(
+                    isPremium,
+                    onClick = openPremiumSheet,
+                    modifier = Modifier.animateItem().padding(16.dp),
+                )
+            }
         }
     }
 }

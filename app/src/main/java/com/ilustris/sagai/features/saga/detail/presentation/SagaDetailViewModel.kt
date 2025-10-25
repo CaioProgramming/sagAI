@@ -58,11 +58,15 @@ class SagaDetailViewModel
                 sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
                     saga?.let { data ->
                         _state.value = State.Success(data)
+                        this@SagaDetailViewModel.saga.value = data
                         if (data.data.isEnded) {
                             fetchEmotionalCardReference()
+                            if (data.data.emotionalReview.isNullOrEmpty()) {
+                                viewModelScope.launch(Dispatchers.Main) {
+                                    createSagaEmotionalReview()
+                                }
+                            }
                         }
-                        this@SagaDetailViewModel.saga.value = data
-                        // Trigger intro sequence only once per fetch
                         launchIntroSequence()
                     }
                 }
@@ -138,7 +142,7 @@ class SagaDetailViewModel
 
         fun createSagaEmotionalReview() {
             val currentSaga = saga.value ?: return
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.value = true
                 sagaDetailUseCase.createSagaEmotionalReview(currentSaga)
                 isGenerating.value = false

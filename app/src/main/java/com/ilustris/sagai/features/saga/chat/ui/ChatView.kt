@@ -311,6 +311,7 @@ fun ChatView(
                             typoFix = typoFix,
                             onUpdateInput = viewModel::updateInput,
                             onUpdateSenders = viewModel::updateSendType,
+                            checkForSaga = viewModel::checkSaga,
                             characters = characters,
                             titleModifier = (
                                 with(sharedTransitionScope) {
@@ -409,6 +410,7 @@ fun ChatContent(
     onInjectFakeMessages: (Int) -> Unit = {},
     onSnackAction: (Triple<ChatAction, String, Any?>) -> Unit = {},
     onRetryMessage: (Message) -> Unit = {},
+    checkForSaga: () -> Unit = {},
 ) {
     val saga = content.data
     val listState = rememberLazyListState()
@@ -586,21 +588,44 @@ fun ChatContent(
                             enter = slideInVertically(),
                             exit = fadeOut(),
                         ) {
-                            ChatInputView(
-                                content = content,
-                                isGenerating = isGenerating,
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .wrapContentHeight(),
-                                typoFix = typoFix,
-                                inputField = inputValue,
-                                sendType = actualSender,
-                                onSendMessage = onSendMessage,
-                                onUpdateInput = onUpdateInput,
-                                onUpdateSender = onUpdateSenders,
-                                suggestions = suggestions,
-                            )
+                            val timeline = remember { content.getCurrentTimeLine() }
+                            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                AnimatedContent(timeline, transitionSpec = {
+                                    slideInVertically() + fadeIn() with fadeOut()
+                                }) {
+                                    if (it != null) {
+                                        ChatInputView(
+                                            content = content,
+                                            isGenerating = isGenerating,
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .wrapContentHeight(),
+                                            typoFix = typoFix,
+                                            inputField = inputValue,
+                                            sendType = actualSender,
+                                            onSendMessage = onSendMessage,
+                                            onUpdateInput = onUpdateInput,
+                                            onUpdateSender = onUpdateSenders,
+                                            suggestions = suggestions,
+                                        )
+                                    } else {
+                                        Image(
+                                            painterResource(R.drawable.ic_spark),
+                                            null,
+                                            colorFilter = ColorFilter.tint(content.data.genre.color),
+                                            modifier =
+                                                Modifier
+                                                    .clip(CircleShape)
+                                                    .clickable(enabled = isGenerating.not()) {
+                                                        checkForSaga()
+                                                    }.align(Alignment.Center)
+                                                    .size(24.dp)
+                                                    .reactiveShimmer(true, saga.genre.shimmerColors()),
+                                        )
+                                    }
+                                }
+                            }
                         }
 
                         val alpha by animateFloatAsState(
@@ -626,7 +651,8 @@ fun ChatContent(
                                 enter = scaleIn() + fadeIn(),
                                 exit = fadeOut() + slideOutVertically { -it },
                             ) {
-                                val currentObjective = content.getCurrentTimeLine()?.data?.currentObjective
+                                val currentObjective =
+                                    content.getCurrentTimeLine()?.data?.currentObjective
 
                                 Image(
                                     painterResource(R.drawable.ic_spark),
@@ -898,7 +924,11 @@ fun ChatContent(
                 val currentObjective = content.getCurrentTimeLine()?.data?.currentObjective
 
                 currentObjective?.let {
-                    AnimatedVisibility(objectiveExpanded, enter = slideInVertically { +it }, exit = fadeOut()) {
+                    AnimatedVisibility(
+                        objectiveExpanded,
+                        enter = slideInVertically { +it },
+                        exit = fadeOut(),
+                    ) {
                         val genre = content.data.genre
                         Column(
                             Modifier
@@ -957,7 +987,10 @@ fun ChatContent(
                                         ).clip(genre.shape())
                                         .height(4.dp)
                                         .fillMaxWidth()
-                                        .reactiveShimmer(true, shimmerColors = genre.shimmerColors()),
+                                        .reactiveShimmer(
+                                            true,
+                                            shimmerColors = genre.shimmerColors(),
+                                        ),
                                 gapSize = 0.dp,
                                 progress = { progress },
                                 drawStopIndicator = {},

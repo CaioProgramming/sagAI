@@ -103,7 +103,7 @@ fun Modifier.effectForGenre(
                 Genre.FANTASY ->
                     ShaderParams(
                         grainIntensity = customGrain ?: .2f,
-                        softFocusRadius = focusRadius ?: .4f,
+                        softFocusRadius = focusRadius ?: .04f,
                         saturation = .4f,
                         contrast = 1.3f,
                         brightness = -0.05f,
@@ -172,11 +172,11 @@ fun Modifier.effectForGenre(
                 }
                 Genre.CRIME ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .1f,
-                        softFocusRadius = focusRadius ?: 1f,
-                        saturation = 1f,
-                        contrast = 1.6f,
-                        brightness = .01f,
+                        grainIntensity = customGrain ?: .14f,
+                        softFocusRadius = focusRadius ?: .12f,
+                        saturation = .7f,
+                        contrast = 1.5f,
+                        brightness = .02f.unaryMinus(),
                         highlightTint = crimePalette.highlightTint,
                         shadowTint = crimePalette.shadowTint,
                         tintStrength = crimePalette.defaultTintStrength,

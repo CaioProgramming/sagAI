@@ -38,6 +38,7 @@ class SharePlayViewModel
             sagaContent: SagaContent,
             shareType: ShareType,
         ) {
+            deleteSavedFile()
             isLoading.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 sharePlayUseCase
@@ -52,8 +53,12 @@ class SharePlayViewModel
         }
 
         fun deleteSavedFile() {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 sharePlayUseCase.clearShareFolder()
+                shareText.value = null
+                isLoading.value = true
+                isSaving.value = false
+                savedFilePath.value = null
             }
         }
 
@@ -62,7 +67,6 @@ class SharePlayViewModel
             fileName: String,
         ) {
             if (bitmap == null) return
-            deleteSavedFile()
             isSaving.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 sharePlayUseCase.saveBitmapToCache(bitmap, fileName).onSuccessAsync {
@@ -70,10 +74,5 @@ class SharePlayViewModel
                     savedFilePath.value = sharePlayUseCase.loadWithFileProvider(it).getSuccess()
                 }
             }
-        }
-
-        override fun onDestroy(owner: LifecycleOwner) {
-            super.onDestroy(owner)
-            deleteSavedFile()
         }
     }

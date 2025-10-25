@@ -83,31 +83,20 @@ class MessageUseCaseImpl
                     message.emotionalTone
                 }
 
+            val newMessage =
+                messageRepository.saveMessage(
+                    message.copy(
+                        emotionalTone = tone,
+                    ),
+                )!!
+
             withContext(Dispatchers.IO) {
-                delay(2.seconds)
-                val sceneSummary =
-                    gemmaClient.generate<SceneSummary>(
-                        ChatPrompts.sceneSummarizationPrompt(
-                            saga = saga,
-                            recentMessages =
-                                saga
-                                    .flatMessages()
-                                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                    .map { it.joinMessage(true).formatToString() },
-                        ),
-                    )!!
                 generateReaction(
                     saga,
-                    MessageContent(message, saga.getCharacters().find { it.id == message.characterId }, emptyList()),
-                    sceneSummary,
+                    MessageContent(newMessage, saga.getCharacters().find { it.id == newMessage.characterId }, emptyList()),
                 )
             }
-
-            messageRepository.saveMessage(
-                message.copy(
-                    emotionalTone = tone,
-                ),
-            )!!
+            newMessage
         }
 
         override suspend fun deleteMessage(messageId: Long) {
@@ -153,6 +142,7 @@ class MessageUseCaseImpl
                                     .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
                                     .map { it.joinMessage(true).formatToString() },
                         ),
+                        skipRunning = true,
                     )!!
 
                 val genText =
@@ -172,23 +162,33 @@ class MessageUseCaseImpl
                         true,
                     )
 
-                if (message.message.senderType != SenderType.THOUGHT && genText != null) {
-                    withContext(Dispatchers.IO) {
-                        generateReaction(saga, message, sceneSummary)
-                    }
-                }
-
                 genText!!
             }
 
         suspend fun generateReaction(
             saga: SagaContent,
             message: MessageContent,
-            sceneSummary: SceneSummary,
         ) = executeRequest {
             delay(2.seconds)
+            val sceneSummary =
+                gemmaClient.generate<SceneSummary>(
+                    ChatPrompts.sceneSummarizationPrompt(
+                        saga = saga,
+                        recentMessages =
+                            saga
+                                .flatMessages()
+                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                                .map { it.joinMessage(true).formatToString() },
+                    ),
+                    skipRunning = true,
+                )!!
             if (sceneSummary.charactersPresent.isEmpty()) {
                 Log.w(javaClass.simpleName, "generateReaction: No characters related to react")
+                return@executeRequest
+            }
+
+            if (message.message.senderType == SenderType.THOUGHT) {
+                Log.w(javaClass.simpleName, "generateReaction: Thought message cannot react")
                 return@executeRequest
             }
 
@@ -222,13 +222,14 @@ class MessageUseCaseImpl
                     messageToReact = message.joinMessage().formatToString(),
                 )
 
+            delay(1.seconds)
             val reaction = gemmaClient.generate<ReactionGen>(prompt, skipRunning = true)
 
             reaction?.reactions?.forEach { reaction ->
                 saga.characters
                     .find { it.data.name.equals(reaction.character, ignoreCase = true) }
                     ?.let {
-                        if (it.data.id != saga.mainCharacter.data.id) {
+                        if (it.data.id != message.character?.id) {
                             reactionRepository.saveReaction(
                                 Reaction(
                                     messageId = message.message.id,
@@ -236,6 +237,8 @@ class MessageUseCaseImpl
                                     emoji = reaction.reaction,
                                 ),
                             )
+                        } else {
+                            Log.w(javaClass.simpleName, "generateReaction: Character can't react to itself.")
                         }
                     }
             }

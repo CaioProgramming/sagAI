@@ -678,7 +678,7 @@ fun SagaDetailContentView(
                                                     onChangeSection(action)
                                                 },
                                                 openEmotionalReview = {
-                                                    if (sagaContent.data.emotionalReview == null) {
+                                                    if (sagaContent.data.emotionalReview.isNullOrEmpty()) {
                                                         createEmotionalReview()
                                                     } else {
                                                         showEmotionalReview = true

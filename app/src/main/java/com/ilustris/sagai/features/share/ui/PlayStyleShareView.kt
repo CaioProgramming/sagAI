@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -106,7 +107,6 @@ fun PlayStyleShareView(
                     .padding(16.dp)
                     .clickable {
                         coroutineScope.launch {
-                            delay(2.seconds)
                             graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
                                 viewModel.saveBitmap(bitmap, "play_style_share")
                             }
@@ -175,9 +175,10 @@ fun PlayStyleShareView(
                                     .fillMaxWidth(),
                             style =
                                 MaterialTheme.typography.displayMedium.copy(
-                                    brush = Brush.linearGradient(genre.color.darkerPalette()),
                                     fontFamily = genre.headerFont(),
                                     textAlign = TextAlign.Center,
+                                    brush = Brush.verticalGradient(listOf(genre.color, genre.iconColor)),
+                                    shadow = Shadow(genre.color, blurRadius = 10f),
                                 ),
                         )
 
@@ -194,6 +195,7 @@ fun PlayStyleShareView(
                                     fontFamily = genre.bodyFont(),
                                     color = genre.iconColor,
                                     textAlign = TextAlign.Center,
+                                    shadow = Shadow(genre.color, blurRadius = 10f),
                                 ),
                         )
                     }
@@ -221,6 +223,16 @@ fun PlayStyleShareView(
                             fontFamily = genre.headerFont(),
                             shadow = Shadow(genre.color, blurRadius = 10f),
                         ),
+                )
+
+                Text(
+                    "Mais universos aguardam",
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = genre.iconColor,
+                        ),
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
                 )
 
                 SagaTitle(
@@ -279,7 +291,7 @@ fun launchShareActivity(
     context.startActivity(
         Intent.createChooser(
             shareIntent,
-            "Compartilhar post em...",
+            "Compartilhar história",
         ),
     )
 }

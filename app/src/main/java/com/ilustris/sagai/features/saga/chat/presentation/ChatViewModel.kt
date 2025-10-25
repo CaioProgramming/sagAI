@@ -147,6 +147,12 @@ class ChatViewModel
             sendType.value = type
         }
 
+        fun checkSaga() {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.checkNarrativeProgression(sagaContentManager.content.value)
+            }
+        }
+
         fun retryAiResponse(message: Message?) {
             message?.let {
                 replyMessage(message)
@@ -510,6 +516,7 @@ class ChatViewModel
                     }
 
                     else -> {
+                        delay(2.seconds)
                         sagaContentManager.setProcessing(false)
                     }
                 }

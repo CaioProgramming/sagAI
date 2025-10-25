@@ -166,6 +166,7 @@ fun SingleRelationShipCard(
     character: Character,
     content: RelationshipContent,
     showText: Boolean = true,
+    showUpdates: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val genre = saga.data.genre
@@ -212,6 +213,16 @@ fun SingleRelationShipCard(
                     relation.description,
                     style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
                     textAlign = TextAlign.Center,
+                )
+            }
+            
+            if (showUpdates) {
+                Text(
+                    "${content.relationshipEvents.size} Atualizações",
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
                 )
             }
         }
