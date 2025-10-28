@@ -6,7 +6,9 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -20,18 +22,26 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -51,6 +61,8 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
+import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -120,6 +132,7 @@ fun CharacterDetailsContent(
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
     val listState = rememberLazyListState()
+    var shareCharacter by remember { mutableStateOf(false) }
     Box {
         LazyColumn(
             modifier =
@@ -153,7 +166,6 @@ fun CharacterDetailsContent(
                                     .clipToBounds()
                                     .effectForGenre(genre, useFallBack = character.emojified),
                         )
-
                         Box(
                             Modifier
                                 .align(Alignment.BottomCenter)
@@ -161,22 +173,36 @@ fun CharacterDetailsContent(
                                 .fillMaxHeight(.7f)
                                 .background(fadeGradientBottom()),
                         )
-
-                        Text(
-                            character.name,
-                            textAlign = TextAlign.Center,
-                            style =
-                                MaterialTheme.typography.displaySmall.copy(
-                                    fontFamily = genre.headerFont(),
-                                    brush = Brush.verticalGradient(characterColor.darkerPalette()),
-                                ),
+                        Column(
                             modifier =
                                 Modifier
                                     .align(Alignment.BottomCenter)
                                     .padding(16.dp)
                                     .reactiveShimmer(true)
                                     .fillMaxWidth(),
-                        )
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                "Compartilhar personagem",
+                                modifier =
+                                    Modifier.size(24.dp).clip(CircleShape).clickable {
+                                        shareCharacter = true
+                                    },
+                                colorFilter = ColorFilter.tint(characterColor),
+                            )
+
+                            Text(
+                                character.name,
+                                textAlign = TextAlign.Center,
+                                style =
+                                    MaterialTheme.typography.displaySmall.copy(
+                                        fontFamily = genre.headerFont(),
+                                        brush = Brush.verticalGradient(characterColor.darkerPalette()),
+                                    ),
+                            )
+                        }
                     }
                 }
             } else {
@@ -244,7 +270,12 @@ fun CharacterDetailsContent(
             }
 
             item {
-                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                Column(
+                    modifier =
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                ) {
                     Text(
                         stringResource(R.string.character_form_title_backstory),
                         style =
@@ -264,7 +295,11 @@ fun CharacterDetailsContent(
             }
 
             item {
-                Column(Modifier.padding(16.dp).fillMaxWidth()) {
+                Column(
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                ) {
                     Text(
                         stringResource(R.string.personality_title),
                         style =
@@ -299,7 +334,10 @@ fun CharacterDetailsContent(
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = genre.bodyFont(),
                             ),
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     )
                 }
 
@@ -350,7 +388,10 @@ fun CharacterDetailsContent(
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = genre.bodyFont(),
                             ),
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                     )
                 }
 
@@ -365,7 +406,9 @@ fun CharacterDetailsContent(
                             openEvent(it)
                         },
                         modifier =
-                            Modifier.padding(horizontal = 16.dp).clip(genre.shape()),
+                            Modifier
+                                .padding(horizontal = 16.dp)
+                                .clip(genre.shape()),
                     )
                 }
             }
@@ -403,8 +446,17 @@ fun CharacterDetailsContent(
                 ),
         ) {
             StarryTextPlaceholder(
-                modifier = Modifier.fillMaxSize().gradientFill(genre.gradient(true)),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .gradientFill(genre.gradient(true)),
             )
         }
+    }
+
+    if (shareCharacter) {
+        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, characterContent, onDismiss = {
+            shareCharacter = false
+        })
     }
 }

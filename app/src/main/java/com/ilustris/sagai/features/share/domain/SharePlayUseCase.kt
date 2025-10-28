@@ -4,12 +4,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.content.FileProvider
-import androidx.core.graphics.scale
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SharePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.FileCacheService
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -30,6 +30,7 @@ interface SharePlayUseCase {
     suspend fun generateShareMessage(
         saga: SagaContent,
         shareType: ShareType,
+        character: CharacterContent?,
     ): RequestResult<ShareText>
 }
 
@@ -47,32 +48,8 @@ class SharePlayUseCaseImpl
         ): RequestResult<File> =
             executeRequest {
                 clearShareFolder()
-                val resizedBitmap = bitmap
-                fileHelper.saveFile("shares", fileName, resizedBitmap)!!
+                fileHelper.saveFile("shares", fileName, bitmap)!!
             }
-
-        private fun resizeBitmap(bitmap: Bitmap): Bitmap {
-            val maxWidth = 1080f
-            val maxHeight = 1350f
-            val targetWidth = maxWidth
-            val targetHeight = maxHeight
-
-            val originalWidth = bitmap.width
-            val originalHeight = bitmap.height
-
-            if (originalWidth <= targetWidth && originalHeight <= targetHeight) {
-                return bitmap
-            }
-
-            val widthRatio = targetWidth / originalWidth.toFloat()
-            val heightRatio = targetHeight / originalHeight.toFloat()
-            val ratio = minOf(widthRatio, heightRatio)
-
-            val newWidth = (originalWidth * ratio).toInt()
-            val newHeight = (originalHeight * ratio).toInt()
-
-            return bitmap.scale(newWidth, newHeight)
-        }
 
         override suspend fun loadWithFileProvider(file: File): RequestResult<Uri> =
             executeRequest {
@@ -85,7 +62,7 @@ class SharePlayUseCaseImpl
 
         override suspend fun clearShareFolder(): RequestResult<Unit> =
             executeRequest {
-                val shareDir = File(context.filesDir, "shares")
+                val shareDir = File(context.cacheDir, "file_cache/shares")
                 if (shareDir.exists() && shareDir.isDirectory) {
                     shareDir.listFiles()?.forEach { it.delete() }
                 }
@@ -94,6 +71,7 @@ class SharePlayUseCaseImpl
         override suspend fun generateShareMessage(
             saga: SagaContent,
             shareType: ShareType,
+            character: CharacterContent?,
         ): RequestResult<ShareText> =
             executeRequest {
                 val prompt =
@@ -102,6 +80,7 @@ class SharePlayUseCaseImpl
                         ShareType.EMOTIONS -> SharePrompts.emotionalPrompt(saga)
                         ShareType.HISTORY -> SharePrompts.historyPrompt(saga)
                         ShareType.RELATIONS -> SharePrompts.relationsPrompt(saga)
+                        ShareType.CHARACTER -> SharePrompts.characterPrompt(character!!, saga)
                     }
 
                 gemmaClient.generate<ShareText>(prompt)!!

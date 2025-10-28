@@ -1,8 +1,11 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
@@ -153,4 +156,56 @@ object SharePrompts {
             appendLine(saga.data.toJsonFormatExcludingFields(sagaExcludedFields.plus("endMessage").plus("review")))
             appendLine("Generate the title, text, and caption that teases the tension within the saga's relationships.")
         }
+
+    fun characterPrompt(
+        characterContent: CharacterContent,
+        sagaContent: SagaContent,
+    ) = buildString {
+        val character = characterContent.data
+        appendLine(
+            "You are a world-class storyteller, tasked with creating a compelling, shareable snapshot of a character from a rich RPG saga.",
+        )
+        appendLine("Your goal is to generate a short, high-impact text package that encapsulates the character's journey and essence.")
+        appendLine("The output MUST adhere to these rules:")
+        appendLine(
+            "1. TITLE: A single, powerful short phrase that defines the character's core identity (e.g., 'The Wanderer', 'Fallen Knight').",
+        )
+        appendLine(
+            "2. TEXT: A short, evocative subtitle (strictly 2 to 5 words) that hints at their personal story or major conflict (e.g., 'A past forged in fire', 'Chasing forgotten echoes').",
+        )
+        appendLine(
+            "3. CAPTION: A very short, brand-aligned phrase (max 4 words) that invites curiosity about their role in the larger narrative (e.g., 'Their story is not over.', 'Destiny is a choice.').",
+        )
+        appendLine("4. SPOILER-FREE: Do not reveal major plot twists, character deaths, or the final outcome of the saga.")
+        appendLine("5. TONE: The tone must be consistent with the character's personality and the saga's genre.")
+
+        appendLine("Character's Context:")
+        appendLine(
+            character.toJsonFormatExcludingFields(
+                listOf("id", "sagaId", "details", "image", "hexColor", "joinedAt", "firstSceneId", "emojified"),
+            ),
+        )
+
+        if (characterContent.events.isNotEmpty()) {
+            appendLine("Character's Events:")
+            appendLine(characterContent.events.joinToString(";\n") { "- ${it.event.title} : ${it.event.summary}" })
+        }
+
+        if (characterContent.relationships.isNotEmpty()) {
+            appendLine("Character's Relationships:")
+            appendLine(
+                characterContent.relationships
+                    .sortedByDescending { it.relationshipEvents.size }
+                    .joinToString(";\n") {
+                        "${it.characterOne.name} & ${it.characterTwo.name} ${it.relationshipEvents.last().emoji}:" +
+                            "${it.relationshipEvents.formatToJsonArray(
+                                listOf("id", "emoji", "timelineId", "timestamp", "relationId"),
+                            )}"
+                    },
+            )
+        }
+
+        appendLine("Saga Genre: ${sagaContent.data.genre.name}")
+        appendLine("Generate the title, text, and caption for this character's shareable card now.")
+    }
 }

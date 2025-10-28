@@ -17,6 +17,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
@@ -26,14 +28,15 @@ fun ShareSheet(
     content: SagaContent,
     isVisible: Boolean,
     shareType: ShareType,
+    character: CharacterContent? = null,
     onDismiss: () -> Unit = {},
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
     if (isVisible) {
         ModalBottomSheet(
             onDismissRequest = {
-                onDismiss()
                 viewModel.deleteSavedFile()
+                onDismiss()
             },
             sheetState = rememberModalBottomSheetState(true),
             containerColor = MaterialTheme.colorScheme.background,
@@ -46,11 +49,20 @@ fun ShareSheet(
                     ShareType.PLAYSTYLE ->
                         PlayStyleShareView(
                             content,
+                            viewModel,
                         )
 
-                    ShareType.HISTORY -> HistoryShareView(content)
-                    ShareType.EMOTIONS -> EmotionShareView(content)
-                    ShareType.RELATIONS -> RelationsShareView(content)
+                    ShareType.CHARACTER ->
+                        character?.let { char ->
+                            CharacterShareView(
+                                content,
+                                character = char,
+                                viewModel,
+                            )
+                        }
+                    ShareType.HISTORY -> HistoryShareView(content, viewModel)
+                    ShareType.EMOTIONS -> EmotionShareView(content, viewModel)
+                    ShareType.RELATIONS -> RelationsShareView(content, viewModel)
                 }
             }
         }

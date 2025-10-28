@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SharePrompts
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.share.domain.SharePlayUseCase
 import com.ilustris.sagai.features.share.domain.model.ShareText
@@ -37,12 +38,14 @@ class SharePlayViewModel
         fun generateShareText(
             sagaContent: SagaContent,
             shareType: ShareType,
+            character: CharacterContent? = null,
         ) {
             deleteSavedFile()
             isLoading.value = true
             viewModelScope.launch(Dispatchers.IO) {
+                if (shareType == ShareType.CHARACTER && character == null) return@launch
                 sharePlayUseCase
-                    .generateShareMessage(sagaContent, shareType)
+                    .generateShareMessage(sagaContent, shareType, character)
                     .onSuccess {
                         shareText.value = it
                         isLoading.value = false
