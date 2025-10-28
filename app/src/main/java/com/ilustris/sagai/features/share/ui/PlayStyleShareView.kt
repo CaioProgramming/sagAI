@@ -112,7 +112,7 @@ fun PlayStyleShareView(
                         coroutineScope.launch {
                             viewModel.startSaving()
                             graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
-                                viewModel.saveBitmap(bitmap, "play_style_share")
+                                viewModel.saveBitmap(bitmap, ShareType.PLAYSTYLE.name)
                             }
                         }
                     }.drawWithContent {
