@@ -110,6 +110,7 @@ import com.ilustris.sagai.features.share.ui.EmotionShareView
 import com.ilustris.sagai.features.share.ui.HistoryShareView
 import com.ilustris.sagai.features.share.ui.PlayStyleShareView
 import com.ilustris.sagai.features.share.ui.RelationsShareView
+import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
 import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -410,31 +411,14 @@ fun SagaReview(
         }
     }
 
-    if (shareSaga) {
-        ModalBottomSheet(
-            onDismissRequest = {
-                shareSaga = false
-            },
-            sheetState = rememberModalBottomSheetState(true),
-            containerColor = MaterialTheme.colorScheme.background,
-        ) {
-            AnimatedContent(shareType, transitionSpec = { fadeIn() togetherWith fadeOut() }) {
-                when (it) {
-                    ShareType.PLAYSTYLE ->
-                        PlayStyleShareView(
-                            content,
-                        )
-                    ShareType.HISTORY -> HistoryShareView(content)
-                    ShareType.EMOTIONS -> EmotionShareView(content)
-                    ShareType.RELATIONS -> RelationsShareView(content)
-
-                    else -> {
-                        Text("Implementing..")
-                    }
-                }
-            }
-        }
-    }
+    ShareSheet(
+        content,
+        shareSaga,
+        onDismiss = {
+            shareSaga = false
+        },
+        shareType = shareType ?: ShareType.PLAYSTYLE,
+    )
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
@@ -49,6 +50,7 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
@@ -103,7 +105,9 @@ private fun rememberRandomShape(): Shape = remember { RandomTrapezoidShape() }
 @Composable
 fun GTAStyleCover(
     sagaContent: SagaContent,
+    title: String,
     subtitle: String,
+    caption: String,
 ) {
     val saga = sagaContent.data
     val chapters = sagaContent.flatChapters().map { it.data }
@@ -121,21 +125,14 @@ fun GTAStyleCover(
             columns = StaggeredGridCells.Fixed(3),
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalItemSpacing = 4.dp,
+            verticalItemSpacing = 2.dp,
             contentPadding = PaddingValues(2.dp),
         ) {
             items(
                 items = allIcons,
-                span = { icon ->
-                    if (icon == mainIcon) {
-                        StaggeredGridItemSpan.FullLine
-                    } else {
-                        StaggeredGridItemSpan.SingleLane
-                    }
-                },
             ) { icon ->
                 val isMainIcon = icon == mainIcon
-                val height = if (isMainIcon) 200.dp else (Random.nextInt(150, 200)).dp
+                val height = if (isMainIcon) 200.dp else (Random.nextInt(80, 150)).dp
                 AsyncImage(
                     model = icon,
                     contentDescription = null,
@@ -148,14 +145,34 @@ fun GTAStyleCover(
             }
         }
 
+        Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .5f)))
+
         Column(
             Modifier.align(Alignment.Center).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Text(
+                title,
+                modifier = Modifier.fillMaxWidth(),
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontFamily = saga.genre.bodyFont(),
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium,
+                        color = saga.genre.iconColor,
+                        shadow =
+                            Shadow(
+                                saga.genre.color,
+                                offset = Offset(5f, 0f),
+                                blurRadius = 10f,
+                            ),
+                    ),
+            )
+
             genre.stylisedText(
                 saga.title,
-                fontSize = MaterialTheme.typography.displaySmall.fontSize,
+                fontSize = MaterialTheme.typography.headlineMedium.fontSize,
             )
 
             Text(
@@ -176,6 +193,15 @@ fun GTAStyleCover(
                             ),
                     ),
             )
+
+            Text(
+                caption,
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = genre.bodyFont(),
+                    ),
+            )
+            SagaTitle(textStyle = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(4.dp))
         }
     }
 }
@@ -215,6 +241,6 @@ fun GTAStyleCoverPreview() {
         )
 
     SagAITheme {
-        GTAStyleCover(sagaContent = sagaContent, "No one gets to see this yet")
+        GTAStyleCover(sagaContent = sagaContent, "No one gets to see this yet", "Your destiny awaits", "A universe in your hands.")
     }
 }

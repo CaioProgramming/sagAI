@@ -1,26 +1,27 @@
 package com.ilustris.sagai.features.share.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,21 +32,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -54,7 +51,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.sortCharactersContentByMessageCount
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -67,7 +64,6 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.shape
-import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -103,11 +99,16 @@ fun RelationsShareView(
         }
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        AnimatedVisibility(isLoading.not() && shareText != null) {
+        AnimatedVisibility(
+            isLoading.not() && shareText != null,
+            modifier =
+                Modifier
+                    .align(Alignment.Center)
+                    .fillMaxSize(),
+        ) {
             Box(
                 Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                    .fillMaxSize()
                     .clip(genre.shape())
                     .background(MaterialTheme.colorScheme.background)
                     .drawWithContent {
@@ -117,7 +118,8 @@ fun RelationsShareView(
                         drawLayer(graphicsLayer)
                     }.clickable {
                         coroutineScope.launch {
-                            delay(2.seconds)
+                            viewModel.startSaving()
+                            delay(1.seconds)
                             graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
                                 viewModel.saveBitmap(bitmap, ShareType.RELATIONS.name)
                             }
@@ -128,60 +130,80 @@ fun RelationsShareView(
                     GridCells.Fixed(3),
                     horizontalArrangement = Arrangement.Center,
                     verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.align(Alignment.Center).background(MaterialTheme.colorScheme.background),
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(16.dp)
+                            .background(MaterialTheme.colorScheme.background),
                 ) {
                     item(span = { GridItemSpan(3) }) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        Text(
+                            sagaContent.data.title,
+                            style =
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    fontFamily = genre.headerFont(),
+                                    brush = genre.gradient(),
+                                    textAlign = TextAlign.Center,
+                                    shadow = Shadow(genre.color, Offset(2f, 0f), 10f),
+                                ),
                             modifier =
                                 Modifier
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    ).padding(16.dp)
+                                    ).padding(8.dp)
                                     .fillMaxWidth(),
-                        ) {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                null,
-                                colorFilter = ColorFilter.tint(genre.color),
-                                modifier = Modifier.size(32.dp),
-                            )
-                            Text(
-                                sagaContent.data.title,
-                                style =
-                                    MaterialTheme.typography.headlineMedium.copy(
-                                        fontFamily = genre.headerFont(),
-                                        brush = genre.gradient(),
-                                        shadow = Shadow(genre.color, Offset(2f, 0f), 10f),
-                                    ),
+                        )
+                    }
+                    val columns = 3
+                    val charactersCount = characters.size
+                    val isLastItemSingleton =
+                        charactersCount > 0 && charactersCount % columns == 1
+
+                    itemsIndexed(
+                        items = characters,
+                        key = { _, it -> it.data.id },
+                        span = { index, _ ->
+                            if (isLastItemSingleton && index == charactersCount - 1) {
+                                GridItemSpan(columns)
+                            } else {
+                                GridItemSpan(1)
+                            }
+                        },
+                    ) { index, it ->
+                        val isCentered =
+                            isLastItemSingleton && index == charactersCount - 1
+
+                        val imageComposable: @Composable () -> Unit = {
+                            AsyncImage(
+                                model = it.data.image,
+                                contentDescription = it.data.name,
                                 modifier =
                                     Modifier
-                                        .weight(1f),
+                                        .padding(2.dp)
+                                        .effectForGenre(genre, useFallBack = true)
+                                        .aspectRatio(1f),
+                                contentScale = ContentScale.Crop,
+                                colorFilter =
+                                    ColorFilter.tint(
+                                        (
+                                            it.data.hexColor.hexToColor()
+                                                ?: genre.color
+                                        ).copy(alpha = .2f),
+                                        blendMode = BlendMode.SrcOver,
+                                    ),
                             )
                         }
-                    }
-                    items(characters) {
-                        val index = characters.indexOf(it)
-                        val isTop3 = index <= 2
-                        AsyncImage(
-                            model = it.data.image,
-                            contentDescription = it.data.name,
-                            modifier =
-                                Modifier
-                                    .padding(2.dp)
-                                    .effectForGenre(genre, useFallBack = true)
-                                    .aspectRatio(.75f),
-                            contentScale = ContentScale.Crop,
-                            colorFilter =
-                                ColorFilter.tint(
-                                    (
-                                        it.data.hexColor.hexToColor()
-                                            ?: genre.color
-                                    ).copy(alpha = .2f),
-                                    blendMode = BlendMode.SrcOver,
-                                ),
-                        )
+                        if (isCentered) {
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Spacer(modifier = Modifier.weight(1f))
+                                Box(modifier = Modifier.weight(1f)) {
+                                    imageComposable()
+                                }
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        } else {
+                            imageComposable()
+                        }
                     }
 
                     shareText?.let {
@@ -189,11 +211,10 @@ fun RelationsShareView(
                             Text(
                                 it.text,
                                 style =
-                                    MaterialTheme.typography.titleMedium.copy(
+                                    MaterialTheme.typography.bodyLarge.copy(
                                         fontFamily = genre.bodyFont(),
-                                        shadow = Shadow(genre.color, Offset(5f, 3f), 10f),
+                                        shadow = Shadow(genre.color, Offset(5f, 0f), 2f),
                                         fontStyle = FontStyle.Italic,
-                                        fontWeight = FontWeight.Light,
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier =
@@ -209,12 +230,12 @@ fun RelationsShareView(
                         Column(
                             Modifier
                                 .background(MaterialTheme.colorScheme.background)
-                                .padding(16.dp)
+                                .padding(4.dp)
                                 .fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Text(
-                                "Descubra mais universos.",
+                                shareText?.caption ?: emptyString(),
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontFamily = genre.bodyFont(),
@@ -246,6 +267,7 @@ fun RelationsShareView(
     LaunchedEffect(isLoading) {
         if (isLoading.not() && isSaving.not()) {
             coroutineScope.launch {
+                viewModel.startSaving()
                 delay(2.seconds)
                 graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
                     viewModel.saveBitmap(bitmap, ShareType.RELATIONS.name)

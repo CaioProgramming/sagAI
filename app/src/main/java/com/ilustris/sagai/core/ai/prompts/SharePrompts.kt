@@ -2,10 +2,10 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.share.domain.model.ShareText
+import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 
 object SharePrompts {
     val sagaExcludedFields =
@@ -29,76 +29,54 @@ object SharePrompts {
         character: Character,
         sagaContent: SagaContent,
     ) = buildString {
-        val characterExcludedFields =
-            listOf(
-                "id",
-                "image",
-                "hexColor",
-                "sagaId",
-                "joinedAt",
-                "firstSceneId",
-                "emojified",
-                "details",
-            )
-        // --- 1. Role Assignment and Style Definition ---
+        val emotionalRanking = sagaContent.flatMessages().rankEmotionalTone()
         appendLine(
-            "You are a world-class marketing copywriter, specialized in minimalistic, highly impactful, and curiosity-driven slogans (Apple, Google, Nike style).",
+            "You are a world-class copywriter, creating minimalist, highly impactful, and curiosity-driven slogans.",
         )
-        appendLine("Your final output must be a single, short, evocative phrase. Do NOT provide any explanation or extra text.")
-
-        // --- 2. Constraints and Output Format ---
-        appendLine("The phrase MUST adhere to these rules:")
-        appendLine("1. CONCISE: Maximum 8 words.")
-        appendLine("2. EVOCATIVE: Focus on the character's legacy, archetype, or the core feeling of their completed quest.")
-        appendLine("3. SPOILER-FREE: Do not mention specific plot points, names of enemies, or final locations.")
-        appendLine("4. CURIOSITY-DRIVEN: It must raise curiosity about the game/app and the character's journey.")
         appendLine(
-            "5. STYLE: Aim for a tagline that suggests action, destiny, or profound change. (e.g., 'The future isn't built. It's fought for.', 'Destiny is for spectators.')",
+            "Your task is to generate a short, evocative text package defining a player's unique playstyle.",
         )
-
-        // --- 3. Contextual Data Injection ---
-        appendLine("--- CHARACTER AND SAGA CONTEXT FOR INSPIRATION ---")
-        appendLine("Character context (Archetype/Core Role): ")
-        appendLine(character.toJsonFormatExcludingFields(characterExcludedFields))
-        appendLine("Saga context (Core Conflict/Resolution): ")
+        appendLine("The output MUST adhere to these rules:")
+        appendLine("1. TITLE: A single, powerful word defining the character's legacy (e.g., 'Indomitable', 'Unbroken').")
+        appendLine(
+            "2. TEXT: A very short subtitle (strictly 2 to 4 words) summarizing the character's role (e.g., 'Hero in Training', 'Mercenary and Nomad'). DO NOT write a paragraph.",
+        )
+        appendLine(
+            "3. CAPTION: A very short, brand-aligned phrase (max 4 words) that evokes curiosity and matches the story's vibe (e.g., 'Your story awaits.', 'Forge your destiny.'). It should be subtle and elegant.",
+        )
+        appendLine(
+            "4. CORE LOGIC: The message must reflect the player's dominant emotional tones, colored by the character's personality. Example: For a 'Guardian' with dominant 'Determination', a good result is TITLE: 'Unbreakable', TEXT: 'The Unwavering Shield'.",
+        )
+        appendLine("5. SPOILER-FREE: Do not mention specific plot points, names, or locations.")
+        appendLine("Dominant Emotional Tones (ranked): ")
+        appendLine(emotionalRanking.joinToString(", ") { "${it.first.name} (${it.second.size})" })
+        appendLine("The character's personality profile is:")
+        appendLine(character.profile.toJsonFormat())
+        appendLine("Saga context: ")
         appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExcludedFields))
-
-        appendLine("Generate the impactful, short marketing slogan based on the provided context.")
-
-        appendLine("Your Output needs to follow this structure:\n${toJsonMap(ShareText::class.java)}\n")
+        appendLine("Generate the title, text, and caption for the player's unique playstyle now.")
     }
 
     fun emotionalPrompt(saga: SagaContent) =
         buildString {
-            // --- 1. Role Assignment and Tone Definition ---
             appendLine(
-                "You are the collective consciousness of the completed journey and the character's memory. Your task is to write a final, brief, and deeply personal note directed to the player (the 'You').",
+                "You are the collective consciousness of a completed journey. Your task is to write a final, deeply personal message for the player.",
             )
             appendLine(
-                "The tone must be reflective, profound, and focus on the emotional journey just completed. This note is intended for a short-form social media story, so it must be impactful and concise.",
+                "The goal is to create a complete shareable package: a poetic TITLE, the reflective TEXT, and a subtle CAPTION.",
+            )
+            appendLine("The output MUST adhere to these rules:")
+            appendLine("1. TITLE: A short, poetic phrase encapsulating the emotional legacy (e.g., 'The Echo of a Choice').")
+            appendLine(
+                "2. TEXT: A short paragraph (max 5 sentences) that speaks directly to the player, reflecting on their journey. CRITICAL: Do NOT use 'I', 'We', or any self-referential term.",
             )
             appendLine(
-                "The text should reflect on the person the player became through their actions, acknowledging their struggles, fears, and ultimate conquests, speaking from a deep, observant, and intimate perspective.",
+                "3. CAPTION: A very short, brand-aligned phrase (max 4 words) that evokes a feeling of continuation or reflection (e.g., 'What will you become?', 'The story is yours.').",
             )
-
-            // --- 2. Constraints and Output Format ---
-            appendLine(
-                "CRITICAL RULE: The text MUST NOT refer to the speaker (the AI/Saga/Narrator) using 'I', 'Eu', 'We', or any self-referential term. The message must feel like a direct thought or a powerful, disembodied realization shared with the player.",
-            )
-            appendLine(
-                "The output must be a single, short paragraph (MAX 5 sentences). Do NOT use any explicit address (e.g., 'Dear Player') or concluding remarks.",
-            )
-            appendLine(
-                "The text must synthesize the emotional data provided below, focusing on the character's emotional *transformation* and legacy.",
-            )
-            // --- 3. Contextual Data Injection ---
-            appendLine("--- EMOTIONAL CONTEXT ---")
-            appendLine("Saga's Overall Emotional Review (Core Tone): ")
+            appendLine("Saga's Overall Emotional Review: ")
             appendLine(saga.data.emotionalReview)
-
-            appendLine("Key Act Emotional Reviews (Journey Arc): ")
-            appendLine(saga.acts.joinToString(";\n") { it.data.emotionalReview.toString() })
-
+            appendLine("Key Act Emotional Reviews: ")
+            appendLine(saga.acts.joinToString(";") { it.data.emotionalReview.toString() })
             appendLine("Character's Core Archetype: ")
             appendLine(
                 saga.mainCharacter
@@ -106,97 +84,73 @@ object SharePrompts {
                     ?.profile
                     .toJsonFormat(),
             )
-
-            appendLine("Your output must be:\n${toJsonMap(ShareText::class.java)}\n")
-
-            // --- 4. Final Instruction ---
             appendLine(
-                "Write the short, profound, fourth-wall-breaking note now, ensuring the speaker remains unnamed and the message is directed personally to 'You'.",
+                "Write the title, text, and caption for this profound, fourth-wall-breaking note now.",
             )
         }
 
     fun historyPrompt(saga: SagaContent) =
         buildString {
-            // --- 1. Role Assignment and Style Definition ---
             appendLine(
-                "You are a master of movie trailer taglines and minimalistic marketing (style of Apple, Google, and major film studios).",
+                "You are a master of movie trailer copy. Your goal is to create a minimalist, high-impact teaser package for a completed RPG Saga.",
             )
-            appendLine("Your task is to create a single, highly impactful, and ultra-short tagline for a completed RPG Saga.")
+            appendLine("The output MUST adhere to these rules:")
             appendLine(
-                "This slogan must focus on the grand scale and core conflict of the *story's arc*, rather than the specific character's playstyle.",
+                "1. TITLE: An extremely concise tagline (max 5 words) focusing on the core theme. It must not be the same as the saga's title.",
             )
-            appendLine("Your final output must be a single phrase. Do NOT provide any explanation or extra text.")
-
-            // --- 2. Constraints and Output Format ---
-            appendLine("The tagline MUST adhere to these rules:")
-            appendLine("1. EXTREMELY CONCISE: Maximum 7 words.")
-            appendLine("2. EVOCATIVE: Focus on the *stakes*, the *world change*, or the *central dilemma* of the narrative.")
             appendLine(
-                "3. SPOILER-FREE: Absolutely do not reveal the climax, specific enemy names, or the final resolution (e.g., 'The empire fell' is too much).",
+                "2. TEXT: A very short, cryptic phrase (strictly 2 to 4 words) that adds mystery to the title. DO NOT write a paragraph. (e.g., TITLE: 'A Kingdom in Shadow', TEXT: 'One spark remains.').",
             )
-            appendLine("4. CURIOSITY-DRIVEN: It must sound like a promise of a huge, untold story.")
             appendLine(
-                "5. STYLE: Suggest immense challenge, unavoidable destiny, or the cost of a victory. (e.g., 'Not all legends ask permission.', 'Some worlds just burn.')",
+                "3. CAPTION: A very short, brand-aligned phrase (max 4 words) that hooks the audience with a sense of scale or possibility (e.g., 'A universe of stories.', 'Legends are written.').",
             )
-
-            appendLine("--- SAGA CONTEXTUAL ARC ---")
-
-            appendLine("Saga Title and Core Description: ")
+            appendLine("4. SPOILER-FREE: Absolutely no spoilers.")
+            appendLine("5. TONE: Must match the provided Saga Genre.")
+            appendLine("Saga Genre: ${saga.data.genre.name}")
+            appendLine("Saga Title and Description (for context only): ")
             appendLine(saga.data.title)
             appendLine(saga.data.description)
-
-            appendLine("Summary of the Saga's Three Acts (Introduction, Rising Action, Resolution): ")
+            appendLine("Summary of the Saga's Acts: ")
             appendLine(saga.acts.map { it.data }.toJsonFormatExcludingFields(listOf("id", "sagaId", "emotionalReview", "currentChapterId")))
-
-            // --- 4. Final Instruction ---
-            appendLine("Generate the short, world-building, and curiosity-driven story slogan now.")
-            appendLine("Your Output needs to follow this structure:\n${toJsonMap(ShareText::class.java)}\n")
+            appendLine("Generate the title, text, and caption for the story teaser now.")
         }
 
     fun relationsPrompt(saga: SagaContent) =
         buildString {
-            val relationsRank = saga.mainCharacter!!.rankRelationships()
+            val relationsRank = saga.mainCharacter?.rankRelationships() ?: emptyList()
             appendLine(
-                "You are a master of high-drama, conceptual taglines for complex narratives (Game of Thrones, big Sci-Fi epics style).",
+                "You are a master of dramatic irony and high-concept taglines.",
             )
             appendLine(
-                "Your task is to create a single, ultra-short, highly conceptual slogan that summarizes the *dynamic of relationships* and the *social cost* of the player's journey.",
+                "Your task is to create a teaser package that explores the tension and transformation within a story's relationships.",
+            )
+            appendLine("The output MUST adhere to these rules:")
+            appendLine("1. TITLE: A concise (max 7 words), high-concept tagline about the paradoxical nature of relationships.")
+            appendLine(
+                "2. TEXT: A very short phrase (strictly 2 to 5 words) that hints at the cost or consequence of those bonds. DO NOT write a paragraph. (e.g., TITLE: 'An Alliance of Rivals', TEXT: 'Trust was their endgame.').",
             )
             appendLine(
-                "The slogan must capture the essence of alliances forged, betrayals suffered, and the ultimate trust placed or broken.",
+                "3. CAPTION: A very short, brand-aligned phrase (max 4 words) that hints at the theme of connection (e.g., 'Some bonds are unbreakable.', 'Trust is a weapon.').",
             )
-            appendLine("Your final output must be a single phrase. Do NOT provide any explanation or extra text.")
-
-            appendLine("The tagline MUST adhere to these rules:")
-            appendLine("1. EXTREMELY CONCISE NAND IMPACTFUL: Maximum 7 words.")
-            appendLine(
-                "2. FOCUSED ON DYNAMICS: The message must revolve around trust, loyalty, betrayal, or complex moral ties, not plot events.",
-            )
-            appendLine("3. SPOILER-FREE: Do not mention character names or specific plot revelations.")
-            appendLine("4. HIGH-CONCEPT: It must elevate the personal dynamics to a universal theme.")
-            appendLine(
-                "5. STYLE: Aim for a dramatic, philosophical, or warning tone about human connection. (e.g., 'Not all debts can be repaid.', 'Trust is the final weapon.')",
-            )
-
-            appendLine("--- SYNTHESIZED RELATIONSHIP DYNAMICS ---")
-
-            appendLine(
-                "Below is a list of the Saga's most critical relationship arcs, showing the full emotional trajectory from start to finish. Use these arcs to find the core dramatic conflict.",
-            )
-
-            appendLine(
-                relationsRank.joinToString(prefix = "-", separator = ".\n") {
-                    " ${it.characterOne.name}'s relationship with ${it.characterTwo.name}: ${it.relationshipEvents.joinToString(
-                        " -> ",
-                    ){ event -> event.title }}"
-                },
-            )
-
+            appendLine("4. SPOILER-FREE: No character names or specific plot twists.")
+            if (relationsRank.isEmpty()) {
+                appendLine(
+                    "Context: The story has no specific character relationships. Focus on the theme of isolation or a solitary journey.",
+                )
+            } else {
+                appendLine(
+                    "Context: Use the following relationship arcs to find the core dramatic conflict.",
+                )
+                appendLine(
+                    relationsRank.joinToString(prefix = "-", separator = ".") {
+                        " ${it.characterOne.name}'s relationship with ${it.characterTwo.name}: ${it.relationshipEvents.joinToString(
+                            " -> ",
+                        ) { event -> event.title }}"
+                    },
+                )
+            }
             appendLine("Saga context: ")
             appendLine(saga.data.toJsonFormatExcludingFields(sagaExcludedFields.plus("endMessage").plus("review")))
-
-            // --- 4. Final Instruction ---
-            appendLine("Generate the short, emotionally complex, and dynamics-focused slogan now.")
-            appendLine("Your Output needs to follow this structure:\n${toJsonMap(ShareText::class.java)}\n")
+            appendLine("Generate the title, text, and caption that teases the tension within the saga's relationships.")
         }
 }

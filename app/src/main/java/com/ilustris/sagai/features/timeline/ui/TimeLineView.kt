@@ -347,28 +347,27 @@ fun TimeLineCard(
                         width = Dimension.fillToConstraints
                     },
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    event.title,
-                    style =
-                        MaterialTheme.typography.titleSmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = genre.color,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    event.createdAt.formatDate(),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = textColor.copy(alpha = .4f),
-                            fontWeight = FontWeight.Light,
-                            fontFamily = genre.bodyFont(),
-                            textAlign = TextAlign.End,
-                        ),
-                )
-            }
+            Text(
+                event.title,
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = genre.color,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Text(
+                event.createdAt.formatDate(),
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = textColor.copy(alpha = .4f),
+                        fontWeight = FontWeight.Light,
+                        fontFamily = genre.bodyFont(),
+                        textAlign = TextAlign.End,
+                    ),
+            )
 
             AnimatedVisibility(showText) {
                 Column {

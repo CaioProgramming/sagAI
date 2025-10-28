@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -102,11 +103,14 @@ fun PlayStyleShareView(
         contentAlignment = Alignment.Center,
     ) {
         AnimatedVisibility(isLoading.not(), enter = fadeIn(), exit = fadeOut()) {
+            val padding by animateDpAsState(if (isLoading.not()) 16.dp else 32.dp)
+
             Column(
                 Modifier
-                    .padding(16.dp)
+                    .fillMaxWidth()
                     .clickable {
                         coroutineScope.launch {
+                            viewModel.startSaving()
                             graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
                                 viewModel.saveBitmap(bitmap, "play_style_share")
                             }
@@ -116,7 +120,7 @@ fun PlayStyleShareView(
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.fillMaxWidth()
+                    }.padding(24.dp)
                     .background(genre.color),
             ) {
                 Box(
@@ -139,35 +143,41 @@ fun PlayStyleShareView(
                     Box(
                         Modifier
                             .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .fillMaxHeight(.5f)
+                            .fillMaxSize()
                             .background(fadeGradientBottom(genre.color)),
                     )
 
-                    Text(
-                        shareText?.text ?: emptyString(),
+                    Column(
                         modifier =
                             Modifier
                                 .align(Alignment.Center)
                                 .padding(16.dp)
                                 .fillMaxWidth(),
-                        style =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = genre.bodyFont(),
-                                color = genre.iconColor,
-                                textAlign = TextAlign.Center,
-                                fontStyle = FontStyle.Italic,
-                                fontWeight = FontWeight.W600,
-                                letterSpacing = 5.sp,
-                                shadow = Shadow(genre.color, blurRadius = 2f, offset = Offset(5f, 0f)),
-                            ),
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                    }
 
                     Column(
                         Modifier.align(Alignment.BottomCenter).padding(16.dp).fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
+                        Text(
+                            shareText?.title ?: emptyString(),
+                            style =
+                                MaterialTheme.typography.titleSmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    color = genre.iconColor,
+                                    textAlign = TextAlign.Center,
+                                    shadow =
+                                        Shadow(
+                                            genre.color,
+                                            blurRadius = 10f,
+                                            offset = Offset(2f, 0f),
+                                        ),
+                                ),
+                        )
+
                         Text(
                             content.mainCharacter?.data?.name ?: emptyString(),
                             modifier =
@@ -177,25 +187,33 @@ fun PlayStyleShareView(
                                 MaterialTheme.typography.displayMedium.copy(
                                     fontFamily = genre.headerFont(),
                                     textAlign = TextAlign.Center,
-                                    brush = Brush.verticalGradient(listOf(genre.color, genre.iconColor)),
+                                    brush =
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                genre.color,
+                                                genre.iconColor,
+                                            ),
+                                        ),
                                     shadow = Shadow(genre.color, blurRadius = 10f),
                                 ),
                         )
 
                         Text(
-                            content.mainCharacter
-                                ?.data
-                                ?.profile
-                                ?.occupation ?: emptyString(),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth(),
+                            shareText?.text ?: emptyString(),
                             style =
-                                MaterialTheme.typography.bodySmall.copy(
+                                MaterialTheme.typography.bodyLarge.copy(
                                     fontFamily = genre.bodyFont(),
                                     color = genre.iconColor,
                                     textAlign = TextAlign.Center,
-                                    shadow = Shadow(genre.color, blurRadius = 10f),
+                                    fontStyle = FontStyle.Italic,
+                                    fontWeight = FontWeight.W600,
+                                    letterSpacing = 5.sp,
+                                    shadow =
+                                        Shadow(
+                                            genre.color,
+                                            blurRadius = 5f,
+                                            offset = Offset(5f, 0f),
+                                        ),
                                 ),
                         )
                     }
@@ -212,21 +230,7 @@ fun PlayStyleShareView(
                 )
 
                 Text(
-                    saga.title,
-                    modifier =
-                        Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(8.dp),
-                    style =
-                        MaterialTheme.typography.titleSmall.copy(
-                            color = genre.iconColor,
-                            fontFamily = genre.headerFont(),
-                            shadow = Shadow(genre.color, blurRadius = 10f),
-                        ),
-                )
-
-                Text(
-                    "Mais universos aguardam",
+                    shareText?.caption ?: emptyString(),
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontFamily = genre.bodyFont(),
@@ -242,7 +246,12 @@ fun PlayStyleShareView(
             }
         }
 
-        AnimatedVisibility(isLoading, modifier = Modifier.fillMaxSize(), enter = fadeIn(), exit = fadeOut()) {
+        AnimatedVisibility(
+            isLoading,
+            modifier = Modifier.fillMaxSize(),
+            enter = fadeIn(),
+            exit = fadeOut(),
+        ) {
             StarryTextPlaceholder(
                 modifier = Modifier.fillMaxSize(),
                 starColor = genre.color,

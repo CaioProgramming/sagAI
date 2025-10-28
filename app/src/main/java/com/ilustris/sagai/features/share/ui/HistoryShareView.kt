@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.share.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
@@ -72,8 +74,8 @@ fun HistoryShareView(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .fillMaxHeight()
                         .clip(genre.shape())
+                        .padding(24.dp)
                         .clickable {
                             coroutineScope.launch {
                                 delay(2.seconds)
@@ -86,29 +88,11 @@ fun HistoryShareView(
                                 this@drawWithContent.drawContent()
                             }
                             drawLayer(graphicsLayer)
-                        }.fillMaxWidth()
-                        .padding(16.dp),
+                        },
             ) {
-                shareText?.let {
-                    GTAStyleCover(saga, it.text)
-
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.BottomCenter)
-                            .background(
-                                fadeGradientBottom(),
-                            ).padding(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            "Crie Seu Universo. Baixe Agora.",
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                ),
-                        )
-                        SagaTitle(textStyle = MaterialTheme.typography.labelMedium)
+                Box {
+                    shareText?.let {
+                        GTAStyleCover(saga, it.title, it.text, it.caption)
                     }
                 }
             }

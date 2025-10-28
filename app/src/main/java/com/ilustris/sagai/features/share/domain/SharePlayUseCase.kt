@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.core.content.FileProvider
+import androidx.core.graphics.scale
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SharePrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -46,8 +47,32 @@ class SharePlayUseCaseImpl
         ): RequestResult<File> =
             executeRequest {
                 clearShareFolder()
-                fileHelper.saveFile("shares", fileName, bitmap)!!
+                val resizedBitmap = bitmap
+                fileHelper.saveFile("shares", fileName, resizedBitmap)!!
             }
+
+        private fun resizeBitmap(bitmap: Bitmap): Bitmap {
+            val maxWidth = 1080f
+            val maxHeight = 1350f
+            val targetWidth = maxWidth
+            val targetHeight = maxHeight
+
+            val originalWidth = bitmap.width
+            val originalHeight = bitmap.height
+
+            if (originalWidth <= targetWidth && originalHeight <= targetHeight) {
+                return bitmap
+            }
+
+            val widthRatio = targetWidth / originalWidth.toFloat()
+            val heightRatio = targetHeight / originalHeight.toFloat()
+            val ratio = minOf(widthRatio, heightRatio)
+
+            val newWidth = (originalWidth * ratio).toInt()
+            val newHeight = (originalHeight * ratio).toInt()
+
+            return bitmap.scale(newWidth, newHeight)
+        }
 
         override suspend fun loadWithFileProvider(file: File): RequestResult<Uri> =
             executeRequest {

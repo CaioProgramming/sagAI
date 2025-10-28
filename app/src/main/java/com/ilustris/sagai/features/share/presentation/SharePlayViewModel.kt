@@ -62,6 +62,10 @@ class SharePlayViewModel
             }
         }
 
+        fun startSaving() {
+            isSaving.value = true
+        }
+
         fun saveBitmap(
             bitmap: Bitmap?,
             fileName: String,
@@ -72,6 +76,7 @@ class SharePlayViewModel
                 sharePlayUseCase.saveBitmapToCache(bitmap, fileName).onSuccessAsync {
                     shareFile = it
                     savedFilePath.value = sharePlayUseCase.loadWithFileProvider(it).getSuccess()
+                    isSaving.emit(false)
                 }
             }
         }

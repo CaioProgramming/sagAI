@@ -45,6 +45,7 @@ import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.shape
@@ -96,14 +97,14 @@ fun EmotionShareView(
                             }
                             drawLayer(graphicsLayer)
                         }.fillMaxWidth()
-                        .padding(32.dp),
+                        .padding(24.dp),
             ) {
                 Text(
                     shareText?.title ?: emptyString(),
                     style =
                         MaterialTheme.typography.titleLarge.copy(
                             fontFamily = genre.headerFont(),
-                            brush = Brush.verticalGradient(genre.color.darkerPalette()),
+                            brush = genre.gradient(),
                         ),
                     modifier = Modifier.padding(vertical = 16.dp),
                 )
@@ -116,18 +117,9 @@ fun EmotionShareView(
                         ),
                 )
 
-                Text(
-                    "${saga.data.title}, chegou ao fim. Mas sua jornada continua.",
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            fontStyle = FontStyle.Italic,
-                        ),
-                )
-
                 Column(Modifier.padding(vertical = 16.dp).alpha(.6f).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        "Sua próxima saga aguarda.",
+                        shareText?.caption ?: emptyString(),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = genre.bodyFont(),
