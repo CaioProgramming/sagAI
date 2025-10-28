@@ -397,7 +397,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         ),
                     shape = RoundedCornerShape(15.dp),
                 ) {
-                    Text(stringResource(R.string.clear_data_button))
+                    Text(stringResource(R.string.clear_data_button), modifier = Modifier.padding(8.dp))
                 }
             }
         }

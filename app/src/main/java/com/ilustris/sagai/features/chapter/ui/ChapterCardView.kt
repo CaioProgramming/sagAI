@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.chapter.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +44,9 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
 
 @Composable
@@ -51,6 +54,7 @@ fun ChapterCardView(
     saga: SagaContent,
     chapter: Chapter,
     modifier: Modifier,
+    showTitle: Boolean = true
 ) {
     val genre = saga.data.genre
     val shape = RoundedCornerShape(genre.cornerSize())
@@ -58,6 +62,7 @@ fun ChapterCardView(
         Box(
             Modifier
                 .clip(shape)
+                .border(1.dp, genre.color.gradientFade(), genre.shape())
                 .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                 .fillMaxWidth()
                 .weight(1f),
@@ -75,10 +80,9 @@ fun ChapterCardView(
                 onSuccess = {
                     textAlpha = 0f
                 },
-                placeholder = painterResource(R.drawable.ic_spark),
-                fallback = painterResource(R.drawable.ic_spark),
                 modifier =
                     Modifier
+                        .fillMaxSize()
                         .effectForGenre(genre)
                         .selectiveColorHighlight(genre.selectiveHighlight()),
             )
@@ -99,19 +103,21 @@ fun ChapterCardView(
             )
         }
 
-        Text(
-            text = chapter.title,
-            maxLines = 1,
-            style =
-                MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = genre.bodyFont(),
-                    textAlign = TextAlign.Start,
-                ),
-            modifier =
-                Modifier
-                    .padding(vertical = 8.dp)
-                    .fillMaxWidth(),
-        )
+        if(showTitle){
+            Text(
+                text = chapter.title,
+                maxLines = 1,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = genre.bodyFont(),
+                        textAlign = TextAlign.Center,
+                    ),
+                modifier =
+                    Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
+            )
+        }
     }
 }
 

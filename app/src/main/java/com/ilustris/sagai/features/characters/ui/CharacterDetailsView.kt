@@ -204,6 +204,7 @@ fun CharacterDetailsContent(
                         MaterialTheme.typography.titleSmall.copy(
                             fontFamily = genre.bodyFont(),
                             color = characterColor,
+                            textAlign = TextAlign.Center,
                         ),
                     modifier = Modifier.padding(16.dp),
                 )

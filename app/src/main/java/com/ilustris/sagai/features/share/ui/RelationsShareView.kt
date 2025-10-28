@@ -153,7 +153,6 @@ fun RelationsShareView(
                                     MaterialTheme.typography.headlineMedium.copy(
                                         fontFamily = genre.headerFont(),
                                         brush = genre.gradient(),
-                                        fontStyle = FontStyle.Italic,
                                         shadow = Shadow(genre.color, Offset(2f, 0f), 10f),
                                     ),
                                 modifier =
@@ -170,11 +169,8 @@ fun RelationsShareView(
                             contentDescription = it.data.name,
                             modifier =
                                 Modifier
-                                    .border(
-                                        2.dp,
-                                        if (isTop3) genre.gradient() else genre.color.solidGradient(),
-                                        RectangleShape,
-                                    ).effectForGenre(genre, useFallBack = true)
+                                    .padding(2.dp)
+                                    .effectForGenre(genre, useFallBack = true)
                                     .aspectRatio(.75f),
                             contentScale = ContentScale.Crop,
                             colorFilter =
@@ -195,9 +191,10 @@ fun RelationsShareView(
                                 style =
                                     MaterialTheme.typography.titleMedium.copy(
                                         fontFamily = genre.bodyFont(),
-                                        shadow = Shadow(genre.color, Offset(5f, 3f), 5f),
+                                        shadow = Shadow(genre.color, Offset(5f, 3f), 10f),
                                         fontStyle = FontStyle.Italic,
                                         fontWeight = FontWeight.Light,
+                                        textAlign = TextAlign.Center,
                                     ),
                                 modifier =
                                     Modifier

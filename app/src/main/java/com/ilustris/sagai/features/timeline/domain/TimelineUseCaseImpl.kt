@@ -43,6 +43,7 @@ class TimelineUseCaseImpl
                             currentTimeline,
                         ),
                         skipRunning = true,
+                        describeOutput = false,
                     )!!
 
             updateTimeline(

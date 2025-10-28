@@ -95,6 +95,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -642,11 +643,8 @@ fun PlayStylePage(content: SagaContent) {
                 firstTone,
                 morphProgress,
                 rotation,
-                outlineBrush =
-                    Brush.verticalGradient(
-                        firstTone.color.darkerPalette(factor = .3f),
-                    ),
-                backgroundBrush = genre.color.solidGradient(),
+                outlineBrush = firstTone.color.solidGradient(),
+                backgroundBrush = Brush.verticalGradient(genre.shimmerColors()),
                 glowColor = genre.iconColor,
             )
         }
@@ -658,7 +656,9 @@ fun PlayStylePage(content: SagaContent) {
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = genre.headerFont(),
                         color = genre.iconColor,
+                        textAlign = TextAlign.Center,
                     ),
+                modifier = Modifier.fillMaxWidth(),
             )
         }
 

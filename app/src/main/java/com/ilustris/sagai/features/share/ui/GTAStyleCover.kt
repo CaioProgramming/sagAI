@@ -115,7 +115,7 @@ fun GTAStyleCover(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(genre.color.gradientFade()),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Fixed(3),
@@ -135,7 +135,7 @@ fun GTAStyleCover(
                 },
             ) { icon ->
                 val isMainIcon = icon == mainIcon
-                val height = if (isMainIcon) 200.dp else (Random.nextInt(100, 200)).dp
+                val height = if (isMainIcon) 200.dp else (Random.nextInt(150, 200)).dp
                 AsyncImage(
                     model = icon,
                     contentDescription = null,
@@ -148,10 +148,14 @@ fun GTAStyleCover(
             }
         }
 
-        Column(Modifier.align(Alignment.Center).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            Modifier.align(Alignment.Center).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             genre.stylisedText(
                 saga.title,
-                fontSize = MaterialTheme.typography.headlineMedium.fontSize,
+                fontSize = MaterialTheme.typography.displaySmall.fontSize,
             )
 
             Text(

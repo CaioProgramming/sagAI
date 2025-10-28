@@ -32,6 +32,10 @@ sealed class NarrativeStep {
         val timeline: TimelineContent,
     ) : NarrativeStep()
 
+    data class EndTimeLine(
+        val currentChapterContent: ChapterContent,
+    ) : NarrativeStep()
+
     data object NoActionNeeded : NarrativeStep()
 }
 
@@ -49,7 +53,8 @@ object NarrativeCheck {
             currentChapter == null -> NarrativeStep.StartChapter(currentAct)
             currentChapter.isFull() -> NarrativeStep.GenerateChapter(currentChapter)
             currentTimeline == null -> NarrativeStep.StartTimeline(currentChapter)
-            currentTimeline.isFull() && currentChapter.isComplete().not() -> NarrativeStep.GenerateTimeLine(currentTimeline)
+            currentTimeline.isComplete() -> NarrativeStep.EndTimeLine(currentChapter)
+            currentTimeline.isFull() -> NarrativeStep.GenerateTimeLine(currentTimeline)
             else -> NarrativeStep.NoActionNeeded
         }
     }

@@ -335,6 +335,7 @@ fun ChatView(
                             onSendMessage = viewModel::sendInput,
                             onBack = navHostController::popBackStack,
                             onRetryMessage = viewModel::retryAiResponse,
+                            requestNewCharacter = viewModel::requestNewCharacter,
                             openSagaDetails = {
                                 navHostController.navigateToRoute(
                                     Routes.SAGA_DETAIL,
@@ -411,6 +412,7 @@ fun ChatContent(
     onSnackAction: (Triple<ChatAction, String, Any?>) -> Unit = {},
     onRetryMessage: (Message) -> Unit = {},
     checkForSaga: () -> Unit = {},
+    requestNewCharacter: (String) -> Unit = {},
 ) {
     val saga = content.data
     val listState = rememberLazyListState()
@@ -553,6 +555,7 @@ fun ChatContent(
                                 showReactions = it
                             },
                             onRetryMessage = onRetryMessage,
+                            requestNewCharacter = requestNewCharacter,
                         )
 
                         Box(
@@ -593,7 +596,7 @@ fun ChatContent(
                                 AnimatedContent(timeline, transitionSpec = {
                                     slideInVertically() + fadeIn() with fadeOut()
                                 }) {
-                                    if (it != null) {
+                                    if (it != null && it.isFull().not()) {
                                         ChatInputView(
                                             content = content,
                                             isGenerating = isGenerating,
@@ -1173,6 +1176,7 @@ fun ChatList(
     openWiki: () -> Unit = {},
     onRetryMessage: (Message) -> Unit = {},
     openReactions: (MessageContent) -> Unit = {},
+    requestNewCharacter: (String) -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
 
@@ -1265,26 +1269,22 @@ fun ChatList(
                         saga,
                         modifier =
                             Modifier
-                                .animateItem()
-                                .fillParentMaxSize()
-                                .background(MaterialTheme.colorScheme.background),
+                                .animateItem(),
                     )
                 }
 
                 item {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.animateItem(),
+                        modifier = Modifier.gradientFill(genre.gradient()).animateItem().alpha(.4f),
                     ) {
                         Text(
                             "Fim",
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
-                                    brush = genre.gradient(),
                                     fontFamily = genre.headerFont(),
                                     textAlign = TextAlign.Center,
                                 ),
-                            modifier = Modifier.alpha(.4f),
                         )
                         Text(
                             act.content.data.title,
@@ -1360,6 +1360,11 @@ fun ChatList(
                             onReactionsClick = { openReactions(it) },
                             onRetry = {
                                 onRetryMessage(it.message)
+                            },
+                            requestNewCharacter = {
+                                it.message.speakerName?.let {
+                                    requestNewCharacter(it)
+                                }
                             },
                         )
                     }

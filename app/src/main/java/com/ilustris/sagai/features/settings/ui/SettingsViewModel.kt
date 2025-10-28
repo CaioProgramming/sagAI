@@ -85,7 +85,7 @@ class SettingsViewModel
             viewModelScope.launch {
                 settingsUseCase.getSagas().collect { sagaList ->
                     val sagaInfoList =
-                        sagaList.map { sagaContent ->
+                        sagaList.sortedByDescending { it.data.createdAt }.map { sagaContent ->
                             val sagaId = sagaContent.data.id
                             val sagaName = sagaContent.data.title
                             val sagaIcon = sagaContent.data.icon

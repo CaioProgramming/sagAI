@@ -14,6 +14,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -82,6 +83,7 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -102,6 +104,7 @@ fun ChatBubble(
     openWiki: () -> Unit = {},
     onRetry: (MessageContent) -> Unit = {},
     onReactionsClick: (MessageContent) -> Unit = {},
+    requestNewCharacter: () -> Unit = {}
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -143,7 +146,7 @@ fun ChatBubble(
                         .fillMaxWidth()
                         .animateContentSize(),
             ) {
-                val avatarSize = if (messageContent.character == null) 12.dp else 50.dp
+                val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
                 val (messageText, characterAvatar, messageTime, retryButton, reactions) = createRefs()
                 val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
                 Box(
@@ -268,6 +271,13 @@ fun ChatBubble(
                                 )
                             }
                         }
+                    } ?: run {
+                        Image(painterResource(R.drawable.ic_spark), null,
+                            Modifier.clickable {
+
+                                requestNewCharacter()
+
+                        }.size(24.dp).gradientFill(genre.gradient()))
                     }
                 }
 

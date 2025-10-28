@@ -13,7 +13,9 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipC
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import kotlinx.coroutines.delay
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 class CharacterRelationUseCaseImpl
     @Inject
@@ -26,8 +28,9 @@ class CharacterRelationUseCaseImpl
             saga: SagaContent,
         ): RequestResult<Unit> =
             executeRequest {
+                delay(3.seconds)
                 val prompt = CharacterPrompts.generateCharacterRelation(timeline, saga)
-                val generatedRelationsData = gemmaClient.generate<List<RelationGeneration>>(prompt)!!
+                val generatedRelationsData = gemmaClient.generate<List<RelationGeneration>>(prompt, describeOutput = false)!!
 
                 val updatedRelations =
                     generatedRelationsData.map { relationData ->

@@ -64,16 +64,6 @@ object LorePrompts {
         sagaContent: SagaContent,
         currentTimeline: TimelineContent,
     ) = buildString {
-        val isFirstTimeline =
-            sagaContent
-                .flatEvents()
-                .firstOrNull()
-                ?.data
-                ?.id == currentTimeline.data.id
-        val isFirstAct = sagaContent.isFirstAct()
-        val isFirstChapter = sagaContent.isTimelineOnFirstChapter(currentTimeline.data)
-        val chapterCurrentTimeline = sagaContent.findTimelineChapter(currentTimeline.data)
-
         appendLine(
             "You are the Saga Chronicler, an AI specialized in identifying and documenting the single most significant new narrative development from conversations.",
         )
@@ -122,9 +112,8 @@ object LorePrompts {
             },
         )
 
-        appendLine("GENERATE A SINGLE JSON OBJECT representing this timeline event.")
-        appendLine("FOLLOW THIS EXACT JSON STRUCTURE FOR YOUR RESPONSE. DO NOT INCLUDE ANY OTHER TEXT OUTSIDE.")
-        appendLine(toJsonMap(Timeline::class.java, TIMELINE_EXCLUDED_FIELDS))
+        appendLine("Follow this structure in your output:")
+        appendLine(toJsonMap(Timeline::class.java, filteredFields = listOf("id", "createdAt", "chapterId")))
     }.trimIndent()
 
     private fun storyContext(

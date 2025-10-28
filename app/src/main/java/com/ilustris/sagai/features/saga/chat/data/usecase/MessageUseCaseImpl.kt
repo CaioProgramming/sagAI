@@ -145,6 +145,13 @@ class MessageUseCaseImpl
                         skipRunning = true,
                     )!!
 
+                val charactersInScene =
+                    sceneSummary.charactersPresent.mapNotNull { characterName ->
+                        saga.getCharacters().find {
+                            it.name.equals(characterName, ignoreCase = true)
+                        }
+                    }
+
                 val genText =
                     textGenClient.generate<MessageGen>(
                         ChatPrompts.replyMessagePrompt(
@@ -157,7 +164,10 @@ class MessageUseCaseImpl
                                     .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
                                     .map { it.message },
                             directive = saga.getDirective(),
-                            sceneSummary = sceneSummary,
+                            sceneSummary =
+                                sceneSummary.copy(
+                                    charactersPresent = charactersInScene.map { it.name },
+                                ),
                         ),
                         true,
                     )

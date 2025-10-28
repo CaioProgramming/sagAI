@@ -80,15 +80,19 @@ class FileHelper(
     fun readFile(
         fileName: String,
         path: String? = null,
-    ): ByteArray? {
-        val directory = path?.let { context.filesDir.resolve(it) } ?: context.filesDir
-        val file = directory.resolve(fileName.removeBlankSpace())
-        return if (file.exists()) {
-            file.readBytes()
-        } else {
+    ): ByteArray? =
+        try {
+            val directory = path?.let { context.filesDir.resolve(it) } ?: context.filesDir
+            val file = directory.resolve(fileName.removeBlankSpace())
+            if (file.exists()) {
+                file.readBytes()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
-    }
 
     fun decodeByteArrayToBitmap(data: ByteArray): Bitmap? =
         try {

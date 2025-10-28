@@ -140,11 +140,12 @@ class CharacterUseCaseImpl
         ): RequestResult<Character> =
             executeRequest {
                 val newCharacter =
-                    textGenClient.generate<Character>(
+                    gemmaClient.generate<Character>(
                         CharacterPrompts.characterGeneration(
                             sagaContent,
                             description,
                         ),
+                        skipRunning = true,
                     )!!
 
                 val character = sagaContent.getCharacters().find { it.name.equals(newCharacter.name, true) }
@@ -168,7 +169,7 @@ class CharacterUseCaseImpl
         ): RequestResult<Unit> =
             executeRequest {
                 val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
-                val request = gemmaClient.generate<List<CharacterUpdate>>(prompt)!!
+                val request = gemmaClient.generate<List<CharacterUpdate>>(prompt, describeOutput = false)!!
 
                 val updatedCharacters =
                     request.mapNotNull {

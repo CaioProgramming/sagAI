@@ -176,7 +176,6 @@ object ChatPrompts {
     ) = buildString {
         appendLine("You task is generate a concise, AI-optimized summary of the current scene in an interactive story.")
         appendLine("This summary will be used exclusively as context for subsequent AI requests and will NOT be shown to the user.")
-        appendLine()
         appendLine("Your goal:")
         appendLine(
             "- Provide only the most relevant details needed to maintain accurate story progression and avoid misleading information.",
@@ -208,7 +207,7 @@ object ChatPrompts {
             appendLine("No events yet.")
         } else {
             appendLine(
-                saga.mainCharacter?.events?.map { it.event }?.takeLast(5)?.formatToJsonArray(
+                saga.mainCharacter.events.map { it.event }.takeLast(5).formatToJsonArray(
                     listOf("gameTimelineId", "characterId", "id", "createdAt"),
                 ),
             )
@@ -244,13 +243,6 @@ object ChatPrompts {
         appendLine(recentMessages.joinToString(separator = ";\n"))
         appendLine("]")
         appendLine()
-        appendLine("Use the following structure (do NOT add extra commentary):")
-        appendLine(toJsonMap(SceneSummary::class.java))
-        appendLine()
-        appendLine("Only include details that are essential to understand the current scene and keep the story pacing.")
-        appendLine("Do NOT repeat information unless it is critical for context.")
-        appendLine("Do NOT speculate or invent details not present in the current context.")
-        appendLine("Output only the structured summary as specified above.")
     }.trimIndent()
 
     private fun conversationStyleAndPacing() =

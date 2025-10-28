@@ -360,7 +360,7 @@ fun LazyListScope.SagaDrawerContent(
 
             Column(
                 Modifier
-                    .padding(16.dp)
+                    .padding(horizontal = 12.dp, vertical = 0.dp)
                     .border(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
@@ -436,7 +436,7 @@ fun LazyListScope.SagaDrawerContent(
                                     isLast = eventsInChapter.indexOf(event) == eventsInChapter.lastIndex,
                                     modifier =
                                         Modifier
-                                            .padding(horizontal = 16.dp)
+                                            .padding(horizontal = 8.dp)
                                             .alpha(.7f),
                                 )
                             }

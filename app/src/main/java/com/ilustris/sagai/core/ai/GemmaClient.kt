@@ -20,6 +20,7 @@ import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString // <-- ADDED IMPORT FOR EXTENSION
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toJsonMap
 import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
@@ -67,6 +68,7 @@ class GemmaClient
             temperatureRandomness: Float = 0f,
             requireTranslation: Boolean = true,
             skipRunning: Boolean = false,
+            describeOutput: Boolean = true,
         ): T? {
             var acquired = false
             try {
@@ -90,7 +92,18 @@ class GemmaClient
                     )
 
                 val fullPrompt =
-                    (if (requireTranslation) "$prompt ${modelLanguage()}" else prompt)
+                    buildString {
+                        appendLine(prompt)
+                        if (requireTranslation) {
+                            appendLine(modelLanguage())
+                        }
+
+                        appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
+                        if (T::class != String::class && describeOutput) {
+                            appendLine("Follow this structure on your output:")
+                            appendLine(toJsonMap(T::class.java))
+                        }
+                    }
 
                 Log.i(this::class.java.simpleName, "Requesting ${modelName()}")
 

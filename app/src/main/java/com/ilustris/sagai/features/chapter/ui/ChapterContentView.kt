@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,6 +46,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.presentation.ChapterViewModel
+import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
@@ -78,7 +81,8 @@ fun ChapterContentView(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val genre = content.data.genre
+        val genre = remember { content.data.genre }
+        val characters = remember { chapter.fetchCharacters(content) }
 
         if (chapter.data.coverImage.isEmpty()) {
             Image(
@@ -157,6 +161,21 @@ fun ChapterContentView(
                             brush = genre.gradient(true),
                             textAlign = TextAlign.Center,
                         ),
+                )
+            }
+        }
+
+        LazyRow(Modifier.align(Alignment.CenterHorizontally)) {
+            items(characters) {
+                CharacterAvatar(
+                    it,
+                    genre = genre,
+                    softFocusRadius = 0f,
+                    grainRadius = 0f,
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .size(50.dp),
                 )
             }
         }

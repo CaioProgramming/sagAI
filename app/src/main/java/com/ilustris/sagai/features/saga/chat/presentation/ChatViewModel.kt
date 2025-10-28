@@ -159,6 +159,22 @@ class ChatViewModel
             }
         }
 
+        fun requestNewCharacter(name: String) {
+            val saga = content.value ?: return
+            val mentions =
+                saga.flatMessages().filter {
+                    it.message.speakerName?.contains(name, true) == true ||
+                        it.message.text.contains(name, true)
+                }
+            createCharacter(
+                buildString {
+                    appendLine("Character name: $name")
+                    appendLine("Character context on story:")
+                    appendLine(mentions.joinToString(";\n") { it.message.text })
+                },
+            )
+        }
+
         private fun observeSaga() {
             viewModelScope.launch(Dispatchers.IO) {
                 content
@@ -471,7 +487,7 @@ class ChatViewModel
                 val characters = content.value!!.getCharacters()
                 val characterReference =
                     characters.find {
-                        message.speakerName?.contains(it.name, true) == true ||
+                        message.speakerName?.equals(it.name, true) == true ||
                             (mainCharacter != null && message.characterId == mainCharacter.id)
                     }
 
@@ -581,8 +597,14 @@ class ChatViewModel
                     ).onSuccessAsync { genMessage ->
                         if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
                             createCharacter(
-                                genMessage.newCharacter,
-                                saga.flatMessages().last().message,
+                                buildString {
+                                    appendLine("New character context:")
+                                    appendLine(genMessage.newCharacter.toJsonFormat())
+                                    newMessage?.let {
+                                        appendLine("Previous Message context:")
+                                        appendLine(newMessage.toJsonFormat())
+                                    }
+                                },
                             )
                         }
                         sendMessage(
@@ -606,30 +628,23 @@ class ChatViewModel
                                 status = MessageStatus.ERROR,
                             ),
                         )
+                        sagaContentManager.setProcessing(false)
+                        isLoading.value = false
                         sendError(
                             "Ocorreu um erro ao responder sua mensagem.",
                             action = ChatAction.RETRY_AI_RESPONSE,
                             message,
                             buttonText = "Tentar novamente",
                         )
-                        sagaContentManager.setProcessing(false)
                     }
             }
         }
 
-        fun createCharacter(
-            newCharacter: CharacterInfo,
-            newMessage: Message,
-        ) {
+        fun createCharacter(context: String) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager
                     .generateCharacter(
-                        buildString {
-                            appendLine("New character context:")
-                            appendLine(newCharacter.toJsonFormat())
-                            appendLine("Previous Message context:")
-                            appendLine(newMessage.toJsonFormat())
-                        },
+                        context,
                     ).onSuccessAsync {
                         sendSnackbarMessage(
                             SnackBarState(
@@ -641,8 +656,6 @@ class ChatViewModel
                         sagaContentManager.generateCharacterImage(
                             it,
                         )
-
-                        delay(20.seconds)
                     }.onFailure {
                         sendError("Ocorreu um erro ao criar o personagem.")
                     }
