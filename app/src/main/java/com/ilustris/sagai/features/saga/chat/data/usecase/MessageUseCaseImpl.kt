@@ -4,6 +4,7 @@ import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
+import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
@@ -72,7 +73,7 @@ class MessageUseCaseImpl
         ) = executeRequest {
             val tone =
                 if (isFromUser) {
-                    val prompt = SagaPrompts.emotionalToneExtraction(message.text)
+                    val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
                     val raw =
                         gemmaClient
                             .generate<String>(prompt, requireTranslation = false)

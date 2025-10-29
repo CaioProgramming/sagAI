@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -91,7 +92,7 @@ class SagaDetailUseCaseImpl
         override suspend fun createEmotionalReview(content: SagaContent): RequestResult<Saga> =
             executeRequest {
                 val emotionalSummary = content.emotionalSummary()
-                val prompt = SagaPrompts.emotionalGeneration(content, emotionalSummary.joinToString())
+                val prompt = EmotionalPrompt.emotionalGeneration(content, emotionalSummary.joinToString())
 
                 val review =
                     textGenClient

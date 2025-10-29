@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -92,6 +93,7 @@ fun GenreSelectionCard(
 fun GenreAvatar(
     genre: Genre,
     showText: Boolean = true,
+    iconSize : Dp = 64.dp,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
     onClick: (Genre) -> Unit,
@@ -120,7 +122,7 @@ fun GenreAvatar(
             contentScale = ContentScale.Crop,
             modifier =
                 Modifier
-                    .size(64.dp)
+                    .size(iconSize)
                     .border(1.dp, backgroundBrush, CircleShape)
                     .background(
                         backgroundBrush,
@@ -211,10 +213,10 @@ fun GenreCard(
                 stringResource(genre.title),
                 maxLines = 2,
                 style =
-                    MaterialTheme.typography.headlineMedium.copy(
+                    MaterialTheme.typography.headlineSmall.copy(
                         textAlign = TextAlign.Center,
                         fontFamily = genre.headerFont(),
-                        brush = genre.gradient(true, 1.seconds, 300f),
+                        brush = genre.gradient(true, 2.seconds, 500f),
                     ),
                 modifier =
                     Modifier

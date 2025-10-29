@@ -468,7 +468,7 @@ fun NewSagaAIForm(
                     GenreAvatar(
                         it,
                         true,
-                        sagaForm.saga.genre == it,
+                        isSelected = sagaForm.saga.genre == it,
                         modifier = Modifier.wrapContentSize(),
                     ) {
                         selectGenre(it)

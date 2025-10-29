@@ -9,16 +9,22 @@ import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
+enum class SagaProcess {
+    CREATING_SAGA,
+    CREATING_CHARACTER,
+    FINALIZING,
+    SUCCESS,
+}
+
 interface NewSagaUseCase {
-    suspend fun saveSaga(
-        saga: Saga,
-        characterDescription: CharacterInfo?,
-    ): RequestResult<Pair<Saga, Character>>
+    suspend fun createSaga(saga: Saga): RequestResult<Saga>
+
+    suspend fun updateSaga(saga: Saga): RequestResult<Saga>
 
     suspend fun generateSaga(
         sagaForm: SagaForm,
         miniChatContent: List<ChatMessage>,
-    ): RequestResult<SagaGen>
+    ): RequestResult<Saga>
 
     suspend fun generateSagaIcon(
         sagaForm: Saga,
@@ -36,5 +42,11 @@ interface NewSagaUseCase {
     suspend fun generateCharacterSavedMark(
         character: Character,
         saga: Saga,
+    ): RequestResult<String>
+
+    suspend fun generateProcessMessage(
+        process: SagaProcess,
+        sagaDescription: String,
+        characterDescription: String,
     ): RequestResult<String>
 }

@@ -69,6 +69,7 @@ class GemmaClient
             requireTranslation: Boolean = true,
             skipRunning: Boolean = false,
             describeOutput: Boolean = true,
+            filterOutputFields: List<String> = emptyList(),
         ): T? {
             var acquired = false
             try {
@@ -101,7 +102,7 @@ class GemmaClient
                         appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
                         if (T::class != String::class && describeOutput) {
                             appendLine("Follow this structure on your output:")
-                            appendLine(toJsonMap(T::class.java))
+                            appendLine(toJsonMap(T::class.java, filteredFields = filterOutputFields))
                         }
                     }
 

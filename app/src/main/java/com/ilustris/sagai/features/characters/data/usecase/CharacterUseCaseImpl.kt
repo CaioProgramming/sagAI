@@ -146,6 +146,13 @@ class CharacterUseCaseImpl
                             description,
                         ),
                         skipRunning = true,
+                        filterOutputFields =
+                            listOf(
+                                "id",
+                                "image",
+                                "joinedAt",
+                                "sagaId",
+                            ),
                     )!!
 
                 val character = sagaContent.getCharacters().find { it.name.equals(newCharacter.name, true) }
@@ -158,6 +165,7 @@ class CharacterUseCaseImpl
                             sagaId = sagaContent.data.id,
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
+                            image = emptyString(),
                         ),
                     )
                 characterTransaction

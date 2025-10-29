@@ -3,17 +3,20 @@ package com.ilustris.sagai.features.newsaga.ui.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.MessageType
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.Sender
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
+import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
 import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +39,7 @@ class CreateSagaViewModel
     @Inject
     constructor(
         private val newSagaUseCase: NewSagaUseCase,
+        private val characterUseCase: CharacterUseCase,
     ) : ViewModel() {
         val form = MutableStateFlow(SagaForm())
         val sagaData = MutableStateFlow<Saga?>(null)
@@ -45,6 +49,7 @@ class CreateSagaViewModel
         val formState = MutableStateFlow(FormState())
         val isGenerating = MutableStateFlow(true)
         val isError = MutableStateFlow(false)
+        val callbackAction = MutableStateFlow<CallBackAction?>(null)
 
         private fun updateGenerating(isGenerating: Boolean) {
             this.isGenerating.value = isGenerating
@@ -55,9 +60,9 @@ class CreateSagaViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 newSagaUseCase
                     .generateIntroduction()
-                    .onSuccess {
-                        chatMessages.update { it + it }
-                        handleGeneratedContent(it)
+                    .onSuccess { gen ->
+                        handleGeneratedContent(gen)
+                        chatMessages.update { it + ChatMessage(text = gen.message, sender = Sender.AI) }
                     }.onFailure {
                         updateGenerating(false)
                     }
@@ -68,7 +73,7 @@ class CreateSagaViewModel
             updateGenerating(true)
             viewModelScope.launch(Dispatchers.IO) {
                 val latestMessage = chatMessages.value.lastOrNull()
-                val userMessage = ChatMessage(text = userInput, isUser = true)
+                val userMessage = ChatMessage(text = userInput, sender = Sender.USER)
                 chatMessages.update { it + userMessage }
 
                 newSagaUseCase
@@ -77,14 +82,25 @@ class CreateSagaViewModel
                         latestMessage = latestMessage?.text ?: emptyString(),
                         currentFormData = form.value,
                     ).onSuccess { response ->
-
-                        chatMessages.update { it + ChatMessage(text = response.message, isUser = false) }
+                        chatMessages.update {
+                            it +
+                                ChatMessage(
+                                    text = response.message,
+                                    sender = Sender.AI,
+                                    sagaForm =
+                                        if (response.callback?.action == CallBackAction.AWAITING_CONFIRMATION) {
+                                            form.value
+                                        } else {
+                                            null
+                                        },
+                                )
+                        }
                         handleGeneratedContent(response)
                         isError.value = false
-                    }.onFailure {
+                    }.onFailure { e ->
                         Log.e(
                             javaClass.simpleName,
-                            "sendChatMessage: Error getting generated content",
+                            "sendChatMessage: Error getting generated content $e",
                         )
                         isError.value = true
                     }
@@ -94,7 +110,7 @@ class CreateSagaViewModel
 
         private fun handleGeneratedContent(response: SagaCreationGen) {
             updateGenerating(false)
-
+            callbackAction.value = response.callback?.action
             formState.value =
                 formState.value.copy(
                     hint = response.inputHint,
@@ -102,159 +118,126 @@ class CreateSagaViewModel
                     message = response.message,
                 )
 
-            val callback = response.callback ?: return
-            Log.d(
-                javaClass.simpleName,
-                "handleGeneratedContent: Checking new generated content $callback",
-            )
-
-            when (callback.action) {
-                CallBackAction.UPDATE_DATA -> {
-                    Log.d(
-                        javaClass.simpleName,
-                        "handleGeneratedContent: Checking new content for update data with ${callback.data}",
-                    )
-
-                    val sagaForm: SagaForm? = callback.data
-
-                    sagaForm?.let {
-                        Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
-                        form.value =
-                            it.copy(
-                                saga =
-                                    form.value.saga.copy(
-                                        title = it.saga.title,
-                                        description = it.saga.description,
-                                        genre = it.saga.genre,
-                                    ),
-                                character =
-                                    form.value.character.copy(
-                                        name = it.character.name,
-                                        gender = it.character.gender,
-                                        description = it.character.description,
-                                    ),
-                            )
-                    }
-                }
-
-                CallBackAction.SAVE_SAGA -> {
-                    val sagaForm: SagaForm? = callback.data
-
-                    sagaForm?.let {
-                        Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
-                        form.value =
-                            it.copy(
-                                saga =
-                                    form.value.saga.copy(
-                                        title = it.saga.title,
-                                        description = it.saga.description,
-                                        genre = it.saga.genre,
-                                    ),
-                                character =
-                                    form.value.character.copy(
-                                        name = it.character.name,
-                                        gender = it.character.gender,
-                                        description = it.character.description,
-                                    ),
-                            )
-                    }
-                    formState.value = (
-                        formState.value.copy(
-                            readyToSave = true,
+            response.callback?.let { callback ->
+                Log.d(
+                    javaClass.simpleName,
+                    "handleGeneratedContent: Checking new generated content $callback",
+                )
+                val sagaForm: SagaForm? = callback.data
+                sagaForm?.let {
+                    Log.i(javaClass.simpleName, "handleGeneratedContent: Updating form to $it")
+                    form.value =
+                        it.copy(
+                            saga =
+                                form.value.saga.copy(
+                                    title = it.saga.title,
+                                    description = it.saga.description,
+                                    genre = it.saga.genre,
+                                ),
+                            character =
+                                form.value.character.copy(
+                                    name = it.character.name,
+                                    gender = it.character.gender,
+                                    description = it.character.description,
+                                ),
                         )
-                    )
                 }
+                if (callback.action == CallBackAction.SAVE_SAGA) {
+                    saveSaga()
+                }
+            }
+        }
+
+        private fun finalizeCreation(
+            saga: Saga,
+            character: Character,
+        ) {
+            viewModelScope.launch {
+                generateProcessMessage(SagaProcess.FINALIZING, saga, character)
+
+                characterUseCase
+                    .generateCharacterImage(
+                        character,
+                        saga,
+                    ).onSuccessAsync {
+                        generateProcessMessage(
+                            SagaProcess.SUCCESS,
+                            saga,
+                            character,
+                        )
+
+                        delay(3.seconds)
+                        navigateToSaga(saga)
+                    }.onFailureAsync {
+                        generateProcessMessage(
+                            SagaProcess.SUCCESS,
+                            saga,
+                            character,
+                        )
+
+                        delay(3.seconds)
+                        navigateToSaga(saga)
+                    }
+                delay(2.seconds)
+
+                newSagaUseCase
+                    .generateSagaIcon(
+                        saga,
+                        character,
+                    ).onSuccessAsync {
+                        generateProcessMessage(
+                            SagaProcess.SUCCESS,
+                            saga,
+                            character,
+                        )
+                        delay(3.seconds)
+                        navigateToSaga(saga)
+                    }.onFailureAsync {
+                        generateProcessMessage(
+                            SagaProcess.SUCCESS,
+                            saga,
+                            character,
+                        )
+                        delay(3.seconds)
+                        navigateToSaga(saga)
+                    }
             }
         }
 
         fun saveSaga() {
             val saga = form.value.saga
-            val character = form.value.character
+            val characterInfo = form.value.character
 
             state.value = CreateSagaState(isLoading = true)
 
             viewModelScope.launch(Dispatchers.IO) {
-                val saveOperation =
-                    newSagaUseCase.saveSaga(
-                        Saga(
-                            title = saga.title,
-                            genre = saga.genre ?: Genre.entries.random(),
-                            description = saga.description,
-                        ),
-                        character,
-                    )
-
-                Log.i(
-                    javaClass.simpleName,
-                    "handleGeneratedContent: Saving saga ${form.value}",
-                )
-                when (saveOperation) {
-                    is RequestResult.Error -> sendErrorState(saveOperation.value)
-
-                    is RequestResult.Success<Pair<Saga, Character>> -> {
-                        val operationData = saveOperation.success.value
-                        newSagaUseCase
-                            .generateCharacterSavedMark(
-                                operationData.second,
-                                operationData.first,
-                            ).onSuccessAsync { message ->
-                                chatMessages.update {
-                                    it +
-                                        ChatMessage(
-                                            text = message,
-                                            isUser = false,
-                                            type = MessageType.CHARACTER,
-                                        )
-                                }
-                            }
-
-                        val sagaUpdateOperation =
-                            newSagaUseCase
-                                .generateSagaIcon(
-                                    operationData.first,
-                                    operationData.second,
-                                )
-                        sagaUpdateOperation
-                            .onSuccess { newSaga ->
-                                state.value =
-                                    state.value.copy(isLoading = false, saga = newSaga)
-                                viewModelScope.launch {
-                                    delay(10.seconds)
-                                    navigateToSaga(newSaga)
-                                }
-                            }.onFailure {
-                                state.value =
-                                    state.value.copy(
-                                        isLoading = false,
-                                        saga = saveOperation.success.value.first,
-                                    )
-
-                                viewModelScope.launch {
-                                    delay(10.seconds)
-                                    navigateToSaga(saveOperation.success.value.first)
-                                }
-                            }
-                    }
-                }
-            }
-        }
-
-        fun generateSaga() {
-            updateGenerating(true)
-            viewModelScope.launch(Dispatchers.IO) {
+                generateProcessMessage(SagaProcess.CREATING_SAGA)
+                delay(2.seconds)
                 newSagaUseCase
                     .generateSaga(form.value, chatMessages.value)
-                    .onSuccess { saga ->
-                        form.update {
-                            it.copy(
-                                saga =
-                                    form.value.saga.copy(
-                                        title = saga.saga.title,
-                                        description = saga.saga.description,
-                                    ),
-                            )
-                        }
-                        saveSaga()
+                    .onSuccessAsync {
+                        newSagaUseCase
+                            .createSaga(it)
+                            .onSuccessAsync { sagaOperation ->
+                                generateProcessMessage(SagaProcess.CREATING_CHARACTER)
+                                characterUseCase
+                                    .generateCharacter(
+                                        SagaContent(data = sagaOperation),
+                                        characterInfo.toJsonFormat(),
+                                    ).onSuccessAsync { characterOperation ->
+                                        newSagaUseCase.updateSaga(
+                                            sagaOperation.copy(
+                                                mainCharacterId = characterOperation.id,
+                                            ),
+                                        )
+                                        finalizeCreation(
+                                            sagaOperation,
+                                            characterOperation,
+                                        )
+                                    }
+                            }.onFailure {
+                                sendErrorState(it)
+                            }
                     }.onFailure {
                         sendErrorState(it)
                     }
@@ -282,7 +265,11 @@ class CreateSagaViewModel
 
         fun resetSaga() {
             viewModelScope.launch {
-                delay(5.seconds)
+                chatMessages.value = emptyList()
+                newSagaUseCase.generateIntroduction().onSuccess { gen ->
+                    handleGeneratedContent(gen)
+                    chatMessages.value = listOf(ChatMessage(text = gen.message, sender = Sender.AI))
+                }
                 form.value = SagaForm()
             }
         }
@@ -297,5 +284,24 @@ class CreateSagaViewModel
 
         fun updateGenre(genre: Genre) {
             form.update { it.copy(saga = it.saga.copy(genre = genre)) }
+        }
+
+        private fun generateProcessMessage(
+            process: SagaProcess,
+            saga: Saga? = null,
+            character: Character? = null,
+        ) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val sagaData = saga?.toJsonFormat() ?: form.value.saga.toJsonFormat()
+                val characterData = character ?: form.value.character
+                newSagaUseCase
+                    .generateProcessMessage(
+                        process = process,
+                        sagaDescription = sagaData,
+                        characterDescription = characterData.toJsonFormat(),
+                    ).onSuccess { message ->
+                        chatMessages.update { it + ChatMessage(text = message, sender = Sender.AI) }
+                    }
+            }
         }
     }

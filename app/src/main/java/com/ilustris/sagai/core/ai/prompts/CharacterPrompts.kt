@@ -176,10 +176,8 @@ object CharacterPrompts {
         appendLine("// This is the ONLY source for the character to be created .")
         appendLine(description)
         appendLine(CharacterGuidelines.creationGuideline)
-        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE THEME ${saga.data.genre.name}.")
-        appendLine("Your OUTPUT MUST BE FOLLOW THIS STRUCTURE: ")
-        appendLine(toJsonMap(Character::class.java))
-    }.trimIndent()
+        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE History THEME ${saga.data.genre.name}.")
+     }.trimIndent()
 
     fun characterLoreGeneration(
         timeline: Timeline,

@@ -1,6 +1,27 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts.SagaEmotionalContext
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
+
 object EmotionalPrompt {
+    fun emotionalToneExtraction(userText: String): String {
+        val labels = EmotionalTone.entries.joinToString()
+        return """
+            You classify the emotional tone of a single USER message into exactly one label from this set:
+            $labels
+            
+            Rules:
+            - Output ONLY the label, uppercase, with no punctuation or extra text.
+            - If uncertain, output NEUTRAL.
+            - Focus on the user's expressed feeling/stance, not plot.
+            
+            USER MESSAGE:
+            >>> $userText
+            """.trimIndent()
+    }
+
     fun generateEmotionalReview(
         texts: List<String>,
         emotionalToneRanking: Map<String, Int>,
@@ -75,4 +96,64 @@ object EmotionalPrompt {
         Analyze the following texts and provide a single, gentle final reflection:
         ${summary.joinToString("", prefix = "- ")}
         """
+
+    fun emotionalGeneration(
+        saga: SagaContent,
+        emotionalSummary: String,
+    ): String {
+        val emotionalContext =
+            SagaEmotionalContext(
+                sagaInfo = saga.data,
+                playerCharacter = saga.mainCharacter?.data,
+                emotionalSummary = emotionalSummary,
+            )
+
+        val excludedFields =
+            listOf(
+                "details",
+                "image",
+                "hexColor",
+                "sagaId",
+                "joinedAt",
+                "id",
+            )
+
+        return """
+            Context for emotional review:
+            ${emotionalContext.toJsonFormatExcludingFields(excludedFields)}
+            
+            You are an insightful and empathetic observer reflecting on a player's emotional journey through the saga referenced in SAGA_TITLE.
+            Your task is to generate a thoughtful and personal reflection addressed directly TO THE PLAYER (in the second person, e.g., "you").
+            This reflection should be based *solely* on the AGGREGATED_EMOTIONAL_ARC provided, which represents a series of emotional summaries and observations collected about the player's reactions and decisions throughout their adventure.
+
+            1.  **Output Format:** Your entire response MUST be **ONLY the plain text string** of the emotional review (approximately 3-5 paragraphs). Do NOT include any JSON, special formatting like Markdown headers, or anything else besides the text itself.
+
+            2.  **Tone and Style:**
+            *   Adopt a reflective, empathetic, and slightly analytical tone.
+            *   Speak directly to the player using "you" (e.g., "Looking back at your journey, [Player Name if available, otherwise 'adventurer'], it seems you often...").
+            *   The review should feel personal and tailored, as if you've been a quiet companion observing their emotional responses.
+
+            
+            3.  **Content Focus (Based on AGGREGATED_EMOTIONAL_ARC):**
+            *   **Synthesize the Core Emotional Journey:** Analyze the sequence of emotional summaries in AGGREGATED_EMOTIONAL_ARC. Identify recurring emotional themes, how the player's emotional responses might have evolved or remained consistent, and any significant emotional turning points.
+            *   **Identify Dominant Personality Traits:** Based on the emotional patterns, infer and discuss the player's likely personality traits as they manifested during the saga (e.g., "Your responses suggest a deeply cautious nature," or "A clear pattern of empathetic decision-making indicates a strong compassionate streak in you.").
+            *   **Highlight Emotional Strengths and Skills:** Acknowledge any emotional skills or strengths the player demonstrated (e.g., resilience in the face of adversity, ability to remain calm under pressure, capacity for deep empathy, courageous conviction).
+            *   **Acknowledge Emotional Struggles or Challenges:** Gently point out any emotional struggles or patterns that might have been challenging for the player (e.g., "There were moments where it seemed you struggled with uncertainty," or "At times, a tendency towards impulsiveness appeared to shape your reactions.").
+            *   **Offer Balanced Observations/Advice:** Provide observations that are neither overly praiseful nor harshly critical. The goal is gentle, constructive insight. For example, "This tendency to prioritize logic, while often a strength, sometimes seemed to create internal conflict when faced with purely emotional dilemmas." or "Your ability to find hope in difficult situations was remarkable, though it's worth reflecting if this optimism sometimes led to underestimating risks." Offer observations that the player might find useful about their approach or reactions.
+            *   **Concluding Thought:** End with a thoughtful, summary statement about their overall emotional journey or what they might take away from it.
+
+            4.  **Key Constraints:**
+            *   **Second Person:** Address the player as "you." If PLAYER_NAME is available, use it in the greeting.
+            *   **Based ONLY on AGGREGATED_EMOTIONAL_ARC:** Do not invent story events or infer details beyond what the emotional summaries provide. The review is about their emotional processing, not their specific in-game achievements unless directly reflected in the emotional summaries.
+            *   **Balanced Perspective:** Avoid being excessively positive or negative. Aim for genuine, constructive reflection.
+            *   **No Spoilers:** The reflection should be about the player's internal journey, not a recap of the saga's plot.
+            *   **No Questions:** The generated text must not ask any questions or prompt further user input. It should end definitively.
+
+            Example Snippets (Your actual output will be more cohesive and detailed, forming a few paragraphs):
+            "Looking back at your journey in [SAGA_TITLE], [Player Name, or 'adventurer' if null], it's clear that you approached many situations with a distinct sense of [observed trait, e.g., 'cautious optimism']. The emotional records show that while you often [observed pattern, e.g., 'sought peaceful resolutions'], there were moments, particularly [general situation, e.g., 'when allies were threatened'], where a fierce [observed emotion, e.g., 'protectiveness'] emerged. This suggests a personality that values [inferred value, e.g., 'harmony but is fiercely loyal']."
+            "One of your notable emotional skills appears to be [skill, e.g., 'your resilience in the face of setbacks']. Even when [general struggle, e.g., 'plans went awry, as indicated by moments of frustration in your emotional responses'], you often found a way to [positive outcome, e.g., 'regroup and adapt']. However, the tendency to [observed challenge, e.g., 'internalize blame during difficult choices'] seemed to be a recurring struggle. Perhaps reflecting on these moments could offer insights into [gentle advice, e.g., 'how you navigate responsibility under pressure']."
+            "Ultimately, your emotional journey through this saga was marked by [summary statement, e.g., 'a growing confidence in your intuitive judgments']. It was a privilege to witness."
+            
+            """.trimIndent()
+    }
 }

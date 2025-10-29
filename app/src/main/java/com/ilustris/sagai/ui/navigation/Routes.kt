@@ -131,7 +131,29 @@ enum class Routes(
         deepLink = "saga://new_saga",
         showBottomNav = false,
         topBarContent = {
-            Box(modifier = Modifier.size(0.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier.padding(
+                        vertical = 32.dp,
+                        horizontal = 16.dp,
+                    ),
+            ) {
+                IconButton(onClick = {
+                    it.popBackStack()
+                }, modifier = Modifier.size(24.dp)) {
+                    Icon(
+                        painterResource(R.drawable.ic_back_left),
+                        contentDescription = stringResource(R.string.back_button_description),
+                    )
+                }
+
+                SagaTitle(
+                    Modifier.weight(1f),
+                )
+
+                Box(Modifier.size(24.dp))
+            }
         },
         view = { nav, padding, _, _ ->
             Box(
