@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
 
 @Singleton
 class GemmaClient
@@ -40,7 +41,7 @@ class GemmaClient
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
 
             const val DEFAULT_SUMMARIZATION_MODEL = "gemini-2.0-flash-lite"
-            const val DEFAULT_DELAY: Long = 500L
+            const val DEFAULT_DELAY: Long = 1500L
         }
 
         fun modelName() =
@@ -81,7 +82,6 @@ class GemmaClient
                 } else if (isRequestRunning) {
                     delay(DEFAULT_DELAY)
                 }
-                delay(200)
 
                 val client =
                     com.google.ai.client.generativeai.GenerativeModel(
@@ -99,8 +99,8 @@ class GemmaClient
                             appendLine(modelLanguage())
                         }
 
-                        appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
                         if (T::class != String::class && describeOutput) {
+                            appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
                             appendLine("Follow this structure on your output:")
                             appendLine(toJsonMap(T::class.java, filteredFields = filterOutputFields))
                         }

@@ -31,4 +31,7 @@ data class RelationshipUpdateEvent(
     val description: String,
     val emoji: String,
     val timestamp: Long = System.currentTimeMillis(),
-)
+) {
+
+
+}

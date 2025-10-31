@@ -10,6 +10,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -131,11 +132,11 @@ class SagaDetailViewModel
             }
         }
 
-        fun createEmotionalReview(timelineContent: TimelineContent) {
+        fun generateTimelineContent(timelineContent: TimelineContent) {
             val currentSaga = saga.value ?: return
             viewModelScope.launch {
                 isGenerating.value = true
-                sagaDetailUseCase.createTimelineReview(currentSaga, timelineContent)
+                sagaDetailUseCase.generateTimelineContent(currentSaga, timelineContent)
                 isGenerating.value = false
             }
         }
@@ -153,6 +154,15 @@ class SagaDetailViewModel
             viewModelScope.launch {
                 delay(2.seconds)
                 showIntro.value = false
+            }
+        }
+
+        fun reviewWiki(wikis: List<Wiki>) {
+            val currentsaga = saga.value ?: return
+            viewModelScope.launch {
+                isGenerating.emit(true)
+                sagaDetailUseCase.reviewWiki(currentsaga, wikis)
+                isGenerating.emit(false)
             }
         }
     }

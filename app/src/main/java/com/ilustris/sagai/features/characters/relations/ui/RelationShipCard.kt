@@ -57,6 +57,8 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findTimeline
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.ui.theme.SagAIScaffold
@@ -77,8 +79,8 @@ fun RelationShipCard(
     modifier: Modifier = Modifier,
 ) {
     var showDetailSheet by remember { mutableStateOf(false) }
-    val genre = saga.data.genre
-    val brush = content.getBrush(genre)
+    val genre = remember { saga.data.genre }
+    val brush = remember { content.getBrush(genre) }
     Column(
         modifier =
             modifier
@@ -99,14 +101,22 @@ fun RelationShipCard(
             }
         Row(
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth().height(150.dp).padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .padding(16.dp),
         ) {
             CharacterAvatar(
                 firstCharacter,
                 firstCharacter.hexColor.hexToColor(),
                 genre = genre,
                 innerPadding = 0.dp,
-                modifier = Modifier.size(avatarSize).offset(x = 15.dp).zIndex(1f),
+                modifier =
+                    Modifier
+                        .size(avatarSize)
+                        .offset(x = 15.dp)
+                        .zIndex(1f),
             )
 
             CharacterAvatar(
@@ -114,10 +124,14 @@ fun RelationShipCard(
                 secondCharacter.hexColor.hexToColor(),
                 innerPadding = 0.dp,
                 genre = genre,
-                modifier = Modifier.size(avatarSize).offset(x = (-15).dp),
+                modifier =
+                    Modifier
+                        .size(avatarSize)
+                        .offset(x = (-15).dp),
             )
         }
-        val relation = content.relationshipEvents.lastOrNull()
+        val relation = remember { content.sortedByEvents(saga.flatEvents().map { it.data }).firstOrNull() }
+
         relation?.let {
             Text(
                 relation.emoji,
@@ -215,7 +229,7 @@ fun SingleRelationShipCard(
                     textAlign = TextAlign.Center,
                 )
             }
-            
+
             if (showUpdates) {
                 Text(
                     "${content.relationshipEvents.size} Atualizações",
@@ -248,6 +262,17 @@ fun RelationShipSheet(
     val genre = saga.data.genre
     val firstCharacter = content.characterOne
     val secondCharacter = content.characterTwo
+    val sortRelationsByTimeline =
+        remember {
+            content.sortedByEvents(saga.flatEvents().map { it.data })
+        }
+
+    val lastRelationEvent =
+        remember {
+            sortRelationsByTimeline.lastOrNull()?.let {
+                saga.findTimeline(it.timelineId)
+            }
+        }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -273,7 +298,11 @@ fun RelationShipSheet(
                     firstCharacter.hexColor.hexToColor(),
                     genre = genre,
                     innerPadding = 0.dp,
-                    modifier = Modifier.size(64.dp).offset(x = 15.dp).zIndex(1f),
+                    modifier =
+                        Modifier
+                            .size(64.dp)
+                            .offset(x = 15.dp)
+                            .zIndex(1f),
                 )
 
                 CharacterAvatar(
@@ -281,7 +310,10 @@ fun RelationShipSheet(
                     secondCharacter.hexColor.hexToColor(),
                     innerPadding = 0.dp,
                     genre = genre,
-                    modifier = Modifier.size(64.dp).offset(x = (-15).dp),
+                    modifier =
+                        Modifier
+                            .size(64.dp)
+                            .offset(x = (-15).dp),
                 )
             }
         }
@@ -308,30 +340,34 @@ fun RelationShipSheet(
             )
         }
 
-        item {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(16.dp),
-            ) {
-                Text(
-                    "Última atualização",
-                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
-                    modifier = Modifier.alpha(.4f),
-                )
+        lastRelationEvent?.let {
+            item {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp),
+                ) {
+                    Text(
+                        "Última atualização",
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
+                        modifier = Modifier.alpha(.4f),
+                    )
 
-                Text(
-                    content.relationshipEvents
-                        .last()
-                        .timestamp
-                        .formatDate(DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR),
-                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
-                    modifier = Modifier.alpha(.8f).padding(8.dp),
-                )
+                    Text(
+                        it.data
+                            .createdAt
+                            .formatDate(DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR),
+                        style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
+                        modifier =
+                            Modifier
+                                .alpha(.8f)
+                                .padding(8.dp),
+                    )
+                }
             }
         }
 
         if (content.relationshipEvents.isNotEmpty()) {
-            items(content.relationshipEvents) {
+            items(sortRelationsByTimeline) {
                 RelationshipEventCard(
                     relationshipEvent = it,
                     content = content,
@@ -620,7 +656,11 @@ fun RelationshipEventCard(
                 firstCharacter.hexColor.hexToColor(),
                 genre = genre,
                 innerPadding = 0.dp,
-                modifier = Modifier.size(32.dp).offset(x = 5.dp).zIndex(1f),
+                modifier =
+                    Modifier
+                        .size(32.dp)
+                        .offset(x = 5.dp)
+                        .zIndex(1f),
             )
 
             CharacterAvatar(
@@ -628,7 +668,10 @@ fun RelationshipEventCard(
                 secondCharacter.hexColor.hexToColor(),
                 innerPadding = 0.dp,
                 genre = genre,
-                modifier = Modifier.size(32.dp).offset(x = (-5).dp),
+                modifier =
+                    Modifier
+                        .size(32.dp)
+                        .offset(x = (-5).dp),
             )
         }
 

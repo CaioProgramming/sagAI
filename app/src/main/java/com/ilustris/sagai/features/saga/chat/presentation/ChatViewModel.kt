@@ -38,6 +38,7 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationMana
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -539,36 +540,40 @@ class ChatViewModel
             }
         }
 
-        private fun generateSuggestions() {
-            if (sagaContentManager.isInDebugMode()) {
-                return
-            }
-
-            if (isGenerating.value) {
-                return
-            }
-
-            Log.d(
-                javaClass.simpleName,
-                "generateSuggestions: checking if is generating -> $isGenerating",
-            )
-            val currentSaga = content.value ?: return
-            if (currentSaga.data.isEnded) return
-            val currentTimeline = currentSaga.getCurrentTimeLine() ?: return
-            if (currentTimeline.messages.isEmpty()) return
+        fun regenerateTimeline(timelineContent: TimelineContent) {
+            val saga = content.value ?: return
             viewModelScope.launch(Dispatchers.IO) {
-                content.value?.data?.let { saga ->
-                    suggestions.value = emptyList()
+                sagaContentManager.regenerateTimeline(saga, timelineContent)
+            }
+        }
 
-                    delay(1.seconds)
-                    suggestionUseCase
-                        .invoke(
-                            currentTimeline.messages,
-                            currentSaga.mainCharacter?.data,
-                            currentSaga,
-                        ).onSuccess {
-                            suggestions.value = it
-                        }
+        private fun generateSuggestions() {
+            viewModelScope.launch(Dispatchers.IO) {
+                if (sagaContentManager.isInDebugMode()) {
+                    return@launch
+                }
+
+                delay(5.seconds)
+                Log.d(
+                    javaClass.simpleName,
+                    "generateSuggestions: checking if is generating -> $isGenerating",
+                )
+                if (isGenerating.value || isLoading.value) {
+                    return@launch
+                }
+
+                val currentSaga = content.value ?: return@launch
+                if (currentSaga.data.isEnded) return@launch
+                val currentTimeline = currentSaga.getCurrentTimeLine() ?: return@launch
+                if (currentTimeline.messages.isEmpty()) return@launch
+                suggestions.emit(emptyList())
+
+                suggestionUseCase(
+                    currentTimeline.messages,
+                    currentSaga.mainCharacter?.data,
+                    currentSaga,
+                ).onSuccess {
+                    suggestions.value = it
                 }
             }
         }

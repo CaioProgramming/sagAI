@@ -59,6 +59,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -132,7 +133,10 @@ fun CharacterDetailsContent(
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
     val listState = rememberLazyListState()
+    val timelineEvents = remember { sagaContent.flatEvents().map { it.data } }
     var shareCharacter by remember { mutableStateOf(false) }
+    val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
+    val characterRelations = remember { characterContent.sortRelationsByTimeline(timelineEvents) }
     Box {
         LazyColumn(
             modifier =
@@ -187,9 +191,12 @@ fun CharacterDetailsContent(
                                 painterResource(R.drawable.ic_spark),
                                 "Compartilhar personagem",
                                 modifier =
-                                    Modifier.size(24.dp).clip(CircleShape).clickable {
-                                        shareCharacter = true
-                                    },
+                                    Modifier
+                                        .size(24.dp)
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            shareCharacter = true
+                                        },
                                 colorFilter = ColorFilter.tint(characterColor),
                             )
 
@@ -318,7 +325,7 @@ fun CharacterDetailsContent(
                 }
             }
 
-            if (characterContent.relationships.isNotEmpty()) {
+            if (characterRelations.isNotEmpty()) {
                 item {
                     HorizontalDivider(
                         color = MaterialTheme.colorScheme.onSurface.copy(.1f),
@@ -344,29 +351,19 @@ fun CharacterDetailsContent(
                 item {
                     LazyRow {
                         items(
-                            characterContent.relationships
-                                .filter { it.relationshipEvents.isNotEmpty() }
-                                .sortedByDescending { it.relationshipEvents.last().timestamp },
+                            characterRelations,
                         ) { relationContent ->
-                            val currentId = character.id
-                            val relatedCharacter =
-                                when (currentId) {
-                                    relationContent.characterOne.id -> relationContent.characterTwo
-                                    relationContent.characterTwo.id -> relationContent.characterOne
-                                    else -> null
-                                }
-                            relationContent.relationshipEvents.lastOrNull()?.let {
-                                if (relatedCharacter != null) {
-                                    SingleRelationShipCard(
-                                        saga = sagaContent,
-                                        character = relatedCharacter,
-                                        content = relationContent,
-                                        modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .requiredWidthIn(max = 300.dp),
-                                    )
-                                }
+                            val relatedCharacter = relationContent.getCharacterExcluding(character)
+                            relationContent.relationshipEvents.firstOrNull()?.let {
+                                SingleRelationShipCard(
+                                    saga = sagaContent,
+                                    character = relatedCharacter,
+                                    content = relationContent,
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .requiredWidthIn(max = 300.dp),
+                                )
                             }
                         }
                     }
@@ -395,7 +392,7 @@ fun CharacterDetailsContent(
                     )
                 }
 
-                items(characterContent.events.sortedBy { it.timeline?.createdAt }) {
+                items(characterEvents) {
                     TimelineCharacterAttachment(
                         it,
                         sagaContent,

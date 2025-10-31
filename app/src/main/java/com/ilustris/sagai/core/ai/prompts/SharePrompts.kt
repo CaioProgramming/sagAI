@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 
@@ -162,6 +163,21 @@ object SharePrompts {
         sagaContent: SagaContent,
     ) = buildString {
         val character = characterContent.data
+        val events = sagaContent.flatEvents().map { it.data }
+        val sagaExclusion =
+            listOf(
+                "id",
+                "icon",
+                "createdAt",
+                "mainCharacterId",
+                "isDebug",
+                "endMessage",
+                "currentActId",
+                "endedAt",
+                "review",
+                "emotionalReview",
+                "isEnded",
+            )
         appendLine(
             "You are a world-class storyteller, tasked with creating a compelling, shareable snapshot of a character from a rich RPG saga.",
         )
@@ -179,6 +195,9 @@ object SharePrompts {
         appendLine("4. SPOILER-FREE: Do not reveal major plot twists, character deaths, or the final outcome of the saga.")
         appendLine("5. TONE: The tone must be consistent with the character's personality and the saga's genre.")
 
+        appendLine("Saga context:")
+        appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusion))
+
         appendLine("Character's Context:")
         appendLine(
             character.toJsonFormatExcludingFields(
@@ -188,24 +207,26 @@ object SharePrompts {
 
         if (characterContent.events.isNotEmpty()) {
             appendLine("Character's Events:")
-            appendLine(characterContent.events.joinToString(";\n") { "- ${it.event.title} : ${it.event.summary}" })
+            appendLine(
+                characterContent
+                    .sortEventsByTimeline(events)
+                    .map { it.event }
+                    .formatToJsonArray(listOf("id", "characterId", "gameTimelineId", "createdAt")),
+            )
         }
 
         if (characterContent.relationships.isNotEmpty()) {
             appendLine("Character's Relationships:")
             appendLine(
-                characterContent.relationships
-                    .sortedByDescending { it.relationshipEvents.size }
-                    .joinToString(";\n") {
-                        "${it.characterOne.name} & ${it.characterTwo.name} ${it.relationshipEvents.last().emoji}:" +
-                            "${it.relationshipEvents.formatToJsonArray(
+                characterContent
+                    .sortRelationsByTimeline(events)
+                    .joinToString(",\n") {
+                        "${it.characterOne.name} & ${it.characterTwo.name} ${it.relationshipEvents.lastOrNull()?.emoji ?: emptyString()}:\n" +
+                            it.relationshipEvents.formatToJsonArray(
                                 listOf("id", "emoji", "timelineId", "timestamp", "relationId"),
-                            )}"
+                            )
                     },
             )
         }
-
-        appendLine("Saga Genre: ${sagaContent.data.genre.name}")
-        appendLine("Generate the title, text, and caption for this character's shareable card now.")
     }
 }

@@ -144,14 +144,14 @@ class MessageUseCaseImpl
                                     .map { it.joinMessage(true).formatToString() },
                         ),
                         skipRunning = true,
-                    )!!
+                    )
 
                 val charactersInScene =
-                    sceneSummary.charactersPresent.mapNotNull { characterName ->
+                    sceneSummary?.charactersPresent?.mapNotNull { characterName ->
                         saga.getCharacters().find {
                             it.name.equals(characterName, ignoreCase = true)
                         }
-                    }
+                    } ?: emptyList()
 
                 val genText =
                     textGenClient.generate<MessageGen>(
@@ -166,7 +166,7 @@ class MessageUseCaseImpl
                                     .map { it.message },
                             directive = saga.getDirective(),
                             sceneSummary =
-                                sceneSummary.copy(
+                                sceneSummary?.copy(
                                     charactersPresent = charactersInScene.map { it.name },
                                 ),
                         ),

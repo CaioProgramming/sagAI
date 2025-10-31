@@ -90,6 +90,7 @@ import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
@@ -502,7 +503,7 @@ fun ChatInputView(
                             Modifier
                                 .padding(16.dp)
                                 .fillMaxWidth()
-                                .border(1.dp, genre.gradient(true), genre.shape())
+                                .border(1.dp, genre.color.gradientFade(), genre.shape())
                                 .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
                                 .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -88,6 +88,12 @@ fun SagaContent.isFirstTimeline() =
             ?.data
             ?.id
 
+fun SagaContent.findTimeline(timelineId: Int) = flatEvents().find { it.data.id == timelineId }
+
+fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id == characterId }
+
+fun SagaContent.findCharacter(name: String) = characters.find { it.data.name.equals(name, true) }
+
 fun SagaContent.findTimelineChapter(timeline: Timeline) = flatChapters().find { it.data.id == timeline.chapterId }
 
 fun SagaContent.findChapterAct(chapter: Chapter?) = acts.find { it.data.id == chapter?.actId }
@@ -105,6 +111,15 @@ fun SagaContent.flatChapters() = acts.flatMap { it.chapters }
 fun SagaContent.getCurrentTimeLine() = currentActInfo?.currentChapterInfo?.currentEventInfo
 
 fun SagaContent.getCurrentMessages(): List<Message>? = getCurrentTimeLine()?.messages?.map { it.message }
+
+fun SagaContent.relationshipsSortedByEvents() =
+    relationships
+        .sortedByDescending {
+            val sortedEvents = it.sortedByEvents(flatEvents().map { it.data })
+            sortedEvents.firstOrNull()?.timelineId ?: sortedEvents.lastOrNull()?.timelineId
+        }.map {
+            it.copy(relationshipEvents = it.sortedByEvents(flatEvents().map { it.data }))
+        }.filter { it.relationshipEvents.isNotEmpty() }
 
 fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
 

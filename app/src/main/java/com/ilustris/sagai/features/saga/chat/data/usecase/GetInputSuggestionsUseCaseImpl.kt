@@ -29,7 +29,7 @@ class GetInputSuggestionsUseCaseImpl
             currentUserCharacter: Character?,
             saga: SagaContent,
         ): RequestResult<List<Suggestion>> =
-            executeRequest {
+            executeRequest(false) {
                 val contextSummary =
                     gemmaClient.generate<SceneSummary>(
                         ChatPrompts.sceneSummarizationPrompt(

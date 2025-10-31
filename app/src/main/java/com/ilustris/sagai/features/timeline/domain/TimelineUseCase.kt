@@ -30,4 +30,9 @@ interface TimelineUseCase {
     ): RequestResult<Timeline>
 
     suspend fun getTimelineObjective(saga: SagaContent): RequestResult<String>
+
+    suspend fun generateTimelineContent(
+        saga: SagaContent,
+        timelineContent: TimelineContent,
+    ): RequestResult<Unit>
 }

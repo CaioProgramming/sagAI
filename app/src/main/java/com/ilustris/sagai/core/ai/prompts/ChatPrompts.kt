@@ -60,15 +60,17 @@ object ChatPrompts {
         message: Message,
         lastMessages: List<Message> = emptyList(),
         directive: String,
-        sceneSummary: SceneSummary,
+        sceneSummary: SceneSummary?,
     ) = buildString {
         appendLine(Core.roleDefinition(saga.data))
         appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
         appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trimIndent())
 
-        appendLine("## Progression Context")
-        appendLine("Guide your response to align with the story's progression based on this summary:")
-        appendLine(sceneSummary.toJsonFormat())
+        sceneSummary?.let {
+            appendLine("## Progression Context")
+            appendLine("Guide your response to align with the story's progression based on this summary:")
+            appendLine(sceneSummary.toJsonFormat())
+        }
 
         appendLine("## Saga & Player Context")
         appendLine("SAGA: ${saga.data.toJsonFormatExcludingFields(sagaExclusions)}")
@@ -155,8 +157,8 @@ object ChatPrompts {
         appendLine("Player relationships with present characters:")
         appendLine(
             relationships.joinToString(";\n") {
-                val lastEvent = it.relationshipEvents.last()
-                "${it.characterOne.name} & ${it.characterTwo.name}: ${lastEvent.title}"
+                val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "Nothing related"
+                "${it.characterOne.name} & ${it.characterTwo.name}: $lastEvent"
             },
         )
 
@@ -196,8 +198,8 @@ object ChatPrompts {
         } else {
             appendLine(
                 saga.mainCharacter.relationships.joinToString(";\n") {
-                    val lastEvent = it.relationshipEvents.last()
-                    "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}: ${lastEvent.title}"
+                    val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "Nothing related"
+                    "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}: $lastEvent"
                 },
             )
         }

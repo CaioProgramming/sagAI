@@ -49,7 +49,6 @@ object WikiPrompts {
                             "createdAt",
                             "sagaId",
                             "id",
-                            "emojiTag",
                             "timelineId",
                             "type",
                         ),
@@ -92,8 +91,10 @@ object WikiPrompts {
         )
     }
 
-    fun mergeWiki(currentChapterContent: ChapterContent) =
+    fun mergeWiki(wikis: List<Wiki>) =
         buildString {
+            val wikiExclusion = listOf("id", "sagaId", "timelineId", "createdAt")
+
             appendLine("ROLE: You are an intelligent system tasked with merging and consolidating Wiki entries from a story chapter.")
             appendLine("INPUT: A list of Wiki items from the current chapter (see below).")
             appendLine("TASK:")
@@ -108,9 +109,13 @@ object WikiPrompts {
             appendLine("- Do NOT include individual character entries in the output.")
             appendLine("- Output only the consolidated list, with duplicates removed and merged items replacing them.")
             appendLine("")
-            appendLine("EXISTING WIKI ITEMS FROM CHAPTER:")
-            appendLine(currentChapterContent.events.map { it.updatedWikis }.formatToJsonArray())
-            appendLine("STRUCTURE EXAMPLE:")
-            appendLine("{ \"mergedItems\": [  ${toJsonMap(MergeWiki::class.java)}  ] ")
+            appendLine("EXISTING WIKI ITEMS TO ANALYZE")
+            appendLine(
+                wikis.formatToJsonArray(
+                    excludingFields = wikiExclusion,
+                ),
+            )
+            appendLine("REQUIRED OUTPUT:")
+            appendLine("[ ${toJsonMap(MergeWiki::class.java, filteredFields = wikiExclusion)} ]")
         }
 }

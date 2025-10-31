@@ -66,6 +66,7 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
@@ -104,7 +105,7 @@ fun ChatBubble(
     openWiki: () -> Unit = {},
     onRetry: (MessageContent) -> Unit = {},
     onReactionsClick: (MessageContent) -> Unit = {},
-    requestNewCharacter: () -> Unit = {}
+    requestNewCharacter: () -> Unit = {},
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -242,13 +243,12 @@ fun ChatBubble(
                         }
 
                         val relationWithMainCharacter =
-                            mainCharacter
-                                ?.relationships
-                                ?.find {
-                                    it.characterOne.id == character.id ||
-                                        it.characterTwo.id == character.id
-                                }?.relationshipEvents
-                                ?.lastOrNull()
+                            remember {
+                                mainCharacter
+                                    ?.findRelationship(character.id)
+                                    ?.sortedByEvents(content.flatEvents().map { it.data })
+                                    ?.firstOrNull()
+                            }
 
                         if (isUser.not()) {
                             relationWithMainCharacter?.let {
@@ -272,12 +272,15 @@ fun ChatBubble(
                             }
                         }
                     } ?: run {
-                        Image(painterResource(R.drawable.ic_spark), null,
-                            Modifier.clickable {
-
-                                requestNewCharacter()
-
-                        }.size(24.dp).gradientFill(genre.gradient()))
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            Modifier
+                                .clickable {
+                                    requestNewCharacter()
+                                }.size(24.dp)
+                                .gradientFill(genre.gradient()),
+                        )
                     }
                 }
 
@@ -397,7 +400,7 @@ fun ChatBubble(
                             .align(Alignment.Center)
                             .padding(16.dp),
                 ) {
-                    val (characterAvatar, text, starPlaceHolder) = createRefs()
+                    val (characterAvatar, text, starPlaceHolder, retryButton) = createRefs()
 
                     var starAlpha by remember { androidx.compose.runtime.mutableFloatStateOf(1f) }
                     val alphaAnimation by animateFloatAsState(
@@ -488,6 +491,42 @@ fun ChatBubble(
                                     },
                         )
                     }
+
+                    AnimatedVisibility(
+                        message.status == MessageStatus.ERROR,
+                        modifier =
+                            Modifier.constrainAs(retryButton) {
+                                top.linkTo(text.bottom, margin = (-4).dp)
+                                if (isUser) {
+                                    end.linkTo(text.start, margin = (-12).dp)
+                                } else {
+                                    start.linkTo(text.end, margin = (-12).dp)
+                                }
+                            },
+                    ) {
+                        IconButton(
+                            onClick = {
+                                onRetry(messageContent)
+                            },
+                            modifier =
+                                Modifier
+                                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                    .size(24.dp),
+                            colors =
+                                IconButtonDefaults
+                                    .iconButtonColors()
+                                    .copy(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.error,
+                                    ),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.baseline_refresh_24),
+                                "Tentar novamente",
+                                modifier = Modifier.padding(4.dp).fillMaxSize(),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -546,6 +585,35 @@ fun ChatBubble(
                             ),
                         onTextClick = { },
                     )
+
+                    AnimatedVisibility(
+                        message.status == MessageStatus.ERROR,
+                        modifier =
+                            Modifier.align(Alignment.CenterHorizontally),
+                    ) {
+                        IconButton(
+                            onClick = {
+                                onRetry(messageContent)
+                            },
+                            modifier =
+                                Modifier
+                                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                    .size(24.dp),
+                            colors =
+                                IconButtonDefaults
+                                    .iconButtonColors()
+                                    .copy(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.error,
+                                    ),
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.baseline_refresh_24),
+                                "Tentar novamente",
+                                modifier = Modifier.padding(4.dp).fillMaxSize(),
+                            )
+                        }
+                    }
 
                     AnimatedVisibility(
                         visible = messageContent.reactions.isNotEmpty(),

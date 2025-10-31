@@ -141,8 +141,8 @@ fun toJsonMap(
                         fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
                         fieldType == Boolean::class.java -> "false"
                         fieldType == Double::class.java -> "0.0"
-                        fieldType == Float::class.java -> "0.0f"
-                        fieldType == Long::class.java -> "0L"
+                        fieldType == Float::class.java -> "0.0"
+                        fieldType == Long::class.java -> "0"
                         List::class.java.isAssignableFrom(fieldType) ||
                             Array::class.java.isAssignableFrom(
                                 fieldType,

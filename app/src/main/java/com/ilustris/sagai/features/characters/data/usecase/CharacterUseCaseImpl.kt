@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.characters.data.usecase
 
 import android.content.Context
+import android.util.Log
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
@@ -25,6 +26,8 @@ import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRe
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -73,7 +76,8 @@ class CharacterUseCaseImpl
             character: Character,
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
-            executeRequest {
+            executeRequest(false) {
+                // TODO REMOVE FORCED PREMIUM
                 val isPremium = true // billingService.isPremium()
 
                 val styleReferenceBitmap =
@@ -180,19 +184,31 @@ class CharacterUseCaseImpl
                 val request = gemmaClient.generate<List<CharacterUpdate>>(prompt, describeOutput = false)!!
 
                 val updatedCharacters =
-                    request.mapNotNull {
-                        val character = saga.getCharacters().find { c -> c.name.equals(it.characterName, true) }
-                        character?.let { character ->
-                            CharacterEvent(
-                                id = 0,
-                                character.id,
-                                gameTimelineId = timeline.id,
-                                title = it.title,
-                                summary = it.description,
-                            )
-                        }
-                    }
+                    request
+                        .mapNotNull {
+                            val character = saga.findCharacter(it.characterName)
+                            val timelineContent = saga.findTimeline(timeline.id)
+                            val characterEventOnThisTimeline =
+                                timelineContent
+                                    ?.characterEventDetails
+                                    ?.find { it.character.id == character?.data?.id }
 
+                            if (characterEventOnThisTimeline != null) {
+                                Log.e(javaClass.simpleName, "Character event already exists for this timeline(${timeline.id})")
+                                return@mapNotNull null
+                            }
+
+                            character?.let { character ->
+                                CharacterEvent(
+                                    id = 0,
+                                    character.data.id,
+                                    gameTimelineId = timeline.id,
+                                    title = it.title,
+                                    summary = it.description,
+                                )
+                            }
+                        }
+                Log.d(javaClass.simpleName, "Updating ${updatedCharacters.size} characters events.")
                 eventsRepository.insertCharacterEvents(updatedCharacters).asSuccess()
             }
 

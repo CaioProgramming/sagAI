@@ -83,6 +83,6 @@ class SharePlayUseCaseImpl
                         ShareType.CHARACTER -> SharePrompts.characterPrompt(character!!, saga)
                     }
 
-                gemmaClient.generate<ShareText>(prompt)!!
+                gemmaClient.generate<ShareText>(prompt, skipRunning = true)!!
             }
     }

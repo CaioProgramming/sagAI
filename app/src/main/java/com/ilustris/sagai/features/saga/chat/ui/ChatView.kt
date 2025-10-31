@@ -174,6 +174,7 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -414,14 +415,9 @@ fun ChatContent(
     checkForSaga: () -> Unit = {},
     requestNewCharacter: (String) -> Unit = {},
 ) {
-    val saga = content.data
+    val saga = remember { content.data }
+    val timeline = remember { content.getCurrentTimeLine() }
     val listState = rememberLazyListState()
-
-    LaunchedEffect(messagesList.size) {
-        if (messagesList.isNotEmpty()) {
-            listState.animateScrollToItem(0)
-        }
-    }
 
     val bottomSheetState = rememberModalBottomSheetState()
     var showCharacter by remember {
@@ -432,19 +428,37 @@ fun ChatContent(
     }
 
     var objectiveExpanded by remember {
-        mutableStateOf(
-            content
-                .getCurrentTimeLine()
-                ?.data
-                ?.currentObjective
-                ?.isNotEmpty() == true,
-        )
+        mutableStateOf(false)
+    }
+
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(timeline) {
+        objectiveExpanded = timeline
+            ?.data
+            ?.currentObjective
+            ?.isEmpty()
+            ?.not() == true
+
+        delay(4.seconds)
+
+        objectiveExpanded = false
     }
     val imeState = WindowInsets.isImeVisible
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val progress by animateFloatAsState(
         if (content.data.isEnded.not()) updateProgress else 1f,
     )
+
+    LaunchedEffect(messagesList.size) {
+        if (messagesList.isNotEmpty()) {
+            if (objectiveExpanded) {
+                delay(2.seconds)
+            }
+            listState.animateScrollToItem(0)
+        }
+    }
+
     LaunchedEffect(listState.isScrollInProgress) {
         if (listState.isScrollInProgress && objectiveExpanded) {
             objectiveExpanded = false
@@ -532,6 +546,7 @@ fun ChatContent(
                             saga = content,
                             actList = messagesList,
                             listState = listState,
+                            objectiveExpanded = objectiveExpanded,
                             modifier =
                                 Modifier
                                     .constrainAs(messages) {
@@ -591,12 +606,11 @@ fun ChatContent(
                             enter = slideInVertically(),
                             exit = fadeOut(),
                         ) {
-                            val timeline = remember { content.getCurrentTimeLine() }
                             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                                 AnimatedContent(timeline, transitionSpec = {
                                     slideInVertically() + fadeIn() with fadeOut()
                                 }) {
-                                    if (it != null && it.isFull().not()) {
+                                    if (it != null) {
                                         ChatInputView(
                                             content = content,
                                             isGenerating = isGenerating,
@@ -1171,6 +1185,7 @@ fun ChatList(
     actList: List<ActDisplayData>,
     modifier: Modifier,
     listState: LazyListState,
+    objectiveExpanded: Boolean,
     openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
     openWiki: () -> Unit = {},
@@ -1179,9 +1194,15 @@ fun ChatList(
     requestNewCharacter: (String) -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(saga.messagesSize()) {
-        listState.animateScrollToItem(0)
+        coroutineScope.launch {
+            delay(3.seconds)
+            if ((listState.canScrollForward && listState.isScrollInProgress.not()) && objectiveExpanded.not()) {
+                listState.animateScrollToItem(0)
+            }
+        }
     }
 
     LazyColumn(

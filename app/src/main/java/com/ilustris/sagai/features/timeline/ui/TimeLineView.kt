@@ -198,6 +198,12 @@ fun TimeLineContent(
                                     it.data.id,
                                     saga.data.id,
                                 )
+                            val cardEnabled = remember {
+                                it.data.emotionalReview.isNullOrEmpty() ||
+                                        it.characterEventDetails.isEmpty() ||
+                                        it.updatedRelationshipDetails.isEmpty() ||
+                                        it.updatedWikis.isEmpty()
+                            }
                             TimeLineCard(
                                 it,
                                 saga,
@@ -208,7 +214,7 @@ fun TimeLineContent(
                                     eventModifier
                                         .animateContentSize()
                                         .clip(genre.shape())
-                                        .clickable(it.data.emotionalReview.isNullOrEmpty()) {
+                                        .clickable(cardEnabled) {
                                             generateEmotionalReview(it)
                                         },
                             )

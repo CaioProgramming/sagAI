@@ -111,9 +111,6 @@ object LorePrompts {
                 it.joinMessage().formatToString()
             },
         )
-
-        appendLine("Follow this structure in your output:")
-        appendLine(toJsonMap(Timeline::class.java, filteredFields = listOf("id", "createdAt", "chapterId")))
     }.trimIndent()
 
     private fun storyContext(

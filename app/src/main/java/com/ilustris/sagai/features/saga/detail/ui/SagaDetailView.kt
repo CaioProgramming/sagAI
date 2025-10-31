@@ -16,7 +16,6 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,7 +26,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -81,11 +79,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -120,6 +116,7 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.home.data.model.relationshipsSortedByEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
@@ -129,20 +126,18 @@ import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineContent
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -219,6 +214,9 @@ fun SagaDetailView(
                     else -> section = DetailAction.BACK
                 }
             },
+            reviewWiki = {
+                viewModel.reviewWiki(it)
+            },
             createReview = {
                 viewModel.createReview()
             },
@@ -234,7 +232,7 @@ fun SagaDetailView(
                 }
             },
             createTimelineReview = {
-                viewModel.createEmotionalReview(it)
+                viewModel.generateTimelineContent(it)
             },
         )
     }
@@ -507,6 +505,7 @@ fun SagaDetailContentView(
     emotionalCardReference: String,
     onChangeSection: (DetailAction) -> Unit = {},
     onBackClick: (DetailAction) -> Unit = {},
+    reviewWiki: (List<Wiki>) -> Unit = {},
     createReview: () -> Unit,
     openReview: () -> Unit,
     closeReview: () -> Unit,
@@ -651,6 +650,9 @@ fun SagaDetailContentView(
                                                 {
                                                     onBackClick(currentSection)
                                                 },
+                                                reviewWiki = {
+                                                    reviewWiki(it)
+                                                },
                                                 titleModifier =
                                                     Modifier.sharedElement(
                                                         rememberSharedContentState(
@@ -782,61 +784,6 @@ fun SagaDetailContentViewPreview() {
 }
 
 @Composable
-fun WikiContent(
-    saga: SagaContent,
-    onBackClick: () -> Unit,
-    titleModifier: Modifier = Modifier,
-) {
-    Box {
-        val gridState = rememberLazyGridState()
-        val titleAndSubtitle =
-            DetailAction.WIKI.titleAndSubtitle(saga)
-        val genre = saga.data.genre
-        LazyVerticalGrid(columns = GridCells.Fixed(2), state = gridState) {
-            item(span = { GridItemSpan(2) }) {
-                Text(
-                    titleAndSubtitle.first,
-                    style =
-                        MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = genre.headerFont(),
-                        ),
-                    modifier = titleModifier.padding(16.dp).fillMaxWidth(),
-                )
-            }
-            items(saga.wikis) { wiki ->
-                WikiCard(
-                    wiki,
-                    saga.data.genre,
-                    modifier =
-                        Modifier
-                            .padding(20.dp)
-                            .fillMaxWidth(),
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            gridState.canScrollBackward,
-            enter = fadeIn(tween(400, delayMillis = 200)),
-            exit = fadeOut(tween(200)),
-        ) {
-            SagaTopBar(
-                titleAndSubtitle.first,
-                titleAndSubtitle.second,
-                saga.data.genre,
-                onBackClick = { onBackClick() },
-                actionContent = { Box(Modifier.size(24.dp)) },
-                modifier =
-                    Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-            )
-        }
-    }
-}
-
-@Composable
 fun ActContent(saga: SagaContent) {
     ActReader(saga)
 }
@@ -893,7 +840,7 @@ private fun SagaDetailInitialView(
                 fontWeight = FontWeight.Bold,
             )
         val gridState = rememberLazyGridState()
-        val genre = saga.data.genre
+        val genre = remember { saga.data.genre }
         with(animationScopes.first) {
             AnimatedContent(showTitleOnly) {
                 if (it) {
@@ -919,15 +866,15 @@ private fun SagaDetailInitialView(
                         var highlightParams by remember {
                             mutableStateOf(genreHighlight)
                         }
+                        val chapters = remember { saga.flatChapters().filter { it.isComplete() } }
+                        val events = remember { saga.flatEvents().filter { it.isComplete() } }
+                        val messages = remember { saga.flatMessages() }
+                        val relationships = remember { saga.relationshipsSortedByEvents() }
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(columnCount),
                             modifier = modifier,
                             state = gridState,
                         ) {
-                            val chapters = saga.flatChapters().filter { it.isComplete() }
-                            val events = saga.flatEvents().filter { it.isComplete() }
-                            val messages = saga.flatMessages()
-
                             item(span = {
                                 GridItemSpan(columnCount)
                             }) {
@@ -1311,7 +1258,7 @@ private fun SagaDetailInitialView(
                                     }
                                 }
 
-                                if (saga.relationships.isNotEmpty()) {
+                                if (relationships.isNotEmpty()) {
                                     item(span = { GridItemSpan(columnCount) }) {
                                         Text(
                                             stringResource(R.string.saga_detail_relationships_section_title),
@@ -1326,9 +1273,7 @@ private fun SagaDetailInitialView(
                                     item(span = { GridItemSpan(columnCount) }) {
                                         LazyRow {
                                             items(
-                                                saga.relationships
-                                                    .filter { it.relationshipEvents.isNotEmpty() }
-                                                    .sortedByDescending { it.relationshipEvents.last().timestamp },
+                                                relationships,
                                             ) { relation ->
                                                 RelationShipCard(
                                                     content = relation,

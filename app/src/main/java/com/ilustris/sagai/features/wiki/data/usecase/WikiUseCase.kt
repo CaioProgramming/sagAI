@@ -22,6 +22,6 @@ interface WikiUseCase {
 
     suspend fun mergeWikis(
         saga: SagaContent,
-        currentChapterContent: ChapterContent,
+        wikiContents: List<Wiki>,
     ): RequestResult<Unit>
 }

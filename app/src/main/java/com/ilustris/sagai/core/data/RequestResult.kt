@@ -79,9 +79,12 @@ fun Exception.asError(sendToCrashlytics: Boolean = true): RequestResult.Error {
     return RequestResult.Error(this)
 }
 
-suspend fun <R> executeRequest(block: suspend () -> R): RequestResult<R> =
+suspend fun <R> executeRequest(
+    reportCrash: Boolean = true,
+    block: suspend () -> R,
+): RequestResult<R> =
     try {
         block().asSuccess()
     } catch (e: Exception) {
-        e.asError()
+        e.asError(reportCrash)
     }

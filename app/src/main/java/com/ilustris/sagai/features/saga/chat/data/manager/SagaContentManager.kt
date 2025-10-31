@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow // Added import
@@ -36,5 +37,8 @@ interface SagaContentManager {
         isRetrying: Boolean = false,
     )
 
-
+    suspend fun regenerateTimeline(
+        saga: SagaContent,
+        timelineContent: TimelineContent,
+    )
 }

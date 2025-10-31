@@ -114,6 +114,7 @@ class ChapterUseCaseImpl
                         chapter.data,
                         characters,
                     )
+                delay(3.seconds)
                 val promptGeneration =
                     gemmaClient.generate<String>(
                         coverPrompt,

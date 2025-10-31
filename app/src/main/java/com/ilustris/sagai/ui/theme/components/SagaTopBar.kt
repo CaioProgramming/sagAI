@@ -54,10 +54,10 @@ fun SagaTopBar(
                     Modifier
                         .reactiveShimmer(isLoading, shimmerColors = genre.shimmerColors())
                         .clip(CircleShape)
-                        .size(24.dp)
                         .clickable {
                             onBackClick()
-                        },
+                        }.size(24.dp)
+                        .padding(4.dp),
             )
         }
 
