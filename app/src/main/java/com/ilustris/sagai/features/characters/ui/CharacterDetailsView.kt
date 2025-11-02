@@ -61,12 +61,14 @@ import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.darkerPalette
@@ -184,7 +186,7 @@ fun CharacterDetailsContent(
                                     .padding(16.dp)
                                     .reactiveShimmer(true)
                                     .fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Image(
@@ -206,7 +208,24 @@ fun CharacterDetailsContent(
                                 style =
                                     MaterialTheme.typography.displaySmall.copy(
                                         fontFamily = genre.headerFont(),
-                                        brush = Brush.verticalGradient(characterColor.darkerPalette()),
+                                        brush =
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    genre.color,
+                                                    characterColor,
+                                                    genre.iconColor,
+                                                ),
+                                            ),
+                                    ),
+                            )
+
+                            Text(
+                                character.profile.occupation,
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        color = characterColor,
+                                        textAlign = TextAlign.Center,
                                     ),
                             )
                         }
@@ -228,19 +247,31 @@ fun CharacterDetailsContent(
                             .gradientFill(characterColor.gradientFade()),
                     )
                 }
-            }
+                item {
+                    Text(
+                        character.name,
+                        textAlign = TextAlign.Center,
+                        style =
+                            MaterialTheme.typography.displayMedium.copy(
+                                fontFamily = genre.headerFont(),
+                                brush =
+                                    Brush.verticalGradient(listOf(characterColor, genre.iconColor, genre.color)),
+                            ),
+                    )
+                }
 
-            item {
-                Text(
-                    character.profile.occupation,
-                    style =
-                        MaterialTheme.typography.titleSmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = characterColor,
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
+                item {
+                    Text(
+                        character.profile.occupation,
+                        style =
+                            MaterialTheme.typography.titleSmall.copy(
+                                fontFamily = genre.bodyFont(),
+                                color = characterColor,
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                    )
+                }
             }
 
             item { CharacterStats(character = character, genre = genre) }

@@ -1084,7 +1084,7 @@ private fun SagaDetailInitialView(
                                             Text(
                                                 it.data.name,
                                                 style =
-                                                    MaterialTheme.typography.titleMedium.copy(
+                                                    MaterialTheme.typography.headlineMedium.copy(
                                                         fontFamily = genre.headerFont(),
                                                         color = genre.iconColor,
                                                     ),

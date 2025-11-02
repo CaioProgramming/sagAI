@@ -99,19 +99,19 @@ fun ActComponent(
                 MaterialTheme.typography.labelMedium.copy(
                     fontFamily = content.data.genre.headerFont(),
                 ),
-            textAlign = TextAlign.Start,
+            textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
         )
 
         Text(
-            act.data.title.ifEmpty { "Ato em curso..." },
+            act.data.title,
             style =
                 MaterialTheme.typography.displaySmall.copy(
                     fontFamily = content.data.genre.headerFont(),
                     brush = content.data.genre.gradient(true),
                 ),
-            textAlign = TextAlign.Start,
-            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
         )
 
         Text(
@@ -122,7 +122,7 @@ fun ActComponent(
                     textAlign = TextAlign.Justify,
                     color = MaterialTheme.colorScheme.onBackground,
                 ),
-            modifier = Modifier.padding(bottom = 16.dp).fillMaxWidth(),
+            modifier = Modifier.padding(16.dp).fillMaxWidth(),
         )
 
         if (act.data.emotionalReview?.isNotEmpty() == true) {
@@ -134,7 +134,7 @@ fun ActComponent(
                         textAlign = TextAlign.Start,
                         color = MaterialTheme.colorScheme.onBackground,
                     ),
-                modifier = Modifier.alpha(.5f),
+                modifier = Modifier.padding(16.dp).alpha(.5f),
             )
         }
     }

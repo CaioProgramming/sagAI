@@ -186,7 +186,10 @@ fun NewSagaChat(
                     item {
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier.animateItem().fillMaxWidth().padding(8.dp),
+                            modifier = Modifier
+                                .animateItem()
+                                .fillMaxWidth()
+                                .padding(8.dp),
                         ) { StarryAnimation(it, Modifier.size(50.dp)) }
                     }
                 }
@@ -375,11 +378,16 @@ fun NewSagaChat(
                                             modifier =
                                                 Modifier
                                                     .padding(16.dp)
-                                                    .border(1.dp, it.color.gradientFade(), it.shape())
+                                                    .border(
+                                                        1.dp,
+                                                        it.color.gradientFade(),
+                                                        it.shape()
+                                                    )
                                                     .background(
                                                         MaterialTheme.colorScheme.surface,
                                                         it.shape(),
-                                                    ).padding(8.dp),
+                                                    )
+                                                    .padding(8.dp),
                                         ) {
                                             val character = currentForm?.character
                                             Text(
@@ -426,7 +434,8 @@ fun NewSagaChat(
                                                     onClick = {
                                                         coroutineScope.launch { tooltipState.show() }
                                                     },
-                                                ).size(iconSize)
+                                                )
+                                                .size(iconSize)
                                                 .padding(8.dp)
                                                 .gradientFill(it.color.gradientFade()),
                                     )
@@ -472,7 +481,7 @@ fun NewSagaChat(
                                                 )
 
                                                 Text(
-                                                    "Ver mais",
+                                                    stringResource(R.string.see_more),
                                                     style =
                                                         MaterialTheme.typography.titleMedium.copy(
                                                             fontFamily = it.bodyFont(),
@@ -488,7 +497,9 @@ fun NewSagaChat(
                                             }
 
                                             LazyRow(
-                                                modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(8.dp),
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             ) {
                                                 val genres = Genre.entries
@@ -535,7 +546,8 @@ fun NewSagaChat(
                                                 onClick = {
                                                     resetSaga()
                                                 },
-                                            ).size(iconSize)
+                                            )
+                                            .size(iconSize)
                                             .padding(8.dp)
                                             .gradientFill(it.color.gradientFade()),
                                 )

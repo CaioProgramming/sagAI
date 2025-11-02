@@ -139,16 +139,22 @@ class TimelineUseCaseImpl
                         timelineContent,
                     )
                     delay(5.seconds)
+                } else {
+                    Log.w(javaClass.simpleName, "generateTimelineContent: Emotional Review Already created")
                 }
                 if (timelineContent.characterEventDetails.isEmpty() ||
                     timelineContent.updatedRelationshipDetails.isEmpty()
                 ) {
                     updateCharacters(timelineContent.data, saga)
                     delay(5.seconds)
+                } else {
+                    Log.w(javaClass.simpleName, "generateTimelineContent: Characters already updated on this event")
                 }
 
                 if (timelineContent.updatedWikis.isEmpty()) {
                     updateWikis(timelineContent.data, saga)
+                } else {
+                    Log.w(javaClass.simpleName, "generateTimelineContent: Wikis already updated on this event")
                 }
             }
 

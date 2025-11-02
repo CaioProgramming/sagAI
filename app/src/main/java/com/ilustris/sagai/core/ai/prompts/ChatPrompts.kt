@@ -41,7 +41,7 @@ object ChatPrompts {
             "review",
         )
 
-    private val characterExclusions =
+    val characterExclusions =
         listOf(
             "id",
             "image",

@@ -253,4 +253,15 @@
     <string name="premium_label_title">You are</string>
     <string name="subscribe">Subscribe</string>
     <string name="premium_already">Subscription active</string>
+    <string name="chapter_number_label">Chapter %s</string>
+    <string name="try_again">Try again</string>
+    <string name="chapter_finished">Chapter %s Finished</string>
+    <string name="ending">Chapter %1$s updated.</string>
+    <string name="see_more">Ver mais</string>
+    <string name="empty" translatable="false" />
+    <string name="timeline_generated_successfully">Timeline %1$s finished.</string>
+    <string name="timeline_updated">Timeline %1$s updated.</string>
+    <string name="act_finished">Act %1$s finished.</string>
+    <string name="unexpected_error">Sorry an unexpected error has occurred.</string>
+
 </resources>

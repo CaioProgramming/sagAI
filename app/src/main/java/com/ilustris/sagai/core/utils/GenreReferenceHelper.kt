@@ -8,6 +8,7 @@ import coil3.BitmapImage
 import coil3.ImageLoader
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
+import coil3.request.allowHardware
 import coil3.toBitmap
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.RequestResult
@@ -31,7 +32,7 @@ class GenreReferenceHelper(
         }
 
     suspend fun getIconReference(genre: Genre): RequestResult<Bitmap> =
-        try {
+        executeRequest {
             val flag = "${genre.name.lowercase()}$ICON_FLAG"
             Log.d(javaClass.simpleName, "getIconReference: fetching flag from firebase $flag")
             val flagValue = firebaseRemoteConfig.getString(flag)
@@ -41,15 +42,13 @@ class GenreReferenceHelper(
                 imageLoader.execute(
                     ImageRequest
                         .Builder(context)
-                        .data(iconUrl)
+                        .data(flagValue)
+                        .allowHardware(false)
                         .build(),
                 )
 
             Log.d(javaClass.simpleName, "getIconReference: Coil request is ${request.javaClass.simpleName}")
-
-            (request.image as BitmapImage).bitmap.asSuccess()
-        } catch (e: Exception) {
-            e.asError()
+            (request as SuccessResult).image.toBitmap()
         }
 
     suspend fun getCoverReference(genre: Genre): RequestResult<Bitmap> =

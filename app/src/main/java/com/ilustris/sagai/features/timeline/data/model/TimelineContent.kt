@@ -64,6 +64,12 @@ data class TimelineContent(
 
     fun numberOfRelationshipUpdates(): Int = updatedRelationshipDetails.size
 
+    fun canBeReviewed() =
+        data.emotionalReview.isNullOrEmpty() ||
+            characterEventDetails.isEmpty() ||
+            updatedRelationshipDetails.isEmpty() ||
+            updatedWikis.isEmpty()
+
     fun emotionalRanking(mainCharacter: Character?) =
         messages
             .filter {

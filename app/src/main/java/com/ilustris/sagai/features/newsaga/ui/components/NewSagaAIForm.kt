@@ -444,7 +444,7 @@ fun NewSagaAIForm(
                 )
 
                 Text(
-                    "Ver mais",
+                    stringResource(R.string.see_more),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = textFont,

@@ -20,12 +20,11 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                Classical oil painting,
+                **Grand Classical oil painting, High Classicism style (17th Century Master)**,
                 rich impasto texture, visible brushstrokes,
-                strong chiaroscuro.
-                natural lighting.
-                ethereal aesthetic.
-                Harmonious colors, authentic painterly grain.
+                **Epic Chiaroscuro**, heroic lighting, **natural/varied ambient light.**
+                **Ethereal and Majestic aesthetic, Vintage color grading**,
+                Harmonious colors, authentic painterly grain, Crisp atmosphere.
                 """
 
             SCI_FI ->
@@ -103,11 +102,21 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                The background Dominated by a strong, evocative red color scheme, featuring deep scarlet, crimson, fiery orange-red, and burgundy tones.
-                The background is composed of voluminous, dramatic cloud formations intensely lit with these red and orange hues, creating a powerful, ambient glow that permeates the entire scene.
-                The lighting is an intense, almost apocalyptic, reddish-orange glow, suggesting either an epic, burning sunset or the aftermath of a fiery event, casting everything in a warm yet foreboding light with deep, rich shadows.
-                **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST retain their natural, distinct hues and NOT be tinted red.
-                The red accents should be isolated and clearly defined.
+                **CRITICAL: These warm colors MUST be incorporated as design elements or local light sources. Select one or more options for this warm accentuation:**
+                - `The character's sword hilt/blade glows with a subtle orange-red light`
+                - `Intricate, gold/red enameling on the character's armor plating`
+                - `A small, localized fire, torch, or glowing magical sigil in the scene`
+                - `Deep crimson or orange-red fabric elements (e.g., scarf, cloak lining, flag)`
+                - `Scattered ground elements in warm colors (e.g., red/orange flowers, specific colored gems, cracked lava/stone)`
+                **CRUCIAL:** The warm tones are for **specific accents and localized light reflection**, not the overall ambient light or background color.
+                The lighting should be predominantly natural (daylight, torchlight, moonlight) as appropriate for the scene, with only small, focused areas reflecting the warm accent color (e.g., rim light from the glowing sword).
+             
+                    2.1. **Background and Ambient Context (ATMOSPHERIC PRIORITY):**
+                    The Agent MUST describe the environment to set a strong, evocative mood (the "Ambient Context"), but this description **must not dictate the composition's framing or depth of field.** The final prompt must clearly state that the background serves as the setting for the character.
+                    * **Mandatory Adaptation:** The image generation model is internally instructed to **apply a depth of field that supports the chosen Framing (e.g., a shallow depth of field for Macro Shots, or a clear focus for Wider Shots),** ensuring the primary subject remains sharp and dominant.
+                    * **Contextual Elements (Fantasy):** Use elements like `ancient ruins`, `crumbled stone`, `stormy sky`, `swirling mist`, or `fantasy forest` to define the setting. The Agent should describe these elements in a way that provides **texture and atmosphere**, not necessarily vast, clear detail.
+                    
+                    **CRITICAL:** The Agent must ensure the Ambient Context description is concise and supports the visual mood (Epic, Somber, etc.) without contradicting the framing term (e.g., 'MACRO SHOT').
                 """
 
             SCI_FI ->
@@ -188,6 +197,16 @@ object GenrePrompts {
                     appendLine("Creating angles that focus on their conflicts and emotions")
                 }
             }
+        }
+
+    fun colorAccent(genre: Genre) =
+        when (genre) {
+            FANTASY -> "Crimson/Red"
+            SCI_FI -> "Luminous purple/Neon magenta\""
+            HORROR -> "Ash gray/Faded cerulean blue"
+            Genre.HEROES -> "Midnight blue/Electric blue"
+            Genre.CRIME -> "Hot pink/Electric magenta"
+            Genre.SPACE_OPERA -> "Cyan/Deep cerulean blue"
         }
 
     fun nameDirectives(genre: Genre) =

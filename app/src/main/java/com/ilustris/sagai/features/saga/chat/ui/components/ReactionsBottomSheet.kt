@@ -25,6 +25,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
+import com.ilustris.sagai.ui.theme.bodyFont
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,9 +39,10 @@ fun ReactionsBottomSheet(
             item {
                 Text(
                     "Reações",
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
                     textAlign = TextAlign.Center,
                     modifier =
                         Modifier
@@ -55,14 +57,9 @@ fun ReactionsBottomSheet(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(16.dp),
                     ) {
-                        AvatarTimelineIcon(
-                            icon = it.character.image,
-                            showSpark = false,
+                        CharacterAvatar(
+                            it.character,
                             genre = content.data.genre,
-                            placeHolderChar =
-                                it.character.name
-                                    .first()
-                                    .uppercase(),
                             modifier = Modifier.size(32.dp),
                         )
 
@@ -70,7 +67,7 @@ fun ReactionsBottomSheet(
                             text = it.character.name,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
+                                    fontFamily = content.data.genre.bodyFont(),
                                 ),
                             modifier = Modifier.weight(1f),
                         )

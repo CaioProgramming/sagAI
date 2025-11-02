@@ -4,23 +4,25 @@ import android.icu.util.Calendar
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
-import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.datasource.SagaDao
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 class SagaRepositoryImpl
     @Inject
@@ -69,7 +71,10 @@ class SagaRepositoryImpl
                     .getGenreStyleReference(saga.genre)
                     .getSuccess()
                     ?.let {
-                        ImageReference(it, ImageGuidelines.styleReferenceGuidance)
+                        ImageReference(
+                            it,
+                            ImageGuidelines.styleReferenceGuidance,
+                        )
                     }
 
             val iconReferenceComposition =
@@ -97,12 +102,26 @@ class SagaRepositoryImpl
 
             val references =
                 listOfNotNull(styleReference, iconReferenceComposition, characterIcon)
+
+            val visualDirection =
+                imagenClient
+                    .extractComposition(
+                        references = references.take(2),
+                    ).getSuccess()
+
+            val context =
+                buildString {
+                    appendLine("Saga Context:")
+                    appendLine(saga.toJsonFormatIncludingFields(listOf("title", "description", "genre")))
+                    appendLine("Main Character Details:")
+                    appendLine(character.toJsonFormatExcludingFields(listOf("image", "sagaId", "joinedAt", "hexColor", "id")))
+                }
             val metaPrompt =
                 gemmaClient.generate<String>(
                     prompt =
                         SagaPrompts
-                            .iconDescription(saga, character),
-                    references,
+                            .iconDescription(saga.genre, context, visualDirection),
+                    listOf(characterIcon),
                     requireTranslation = false,
                 )!!
             val newIcon =

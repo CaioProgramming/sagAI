@@ -1,7 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.SagaEndCreditsContext
-import com.ilustris.sagai.core.ai.models.SagaGenerationContext
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -11,12 +10,8 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.generateActLevelEmotionalFlowText
 import com.ilustris.sagai.features.home.data.model.generateCharacterRelationsSummary
-import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.SagaForm
-import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import kotlin.jvm.java
 import kotlin.text.appendLine
@@ -77,68 +72,29 @@ object SagaPrompts {
 
     @Suppress("ktlint:standard:max-line-length")
     fun iconDescription(
-        saga: Saga,
-        character: Character,
+        genre: Genre,
+        context: String,
+        visualDirection: String?,
     ) = buildString {
         appendLine(
             "Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.",
         )
-        appendLine(
-            "This final text prompt will be used to create a **Dramatic Icon** for the saga \"${saga.title}\" (Genre: ${saga.genre.name}).",
-        )
-        appendLine("Ensure to render this art style description matching with the reference image")
-        appendLine(GenrePrompts.artStyle(saga.genre))
-        appendLine("*The accents are design elements, not the primary light source for the character.")
-        appendLine(GenrePrompts.getColorEmphasisDescription(saga.genre))
-        appendLine("* Also you will have access to character visual reference to provide a more precise description.")
-        appendLine("4.  **Character Details (Provided Below):** The character to be depicted.")
+        appendLine("Overall context: ")
+        appendLine(context)
+        appendLine("* You will have access to subject(s) visual reference to provide a more precise description.")
+        appendLine("Visual Direction:")
+        visualDirection?.let {
+            appendLine("This rules dictate how you should describe the icon composition")
+            appendLine(it)
+        } ?: run {
+            appendLine("Ensure to render this art style description matching with the reference image")
+            appendLine(GenrePrompts.artStyle(genre))
+            appendLine("*The accents are design elements, not the primary light source for the character.")
+            appendLine(GenrePrompts.getColorEmphasisDescription(genre))
+        }
         appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
         appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
-        appendLine("This description must:")
-        appendLine("*   Integrate the **Character Details**.")
-        appendLine(
-            "*Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
-        )
-        appendLine(
-            "*   **Character Focus and Framing:** Ensure the character is the primary subject, framed as a close-up or medium close-up shot (e.g., from the chest up or waist up). The character should dominate the icon and be the clear focal point, with dynamic posing.",
-        )
-        appendLine(
-            "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character\'s Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
-        )
-        appendLine(
-            "***CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.",
-        )
-        appendLine("* CRUCIAL: ENSURE THAT NO TEXT IS RENDERED AT ALL ONLY THE Image")
-        appendLine("Saga Context:")
-        appendLine(saga.toJsonFormatIncludingFields(listOf("title", "description", "genre")))
-        appendLine("Main Character Details:")
-        appendLine(character.toJsonFormatExcludingFields(listOf("image", "sagaId", "joinedAt", "hexColor", "id")))
-        appendLine(
-            "    - **Looks:** Describe the character's facial features and physical build (e.g., 'a rugged man with a lean physique', 'a Latina woman with a sophisticated haircut').",
-        )
-        appendLine(
-            "    - **Clothing:** Detail their attire, including style, color, and accessories (e.g., 'a vibrant Hawaiian-style shirt', 'a sleek two-piece swimsuit').",
-        )
-        appendLine(
-            "    - **Expression:** The face should not be neutral. It must convey a strong emotion or intention. Use terms like 'a hardened, protective gaze', 'a piercing, fatal stare', 'a sardonic smile'.",
-        )
-        appendLine(
-            "    - **Pose & Body Language:** Describe their posture and how they interact with the environment. Use dynamic phrases like 'relaxed yet alert posture', 'casually lounging on a car hood', 'body language exuding confidence'.",
-        )
-        appendLine(
-            "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].",
-        )
-        appendLine("The background is a vibrant [e.g., neon purple as per genre instructions].")
-        appendLine(
-            "Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their blackpopover, as per genre instructions].",
-        )
-        appendLine(
-            "The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded anime style and studio quality.",
-        )
-        appendLine(
-            "The character should be the absolute focus of the image, filling most of the frame in a compelling, dynamic pose. No other characters or complex backgrounds should be present, ensuring the icon is clean and impactful.",
-        )
-        appendLine("Desired Output: A single, striking icon image. NO TEXT SHOULD BE GENERATED ON THE IMAGE ITSELF.")
+        appendLine(ImagePrompts.descriptionRules(genre))
     }
 
     // UPDATED SagaReviewContext

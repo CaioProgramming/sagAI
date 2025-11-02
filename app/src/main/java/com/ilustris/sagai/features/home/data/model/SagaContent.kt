@@ -123,7 +123,12 @@ fun SagaContent.relationshipsSortedByEvents() =
 
 fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
 
-fun SagaContent.actNumber(act: Act) = acts.indexOfFirst { it.data.id == act.id } + 1
+fun SagaContent.actNumber(act: Act?): Int =
+    acts.find { it.data.id == act?.id }?.let { requestedAct ->
+        acts.indexOf(requestedAct) + 1
+    } ?: run {
+        1
+    }
 
 fun SagaContent.getDirective(): String {
     val actsCount = acts.size

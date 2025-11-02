@@ -17,6 +17,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken // <-- ADDED IMPORT
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString // <-- ADDED IMPORT FOR EXTENSION
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
@@ -25,6 +26,7 @@ import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.log
 import kotlin.time.Duration.Companion.seconds
 
 @Singleton
@@ -109,12 +111,15 @@ class GemmaClient
                 Log.i(this::class.java.simpleName, "Requesting ${modelName()}")
 
                 val contentParts =
-                    listOf(TextPart(fullPrompt)).plus(
-                        references.filterNotNull().map { reference ->
-                            ImagePart(reference.bitmap)
-                            TextPart(reference.description)
-                        },
-                    )
+                    buildList {
+                        if (prompt.isNotEmpty()) {
+                            add(TextPart(fullPrompt))
+                        }
+                        references.filterNotNull().forEach { reference ->
+                            add(ImagePart(reference.bitmap))
+                            add(TextPart(reference.description))
+                        }
+                    }
 
                 val inputContent =
                     Content(
@@ -125,17 +130,30 @@ class GemmaClient
                 val content = client.generateContent(inputContent)
 
                 val response = content.text
-
+                Log.d(javaClass.simpleName, "Input content: ${inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}")
                 Log.i(
                     javaClass.simpleName,
-                    "Generation content: ${content.toJsonFormatExcludingFields(
+                    "Generated content: ${content.toJsonFormatExcludingFields(
                         AI_EXCLUDED_FIELDS,
                     )}",
                 )
 
-                Log.d(javaClass.simpleName, "Full prompt: $fullPrompt")
+                val promptDescription =
+                    buildString {
+                        appendLine("Full Prompt { ")
+                        if (prompt.isNotEmpty()) {
+                            appendLine("Main prompt { ")
+                            appendLine(prompt)
+                            appendLine("}")
+                        }
+                        appendLine("References:")
+                        appendLine(references.filterNotNull().formatToJsonArray())
+                    }
+
+                Log.d(javaClass.simpleName, promptDescription)
 
                 if (T::class == String::class) {
+                    Log.i(javaClass.simpleName, "Prompt request result:\n$response")
                     return response as T
                 }
 

@@ -15,6 +15,9 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.crashlytics.recordException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.network.FreePikApiService
 import com.ilustris.sagai.core.network.body.FreepikRequest
 import com.ilustris.sagai.core.network.response.FreePikResponse
@@ -29,6 +32,8 @@ interface ImagenClient {
         references: List<ImageReference> = emptyList(),
         canByPass: Boolean = false,
     ): Bitmap?
+
+    suspend fun extractComposition(references: List<ImageReference>): RequestResult<String>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -37,6 +42,7 @@ class ImagenClientImpl
     constructor(
         val billingService: BillingService,
         private val firebaseRemoteConfig: FirebaseRemoteConfig,
+        private val gemmaClient: GemmaClient,
     ) : ImagenClient {
         companion object {
             const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
@@ -90,5 +96,14 @@ class ImagenClientImpl
                 Log.e(TAG, "generateImage: ${references.size} references submitted")
                 e.printStackTrace()
                 null
+            }
+
+        override suspend fun extractComposition(references: List<ImageReference>) =
+            executeRequest {
+                gemmaClient.generate<String>(
+                    ImagePrompts.extractComposition(),
+                    references = references,
+                    requireTranslation = false,
+                )!!
             }
     }

@@ -77,7 +77,7 @@ object ImageGuidelines {
 
     fun characterVisualReferenceGuidance(characterName: String): String =
         """
-        **Analyzing Character Reference for '$characterName':**
+        **Use this image as '$characterName' visual reference:**
         Analyze the uploaded image to understand the visual identity of '$characterName'.
         Adapt these key features to the new scene:
         * **Core Traits:** Identify key physical features like face shape, hairstyle and color, eye color, and any unique marks (e.g., tattoos, scars).

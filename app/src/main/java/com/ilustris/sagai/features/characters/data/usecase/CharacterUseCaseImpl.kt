@@ -8,8 +8,10 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -18,6 +20,8 @@ import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.core.utils.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.ImageCropHelper
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
@@ -80,7 +84,7 @@ class CharacterUseCaseImpl
                 // TODO REMOVE FORCED PREMIUM
                 val isPremium = true // billingService.isPremium()
 
-                val styleReferenceBitmap =
+                val styleReference =
                     ImageReference(
                         genreReferenceHelper.getGenreStyleReference(saga.genre).getSuccess()!!,
                         ImageGuidelines.styleReferenceGuidance,
@@ -93,17 +97,37 @@ class CharacterUseCaseImpl
                     if (isPremium) {
                         listOfNotNull(
                             portraitReference,
-                            styleReferenceBitmap,
+                            styleReference,
                         )
                     } else {
                         emptyList()
                     }
 
+                val visualComposition =
+                    imagenClient
+                        .extractComposition(
+                            listOfNotNull(portraitReference, styleReference),
+                        ).getSuccess()
+
                 val descriptionPrompt =
                     if (isPremium) {
-                        CharacterPrompts.descriptionTranslationPrompt(
-                            character,
+                        SagaPrompts.iconDescription(
                             saga.genre,
+                            mapOf(
+                                "saga" to saga.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
+                                "character" to
+                                    character.toJsonFormatExcludingFields(
+                                        listOf(
+                                            "id",
+                                            "image",
+                                            "sagaId",
+                                            "joinedAt",
+                                            "emojified",
+                                            "abilities",
+                                        ),
+                                    ),
+                            ).toJsonFormat(),
+                            visualComposition,
                         )
                     } else {
                         ImagePrompts.simpleEmojiRendering(
@@ -159,7 +183,8 @@ class CharacterUseCaseImpl
                             ),
                     )!!
 
-                val character = sagaContent.getCharacters().find { it.name.equals(newCharacter.name, true) }
+                val character =
+                    sagaContent.getCharacters().find { it.name.equals(newCharacter.name, true) }
                 if (character != null) {
                     error("Character already exists")
                 }
@@ -181,7 +206,8 @@ class CharacterUseCaseImpl
         ): RequestResult<Unit> =
             executeRequest {
                 val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
-                val request = gemmaClient.generate<List<CharacterUpdate>>(prompt, describeOutput = false)!!
+                val request =
+                    gemmaClient.generate<List<CharacterUpdate>>(prompt, describeOutput = false)!!
 
                 val updatedCharacters =
                     request
@@ -194,7 +220,10 @@ class CharacterUseCaseImpl
                                     ?.find { it.character.id == character?.data?.id }
 
                             if (characterEventOnThisTimeline != null) {
-                                Log.e(javaClass.simpleName, "Character event already exists for this timeline(${timeline.id})")
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "Character event already exists for this timeline(${timeline.id})",
+                                )
                                 return@mapNotNull null
                             }
 

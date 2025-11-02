@@ -371,6 +371,7 @@ fun ChatCard(
                 saga.data.title
                     .first()
                     .uppercase(),
+                borderWidth = 2.dp,
                 modifier = Modifier.size(48.dp),
             )
 

@@ -16,6 +16,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -33,13 +34,11 @@ fun ShareSheet(
     viewModel: SharePlayViewModel = hiltViewModel(),
 ) {
     if (isVisible) {
-        ModalBottomSheet(
+        Dialog(
             onDismissRequest = {
                 viewModel.deleteSavedFile()
                 onDismiss()
             },
-            sheetState = rememberModalBottomSheetState(true),
-            containerColor = MaterialTheme.colorScheme.background,
         ) {
             AnimatedContent(
                 shareType,

@@ -7,6 +7,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,7 +29,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
@@ -71,6 +75,7 @@ import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
+import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -102,13 +107,19 @@ fun CharacterShareView(
     }
 
     Box(
-        Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        AnimatedVisibility(isLoading.not(), enter = fadeIn(), exit = fadeOut()) {
+        AnimatedVisibility(isLoading.not(), enter = fadeIn() + scaleIn(), exit = fadeOut()) {
             Column(
                 Modifier
-                    .fillMaxWidth()
+                    .padding(20.dp)
+                    .drawWithContent {
+                        graphicsLayer.record {
+                            this@drawWithContent.drawContent()
+                        }
+                        drawLayer(graphicsLayer)
+                    }.shadow(10.dp, genre.shape(), spotColor = genre.color)
+                    .clip(genre.shape())
                     .clickable {
                         coroutineScope.launch {
                             viewModel.startSaving()
@@ -116,13 +127,7 @@ fun CharacterShareView(
                                 viewModel.saveBitmap(bitmap, ShareType.CHARACTER.name)
                             }
                         }
-                    }.drawWithContent {
-                        graphicsLayer.record {
-                            this@drawWithContent.drawContent()
-                        }
-                        drawLayer(graphicsLayer)
-                    }.padding(24.dp)
-                    .background(genre.color),
+                    }.background(genre.color, genre.shape()),
             ) {
                 Box(
                     modifier =
@@ -136,6 +141,7 @@ fun CharacterShareView(
                         modifier =
                             Modifier
                                 .fillMaxSize()
+                                .clipToBounds()
                                 .effectForGenre(genre),
                         contentScale = ContentScale.Crop,
                     )
@@ -192,13 +198,12 @@ fun CharacterShareView(
                         Text(
                             shareText?.text ?: emptyString(),
                             style =
-                                MaterialTheme.typography.bodyLarge.copy(
+                                MaterialTheme.typography.bodySmall.copy(
                                     fontFamily = genre.bodyFont(),
                                     color = genre.iconColor,
                                     textAlign = TextAlign.Center,
                                     fontStyle = FontStyle.Italic,
-                                    fontWeight = FontWeight.W600,
-                                    letterSpacing = 5.sp,
+                                    letterSpacing = 3.sp,
                                     shadow =
                                         Shadow(
                                             genre.color,

@@ -101,6 +101,7 @@ dependencies {
     implementation(libs.androidx.hilt.android)
     implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.compose.ui.unit)
+    implementation(libs.androidx.compose.ui.graphics)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.core.splashscreen)
 
