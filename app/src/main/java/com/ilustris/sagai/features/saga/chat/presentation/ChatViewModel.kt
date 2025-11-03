@@ -21,7 +21,6 @@ import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -41,6 +40,8 @@ import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.components.SnackBarState
+import com.ilustris.sagai.ui.components.snackBar
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -48,9 +49,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -66,7 +64,7 @@ class ChatViewModel
         private val suggestionUseCase: GetInputSuggestionsUseCase,
         private val notificationManager: ChatNotificationManager,
         mediaPlayerManager: MediaPlayerManager,
-        private val settingsUseCase: SettingsUseCase, // Injected SettingsUseCase
+        private val settingsUseCase: SettingsUseCase,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         val state = MutableStateFlow<ChatState>(ChatState.Loading)
@@ -92,18 +90,9 @@ class ChatViewModel
         val notificationsEnabled = MutableStateFlow(true)
         val smartSuggestionsEnabled = MutableStateFlow(true)
 
-        private fun updateSnackBar(
-            message: String,
-            action: ChatAction? = null,
-            icon: Any = R.drawable.ic_spark,
-        ) {
+        private fun updateSnackBar(snackBarState: SnackBarState) {
             viewModelScope.launch {
-                snackBarMessage.value =
-                    SnackBarState(
-                        icon,
-                        message = message,
-                        action,
-                    )
+                snackBarMessage.value = snackBarState
                 delay(15.seconds)
                 snackBarMessage.value = null
                 isLoading.value = false
@@ -144,6 +133,12 @@ class ChatViewModel
 
                 settingsUseCase.getNotificationsEnabled().collect {
                     notificationsEnabled.emit(it)
+                }
+
+                settingsUseCase.backupEnabled().collect {
+                    if (it.not()) {
+                        updateSnackBar(snackBarState = snackBar("Backup desativado. Verifique as permissões."))
+                    }
                 }
             }
         }
@@ -318,7 +313,9 @@ class ChatViewModel
             } catch (e: Exception) {
                 Log.e("ChatViewModel", "Error controlling MediaPlayerService with action $action", e)
                 updateSnackBar(
-                    "Não foi possível iniciar o serviço áudio. Verifique as permissões",
+                    snackBar(
+                        "Não foi possível iniciar o serviço áudio. Verifique as permissões",
+                    ),
                 )
             }
         }
@@ -385,6 +382,9 @@ class ChatViewModel
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
             Log.d("ChatViewModel", "Lifecycle: onPause called. Music continues via service if playing.")
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.backupSaga()
+            }
         }
 
         override fun onCleared() {
@@ -536,10 +536,13 @@ class ChatViewModel
                         updateLoading(false)
                         handleNewMessage(it, isFromUser)
                     }.onFailure {
-                        updateSnackBar(
+                        snackBar(
                             "Ocorreu um erro ao salvar a mensagem",
-                            ChatAction.ResendMessage(message),
-                        )
+                        ) {
+                            action {
+                                resendMessage(message)
+                            }
+                        }
                         typoFixMessage.value = null
                         updateLoading(false)
                     }
@@ -672,31 +675,45 @@ class ChatViewModel
                         )
                         sagaContentManager.setProcessing(false)
                         isLoading.value = false
-                        updateSnackBar(
-                            "Ocorreu um erro ao responder sua mensagem.",
-                            action = ChatAction.ResendMessage(message),
-                        )
+                        snackBar(
+                            context.getString(R.string.message_reply_error),
+                        ) {
+                            action {
+                                resendMessage(message)
+                            }
+                        }
                     }
             }
         }
 
-        fun createCharacter(context: String) {
+        fun createCharacter(contextDescription: String) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager
                     .generateCharacter(
-                        context,
+                        contextDescription,
                     ).onSuccessAsync {
                         updateSnackBar(
-                            "${it.name} juntou-se a história!",
-                            action = ChatAction.OpenDetails(it),
-                        )
-                        sagaContentManager.generateCharacterImage(
-                            it,
+                            snackBar(
+                                context.getString(
+                                    R.string.new_character_message,
+                                    it.name,
+                                ),
+                            ) {
+                                action {
+                                    icon = it.image
+                                    openDetails(it)
+                                }
+                            },
                         )
                     }.onFailure {
                         updateSnackBar(
-                            message = "Ocorreu um erro ao criar o personagem",
-                            action = ChatAction.RetryCharacter(context),
+                            snackBar(
+                                message = "Ocorreu um erro ao criar o personagem",
+                            ) {
+                                action {
+                                    retryCharacter(contextDescription)
+                                }
+                            },
                         )
                     }
             }

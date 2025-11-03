@@ -1,14 +1,22 @@
 package com.ilustris.sagai.features.settings.domain
 
+import android.Manifest
 import android.content.Context
 import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.FileManager
+import com.ilustris.sagai.core.permissions.PermissionService
+import com.ilustris.sagai.core.permissions.PermissionStatus
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.utils.FileHelper
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
+import com.ilustris.sagai.features.settings.ui.SagaStorageInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.File
 import javax.inject.Inject
@@ -16,9 +24,9 @@ import javax.inject.Inject
 interface SettingsUseCase {
     fun getNotificationsEnabled(): Flow<Boolean>
 
-    suspend fun setNotificationsEnabled(enabled: Boolean)
-
     fun getSmartSuggestionsEnabled(): Flow<Boolean>
+
+    fun backupEnabled(): Flow<Boolean>
 
     suspend fun setSmartSuggestionsEnabled(enabled: Boolean)
 
@@ -30,7 +38,7 @@ interface SettingsUseCase {
 
     suspend fun isUserPro(): Boolean
 
-    suspend fun getSagas(): Flow<List<SagaContent>>
+    fun getSagas(): Flow<List<SagaStorageInfo>>
 
     suspend fun getStorageBreakdown(): StorageBreakdown
 
@@ -46,17 +54,22 @@ class SettingsUseCaseImpl
         private val sagaRepository: SagaRepository,
         private val billingService: BillingService,
         private val fileHelper: FileHelper,
+        private val permissionService: PermissionService,
+        private val backupService: BackupService,
+        private val fileManager: FileManager,
     ) : SettingsUseCase {
         companion object {
-            const val NOTIFICATIONS_ENABLED_KEY = "notifications_enabled"
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
         }
 
-        override fun getNotificationsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(NOTIFICATIONS_ENABLED_KEY, true)
-
-        override suspend fun setNotificationsEnabled(enabled: Boolean) = dataStorePreferences.setBoolean(NOTIFICATIONS_ENABLED_KEY, enabled)
+        override fun getNotificationsEnabled(): Flow<Boolean> =
+            permissionService
+                .observePermission(Manifest.permission.POST_NOTIFICATIONS)
+                .map { it == PermissionStatus.GRANTED }
 
         override fun getSmartSuggestionsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(SMART_SUGGESTIONS_ENABLED_KEY, true)
+
+        override fun backupEnabled() = backupService.backupEnabled()
 
         override suspend fun setSmartSuggestionsEnabled(enabled: Boolean) =
             dataStorePreferences.setBoolean(SMART_SUGGESTIONS_ENABLED_KEY, enabled)
@@ -76,17 +89,12 @@ class SettingsUseCaseImpl
 
         override suspend fun isUserPro(): Boolean = billingService.isPremium()
 
-        override suspend fun getSagas() = sagaRepository.getChats()
-
-        override suspend fun getStorageBreakdown(): StorageBreakdown =
-            withContext(Dispatchers.IO) {
-                val cacheSize = fileHelper.getDirectorySize(context.cacheDir)
-                val sagaRoot = File(context.filesDir, "sagas")
-                val sagaContentSize = fileHelper.getDirectorySize(sagaRoot)
-                val totalSize = getAppStorageUsage()
-                val otherSize = totalSize - cacheSize - sagaContentSize
-                StorageBreakdown(cacheSize, sagaContentSize, otherSize)
+        override fun getSagas() =
+            sagaRepository.getChats().map {
+                fileManager.fetchSagasStorage(it.map { saga -> saga.data })
             }
+
+        override suspend fun getStorageBreakdown(): StorageBreakdown = fileManager.getStorageBreakdown()
 
         override suspend fun clearCache() {
             context.cacheDir.deleteRecursively()

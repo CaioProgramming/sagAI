@@ -68,6 +68,7 @@ import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
@@ -139,6 +140,7 @@ fun CharacterDetailsContent(
     var shareCharacter by remember { mutableStateOf(false) }
     val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
     val characterRelations = remember { characterContent.sortRelationsByTimeline(timelineEvents) }
+
     Box {
         LazyColumn(
             modifier =
@@ -464,23 +466,17 @@ fun CharacterDetailsContent(
                     .fillMaxWidth(),
         )
     }
-    if (isGenerating) {
-        Dialog(
-            onDismissRequest = { },
-            properties =
-                DialogProperties(
-                    dismissOnBackPress = false,
-                    dismissOnClickOutside = false,
-                ),
-        ) {
-            StarryTextPlaceholder(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .gradientFill(genre.gradient(true)),
-            )
-        }
-    }
+
+    StarryLoader(
+        isGenerating,
+        null,
+        textStyle =
+            MaterialTheme.typography.headlineMedium.copy(
+                genre.color,
+                fontFamily = genre.bodyFont(),
+            ),
+        brush = genre.gradient(true),
+    )
 
     if (shareCharacter) {
         ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, characterContent, onDismiss = {

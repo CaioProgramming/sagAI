@@ -3,14 +3,15 @@
 package com.ilustris.sagai.features.settings.ui
 
 import ai.atick.material.MaterialColor
-import androidx.compose.foundation.Image
+import android.Manifest
+import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -25,6 +26,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,11 +37,15 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.permissions.PermissionComponent
+import com.ilustris.sagai.core.permissions.PermissionService
+import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSettings
+import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
 import com.ilustris.sagai.core.utils.formatFileSize
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.premium.PremiumView
-import com.ilustris.sagai.features.settings.domain.StorageBreakdown
+import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -53,15 +59,23 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
         false,
     )
+    val backupEnabled by viewModel.backupEnabled.collectAsStateWithLifecycle(false)
+
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
-    val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle()
+    val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle(emptyList())
     val breakdown = viewModel.storageBreakdown.collectAsStateWithLifecycle().value
 
     var showClearDialog by remember { mutableStateOf(false) }
     var isWiping by remember { mutableStateOf(false) }
     var wipeComplete by remember { mutableStateOf(false) }
     var premiumSheetVisible by remember { mutableStateOf(false) }
+    var requestedPermission by remember {
+        mutableStateOf<String?>(null)
+    }
+    val context = LocalActivity.current
+    val permissionLauncher = rememberPermissionLauncher()
+
     Box(modifier = Modifier.fillMaxSize()) {
         val blurRadius = if (isWiping || showClearDialog) 16.dp else 0.dp
         LazyColumn(
@@ -193,16 +207,17 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             ).padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    storageInfo.forEach { saga ->
+                    storageInfo.forEach { info ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
+                            val saga = remember { info.data }
                             AvatarTimelineIcon(
                                 saga.icon,
                                 false,
                                 saga.genre,
-                                placeHolderChar = saga.name.first().uppercase(),
+                                placeHolderChar = saga.title.first().uppercase(),
                                 modifier =
                                     Modifier
                                         .size(32.dp)
@@ -218,12 +233,15 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                 modifier = Modifier.weight(1f),
                             ) {
                                 Text(
-                                    saga.name,
+                                    saga.title,
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
 
                                 Text(
-                                    stringResource(R.string.saga_detail_status_created, saga.createdAt),
+                                    stringResource(
+                                        R.string.saga_detail_status_created,
+                                        saga.createdAt,
+                                    ),
                                     style =
                                         MaterialTheme.typography.labelMedium.copy(
                                             fontWeight = FontWeight.Light,
@@ -233,7 +251,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             }
 
                             Text(
-                                saga.sizeBytes.formatFileSize(),
+                                info.sizeBytes.formatFileSize(),
                                 style =
                                     MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.Normal,
@@ -242,7 +260,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             )
                         }
 
-                        if (saga != storageInfo.last()) {
+                        if (info != storageInfo.last()) {
                             HorizontalDivider(
                                 modifier = Modifier.fillMaxWidth(),
                                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
@@ -269,51 +287,28 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             RoundedCornerShape(15.dp),
                         ),
                 ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    RoundedCornerShape(15.dp),
-                                ).padding(12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(
-                            modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.notifications),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Text(
-                                stringResource(R.string.notifications_description),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                                modifier = Modifier.alpha(.7f),
-                            )
-                        }
-                        Switch(
-                            checked = notificationsEnabled,
-                            colors =
-                                SwitchDefaults.colors().copy(
-                                    uncheckedBorderColor = Color.Transparent,
-                                ),
-                            modifier = Modifier.scale(.6f),
-                            onCheckedChange = {
-                                viewModel.setNotificationsEnabled(
-                                    notificationsEnabled.not(),
-                                )
-                            },
-                        )
-                    }
+                    PreferencesContainer(
+                        stringResource(R.string.notifications),
+                        stringResource(R.string.notification_explanation),
+                        isActivated = notificationsEnabled,
+                        onClickSwitch = {
+                            context?.let {
+                                if (notificationsEnabled) {
+                                    openAppSettings(it)
+                                } else {
+                                    PermissionService.requestPermission(
+                                        it,
+                                        Manifest.permission.POST_NOTIFICATIONS,
+                                        permissionLauncher,
+                                        onShowRationale = {
+                                            requestedPermission =
+                                                Manifest.permission.POST_NOTIFICATIONS
+                                        },
+                                    )
+                                }
+                            }
+                        },
+                    )
 
                     HorizontalDivider(
                         modifier = Modifier.fillMaxWidth(),
@@ -321,51 +316,46 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         thickness = 1.dp,
                     )
 
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceContainer,
-                                    RoundedCornerShape(15.dp),
-                                ).padding(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(
-                            Modifier
-                                .padding(8.dp)
-                                .weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Text(
-                                stringResource(R.string.smart_fix),
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
+                    val backupLauncher = PermissionService.rememberMultiplePermissionLauncher()
 
-                            Text(
-                                stringResource(R.string.smart_fix_description),
-                                style =
-                                    MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                                modifier = Modifier.alpha(.7f),
-                            )
-                        }
-                        Switch(
-                            checked = smartSuggestionsEnabled,
-                            colors =
-                                SwitchDefaults.colors().copy(
-                                    uncheckedBorderColor = Color.Transparent,
-                                ),
-                            modifier = Modifier.scale(.6f),
-                            onCheckedChange = {
-                                viewModel.setSmartSuggestionsEnabled(
-                                    smartSuggestionsEnabled.not(),
-                                )
-                            },
-                        )
-                    }
+                    PreferencesContainer(
+                        stringResource(R.string.backup),
+                        stringResource(R.string.storage_permission_description),
+                        isActivated = backupEnabled,
+                        onClickSwitch = {
+                            context?.let {
+                                if (backupEnabled) {
+                                    openAppSettings(it)
+                                } else {
+                                    PermissionService.requestMultiplePermissions(
+                                        it,
+                                        listOf(
+                                            Manifest.permission.READ_EXTERNAL_STORAGE,
+                                            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                        ),
+                                        backupLauncher,
+                                    ) {
+                                        requestedPermission = Manifest.permission.READ_EXTERNAL_STORAGE
+                                    }
+                                }
+                            }
+                        },
+                    )
+
+                    HorizontalDivider(
+                        modifier = Modifier.fillMaxWidth(),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                        thickness = 1.dp,
+                    )
+
+                    PreferencesContainer(
+                        stringResource(R.string.smart_fix),
+                        stringResource(R.string.smart_fix_description),
+                        isActivated = smartSuggestionsEnabled,
+                        onClickSwitch = {
+                            viewModel.setSmartSuggestionsEnabled(it.not())
+                        },
+                    )
                 }
             }
 
@@ -397,7 +387,10 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         ),
                     shape = RoundedCornerShape(15.dp),
                 ) {
-                    Text(stringResource(R.string.clear_data_button), modifier = Modifier.padding(8.dp))
+                    Text(
+                        stringResource(R.string.clear_data_button),
+                        modifier = Modifier.padding(8.dp),
+                    )
                 }
             }
         }
@@ -464,6 +457,13 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                 }
             }
         }
+
+        PermissionComponent(requestedPermission, {
+            context?.let {
+                openAppSettings(context)
+                requestedPermission = null
+            }
+        }, { requestedPermission = null })
     }
 
     PremiumView(

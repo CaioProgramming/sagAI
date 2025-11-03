@@ -10,14 +10,12 @@ import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
-import com.ilustris.sagai.core.ai.prompts.ImageRules
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.GenreReferenceHelper
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat

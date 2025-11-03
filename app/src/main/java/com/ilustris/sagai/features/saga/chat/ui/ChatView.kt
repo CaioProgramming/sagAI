@@ -94,12 +94,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -108,6 +110,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
@@ -147,10 +150,8 @@ import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
-import com.ilustris.sagai.features.saga.chat.presentation.ChatAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
-import com.ilustris.sagai.features.saga.chat.presentation.SnackBarState
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
@@ -160,8 +161,10 @@ import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.SagaSnackBar
+import com.ilustris.sagai.ui.components.SnackAction
+import com.ilustris.sagai.ui.components.SnackBarState
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -246,30 +249,28 @@ fun ChatView(
     }
 
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            when {
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ) == PackageManager.PERMISSION_GRANTED -> {
-                    Log.i("ChatView", "POST_NOTIFICATIONS permission already granted.")
-                }
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                Log.i("ChatView", "POST_NOTIFICATIONS permission already granted.")
+            }
 
-                ActivityCompat.shouldShowRequestPermissionRationale(
-                    context as Activity,
-                    Manifest.permission.POST_NOTIFICATIONS,
-                ) -> {
-                    Log.i("ChatView", "Showing rationale for POST_NOTIFICATIONS permission.")
-                    showRationaleDialog = true
-                }
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                context as Activity,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) -> {
+                Log.i("ChatView", "Showing rationale for POST_NOTIFICATIONS permission.")
+                showRationaleDialog = true
+            }
 
-                else -> {
-                    Log.i(
-                        "ChatView",
-                        "Requesting POST_NOTIFICATIONS permission (first time or no rationale needed).",
-                    )
-                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
+            else -> {
+                Log.i(
+                    "ChatView",
+                    "Requesting POST_NOTIFICATIONS permission (first time or no rationale needed).",
+                )
+                requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
     }
@@ -406,7 +407,7 @@ fun ChatContent(
     onBack: () -> Unit = {},
     openSagaDetails: (Saga) -> Unit = {},
     onInjectFakeMessages: (Int) -> Unit = {},
-    onSnackAction: (ChatAction) -> Unit = {},
+    onSnackAction: (SnackAction) -> Unit = {},
     onRetryMessage: (Message) -> Unit = {},
     reviewWiki: (List<Wiki>) -> Unit = {},
     requestNewCharacter: (String) -> Unit = {},
@@ -812,101 +813,41 @@ fun ChatContent(
                         ) {
                             snackBar?.let { snackBar ->
 
-                                val shape = remember { saga.genre.shape() }
-                                Row(
-                                    Modifier
-                                        .clip(shape)
-                                        .border(1.dp, saga.genre.color.gradientFade(), shape)
-                                        .background(
-                                            saga.genre.color,
-                                            shape,
-                                        ).fillMaxWidth()
-                                        .animateContentSize(
-                                            animationSpec = tween(200, easing = EaseIn),
-                                        ).padding(8.dp),
-                                ) {
-                                    val resource = snackBar.icon
-                                    val colorFilter = if (resource == null) ColorFilter.tint(content.data.genre.iconColor) else null
-                                    val shape = if (resource !is Painter) CircleShape else shape
+                                SagaSnackBar(saga.genre, snackBar) {
+                                    when (it) {
+                                        is SnackAction.OpenDetails -> {
+                                            when (val data = it.data) {
+                                                is Character -> {
+                                                    showCharacter =
+                                                        content.findCharacter(data.id)
+                                                }
 
-                                    AsyncImage(
-                                        resource,
-                                        null,
-                                        colorFilter = colorFilter,
-                                        placeholder = painterResource(R.drawable.ic_spark),
-                                        error = painterResource(R.drawable.ic_spark),
-                                        modifier =
-                                            Modifier
-                                                .size(24.dp)
-                                                .padding(4.dp)
-                                                .clip(shape),
-                                    )
+                                                is Wiki -> {
+                                                    coroutineScope.launch {
+                                                        drawerState.open()
+                                                    }
+                                                }
 
-                                    Text(
-                                        snackBar.message,
-                                        style =
+                                                is Chapter -> {
+                                                    openSagaDetails(content.data)
+                                                }
+                                            }
+                                        }
 
-                                            MaterialTheme.typography.bodySmall.copy(
-                                                color = saga.genre.iconColor,
-                                            ),
-                                        fontFamily = saga.genre.bodyFont(),
-                                        textAlign = TextAlign.Start,
-                                        modifier =
-                                            Modifier
-                                                .padding(8.dp)
-                                                .weight(1f),
-                                    )
+                                        is SnackAction.ResendMessage -> {
+                                            onRetryMessage(it.message)
+                                        }
 
-                                    snackBar.redirectAction?.let {
-                                        Text(
-                                            stringResource(it.actionRes ?: R.string.empty),
-                                            style =
-                                                MaterialTheme.typography.labelMedium.copy(
-                                                    color = saga.genre.iconColor,
-                                                    fontFamily = saga.genre.bodyFont(),
-                                                ),
-                                            modifier =
-                                                Modifier
-                                                    .padding(8.dp)
-                                                    .clip(shape)
-                                                    .clickable {
-                                                        when (it) {
-                                                            is ChatAction.OpenDetails -> {
-                                                                when (val data = it.data) {
-                                                                    is Character -> {
-                                                                        showCharacter =
-                                                                            content.findCharacter(data.id)
-                                                                    }
+                                        is SnackAction.RetryCharacter -> {
+                                            requestNewCharacter(it.description)
+                                        }
 
-                                                                    is Wiki -> {
-                                                                        coroutineScope.launch {
-                                                                            drawerState.open()
-                                                                        }
-                                                                    }
-
-                                                                    is Chapter -> {
-                                                                        openSagaDetails(content.data)
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            is ChatAction.ResendMessage -> {
-                                                                onRetryMessage(it.message)
-                                                            }
-
-                                                            is ChatAction.RetryCharacter -> {
-                                                                requestNewCharacter(it.description)
-                                                            }
-
-                                                            is ChatAction.RevaluateSaga -> {
-                                                                checkSaga()
-                                                            }
-                                                        }
-
-                                                        onSnackAction(snackBar.redirectAction)
-                                                    },
-                                        )
+                                        is SnackAction.RevaluateSaga -> {
+                                            checkSaga()
+                                        }
                                     }
+
+                                    onSnackAction(it)
                                 }
                             }
                         }

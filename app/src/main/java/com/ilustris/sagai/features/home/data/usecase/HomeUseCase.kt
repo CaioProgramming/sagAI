@@ -9,11 +9,19 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 
 interface HomeUseCase {
+    val billingState: MutableStateFlow<BillingState?>
+
     fun getSagas(): Flow<List<SagaContent>>
 
-    suspend fun fetchDynamicNewSagaTexts(): RequestResult<DynamicSagaPrompt>
+    suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt>
 
     suspend fun createFakeSaga(): RequestResult<Saga>
 
-    val billingState: MutableStateFlow<BillingState?>
+    suspend fun checkDebugBuild(): Boolean
+
+    suspend fun checkBackups(): RequestResult<List<SagaContent>>
+
+    fun backupEnabled(): Flow<Boolean>
+
+    suspend fun recoverSaga(sagaContent: SagaContent): RequestResult<SagaContent>
 }

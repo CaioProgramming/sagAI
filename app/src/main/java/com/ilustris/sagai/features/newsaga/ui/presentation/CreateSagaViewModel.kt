@@ -50,6 +50,8 @@ class CreateSagaViewModel
         val isGenerating = MutableStateFlow(true)
         val isError = MutableStateFlow(false)
         val callbackAction = MutableStateFlow<CallBackAction?>(null)
+        val isSaving = MutableStateFlow(false)
+        val loadingMessage = MutableStateFlow<String?>(null)
 
         private fun updateGenerating(isGenerating: Boolean) {
             this.isGenerating.value = isGenerating
@@ -154,53 +156,27 @@ class CreateSagaViewModel
         ) {
             viewModelScope.launch {
                 generateProcessMessage(SagaProcess.FINALIZING, saga, character)
-
                 characterUseCase
                     .generateCharacterImage(
                         character,
                         saga,
-                    ).onSuccessAsync {
-                        generateProcessMessage(
-                            SagaProcess.SUCCESS,
-                            saga,
-                            character,
-                        )
-
-                        delay(3.seconds)
-                        navigateToSaga(saga)
-                    }.onFailureAsync {
-                        generateProcessMessage(
-                            SagaProcess.SUCCESS,
-                            saga,
-                            character,
-                        )
-
-                        delay(3.seconds)
-                        navigateToSaga(saga)
-                    }
-                delay(2.seconds)
+                    )
 
                 newSagaUseCase
                     .generateSagaIcon(
                         saga,
                         character,
-                    ).onSuccessAsync {
-                        generateProcessMessage(
-                            SagaProcess.SUCCESS,
-                            saga,
-                            character,
-                        )
-                        delay(3.seconds)
-                        navigateToSaga(saga)
-                    }.onFailureAsync {
-                        generateProcessMessage(
-                            SagaProcess.SUCCESS,
-                            saga,
-                            character,
-                        )
-                        delay(3.seconds)
-                        navigateToSaga(saga)
-                    }
+                    )
+
+                generateProcessMessage(
+                    SagaProcess.SUCCESS,
+                    saga,
+                    character,
+                )
+                isSaving.emit(false)
+                loadingMessage.emit(null)
+                delay(3.seconds)
+                navigateToSaga(saga)
             }
         }
 
@@ -209,7 +185,7 @@ class CreateSagaViewModel
             val characterInfo = form.value.character
 
             state.value = CreateSagaState(isLoading = true)
-
+            isSaving.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 generateProcessMessage(SagaProcess.CREATING_SAGA)
                 delay(2.seconds)
@@ -257,6 +233,8 @@ class CreateSagaViewModel
 
         private fun sendErrorState(exception: Exception) {
             state.value = state.value.copy(isLoading = false, errorMessage = exception.message)
+            isSaving.value = false
+            loadingMessage.value = null
             Log.e(
                 javaClass.simpleName,
                 "sendErrorState: Error saving saga ${exception.message}",
@@ -301,6 +279,7 @@ class CreateSagaViewModel
                         characterDescription = characterData.toJsonFormat(),
                     ).onSuccess { message ->
                         chatMessages.update { it + ChatMessage(text = message, sender = Sender.AI) }
+                        loadingMessage.value = message
                     }
             }
         }

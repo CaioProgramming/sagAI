@@ -1,4 +1,4 @@
-package com.ilustris.sagai.core.utils
+package com.ilustris.sagai.core.file
 
 import android.graphics.Bitmap
 import android.graphics.Rect

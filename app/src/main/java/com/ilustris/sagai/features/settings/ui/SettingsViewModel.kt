@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.settings.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.utils.formatDate
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
@@ -22,14 +23,15 @@ class SettingsViewModel
 
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()
 
+        val backupEnabled = settingsUseCase.backupEnabled()
+
         private val _memoryUsage = MutableStateFlow<Long?>(null)
         val memoryUsage = _memoryUsage.asStateFlow()
 
         private val _isUserPro = MutableStateFlow<Boolean>(false)
         val isUserPro = _isUserPro.asStateFlow()
 
-        private val _sagaStorageInfo = MutableStateFlow<List<SagaStorageInfo>>(emptyList())
-        val sagaStorageInfo = _sagaStorageInfo.asStateFlow()
+        val sagaStorageInfo = settingsUseCase.getSagas()
 
         private val _storageBreakdown = MutableStateFlow(StorageBreakdown(0L, 0L, 0L))
         val storageBreakdown = _storageBreakdown.asStateFlow()
@@ -37,7 +39,6 @@ class SettingsViewModel
         init {
             loadMemoryUsage()
             checkUserPro()
-            loadSagaStorageInfo()
             loadStorageBreakdown()
         }
 
@@ -61,12 +62,6 @@ class SettingsViewModel
             }
         }
 
-        fun setNotificationsEnabled(enabled: Boolean) {
-            viewModelScope.launch {
-                settingsUseCase.setNotificationsEnabled(enabled)
-            }
-        }
-
         fun setSmartSuggestionsEnabled(enabled: Boolean) {
             viewModelScope.launch {
                 settingsUseCase.setSmartSuggestionsEnabled(enabled)
@@ -81,29 +76,6 @@ class SettingsViewModel
             }
         }
 
-        fun loadSagaStorageInfo() {
-            viewModelScope.launch {
-                settingsUseCase.getSagas().collect { sagaList ->
-                    val sagaInfoList =
-                        sagaList.sortedByDescending { it.data.createdAt }.map { sagaContent ->
-                            val sagaId = sagaContent.data.id
-                            val sagaName = sagaContent.data.title
-                            val sagaIcon = sagaContent.data.icon
-                            val size = settingsUseCase.getSagaStorageUsage(sagaId)
-                            SagaStorageInfo(
-                                id = sagaId,
-                                name = sagaName,
-                                icon = sagaIcon,
-                                genre = sagaContent.data.genre,
-                                sizeBytes = size,
-                                createdAt = sagaContent.data.createdAt.formatDate(),
-                            )
-                        }
-                    _sagaStorageInfo.value = sagaInfoList
-                }
-            }
-        }
-
         fun loadStorageBreakdown() {
             viewModelScope.launch {
                 _storageBreakdown.value = settingsUseCase.getStorageBreakdown()
@@ -112,10 +84,6 @@ class SettingsViewModel
     }
 
 data class SagaStorageInfo(
-    val id: Int,
-    val name: String,
-    val icon: String,
+    val data: Saga,
     val sizeBytes: Long,
-    val genre: Genre,
-    val createdAt: String,
 )

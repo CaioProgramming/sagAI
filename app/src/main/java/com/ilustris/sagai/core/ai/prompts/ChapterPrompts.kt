@@ -299,13 +299,18 @@ object ChapterPrompts {
                 "* **Action Focus:** For ULTRA CLOSE-UP, the dynamism must be expressed through **head/neck movement, hair movement, expression intensity, or interaction with an object just outside the frame**.",
             )
             appendLine(ImagePrompts.imageHighlight(genre))
+
             appendLine(
-                "* **CRITICAL:** Replace passive descriptions (e.g., \"Her jaw is clenched\") with active, dynamic phrasing (e.g., \"**Vanya lunges forward** from the darkness, her neck strained, the motion captured as **strands of hair whip across her jawline**.\"). The description must convey **energy and tension**.",
+                "* **CRITICAL - ACTION DYNAMISM MANDATE:** The Agent **MUST NOT** use the exact example phrase 'Vanya lunges forward from the darkness, her neck strained, the motion captured as strands of hair whip across her jawline.'",
             )
-            appendLine("* The description of the *expression* and *gaze* must be the longest and most detailed part for Close-Ups.")
             appendLine(
-                "* **Goal:** Use these terms to enhance the \"vibe\" and intensity. For example: \"ULTRA CLOSE-UP on Vanya's eye, Very tight shot, Subject fills entire frame, subtly cropped for intense focus.\"",
+                "* The Agent MUST replace passive descriptions with a **unique, active, and dynamic phrasing** that conveys energy and tension.",
             )
+            appendLine(
+                "* The generated action MUST be **original** for the current image and consistent with the pose/scene described in the 'NARRATIVE & COMPOSITION CORE' (e.g., if the mood is 'Contemplative', the action could be 'She braces her body against the biting wind, her posture radiating stoic defiance,' OR 'Her hand tightens around the dagger hilt in a reflexive gesture of protection').",
+            )
+            appendLine("* **Goal:** The description must convey **energy and tension** without repeating the boilerplate example.")
+
             appendLine(
                 "**CRITICAL:** The Agent MUST rewrite the character description to be consistent with the first element of the prompt, ensuring the focus is unambiguous.",
             )

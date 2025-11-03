@@ -1,4 +1,4 @@
-package com.ilustris.sagai.ui.components
+package com.ilustris.sagai.core.network.ui
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.*

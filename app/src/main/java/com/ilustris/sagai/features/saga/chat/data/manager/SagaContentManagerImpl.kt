@@ -4,16 +4,14 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.FileCacheService
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -35,17 +33,16 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
-import com.ilustris.sagai.features.saga.chat.presentation.ChatAction
-import com.ilustris.sagai.features.saga.chat.presentation.SnackBarState
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import com.ilustris.sagai.ui.components.SnackBarState
+import com.ilustris.sagai.ui.components.snackBar
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +53,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -266,8 +262,7 @@ class SagaContentManagerImpl
                     )
 
                 updateSnackBar(
-                    SnackBarState(
-                        icon = null,
+                    snackBar(
                         message = context.getString(R.string.chapter_finished, newChapter.title),
                     ),
                 )
@@ -300,6 +295,13 @@ class SagaContentManagerImpl
                     timelineContent,
                 )
             }
+        }
+
+        override suspend fun backupSaga() {
+            val currentSaga = content.value ?: return
+            Log.d(javaClass.simpleName, "Backing up saga ${currentSaga.data.id}")
+
+            sagaHistoryUseCase.backupSaga(currentSaga)
         }
 
         private suspend fun endChapter(currentAct: ActContent?) =
@@ -436,8 +438,7 @@ class SagaContentManagerImpl
                     )
                 val newAct = actUseCase.updateAct(updatedActData)
                 updateSnackBar(
-                    SnackBarState(
-                        icon = null,
+                    snackBar(
                         message = context.getString(R.string.chapter_finished, newAct.title),
                     ),
                 )
@@ -543,10 +544,13 @@ class SagaContentManagerImpl
                             validatePostAction(saga, narrativeStep, action.success)
                         }.onFailureAsync {
                             updateSnackBar(
-                                SnackBarState(
-                                    message = context.getString(R.string.unexpected_error),
-                                    redirectAction = ChatAction.RevaluateSaga,
-                                ),
+                                snackBar(
+                                    context.getString(R.string.unexpected_error),
+                                ) {
+                                    action {
+                                        revaluateSaga()
+                                    }
+                                },
                             )
                             if (isRetrying.not()) {
                                 delay(3.seconds)
@@ -599,6 +603,8 @@ class SagaContentManagerImpl
                                 delay(3.seconds)
                                 actUseCase.generateActIntroduction(saga, data)
                             }
+
+                            backupSaga()
                         }
                     }
 
@@ -710,9 +716,8 @@ class SagaContentManagerImpl
                     timelineUseCase.generateTimelineContent(saga, content.copy(data = timeline))
 
                     updateSnackBar(
-                        SnackBarState(
-                            icon = null,
-                            message = context.getString(R.string.timeline_updated),
+                        snackBar(
+                            context.getString(R.string.timeline_updated, timeline.title),
                         ),
                     )
                 }

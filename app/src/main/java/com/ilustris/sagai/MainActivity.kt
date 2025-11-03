@@ -3,7 +3,6 @@
 package com.ilustris.sagai
 
 import android.content.Intent // Added
-import android.net.Uri // Added
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -47,13 +45,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.installations.FirebaseInstallations
-import com.ilustris.sagai.core.utils.ConnectivityObserver
-import com.ilustris.sagai.ui.components.NoInternetScreen
+import com.ilustris.sagai.core.network.ConnectivityObserver
+import com.ilustris.sagai.core.network.ui.NoInternetScreen
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.SagaNavGraph
 import com.ilustris.sagai.ui.navigation.findRoute

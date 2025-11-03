@@ -1,4 +1,4 @@
-package com.ilustris.sagai.core.utils
+package com.ilustris.sagai.core.permissions
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -6,12 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
-// Ensure you have a way to access R.drawable. If this util class is in a different module
-// from your app resources, you might need to pass R.drawable values or use a different context.
-// For now, assuming it's in the same module or R is accessible.
-// import com.ilustris.sagai.R
 
 object NotificationUtils {
     const val CHAT_CHANNEL_ID = "SAGAI_CHAT_CHANNEL_ID"

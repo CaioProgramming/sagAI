@@ -53,4 +53,6 @@ class SagaHistoryUseCaseImpl
                         SagaPrompts.endCredits(saga),
                     )!!
             }
+
+        override suspend fun backupSaga(saga: SagaContent) = sagaRepository.backupSaga(saga)
     }

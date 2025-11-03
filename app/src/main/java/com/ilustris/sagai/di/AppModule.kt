@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.work.WorkManager
 import coil3.ImageLoader
 import coil3.request.crossfade
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.gson.Gson
 import com.ilustris.sagai.core.ai.GemmaClient
@@ -17,15 +17,18 @@ import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.datastore.DataStorePreferencesImpl
+import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.file.FileCacheService
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.FileManager
+import com.ilustris.sagai.core.file.GenreReferenceHelper
+import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
-import com.ilustris.sagai.core.network.FreePikApiService
+import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.utils.FileCacheService
-import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.ImageCropHelper
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -92,6 +95,29 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
+    fun providesFileManager(
+        @ApplicationContext context: Context,
+        fileHelper: FileHelper,
+    ) = FileManager(
+        fileHelper,
+        context,
+    )
+
+    @Provides
+    @Singleton
+    fun providesPermissionService(
+        @ApplicationContext context: Context,
+    ) = PermissionService(context)
+
+    @Provides
+    @Singleton
+    fun providesBackupService(
+        @ApplicationContext context: Context,
+        permissionService: PermissionService,
+    ) = BackupService(context, permissionService)
+
+    @Provides
+    @Singleton
     fun provideImageCropHelper(): ImageCropHelper = ImageCropHelper()
 
     @Provides
@@ -110,7 +136,7 @@ object AppModule {
         @ApplicationContext context: Context,
         firebaseRemoteConfig: FirebaseRemoteConfig,
         imageLoader: ImageLoader,
-    ) = com.ilustris.sagai.core.utils.GenreReferenceHelper(
+    ) = GenreReferenceHelper(
         context,
         firebaseRemoteConfig,
         imageLoader,
@@ -149,10 +175,6 @@ object AppModule {
     fun bindsFileCacheService(
         @ApplicationContext context: Context,
     ) = FileCacheService(context)
-
-    @Provides
-    @Singleton
-    fun providesCloudFlareApiService() = FreePikApiService()
 
     @Provides
     @Singleton

@@ -1,7 +1,8 @@
-package com.ilustris.sagai.core.utils
+package com.ilustris.sagai.core.file
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
@@ -23,7 +24,7 @@ fun cropBitmapToCircle(bitmap: Bitmap?): Bitmap? {
 
     paint.isAntiAlias = true
     canvas.drawARGB(0, 0, 0, 0)
-    paint.color = android.graphics.Color.BLACK // Dummy color for mask shape
+    paint.color = Color.BLACK // Dummy color for mask shape
     canvas.drawCircle(width / 2f, height / 2f, radius, paint)
     paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
     canvas.drawBitmap(bitmap, rect, rect, paint)

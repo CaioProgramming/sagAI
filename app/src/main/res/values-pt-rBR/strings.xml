@@ -123,22 +123,22 @@
     <string name="saga_detail_delete_confirmation_message">Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.</string>
     <string name="saga_detail_delete_button">Excluir</string>
     <string name="saga_detail_cancel_button">Cancelar</string>
-    <string name="saga_drawer_act_prefix">Ato %1$s</string>
+    <string name="saga_drawer_act_prefix">Ato %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
     <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
     <string name="saga_detail_progress_title">Progresso</string>
     <string name="saga_detail_section_title_characters">Personagens</string>
-    <string name="saga_detail_section_subtitle_characters">%1$d personagens</string>
+    <string name="saga_detail_section_subtitle_characters">%d personagens</string>
     <string name="saga_detail_section_title_timeline">Eventos</string>
-    <string name="saga_detail_section_subtitle_timeline">%1$d eventos</string>
+    <string name="saga_detail_section_subtitle_timeline">%d eventos</string>
     <string name="saga_detail_section_title_chapters">Capítulos</string>
-    <string name="saga_detail_section_subtitle_chapters">%1$d capítulos</string>
+    <string name="saga_detail_section_subtitle_chapters">%d capítulos</string>
     <string name="saga_detail_section_title_wiki">Wiki</string>
-    <string name="saga_detail_section_subtitle_wiki">%1$d itens</string>
+    <string name="saga_detail_section_subtitle_wiki">%d itens</string>
     <string name="saga_detail_section_title_acts">Atos</string>
-    <string name="saga_detail_section_subtitle_acts">%1$d atos</string>
-    <string name="saga_detail_status_ended">Finalizado em %1$s</string>
-    <string name="saga_detail_status_created">Criado em %1$s</string>
+    <string name="saga_detail_section_subtitle_acts">%d atos</string>
+    <string name="saga_detail_status_ended">Finalizado em %s</string>
+    <string name="saga_detail_status_created">Criado em %s</string>
     <string name="saga_detail_journey_of">A jornada de</string>
     <string name="saga_detail_messages_label">Mensagens</string>
     <string name="saga_detail_see_your_now">Veja Agora seu</string>
@@ -174,8 +174,8 @@
     <string name="chat_card_unknown_character">Desconhecido</string>
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
-    <string name="notification_title">Nova mensagem em %1$s</string>
-    <string name="notification_playing_act">Jogando ato %1$s</string>
+    <string name="notification_title">Nova mensagem em %s</string>
+    <string name="notification_playing_act">Jogando ato %s</string>
     <string name="saga_detail_relationships_section_title">Relacionamentos</string>
     <string name="character_tooltip_empty_message">Descreva seu herói para revelar o cartão — nome, traços e um vislumbre da história.</string>
     <string name="starring">Estrelando</string>
@@ -231,14 +231,23 @@
     <string name="premium_already">Assinatura ativa</string>
     <string name="chapter_number_label">Capítulo %s</string>
     <string name="try_again">Tentar novamente</string>
-    <string name="ending">Capítulo %1$s atualizado</string>
+    <string name="ending">Capítulo %s atualizado</string>
     <string name="see_more">Ver mais</string>
-    <string name="timeline_generated_successfully">Evento %1$s finalizado.</string>
+    <string name="timeline_generated_successfully">Evento %s finalizado.</string>
     <string name="chapter_finished">Capítulo %s finalizado</string>
-    <string name="timeline_updated">Evento %1$s finalizado</string>
-    <string name="act_finished">Ato %1$s finalizado</string>
-    <string name="unexpected_error">Ocorreu um erro inesperado, vamos tentar novamente.</string>
+    <string name="timeline_updated">Evento %s finalizado</string>
+    <string name="act_finished">Ato %s finalizado</string>
+    <string name="unexpected_error">Ocorreu um erro inesperado</string>
 
     <string name="smart_fix_description">Receba sugestões automáticas de correção por IA com base na sua história e tema. As sugestões ajudam a enriquecer o vocabulário e a adicionar profundidade à narrativa.</string>
 
+
+    <string name="storage_permission_title">Permissão de armazenamento</string>
+    <string name="storage_permission_description">Para fazer backup de suas sagas e de todas as imagens relacionadas, precisamos de acesso ao armazenamento do seu dispositivo.</string>
+    <string name="notifications_permission_title">Permissão para Notificações</string>
+    <string name="notifications_permission_description">Para mantermos você atualizado sobre o progresso da sua saga e eventos importantes, por favor, nos permita enviar notificações.</string>
+    <string name="permission_required_title">Permissão Necessária</string>
+    <string name="permission_required_description">Este recurso precisa de uma permissão especial para funcionar. Poderia nos ajudar com isso?</string>
+    <string name="confirm_permission_button">Conceder Permissão</string>
+    <string name="backup">Backup</string>
 </resources>

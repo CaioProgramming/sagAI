@@ -69,4 +69,7 @@ class CharacterRelationRepositoryImpl
                 )
             relationshipUpdateEventDao.insertEvent(event)
         }
+
+        override suspend fun addEventToRelation(event: RelationshipUpdateEvent): RelationshipUpdateEvent =
+            event.copy(id = relationshipUpdateEventDao.insertEvent(event).toInt())
     }

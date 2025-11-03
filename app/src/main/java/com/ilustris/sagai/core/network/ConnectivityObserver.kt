@@ -1,4 +1,4 @@
-package com.ilustris.sagai.core.utils
+package com.ilustris.sagai.core.network
 
 import android.content.Context
 import android.net.ConnectivityManager
@@ -15,36 +15,39 @@ interface IConnectivityObserver {
     fun observe(): Flow<Boolean>
 }
 
-class ConnectivityObserver(private val context: Context) : IConnectivityObserver {
-
+class ConnectivityObserver(
+    context: Context,
+) : IConnectivityObserver {
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    override fun observe(): Flow<Boolean> {
-        return callbackFlow {
-            // Initial check
+    override fun observe(): Flow<Boolean> =
+        callbackFlow {
             launch { send(isConnected()) }
 
-            val callback = object : ConnectivityManager.NetworkCallback() {
-                override fun onAvailable(network: Network) {
-                    super.onAvailable(network)
-                    launch { send(true) }
+            val callback =
+                object : ConnectivityManager.NetworkCallback() {
+                    override fun onAvailable(network: Network) {
+                        super.onAvailable(network)
+                        launch { send(true) }
+                    }
+
+                    override fun onLost(network: Network) {
+                        super.onLost(network)
+                        launch { send(false) }
+                    }
+
+                    override fun onUnavailable() {
+                        super.onUnavailable()
+                        launch { send(false) }
+                    }
                 }
 
-                override fun onLost(network: Network) {
-                    super.onLost(network)
-                    launch { send(false) }
-                }
-
-                override fun onUnavailable() {
-                    super.onUnavailable()
-                    launch { send(false) }
-                }
-            }
-
-            val networkRequest = NetworkRequest.Builder()
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .build()
+            val networkRequest =
+                NetworkRequest
+                    .Builder()
+                    .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                    .build()
 
             connectivityManager.registerNetworkCallback(networkRequest, callback)
 
@@ -52,12 +55,11 @@ class ConnectivityObserver(private val context: Context) : IConnectivityObserver
                 connectivityManager.unregisterNetworkCallback(callback)
             }
         }.distinctUntilChanged()
-    }
 
     private fun isConnected(): Boolean {
         val activeNetwork = connectivityManager.activeNetwork
         val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
         return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true &&
-               capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) // Optional: check if network actually has internet
+            capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) // Optional: check if network actually has internet
     }
 }

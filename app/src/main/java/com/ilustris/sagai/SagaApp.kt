@@ -1,11 +1,11 @@
 package com.ilustris.sagai
 
 import android.app.Application
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.remoteconfig.ktx.remoteConfig
-import com.google.firebase.remoteconfig.ktx.remoteConfigSettings
+import com.google.firebase.Firebase
+import com.google.firebase.remoteconfig.remoteConfig
+import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.utils.NotificationUtils
+import com.ilustris.sagai.core.permissions.NotificationUtils
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

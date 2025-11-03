@@ -1,4 +1,4 @@
-package com.ilustris.sagai.core.utils
+package com.ilustris.sagai.core.file
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -6,6 +6,7 @@ import android.graphics.BitmapFactory
 import android.icu.util.Calendar
 import android.util.Base64
 import android.util.Log
+import com.ilustris.sagai.core.utils.removeBlankSpace
 import java.io.File
 import java.io.FileOutputStream
 

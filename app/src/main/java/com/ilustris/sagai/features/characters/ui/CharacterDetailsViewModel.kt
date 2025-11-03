@@ -29,6 +29,7 @@ class CharacterDetailsViewModel
         val character = MutableStateFlow<CharacterContent?>(null)
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
+        val loadingMessage = MutableStateFlow<String?>(null)
 
         fun loadSagaAndCharacter(
             sagaId: String?,
@@ -51,16 +52,19 @@ class CharacterDetailsViewModel
             selectedCharacter: Character,
         ) {
             Log.i(javaClass.simpleName, "regenerate: Regenerating character icon")
+            // TODO UNCOMMENT THIS SECTION TO AVOID UNECESSARY IMAGE GENERATION
             /*if (selectedCharacter.image.isNotEmpty() && selectedCharacter.emojified && billingService.isPremium().not()) {
                 return
             }*/
             isGenerating.value = true
+            loadingMessage.value = "Gerando ${selectedCharacter.name}..."
             viewModelScope.launch(Dispatchers.IO) {
                 characterUseCase.generateCharacterImage(
                     selectedCharacter,
                     sagaContent.data,
                 )
                 isGenerating.value = false
+                loadingMessage.emit(null)
             }
         }
     }

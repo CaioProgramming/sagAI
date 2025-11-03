@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.characters.relations.data.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.timeline.data.model.Timeline // Assuming this is the correct import for Timeline
 
@@ -21,6 +22,7 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline // Assuming this
             onDelete = ForeignKey.CASCADE,
         ),
     ],
+    indices = [Index(value = ["relationId"]), Index(value = ["timelineId"])]
 )
 data class RelationshipUpdateEvent(
     @PrimaryKey(autoGenerate = true)

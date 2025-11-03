@@ -11,16 +11,11 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.crashlytics.recordException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.network.FreePikApiService
-import com.ilustris.sagai.core.network.body.FreepikRequest
-import com.ilustris.sagai.core.network.response.FreePikResponse
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.toJsonFormat
 import javax.inject.Inject

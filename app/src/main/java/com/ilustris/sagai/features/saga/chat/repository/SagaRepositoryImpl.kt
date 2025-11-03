@@ -5,24 +5,21 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
-import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.GenreReferenceHelper
-import com.ilustris.sagai.core.utils.ImageCropHelper
+import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.GenreReferenceHelper
+import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.datasource.SagaDao
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class SagaRepositoryImpl
     @Inject
@@ -33,7 +30,7 @@ class SagaRepositoryImpl
         private val imageCropHelper: ImageCropHelper,
         private val fileHelper: FileHelper,
         private val imagenClient: ImagenClient,
-        private val billingService: BillingService,
+        private val backupService: BackupService,
     ) : SagaRepository {
         private val sagaDao: SagaDao by lazy {
             database.sagaDao()
@@ -143,5 +140,9 @@ class SagaRepositoryImpl
 
             croppedIcon.recycle()
             updateChat(saga.copy(icon = file!!.absolutePath))
+        }
+
+        override suspend fun backupSaga(sagaContent: SagaContent) {
+            backupService.backupSaga(sagaContent)
         }
     }

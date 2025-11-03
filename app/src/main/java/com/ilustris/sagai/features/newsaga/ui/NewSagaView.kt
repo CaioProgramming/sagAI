@@ -20,6 +20,7 @@ import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.features.newsaga.ui.components.NewSagaChat
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 
@@ -37,6 +38,8 @@ fun NewSagaView(
     val messages by createSagaViewModel.chatMessages.collectAsStateWithLifecycle()
     var showExitDialog by remember { mutableStateOf(false) }
     val callbackAction by createSagaViewModel.callbackAction.collectAsStateWithLifecycle()
+    val isSaving by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
+    val loadingMessage by createSagaViewModel.loadingMessage.collectAsStateWithLifecycle()
 
     BackHandler(enabled = isGenerating) {
         showExitDialog = true
@@ -98,5 +101,10 @@ fun NewSagaView(
         inputSuggestions = aiFormState.suggestions,
         updateGenre = { createSagaViewModel.updateGenre(it) },
         resetSaga = { createSagaViewModel.resetSaga() },
+    )
+
+    StarryLoader(
+        isLoading = isSaving,
+        loadingMessage = loadingMessage,
     )
 }

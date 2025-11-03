@@ -144,22 +144,22 @@
     <string name="saga_detail_delete_confirmation_message">Are you sure you want to delete this saga? This action cannot be undone.</string>
     <string name="saga_detail_delete_button">Delete</string>
     <string name="saga_detail_cancel_button">Cancel</string>
-    <string name="saga_drawer_act_prefix">Act %1$s</string>
+    <string name="saga_drawer_act_prefix">Act %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d events</string>
-    <string name="saga_drawer_events_since_last_chapter">%1$d events in chapter.</string>
+    <string name="saga_drawer_events_since_last_chapter">%d events in chapter.</string>
     <string name="saga_detail_progress_title">Progress</string>
     <string name="saga_detail_section_title_characters">Characters</string>
-    <string name="saga_detail_section_subtitle_characters">%1$d characters</string>
+    <string name="saga_detail_section_subtitle_characters">%d characters</string>
     <string name="saga_detail_section_title_timeline">Events</string>
-    <string name="saga_detail_section_subtitle_timeline">%1$d events</string>
+    <string name="saga_detail_section_subtitle_timeline">%d events</string>
     <string name="saga_detail_section_title_chapters">Chapters</string>
-    <string name="saga_detail_section_subtitle_chapters">%1$d chapters</string>
+    <string name="saga_detail_section_subtitle_chapters">%d chapters</string>
     <string name="saga_detail_section_title_wiki">Wiki</string>
-    <string name="saga_detail_section_subtitle_wiki">%1$d items</string>
+    <string name="saga_detail_section_subtitle_wiki">%d items</string>
     <string name="saga_detail_section_title_acts">Acts</string>
-    <string name="saga_detail_section_subtitle_acts">%1$d acts</string>
-    <string name="saga_detail_status_ended">Finished on %1$s</string>
-    <string name="saga_detail_status_created">Created on %1$s</string>
+    <string name="saga_detail_section_subtitle_acts">%d acts</string>
+    <string name="saga_detail_status_ended">Finished on %s</string>
+    <string name="saga_detail_status_created">Created on %s</string>
     <string name="saga_detail_journey_of">The journey of</string>
     <string name="saga_detail_messages_label">Messages</string>
     <string name="saga_detail_see_your_now">See your</string>
@@ -194,8 +194,8 @@
     <string name="dialog_exit_dismiss_button_new_saga">Stay</string>
     <string name="notification_explanation">To notify you about new messages in your saga when you\'re not in the app, please allow notification permission.</string>
     <string name="continue_text">continue</string>
-    <string name="notification_title">New message on %1$s</string>
-    <string name="notification_playing_act">Playing act %1$s</string>
+    <string name="notification_title">New message on %s</string>
+    <string name="notification_playing_act">Playing act %s</string>
     <string name="notification_action_pause" translatable="false">Pause</string>
     <string name="notification_action_play" translatable="false">Play</string>
     <string name="saga_detail_relationships_section_title">Relationships</string>
@@ -256,12 +256,24 @@
     <string name="chapter_number_label">Chapter %s</string>
     <string name="try_again">Try again</string>
     <string name="chapter_finished">Chapter %s Finished</string>
-    <string name="ending">Chapter %1$s updated.</string>
+    <string name="ending">Chapter %s updated.</string>
     <string name="see_more">Ver mais</string>
     <string name="empty" translatable="false" />
-    <string name="timeline_generated_successfully">Timeline %1$s finished.</string>
-    <string name="timeline_updated">Timeline %1$s updated.</string>
-    <string name="act_finished">Act %1$s finished.</string>
+    <string name="timeline_generated_successfully">Timeline %s finished.</string>
+    <string name="timeline_updated">Timeline %s updated.</string>
+    <string name="act_finished">Act %s finished.</string>
     <string name="unexpected_error">Sorry an unexpected error has occurred.</string>
+    <string name="message_reply_error">Ocorreu um erro ao responder sua mensagem.</string>
+    <string name="new_character_message">%1$s juntou-se a história!</string>
+
+
+    <string name="storage_permission_title">Storage Permission</string>
+    <string name="storage_permission_description">To back up your sagas and all related images, the app needs access to your device\'s storage. We promise to keep everything safe!</string>
+    <string name="notifications_permission_title">Notifications Permission</string>
+    <string name="notifications_permission_description">To keep you updated on your saga\'s progress and important events, please allow notifications. Don\'t miss a single adventure!</string>
+    <string name="permission_required_title">Permission Needed</string>
+    <string name="permission_required_description">This feature needs a little help to work its magic. Could you please grant the required permission?</string>
+    <string name="confirm_permission_button">Grant Permission</string>
+    <string name="backup">Backup</string>
 
 </resources>

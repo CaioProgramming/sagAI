@@ -19,30 +19,6 @@ sealed class ChatState {
     ) : ChatState()
 }
 
-data class SnackBarState(
-    val icon: Any? = null,
-    val message: String,
-    val redirectAction: ChatAction? = null,
-)
-
-sealed class ChatAction(
-    @StringRes val actionRes: Int? = null,
-) {
-    data class ResendMessage(
-        val message: Message,
-    ) : ChatAction(R.string.try_again)
-
-    data class OpenDetails(
-        val data: Any,
-    ) : ChatAction(R.string.see_more)
-
-    data class RetryCharacter(
-        val description: String,
-    ) : ChatAction(R.string.try_again)
-
-    data object RevaluateSaga : ChatAction(R.string.try_again)
-}
-
 data class ActDisplayData(
     val content: ActContent,
     val isComplete: Boolean,

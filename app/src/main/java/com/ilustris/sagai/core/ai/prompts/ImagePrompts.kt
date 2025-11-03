@@ -108,34 +108,51 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
         )
     }
 
+    @Suppress("ktlint:standard:max-line-length")
     fun extractComposition() =
         buildString {
+            appendLine("")
             appendLine("You are analyzing TWO visual references:")
             appendLine("1. **Image A (Composition Reference):** Dictates layout, framing, and light.")
             appendLine("2. **Image B (Style Reference):** Dictates artistic rendering, texture, and aesthetic era.")
             appendLine("")
             appendLine(
-                "Your task is to extract EIGHT critical, technical components by separating the focus as instructed. Your response must be in **ENGLISH ONLY** and contain **ONLY** the structured information.",
+                "Your task is to extract NINE critical, technical components by separating the focus as instructed. Your response must be in **ENGLISH ONLY** and contain **ONLY** the structured information.",
+            )
+            appendLine("")
+            appendLine("**MANDATE: EXCLUSIVITY AND PRECISION (CRITICAL):**")
+            appendLine(
+                "* The Agent MUST analyze Image B and generate terms that are **technically exclusive** and descriptive of the style.",
+            )
+            appendLine(
+                "* The generated terms for Art Technique, Aesthetic Era, and Reference MUST NOT use synonymous or overlapping language.",
             )
             appendLine("")
             appendLine("**I. Extract from IMAGE A (Composition Reference):**")
-            appendLine("1.  **Framing:** [The most accurate, literal photographic framing term, e.g., FULL BODY SHOT, ULTRA CLOSE-UP]")
+            appendLine("1.  **Framing:** [The most accurate, literal photographic framing term, e.g., FULL BODY SHOT]")
             appendLine("2.  **Zoom Level / Proximity:** [The camera's closeness to the subject, e.g., Extreme closeness, Medium proximity]")
             appendLine(
-                "3.  **Cropping Intention:** [How the subject is intentionally cut by the frame. **MUST INCLUDE pose/gaze guidance,** e.g., Tightly cropped for dramatic effect, no straight-on gaze]",
+                "3.  **Cropping Intention:** [How the subject is intentionally cut by the frame. MUST INCLUDE explicit pose/gaze guidance]",
             )
             appendLine("4.  **Key Lighting Style:** [The primary lighting technique, e.g., Rembrandt Lighting, Dramatic Backlighting]")
             appendLine("")
+
             appendLine("**II. Extract from IMAGE B (Style Reference):**")
-            appendLine("6.  **Art Technique:** [Technical details of the texture/application, e.g., Impasto Texture, Visible Brushstrokes]")
             appendLine(
-                "7.  **Aesthetic Era / Influence:** [The dominant artistic movement or time period, e.g., High Classicism (17th Century), Romanticism]",
+                "5.  **Art Technique:** [The dominant technical rendering method, focusing on texture and application. May combine up to two distinct technical aspects if critical, e.g., 'Cel-Shaded with Retro Print Grain', 'Impasto Texture and Visible Brushstrokes'. **CRITICAL EXCLUSION:** The generated term MUST NOT include general category words such as 'Digital Painting', 'Digital Art', 'Illustration', or 'CGI' unless the style is genuinely photorealistic or a broad digital painting. Prioritize specific sub-techniques like 'Cel-Shaded', 'Cross-Hatching', 'Vector Graphics', or 'Oil Painting'.]",
             )
             appendLine(
-                "8.  **Vibe / Mood Aesthetic:** [A technical aesthetic term defining the final mood, e.g., Ethereal and Majestic, Foreboding and Heroic]",
+                "6.  **Aesthetic Era / Influence:** [The dominant artistic movement, time period, or genre influence. Must be a single, exclusive term, e.g., Romanticism, Cyberpunk Anime (Late 1980s).]",
+            )
+            appendLine(
+                "7.  **Cultural/Artistic Reference:** [The single most defining, direct reference to an artist, specific artwork, or cultural touchstone that dictates the style. MUST be highly specific, e.g., 'In the style of Moebius', 'Highly reminiscent of Ghost in the Shell (1995)', 'Inspired by the work of Frank Frazetta'.]",
+            )
+            appendLine(
+                "8.  **Vibe / Mood Aesthetic:** [A technical aesthetic term defining the final mood, e.g., Gritty and Atmospheric, Ethereal and Majestic.]",
             )
         }
 
+    @Suppress("ktlint:standard:max-line-length")
     fun imageHighlight(genre: Genre) =
         buildString {
             appendLine("**Injected Detail - Localized Color Accent (Crucial for Aesthetic Focus):**")
@@ -162,17 +179,15 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             )
             appendLine("**Character Focus and Framing (CRITICAL - INJECTION OF VISUAL DIRECTION):**")
             appendLine("**Final Prompt Structure (Mandatory Order - BLOCK INJECTION):**")
-            appendLine("")
-            appendLine("1.  **Technical Foundation (Composed of Injected Data):**")
+            appendLine("1. **Technical Foundation (Composed of NINE Injected Data Points):**")
             appendLine(
-                "* Start the prompt by injecting: **[Framing]**, **[Zoom Level / Proximity]**, **[Cropping Intention]**. (Using extracted data)",
+                "* Start the prompt by injecting the **Framing**, **Zoom Level / Proximity**, and **Cropping Intention**. (From I. 1-3)",
             )
             appendLine(
-                "* Inject the **Render Style**, **Art Technique**, **Aesthetic Era / Influence**, and **Vibe / Mood Aesthetic** to form the core style description. (Using extracted data)",
+                "* Inject the **Art Technique**, **Aesthetic Era / Influence**, **Cultural/Artistic Reference**, and **Vibe / Mood Aesthetic**. (From II. 5-8)",
             )
-            appendLine("* Inject the **Key Lighting Style**. (Using extracted data)")
+            appendLine("* Inject the **Key Lighting Style**. (From I. 4)")
             appendLine("")
-
             appendLine("2. **NARRATIVE & COMPOSITION CORE (Dynamic Scene Assembly - Final Mandate):**")
             appendLine("")
             appendLine("**A. NARRATIVE TENSION SOURCE (CRITICAL):**")

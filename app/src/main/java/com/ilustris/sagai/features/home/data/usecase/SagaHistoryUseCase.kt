@@ -13,4 +13,6 @@ interface SagaHistoryUseCase {
     suspend fun createFakeSaga(): RequestResult<Saga>
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<String>
+
+    suspend fun backupSaga(saga: SagaContent)
 }

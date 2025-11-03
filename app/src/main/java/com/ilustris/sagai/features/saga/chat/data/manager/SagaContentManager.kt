@@ -1,17 +1,16 @@
 package com.ilustris.sagai.features.saga.chat.data.manager
 
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
-import com.ilustris.sagai.features.saga.chat.presentation.SnackBarState
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
+import com.ilustris.sagai.ui.components.SnackBarState
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow // Added import
-import java.io.File // Added import
+import kotlinx.coroutines.flow.StateFlow
+import java.io.File
 
 interface SagaContentManager {
     val content: MutableStateFlow<SagaContent?>
@@ -48,4 +47,6 @@ interface SagaContentManager {
     suspend fun reviewWiki(wikiItems: List<Wiki>)
 
     suspend fun reviewEvent(timelineContent: TimelineContent)
+
+    suspend fun backupSaga()
 }
