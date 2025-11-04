@@ -9,11 +9,9 @@ import com.ilustris.sagai.features.saga.chat.data.model.Reaction
 
 @Dao
 interface ReactionDao {
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addReaction(reaction: Reaction)
+    suspend fun addReaction(reaction: Reaction): Long
 
     @Delete
     suspend fun removeReaction(reaction: Reaction)
-
 }

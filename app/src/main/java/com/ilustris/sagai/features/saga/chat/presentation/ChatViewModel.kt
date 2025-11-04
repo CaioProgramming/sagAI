@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.presentation
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.TextFieldValue
@@ -90,6 +91,8 @@ class ChatViewModel
         val notificationsEnabled = MutableStateFlow(true)
         val smartSuggestionsEnabled = MutableStateFlow(true)
 
+        val backupEnabled = sagaContentManager.backupEnabled
+
         private fun updateSnackBar(snackBarState: SnackBarState) {
             viewModelScope.launch {
                 snackBarMessage.value = snackBarState
@@ -113,7 +116,7 @@ class ChatViewModel
             observeAmbientMusicServiceControl()
             observePreferences()
             observeSnackBarUpdates()
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch {
                 sagaContentManager.loadSaga(sagaId)
             }
         }
@@ -137,7 +140,14 @@ class ChatViewModel
 
                 settingsUseCase.backupEnabled().collect {
                     if (it.not()) {
-                        updateSnackBar(snackBarState = snackBar("Backup desativado. Verifique as permissões."))
+                        updateSnackBar(
+                            snackBarState =
+                                snackBar("Backup desativado. Verifique as permissões.") {
+                                    action {
+                                        configureBackup()
+                                    }
+                                },
+                        )
                     }
                 }
             }
@@ -158,7 +168,7 @@ class ChatViewModel
         }
 
         fun checkSaga() {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch {
                 sagaContentManager.checkNarrativeProgression(content.value)
             }
         }
@@ -192,7 +202,7 @@ class ChatViewModel
         }
 
         private fun observeSaga() {
-            viewModelScope.launch(Dispatchers.IO) {
+            viewModelScope.launch {
                 content
                     .collectLatest { sagaContent ->
                         if (sagaContent == null) {
@@ -201,6 +211,8 @@ class ChatViewModel
                             }
                             return@collectLatest
                         }
+
+                        val canAnimateTitle = content.value == null
 
                         val allMessages =
                             messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
@@ -220,13 +232,24 @@ class ChatViewModel
                             )
 
                         checkIfUpdatesService(sagaContent)
-
                         validateCharacterMessageUpdates(sagaContent)
                         updateProgress(sagaContent)
                         notifyIfNeeded()
-                        state.value = ChatState.Success
                         loadFinished = true
+                        content.emit(sagaContent)
+                        state.emit(ChatState.Success)
+
+                        if (showTitle.value) {
+                            titleAnimation()
+                        }
                     }
+            }
+        }
+
+        private fun titleAnimation() {
+            viewModelScope.launch {
+                delay(3.seconds)
+                showTitle.emit(false)
             }
         }
 
@@ -748,6 +771,12 @@ class ChatViewModel
                     delay(100)
                 }
                 Log.d("ChatViewModel", "Finished enqueuing $count fake messages.")
+            }
+        }
+
+        fun enableBackup(uri: Uri?) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.enableBackup(uri)
             }
         }
     }

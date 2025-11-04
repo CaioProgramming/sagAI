@@ -1,13 +1,24 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
+import android.util.Log
+import androidx.core.net.toUri
+import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.file.backup.RestorableSaga
+import com.ilustris.sagai.core.file.backup.filterBackups
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
+import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
+import com.ilustris.sagai.features.characters.relations.data.model.RelationshipUpdateEvent
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -22,9 +33,15 @@ import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import jakarta.inject.Inject
-import kotlin.collections.forEach
+import kotlinx.coroutines.flow.first
 
-class SagaBackupService
+interface SagaBackupService {
+    suspend fun restoreContent(sagaContent: RestorableSaga): RequestResult<SagaContent>
+
+    suspend fun filterValidSagas(manifests: List<RestorableSaga>): RequestResult<List<RestorableSaga>>
+}
+
+class SagaBackupServiceImpl
     @Inject
     constructor(
         private val sagaRepository: SagaRepository,
@@ -37,87 +54,261 @@ class SagaBackupService
         private val characterEventRepository: CharacterEventRepository,
         private val messageRepository: MessageRepository,
         private val reactionRepository: ReactionRepository,
-    ) {
-        suspend fun restoreSaga(sagaContent: SagaContent) =
+        private val backupService: BackupService,
+    ) : SagaBackupService {
+        override suspend fun restoreContent(sagaContent: RestorableSaga) =
             executeRequest {
-                recoverSaga(sagaContent.data)
-                saveActs(sagaContent.data.id, sagaContent.acts.map { it.data })
-                saveChapters(sagaContent.flatChapters().map { it.data })
-                saveEvents(sagaContent.flatEvents().map { it.data })
+                val sagaContent =
+                    backupService
+                        .unzipAndParseSaga(sagaContent.manifest.zipFileName.toUri())!!
 
-                recoverCharacters(sagaContent.data.id, sagaContent.characters)
-                recoverWiki(sagaContent.data.id, sagaContent.wikis)
-                recoverReactions(sagaContent.flatMessages().map { it.reactions.map { it.data } }.flatten())
+                recoverOperation(
+                    sagaContent,
+                )
 
                 sagaContent
             }
 
-        private suspend fun recoverSaga(saga: Saga) {
-            sagaRepository.saveChat(saga)
+        private suspend fun recoverOperation(sagaContent: SagaContent) {
+            val newSaga = sagaContent.copy(data = recoverSaga(sagaContent.data).second)
+
+            val actsPairs = saveActs(newSaga.data.id, newSaga.acts.map { it.data })
+
+            val chapterPairs = saveChapters(sagaContent.flatChapters().map { it.data }, actsPairs)
+
+            val eventPairs = saveEvents(sagaContent.flatEvents().map { it.data }, chapterPairs)
+
+            val newCharacters = recoverCharacters(newSaga.data.id, sagaContent.characters, eventPairs)
+
+            val messagePairs =
+                saveMessages(sagaContent.flatMessages().map { it.message }, eventPairs, newCharacters)
+
+            val reactionPairs =
+                recoverReactions(
+                    sagaContent.flatMessages().map { it.reactions.map { it.data } }.flatten(),
+                    messagePairs,
+                    newCharacters,
+                )
+
+            val wikis = recoverWiki(newSaga.data.id, eventPairs, sagaContent.wikis)
+
+            val charactersEventsPairs =
+                recoverCharactersEvents(
+                    sagaContent.characters
+                        .map { it.events.map { it.event } }
+                        .flatten(),
+                    newCharacters,
+                    eventPairs,
+                )
+
+            val charactersRelationsPairs =
+                recoverCharactersRelations(
+                    newSaga.data.id,
+                    sagaContent.characters.map { it.relationships }.flatten(),
+                    newCharacters,
+                )
+            val relationsEventsPairs =
+                recoverCharactersRelationEvents(
+                    sagaContent.characters.map { it.relationships.map { it.relationshipEvents }.flatten() }.flatten(),
+                    eventPairs,
+                    charactersRelationsPairs,
+                )
+
+            chapterPairs
+                .filter {
+                    sagaContent.characters.any { character ->
+                        it.first.featuredCharacters.any { featured -> featured == character.data.id }
+                    }
+                }.forEach {
+                    val mappedFeaturedCharacters =
+                        it.first.featuredCharacters.mapNotNull { featured ->
+                            newCharacters.find { character -> character.first.id == featured }?.second?.id
+                        }
+                    chapterRepository.updateChapter(
+                        it.second.copy(
+                            featuredCharacters = mappedFeaturedCharacters,
+                        ),
+                    )
+                }
+
+            val backupLog =
+                buildString {
+                    appendLine("SAGA RESTORED")
+                    appendLine(newSaga.data.toJsonFormat())
+                    appendLine("${actsPairs.size} acts")
+                    appendLine("${chapterPairs.size} chapters")
+                    appendLine("${eventPairs.size} events")
+                    appendLine("${messagePairs.size} messages")
+                    appendLine("${reactionPairs.size} reactions")
+                    appendLine("")
+                    appendLine("Restored ${newCharacters.size} characters")
+                    appendLine(" ${wikis.size} wikis")
+                    appendLine("${messagePairs.size} messages")
+                    appendLine("${charactersEventsPairs.size} character events")
+                    appendLine("${charactersRelationsPairs.size} character relations")
+                    appendLine("${relationsEventsPairs.size} relation events")
+                }
+
+            Log.i(javaClass.simpleName, "recoverOperation: Backup complete -> $backupLog")
         }
 
-        private suspend fun recoverReactions(reactions: List<Reaction>) {
-            reactions.forEach {
-                reactionRepository.saveReaction(it)
+        private suspend fun recoverCharactersRelations(
+            sagaId: Int,
+            relations: List<RelationshipContent>,
+            newCharacters: List<Pair<Character, Character>>,
+        ) = relations
+            .map {
+                val characterOne =
+                    newCharacters.find { pair -> pair.first.id == it.characterOne.id } ?: return@map null
+                val characterTwo =
+                    newCharacters.find { pair -> pair.first.id == it.characterTwo.id } ?: return@map null
+
+                it.data to
+                    relationRepository.insertRelation(
+                        it.data.copy(
+                            sagaId = sagaId,
+                            characterOneId = characterOne.second.id,
+                            characterTwoId = characterTwo.second.id,
+                        ),
+                    )
+            }.filterNotNull()
+
+        private suspend fun recoverCharactersRelationEvents(
+            events: List<RelationshipUpdateEvent>,
+            timelinePairs: List<Pair<Timeline, Timeline>>,
+            relationshipPair: List<Pair<CharacterRelation, CharacterRelation>>,
+        ) = events.map {
+            val timeline = timelinePairs.find { timeline -> timeline.first.id == it.timelineId } ?: return@map null
+            val relationship = relationshipPair.find { pair -> pair.first.id == it.relationId } ?: return@map null
+
+            relationRepository.addEventToRelation(
+                it.copy(
+                    timelineId = timeline.second.id,
+                    relationId = relationship.second.id,
+                ),
+            )
+        }
+
+        override suspend fun filterValidSagas(manifests: List<RestorableSaga>) =
+            executeRequest {
+                val sagas = sagaRepository.getChats().first()
+
+                manifests.filterBackups(sagas.map { it.data })
             }
+
+        private suspend fun recoverSaga(saga: Saga) = saga to sagaRepository.saveChat(saga)
+
+        private suspend fun recoverReactions(
+            reactions: List<Reaction>,
+            messagesPair: List<Pair<Message, Message>>,
+            charactersPair: List<Pair<Character, Character>>,
+        ) = reactions.map {
+            val message = messagesPair.find { message -> message.first.id == it.messageId } ?: return@map null
+            val character = charactersPair.find { character -> character.first.id == it.characterId } ?: return@map null
+
+            it to
+                reactionRepository.saveReaction(
+                    it.copy(
+                        messageId = message.second.id,
+                        characterId = character.second.id,
+                    ),
+                )
         }
 
         private suspend fun recoverCharacters(
             sagaId: Int,
             characters: List<CharacterContent>,
-        ) {
-            characters.forEach {
-                characterRepository.insertCharacter(it.data.copy(sagaId = sagaId))
-            }
-
-            characters.forEach {
-                it.events.forEach { event ->
-                    characterEventRepository.insertCharacterEvent(event.event)
-                }
-
-                relationRepository.insertRelations(it.relationships.map { it.data })
-
-                it.relationships.forEach { relationship ->
-                    relationship.relationshipEvents.forEach { event ->
-                        relationRepository.addEventToRelation(event)
-                    }
-                }
-            }
+            eventPairs: List<Pair<Timeline, Timeline>>,
+        ) = characters.map {
+            val timeline = eventPairs.find { eventPair -> eventPair.first.id == it.data.firstSceneId }
+            it.data to
+                characterRepository.insertCharacter(
+                    it.data.copy(
+                        sagaId = sagaId,
+                        firstSceneId = timeline?.second?.id,
+                    ),
+                )
         }
+
+        private suspend fun recoverCharactersEvents(
+            events: List<CharacterEvent>,
+            charactersPair: List<Pair<Character, Character>>,
+            timelines: List<Pair<Timeline, Timeline>>,
+        ) = events
+            .map {
+                val timeLine =
+                    timelines.find { timeline -> timeline.first.id == it.gameTimelineId }
+                        ?: return@map null
+                val character =
+                    charactersPair.find { pair -> pair.first.id == it.characterId } ?: return@map null
+
+                it to
+                    characterEventRepository.insertCharacterEvent(
+                        it.copy(
+                            gameTimelineId = timeLine.second.id,
+                            characterId = character.second.id,
+                        ),
+                    )
+            }.filterNotNull()
 
         private suspend fun recoverWiki(
             sagaId: Int,
+            timeLinePair: List<Pair<Timeline, Timeline>>,
             wikis: List<Wiki>,
-        ) {
-            wikis.forEach {
-                wikiRepository.insertWiki(it.copy(sagaId = sagaId))
-            }
+        ) = wikis.map {
+            val timeLine = timeLinePair.find { timeline -> timeline.first.id == it.timelineId }
+            it to
+                wikiRepository.insertWiki(
+                    it.copy(
+                        sagaId = sagaId,
+                        timelineId = timeLine?.second?.id,
+                    ),
+                )
         }
 
         private suspend fun saveActs(
             sagaId: Int,
             acts: List<Act>,
-        ) {
-            acts.forEach {
-                actRepository.saveAct(it)
-            }
-        }
+        ) = acts.map { it to actRepository.saveAct(it.copy(sagaId = sagaId)) }
 
-        private suspend fun saveChapters(chapters: List<Chapter>) {
-            chapters.forEach {
-                chapterRepository.saveChapter(it)
-            }
-        }
+        private suspend fun saveChapters(
+            chapters: List<Chapter>,
+            actsPairs: List<Pair<Act, Act>>,
+        ) = chapters
+            .map {
+                val act = actsPairs.find { pair -> pair.first.id == it.actId } ?: return@map null
+                it to chapterRepository.saveChapter(it.copy(actId = act.second.id))
+            }.filterNotNull()
 
-        private suspend fun saveEvents(events: List<Timeline>) {
-            events.forEach {
-                timelineRepository.saveTimeline(it)
-            }
-        }
+        private suspend fun saveEvents(
+            events: List<Timeline>,
+            chapterPairs: List<Pair<Chapter, Chapter>>,
+        ) = events
+            .map {
+                val chapter = chapterPairs.find { pair -> pair.first.id == it.chapterId } ?: return@map null
+                it to
+                    timelineRepository.saveTimeline(
+                        it.copy(
+                            chapterId = chapter.second.id,
+                        ),
+                    )
+            }.filterNotNull()
 
-        private suspend fun saveMessages(messages: List<Message>) {
-            messages.forEach {
-                messageRepository.saveMessage(it)
-            }
-        }
+        private suspend fun saveMessages(
+            messages: List<Message>,
+            eventPairs: List<Pair<Timeline, Timeline>>,
+            charactersPair: List<Pair<Character, Character>>,
+        ) = messages
+            .map {
+                val event =
+                    eventPairs.find { pair -> pair.first.id == it.timelineId } ?: return@map null
+                val character = charactersPair.find { pair -> pair.first.id == it.characterId }
+                it to
+                    messageRepository.saveMessage(
+                        it.copy(
+                            timelineId = event.second.id,
+                            characterId = character?.second?.id,
+                        ),
+                    )
+            }.filterNotNull()
     }

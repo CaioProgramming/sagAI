@@ -7,9 +7,9 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 
 interface WikiUseCase {
-    suspend fun saveWiki(wiki: Wiki): Long
+    suspend fun saveWiki(wiki: Wiki): Wiki
 
-    suspend fun updateWiki(wiki: Wiki)
+    suspend fun updateWiki(wiki: Wiki): Wiki
 
     suspend fun deleteWiki(wikiId: Int)
 

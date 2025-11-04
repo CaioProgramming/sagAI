@@ -31,7 +31,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -41,6 +44,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
@@ -58,6 +62,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm // Added import for SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.Sender // Correct import
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.ui.components.BubbleStyle
 import com.ilustris.sagai.features.saga.chat.ui.components.description
@@ -69,6 +74,7 @@ import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.MorphPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
@@ -97,12 +103,12 @@ fun NewSagaChat(
     saveSaga: () -> Unit = {},
     updateGenre: (Genre) -> Unit = {},
     resetSaga: () -> Unit = {},
+    onNavigateBack: () -> Unit = {},
     userInputHint: String? = "Chat with SagAI...",
     isLoading: Boolean = false,
     isGenerating: Boolean = false,
     inputSuggestions: List<String> = emptyList(),
 ) {
-    val genre = currentForm?.saga?.genre ?: Genre.entries.random()
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
@@ -124,10 +130,13 @@ fun NewSagaChat(
         inputField = TextFieldValue("")
     }
 
-    AnimatedContent(genre, transitionSpec = {
+    AnimatedContent(currentForm?.saga?.genre, transitionSpec = {
         fadeIn() togetherWith fadeOut()
     }) {
-        ConstraintLayout(Modifier.fillMaxSize()) {
+        val defaultGenre = remember { Genre.entries.random() }
+        val genre = it ?: defaultGenre
+
+        ConstraintLayout(Modifier.navigationBarsPadding().fillMaxSize()) {
             val (chatList, inputView) = createRefs()
 
             LazyColumn(
@@ -139,6 +148,34 @@ fun NewSagaChat(
                 },
                 state = listState,
             ) {
+                stickyHeader {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.background)
+                                .statusBarsPadding()
+                                .padding(16.dp),
+                    ) {
+                        IconButton(onClick = {
+                            onNavigateBack()
+                        }, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                painterResource(R.drawable.ic_back_left),
+                                contentDescription = stringResource(R.string.back_button_description),
+                                modifier = Modifier.padding(4.dp),
+                            )
+                        }
+
+                        SagaTitle(
+                            Modifier.statusBarsPadding().weight(1f),
+                        )
+
+                        Box(Modifier.size(24.dp))
+                    }
+                }
+
                 if (messages.size == 1) {
                     item {
                         val message = messages.first()
@@ -153,7 +190,7 @@ fun NewSagaChat(
                                     .fillMaxWidth(),
                         ) {
                             StarryAnimation(
-                                it,
+                                genre,
                                 Modifier
                                     .align(Alignment.CenterHorizontally)
                                     .size(150.dp),
@@ -164,7 +201,7 @@ fun NewSagaChat(
                                 style =
                                     MaterialTheme.typography.titleMedium.copy(
                                         fontFamily = genre.headerFont(),
-                                        brush = it.gradient(),
+                                        brush = genre.gradient(),
                                         textAlign = TextAlign.Center,
                                     ),
                                 modifier = Modifier.reactiveShimmer(true),
@@ -175,7 +212,7 @@ fun NewSagaChat(
                     items(messages) { message ->
                         ChatMessageBubble(
                             message,
-                            it,
+                            genre,
                             isLast = messages.last() == message,
                             modifier = Modifier.animateItem(),
                         )
@@ -186,11 +223,12 @@ fun NewSagaChat(
                     item {
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .animateItem()
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                        ) { StarryAnimation(it, Modifier.size(50.dp)) }
+                            modifier =
+                                Modifier
+                                    .animateItem()
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                        ) { StarryAnimation(genre, Modifier.size(50.dp)) }
                     }
                 }
 
@@ -206,8 +244,8 @@ fun NewSagaChat(
                             modifier =
                                 Modifier
                                     .padding(16.dp)
-                                    .border(1.dp, it.gradient(), it.shape())
-                                    .background(it.gradient(), it.shape())
+                                    .border(1.dp, genre.gradient(), it.shape())
+                                    .background(genre.gradient(), it.shape())
                                     .fillMaxWidth()
                                     .reactiveShimmer(true),
                         ) {
@@ -215,8 +253,8 @@ fun NewSagaChat(
                                 stringResource(R.string.save_saga),
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
-                                        fontFamily = it.bodyFont(),
-                                        color = it.iconColor,
+                                        fontFamily = genre.bodyFont(),
+                                        color = genre.iconColor,
                                     ),
                             )
                         }
@@ -226,17 +264,19 @@ fun NewSagaChat(
 
             val isBusy = isLoading || isGenerating
             val glowBrush =
-                if (isBusy) {
-                    it.gradient(true, gradientType = GradientType.LINEAR)
-                } else {
-                    Color.Transparent.solidGradient()
+                remember {
+                    if (isBusy) {
+                        Brush.verticalGradient(genre.colorPalette())
+                    } else {
+                        Color.Transparent.solidGradient()
+                    }
                 }
-            val glowRadius by animateFloatAsState(
-                targetValue = if (isBusy) 20f else 0f,
+            val glowRadius by animateDpAsState(
+                targetValue = if (isBusy) 20.dp else 5.dp,
                 label = "glowRadius",
                 animationSpec = tween(500),
             )
-            val inputAreaShape = it.shape()
+            val inputAreaShape = remember { it.shape() }
 
             Column(
                 Modifier.constrainAs(inputView) {
@@ -244,6 +284,7 @@ fun NewSagaChat(
                     width = Dimension.matchParent
                 },
             ) {
+                val shape = remember { genre.shape() }
                 AnimatedVisibility(callback != CallBackAction.AWAITING_CONFIRMATION) {
                     LazyRow(
                         modifier =
@@ -261,11 +302,11 @@ fun NewSagaChat(
                                 shape = it.shape(),
                                 modifier =
                                     Modifier
-                                        .border(1.dp, it.color.gradientFade(), it.shape())
+                                        .border(1.dp, genre.color.gradientFade(), it.shape())
                                         .fillParentMaxWidth(.6f),
                                 colors =
                                     ButtonDefaults.outlinedButtonColors().copy(
-                                        contentColor = it.color,
+                                        contentColor = genre.color,
                                         containerColor = Color.Transparent,
                                     ),
                             ) {
@@ -273,8 +314,8 @@ fun NewSagaChat(
                                     suggestion,
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
-                                            fontFamily = it.bodyFont(),
-                                            brush = it.gradient(),
+                                            fontFamily = genre.bodyFont(),
+                                            brush = genre.gradient(),
                                         ),
                                 )
                             }
@@ -282,276 +323,283 @@ fun NewSagaChat(
                     }
                 }
 
-                BlurredGlowContainer(
-                    brush = glowBrush,
-                    blurSigma = glowRadius,
-                    shape = inputAreaShape,
-                    modifier =
-                        Modifier
-                            .imePadding()
-                            .padding(16.dp)
-                            .animateContentSize(),
+                Column(
+                    Modifier
+                        .imePadding()
+                        .animateContentSize()
+                        .padding(16.dp)
+                        .dropShadow(
+                            shape = shape,
+                            shadow =
+                                Shadow(
+                                    radius = glowRadius,
+                                    spread = 2.dp,
+                                    color = genre.color,
+                                    offset = DpOffset.Zero,
+                                ),
+                        ).clip(genre.shape())
+                        .border(1.dp, genre.color.gradientFade(), shape)
+                        .background(MaterialTheme.colorScheme.surfaceContainer, shape),
                 ) {
-                    Column(
-                        Modifier
-                            .padding(1.dp)
-                            .border(1.dp, it.color.gradientFade(), it.shape())
-                            .background(MaterialTheme.colorScheme.surfaceContainer, it.shape()),
+                    Row(
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Bottom,
                     ) {
-                        Row(
+                        BasicTextField(
+                            value = inputField,
+                            onValueChange = { inputField = it },
+                            enabled = !isBusy,
+                            cursorBrush = genre.color.solidGradient(),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(onSend = { sendMessage() }),
+                            textStyle =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                ),
                             modifier =
                                 Modifier
-                                    .padding(8.dp)
-                                    .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.Bottom,
-                        ) {
-                            BasicTextField(
-                                value = inputField,
-                                onValueChange = { inputField = it },
-                                enabled = !isBusy,
-                                cursorBrush = it.color.solidGradient(),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                                keyboardActions = KeyboardActions(onSend = { sendMessage() }),
-                                textStyle =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .weight(1f)
-                                        .padding(8.dp),
-                                decorationBox = { innerTextField ->
-                                    Box(contentAlignment = Alignment.CenterStart) {
-                                        if (inputField.text.isEmpty()) {
-                                            Text(
-                                                text = userInputHint ?: emptyString(),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                                fontFamily = genre.bodyFont(),
-                                            )
-                                        }
-                                        innerTextField()
+                                    .weight(1f)
+                                    .padding(8.dp),
+                            decorationBox = { innerTextField ->
+                                Box(contentAlignment = Alignment.CenterStart) {
+                                    if (inputField.text.isEmpty()) {
+                                        Text(
+                                            text = userInputHint ?: emptyString(),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                            fontFamily = genre.bodyFont(),
+                                        )
                                     }
-                                },
-                            )
+                                    innerTextField()
+                                }
+                            },
+                        )
 
-                            IconButton(
-                                onClick = { sendMessage() },
-                                enabled = inputField.text.isNotEmpty(),
-                                colors = IconButtonDefaults.iconButtonColors(containerColor = it.color, contentColor = it.iconColor),
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .size(32.dp),
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_arrow_up),
-                                    contentDescription = "Send message",
-                                    tint = it.iconColor,
-                                )
-                            }
-                        }
-
-                        LazyRow(
+                        IconButton(
+                            onClick = { sendMessage() },
+                            enabled = inputField.text.isNotEmpty(),
+                            colors =
+                                IconButtonDefaults.iconButtonColors(
+                                    containerColor = genre.color,
+                                    disabledContainerColor =
+                                        Color.Transparent,
+                                    contentColor = genre.iconColor,
+                                    disabledContentColor = genre.color.copy(alpha = .4f),
+                                ),
                             modifier =
                                 Modifier
-                                    .animateContentSize()
                                     .padding(8.dp)
-                                    .fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                                    .size(32.dp),
                         ) {
-                            val iconSize = 32.dp
-                            item {
-                                val tooltipState = rememberTooltipState()
-                                val tooltipPositionProvider =
-                                    TooltipDefaults.rememberPlainTooltipPositionProvider(
-                                        spacingBetweenTooltipAndAnchor = 8.dp,
-                                    )
-                                TooltipBox(
-                                    positionProvider = tooltipPositionProvider,
-                                    state = tooltipState,
-                                    tooltip = {
-                                        Column(
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_arrow_up),
+                                contentDescription = "Send message",
+                                tint = genre.iconColor,
+                                modifier = Modifier.padding(4.dp),
+                            )
+                        }
+                    }
+
+                    LazyRow(
+                        modifier =
+                            Modifier
+                                .animateContentSize()
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        val iconSize = 32.dp
+                        item {
+                            val shape = remember { genre.shape() }
+                            val tooltipState = rememberTooltipState()
+                            val tooltipPositionProvider =
+                                TooltipDefaults.rememberPlainTooltipPositionProvider(
+                                    spacingBetweenTooltipAndAnchor = 8.dp,
+                                )
+                            TooltipBox(
+                                positionProvider = tooltipPositionProvider,
+                                state = tooltipState,
+                                tooltip = {
+                                    Column(
+                                        modifier =
+                                            Modifier
+                                                .padding(16.dp)
+                                                .border(
+                                                    1.dp,
+                                                    genre.color.gradientFade(),
+                                                    shape,
+                                                ).background(
+                                                    MaterialTheme.colorScheme.surface,
+                                                    shape,
+                                                ).padding(8.dp),
+                                    ) {
+                                        val character = currentForm?.character
+                                        Text(
+                                            text = character?.name ?: emptyString(),
+                                            style =
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    fontFamily = genre.headerFont(),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                ),
+                                        )
+                                        Text(
+                                            text = character?.description ?: emptyString(),
+                                            style =
+                                                MaterialTheme.typography.bodySmall.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    color = MaterialTheme.colorScheme.onSurface,
+                                                ),
+                                            modifier = Modifier.padding(top = 4.dp),
+                                        )
+
+                                        Text(
+                                            "Escreva mais sobre seu personagem para enriquecer seus detalhes",
+                                            style =
+                                                MaterialTheme.typography.labelMedium.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                ),
                                             modifier =
                                                 Modifier
-                                                    .padding(16.dp)
-                                                    .border(
-                                                        1.dp,
-                                                        it.color.gradientFade(),
-                                                        it.shape()
-                                                    )
-                                                    .background(
-                                                        MaterialTheme.colorScheme.surface,
-                                                        it.shape(),
-                                                    )
-                                                    .padding(8.dp),
-                                        ) {
-                                            val character = currentForm?.character
-                                            Text(
-                                                text = character?.name ?: emptyString(),
-                                                style =
-                                                    MaterialTheme.typography.titleMedium.copy(
-                                                        fontFamily = genre.headerFont(),
-                                                        color = MaterialTheme.colorScheme.onSurface,
-                                                    ),
-                                            )
-                                            Text(
-                                                text = character?.description ?: emptyString(),
-                                                style =
-                                                    MaterialTheme.typography.bodySmall.copy(
-                                                        fontFamily = genre.bodyFont(),
-                                                        color = MaterialTheme.colorScheme.onSurface,
-                                                    ),
-                                                modifier = Modifier.padding(top = 4.dp),
-                                            )
-
-                                            Text(
-                                                "Escreva mais sobre seu personagem para enriquecer seus detalhes",
-                                                style =
-                                                    MaterialTheme.typography.labelMedium.copy(
-                                                        fontFamily = genre.bodyFont(),
-                                                    ),
-                                                modifier =
-                                                    Modifier
-                                                        .padding(8.dp)
-                                                        .align(Alignment.CenterHorizontally)
-                                                        .alpha(.5f),
-                                            )
-                                        }
-                                    },
-                                ) {
-                                    Icon(
-                                        painterResource(R.drawable.ic_eye_mask),
-                                        contentDescription = "Select character",
-                                        modifier =
-                                            Modifier
-                                                .clip(CircleShape)
-                                                .clickable(
-                                                    enabled = currentForm?.character?.name?.isNotEmpty() == true,
-                                                    onClick = {
-                                                        coroutineScope.launch { tooltipState.show() }
-                                                    },
-                                                )
-                                                .size(iconSize)
-                                                .padding(8.dp)
-                                                .gradientFill(it.color.gradientFade()),
-                                    )
-                                }
-                            }
-
-                            item {
-                                val tooltipState =
-                                    rememberTooltipState(
-                                        isPersistent = true,
-                                    )
-                                val tooltipPositionProvider =
-                                    TooltipDefaults.rememberPlainTooltipPositionProvider(
-                                        spacingBetweenTooltipAndAnchor = 8.dp,
-                                    )
-
-                                TooltipBox(
-                                    positionProvider = tooltipPositionProvider,
-                                    state = tooltipState,
-                                    tooltip = {
-                                        Column(
-                                            Modifier
-                                                .padding(18.dp)
-                                                .fillMaxWidth()
-                                                .border(1.dp, it.color.gradientFade(), it.shape())
-                                                .background(
-                                                    MaterialTheme.colorScheme.background,
-                                                    it.shape(),
-                                                ),
-                                        ) {
-                                            Row {
-                                                Text(
-                                                    "Temas",
-                                                    style =
-                                                        MaterialTheme.typography.titleMedium.copy(
-                                                            fontFamily = it.bodyFont(),
-                                                        ),
-                                                    modifier =
-                                                        Modifier
-                                                            .weight(1f)
-                                                            .animateContentSize()
-                                                            .padding(16.dp),
-                                                )
-
-                                                Text(
-                                                    stringResource(R.string.see_more),
-                                                    style =
-                                                        MaterialTheme.typography.titleMedium.copy(
-                                                            fontFamily = it.bodyFont(),
-                                                            color = it.color,
-                                                        ),
-                                                    modifier =
-                                                        Modifier
-                                                            .padding(16.dp)
-                                                            .clickable {
-                                                                showThemes = true
-                                                            },
-                                                )
-                                            }
-
-                                            LazyRow(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(8.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            ) {
-                                                val genres = Genre.entries
-                                                items(genres) { g ->
-                                                    GenreAvatar(
-                                                        g,
-                                                        true,
-                                                        48.dp,
-                                                        genre == g,
-                                                        modifier = Modifier.padding(8.dp),
-                                                    ) {
-                                                        updateGenre(g)
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    },
-                                ) {
-                                    Icon(
-                                        painterResource(genre.background),
-                                        contentDescription = "Select genre",
-                                        modifier =
-                                            Modifier
-                                                .clip(CircleShape)
-                                                .clickable(onClick = {
-                                                    coroutineScope.launch { tooltipState.show() }
-                                                })
-                                                .size(iconSize)
-                                                .padding(8.dp)
-                                                .gradientFill(it.color.gradientFade()),
-                                    )
-                                }
-                            }
-
-                            item {
+                                                    .padding(8.dp)
+                                                    .align(Alignment.CenterHorizontally)
+                                                    .alpha(.5f),
+                                        )
+                                    }
+                                },
+                            ) {
                                 Icon(
-                                    painterResource(R.drawable.baseline_refresh_24),
-                                    contentDescription = "Reset saga",
+                                    painterResource(R.drawable.ic_eye_mask),
+                                    contentDescription = "Select character",
                                     modifier =
                                         Modifier
                                             .clip(CircleShape)
                                             .clickable(
-                                                enabled = messages.size > 1,
+                                                enabled = currentForm?.character?.name?.isNotEmpty() == true,
                                                 onClick = {
-                                                    resetSaga()
+                                                    coroutineScope.launch { tooltipState.show() }
                                                 },
-                                            )
-                                            .size(iconSize)
+                                            ).size(iconSize)
                                             .padding(8.dp)
-                                            .gradientFill(it.color.gradientFade()),
+                                            .gradientFill(genre.color.gradientFade()),
                                 )
                             }
+                        }
+
+                        item {
+                            val tooltipState =
+                                rememberTooltipState(
+                                    isPersistent = true,
+                                )
+                            val tooltipPositionProvider =
+                                TooltipDefaults.rememberPlainTooltipPositionProvider(
+                                    spacingBetweenTooltipAndAnchor = 8.dp,
+                                )
+
+                            TooltipBox(
+                                positionProvider = tooltipPositionProvider,
+                                state = tooltipState,
+                                tooltip = {
+                                    Column(
+                                        Modifier
+                                            .padding(18.dp)
+                                            .fillMaxWidth()
+                                            .border(1.dp, genre.color.gradientFade(), it.shape())
+                                            .background(
+                                                MaterialTheme.colorScheme.background,
+                                                it.shape(),
+                                            ),
+                                    ) {
+                                        Row {
+                                            Text(
+                                                "Temas",
+                                                style =
+                                                    MaterialTheme.typography.titleMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                    ),
+                                                modifier =
+                                                    Modifier
+                                                        .weight(1f)
+                                                        .animateContentSize()
+                                                        .padding(16.dp),
+                                            )
+
+                                            Text(
+                                                stringResource(R.string.see_more),
+                                                style =
+                                                    MaterialTheme.typography.titleMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        color = genre.color,
+                                                    ),
+                                                modifier =
+                                                    Modifier
+                                                        .padding(16.dp)
+                                                        .clickable {
+                                                            showThemes = true
+                                                        },
+                                            )
+                                        }
+
+                                        LazyRow(
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            val genres = Genre.entries
+                                            items(genres) { g ->
+                                                GenreAvatar(
+                                                    g,
+                                                    true,
+                                                    48.dp,
+                                                    genre == g,
+                                                    modifier = Modifier.padding(8.dp),
+                                                ) {
+                                                    updateGenre(g)
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                            ) {
+                                Icon(
+                                    painterResource(genre.background),
+                                    contentDescription = "Select genre",
+                                    modifier =
+                                        Modifier
+                                            .clip(CircleShape)
+                                            .clickable(onClick = {
+                                                coroutineScope.launch { tooltipState.show() }
+                                            })
+                                            .size(iconSize)
+                                            .padding(8.dp)
+                                            .gradientFill(genre.color.gradientFade()),
+                                )
+                            }
+                        }
+
+                        item {
+                            Icon(
+                                painterResource(R.drawable.baseline_refresh_24),
+                                contentDescription = "Reset saga",
+                                modifier =
+                                    Modifier
+                                        .clip(CircleShape)
+                                        .clickable(
+                                            enabled = messages.size > 1,
+                                            onClick = {
+                                                resetSaga()
+                                            },
+                                        ).size(iconSize)
+                                        .padding(8.dp)
+                                        .gradientFill(genre.color.gradientFade()),
+                            )
                         }
                     }
                 }
@@ -588,7 +636,7 @@ fun NewSagaChat(
                 items(Genre.entries) { genr ->
                     GenreCard(
                         genre = genr,
-                        isSelected = genr == genre,
+                        isSelected = genr == currentForm?.saga?.genre,
                         modifier =
                             Modifier
                                 .fillMaxSize()

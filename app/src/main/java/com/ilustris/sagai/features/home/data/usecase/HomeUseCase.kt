@@ -1,6 +1,8 @@
 package com.ilustris.sagai.features.home.data.usecase
 
+import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -19,9 +21,5 @@ interface HomeUseCase {
 
     suspend fun checkDebugBuild(): Boolean
 
-    suspend fun checkBackups(): RequestResult<List<SagaContent>>
-
-    fun backupEnabled(): Flow<Boolean>
-
-    suspend fun recoverSaga(sagaContent: SagaContent): RequestResult<SagaContent>
+    suspend fun recoverSaga(sagaContent: RestorableSaga): RequestResult<SagaContent>
 }

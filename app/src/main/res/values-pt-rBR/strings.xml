@@ -234,20 +234,26 @@
     <string name="ending">Capítulo %s atualizado</string>
     <string name="see_more">Ver mais</string>
     <string name="timeline_generated_successfully">Evento %s finalizado.</string>
-    <string name="chapter_finished">Capítulo %s finalizado</string>
-    <string name="timeline_updated">Evento %s finalizado</string>
+    <string name="chapter_finished">Capítulo %s finalizado.</string>
+    <string name="timeline_updated">Evento %s atualizado.</string>
     <string name="act_finished">Ato %s finalizado</string>
     <string name="unexpected_error">Ocorreu um erro inesperado</string>
 
     <string name="smart_fix_description">Receba sugestões automáticas de correção por IA com base na sua história e tema. As sugestões ajudam a enriquecer o vocabulário e a adicionar profundidade à narrativa.</string>
 
 
+    <string name="message_reply_error">Ocorreu um erro ao responder sua mensagem.</string>
+    <string name="configure">Configurar</string>
+
     <string name="storage_permission_title">Permissão de armazenamento</string>
-    <string name="storage_permission_description">Para fazer backup de suas sagas e de todas as imagens relacionadas, precisamos de acesso ao armazenamento do seu dispositivo.</string>
+    <string name="storage_permission_description">Para salvar suas sagas e todas as imagens relacionadas, precisamos de acesso ao armazenamento do seu dispositivo. Seus dados são salvos localmente.</string>
     <string name="notifications_permission_title">Permissão para Notificações</string>
     <string name="notifications_permission_description">Para mantermos você atualizado sobre o progresso da sua saga e eventos importantes, por favor, nos permita enviar notificações.</string>
     <string name="permission_required_title">Permissão Necessária</string>
     <string name="permission_required_description">Este recurso precisa de uma permissão especial para funcionar. Poderia nos ajudar com isso?</string>
     <string name="confirm_permission_button">Conceder Permissão</string>
     <string name="backup">Backup</string>
+    <string name="new_character_message">%s juntou-se a história!</string>
+    <string name="backup_disabled">Nao foi possivel habilitar o backup</string>
+    <string name="signatures_title">Assinaturas</string>
 </resources>

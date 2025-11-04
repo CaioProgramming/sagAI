@@ -19,7 +19,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -74,33 +76,7 @@ enum class Routes(
 ) {
     HOME(icon = R.drawable.ic_spark, view = { nav, padding, _, _ ->
         HomeView(nav, padding)
-    }, title = R.string.home_title, topBarContent = {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier.padding(
-                    vertical = 32.dp,
-                    horizontal = 16.dp,
-                ),
-        ) {
-            Box(Modifier.size(24.dp))
-            SagaTitle(
-                Modifier
-                    .weight(1f)
-                    .background(MaterialTheme.colorScheme.background),
-            )
-            IconButton(onClick = {
-                it.navigateToRoute(SETTINGS)
-            }, modifier = Modifier.size(32.dp)) {
-                Icon(
-                    painterResource(R.drawable.ic_settings),
-                    contentDescription = stringResource(R.string.settings_title),
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            }
-        }
-    }),
+    }, topBarContent = {}, title = R.string.home_title),
     CHAT(
         view = { nav, padding, transitionScope, snack ->
             val arguments = nav.currentBackStackEntry?.arguments
@@ -131,38 +107,11 @@ enum class Routes(
         deepLink = "saga://new_saga",
         showBottomNav = false,
         topBarContent = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier =
-                    Modifier.padding(
-                        vertical = 32.dp,
-                        horizontal = 16.dp,
-                    ),
-            ) {
-                IconButton(onClick = {
-                    it.popBackStack()
-                }, modifier = Modifier.size(24.dp)) {
-                    Icon(
-                        painterResource(R.drawable.ic_back_left),
-                        contentDescription = stringResource(R.string.back_button_description),
-                    )
-                }
 
-                SagaTitle(
-                    Modifier.weight(1f),
-                )
-
-                Box(Modifier.size(24.dp))
-            }
         },
         view = { nav, padding, _, _ ->
-            Box(
-                Modifier
-                    .padding(padding)
-                    .fillMaxSize(),
-            ) {
-                NewSagaView(nav)
-            }
+
+            NewSagaView(nav)
         },
     ),
     SAGA_DETAIL(

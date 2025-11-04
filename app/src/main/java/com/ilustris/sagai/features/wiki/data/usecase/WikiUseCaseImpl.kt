@@ -20,7 +20,7 @@ class WikiUseCaseImpl
         private val wikiRepository: WikiRepository,
         private val gemmaClient: GemmaClient,
     ) : WikiUseCase {
-        override suspend fun saveWiki(wiki: Wiki): Long = wikiRepository.insertWiki(wiki)
+        override suspend fun saveWiki(wiki: Wiki) = wikiRepository.insertWiki(wiki)
 
         override suspend fun updateWiki(wiki: Wiki) = wikiRepository.updateWiki(wiki)
 

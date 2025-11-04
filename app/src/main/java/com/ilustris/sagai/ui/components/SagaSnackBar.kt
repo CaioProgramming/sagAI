@@ -1,9 +1,13 @@
 package com.ilustris.sagai.ui.components
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,87 +39,101 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun SagaSnackBar(
-    genre: Genre,
-    snackBar: SnackBarState,
+    snackBarState: SnackBarState?,
+    genre: Genre?,
+    modifier: Modifier,
     onAction: (SnackAction) -> Unit,
 ) {
-    val shape = remember { genre.shape() }
-    Row(
-        Modifier
-            .dropShadow(
-                shape = RoundedCornerShape(20.dp),
-                shadow =
-                    Shadow(
-                        radius = 10.dp,
-                        spread = 6.dp,
-                        color = genre.color,
-                        offset = DpOffset.Zero,
-                    ),
-            ).clip(shape)
-            .border(1.dp, genre.color.gradientFade(), shape)
-            .background(
-                genre.color,
-                shape,
-            ).fillMaxWidth()
-            .animateContentSize(
-                animationSpec = tween(200, easing = EaseIn),
-            ).padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    val mainColor = genre?.color ?: MaterialTheme.colorScheme.background
+    val contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onBackground
+    val shape = remember { genre?.shape() ?: RoundedCornerShape(10.dp) }
+
+    AnimatedVisibility(
+        snackBarState != null,
+        modifier = modifier,
+        enter = slideInVertically { -it } + fadeIn(tween(500)),
+        slideOutVertically { it },
     ) {
-        val resource = snackBar.icon
-        val colorFilter = if (resource == null) ColorFilter.tint(genre.iconColor) else null
-        val shape = if (resource !is Painter) CircleShape else shape
-
-        AsyncImage(
-            resource,
-            null,
-            colorFilter = colorFilter,
-            placeholder = painterResource(R.drawable.ic_spark),
-            error = painterResource(R.drawable.ic_spark),
-            modifier =
+        snackBarState?.let { snackBar ->
+            Row(
                 Modifier
-                    .size(24.dp)
-                    .padding(4.dp)
-                    .clip(shape),
-        )
+                    .dropShadow(
+                        shape = RoundedCornerShape(20.dp),
+                        shadow =
+                            Shadow(
+                                radius = 5.dp,
+                                spread = 2.dp,
+                                color = mainColor.darker(),
+                                offset = DpOffset.Zero,
+                            ),
+                    ).clip(shape)
+                    .border(1.dp, mainColor.gradientFade(), shape)
+                    .background(
+                        mainColor,
+                        shape,
+                    ).fillMaxWidth()
+                    .animateContentSize(
+                        animationSpec = tween(200, easing = EaseIn),
+                    ).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val resource = snackBar.icon
+                val colorFilter = if (resource == null) ColorFilter.tint(contentColor) else null
+                val shape = if (resource !is Painter) CircleShape else shape
 
-        Text(
-            snackBar.message,
-            style =
+                AsyncImage(
+                    resource,
+                    null,
+                    colorFilter = colorFilter,
+                    placeholder = painterResource(R.drawable.ic_spark),
+                    error = painterResource(R.drawable.ic_spark),
+                    modifier =
+                        Modifier
+                            .size(24.dp)
+                            .padding(4.dp)
+                            .clip(shape),
+                )
 
-                MaterialTheme.typography.bodySmall.copy(
-                    color = genre.iconColor,
-                ),
-            fontFamily = genre.bodyFont(),
-            textAlign = TextAlign.Start,
-            modifier =
-                Modifier
-                    .padding(8.dp)
-                    .weight(1f),
-        )
+                Text(
+                    snackBar.message,
+                    style =
 
-        snackBar.action?.let { snackAction ->
-            Text(
-                stringResource(snackAction.actionRes ?: R.string.empty),
-                style =
-                    MaterialTheme.typography.labelMedium.copy(
-                        color = genre.iconColor,
-                        fontFamily = genre.bodyFont(),
-                    ),
-                modifier =
-                    Modifier
-                        .padding(8.dp)
-                        .clip(shape)
-                        .clickable {
-                            onAction(snackAction)
-                        },
-            )
+                        MaterialTheme.typography.bodySmall.copy(
+                            color = contentColor,
+                        ),
+                    fontFamily = genre?.bodyFont(),
+                    textAlign = TextAlign.Start,
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .weight(1f),
+                )
+
+                snackBar.action?.let { snackAction ->
+                    Text(
+                        stringResource(snackAction.actionRes ?: R.string.empty),
+                        style =
+                            MaterialTheme.typography.labelMedium.copy(
+                                color = contentColor,
+                                fontFamily = genre?.bodyFont(),
+                            ),
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .clip(shape)
+                                .clickable {
+                                    onAction(snackAction)
+                                },
+                    )
+                }
+            }
         }
     }
 }
@@ -157,6 +175,10 @@ class SnackActionBuilder {
     fun revaluateSaga() {
         action = SnackAction.RevaluateSaga
     }
+
+    fun configureBackup() {
+        action = SnackAction.EnableBackup
+    }
 }
 
 data class SnackBarState(
@@ -181,4 +203,6 @@ sealed class SnackAction(
     ) : SnackAction(R.string.try_again)
 
     data object RevaluateSaga : SnackAction(R.string.try_again)
+
+    data object EnableBackup : SnackAction(R.string.configure)
 }

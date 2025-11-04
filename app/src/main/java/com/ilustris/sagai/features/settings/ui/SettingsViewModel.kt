@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.settings.ui
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.utils.formatDate
@@ -8,10 +9,12 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @HiltViewModel
 class SettingsViewModel
@@ -35,6 +38,8 @@ class SettingsViewModel
 
         private val _storageBreakdown = MutableStateFlow(StorageBreakdown(0L, 0L, 0L))
         val storageBreakdown = _storageBreakdown.asStateFlow()
+        val isLoading = MutableStateFlow(false)
+        val loadingMessage = MutableStateFlow<String?>(null)
 
         init {
             loadMemoryUsage()
@@ -68,17 +73,28 @@ class SettingsViewModel
             }
         }
 
-        fun wipeAppData(onComplete: (() -> Unit)? = null) {
+        fun wipeAppData() {
             viewModelScope.launch {
+                isLoading.value = true
+                loadingMessage.emit("Limpando seus universos...")
                 settingsUseCase.wipeAppData()
+                loadingMessage.emit("Suas histórias foram removidas, hora de recomeçar!")
                 loadMemoryUsage()
-                onComplete?.invoke()
+                delay(2.seconds)
+                isLoading.value = false
+                loadingMessage.emit(null)
             }
         }
 
         fun loadStorageBreakdown() {
             viewModelScope.launch {
                 _storageBreakdown.value = settingsUseCase.getStorageBreakdown()
+            }
+        }
+
+        fun disableBackup() {
+            viewModelScope.launch {
+                settingsUseCase.disableBackup()
             }
         }
     }

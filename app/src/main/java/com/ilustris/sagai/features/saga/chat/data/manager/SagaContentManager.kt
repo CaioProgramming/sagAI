@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.data.manager
 
+import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -7,6 +8,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.components.SnackBarState
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +21,8 @@ interface SagaContentManager {
     val narrativeProcessingUiState: StateFlow<Boolean>
 
     var snackBarUpdate: MutableStateFlow<SnackBarState?>
+
+    val backupEnabled: Flow<Boolean>
 
     suspend fun loadSaga(sagaId: String)
 
@@ -49,4 +53,6 @@ interface SagaContentManager {
     suspend fun reviewEvent(timelineContent: TimelineContent)
 
     suspend fun backupSaga()
+
+    suspend fun enableBackup(uri: Uri?)
 }

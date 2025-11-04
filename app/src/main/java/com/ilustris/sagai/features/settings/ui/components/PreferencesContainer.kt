@@ -48,6 +48,7 @@ fun PreferencesContainer(
             Text(
                 title,
                 style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 description,
@@ -66,7 +67,7 @@ fun PreferencesContainer(
                 ),
             modifier = Modifier.scale(.6f),
             onCheckedChange = {
-                onClickSwitch(it)
+                onClickSwitch(it.not())
             },
         )
     }

@@ -53,14 +53,17 @@ fun StarryLoader(
                             .gradientFill(brush),
                 )
 
-                AnimatedContent(loadingMessage, transitionSpec = {
-                    fadeIn(tween(500)) togetherWith slideOutVertically { it }
-                }) {
+                AnimatedContent(
+                    loadingMessage,
+                    modifier = Modifier.align(Alignment.Center),
+                    transitionSpec = {
+                        fadeIn(tween(500)) togetherWith slideOutVertically { it }
+                    },
+                ) {
                     it?.let { message ->
                         Text(
                             message,
                             style = textStyle,
-                            modifier = Modifier.align(Alignment.Center),
                         )
                     }
                 }

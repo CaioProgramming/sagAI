@@ -1,160 +1,255 @@
 package com.ilustris.sagai.core.file
 
-import android.Manifest
 import android.content.Context
-import android.os.Environment
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Log
+import androidx.core.net.toUri
+import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.permissions.PermissionService
-import com.ilustris.sagai.core.permissions.PermissionStatus
+import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.file.backup.RestorableSaga
+import com.ilustris.sagai.core.file.backup.SagaManifest
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import java.io.File
-import java.io.FileWriter
+import java.io.FileInputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
+import kotlin.collections.emptyList
 
 class BackupService(
     private val context: Context,
-    private val permissionService: PermissionService,
+    private val preferences: DataStorePreferences,
 ) {
     companion object {
-        private const val BACKUP_FOLDER = "sagai_backups"
+        private const val BACKUP_FOLDER_NAME = "sagai_backups"
+        private const val MANIFEST_FILE_NAME = "sagai_manifest.json"
         private const val SAGA_JSON_FILE = "saga.json"
+        private const val IMAGES_FOLDER = "images"
     }
 
-    private fun getBackupRoot(): File? {
-        val externalFilesDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-        return externalFilesDir?.let {
-            val backupDir = File(it, BACKUP_FOLDER)
-            if (!backupDir.exists()) {
-                backupDir.mkdirs()
-            }
-            backupDir
-        }
-    }
-
-    private fun getSagaBackupDirs(): List<File> {
-        val root = getBackupRoot()
-        return root?.listFiles { file -> file.isDirectory }?.toList() ?: emptyList()
-    }
-
-    suspend fun getBackedUpSagas() =
-        executeRequest {
-            val gson = Gson()
-            getSagaBackupDirs().mapNotNull { sagaDir ->
-                try {
-                    val sagaJsonFile = File(sagaDir, SAGA_JSON_FILE)
-                    if (!sagaJsonFile.exists()) return@mapNotNull null
-
-                    val json = sagaJsonFile.readText()
-                    val sagaContent = gson.fromJson(json, SagaContent::class.java)
-
-                    val iconName = File(sagaContent.data.icon).name
-                    val newIconPath =
-                        if (iconName.isNotBlank()) sagaDir.absolutePath + File.separator + iconName else ""
-
-                    val updatedSaga = sagaContent.data.copy(icon = newIconPath)
-
-                    val updatedCharacters =
-                        sagaContent.characters.map { characterContent ->
-                            val characterImageName = File(characterContent.data.image).name
-                            val newCharacterImage =
-                                if (characterImageName.isNotBlank()) sagaDir.absolutePath + File.separator + characterImageName else ""
-                            characterContent.copy(data = characterContent.data.copy(image = newCharacterImage))
-                        }
-
-                    val updatedActs =
-                        sagaContent.acts.map { actContent ->
-                            val updatedChapters =
-                                actContent.chapters.map { chapterContent ->
-                                    val chapterImageName = File(chapterContent.data.coverImage).name
-                                    val newChapterImage =
-                                        if (chapterImageName.isNotBlank()) sagaDir.absolutePath + File.separator + chapterImageName else ""
-                                    chapterContent.copy(data = chapterContent.data.copy(coverImage = newChapterImage))
-                                }
-                            actContent.copy(chapters = updatedChapters)
-                        }
-
-                    sagaContent.copy(
-                        data = updatedSaga,
-                        characters = updatedCharacters,
-                        acts = updatedActs,
-                    )
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    null
-                }
-            }
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun backupEnabled() =
+        preferences.getString(BACKUP_PREFRENCE_KEY).flatMapLatest {
+            flowOf(getBackupRoot() != null)
         }
 
-    suspend fun backupSaga(saga: SagaContent) =
-        executeRequest {
-            val rootDir = getBackupRoot() ?: error("Could not access backup directory")
-            val sagaDir = File(rootDir, saga.data.id.toString())
-            if (!sagaDir.exists()) {
-                sagaDir.mkdirs()
-            }
+    suspend fun deleteBackup() {
+        preferences.setString(BACKUP_PREFRENCE_KEY, emptyString())
+    }
 
-            val newSagaIconPath = copyFileToBackupDir(saga.data.icon, sagaDir)?.name ?: ""
-
-            val newCharacters =
-                saga.characters.map { characterContent ->
-                    val newImagePath =
-                        copyFileToBackupDir(characterContent.data.image, sagaDir)?.name ?: ""
-                    characterContent.copy(data = characterContent.data.copy(image = newImagePath))
+    private suspend fun getBackupRoot(): DocumentFile? =
+        try {
+            val path =
+                preferences.getStringNow(BACKUP_PREFRENCE_KEY).ifEmpty {
+                    error("Path not defined.")
                 }
+            Log.i(javaClass.simpleName, "backup Path: $path")
+            val pathUri = path.toUri()
 
-            val newActs =
-                saga.acts.map { actContent ->
-                    val newChapters =
-                        actContent.chapters.map { chapterContent ->
-                            val newCoverPath =
-                                copyFileToBackupDir(chapterContent.data.coverImage, sagaDir)?.name
-                                    ?: ""
-                            chapterContent.copy(data = chapterContent.data.copy(coverImage = newCoverPath))
-                        }
-                    actContent.copy(chapters = newChapters)
-                }
+            val parentFolder = DocumentFile.fromTreeUri(context, pathUri)
 
-            val backupSagaContent =
-                saga.copy(
-                    data = saga.data.copy(icon = newSagaIconPath),
-                    characters = newCharacters,
-                    acts = newActs,
+            parentFolder ?: error("Could not access backup directory")
+
+            if (parentFolder.exists().not()) error("Backup directory does not exist.")
+            if (parentFolder.canWrite().not()) error("Backup directory is not writable.")
+
+            val sagaiBackupFolder =
+                parentFolder.findFile(BACKUP_FOLDER_NAME) ?: return parentFolder.createDirectory(
+                    BACKUP_FOLDER_NAME,
                 )
 
-            val gson = Gson()
-            val json = gson.toJson(backupSagaContent)
-            val file = File(sagaDir, SAGA_JSON_FILE)
-            FileWriter(file).use { it.write(json) }
+            if (sagaiBackupFolder.isDirectory.not()) error("Backup folder is not a directory.")
 
-            sagaDir.absolutePath
-        }
-
-    private fun copyFileToBackupDir(
-        sourcePath: String,
-        destinationDir: File,
-    ): File? {
-        return try {
-            if (sourcePath.isBlank()) return null
-            val sourceFile = File(sourcePath)
-            if (!sourceFile.exists()) return null
-
-            val destinationFile = File(destinationDir, sourceFile.name)
-            sourceFile.copyTo(destinationFile, overwrite = true)
-            destinationFile
+            sagaiBackupFolder
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+
+    private suspend fun getBackupManifests(backupRoot: DocumentFile): List<SagaManifest> {
+        val manifestFile = backupRoot.findFile(MANIFEST_FILE_NAME) ?: return emptyList()
+        val json = readTextFromUri(manifestFile.uri) ?: return emptyList()
+        return Gson()
+            .fromJson(json, Array<SagaManifest>::class.java)
+            ?.toList() ?: emptyList()
     }
 
-    fun backupEnabled(): Flow<Boolean> {
-        val writeFlow = permissionService.observePermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-        val readFlow = permissionService.observePermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-        return combine(writeFlow, readFlow) { writeStatus, readStatus ->
-            writeStatus == PermissionStatus.GRANTED && readStatus == PermissionStatus.GRANTED
+    private fun getIconFromZip(
+        backupRoot: DocumentFile,
+        zipFileName: String,
+        iconFileName: String,
+    ): Bitmap? {
+        if (iconFileName.isBlank()) return null
+        val zipFile = backupRoot.findFile(zipFileName) ?: return null
+
+        try {
+            context.contentResolver.openInputStream(zipFile.uri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        if (entry.name == "$IMAGES_FOLDER/$iconFileName") {
+                            return BitmapFactory.decodeStream(zipStream)
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
+
+    suspend fun getBackedUpSagas() =
+        executeRequest {
+            val backupRoot = getBackupRoot() ?: return@executeRequest emptyList()
+            val manifests = getBackupManifests(backupRoot)
+
+            manifests.map {
+                val icon = getIconFromZip(backupRoot, it.zipFileName, it.iconName)
+                RestorableSaga(
+                    it,
+                    icon,
+                )
+            }
+        }
+
+    private fun readTextFromUri(uri: Uri): String? =
+        try {
+            context.contentResolver
+                .openInputStream(uri)
+                ?.bufferedReader()
+                ?.use { it.readText() }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+
+    private suspend fun updateManifest(
+        backupRoot: DocumentFile,
+        saga: SagaContent,
+        zipFileName: String,
+    ) {
+        val gson = Gson()
+        var manifestFile = backupRoot.findFile(MANIFEST_FILE_NAME)
+
+        val currentManifest: MutableList<SagaManifest> =
+            if (manifestFile != null) {
+                val json = readTextFromUri(manifestFile.uri)
+                gson.fromJson<Array<SagaManifest>>(json, Array<SagaManifest>::class.java)?.toMutableList() ?: mutableListOf()
+            } else {
+                manifestFile = backupRoot.createFile("application/json", MANIFEST_FILE_NAME)
+                    ?: error("Could not create manifest file.")
+                mutableListOf()
+            }
+
+        currentManifest.removeAll { it.sagaId == saga.data.id }
+
+        val newEntry =
+            SagaManifest(
+                sagaId = saga.data.id,
+                title = saga.data.title,
+                description = saga.data.description,
+                genre = saga.data.genre,
+                iconName = File(saga.data.icon).name,
+                lastBackup = System.currentTimeMillis(),
+                zipFileName = zipFileName,
+            )
+        currentManifest.add(newEntry)
+
+        val updatedJson = gson.toJson(currentManifest)
+        context.contentResolver.openOutputStream(manifestFile.uri, "w")?.use { outputStream ->
+            outputStream.write(updatedJson.toByteArray())
         }
     }
+
+    suspend fun backupSaga(saga: SagaContent) =
+        executeRequest {
+            val backupRoot = getBackupRoot() ?: error("Could not access backup directory")
+            val zipFileName = "saga_${saga.data.id}.zip"
+            var sagaZipFile = backupRoot.findFile(zipFileName)
+            if (sagaZipFile == null) {
+                sagaZipFile = backupRoot.createFile("application/zip", zipFileName)
+                    ?: error("Could not create zip file in backup directory.")
+            }
+
+            context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
+                ZipOutputStream(outputStream).use { zipStream ->
+
+                    val sagaJson = Gson().toJson(saga)
+                    zipStream.putNextEntry(ZipEntry(SAGA_JSON_FILE))
+                    zipStream.write(sagaJson.toByteArray())
+                    zipStream.closeEntry()
+
+                    val imagePaths = getAllImagePaths(saga)
+                    imagePaths.forEach { path ->
+                        val file = File(path)
+                        if (file.exists()) {
+                            // Use a folder structure inside the zip for organization
+                            zipStream.putNextEntry(ZipEntry("$IMAGES_FOLDER/${file.name}"))
+                            FileInputStream(file).use { it.copyTo(zipStream) }
+                            zipStream.closeEntry()
+                        }
+                    }
+                }
+            }
+
+            updateManifest(backupRoot, saga, zipFileName)
+        }
+
+    private fun getAllImagePaths(saga: SagaContent): Set<String> {
+        val paths = mutableSetOf<String>()
+        paths.add(saga.data.icon)
+        saga.characters.forEach { paths.add(it.data.image) }
+        saga.acts.forEach { act ->
+            act.chapters.forEach { chapter ->
+                paths.add(chapter.data.coverImage)
+            }
+        }
+        return paths.filter { it.isNotBlank() }.toSet()
+    }
+
+    suspend fun enableBackup(uri: Uri?) =
+        executeRequest {
+            val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+
+            context.contentResolver.takePersistableUriPermission(uri!!, flags)
+
+            preferences.setString(BACKUP_PREFRENCE_KEY, uri.toString())
+        }
+
+    fun unzipAndParseSaga(zipUri: Uri): SagaContent? {
+        try {
+            context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        if (entry.name == SAGA_JSON_FILE) {
+                            // We found the saga.json file!
+                            // Read its content as text.
+                            val jsonString = zipStream.bufferedReader().use { it.readText() }
+                            // Parse the JSON into our SagaContent object.
+                            return Gson().fromJson(jsonString, SagaContent::class.java)
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return null
+    }
 }
+
+const val BACKUP_PREFRENCE_KEY = "BACKUP_PATH"
+const val BACKUP_PERMISSION = "BACKUP_SERVICE"

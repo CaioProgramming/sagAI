@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.data.manager
 
 import android.content.Context
+import android.net.Uri
 import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.R
@@ -8,6 +9,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
@@ -48,6 +50,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -72,6 +75,7 @@ class SagaContentManagerImpl
         private val emotionalUseCase: EmotionalUseCase,
         private val fileCacheService: FileCacheService,
         private val remoteConfig: FirebaseRemoteConfig,
+        private val backupService: BackupService,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -92,6 +96,7 @@ class SagaContentManagerImpl
             _narrativeProcessingUiState.asStateFlow()
 
         override var snackBarUpdate: MutableStateFlow<SnackBarState?> = MutableStateFlow(null)
+        override val backupEnabled = backupService.backupEnabled()
         private var isDebugModeEnabled: Boolean = false
         private var isProcessing: Boolean = false
 
@@ -124,8 +129,9 @@ class SagaContentManagerImpl
                             javaClass.simpleName,
                             "Saga flow updated for saga -> $sagaId \n ${saga?.data.toJsonFormat()}",
                         )
-                        content.value = saga
+                        content.emit(saga)
                         if (saga == null) {
+                            Log.e(javaClass.simpleName, "loadSaga: Unexpected error loading saga($sagaId)")
                             return@collectLatest
                         }
 
@@ -302,6 +308,14 @@ class SagaContentManagerImpl
             Log.d(javaClass.simpleName, "Backing up saga ${currentSaga.data.id}")
 
             sagaHistoryUseCase.backupSaga(currentSaga)
+        }
+
+        override suspend fun enableBackup(uri: Uri?) {
+            uri?.let {
+                backupService.enableBackup(it)
+            } ?: run {
+                snackBarUpdate.emit(snackBar(context.getString(R.string.backup_disabled)))
+            }
         }
 
         private suspend fun endChapter(currentAct: ActContent?) =

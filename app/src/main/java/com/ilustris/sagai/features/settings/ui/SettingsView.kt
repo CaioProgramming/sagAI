@@ -6,6 +6,8 @@ import ai.atick.material.MaterialColor
 import android.Manifest
 import android.app.Activity
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,10 +39,14 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.file.BACKUP_PERMISSION
+import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSettings
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.rememberPermissionLauncher
+import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.core.utils.formatFileSize
 import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumTitle
@@ -48,6 +54,7 @@ import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -59,16 +66,18 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
     val smartSuggestionsEnabled by viewModel.smartSuggestionsEnabled.collectAsStateWithLifecycle(
         false,
     )
-    val backupEnabled by viewModel.backupEnabled.collectAsStateWithLifecycle(false)
+    val backupEnabled by
+        viewModel.backupEnabled
+            .collectAsStateWithLifecycle(false)
 
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
     val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle(emptyList())
-    val breakdown = viewModel.storageBreakdown.collectAsStateWithLifecycle().value
+    val breakdown by viewModel.storageBreakdown.collectAsStateWithLifecycle()
 
     var showClearDialog by remember { mutableStateOf(false) }
-    var isWiping by remember { mutableStateOf(false) }
-    var wipeComplete by remember { mutableStateOf(false) }
+    val isWiping by viewModel.isLoading.collectAsStateWithLifecycle()
+    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     var premiumSheetVisible by remember { mutableStateOf(false) }
     var requestedPermission by remember {
         mutableStateOf<String?>(null)
@@ -76,81 +85,84 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
     val context = LocalActivity.current
     val permissionLauncher = rememberPermissionLauncher()
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        val blurRadius = if (isWiping || showClearDialog) 16.dp else 0.dp
-        LazyColumn(
-            modifier =
-                Modifier
-                    .padding(top = 50.dp)
-                    .fillMaxSize()
-                    .padding(16.dp)
-                    .blur(blurRadius),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                Text(
-                    text = stringResource(R.string.settings_title),
-                    style =
-                        MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Black,
-                        ),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-            }
+    val blurRadius = if (isWiping || showClearDialog) 16.dp else 0.dp
+    var showBackupSheet by remember { mutableStateOf(false) }
+    var showBackups by remember { mutableStateOf(true) }
+    LazyColumn(
+        modifier =
+            Modifier
+                .statusBarsPadding()
+                .fillMaxSize()
+                .padding(16.dp)
+                .blur(blurRadius),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            Text(
+                text = stringResource(R.string.settings_title),
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Black,
+                    ),
+                modifier = Modifier.padding(bottom = 8.dp),
+            )
+        }
 
-            if (isUserPro) {
-                item {
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier =
-                            Modifier
-                                .reactiveShimmer(true)
-                                .gradientFill(Brush.horizontalGradient(holographicGradient)),
-                    ) {
-                        PremiumTitle()
-                    }
+        if (isUserPro) {
+            item {
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .reactiveShimmer(true)
+                            .gradientFill(Brush.horizontalGradient(holographicGradient)),
+                ) {
+                    PremiumTitle()
                 }
             }
+        }
 
-            item {
-                Column(
+        item {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.surfaceContainer,
+                            RoundedCornerShape(15.dp),
+                        ).padding(12.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.memory_usage),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.alpha(.5f),
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text =
+                        memoryUsage?.formatFileSize() ?: "---",
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                        ),
+                )
+
+                StorageBarChart(
+                    cacheSize = breakdown.cacheSize,
+                    sagaContentSize = breakdown.sagaContentSize,
+                    otherSize = breakdown.otherSize,
+                    totalSize = (memoryUsage ?: 0L),
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainer,
-                                RoundedCornerShape(15.dp),
-                            ).padding(12.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.memory_usage),
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.alpha(.5f),
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text =
-                            memoryUsage?.formatFileSize() ?: "---",
-                        style =
-                            MaterialTheme.typography.headlineSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                            ),
-                    )
-
-                    StorageBarChart(
-                        cacheSize = breakdown.cacheSize,
-                        sagaContentSize = breakdown.sagaContentSize,
-                        otherSize = breakdown.otherSize,
-                        totalSize = (memoryUsage ?: 0L),
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                    )
-                }
+                            .padding(vertical = 8.dp),
+                )
             }
+        }
 
+        if (breakdown.cacheSize > 1) {
             item {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -183,19 +195,26 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     Icon(
                         painterResource(R.drawable.round_arrow_forward_ios_24),
                         null,
-                        modifier = Modifier.alpha(.5f).size(24.dp),
+                        modifier =
+                            Modifier
+                                .alpha(.5f)
+                                .size(24.dp)
+                                .padding(8.dp),
                         tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             }
+        }
 
+        if (storageInfo.isNotEmpty()) {
             item {
                 Text(
                     text = stringResource(R.string.sagas_storage),
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.alpha(.5f),
                 )
             }
+
             item {
                 Column(
                     modifier =
@@ -240,7 +259,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                 Text(
                                     stringResource(
                                         R.string.saga_detail_status_created,
-                                        saga.createdAt,
+                                        saga.createdAt.formatDate(),
                                     ),
                                     style =
                                         MaterialTheme.typography.labelMedium.copy(
@@ -270,201 +289,185 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     }
                 }
             }
+        }
 
-            item {
-                Text(
-                    text = stringResource(R.string.preferences),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.alpha(.5f),
-                )
-            }
-
-            item {
-                Column(
+        item {
+            Text(
+                text = stringResource(R.string.preferences),
+                style = MaterialTheme.typography.titleMedium,
+                modifier =
                     Modifier
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer,
-                            RoundedCornerShape(15.dp),
-                        ),
-                ) {
-                    PreferencesContainer(
-                        stringResource(R.string.notifications),
-                        stringResource(R.string.notification_explanation),
-                        isActivated = notificationsEnabled,
-                        onClickSwitch = {
-                            context?.let {
-                                if (notificationsEnabled) {
-                                    openAppSettings(it)
-                                } else {
-                                    PermissionService.requestPermission(
-                                        it,
-                                        Manifest.permission.POST_NOTIFICATIONS,
-                                        permissionLauncher,
-                                        onShowRationale = {
-                                            requestedPermission =
-                                                Manifest.permission.POST_NOTIFICATIONS
-                                        },
-                                    )
-                                }
+                        .alpha(.5f)
+                        .padding(8.dp),
+            )
+        }
+
+        item {
+            Column(
+                Modifier
+                    .background(
+                        MaterialTheme.colorScheme.surfaceContainer,
+                        RoundedCornerShape(15.dp),
+                    ).padding(8.dp),
+            ) {
+                PreferencesContainer(
+                    stringResource(R.string.notifications),
+                    stringResource(R.string.notification_explanation),
+                    isActivated = notificationsEnabled,
+                    onClickSwitch = {
+                        context?.let {
+                            if (notificationsEnabled) {
+                                openAppSettings(it)
+                            } else {
+                                PermissionService.requestPermission(
+                                    it,
+                                    Manifest.permission.POST_NOTIFICATIONS,
+                                    permissionLauncher,
+                                    onShowRationale = {
+                                        requestedPermission =
+                                            Manifest.permission.POST_NOTIFICATIONS
+                                    },
+                                )
                             }
-                        },
-                    )
-
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                        thickness = 1.dp,
-                    )
-
-                    val backupLauncher = PermissionService.rememberMultiplePermissionLauncher()
-
-                    PreferencesContainer(
-                        stringResource(R.string.backup),
-                        stringResource(R.string.storage_permission_description),
-                        isActivated = backupEnabled,
-                        onClickSwitch = {
-                            context?.let {
-                                if (backupEnabled) {
-                                    openAppSettings(it)
-                                } else {
-                                    PermissionService.requestMultiplePermissions(
-                                        it,
-                                        listOf(
-                                            Manifest.permission.READ_EXTERNAL_STORAGE,
-                                            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                        ),
-                                        backupLauncher,
-                                    ) {
-                                        requestedPermission = Manifest.permission.READ_EXTERNAL_STORAGE
-                                    }
-                                }
-                            }
-                        },
-                    )
-
-                    HorizontalDivider(
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
-                        thickness = 1.dp,
-                    )
-
-                    PreferencesContainer(
-                        stringResource(R.string.smart_fix),
-                        stringResource(R.string.smart_fix_description),
-                        isActivated = smartSuggestionsEnabled,
-                        onClickSwitch = {
-                            viewModel.setSmartSuggestionsEnabled(it.not())
-                        },
-                    )
-                }
-            }
-
-            item {
-                Text(
-                    "Assinaturas",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.alpha(.5f),
+                        }
+                    },
                 )
-            }
 
-            item {
-                PremiumCard(
-                    isUserPro = isUserPro,
-                    onClick = {
-                        premiumSheetVisible = true
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                    thickness = 1.dp,
+                )
+
+                PreferencesContainer(
+                    stringResource(R.string.backup),
+                    stringResource(R.string.storage_permission_description),
+                    isActivated = backupEnabled,
+                    onClickSwitch = {
+                        if (backupEnabled) {
+                            viewModel.disableBackup()
+                        } else {
+                            showBackupSheet = true
+                        }
+                    },
+                )
+
+                if (backupEnabled) {
+                    Box(
+                        Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Button(onClick = {
+                            showBackups = true
+                            showBackupSheet = true
+                        }, colors = ButtonDefaults.textButtonColors()) {
+                            Icon(
+                                painterResource(R.drawable.ic_restore),
+                                null,
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 8.dp)
+                                        .size(24.dp),
+                            )
+                            Text(
+                                "Restaurar histórias",
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Light,
+                                    ),
+                            )
+                        }
+                    }
+                }
+
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                    thickness = 1.dp,
+                )
+
+                PreferencesContainer(
+                    stringResource(R.string.smart_fix),
+                    stringResource(R.string.smart_fix_description),
+                    isActivated = smartSuggestionsEnabled,
+                    onClickSwitch = {
+                        viewModel.setSmartSuggestionsEnabled(!it)
                     },
                 )
             }
-
-            item {
-                Button(
-                    onClick = { showClearDialog = true },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors =
-                        ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                            contentColor = MaterialColor.RedA200,
-                        ),
-                    shape = RoundedCornerShape(15.dp),
-                ) {
-                    Text(
-                        stringResource(R.string.clear_data_button),
-                        modifier = Modifier.padding(8.dp),
-                    )
-                }
-            }
         }
 
-        if (showClearDialog) {
-            AlertDialog(
-                onDismissRequest = { showClearDialog = false },
-                title = { Text(stringResource(R.string.clear_data_dialog_title)) },
-                text = { Text(stringResource(R.string.clear_data_dialog_message)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showClearDialog = false
-                        isWiping = true
-                        wipeComplete = false
-                        viewModel.wipeAppData {
-                            isWiping = false
-                            wipeComplete = true
-                        }
-                    }) {
-                        Text(stringResource(R.string.clear_data_dialog_confirm))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showClearDialog = false }) {
-                        Text(stringResource(R.string.clear_data_dialog_cancel))
-                    }
+        item {
+            Text(
+                stringResource(R.string.signatures_title),
+                style = MaterialTheme.typography.titleSmall,
+                modifier =
+                    Modifier
+                        .alpha(.5f)
+                        .padding(8.dp),
+            )
+        }
+
+        item {
+            PremiumCard(
+                isUserPro = isUserPro,
+                onClick = {
+                    premiumSheetVisible = true
                 },
             )
         }
 
-        if (isWiping || wipeComplete) {
-            Dialog(
-                onDismissRequest = {
-                    if (wipeComplete) wipeComplete = false
-                },
-                properties =
-                    DialogProperties(
-                        dismissOnBackPress = wipeComplete,
-                        dismissOnClickOutside = wipeComplete,
+        item {
+            Button(
+                onClick = { showClearDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                        contentColor = MaterialColor.RedA200,
                     ),
+                shape = RoundedCornerShape(15.dp),
             ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .background(Brush.verticalGradient(holographicGradient)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        StarryTextPlaceholder(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(200.dp)
-                                    .background(Brush.verticalGradient(holographicGradient)),
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            text = if (isWiping) "Wiping your universes" else "Your universe is empty again!",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        )
-                    }
-                }
+                Text(
+                    stringResource(R.string.clear_data_button),
+                    modifier = Modifier.padding(8.dp),
+                )
             }
         }
 
-        PermissionComponent(requestedPermission, {
-            context?.let {
-                openAppSettings(context)
-                requestedPermission = null
-            }
-        }, { requestedPermission = null })
+        item {
+            Spacer(Modifier.size(50.dp))
+        }
     }
+
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title = { Text(stringResource(R.string.clear_data_dialog_title)) },
+            text = { Text(stringResource(R.string.clear_data_dialog_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showClearDialog = false
+                    viewModel.wipeAppData()
+                }) {
+                    Text(stringResource(R.string.clear_data_dialog_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDialog = false }) {
+                    Text(stringResource(R.string.clear_data_dialog_cancel))
+                }
+            },
+        )
+    }
+
+    StarryLoader(isWiping, loadingMessage)
+
+    PermissionComponent(requestedPermission, {
+        openAppSettings(context)
+    }, { requestedPermission = null })
 
     PremiumView(
         isVisible = premiumSheetVisible,
@@ -472,6 +475,13 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
             premiumSheetVisible = false
         },
     )
+
+    if (showBackupSheet) {
+        BackupSheet(showBackups, onDismiss = {
+            showBackupSheet = false
+            showBackups = false
+        })
+    }
 }
 
 @Composable

@@ -263,17 +263,21 @@
     <string name="timeline_updated">Timeline %s updated.</string>
     <string name="act_finished">Act %s finished.</string>
     <string name="unexpected_error">Sorry an unexpected error has occurred.</string>
-    <string name="message_reply_error">Ocorreu um erro ao responder sua mensagem.</string>
-    <string name="new_character_message">%1$s juntou-se a história!</string>
+    <string name="message_reply_error">Error while replying message.</string>
+    <string name="configure">Configure</string>
 
 
-    <string name="storage_permission_title">Storage Permission</string>
-    <string name="storage_permission_description">To back up your sagas and all related images, the app needs access to your device\'s storage. We promise to keep everything safe!</string>
+
+    <string name="storage_permission_title">Backup</string>
+    <string name="storage_permission_description">To securely save your sagas and all related images, the app needs you to choose a preferred folder for backups. We promise to keep everything safe!</string>
     <string name="notifications_permission_title">Notifications Permission</string>
     <string name="notifications_permission_description">To keep you updated on your saga\'s progress and important events, please allow notifications. Don\'t miss a single adventure!</string>
     <string name="permission_required_title">Permission Needed</string>
     <string name="permission_required_description">This feature needs a little help to work its magic. Could you please grant the required permission?</string>
     <string name="confirm_permission_button">Grant Permission</string>
     <string name="backup">Backup</string>
+    <string name="new_character_message">%s joined the history</string>
+    <string name="backup_disabled">Nao foi possivel habilitar o backup</string>
+    <string name="signatures_title">Assinaturas</string>
 
 </resources>

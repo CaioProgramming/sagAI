@@ -62,6 +62,8 @@ import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationMana
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupServiceImpl
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
 import com.ilustris.sagai.features.saga.datasource.ReactionRepositoryImpl
@@ -113,8 +115,8 @@ object AppModule {
     @Singleton
     fun providesBackupService(
         @ApplicationContext context: Context,
-        permissionService: PermissionService,
-    ) = BackupService(context, permissionService)
+        preferences: DataStorePreferences,
+    ) = BackupService(context, preferences)
 
     @Provides
     @Singleton
@@ -266,6 +268,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun provideSettingsUseCase(getSettingsUseCaseImpl: SettingsUseCaseImpl): SettingsUseCase
+
+    @Binds
+    abstract fun providesSagaBackupService(sagaBackupServiceImpl: SagaBackupServiceImpl): SagaBackupService
 }
 
 @InstallIn(ViewModelComponent::class)

@@ -20,16 +20,15 @@ class WikiRepositoryImpl
 
         override suspend fun getWikiById(wikiId: Int): Wiki? = wikiDao.getWikiById(wikiId)
 
-        override suspend fun insertWiki(wiki: Wiki): Long =
-            wikiDao.insertWiki(
-                wiki.copy(
-                    id = 0,
-                    createdAt = Calendar.getInstance().timeInMillis,
-                ),
+        override suspend fun insertWiki(wiki: Wiki): Wiki =
+            wiki.copy(
+                id = wikiDao.insertWiki(wiki.copy(id = 0)).toInt(),
+                createdAt = Calendar.getInstance().timeInMillis,
             )
 
-        override suspend fun updateWiki(wiki: Wiki) {
+        override suspend fun updateWiki(wiki: Wiki): Wiki {
             wikiDao.updateWiki(wiki)
+            return wiki
         }
 
         override suspend fun deleteWiki(wikiId: Int) {

@@ -4,6 +4,7 @@ package com.ilustris.sagai.features.home.ui
 
 import android.Manifest
 import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -33,6 +34,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -43,18 +45,26 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,18 +75,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.file.BACKUP_PERMISSION
+import com.ilustris.sagai.core.file.backup.toSaga
+import com.ilustris.sagai.core.file.backup.ui.BackupSheet
+import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.core.utils.emptyString
@@ -93,12 +109,15 @@ import com.ilustris.sagai.features.premium.PremiumCard
 import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.settings.ui.SettingsView
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.navigation.Routes
+import com.ilustris.sagai.ui.navigation.Routes.SETTINGS
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -110,6 +129,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -119,8 +139,8 @@ import kotlin.time.Duration.Companion.seconds
 fun HomeView(
     navController: NavHostController,
     padding: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val viewModel: HomeViewModel = hiltViewModel()
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
     val showDebugButton by viewModel.showDebugButton.collectAsStateWithLifecycle()
     val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
@@ -129,45 +149,77 @@ fun HomeView(
     val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     var showPremiumSheet by remember { mutableStateOf(false) }
     var showBackupSheet by remember { mutableStateOf(viewModel.showRecoverSheet.value) }
-    val backupContent by viewModel.backups.collectAsStateWithLifecycle()
-    val backupEnabled by viewModel.backupEnabled.collectAsStateWithLifecycle(null)
-    var requiredPermission by remember { mutableStateOf<String?>(null) }
-    val activity = LocalActivity.current
-    val backupLauncher = PermissionService.rememberMultiplePermissionLauncher()
+    val backupAvailable by viewModel.backupAvailable.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
-    ChatList(
-        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
-        padding = padding,
-        showDebugButton = showDebugButton,
-        dynamicNewSagaTexts = dynamicNewSagaTexts,
-        isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-        isPremium = billingState is BillingState.SignatureEnabled,
-        onCreateNewChat = {
-            val isPremium = billingState == BillingState.SignatureEnabled
-            val freeSagasCount = sagas.count { it.data.isEnded.not() }
-            if (freeSagasCount <= 3 || isPremium) {
-                navController.navigateToRoute(Routes.NEW_SAGA)
-            } else {
-                showPremiumSheet = true
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
+
+    BackHandler(enabled = drawerState.isOpen) {
+        if (drawerState.isOpen) {
+            coroutineScope.launch {
+                drawerState.close()
             }
-        },
-        onSelectSaga = { sagaData ->
-            navController.navigateToRoute(
-                Routes.CHAT,
-                mapOf(
-                    "sagaId" to sagaData.id.toString(),
-                    "isDebug" to sagaData.isDebug.toString(),
-                ),
-            )
-        },
-        createFakeSaga = {
-            viewModel.createFakeSaga()
-        },
-        openPremiumSheet = {
-            showPremiumSheet = true
-        },
-    )
+        }
+    }
+
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Box(Modifier.fillMaxSize()) {
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        ModalDrawerSheet(
+                            drawerContainerColor = MaterialTheme.colorScheme.background,
+                        ) { SettingsView() }
+                    }
+                },
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    ChatList(
+                        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
+                        padding = padding,
+                        showDebugButton = showDebugButton,
+                        dynamicNewSagaTexts = dynamicNewSagaTexts,
+                        isLoadingDynamicPrompts = isLoadingDynamicPrompts,
+                        isPremium = billingState is BillingState.SignatureEnabled,
+                        onCreateNewChat = {
+                            val isPremium = billingState == BillingState.SignatureEnabled
+                            val freeSagasCount = sagas.count { it.data.isEnded.not() }
+                            if (freeSagasCount <= 3 || isPremium) {
+                                navController.navigateToRoute(Routes.NEW_SAGA)
+                            } else {
+                                showPremiumSheet = true
+                            }
+                        },
+                        onSelectSaga = { sagaData ->
+                            navController.navigateToRoute(
+                                Routes.CHAT,
+                                mapOf(
+                                    "sagaId" to sagaData.id.toString(),
+                                    "isDebug" to sagaData.isDebug.toString(),
+                                ),
+                            )
+                        },
+                        createFakeSaga = {
+                            viewModel.createFakeSaga()
+                        },
+                        openPremiumSheet = {
+                            showPremiumSheet = true
+                        },
+                        recoverSagas = {
+                            showBackupSheet = true
+                        },
+                        openSettings = {
+                            coroutineScope.launch {
+                                drawerState.open()
+                            }
+                        },
+                    )
+                }
+            }
+        }
+    }
     LaunchedEffect(startFakeSaga) {
         startFakeSaga?.let {
             navController.navigateToRoute(
@@ -187,70 +239,10 @@ fun HomeView(
         },
     )
 
-    if (showBackupSheet && backupContent.isNotEmpty()) {
-        ModalBottomSheet(onDismissRequest = {
-            viewModel.updateRecoverSheet(false)
-        }) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-            ) {
-                stickyHeader {
-                    Text("Backups", style = MaterialTheme.typography.titleLarge)
-                }
-
-                item {
-                    Text(
-                        "Encontramos algumas histórias perdidas, gostaria de recupera-las?",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-
-                items(backupContent) {
-                    SagaCard(
-                        it.data,
-                        modifier =
-                            Modifier.aspectRatio(.75f).clip(it.data.genre.shape()).clickable {
-                                viewModel.recoverSaga(it)
-                            },
-                    )
-                }
-
-                item(span = { GridItemSpan(2) }) {
-                    Button(onClick = {
-                        viewModel.recoverAllSagas()
-                    }) {
-                        Icon(
-                            painterResource(R.drawable.ic_restore),
-                            null,
-                            modifier = Modifier.size(24.dp),
-                        )
-                        Text("Restaurar todas as histórias")
-                    }
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(backupEnabled) {
-        if (backupEnabled == null) return@LaunchedEffect
-
-        if (backupEnabled?.not() == true) {
-            activity?.let {
-                PermissionService.requestMultiplePermissions(
-                    activity,
-                    listOf(
-                        Manifest.permission.READ_EXTERNAL_STORAGE,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                    ),
-                    backupLauncher,
-                ) {
-                    requiredPermission = Manifest.permission.READ_EXTERNAL_STORAGE
-                }
-            }
-        }
+    if (showBackupSheet) {
+        BackupSheet(true, {
+            showBackupSheet = false
+        })
     }
 
     StarryLoader(
@@ -268,17 +260,45 @@ private fun ChatList(
     dynamicNewSagaTexts: DynamicSagaPrompt?,
     isLoadingDynamicPrompts: Boolean,
     isPremium: Boolean = false,
-    canRecover: Boolean = false,
+    backupAvailable: Boolean = false,
+    recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
     openPremiumSheet: () -> Unit = {},
-    openBackupSheet: () -> Unit = {},
+    openSettings: () -> Unit = {},
 ) {
     LazyColumn(
         modifier =
-            Modifier.animateContentSize().padding(padding),
+            Modifier
+                .animateContentSize()
+                .padding(padding),
     ) {
+        stickyHeader {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier.statusBarsPadding(),
+            ) {
+                Box(Modifier.size(24.dp))
+                SagaTitle(
+                    Modifier
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.background),
+                )
+                IconButton(onClick = {
+                    openSettings()
+                }, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painterResource(R.drawable.ic_settings),
+                        contentDescription = stringResource(R.string.settings_title),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+
         if (showDebugButton) {
             item {
                 val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
@@ -425,27 +445,14 @@ private fun ChatList(
         ) {
             ChatCard(
                 it,
-                Modifier.animateItem().clickable {
-                    if (!it.data.isDebug || showDebugButton) {
-                        onSelectSaga(it.data)
-                    }
-                },
+                Modifier
+                    .animateItem()
+                    .clickable {
+                        if (!it.data.isDebug || showDebugButton) {
+                            onSelectSaga(it.data)
+                        }
+                    },
             )
-        }
-
-        if (canRecover) {
-            item {
-                Button(onClick = {
-                    openBackupSheet()
-                }) {
-                    Icon(
-                        painterResource(R.drawable.baseline_refresh_24),
-                        null,
-                        modifier = Modifier.size(24.dp),
-                    )
-                    Text("Restaurar histórias")
-                }
-            }
         }
 
         if (isLoadingDynamicPrompts.not()) {
@@ -453,8 +460,42 @@ private fun ChatList(
                 PremiumCard(
                     isPremium,
                     onClick = openPremiumSheet,
-                    modifier = Modifier.animateItem().padding(16.dp),
+                    modifier =
+                        Modifier
+                            .animateItem()
+                            .padding(16.dp),
                 )
+            }
+
+            if (backupAvailable) {
+                item {
+                    Box(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Button(onClick = {
+                            recoverSagas.invoke()
+                        }, colors = ButtonDefaults.textButtonColors()) {
+                            Icon(
+                                painterResource(R.drawable.ic_restore),
+                                null,
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 8.dp)
+                                        .size(24.dp),
+                            )
+                            Text(
+                                "Restaurar histórias",
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Light,
+                                    ),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -624,14 +665,13 @@ fun HomeViewPreview() {
                     }
                 ChatList(
                     sagas = previewChats,
-                    showDebugButton = true, // Example for preview
+                    showDebugButton = true,
                     dynamicNewSagaTexts =
                         DynamicSagaPrompt(
                             "Dynamic Title Preview",
                             "Dynamic Subtitle Preview",
                         ),
-                    // Example for preview
-                    isLoadingDynamicPrompts = false, // Example for preview
+                    isLoadingDynamicPrompts = false,
                 )
             }
         }

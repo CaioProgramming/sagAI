@@ -1,12 +1,13 @@
 package com.ilustris.sagai.features.home.ui
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.data.RequestState
-import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.file.backup.RestorableSaga
+import com.ilustris.sagai.core.file.backup.filterBackups
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -24,6 +25,7 @@ class HomeViewModel
     @Inject
     constructor(
         private val homeUseCase: HomeUseCase,
+        private val backupService: BackupService,
     ) : ViewModel() {
         val sagas = homeUseCase.getSagas()
 
@@ -36,15 +38,13 @@ class HomeViewModel
         private val _dynamicNewSagaTexts = MutableStateFlow<DynamicSagaPrompt?>(null)
         val dynamicNewSagaTexts = _dynamicNewSagaTexts.asStateFlow()
 
+        private val _backupAvailable = MutableStateFlow(false)
+        val backupAvailable = _backupAvailable.asStateFlow()
+
         private val _isLoading = MutableStateFlow<Boolean>(false)
         val isLoading = _isLoading.asStateFlow()
 
         val loadingMessage = MutableStateFlow<String?>(null)
-
-        private val _backups = MutableStateFlow<List<SagaContent>>(emptyList())
-        val backups = _backups.asStateFlow()
-
-        val backupEnabled = homeUseCase.backupEnabled()
 
         private val _showRecoverSheet = MutableStateFlow(false)
         val showRecoverSheet = _showRecoverSheet.asStateFlow()
@@ -54,43 +54,16 @@ class HomeViewModel
         init {
             checkDebug()
             getDynamicPrompts()
-            checkBackups()
+            observeSagas()
         }
 
-        fun updateRecoverSheet(show: Boolean) {
-            _showRecoverSheet.update { show }
-        }
-
-        private fun checkBackups() {
+        private fun observeSagas() {
             viewModelScope.launch {
-                val backupsData = homeUseCase.checkBackups().getSuccess() ?: emptyList()
-                _backups.emit(backupsData)
-                if (backupsData.isNotEmpty()) {
-                    _showRecoverSheet.update { true }
+                sagas.collect { sagaContents ->
+                    backupService.getBackedUpSagas().onSuccessAsync {
+                        _backupAvailable.emit(it.filterBackups(sagaContents.map { it.data }).isNotEmpty())
+                    }
                 }
-            }
-        }
-
-        fun recoverSaga(sagaContent: SagaContent) {
-            viewModelScope.launch {
-                if (isLoading.value.not()) {
-                    _isLoading.emit(true)
-                }
-                loadingMessage.emit("Restaurando ${sagaContent.data.title}.")
-                homeUseCase.recoverSaga(sagaContent)
-                checkBackups()
-                delay(3.seconds)
-                _isLoading.emit(false)
-                loadingMessage.emit(null)
-            }
-        }
-
-        fun recoverAllSagas() {
-            viewModelScope.launch {
-                backups.value.forEach {
-                    homeUseCase.recoverSaga(it)
-                }
-                checkBackups()
             }
         }
 

@@ -7,7 +7,9 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,13 +20,16 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -119,24 +124,44 @@ fun WikiContent(
                     )
                 }
 
-                item(span = { GridItemSpan(2) }) {
-                    Text(
-                        "Revisar Items",
-                        style =
-                            MaterialTheme.typography.labelLarge.copy(
-                                fontFamily = genre.bodyFont(),
-                                brush = genre.gradient(),
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier
-                                .clip(genre.shape())
-                                .clickable {
-                                    reviewWiki(wikis)
-                                }.padding(16.dp)
-                                .fillMaxWidth()
-                                .alpha(.6f),
-                    )
+                if (chapter.isComplete()) {
+                    item(span = { GridItemSpan(2) }) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            modifier =
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .clip(genre.shape())
+                                    .clickable {
+                                        reviewWiki(wikis)
+                                    },
+                        ) {
+                            Icon(
+                                painterResource(R.drawable.ic_review),
+                                null,
+                                tint = genre.color,
+                                modifier =
+                                    Modifier
+                                        .padding(4.dp)
+                                        .size(24.dp)
+                                        .padding(2.dp),
+                            )
+                            Text(
+                                "Revisar Items",
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        brush = genre.gradient(),
+                                        textAlign = TextAlign.Center,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .padding(16.dp)
+                                        .fillMaxWidth()
+                                        .alpha(.6f),
+                            )
+                        }
+                    }
                 }
             }
         }

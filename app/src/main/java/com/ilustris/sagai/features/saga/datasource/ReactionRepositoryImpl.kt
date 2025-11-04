@@ -14,7 +14,5 @@ class ReactionRepositoryImpl
             database.reactionDao()
         }
 
-        override suspend fun saveReaction(reaction: Reaction) {
-            reactionDao.addReaction(reaction)
-        }
+        override suspend fun saveReaction(reaction: Reaction) = reaction.copy(id = reactionDao.addReaction(reaction).toInt())
     }

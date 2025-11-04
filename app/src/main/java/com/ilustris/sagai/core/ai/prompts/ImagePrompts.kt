@@ -111,45 +111,49 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
     @Suppress("ktlint:standard:max-line-length")
     fun extractComposition() =
         buildString {
-            appendLine("")
             appendLine("You are analyzing TWO visual references:")
             appendLine("1. **Image A (Composition Reference):** Dictates layout, framing, and light.")
             appendLine("2. **Image B (Style Reference):** Dictates artistic rendering, texture, and aesthetic era.")
             appendLine("")
             appendLine(
-                "Your task is to extract NINE critical, technical components by separating the focus as instructed. Your response must be in **ENGLISH ONLY** and contain **ONLY** the structured information.",
+                "Your task is to extract NINE critical, technical components. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the nine extracted phrases/terms, each prepended by its respective label (e.g., 'Framing: ', 'Art Technique: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS (I., II.), OR EXPLANATIONS/GROUPINGS.**",
             )
             appendLine("")
-            appendLine("**MANDATE: EXCLUSIVITY AND PRECISION (CRITICAL):**")
-            appendLine(
-                "* The Agent MUST analyze Image B and generate terms that are **technically exclusive** and descriptive of the style.",
-            )
-            appendLine(
-                "* The generated terms for Art Technique, Aesthetic Era, and Reference MUST NOT use synonymous or overlapping language.",
-            )
-            appendLine("")
-            appendLine("**I. Extract from IMAGE A (Composition Reference):**")
-            appendLine("1.  **Framing:** [The most accurate, literal photographic framing term, e.g., FULL BODY SHOT]")
-            appendLine("2.  **Zoom Level / Proximity:** [The camera's closeness to the subject, e.g., Extreme closeness, Medium proximity]")
-            appendLine(
-                "3.  **Cropping Intention:** [How the subject is intentionally cut by the frame. MUST INCLUDE explicit pose/gaze guidance]",
-            )
-            appendLine("4.  **Key Lighting Style:** [The primary lighting technique, e.g., Rembrandt Lighting, Dramatic Backlighting]")
+            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (9 points):**")
+            appendLine("1. Framing: [Value]")
+            appendLine("2. Zoom Level / Proximity: [Value]")
+            appendLine("3. Cropping Intention: [Value]")
+            appendLine("4. Key Lighting Style: [Value]")
+            appendLine("5. Art Technique: [Value]")
+            appendLine("6. Aesthetic Era / Influence: [Value]")
+            appendLine("7. Cultural/Artistic Reference: [Value]")
+            appendLine("8. Vibe / Mood Aesthetic: [Value]")
+            appendLine("9. Dynamic Color Palette: [Value]")
             appendLine("")
 
+            appendLine("")
+            appendLine("**I. Extract from IMAGE A (Composition Reference):**")
+            appendLine(
+                "1.  **Framing:** [The most accurate, literal photographic framing term, e.g., FULL BODY SHOT, MEDIUM SHOT, MEDIUM CLOSE-UP. **CRITICAL VALIDATION:** The term chosen MUST be logically consistent with the Cropping Intention (Point 3). If the subject is cropped above the knees, the framing CANNOT be FULL BODY SHOT.]",
+            )
+            appendLine(
+                "2.  **Zoom Level / Proximity:** [The camera's closeness to the subject. **CRITICAL COHERENCE:** This term must reflect the closeness to the PRIMARY FOCAL POINT (e.g., the face), regardless of the framing. Use 'High proximity' ONLY if facial expression is the dominant element.]",
+            )
+            appendLine(
+                "3.  **Cropping Intention:** [How the subject is intentionally cut by the frame. MUST INCLUDE explicit pose/gaze guidance. **CRITICAL EXCLUSION:** The description MUST be neutral and **MUST NOT mention specific items, clothing, or character details** (e.g., 'armor', 'dress', 'dagger'). It should focus purely on the visual effect, such as the relationship between the hands and the hilt, or the visual line of the body.]",
+            )
+            appendLine("4.  **Key Lighting Style:** [The primary lighting technique, e.g., Rembrandt Lighting, Dramatic Backlighting]")
             appendLine("**II. Extract from IMAGE B (Style Reference):**")
             appendLine(
-                "5.  **Art Technique:** [The dominant technical rendering method, focusing on texture and application. May combine up to two distinct technical aspects if critical, e.g., 'Cel-Shaded with Retro Print Grain', 'Impasto Texture and Visible Brushstrokes'. **CRITICAL EXCLUSION:** The generated term MUST NOT include general category words such as 'Digital Painting', 'Digital Art', 'Illustration', or 'CGI' unless the style is genuinely photorealistic or a broad digital painting. Prioritize specific sub-techniques like 'Cel-Shaded', 'Cross-Hatching', 'Vector Graphics', or 'Oil Painting'.]",
+                "5.  **Art Technique:** [The dominant technical rendering method. Must be specific and exclusive. **CRITICAL EXCLUSION:** Avoid general terms like 'Digital Painting' unless truly necessary. Prioritize specific sub-techniques.]",
             )
             appendLine(
-                "6.  **Aesthetic Era / Influence:** [The dominant artistic movement, time period, or genre influence. Must be a single, exclusive term, e.g., Romanticism, Cyberpunk Anime (Late 1980s).]",
+                "6.  **Aesthetic Era / Influence:** [The dominant artistic movement, time period, or genre influence. Must be a single, exclusive term.]",
             )
             appendLine(
-                "7.  **Cultural/Artistic Reference:** [The single most defining, direct reference to an artist, specific artwork, or cultural touchstone that dictates the style. MUST be highly specific, e.g., 'In the style of Moebius', 'Highly reminiscent of Ghost in the Shell (1995)', 'Inspired by the work of Frank Frazetta'.]",
+                "7.  **Cultural/Artistic Reference:** [The single most defining, direct reference to an artist, specific artwork, or cultural touchstone that dictates the style. MUST be highly specific.]",
             )
-            appendLine(
-                "8.  **Vibe / Mood Aesthetic:** [A technical aesthetic term defining the final mood, e.g., Gritty and Atmospheric, Ethereal and Majestic.]",
-            )
+            appendLine("8.  **Vibe / Mood Aesthetic:** [A technical aesthetic term defining the final mood.]")
         }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -219,12 +223,19 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             )
             appendLine("* The Negative Prompts **MUST NOT** include terms like 'multiple subjects' and 'group shot'.")
             appendLine("")
-            appendLine("**C. POSE & FRAMING INTEGRATION (RULE OF PROXIMITY ACTIVATED):**")
+
+            appendLine("**C. POSE & FRAMING INTEGRATION (CRITICAL - ACTION DYNAMISM MANDATE):**")
             appendLine(
-                "* The description MUST synthesize the character's physical details with the action required by the **Central Conflict** and the **Framing** (Fase 1).",
+                "* The Agent MUST replace passive descriptions with a **unique, active, and dynamically phrased action** that conveys the character's core tension and mood.",
             )
             appendLine(
-                "* **Action Focus:** The pose and setting MUST reflect the extracted **Vibe / Mood Aesthetic**. The **LOW PROXIMITY MANDATE** requires the composition to integrate all characters into a detailed, atmospheric environment.",
+                "* **MANDATE OF ORIGINALITY:** The generated action phrase MUST be **structurally original** for the current image. The Agent **MUST NOT** use the terms 'lunges forward', 'neck strained', or 'strands of hair whip' or any close structural variation (e.g., 'hair flicks', 'head strained') unless the Central Conflict explicitly describes a sudden lunge or attack.",
+            )
+            appendLine(
+                "* The action phrase must be highly relevant to the Vibe/Mood Aesthetic (e.g., if 'Contemplative', use 'Her posture radiates quiet defiance, her focus absolute').",
+            )
+            appendLine(
+                "* The description MUST synthesize the character's physical details with the action required by the **Central Conflict** and the **Framing**.",
             )
             appendLine("")
             appendLine(

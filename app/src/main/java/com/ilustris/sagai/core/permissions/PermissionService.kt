@@ -92,11 +92,14 @@ class PermissionService
              *                        should ideally guide the user to app settings.
              */
             fun requestPermission(
-                activity: Activity,
-                permission: String,
+                activity: Activity?,
+                permission: String?,
                 permissionLauncher: ActivityResultLauncher<String>,
                 onShowRationale: () -> Unit,
             ) {
+                activity ?: return
+                permission ?: return
+
                 when {
                     ActivityCompat.shouldShowRequestPermissionRationale(activity, permission) -> {
                         onShowRationale()
@@ -111,11 +114,12 @@ class PermissionService
                 activity: Activity,
                 permissions: List<String>,
                 permissionLauncher: ActivityResultLauncher<Array<String>>,
-                onShowRationale: () -> Unit
+                onShowRationale: () -> Unit,
             ) {
-                val showRationale = permissions.any { permission ->
-                    ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
-                }
+                val showRationale =
+                    permissions.any { permission ->
+                        ActivityCompat.shouldShowRequestPermissionRationale(activity, permission)
+                    }
 
                 if (showRationale) {
                     onShowRationale()
@@ -124,12 +128,18 @@ class PermissionService
                 }
             }
 
+            @Composable
+            fun rememberBackupLauncher(onresult: (Uri?) -> Unit = {}) =
+                rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocumentTree()) { uri ->
+                    onresult(uri)
+                }
 
             /**
              * Opens the application's settings screen for the user to manually manage permissions.
              * This is typically called from a rationale dialog.
              */
-            fun openAppSettings(context: Context) {
+            fun openAppSettings(context: Context?) {
+                context ?: return
                 val intent =
                     Intent(
                         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -148,9 +158,10 @@ class PermissionService
                 )
 
             @Composable
-            fun rememberMultiplePermissionLauncher(onResult: (Map<String, Boolean>) -> Unit = {}): ActivityResultLauncher<Array<String>> = rememberLauncherForActivityResult(
-                contract = ActivityResultContracts.RequestMultiplePermissions(), 
-                onResult = onResult
-            )
+            fun rememberMultiplePermissionLauncher(onResult: (Map<String, Boolean>) -> Unit = {}): ActivityResultLauncher<Array<String>> =
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestMultiplePermissions(),
+                    onResult = onResult,
+                )
         }
     }

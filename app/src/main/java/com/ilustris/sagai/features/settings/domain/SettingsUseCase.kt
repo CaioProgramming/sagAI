@@ -2,7 +2,10 @@ package com.ilustris.sagai.features.settings.domain
 
 import android.Manifest
 import android.content.Context
+import android.net.Uri
+import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.file.BACKUP_PREFRENCE_KEY
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.FileManager
@@ -43,6 +46,10 @@ interface SettingsUseCase {
     suspend fun getStorageBreakdown(): StorageBreakdown
 
     suspend fun clearCache()
+
+    suspend fun disableBackup()
+
+    suspend fun enableBackup(uri: Uri?): RequestResult<Unit>
 }
 
 class SettingsUseCaseImpl
@@ -99,4 +106,8 @@ class SettingsUseCaseImpl
         override suspend fun clearCache() {
             context.cacheDir.deleteRecursively()
         }
+
+        override suspend fun disableBackup() = backupService.deleteBackup()
+
+        override suspend fun enableBackup(uri: Uri?) = backupService.enableBackup(uri)
     }
