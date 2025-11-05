@@ -91,8 +91,6 @@ class ChatViewModel
         val notificationsEnabled = MutableStateFlow(true)
         val smartSuggestionsEnabled = MutableStateFlow(true)
 
-        val backupEnabled = sagaContentManager.backupEnabled
-
         private fun updateSnackBar(snackBarState: SnackBarState) {
             viewModelScope.launch {
                 snackBarMessage.value = snackBarState
@@ -142,7 +140,7 @@ class ChatViewModel
                     if (it.not()) {
                         updateSnackBar(
                             snackBarState =
-                                snackBar("Backup desativado. Verifique as permissões.") {
+                                snackBar("Backup desativado. Verifique as permissões, para nao perder o progresso.") {
                                     action {
                                         configureBackup()
                                     }
@@ -164,6 +162,12 @@ class ChatViewModel
         fun reviewWiki(wikiItems: List<Wiki>) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.reviewWiki(wikiItems)
+            }
+        }
+
+        fun appendWiki(wiki: Wiki) {
+            viewModelScope.launch(Dispatchers.IO) {
+                inputValue.value = inputValue.value.copy(text = inputValue.value.text + " " + wiki.title)
             }
         }
 

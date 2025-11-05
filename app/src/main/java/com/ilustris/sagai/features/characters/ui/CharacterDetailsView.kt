@@ -59,6 +59,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
@@ -386,8 +387,7 @@ fun CharacterDetailsContent(
                         items(
                             characterRelations,
                         ) { relationContent ->
-                            val relatedCharacter = relationContent.getCharacterExcluding(character)
-                            relationContent.relationshipEvents.firstOrNull()?.let {
+                            sagaContent.findCharacter(relationContent.getCharacterExcluding(character).id) ?.let { relatedCharacter ->
                                 SingleRelationShipCard(
                                     saga = sagaContent,
                                     character = relatedCharacter,
@@ -397,6 +397,8 @@ fun CharacterDetailsContent(
                                             .padding(16.dp)
                                             .requiredWidthIn(max = 300.dp),
                                 )
+
+
                             }
                         }
                     }

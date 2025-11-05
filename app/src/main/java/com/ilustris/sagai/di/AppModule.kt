@@ -116,7 +116,8 @@ object AppModule {
     fun providesBackupService(
         @ApplicationContext context: Context,
         preferences: DataStorePreferences,
-    ) = BackupService(context, preferences)
+        fileHelper: FileHelper,
+    ) = BackupService(context, preferences, fileHelper)
 
     @Provides
     @Singleton

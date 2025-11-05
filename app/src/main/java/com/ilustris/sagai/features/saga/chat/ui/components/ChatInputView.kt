@@ -113,24 +113,22 @@ fun ChatInputView(
 ) {
     val action = sendType
     val inputBrush =
-        if (isGenerating) {
-            content.data.genre.gradient(
-                true,
-                gradientType = GradientType.LINEAR,
-                duration = 2.seconds,
-            )
-        } else {
-            Color.Transparent.solidGradient()
-        }
+        content.data.genre.gradient(
+            isGenerating,
+            duration = 2.seconds,
+        )
 
     var charactersExpanded by remember {
         mutableStateOf(false)
     }
 
     val glowRadius by animateFloatAsState(
-        if (isGenerating.not()) 0f else 30f,
+        if (isGenerating.not()) 15f else 30f,
     )
-    val inputShape = RoundedCornerShape(content.data.genre.cornerSize())
+    val backgroundColor by animateColorAsState(
+        if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
+    )
+    val inputShape = remember { content.data.genre.shape() }
 
     rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val focusManager = LocalFocusManager.current
@@ -177,7 +175,12 @@ fun ChatInputView(
                                         newText,
                                     )
 
-                                onUpdateInput(TextFieldValue(textReplacement, TextRange(textReplacement.length)))
+                                onUpdateInput(
+                                    TextFieldValue(
+                                        textReplacement,
+                                        TextRange(textReplacement.length),
+                                    ),
+                                )
 
                                 charactersExpanded = false
                             },
@@ -270,7 +273,7 @@ fun ChatInputView(
                         .verticalScroll(rememberScrollState())
                         .fillMaxWidth()
                         .border(1.dp, inputBrush, inputShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
+                        .background(backgroundColor, inputShape)
                         .padding(4.dp),
             ) {
                 Row(
@@ -328,10 +331,12 @@ fun ChatInputView(
                             Box(
                                 contentAlignment = Alignment.CenterStart,
                                 modifier =
-                                    Modifier.padding(boxPadding).reactiveShimmer(
-                                        isGenerating,
-                                        content.data.genre.shimmerColors(),
-                                    ),
+                                    Modifier
+                                        .padding(boxPadding)
+                                        .reactiveShimmer(
+                                            isGenerating,
+                                            content.data.genre.shimmerColors(),
+                                        ),
                             ) {
                                 val textAlpha by animateFloatAsState(
                                     if (inputField.text.isEmpty()) 0f else 1f,
@@ -504,8 +509,10 @@ fun ChatInputView(
                                 .padding(16.dp)
                                 .fillMaxWidth()
                                 .border(1.dp, genre.color.gradientFade(), genre.shape())
-                                .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
-                                .padding(16.dp),
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    genre.shape(),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

@@ -22,8 +22,6 @@ interface SagaContentManager {
 
     var snackBarUpdate: MutableStateFlow<SnackBarState?>
 
-    val backupEnabled: Flow<Boolean>
-
     suspend fun loadSaga(sagaId: String)
 
     suspend fun generateCharacter(description: String): RequestResult<Character>

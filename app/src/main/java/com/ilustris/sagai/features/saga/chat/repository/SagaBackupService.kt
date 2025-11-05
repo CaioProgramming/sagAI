@@ -5,8 +5,10 @@ import androidx.core.net.toUri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.file.backup.filterBackups
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.repository.ActRepository
@@ -55,30 +57,67 @@ class SagaBackupServiceImpl
         private val messageRepository: MessageRepository,
         private val reactionRepository: ReactionRepository,
         private val backupService: BackupService,
+        private val fileHelper: FileHelper,
     ) : SagaBackupService {
         override suspend fun restoreContent(sagaContent: RestorableSaga) =
             executeRequest {
+                val zipFile = sagaContent.manifest.zipFileName.toUri()
+
+                val imageResources = backupService.unzipImageBytes(zipFile)
+
                 val sagaContent =
                     backupService
-                        .unzipAndParseSaga(sagaContent.manifest.zipFileName.toUri())!!
+                        .unzipAndParseSaga(zipFile)!!
 
                 recoverOperation(
                     sagaContent,
+                    imageResources,
                 )
 
                 sagaContent
             }
 
-        private suspend fun recoverOperation(sagaContent: SagaContent) {
+        private suspend fun recoverOperation(
+            sagaContent: SagaContent,
+            imageResources: List<Pair<String, ByteArray>>,
+        ) {
             val newSaga = sagaContent.copy(data = recoverSaga(sagaContent.data).second)
+
+            val savedImages = backupService.saveExtractedImages(newSaga.data.id, imageResources)
+
+            sagaRepository.updateChat(
+                newSaga.data.copy(
+                    icon =
+                        savedImages.find { it.first == sagaContent.data.icon }?.second
+                            ?: emptyString(),
+                ),
+            )
 
             val actsPairs = saveActs(newSaga.data.id, newSaga.acts.map { it.data })
 
-            val chapterPairs = saveChapters(sagaContent.flatChapters().map { it.data }, actsPairs)
+            val chapterPairs =
+                saveChapters(
+                    sagaContent.flatChapters().map {
+                        val coverImage =
+                            if (it.data.coverImage.isEmpty()) {
+                                it.data.coverImage
+                            } else {
+                                savedImages
+                                    .find { (relativePath, _) ->
+
+                                        it.data.coverImage == relativePath
+                                    }?.second ?: emptyString()
+                            }
+
+                        it.data.copy(coverImage = coverImage)
+                    },
+                    actsPairs,
+                )
 
             val eventPairs = saveEvents(sagaContent.flatEvents().map { it.data }, chapterPairs)
 
-            val newCharacters = recoverCharacters(newSaga.data.id, sagaContent.characters, eventPairs)
+            val newCharacters =
+                recoverCharacters(newSaga.data.id, sagaContent.characters, eventPairs, savedImages)
 
             val messagePairs =
                 saveMessages(sagaContent.flatMessages().map { it.message }, eventPairs, newCharacters)
@@ -109,7 +148,10 @@ class SagaBackupServiceImpl
                 )
             val relationsEventsPairs =
                 recoverCharactersRelationEvents(
-                    sagaContent.characters.map { it.relationships.map { it.relationshipEvents }.flatten() }.flatten(),
+                    sagaContent.characters
+                        .map {
+                            it.relationships.map { it.relationshipEvents }.flatten()
+                        }.flatten(),
                     eventPairs,
                     charactersRelationsPairs,
                 )
@@ -159,9 +201,11 @@ class SagaBackupServiceImpl
         ) = relations
             .map {
                 val characterOne =
-                    newCharacters.find { pair -> pair.first.id == it.characterOne.id } ?: return@map null
+                    newCharacters.find { pair -> pair.first.id == it.characterOne.id }
+                        ?: return@map null
                 val characterTwo =
-                    newCharacters.find { pair -> pair.first.id == it.characterTwo.id } ?: return@map null
+                    newCharacters.find { pair -> pair.first.id == it.characterTwo.id }
+                        ?: return@map null
 
                 it.data to
                     relationRepository.insertRelation(
@@ -178,8 +222,10 @@ class SagaBackupServiceImpl
             timelinePairs: List<Pair<Timeline, Timeline>>,
             relationshipPair: List<Pair<CharacterRelation, CharacterRelation>>,
         ) = events.map {
-            val timeline = timelinePairs.find { timeline -> timeline.first.id == it.timelineId } ?: return@map null
-            val relationship = relationshipPair.find { pair -> pair.first.id == it.relationId } ?: return@map null
+            val timeline =
+                timelinePairs.find { timeline -> timeline.first.id == it.timelineId } ?: return@map null
+            val relationship =
+                relationshipPair.find { pair -> pair.first.id == it.relationId } ?: return@map null
 
             relationRepository.addEventToRelation(
                 it.copy(
@@ -196,15 +242,18 @@ class SagaBackupServiceImpl
                 manifests.filterBackups(sagas.map { it.data })
             }
 
-        private suspend fun recoverSaga(saga: Saga) = saga to sagaRepository.saveChat(saga)
+        private suspend fun recoverSaga(saga: Saga): Pair<Saga, Saga> = saga to sagaRepository.saveChat(saga)
 
         private suspend fun recoverReactions(
             reactions: List<Reaction>,
             messagesPair: List<Pair<Message, Message>>,
             charactersPair: List<Pair<Character, Character>>,
         ) = reactions.map {
-            val message = messagesPair.find { message -> message.first.id == it.messageId } ?: return@map null
-            val character = charactersPair.find { character -> character.first.id == it.characterId } ?: return@map null
+            val message =
+                messagesPair.find { message -> message.first.id == it.messageId } ?: return@map null
+            val character =
+                charactersPair.find { character -> character.first.id == it.characterId }
+                    ?: return@map null
 
             it to
                 reactionRepository.saveReaction(
@@ -219,6 +268,7 @@ class SagaBackupServiceImpl
             sagaId: Int,
             characters: List<CharacterContent>,
             eventPairs: List<Pair<Timeline, Timeline>>,
+            imageResources: List<Pair<String, String>>,
         ) = characters.map {
             val timeline = eventPairs.find { eventPair -> eventPair.first.id == it.data.firstSceneId }
             it.data to
@@ -226,6 +276,17 @@ class SagaBackupServiceImpl
                     it.data.copy(
                         sagaId = sagaId,
                         firstSceneId = timeline?.second?.id,
+                        image =
+                            if (it.data.image.isEmpty()) {
+                                it.data.image
+                            } else {
+                                imageResources
+                                    .find { (relativePath, newPath) ->
+                                        relativePath ==
+                                            it.data.image
+                                    }?.second
+                                    ?: emptyString()
+                            },
                     ),
                 )
         }
@@ -285,7 +346,8 @@ class SagaBackupServiceImpl
             chapterPairs: List<Pair<Chapter, Chapter>>,
         ) = events
             .map {
-                val chapter = chapterPairs.find { pair -> pair.first.id == it.chapterId } ?: return@map null
+                val chapter =
+                    chapterPairs.find { pair -> pair.first.id == it.chapterId } ?: return@map null
                 it to
                     timelineRepository.saveTimeline(
                         it.copy(

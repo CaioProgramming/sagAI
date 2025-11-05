@@ -2,13 +2,17 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,11 +24,15 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,7 +50,9 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.shape
 
@@ -51,7 +61,8 @@ fun WikiContent(
     saga: SagaContent,
     onBackClick: () -> Unit,
     titleModifier: Modifier = Modifier,
-    reviewWiki: (List<Wiki>) -> Unit,
+    reviewWiki: (List<Wiki>) -> Unit = {},
+    onHoldWiki: (Wiki) -> Unit = {},
 ) {
     Box {
         val gridState = rememberLazyGridState()
@@ -59,13 +70,12 @@ fun WikiContent(
             DetailAction.WIKI.titleAndSubtitle(saga)
         val genre = remember { saga.data.genre }
         val chapters =
-            remember {
-                saga.flatChapters().filter {
-                    it.events
-                        .map { events -> events.updatedWikis }
-                        .flatten()
-                        .isNotEmpty()
-                }
+
+            saga.flatChapters().filter {
+                it.events
+                    .map { events -> events.updatedWikis }
+                    .flatten()
+                    .isNotEmpty()
             }
 
         LazyVerticalGrid(
@@ -113,21 +123,44 @@ fun WikiContent(
                 }
 
                 items(wikis) { wiki ->
+                    var isExpanded by remember { mutableStateOf(false) }
+
                     WikiCard(
-                        wiki,
-                        saga.data.genre,
+                        wiki = wiki,
+                        genre = saga.data.genre,
                         modifier =
                             Modifier
+                                .padding(8.dp)
                                 .animateItem()
-                                .padding(16.dp)
+                                .clip(genre.shape())
+                                .combinedClickable(
+                                    onClick = {
+                                        isExpanded = !isExpanded
+                                    },
+                                    onLongClick = {
+                                        onHoldWiki(wiki)
+                                    },
+                                ).border(
+                                    width = 1.dp,
+                                    brush = genre.color.gradientFade(),
+                                    shape =
+                                        RoundedCornerShape(
+                                            genre.cornerSize(),
+                                        ),
+                                ).padding(16.dp)
+                                .animateContentSize(
+                                    tween(easing = FastOutSlowInEasing),
+                                ).padding(16.dp)
                                 .fillMaxWidth(),
+                        expanded = isExpanded,
                     )
                 }
 
                 if (chapter.isComplete()) {
                     item(span = { GridItemSpan(2) }) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
                             modifier =
                                 Modifier
                                     .align(Alignment.Center)

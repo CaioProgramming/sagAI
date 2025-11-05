@@ -14,21 +14,17 @@ class FileHelper(
     private val context: Context,
 ) {
     fun saveFile(
+        byteArray: ByteArray,
+        path: String,
         fileName: String,
-        data: ByteArray,
-        path: String? = null,
     ): File? {
-        val directory =
-            if (path != null) {
-                context.filesDir.resolve("sagas/$path")
-            } else {
-                context.filesDir
-            }
+        val directory = context.filesDir.resolve(path)
+
         if (!directory.exists()) {
             directory.mkdirs()
         }
         val file = directory.resolve(fileName.plus(".png").removeBlankSpace())
-        file.writeBytes(data)
+        file.writeBytes(byteArray)
         return file.takeIf { it.exists() }
     }
 
@@ -57,15 +53,6 @@ class FileHelper(
             Log.d(javaClass.simpleName, "saveFile: File saved at ${file.absolutePath}")
             it.exists()
         }
-    }
-
-    fun saveFile(
-        fileName: String,
-        data: String,
-        path: String? = null,
-    ): File? {
-        val decodedBytes = Base64.decode(data, Base64.DEFAULT)
-        return saveFile(fileName, decodedBytes, "sagas/$path")
     }
 
     fun readFile(path: String?): Bitmap? {

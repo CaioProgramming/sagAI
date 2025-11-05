@@ -58,23 +58,10 @@ fun WikiCard(
     modifier: Modifier,
     expanded: Boolean = false,
 ) {
-    var isExpanded by remember { mutableStateOf(expanded) }
     Column(
         modifier =
             modifier
-                .clip(RoundedCornerShape(genre.cornerSize()))
-                .border(
-                    width = 1.dp,
-                    brush = genre.color.gradientFade(),
-                    shape =
-                        RoundedCornerShape(
-                            genre.cornerSize(),
-                        ),
-                ).clickable { isExpanded = !isExpanded }
-                .padding(16.dp)
-                .animateContentSize(
-                    tween(easing = FastOutSlowInEasing),
-                ),
+                ,
     ) {
         val tag = wiki.emojiTag ?: emptyString()
 
@@ -87,7 +74,7 @@ fun WikiCard(
                 ),
             color = MaterialTheme.colorScheme.onBackground,
         )
-        AnimatedVisibility(isExpanded) {
+        AnimatedVisibility(expanded) {
             Text(
                 text = wiki.content,
                 style =

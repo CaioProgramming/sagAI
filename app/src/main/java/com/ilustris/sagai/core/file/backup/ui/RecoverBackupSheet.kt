@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -69,6 +70,7 @@ fun RecoverBackupSheet(
                     val saga = it.manifest.toSaga()
                     SagaCard(
                         saga,
+                        bitmap = it.iconBitmap?.asImageBitmap(),
                         modifier =
                             Modifier
                                 .clip(saga.genre.shape())

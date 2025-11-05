@@ -9,12 +9,14 @@ import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.file.backup.SagaManifest
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -28,6 +30,7 @@ import kotlin.collections.emptyList
 class BackupService(
     private val context: Context,
     private val preferences: DataStorePreferences,
+    private val fileHelper: FileHelper,
 ) {
     companion object {
         private const val BACKUP_FOLDER_NAME = "sagai_backups"
@@ -185,17 +188,16 @@ class BackupService(
             context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
                 ZipOutputStream(outputStream).use { zipStream ->
 
-                    val sagaJson = Gson().toJson(saga)
+                    val backedSaga = normalizeSagaContentPaths(saga)
+                    val sagaJson = Gson().toJson(backedSaga)
                     zipStream.putNextEntry(ZipEntry(SAGA_JSON_FILE))
                     zipStream.write(sagaJson.toByteArray())
                     zipStream.closeEntry()
 
-                    val imagePaths = getAllImagePaths(saga)
-                    imagePaths.forEach { path ->
-                        val file = File(path)
+                    val imagePaths = getAllImageFiles(saga)
+                    imagePaths.forEach { (path, file) ->
                         if (file.exists()) {
-                            // Use a folder structure inside the zip for organization
-                            zipStream.putNextEntry(ZipEntry("$IMAGES_FOLDER/${file.name}"))
+                            zipStream.putNextEntry(ZipEntry(path))
                             FileInputStream(file).use { it.copyTo(zipStream) }
                             zipStream.closeEntry()
                         }
@@ -206,26 +208,138 @@ class BackupService(
             updateManifest(backupRoot, saga, zipFileName)
         }
 
-    private fun getAllImagePaths(saga: SagaContent): Set<String> {
-        val paths = mutableSetOf<String>()
-        paths.add(saga.data.icon)
-        saga.characters.forEach { paths.add(it.data.image) }
-        saga.acts.forEach { act ->
-            act.chapters.forEach { chapter ->
-                paths.add(chapter.data.coverImage)
-            }
+    private fun normalizeSagaContentPaths(saga: SagaContent): SagaContent =
+        saga.copy(
+            data =
+                saga.data.copy(
+                    icon = getFileRelativePath(saga.data.icon, saga.data.id),
+                ),
+            characters =
+                saga.characters.map {
+                    it.copy(data = it.data.copy(image = getFileRelativePath(it.data.image, saga.data.id)))
+                },
+            acts =
+                saga.acts.map {
+                    it.copy(
+                        chapters =
+                            it.chapters.map {
+                                it.copy(
+                                    data = it.data.copy(coverImage = getFileRelativePath(it.data.coverImage, saga.data.id)),
+                                )
+                            },
+                    )
+                },
+        )
+
+    private fun getFileRelativePath(
+        path: String,
+        sagaId: Int,
+    ): String {
+        val sagaBasePath = File(context.filesDir, "sagas/$sagaId").absolutePath + File.separator
+        val relativePath = { absolutePath: String ->
+            absolutePath.removePrefix(sagaBasePath)
         }
-        return paths.filter { it.isNotBlank() }.toSet()
+
+        return relativePath(path)
     }
+
+    private fun getAllImageFiles(saga: SagaContent): List<Pair<String, File>> =
+        buildList {
+            val sagaId = saga.data.id
+            if (saga.data.icon.isNotBlank()) {
+                add(getFileRelativePath(saga.data.icon, sagaId) to File(saga.data.icon))
+            }
+            addAll(
+                saga.characters.mapNotNull {
+                    if (it.data.image.isNotBlank()) getFileRelativePath(it.data.image, sagaId) to File(it.data.image) else null
+                },
+            )
+            addAll(
+                saga.flatChapters().mapNotNull {
+                    if (it.data.coverImage.isNotBlank()) {
+                        getFileRelativePath(
+                            it.data.coverImage,
+                            sagaId,
+                        ) to File(it.data.coverImage)
+                    } else {
+                        null
+                    }
+                },
+            )
+        }
 
     suspend fun enableBackup(uri: Uri?) =
         executeRequest {
+            releaseOldPermission()
+            if (uri == null) {
+                deleteBackup()
+                error("Backup URI cannot be null.")
+            }
             val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-
-            context.contentResolver.takePersistableUriPermission(uri!!, flags)
+            context.contentResolver.takePersistableUriPermission(uri, flags)
 
             preferences.setString(BACKUP_PREFRENCE_KEY, uri.toString())
         }
+
+    private suspend fun releaseOldPermission() =
+        executeRequest {
+            val oldUriString = preferences.getStringNow(BACKUP_PREFRENCE_KEY)
+
+            if (oldUriString.isNotEmpty()) {
+                val oldUri = oldUriString.toUri()
+                val releaseFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                context.contentResolver.releasePersistableUriPermission(oldUri, releaseFlags)
+                Log.i(javaClass.simpleName, "Successfully released permission for old URI: $oldUriString")
+            }
+        }
+
+    fun saveExtractedImages(
+        newSagaId: Int,
+        imageByteMap: List<Pair<String, ByteArray>>,
+    ): MutableList<Pair<String, String>> {
+        val pathTranslationMap = mutableListOf<Pair<String, String>>()
+        val sagaRoot = File(context.filesDir, "sagas/$newSagaId")
+        if (!sagaRoot.exists()) sagaRoot.mkdirs()
+
+        imageByteMap.forEach { (path, bytes) ->
+
+            val destinationFile = File(sagaRoot, path)
+
+            // 2. Ensure the parent directory (e.g., ".../sagas/4/characters/") exists
+            val destinationDir = destinationFile.parentFile
+            if (destinationDir != null && !destinationDir.exists()) {
+                destinationDir.mkdirs()
+            }
+
+            // 3. Save the file's byte array to the correct destination
+            val dirPath = destinationDir?.path ?: return@forEach
+            val newFile = fileHelper.saveFile(bytes, destinationDir.path, destinationFile.name) ?: return@forEach
+
+            pathTranslationMap.add(path to newFile.absolutePath)
+        }
+        return pathTranslationMap
+    }
+
+    fun unzipImageBytes(zipUri: Uri): List<Pair<String, ByteArray>> {
+        val imageByteMap = mutableListOf<Pair<String, ByteArray>>()
+        try {
+            context.contentResolver.openInputStream(zipUri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        if (!entry.isDirectory && entry.name != SAGA_JSON_FILE) {
+                            val filePair = entry.name to zipStream.readBytes()
+                            imageByteMap.add(filePair)
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return imageByteMap
+    }
 
     fun unzipAndParseSaga(zipUri: Uri): SagaContent? {
         try {

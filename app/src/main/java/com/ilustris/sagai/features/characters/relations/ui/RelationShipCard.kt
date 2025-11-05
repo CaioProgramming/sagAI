@@ -177,7 +177,7 @@ fun RelationShipCard(
 @Composable
 fun SingleRelationShipCard(
     saga: SagaContent,
-    character: Character,
+    character: CharacterContent,
     content: RelationshipContent,
     showText: Boolean = true,
     showUpdates: Boolean = false,
@@ -185,8 +185,16 @@ fun SingleRelationShipCard(
 ) {
     val genre = saga.data.genre
 
+    val timelineEvents = remember { saga.flatEvents().map { it.data } }
+
     var showDetailSheet by remember { mutableStateOf(false) }
     val brush = content.getBrush(genre)
+    val relationshipEvents = remember {
+        content.sortedByEvents(timelineEvents)
+    }
+
+
+
     Column(
         modifier =
             modifier
@@ -200,13 +208,13 @@ fun SingleRelationShipCard(
     ) {
         Row(horizontalArrangement = Arrangement.Center) {
             CharacterAvatar(
-                character,
-                character.hexColor.hexToColor(),
+                character.data,
+                character.data.hexColor.hexToColor(),
                 genre = genre,
                 modifier = Modifier.size(100.dp),
             )
         }
-        content.relationshipEvents.lastOrNull()?.let { relation ->
+        relationshipEvents.firstOrNull()?.let { relation ->
             Text(
                 relation.emoji,
                 style = MaterialTheme.typography.headlineMedium,
@@ -469,7 +477,9 @@ fun SingleRelationShipCardPreview() {
                 ),
         )
     val character =
-        Character(id = 2, name = "Alien Ally", details = Details(), hexColor = "#0000FF", profile = CharacterProfile())
+        CharacterContent(
+            data = Character(id = 2, name = "Alien Ally", details = Details(), hexColor = "#0000FF", profile = CharacterProfile()),
+        )
     val content =
         RelationshipContent(
             data =
@@ -483,7 +493,7 @@ fun SingleRelationShipCardPreview() {
                     emoji = "🚀",
                 ),
             characterOne = Character(id = 1, name = "Space Captain", details = Details(), profile = CharacterProfile()),
-            characterTwo = character,
+            characterTwo = character.data,
             relationshipEvents =
                 listOf(
                     RelationshipUpdateEvent(

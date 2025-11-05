@@ -208,7 +208,6 @@ fun ChatView(
     var showCharacter by remember {
         mutableStateOf<CharacterContent?>(null)
     }
-    val backupEnabled by viewModel.backupEnabled.collectAsStateWithLifecycle(true)
 
     LaunchedEffect(Unit) {
         PermissionService.requestPermission(
@@ -226,10 +225,6 @@ fun ChatView(
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     var showBackupSheet by remember { mutableStateOf(false) }
-
-    LaunchedEffect(backupEnabled) {
-        showBackupSheet = backupEnabled.not() && content != null
-    }
 
     DisposableEffect(lifecycleOwner, viewModel) {
         lifecycleOwner.lifecycle.addObserver(viewModel)
@@ -257,7 +252,12 @@ fun ChatView(
                             coroutineScope.launch {
                                 drawerState.close()
                             }
-                        }, reviewWiki = viewModel::reviewWiki)
+                        }, reviewWiki = viewModel::reviewWiki, onHoldWiki = {
+                            viewModel.appendWiki(it)
+                            coroutineScope.launch {
+                                drawerState.close()
+                            }
+                        })
                     }
                 }
             },
@@ -909,6 +909,7 @@ fun ChatContent(
                             style =
                                 MaterialTheme.typography.labelMedium.copy(
                                     fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Center,
                                 ),
                             modifier = Modifier.alpha(.6f),
                         )
@@ -918,6 +919,7 @@ fun ChatContent(
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     fontFamily = genre.bodyFont(),
+                                    textAlign = TextAlign.Center,
                                 ),
                         )
 

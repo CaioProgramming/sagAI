@@ -37,6 +37,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -100,6 +101,7 @@ import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -624,11 +626,15 @@ fun TimeLineCard(
                                 modifier =
                                     Modifier
                                         .padding(16.dp)
-                                        .shadow(3.dp, genre.shape(), spotColor = genre.color)
-                                        .background(
-                                            MaterialTheme.colorScheme.background,
-                                            genre.shape(),
-                                        ).fillMaxWidth(),
+                                        .clip(genre.shape())
+                                        .border(
+                                            width = 1.dp,
+                                            brush = genre.color.gradientFade(),
+                                            shape =
+                                                RoundedCornerShape(
+                                                    genre.cornerSize(),
+                                                ),
+                                        ).padding(16.dp),
                                 true,
                             )
                         }

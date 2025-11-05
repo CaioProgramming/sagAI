@@ -64,7 +64,7 @@ fun SagaSnackBar(
             Row(
                 Modifier
                     .dropShadow(
-                        shape = RoundedCornerShape(20.dp),
+                        shape = genre?.shape() ?: RoundedCornerShape(20.dp),
                         shadow =
                             Shadow(
                                 radius = 5.dp,

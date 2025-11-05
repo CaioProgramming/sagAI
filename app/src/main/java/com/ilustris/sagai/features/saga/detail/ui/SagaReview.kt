@@ -89,6 +89,7 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -906,14 +907,18 @@ fun MentionsPage(content: SagaContent) {
                                 .padding(8.dp)
                                 .animateItem(),
                     ) {
-                        SingleRelationShipCard(
-                            content,
-                            it.getCharacterExcluding(character.data),
-                            it,
-                            false,
-                            showUpdates = true,
-                            Modifier.fillMaxWidth(),
-                        )
+                        content.findCharacter(it.getCharacterExcluding(character.data).id)?.let  { character ->
+                            SingleRelationShipCard(
+                                content,
+                                character,
+                                it,
+                                false,
+                                showUpdates = true,
+                                Modifier.fillMaxWidth(),
+                            )
+                        }
+
+
                     }
                 }
             }

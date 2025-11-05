@@ -96,7 +96,6 @@ class SagaContentManagerImpl
             _narrativeProcessingUiState.asStateFlow()
 
         override var snackBarUpdate: MutableStateFlow<SnackBarState?> = MutableStateFlow(null)
-        override val backupEnabled = backupService.backupEnabled()
         private var isDebugModeEnabled: Boolean = false
         private var isProcessing: Boolean = false
 
