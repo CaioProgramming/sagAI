@@ -158,41 +158,40 @@ fun WikiContent(
 
                 if (chapter.isComplete()) {
                     item(span = { GridItemSpan(2) }) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .clip(genre.shape())
-                                    .clickable {
-                                        reviewWiki(wikis)
-                                    },
+                        Box(
+                            Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                painterResource(R.drawable.ic_review),
-                                null,
-                                tint = genre.color,
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
                                 modifier =
                                     Modifier
-                                        .padding(4.dp)
-                                        .size(24.dp)
-                                        .padding(2.dp),
-                            )
-                            Text(
-                                "Revisar Items",
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        brush = genre.gradient(),
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .padding(16.dp)
-                                        .fillMaxWidth()
-                                        .alpha(.6f),
-                            )
+                                        .align(Alignment.Center)
+                                        .clip(genre.shape())
+                                        .clickable {
+                                            reviewWiki(wikis)
+                                        },
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_review),
+                                    null,
+                                    tint = genre.color,
+                                    modifier =
+                                        Modifier
+                                            .size(50.dp)
+                                            .padding(8.dp),
+                                )
+                                Text(
+                                    stringResource(R.string.review_items),
+                                    style =
+                                        MaterialTheme.typography.labelLarge.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            brush = genre.gradient(),
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                )
+                            }
                         }
                     }
                 }

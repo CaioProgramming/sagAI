@@ -277,28 +277,38 @@ class SagaContentManagerImpl
                 )
             }
 
-        private suspend fun mergeWiki(
-            saga: SagaContent,
-            chapter: ChapterContent,
-        ) = wikiUseCase.mergeWikis(
-            saga,
-            chapter.events.map { it.updatedWikis }.flatten(),
-        )
-
         override suspend fun reviewWiki(wikiItems: List<Wiki>) {
             val saga = content.value ?: return
             startProcessing {
-                wikiUseCase.mergeWikis(saga, wikiItems)
+                wikiUseCase.mergeWikis(saga, wikiItems).onSuccessAsync {
+                    updateSnackBar(
+                        SnackBarState(
+                            message = context.getString(R.string.wiki_updated),
+                        ),
+                    )
+                }
+            }
+        }
+
+        override suspend fun reviewChapter(chapterContent: ChapterContent) {
+            val saga = content.value ?: return
+            startProcessing {
+                chapterUseCase.reviewChapter(saga, chapterContent)
             }
         }
 
         override suspend fun reviewEvent(timelineContent: TimelineContent) {
             val saga = content.value ?: return
             startProcessing {
-                timelineUseCase.generateTimelineContent(
-                    saga,
-                    timelineContent,
-                )
+                timelineUseCase
+                    .generateTimelineContent(
+                        saga,
+                        timelineContent,
+                    ).onSuccessAsync {
+                        SnackBarState(
+                            message = context.getString(R.string.timeline_updated, timelineContent.data.title),
+                        )
+                    }
             }
         }
 

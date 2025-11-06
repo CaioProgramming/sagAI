@@ -21,6 +21,7 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -202,6 +203,12 @@ class ChatViewModel
         fun reviewEvent(timelineContent: TimelineContent) {
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.reviewEvent(timelineContent)
+            }
+        }
+
+        fun reviewChapter(chapterContent: ChapterContent) {
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.reviewChapter(chapterContent)
             }
         }
 

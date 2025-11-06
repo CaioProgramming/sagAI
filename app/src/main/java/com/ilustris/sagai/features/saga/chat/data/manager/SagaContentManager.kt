@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.saga.chat.data.manager
 
 import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -53,4 +54,6 @@ interface SagaContentManager {
     suspend fun backupSaga()
 
     suspend fun enableBackup(uri: Uri?)
+
+    suspend fun reviewChapter(chapterContent: ChapterContent)
 }

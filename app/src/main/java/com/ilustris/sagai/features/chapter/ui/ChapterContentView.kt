@@ -28,8 +28,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,6 +65,7 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
@@ -74,6 +77,7 @@ fun ChapterContentView(
     isLast: Boolean = false,
     imageSize: Dp = 250.dp,
     openCharacters: () -> Unit = {},
+    requestReview: ((ChapterContent) -> Unit)? = null,
     viewModel: ChapterViewModel = hiltViewModel(),
 ) {
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
@@ -212,6 +216,29 @@ fun ChapterContentView(
                 true,
                 modifier = Modifier.padding(16.dp),
             )
+        }
+
+        if (requestReview != null) {
+            Column(
+                Modifier
+                    .clip(genre.shape())
+                    .gradientFill(genre.gradient())
+                    .clickable {
+                        requestReview(chapter)
+                    }.padding(4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Image(painterResource(R.drawable.center_spark), null, modifier = Modifier.size(50.dp).padding(8.dp))
+                Text(
+                    stringResource(R.string.review_chapter),
+                    style =
+                        MaterialTheme.typography.labelLarge.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center,
+                        ),
+                )
+            }
         }
     }
 

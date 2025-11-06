@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.shadow.Shadow
@@ -40,7 +41,9 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darker
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
@@ -50,9 +53,9 @@ fun SagaSnackBar(
     modifier: Modifier,
     onAction: (SnackAction) -> Unit,
 ) {
-    val mainColor = genre?.color ?: MaterialTheme.colorScheme.background
+    val mainColor = MaterialTheme.colorScheme.background
     val contentColor = genre?.iconColor ?: MaterialTheme.colorScheme.onBackground
-    val shape = remember { genre?.shape() ?: RoundedCornerShape(10.dp) }
+    val shape = genre?.shape() ?: RoundedCornerShape(10.dp)
 
     AnimatedVisibility(
         snackBarState != null,
@@ -67,13 +70,13 @@ fun SagaSnackBar(
                         shape = genre?.shape() ?: RoundedCornerShape(20.dp),
                         shadow =
                             Shadow(
-                                radius = 5.dp,
+                                radius = 10.dp,
                                 spread = 2.dp,
                                 color = mainColor.darker(),
                                 offset = DpOffset.Zero,
                             ),
                     ).clip(shape)
-                    .border(1.dp, mainColor.gradientFade(), shape)
+                    .border(1.dp, genre?.gradient() ?: Brush.verticalGradient(holographicGradient), shape)
                     .background(
                         mainColor,
                         shape,

@@ -256,7 +256,7 @@
     <string name="chapter_number_label">Chapter %s</string>
     <string name="try_again">Try again</string>
     <string name="chapter_finished">Chapter %s Finished</string>
-    <string name="ending">Chapter %s updated.</string>
+    <string name="chapter_updated">Chapter %s updated.</string>
     <string name="see_more">Ver mais</string>
     <string name="empty" translatable="false" />
     <string name="timeline_generated_successfully">Timeline %s finished.</string>
@@ -278,6 +278,10 @@
     <string name="backup">Backup</string>
     <string name="new_character_message">%s joined the history</string>
     <string name="backup_disabled">Nao foi possivel habilitar o backup</string>
-    <string name="signatures_title">Assinaturas</string>
+    <string name="signatures_title">Subscriptions</string>
+    <string name="wiki_updated">Updated wikis</string>
+    <string name="review_chapter">Review Chapter</string>
+    <string name="ending">Chapter %s updated.</string>
+    <string name="review_items">Review Items</string>
 
 </resources>

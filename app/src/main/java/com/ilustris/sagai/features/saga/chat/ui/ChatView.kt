@@ -115,6 +115,7 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -500,6 +501,7 @@ fun ChatContent(
     selectCharacter: (CharacterContent) -> Unit = {},
     requestNewCharacter: (String) -> Unit = {},
     reviewEvent: (TimelineContent) -> Unit = {},
+    reviewChapter: (ChapterContent) -> Unit = {},
 ) {
     val saga = remember { content.data }
     val timeline = remember { content.getCurrentTimeLine() }
@@ -1116,6 +1118,7 @@ fun ChatList(
     openReactions: (MessageContent) -> Unit = {},
     requestNewCharacter: (String) -> Unit = {},
     reviewEvent: (TimelineContent) -> Unit = {},
+    reviewChapter: (ChapterContent) -> Unit = {},
 ) {
     val animatedMessages = remember { mutableSetOf<Int>() }
     val coroutineScope = rememberCoroutineScope()
@@ -1228,6 +1231,10 @@ fun ChatList(
                             saga,
                             isLast = act.chapters.lastOrNull() == chapter,
                             imageSize = 400.dp,
+                            openCharacters = {
+                                openSaga()
+                            },
+                            requestReview = reviewChapter,
                             modifier =
                                 Modifier
                                     .animateItem()

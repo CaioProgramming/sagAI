@@ -13,9 +13,9 @@ import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -27,6 +27,7 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
@@ -78,6 +79,9 @@ class ChapterUseCaseImpl
             chapterContent: ChapterContent,
         ) {
             delay(3.seconds)
+            if (chapterContent.data.introduction.isEmpty()) {
+                generateChapterIntroduction(saga, chapterContent.data, saga.findChapterAct(chapterContent.data)!!)
+            }
             cleanUpEmptyTimeLines(chapterContent)
             wikiUseCase.mergeWikis(saga, chapterContent.events.map { it.updatedWikis }.flatten())
         }
