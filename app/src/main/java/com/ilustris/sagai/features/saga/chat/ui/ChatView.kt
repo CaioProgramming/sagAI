@@ -338,6 +338,7 @@ fun ChatView(
                                             onRetryMessage = viewModel::retryAiResponse,
                                             requestNewCharacter = viewModel::requestNewCharacter,
                                             reviewEvent = viewModel::reviewEvent,
+                                            reviewChapter = viewModel::reviewChapter,
                                             openSagaDetails = {
                                                 navHostController.navigateToRoute(
                                                     Routes.SAGA_DETAIL,
@@ -616,6 +617,7 @@ fun ChatContent(
                         openReactions = {
                             showReactions = it
                         },
+                        reviewChapter = reviewChapter,
                         onRetryMessage = onRetryMessage,
                         requestNewCharacter = requestNewCharacter,
                         reviewEvent = reviewEvent,

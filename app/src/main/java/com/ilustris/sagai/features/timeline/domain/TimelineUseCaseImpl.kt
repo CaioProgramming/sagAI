@@ -51,7 +51,6 @@ class TimelineUseCaseImpl
                             saga,
                             currentTimeline,
                         ),
-                        skipRunning = true,
                         filterOutputFields = listOf("id", "createdAt", "chapterId", "emotionalReview"),
                     )!!
 
@@ -59,7 +58,6 @@ class TimelineUseCaseImpl
             val userMessages =
                 content.messages.map { it.joinMessage(showType = true).formatToString(true) }
 
-            delay(2.seconds)
             val emotionalReview =
                 emotionalUseCase.generateEmotionalReview(
                     userMessages,
@@ -125,7 +123,7 @@ class TimelineUseCaseImpl
                             it.joinMessage(true).formatToString(true)
                         },
                     )
-                gemmaClient.generate<SceneSummary>(objectivePrompt, skipRunning = true)!!.immediateObjective!!
+                gemmaClient.generate<SceneSummary>(objectivePrompt)!!.immediateObjective!!
             }
 
         override suspend fun generateTimelineContent(
@@ -152,7 +150,10 @@ class TimelineUseCaseImpl
                 }
 
                 if (timelineContent.updatedWikis.isEmpty()) {
-                    updateWikis(timelineContent.data, saga)
+                    updateWikis(
+                        timelineContent.data,
+                        saga,
+                    )
                 } else {
                     Log.w(javaClass.simpleName, "generateTimelineContent: Wikis already updated on this event")
                 }

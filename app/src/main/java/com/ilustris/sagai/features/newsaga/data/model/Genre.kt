@@ -24,7 +24,7 @@ Genre(
         background = R.drawable.fantasy,
         ambientMusicConfigKey = "fantasy_ambient_music_url",
     ),
-    SCI_FI(
+    CYBERPUNK(
         title = R.string.genre_scifi,
         color = MaterialColor.DeepPurpleA200,
         iconColor = Color.White,
@@ -76,7 +76,7 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 desaturationFactorNonTarget = .5f,
             )
 
-        Genre.SCI_FI ->
+        Genre.CYBERPUNK ->
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = .11f,
@@ -128,7 +128,7 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
 fun Genre.defaultHeaderImage() =
     when (this) {
         Genre.FANTASY -> R.drawable.fantasy_card
-        Genre.SCI_FI -> R.drawable.scifi_card
+        Genre.CYBERPUNK -> R.drawable.scifi_card
         Genre.HORROR -> R.drawable.horror_card
         Genre.HEROES -> R.drawable.hero_card
         Genre.CRIME -> R.drawable.crime_card
@@ -153,7 +153,7 @@ fun Genre.colorPalette() =
                 MaterialColor.RedA200,
             )
 
-        Genre.SCI_FI ->
+        Genre.CYBERPUNK ->
             listOf(
                 MaterialColor.Purple500,
                 MaterialColor.Teal800,

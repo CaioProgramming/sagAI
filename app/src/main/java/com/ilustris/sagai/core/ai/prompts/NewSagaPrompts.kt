@@ -150,20 +150,24 @@ object NewSagaPrompts {
             appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT.")
             appendLine("DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS BEFORE OR AFTER THE JSON.")
             appendLine()
+            appendLine("Your task is to generate a fun and engaging welcome message to start creating an epic saga together!")
+            appendLine()
             appendLine(
-                "Your task is to generate a very short, welcoming, and engaging message to start a conversation about creating a new saga.",
+                "- message: A playful greeting asking what kind of story the user wants to create. Be enthusiastic and engaging (max 2 sentences).",
             )
+            appendLine("- inputHint: A brief creative hook like \"A world where books read themselves\" (keep under 40 characters).")
             appendLine(
-                "- message: A concise and friendly welcome (max 2 sentences). Greet the user and ask what kind of story they have in mind.",
+                "- suggestions: Generate 3 unique micro-story ideas (max 6 words each) based on any of these genres: ${Genre.entries.joinToString {
+                    it.name
+                }}. Examples:",
             )
-            appendLine("- inputHint: A short hint for the user's input (e.g., \"A sci-fi epic, a fantasy adventure, ...\").")
-            appendLine("- suggestions: Provide 2-3 one-word suggestions to spark ideas (e.g., \"Cyberpunk\", \"Magic\", \"Mystery\").")
-            appendLine("- Keep the tone encouraging and imaginative.")
+            appendLine("  * \"Time-traveling chef changes history through food\"")
+            appendLine("  * \"Supernatural detective solves crimes using dreams\"")
+            appendLine("  * \"Space pirates stealing clouds from planets\"")
+            appendLine("The suggestions field must be a String Array with 3 concise story ideas.")
             appendLine()
             appendLine("Important JSON rules:")
             appendLine("- Set `callback` to null.")
-            appendLine()
-            appendLine("Expected output schema:")
-            appendLine(toJsonMap(SagaCreationGen::class.java))
+            appendLine("- Keep responses concise and playful.")
         }
 }

@@ -1,17 +1,10 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.network.body.ColorPreset
-import com.ilustris.sagai.core.network.body.Effects
-import com.ilustris.sagai.core.network.body.FramingPreset
-import com.ilustris.sagai.core.network.body.ImageStyling
-import com.ilustris.sagai.core.network.body.LightningPreset
-import com.ilustris.sagai.core.network.body.StylePreset
 import com.ilustris.sagai.core.utils.currentLanguage
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.Genre.CYBERPUNK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
-import com.ilustris.sagai.features.newsaga.data.model.Genre.SCI_FI
 
 object GenrePrompts {
     fun detail(genre: Genre) = "theme: ${genre.name}"
@@ -27,7 +20,7 @@ object GenrePrompts {
                 Harmonious colors, authentic painterly grain, Crisp atmosphere.
                 """
 
-            SCI_FI ->
+            CYBERPUNK ->
                 """
                retro anime, 80s anime, 90s anime, cel shading,
                cel art, anime cel, bold outlines, varied line weight,
@@ -119,7 +112,7 @@ object GenrePrompts {
                     **CRITICAL:** The Agent must ensure the Ambient Context description is concise and supports the visual mood (Epic, Somber, etc.) without contradicting the framing term (e.g., 'MACRO SHOT').
                 """
 
-            SCI_FI ->
+            CYBERPUNK ->
                 """
                 **Specific Color Application Instructions:**
                 *The following rules dictate how the genre's key color (purple) is applied.  Imagine a striking visual effect where purple is used as a focused accent, similar to how a brightly colored detail might stand out against a muted background – think a vibrant neon sign in a dark alley.*
@@ -184,7 +177,7 @@ object GenrePrompts {
                     )
                 }
 
-                Genre.SCI_FI -> {
+                Genre.CYBERPUNK -> {
                     appendLine(
                         "The composition MUST emphasize tension and dramatic melancholy. With high focus on characters emotions and world building.",
                     )
@@ -202,7 +195,7 @@ object GenrePrompts {
     fun colorAccent(genre: Genre) =
         when (genre) {
             FANTASY -> "Crimson/Red"
-            SCI_FI -> "Luminous purple/Neon magenta\""
+            CYBERPUNK -> "Luminous purple/Neon magenta\""
             HORROR -> "Ash gray/Faded cerulean blue"
             Genre.HEROES -> "Midnight blue/Electric blue"
             Genre.CRIME -> "Hot pink/Electric magenta"
@@ -221,7 +214,7 @@ object GenrePrompts {
                 // AVOID overly modern, generic, or overtly tech-sounding names (e.g., John, Mary, Smith, unit numbers, cyber-names).
                 """
 
-            SCI_FI ->
+            CYBERPUNK ->
                 """
                 // - Aim for names that blend futuristic, cyberpunk, or slightly exotic sounds.
                 // - Consider influences from Japanese, tech-inspired, or gritty Western phonetics.
@@ -292,7 +285,7 @@ object GenrePrompts {
                 * Maintain a sense of wonder, mystery, or impending doom as appropriate for the scene.
                 """
 
-            SCI_FI ->
+            CYBERPUNK ->
                 """
              // This directive defines the specific linguistic style for the Cyberpunk/Dystopian Sci-Fi genre.
             // NPCs and narrative voice should reflect a gritty, tech-infused, and often cynical tone.

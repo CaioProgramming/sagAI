@@ -43,7 +43,7 @@ class ActUseCaseImpl
         override suspend fun generateAct(saga: SagaContent): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
-                gemmaClient.generate<Act>(titlePrompt, skipRunning = true)!!
+                gemmaClient.generate<Act>(titlePrompt)!!
             }
 
         private fun generateActPrompt(saga: SagaContent) =
@@ -72,7 +72,7 @@ class ActUseCaseImpl
             val prompt = ActPrompts.actIntroductionPrompt(saga, previousAct)
 
             delay(2.seconds)
-            val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
+            val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
             actRepository
                 .updateAct(act.copy(introduction = intro))
         }

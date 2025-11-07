@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -60,8 +61,11 @@ class HomeViewModel
         private fun observeSagas() {
             viewModelScope.launch {
                 sagas.collect { sagaContents ->
-                    backupService.getBackedUpSagas().onSuccessAsync {
-                        _backupAvailable.emit(it.filterBackups(sagaContents.map { it.data }).isNotEmpty())
+                    val isBackupEnabled = backupService.backupEnabled().first()
+                    if (isBackupEnabled) {
+                        backupService.getBackedUpSagas().onSuccessAsync {
+                            _backupAvailable.emit(it.filterBackups(sagaContents.map { it.data }).isNotEmpty())
+                        }
                     }
                 }
             }

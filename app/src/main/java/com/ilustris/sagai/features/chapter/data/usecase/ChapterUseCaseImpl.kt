@@ -70,7 +70,6 @@ class ChapterUseCaseImpl
                             currentChapter = chapterContent,
                         ),
                     requireTranslation = true,
-                    skipRunning = true,
                 )!!
         }
 
@@ -162,7 +161,6 @@ class ChapterUseCaseImpl
                         coverPrompt,
                         references = charactersIcons,
                         requireTranslation = false,
-                        skipRunning = true,
                     )!!
                 val genCover =
                     imagenClient
@@ -212,7 +210,6 @@ class ChapterUseCaseImpl
                     gemmaClient.generate<String>(
                         prompt,
                         requireTranslation = true,
-                        skipRunning = true,
                     )!!
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)

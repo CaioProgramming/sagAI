@@ -12,10 +12,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -46,22 +44,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
-import com.ilustris.sagai.ui.theme.grayScale
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.solidGradient
-import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
@@ -93,14 +83,13 @@ fun GenreSelectionCard(
 fun GenreAvatar(
     genre: Genre,
     showText: Boolean = true,
-    iconSize : Dp = 64.dp,
+    iconSize: Dp = 64.dp,
     isSelected: Boolean,
     modifier: Modifier = Modifier,
     onClick: (Genre) -> Unit,
 ) {
     val backgroundColor by animateColorAsState(
-        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer
-
+        if (isSelected) genre.color else MaterialTheme.colorScheme.surfaceContainer,
     )
 
     val scale by animateFloatAsState(
@@ -208,7 +197,7 @@ fun GenreCard(
         )
 
         Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = .3f)))
-        if (showText){
+        if (showText) {
             Text(
                 stringResource(genre.title),
                 maxLines = 2,
@@ -248,7 +237,7 @@ fun GenreSelectionCardPreview() {
 fun GenreCardPreview() {
     val selectedGenre =
         remember {
-            mutableStateOf(Genre.SCI_FI)
+            mutableStateOf(Genre.CYBERPUNK)
         }
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),

@@ -89,7 +89,7 @@ class MessageUseCaseImpl
                     message.copy(
                         emotionalTone = tone,
                     ),
-                )!!
+                )
 
             withContext(Dispatchers.IO) {
                 generateReaction(
@@ -143,7 +143,6 @@ class MessageUseCaseImpl
                                     .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
                                     .map { it.joinMessage(true).formatToString() },
                         ),
-                        skipRunning = true,
                     )
 
                 val charactersInScene =
@@ -191,7 +190,6 @@ class MessageUseCaseImpl
                                 .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
                                 .map { it.joinMessage(true).formatToString() },
                     ),
-                    skipRunning = true,
                 )!!
             if (sceneSummary.charactersPresent.isEmpty()) {
                 Log.w(javaClass.simpleName, "generateReaction: No characters related to react")
@@ -234,7 +232,7 @@ class MessageUseCaseImpl
                 )
 
             delay(1.seconds)
-            val reaction = gemmaClient.generate<ReactionGen>(prompt, skipRunning = true)
+            val reaction = gemmaClient.generate<ReactionGen>(prompt)
 
             reaction?.reactions?.forEach { reaction ->
                 saga.characters

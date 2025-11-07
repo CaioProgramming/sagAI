@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -20,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -61,10 +59,8 @@ import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -189,11 +185,10 @@ fun SingleRelationShipCard(
 
     var showDetailSheet by remember { mutableStateOf(false) }
     val brush = content.getBrush(genre)
-    val relationshipEvents = remember {
-        content.sortedByEvents(timelineEvents)
-    }
-
-
+    val relationshipEvents =
+        remember {
+            content.sortedByEvents(timelineEvents)
+        }
 
     Column(
         modifier =
@@ -470,7 +465,7 @@ fun RelationShipCardPreview() {
 fun SingleRelationShipCardPreview() {
     val saga =
         SagaContent(
-            data = Saga(id = 1, title = "My Saga", genre = Genre.SCI_FI),
+            data = Saga(id = 1, title = "My Saga", genre = Genre.CYBERPUNK),
             mainCharacter =
                 CharacterContent(
                     data = Character(id = 1, name = "Space Captain", details = Details(), profile = CharacterProfile()),

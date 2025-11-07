@@ -51,7 +51,7 @@ fun loadShaderFromAssetsOnce(assetFileName: String): String? {
 fun Genre.colorTones() =
     when (this) {
         Genre.FANTASY -> FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
-        Genre.SCI_FI -> SciFiColorTones.CYBERPUNK_NEON_NIGHT
+        Genre.CYBERPUNK -> SciFiColorTones.CYBERPUNK_NEON_NIGHT
         Genre.HORROR -> HorrorColorTones.MOONLIGHT_MYSTIQUE
         Genre.HEROES -> HeroColorTones.URBAN_COMIC_VIBRANCY
         Genre.CRIME -> CrimeColorTones.MIAMI_NEON_SUNSET
@@ -78,7 +78,7 @@ fun Genre.shaderParams(
             pixelationBlockSize = 0f,
             colorTemperature = .1f,
         )
-    Genre.SCI_FI ->
+    Genre.CYBERPUNK ->
         ShaderParams(
             grainIntensity = customGrain ?: .15f,
             bloomThreshold = .3f,
@@ -237,7 +237,7 @@ fun Modifier.effectForGenre(
                         pixelationBlockSize = 0f,
                         colorTemperature = .1f,
                     )
-                Genre.SCI_FI ->
+                Genre.CYBERPUNK ->
                     ShaderParams(
                         grainIntensity = customGrain ?: .15f,
                         bloomThreshold = .3f,

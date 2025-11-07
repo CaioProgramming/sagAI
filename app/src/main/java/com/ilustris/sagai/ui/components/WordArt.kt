@@ -2,29 +2,15 @@ package com.ilustris.sagai.ui.components
 
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -53,7 +39,6 @@ import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.lighter
-import effectForGenre
 
 @Composable
 fun WordArtText(
@@ -177,14 +162,14 @@ fun Genre.stylisedText(
                 bottomColor = palette.last(),
                 numberOfExtrusionLayers = 1,
                 outlineWidthFactor = .1f,
-                outlineColor = color.darker( .5f),
+                outlineColor = color.darker(.5f),
                 extrusionColor = palette.last().darker(.3f),
                 glowAlpha = .6f,
                 glowColor = color,
                 glowRadiusFactor = 15f,
             )
         }
-        Genre.SCI_FI -> {
+        Genre.CYBERPUNK -> {
             val palette = this.colorPalette()
             WordArtText(
                 text = text,

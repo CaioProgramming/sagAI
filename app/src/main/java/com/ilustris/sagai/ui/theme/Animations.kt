@@ -180,6 +180,6 @@ fun TypewriterTextPreview() {
                 Wiki(title = "wiki test", sagaId = 0),
             ),
         mainCharacter = null,
-        genre = Genre.SCI_FI,
+        genre = Genre.CYBERPUNK,
     )
 }
