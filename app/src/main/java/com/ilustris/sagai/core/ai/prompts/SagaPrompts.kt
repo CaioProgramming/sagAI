@@ -85,6 +85,7 @@ object SagaPrompts {
         appendLine("Visual Direction:")
         visualDirection?.let {
             appendLine("This rules dictate how you should describe the icon composition")
+            appendLine(GenrePrompts.artStyle(genre))
             appendLine(it)
         } ?: run {
             appendLine("Ensure to render this art style description matching with the reference image")

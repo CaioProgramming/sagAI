@@ -22,7 +22,6 @@ class EmotionalUseCaseImpl
         ): RequestResult<String> =
             executeRequest {
                 val prompt = EmotionalPrompt.generateEmotionalReview(content, emotionalRanking)
-                delay(2500)
                 gemmaClient
                     .generate<String>(
                         prompt = prompt,

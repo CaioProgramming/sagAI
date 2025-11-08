@@ -417,7 +417,10 @@ fun NewSagaChat(
                         val iconSize = 32.dp
                         item {
                             val shape = remember { genre.shape() }
-                            val tooltipState = rememberTooltipState()
+                            val tooltipState =
+                                rememberTooltipState(
+                                    isPersistent = true,
+                                )
                             val tooltipPositionProvider =
                                 TooltipDefaults.rememberPlainTooltipPositionProvider(
                                     spacingBetweenTooltipAndAnchor = 8.dp,
@@ -437,7 +440,8 @@ fun NewSagaChat(
                                                 ).background(
                                                     MaterialTheme.colorScheme.surface,
                                                     shape,
-                                                ).padding(8.dp),
+                                                ).padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
                                         val character = currentForm?.character
                                         Text(
@@ -466,7 +470,6 @@ fun NewSagaChat(
                                                 ),
                                             modifier =
                                                 Modifier
-                                                    .padding(8.dp)
                                                     .align(Alignment.CenterHorizontally)
                                                     .alpha(.5f),
                                         )

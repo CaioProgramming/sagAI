@@ -71,6 +71,8 @@ class GemmaClient
             withContext(Dispatchers.IO) {
                 requestMutex.withLock {
                     try {
+                        delay(2.seconds)
+
                         val client =
                             com.google.ai.client.generativeai.GenerativeModel(
                                 modelName = modelName(),
@@ -146,7 +148,6 @@ class GemmaClient
 
                         val cleanedJsonString = response.sanitizeAndExtractJsonString()
                         val typeToken = object : TypeToken<T>() {}
-                        delay(1.seconds)
                         Gson().fromJson(cleanedJsonString, typeToken.type)
                     } catch (e: Exception) {
                         Log.e(this@GemmaClient::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)

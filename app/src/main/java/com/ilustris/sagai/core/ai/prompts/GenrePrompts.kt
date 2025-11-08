@@ -2,9 +2,12 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.currentLanguage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.Genre.CRIME
 import com.ilustris.sagai.features.newsaga.data.model.Genre.CYBERPUNK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
+import com.ilustris.sagai.features.newsaga.data.model.Genre.HEROES
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
+import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
 
 object GenrePrompts {
     fun detail(genre: Genre) = "theme: ${genre.name}"
@@ -13,82 +16,80 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                **Grand Classical oil painting, High Classicism style (17th Century Master)**,
-                rich impasto texture, visible brushstrokes,
-                **Epic Chiaroscuro**, heroic lighting, **natural/varied ambient light.**
-                **Ethereal and Majestic aesthetic, Vintage color grading**,
-                Harmonious colors, authentic painterly grain, Crisp atmosphere.
-                """
+        Art Technique: Painterly brushstrokes (loose impasto)
+        Key Lighting Style: SUBTLE CHIAROSCURO / ATMOSPHERIC RENDERING
+        Texture / Materiality: CANVAS OIL with VISIBLE BRUSHSTROKES and LOOSE IMPASTO
+        Aesthetic Era / Influence: Romanticism; Pre-Raphaelite
+        Cultural/Artistic Reference: John William Waterhouse (atmospheric rendering)
+        Dynamic Color Palette: MUTED EARTH TONES, LOW SATURATION, WARM/COOL CONTRAST
+
+        Mood: Epic, wistful, and mysterious — a sense of ancient fate and quiet reverence. Emphasize wonder over action.
+        Ambience: Soft, volumetric natural light (dawn/dusk), drifting mist or smoke, distant weather elements (storm clouds or light rain), and small localized warm light accents (fire, sigils, glowing artifacts).
+        """
 
             CYBERPUNK ->
                 """
-               retro anime, 80s anime, 90s anime, cel shading,
-               cel art, anime cel, bold outlines, varied line weight,
-               limited color palette, Akira, Ghost in the Shell (1995),
-               Bubblegum Crisis, theatrical anime, OVA, film grain, animation cel artifacting,
-               stylized backgrounds, industrial aesthetic, melancholic atmosphere
-               """
+        Art Technique: TRADITIONAL ANIME CEL SHADING (Zero Gradients)
+        Line Detail: BOLD, VARIED LINE WEIGHT
+        Texture / Materiality: FILM GRAIN, ANIMATION CEL ARTIFACTING
+        Aesthetic Era / Influence: 80s/90s OVA, AKIRA/GHOST IN THE SHELL (1995) AESTHETIC
+        Dynamic Color Palette: LIMITED NEON AND INDUSTRIAL PALETTE (High Saturation Contrast)
+
+        Mood: Neon-noir, melancholic, and tense — characters feel isolated within a noisy, decaying metropolis.
+        Ambience: Rain-slick streets, atmospheric haze and steam, scattered neon signs (accented purple), shallow depth-of-field with out-of-focus backgrounds to emphasize the subject. Subtle motion blur on distant lights is allowed.
+        """
 
             HORROR ->
                 """
-                pixel art,
-                32-bit,
-                retro game art,
-                pixelated,
-                blocky shading.
-                Haunted and Mystique dark aesthetic.
-                Mystique haunted pale blue background.
-                """
+        Art Technique: 32-BIT PIXEL ART with BLOCKY SHADING
+        Texture / Materiality: RETRO GAME ART PIXELATION
+        Aesthetic Era / Influence: PS1/SEGA SATURN HORROR GAME AESTHETIC
+        Vibe / Mood Aesthetic: HAUNTED, MYSTIQUE DARK AESTHETIC
+        Dynamic Color Palette: LIMITED DARK AND PALE BLUE PALETTE
 
-            Genre.HEROES -> {
+        Mood: Oppressive, uncanny, and creeping dread — prioritize psychological unease over explicit gore.
+        Ambience: Low-key, desaturated environment with heavy shadows and subtle volumetric fog; minimal and muted highlights only where needed to draw attention to small, eerie details.
+        """
+
+            HEROES -> {
                 """
-                Comic book art style, characterized by clean and detailed line work,
-                anatomically accurate figures, and dynamic poses.
-                The shading is subtle, utilizing cross-hatching and texture to create depth.
-                Lighting is dramatic, with strong highlights and shadows emphasizing form.
-                The color palette is primarily teal and white, accented with darker tones to create a sense of depth and atmosphere.
-                The overall aesthetic evokes the superhero comics of the 1990s, with a slightly painterly quality.  
-                """
+        Art Technique: COMIC BOOK ART STYLE (Clean and Detailed Line Work)
+        Line Detail: ANATOMICALLY ACCURATE FIGURES, SUBTLE CROSS-HATCHING FOR DEPTH
+        Key Lighting Style: DRAMATIC LIGHTING with STRONG HIGHLIGHTS and SHADOWS
+        Texture / Materiality: SLIGHTLY PAINTERLY QUALITY with TEXTURE
+        Aesthetic Era / Influence: SUPERHERO COMICS OF THE 1990s
+        Dynamic Color Palette: PRIMARILY TEAL AND WHITE, ACCENTED WITH DARKER TONES
+
+        Mood: Heroic, gritty optimism — confident and grounded, with emotional stakes.
+        Ambience: Urban nightscapes with high-contrast rim lighting, audible but unseen city life (sirens, distant traffic), and clean, focused lighting on the subject to convey importance.
+        """
             }
 
-            Genre.CRIME ->
+            CRIME ->
                 """
-                
-                **CRITICAL: RAW, UNREFINED, FUNCTIONAL Comic Panel Illustration. The style must be AUSTERE and GRITTY, strongly avoiding any idealized, beautiful, or overly polished aesthetic commonly found on comic covers.**
-                Linework must be **FAST, IMPERFECT, and AUSTERE**, with a **raw, gestural sketch quality**, emphasizing **functional narrative clarity** over aesthetic polish. Avoid all forms of smooth, clean digital rendering.
-                
-                **Anti-Idealization and Simplicity (BRUTAL SIMPLIFICATION):**
-                Facial features and anatomical details must be rendered with **austere simplification** and **minimalist precision**, deliberately resembling a **quickly-drawn internal comic page panel, NOT an idealized or beautiful cover portrait.**
-                **Hair must use brutal simplification**, rendered in **flat, contiguous ink blocks**, **AVOIDING** individual strand lines, volume definition, or any internal soft light/shadow rendering.
-                **Eyes must use a simplified, two-tone rendering: a flat, colored iris and a solid, black pupil.** CRITICALLY, they must **LACK ALL** highlights, catchlights, or complex reflective details, maintaining a mature, non-idealized appearance.
-                **CRITICAL:** The final image must possess a **deliberate lack of polish**. Avoid any excessive luminosity, high-gloss shine, or idealized beauty filters on the skin, eyes, or hair.
-                
-                **Coloring and Shadow (BRUTALIST & FLAT):**
-                Coloring must use **flat, highly saturated color blocks** with **ZERO smooth gradients**.
-                Shadows must be **SOLID, black/dark ink-wash blocks** that are **graphic, high-contrast, and angular**, explicitly **avoiding soft light or any form of photorealistic rendering**.
-                
-                **Lighting and Texture:**
-                Lighting must be **extremely dramatic and high-contrast** (Chiaroscuro), prioritizing **strong light and deep, ink-block shadows** over mid-tones.
-                The final image must have the visual texture of **physical comic book printing and hand-inking**, not a clean digital vector.
-                
-                **Setting:**
-                The setting is a **tropical urban environment** at dusk or night; **subtle hints of palm trees and distant city lights** are sufficient. The background should be minimalist and stylized, allowing the character to dominate. The color palette of the setting should be vibrant and clean.
-                
-                **Composition Rules:**
-                The composition must look like a **standard, functional panel or close-up from an interior comic book page**, prioritizing **narrative focus** and **expressive emotion** over idealized composition.
-                DO NOT PLACE ANY TEXTUAL ELEMENT OR GRAPHICAL ELEMENT, RENDER ONLY THE REQUIRED IMAGE.
-                
+        Art Technique: EXPRESSIVE INK LINE WORK with VISIBLE SCRATCHY HATCHING
+        Texture / Materiality: GRITTY, ROUGH INK TEXTURE
+        Line Detail: VARIABLE LINE WEIGHT AND MINIMAL FACIAL CONTOUR HATCHING
+        Color Application: FLAT COLOR BLOCKING (ZERO GRADIENTS) with SUBTLE COLOR BLEED
+        Aesthetic Era / Influence: MODERN INDEPENDENT COMIC ART
+        Figure Style: DYNAMIC, EXPRESSIVE ANATOMY, MATURE, NON-IDEALIZED FACIAL FEATURES
+
+        Mood: Tense, stylish, and melancholic — a slow-burning dramatic tone that emphasizes moral ambiguity.
+        Ambience: Tropical coastal city — palm-lined boulevards, beachfront skyline, pastel art-deco buildings, neon-lit boardwalks, and modern urban life (luxury cars, speedboats, street vendors). Think Miami Vice / GTA Vice City: humid air, sunset glow, reflective wet streets, and a blend of glamour and decay.
+        """
+            SPACE_OPERA ->
                 """
-            Genre.SPACE_OPERA ->
-                """
-                **1960s POP ART, inspired by Roy Lichtenstein's dramatic comic book illustrations, rendered with the aesthetic of VINTAGE OFFSET PRINTING**.
-                Characterized by **heavy black inking, flat solid colors, coarse Ben-Day dots APPLIED TO THE CHARACTER'S FACE AND CLOTHING**, and a limited color palette.
-                Emphasize **extreme chiaroscuro** lighting, **with shadows rendered in solid black shapes**, high contrast, and stylized features.
-                The character's face and figure display stronger, more **defined features with realistic proportions**, **evocando a youthful, determined appearance** while **avoiding any childlike rendering**.
-                
-                CRITICAL STYLIZATION DIRECTIVE: Since the style is 1960s POP ART, the translated expression MUST be dramatic, stylized, and slightly exaggerated to match the aesthetic of classic comic book panels, ensuring the emotional state is visually explicit.
-                Example Translation: "Calma, observadora, mas sobrecarregada" → Intense, reserved gaze, slight frown of profound weariness emphasized by comic book exaggeration of eyebrows and mouth curve.
-                """
+        Art Technique: CLASSIC GOLDEN AGE COMIC ART
+        Line Detail: BOLD, CLEAN, AND CONSISTENT INK OUTLINES
+        Color Application: FLAT PRIMARY COLOR BLOCKING (ZERO GRADIENTS)
+        Texture / Materiality: SMOOTH, CLEAN INKING
+        Aesthetic Era / Influence: 1940s/1950s GOLDEN AGE COMICS
+        Figure Style: POWERFUL, HEROIC, AND STYLIZED ANATOMY
+        Vibe / Mood Aesthetic: ADVENTUROUS AND OPTIMISTIC
+
+        Mood: Vast, aspirational, and wonder-filled — evoke exploration and cosmic scale.
+        Ambience: Minimalist starfields, soft cosmic fog or nebula backdrops, gentle backlighting to create silhouettes and emphasize scale without cluttering the frame.
+        """
         }
 
     fun getColorEmphasisDescription(genre: Genre): String =
@@ -138,7 +139,7 @@ object GenrePrompts {
                 Character accents, if any, must be **extremely minimal, desaturated, and applied to very small details**: for instance, a faint, chilling blue reflection in the eyes, or a tiny, barely perceptible grey pattern on dark clothing.
                 **CRUCIAL:** The character should appear largely devoid of vibrant color, blending with the bleak, desaturated environment. Avoid any noticeable color accents that would break the monochromatic feel. The character's skin should appear pale or shadowed, not tinted by any accent color.
                 """
-            Genre.HEROES ->
+            HEROES ->
                 """
                 Urban environment.
                 The color palette is dominated by vivid blues and teals, accented with black, white, and yellow.
@@ -146,15 +147,15 @@ object GenrePrompts {
                 bathed in a cool blue light.
                 """
 
-            Genre.CRIME ->
+            CRIME ->
                 """
-                Tropical environment.
+                Tropical urban environment: a vibrant coastal city with palm trees, beachfront boardwalks, pastel art-deco and modern high-rises, and active street life.
                 The color palette is dominated by vivid pink and orange, accented with teal blues.
-                The background is a detailed beach at a sunset, with a sense of calm and tranquility.
-                In a  Miami Vice aesthetic with pink highlights at the sky and dramatic cinematic lights.
+                The background is a detailed beach at sunset with neon highlights along the boardwalk, conveying modern life (cars, speedboats, palm-lined boulevards) and a sense of both leisure and latent danger.
+                In a Miami Vice / GTA Vice City aesthetic with pink highlights at the sky, dramatic cinematic lighting, and wet reflective surfaces.
                 """
 
-            Genre.SPACE_OPERA ->
+            SPACE_OPERA ->
                 """
                 **Background & Ambient Lighting:**
                 Establish a subtle, dark, and atmospheric starry sky background.
@@ -168,7 +169,7 @@ object GenrePrompts {
     fun cinematographyComposition(genre: Genre) =
         buildString {
             when (genre) {
-                Genre.CRIME -> {
+                CRIME -> {
                     appendLine(
                         "*The composition MUST emphasize **intense psychological tension and dramatic observation**. Use **cinematic staging** to create emotional distance or scrutiny, such as **observing a character from behind a pane of glass (like a luxury car window) or through heavy shadow/neon reflection**. Focus on aesthetic of **decadent tropical luxury** and urban grit.",
                     )
@@ -177,7 +178,7 @@ object GenrePrompts {
                     )
                 }
 
-                Genre.CYBERPUNK -> {
+                CYBERPUNK -> {
                     appendLine(
                         "The composition MUST emphasize tension and dramatic melancholy. With high focus on characters emotions and world building.",
                     )
@@ -195,11 +196,11 @@ object GenrePrompts {
     fun colorAccent(genre: Genre) =
         when (genre) {
             FANTASY -> "Crimson/Red"
-            CYBERPUNK -> "Luminous purple/Neon magenta\""
+            CYBERPUNK -> "Luminous purple/Neon magenta"
             HORROR -> "Ash gray/Faded cerulean blue"
-            Genre.HEROES -> "Midnight blue/Electric blue"
-            Genre.CRIME -> "Hot pink/Electric magenta"
-            Genre.SPACE_OPERA -> "Cyan/Deep cerulean blue"
+            HEROES -> "Midnight blue/Electric blue"
+            CRIME -> "Hot pink/Electric magenta"
+            SPACE_OPERA -> "Cyan/Deep cerulean blue"
         }
 
     fun nameDirectives(genre: Genre) =
@@ -231,7 +232,7 @@ object GenrePrompts {
                 // - Avoid names that are overtly heroic, futuristic, or melodramatic.
                """
 
-            Genre.HEROES ->
+            HEROES ->
                 """
                 // - Aim for names that feel grounded, contemporary, and reflect a diverse urban environment.
                 // - Consider influences from street culture, hip-hop, graffiti art, and modern city life.
@@ -244,7 +245,7 @@ object GenrePrompts {
                 // - Think about names that could easily become a street tag or a whispered legend.
                 """
 
-            Genre.CRIME ->
+            CRIME ->
                 """
                 // - Aim for names fitting a crime drama set in a stylized neon city.
                 // - Blend gritty street nicknames with classic, timeless first names.
@@ -252,7 +253,7 @@ object GenrePrompts {
                 // - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
                 // - Avoid overtly sci-fi or fantasy elements.
                 """
-            Genre.SPACE_OPERA ->
+            SPACE_OPERA ->
                 """
                 Concept: Evoke exploration, cosmic significance, advanced scientific concepts, or ancient, wise origins.
                 Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
@@ -330,7 +331,7 @@ object GenrePrompts {
                     * Avoid explicit and graphic descriptions of the horror, opting instead to hint at what is indescribable to heighten the reader's fear.
                      
                """
-            Genre.HEROES ->
+            HEROES ->
                 """
                 // This directive defines the specific linguistic style for the Urban Hero genre.
                 // NPCs and narrative voice should reflect a contemporary, street-smart, and often gritty tone, blending realism with a sense of hidden potential.
@@ -354,7 +355,7 @@ object GenrePrompts {
                     * The narrative should subtly hint at the hidden potential and extraordinary abilities that exist beneath the surface of everyday life.
                 """
 
-            Genre.CRIME ->
+            CRIME ->
                 """
                 // This directive defines the specific linguistic style for the Crime City genre.
                 // NPCs and narration should evoke 80s crime drama with a neon-soaked, Miami Vice mood.
@@ -375,7 +376,7 @@ object GenrePrompts {
                     * Emphasize rim lighting, silhouettes against pink-yellow dusk, and reflective wet streets.
                     * Keep descriptions cinematic but slightly imperfect and gritty.
                 """
-            Genre.SPACE_OPERA ->
+            SPACE_OPERA ->
                 """
                 Vocabulary: Galactic exploration, profound discoveries, cosmic phenomena,
                 ancient alien civilizations, advanced technology, philosophical ponderings about existence.

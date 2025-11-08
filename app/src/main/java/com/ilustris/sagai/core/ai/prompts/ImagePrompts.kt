@@ -104,74 +104,101 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
         )
 
         appendLine(
-            "Apply a solid black background.",
+            "Apply a solid background using the provided hex color: $backgroundHexCode.",
         )
     }
 
     @Suppress("ktlint:standard:max-line-length")
     fun extractComposition() =
         buildString {
-            appendLine("You are analyzing TWO visual references:")
-            appendLine("1. **Image A (Composition Reference):** Dictates layout, framing, and light.")
-            appendLine("2. **Image B (Style Reference):** Dictates artistic rendering, texture, and aesthetic era.")
-            appendLine("")
+            appendLine("You are analyzing ONE composition reference image:")
             appendLine(
-                "Your task is to extract NINE critical, technical components. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the nine extracted phrases/terms, each prepended by its respective label (e.g., 'Framing: ', 'Art Technique: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS (I., II.), OR EXPLANATIONS/GROUPINGS.**",
+                "1. **Image A (Composition Reference):** This single reference dictates layout, framing, lighting, lens feel, and photographic treatment. Use this image as the sole source for all observable photographic cues.",
             )
             appendLine("")
-            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (9 points):**")
+            appendLine(
+                "Your task is to extract EIGHT concise, photography-focused composition components based only on Image A. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the extracted phrases/terms, each prepended by its respective label (e.g., 'Framing: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS, OR EXPLANATIONS.**",
+            )
+            appendLine("")
+            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (8 points):**")
             appendLine("1. Framing: [Value]")
             appendLine("2. Zoom Level / Proximity: [Value]")
             appendLine("3. Cropping Intention: [Value]")
             appendLine("4. Key Lighting Style: [Value]")
-            appendLine("5. Art Technique: [Value]")
-            appendLine("6. Aesthetic Era / Influence: [Value]")
-            appendLine("7. Cultural/Artistic Reference: [Value]")
-            appendLine("8. Vibe / Mood Aesthetic: [Value]")
-            appendLine("9. Dynamic Color Palette: [Value]")
+            appendLine("5. Camera Angle: [Value]")
+            appendLine("6. Lens / Focal Length: [Value]")
+            appendLine("7. Depth of Field / Bokeh: [Value]")
+            appendLine("8. Motion / Shutter Treatment: [Value]")
             appendLine("")
 
+            appendLine("**Extract these details directly from IMAGE A:**")
+            appendLine(
+                "1.  **Framing:** [Pick the most accurate photographic framing term (e.g., FULL BODY, 3/4, WAIST-UP, BUST-UP, HEADSHOT). Be consistent with Cropping Intention.]",
+            )
+            appendLine(
+                "2.  **Zoom Level / Proximity:** [Describe camera-subject distance in photographic terms: e.g., 'Close (tight on face)', 'Mid (waist-up)', 'Wide (environmental)'. Indicate if facial expression is dominant.]",
+            )
+            appendLine(
+                "3.  **Cropping Intention:** [Describe how the subject is intentionally cut by the frame (explicit pose/gaze guidance). Keep this neutral — focus on pose/gaze and compositional crop only (no clothing or prop details).]",
+            )
+            appendLine(
+                "4.  **Key Lighting Style:** [State the primary lighting technique and its photographic effect: e.g., 'Hard rim lighting with deep shadows', 'High-key even fill', 'Split lighting with strong contrast', 'Backlit silhouette'. Mention directionality and contrast briefly.]",
+            )
+            appendLine(
+                "5.  **Camera Angle:** [Specify the camera angle: e.g., Low-angle (heroic), High-angle (vulnerable), Eye-level (neutral), Dutch/canted. Include a short note on impact (e.g., 'Low-angle — imposing').]",
+            )
+            appendLine(
+                "6.  **Lens / Focal Length:** [Estimate lens feel: e.g., 'Wide (24–35mm) — exaggerated perspective', 'Standard (35–50mm)', 'Short tele (85–135mm) — compressed perspective'. If exact mm cannot be inferred, give the perceptual effect and an approximate range.]",
+            )
+            appendLine(
+                "7.  **Depth of Field / Bokeh:** [Describe DOF: e.g., 'Shallow DOF with creamy bokeh', 'Deep focus (everything sharp)', 'Moderate DOF with subject separation'. Note any visible out-of-focus shapes or background separation.]",
+            )
+            appendLine(
+                "8.  **Motion / Shutter Treatment:** [Describe whether motion is frozen or implied: e.g., 'Crisp frozen action (fast shutter)', 'Intentional motion blur (slow shutter)', 'Subject motion with sharp face and blurred limbs'. Keep to short, specific phrases.]",
+            )
+
             appendLine("")
-            appendLine("**I. Extract from IMAGE A (Composition Reference):**")
+            appendLine("**IMPLEMENTATION RULES FOR THE AGENT:**")
             appendLine(
-                "1.  **Framing:** [The most accurate, literal photographic framing term, e.g., FULL BODY SHOT, MEDIUM SHOT, MEDIUM CLOSE-UP. **CRITICAL VALIDATION:** The term chosen MUST be logically consistent with the Cropping Intention (Point 3). If the subject is cropped above the knees, the framing CANNOT be FULL BODY SHOT.]",
+                "- Base every field on directly observable photographic cues (crop lines, shadow/hight contrast, edge sharpness, background separation, blur, perspective distortion).",
             )
             appendLine(
-                "2.  **Zoom Level / Proximity:** [The camera's closeness to the subject. **CRITICAL COHERENCE:** This term must reflect the closeness to the PRIMARY FOCAL POINT (e.g., the face), regardless of the framing. Use 'High proximity' ONLY if facial expression is the dominant element.]",
+                "- If a value is uncertain, provide the most likely photographic perceptual description and add a tight approximate range (e.g., 'Short tele (85–105mm approx)').",
             )
-            appendLine(
-                "3.  **Cropping Intention:** [How the subject is intentionally cut by the frame. MUST INCLUDE explicit pose/gaze guidance. **CRITICAL EXCLUSION:** The description MUST be neutral and **MUST NOT mention specific items, clothing, or character details** (e.g., 'armor', 'dress', 'dagger'). It should focus purely on the visual effect, such as the relationship between the hands and the hilt, or the visual line of the body.]",
-            )
-            appendLine("4.  **Key Lighting Style:** [The primary lighting technique, e.g., Rembrandt Lighting, Dramatic Backlighting]")
-            appendLine("**II. Extract from IMAGE B (Style Reference):**")
-            appendLine(
-                "5.  **Art Technique:** [The dominant technical rendering method. Must be specific and exclusive. **CRITICAL EXCLUSION:** Avoid general terms like 'Digital Painting' unless truly necessary. Prioritize specific sub-techniques.]",
-            )
-            appendLine(
-                "6.  **Aesthetic Era / Influence:** [The dominant artistic movement, time period, or genre influence. Must be a single, exclusive term.]",
-            )
-            appendLine(
-                "7.  **Cultural/Artistic Reference:** [The single most defining, direct reference to an artist, specific artwork, or cultural touchstone that dictates the style. MUST be highly specific.]",
-            )
-            appendLine("8.  **Vibe / Mood Aesthetic:** [A technical aesthetic term defining the final mood.]")
+            appendLine("- Output must be exactly the eight labeled lines above with their bracketed values; no extra commentary.")
         }
 
     @Suppress("ktlint:standard:max-line-length")
     fun imageHighlight(genre: Genre) =
         buildString {
-            appendLine("**Injected Detail - Localized Color Accent (Crucial for Aesthetic Focus):**")
+            appendLine("**Injected Detail — Photographic Light Accent:**")
             appendLine(
-                "The Agent MUST inject a short phrase dedicated to a localized color accent. This element MUST be subtle and enhance the drama by acting as a **visual focal point**.",
+                "Create exactly ONE short phrase (6-16 words) describing a subtle photographic light accent using ${GenrePrompts.colorAccent(
+                    genre,
+                )}.",
             )
             appendLine("")
-            appendLine("* **Color Source:** The accent color MUST be a dynamic, high-contrast color ${GenrePrompts.colorAccent(genre)}.")
-            appendLine("* **Placement:** Inject this phrase immediately before the main 'Narrative & Composition Core' block.")
-            appendLine(
-                "* **MANDATE:** The Agent MUST select a **single, specific, and logical existing detail** from the current character's description (e.g., a weapon, an accessory, a lining of clothing, or an armor accent) and use the accent color on it to make it pop against the surrounding dark palette.",
-            )
-            appendLine(
-                "* **CRITICAL:** The Agent MUST use its analysis of the character details to create a **new and unique** localized color accent, ensuring it is coherent with the character's description (e.g., If the character wears sapphires, the accent cannot be a ruby ring). The narrative purpose (e.g., blood) must be avoided.",
-            )
+            appendLine("Light Properties:")
+            appendLine("1. Role: Secondary/supporting light only — not the main illumination")
+            appendLine("2. Purpose: Create a focused highlight that guides the viewer's eye")
+            appendLine("3. Character: Subtle, photographic, intentional — avoid narrative light sources")
+            appendLine("")
+            appendLine("Required Elements (include all):")
+            appendLine("1. Position: Name exact spot ('edge of jawline', 'upper right hairline', 'inner corner of eye')")
+            appendLine("2. Intensity: State level (soft/medium) and spread (tight/gradual)")
+            appendLine("3. Surface: Describe one material interaction ('specular on skin', 'diffused in hair')")
+            appendLine("")
+            appendLine("Technical Constraints:")
+            appendLine("* Keep color influence subtle (max 10-15% of total lighting)")
+            appendLine("* Must work with main lighting, not fight it")
+            appendLine("* Focus on edge highlights, rim lights, or small focused accents")
+            appendLine("* No narrative sources (avoid devices, props, or environmental sources)")
+            appendLine("")
+            appendLine("Example Format:")
+            appendLine("'soft ${GenrePrompts.colorAccent(genre)} rim light along left jawline, medium fade, pearl highlight on skin'")
+            appendLine("'subtle ${GenrePrompts.colorAccent(genre)} catch light in eyes, low intensity, clean specular'")
+            appendLine("")
+            appendLine("Output this single phrase before the Narrative Core section.")
         }
 
     fun descriptionRules(genre: Genre) =
@@ -183,14 +210,17 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             )
             appendLine("**Character Focus and Framing (CRITICAL - INJECTION OF VISUAL DIRECTION):**")
             appendLine("**Final Prompt Structure (Mandatory Order - BLOCK INJECTION):**")
-            appendLine("1. **Technical Foundation (Composed of NINE Injected Data Points):**")
+            appendLine("1. **Technical Foundation (Composed of injected composition data points):**")
             appendLine(
-                "* Start the prompt by injecting the **Framing**, **Zoom Level / Proximity**, and **Cropping Intention**. (From I. 1-3)",
+                "* Start the prompt by injecting the **Framing**, **Zoom Level / Proximity**, and **Cropping Intention**. (From extractComposition)",
             )
             appendLine(
-                "* Inject the **Art Technique**, **Aesthetic Era / Influence**, **Cultural/Artistic Reference**, and **Vibe / Mood Aesthetic**. (From II. 5-8)",
+                "* Inject **Key Lighting Style**, **Camera Angle**, **Lens / Focal Length**, and **Depth of Field / Motion Treatment** as supporting composition cues.",
             )
-            appendLine("* Inject the **Key Lighting Style**. (From I. 4)")
+            appendLine("* Inject the **Key Lighting Style** prominently where it affects mood and shading.")
+            appendLine(
+                "* Inject the **Art Style** from the provided genre data (use GenrePrompts.artStyle(genre) — do NOT infer or extract art style from the reference images). This hardcoded art style must be applied to the character rendering and overall final look.",
+            )
             appendLine("")
             appendLine("2. **NARRATIVE & COMPOSITION CORE (Dynamic Scene Assembly - Final Mandate):**")
             appendLine("")

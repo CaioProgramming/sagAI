@@ -71,7 +71,6 @@ class ActUseCaseImpl
 
             val prompt = ActPrompts.actIntroductionPrompt(saga, previousAct)
 
-            delay(2.seconds)
             val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
             actRepository
                 .updateAct(act.copy(introduction = intro))

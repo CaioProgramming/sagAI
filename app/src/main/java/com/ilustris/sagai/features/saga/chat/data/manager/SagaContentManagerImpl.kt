@@ -206,7 +206,6 @@ class SagaContentManagerImpl
             chapter: ChapterContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                setNarrativeProcessingStatus(true)
                 chapterUseCase
                     .updateChapter(
                         chapter.data.copy(
@@ -238,8 +237,6 @@ class SagaContentManagerImpl
                         .rankTopCharacters(saga.getCharacters())
                         .take(3)
                         .map { it.first.id }
-
-                delay(2.seconds)
 
                 val emotionalReview =
                     generateEmotionalReview(
@@ -380,10 +377,8 @@ class SagaContentManagerImpl
                 endTimeline(saga.currentActInfo?.currentChapterInfo)
                 error("Timeline already completed")
             } else {
-                setNarrativeProcessingStatus(true)
                 delay(2.seconds)
                 val timeLineUpdate = timelineUseCase.generateTimeline(saga, content).getSuccess()!!
-
                 updateSnackBar(
                     SnackBarState(
                         message = context.getString(R.string.timeline_updated, timeLineUpdate.title),
@@ -396,7 +391,6 @@ class SagaContentManagerImpl
 
         private suspend fun createAct(currentSaga: SagaContent) =
             executeRequest {
-                setNarrativeProcessingStatus(true)
                 val lastAct = currentSaga.acts.lastOrNull()
                 if (lastAct?.isComplete()?.not() == true) {
                     error("Act is already set at this saga")
@@ -412,7 +406,6 @@ class SagaContentManagerImpl
         private suspend fun updateAct(currentAct: ActContent) =
             executeRequest {
                 val saga = content.value!!
-                setNarrativeProcessingStatus(true)
                 Log.d(
                     javaClass.simpleName,
                     "updating act(${saga.currentActInfo?.data?.id})",
@@ -510,7 +503,6 @@ class SagaContentManagerImpl
                     generateCharacter("Main Debug Character").onSuccessAsync { newCharacter ->
                         sagaHistoryUseCase.updateSaga(saga.data.copy(mainCharacterId = newCharacter.id))
                     }
-                    setNarrativeProcessingStatus(false)
                     return@launch
                 }
                 val narrativeStep = NarrativeCheck.validateProgression(saga)
@@ -576,7 +568,6 @@ class SagaContentManagerImpl
                                 },
                             )
                             if (isRetrying.not()) {
-                                delay(3.seconds)
                                 checkNarrativeProgression(saga, true)
                             }
                         }
@@ -599,8 +590,7 @@ class SagaContentManagerImpl
         override suspend fun regenerateTimeline(
             saga: SagaContent,
             timelineContent: TimelineContent,
-        ) {
-            setNarrativeProcessingStatus(true)
+        ) = startProcessing {
             generateTimelineContent(timelineContent.data, saga)
         }
 
@@ -619,11 +609,11 @@ class SagaContentManagerImpl
                 when (step) {
                     is NarrativeStep.StartAct -> {
                         (result.value as? Act)?.let { data ->
-                            sagaHistoryUseCase.updateSaga(
-                                saga.data.copy(currentActId = data.id),
-                            )
+
                             startProcessing {
-                                delay(3.seconds)
+                                sagaHistoryUseCase.updateSaga(
+                                    saga.data.copy(currentActId = data.id),
+                                )
                                 actUseCase.generateActIntroduction(saga, data)
                             }
 
@@ -634,11 +624,10 @@ class SagaContentManagerImpl
                     is NarrativeStep.StartChapter -> {
                         val currentAct = saga.currentActInfo!!
                         (result.value as? Chapter)?.let {
-                            actUseCase.updateAct(
-                                currentAct.data.copy(currentChapterId = it.id),
-                            )
                             startProcessing {
-                                delay(3.seconds)
+                                actUseCase.updateAct(
+                                    currentAct.data.copy(currentChapterId = it.id),
+                                )
                                 chapterUseCase
                                     .generateChapterIntroduction(
                                         saga = content.value!!,
@@ -657,7 +646,6 @@ class SagaContentManagerImpl
                                 ),
                             )
                             startProcessing {
-                                delay(2.seconds)
                                 val objective =
                                     timelineUseCase.getTimelineObjective(content.value!!).getSuccess()
                                 timelineUseCase.updateTimeline(
@@ -697,7 +685,6 @@ class SagaContentManagerImpl
 
                     is NarrativeStep.NoActionNeeded -> {
                         checkObjective()
-                        setNarrativeProcessingStatus(false)
                     }
 
                     else -> setNarrativeProcessingStatus(false)

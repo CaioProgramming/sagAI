@@ -188,7 +188,6 @@ class CreateSagaViewModel
             isSaving.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 generateProcessMessage(SagaProcess.CREATING_SAGA)
-                delay(2.seconds)
                 newSagaUseCase
                     .generateSaga(form.value, chatMessages.value)
                     .onSuccessAsync {

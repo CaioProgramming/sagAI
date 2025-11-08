@@ -82,13 +82,8 @@ class CharacterUseCaseImpl
         ): RequestResult<Pair<Character, String>> =
             executeRequest(false) {
                 // TODO REMOVE FORCED PREMIUM
-                val isPremium = true // billingService.isPremium()
+                val isPremium = billingService.isPremium()
 
-                val styleReference =
-                    ImageReference(
-                        genreReferenceHelper.getGenreStyleReference(saga.genre).getSuccess()!!,
-                        ImageGuidelines.styleReferenceGuidance,
-                    )
                 val portraitReference =
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
                         ImageReference(it, ImageGuidelines.compositionReferenceGuidance)
@@ -97,7 +92,6 @@ class CharacterUseCaseImpl
                     if (isPremium) {
                         listOfNotNull(
                             portraitReference,
-                            styleReference,
                         )
                     } else {
                         emptyList()
@@ -106,7 +100,7 @@ class CharacterUseCaseImpl
                 val visualComposition =
                     imagenClient
                         .extractComposition(
-                            listOfNotNull(portraitReference, styleReference),
+                            listOfNotNull(portraitReference),
                         ).getSuccess()
 
                 val descriptionPrompt =

@@ -38,7 +38,7 @@ fun NewSagaView(
     val messages by createSagaViewModel.chatMessages.collectAsStateWithLifecycle()
     var showExitDialog by remember { mutableStateOf(false) }
     val callbackAction by createSagaViewModel.callbackAction.collectAsStateWithLifecycle()
-    val isSaving by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
+    val isSaving by createSagaViewModel.isSaving.collectAsStateWithLifecycle()
     val loadingMessage by createSagaViewModel.loadingMessage.collectAsStateWithLifecycle()
 
     BackHandler(enabled = isGenerating) {

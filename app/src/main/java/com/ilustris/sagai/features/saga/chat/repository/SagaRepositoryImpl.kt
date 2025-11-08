@@ -63,17 +63,6 @@ class SagaRepositoryImpl
             saga: Saga,
             character: Character,
         ) = executeRequest {
-            val styleReference =
-                genreReferenceHelper
-                    .getGenreStyleReference(saga.genre)
-                    .getSuccess()
-                    ?.let {
-                        ImageReference(
-                            it,
-                            ImageGuidelines.styleReferenceGuidance,
-                        )
-                    }
-
             val iconReferenceComposition =
                 genreReferenceHelper
                     .getIconReference(saga.genre)
@@ -98,12 +87,12 @@ class SagaRepositoryImpl
                     }
 
             val references =
-                listOfNotNull(styleReference, iconReferenceComposition, characterIcon)
+                listOfNotNull(iconReferenceComposition, characterIcon)
 
             val visualDirection =
                 imagenClient
                     .extractComposition(
-                        references = references.take(2),
+                        references = listOfNotNull(iconReferenceComposition),
                     ).getSuccess()
 
             val context =
