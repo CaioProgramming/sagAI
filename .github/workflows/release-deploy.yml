@@ -1,0 +1,24 @@
+release-review:
+    runs-on: ubuntu-latest
+    needs: build-apk
+    steps:
+      - name: 🧰 Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Gemini CLI
+        id: gemini
+        uses: google-github-actions/run-gemini-cli@v0.1.14
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_KEY }}
+          command: "@gemini-cli /review --release"
+
+      - name: Delivering artifact 🚚
+        uses: OrjanSkarnes/pull-request-commenter@1.2.3
+        with:
+          comment-body: |
+            ${{ steps.gemini.outputs.pr_body }}
+            
+            Beta test ready to test! 📦️ — [Download it here](${{ needs.build-apk.outputs.upload_artifact.outputs.artifact-url }})
+          comment-title: '${{ github.event.pull_request.title }} APK Delivered! 🎉'
+          remove-comment-if-no-output: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}

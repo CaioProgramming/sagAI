@@ -43,12 +43,8 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         RelationshipUpdateEvent::class,
         Reaction::class,
     ],
-    version = 57,
+    version = 3,
     exportSchema = true,
-    autoMigrations = [
-        AutoMigration(from = 55, to = 56),
-        AutoMigration(from = 56, to = 57),
-    ],
 )
 @TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {
