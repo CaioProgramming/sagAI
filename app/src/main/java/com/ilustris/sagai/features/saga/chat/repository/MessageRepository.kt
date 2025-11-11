@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface MessageRepository {
     suspend fun getMessages(sagaId: Int): Flow<List<MessageContent>>
 
-    suspend fun saveMessage(message: Message): Message?
+    suspend fun saveMessage(message: Message): Message
 
     suspend fun deleteMessage(messageId: Long)
 

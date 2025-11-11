@@ -1,7 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.sagaExclusions
 import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -13,6 +15,8 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.getDirective
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import kotlin.text.appendLine
 
 object ChapterPrompts {
     fun chapterSummary(sagaContent: SagaContent) =
@@ -42,11 +46,15 @@ object ChapterPrompts {
         sagaContent: SagaContent,
         currentChapter: Chapter,
         currentAct: ActContent,
+        contextSummary: SceneSummary?,
     ): String =
         buildString {
             val actContent = sagaContent.findChapterAct(currentChapter)
-            val chaptersInAct = currentAct.chapters.filter { it.isComplete() }.map { it.data }
-            val isFirst = chaptersInAct.isEmpty()
+            val chaptersInAct =
+                currentAct.chapters
+                    .filter { it.isComplete() }
+                    .map { it.data }
+                    .filter { it.id != currentChapter.id }
             val excludedFields =
                 listOf(
                     "details",
@@ -57,20 +65,6 @@ object ChapterPrompts {
                     "id",
                     "firstSceneId",
                     "createdAt",
-                )
-            val sagaExclusion =
-                listOf(
-                    "id",
-                    "icon",
-                    "createdAt",
-                    "mainCharacterId",
-                    "isDebug",
-                    "endMessage",
-                    "currentActId",
-                    "endedAt",
-                    "review",
-                    "emotionalReview",
-                    "isEnded",
                 )
 
             val chapterExclusions =
@@ -84,34 +78,58 @@ object ChapterPrompts {
                     "featuredCharacters",
                 )
 
-            appendLine("Your task is write a introduction to engage the player to continue the story.")
-            appendLine("Use the context provided to create a relevant and compelling introduction paragraph.")
-            appendLine("Keep the introduction around 40-60 words.")
-            appendLine("Do not reference the chapter title or any characters by name.")
-            appendLine("Do not include any quotes or dialogue.")
-            appendLine("Do not include any text other than the introduction paragraph.")
-            appendLine("Saga context:")
-            appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusion))
-            appendLine("Main character Context:")
-            appendLine(sagaContent.mainCharacter?.data.toJsonFormatExcludingFields(excludedFields))
+            appendLine(
+                "You are an AI storyteller continuing a saga. Your task is to write a short, engaging introduction for the next chapter.",
+            )
+            appendLine(
+                "This intro must act as a seamless bridge from the previous events, pulling the reader right back into the action or mood.",
+            )
+            appendLine()
 
-            val description =
-                actContent?.data?.introduction?.ifEmpty {
-                    sagaContent.data.description
-                }
+            appendLine("## CONTEXT")
+            appendLine("### Saga Overview:")
+            appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusions))
+            appendLine()
 
-            appendLine("Use this description to understand current context of the saga and act.")
-            appendLine(description)
+            appendLine("### Main Character:")
+            appendLine(sagaContent.mainCharacter?.data?.toJsonFormatExcludingFields(excludedFields))
 
-            if (chaptersInAct.isNotEmpty()) {
-                appendLine("Use the following chapters in this act to understand the immediate context:")
-                appendLine(chaptersInAct.filter { it.id != currentChapter.id }.formatToJsonArray(chapterExclusions))
+            contextSummary?.let {
+                appendLine("### Latest Scene Summary (What JUST Happened):")
+                appendLine(it.toJsonFormat())
+                appendLine()
             }
 
-            appendLine("Use this directive to understand the improve the introduction:")
+            actContent?.data?.introduction?.let {
+                appendLine("### Current Act's Theme:")
+                appendLine(it)
+            }
+
+            if (chaptersInAct.isNotEmpty()) {
+                appendLine("### Summaries of Previous Chapters in this Act:")
+                appendLine(chaptersInAct.formatToJsonArray(chapterExclusions))
+                appendLine()
+            }
+
+            appendLine("### Narrative Directive (Pacing and Style):")
             appendLine(sagaContent.getDirective())
 
-            appendLine("Output only the introduction paragraph, no titles, quotes, or extra text.")
+            appendLine("## YOUR TASK")
+            appendLine("Based on the context, write a single paragraph to introduce the next chapter. Follow these rules:")
+            appendLine(
+                "1.  **Immediately Follow Up:** Start by directly referencing the mood, outcome, or lingering question from the 'Latest Scene Summary'.",
+            )
+            appendLine(
+                "2.  **Create Momentum:** Build on that starting point to create a sense of forward momentum. What is happening now? What is the immediate feeling?",
+            )
+            appendLine(
+                "3.  **Be Evocative, Not Explicit:** Hint at the stakes or the atmosphere. Use descriptive language but AVOID naming specific characters or places. Let the feeling lead.",
+            )
+
+            appendLine("## OUTPUT REQUIREMENTS")
+            appendLine("- **Length:** 1 concise paragraph (40-60 words).")
+            appendLine("- **Content:** Absolutely NO dialogue, character names, or titles.")
+            appendLine("- **Format:** Output ONLY the introduction text itself. No quotes, no labels, no extra commentary.")
         }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -202,11 +220,12 @@ object ChapterPrompts {
         content: SagaContent,
         chapter: Chapter,
         characters: List<Character>,
+        visualDirection: String?,
     ): String {
         val coverContext =
             mapOf(
                 "sagaTitle" to content.data.title,
-                "sagaGenre" to content.data.genre.title,
+                "sagaGenre" to content.data.genre.name,
                 "chapterTitle" to chapter.title,
                 "chapterDescription" to chapter.overview,
                 "charactersInvolved" to characters,
@@ -217,48 +236,117 @@ object ChapterPrompts {
                 "id",
                 "image",
                 "hexColor",
+                "sagaId",
+                "abilities",
+                "emojified",
             )
         val coverContextJson = coverContext.toJsonFormatExcludingFields(fieldsToExcludeForCover)
+        val genre = content.data.genre
 
-        return """
-             Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Minimalistic Chapter Covers**.
-             You will receive contextual information about the SAGA (title, genre) and the specific CHARACTERS to be featured.
-             You will also (outside this prompt) have access to Visual Reference Images for each character involved to inspire their appearance, and a general Visual Reference Image for overall composition and style.
+        return buildString {
+            appendLine(
+                "Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Minimalistic Chapter Covers**.",
+            )
+            appendLine("You will receive contextual information about the SAGA (title, genre) and the specific CHARACTERS to be featured.")
+            appendLine(
+                "You will also (outside this prompt) have access to Visual Reference Images for each character involved to inspire their appearance, and a general Visual Reference Image for overall composition and style.",
+            )
+            appendLine()
+            appendLine("**CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**")
+            appendLine("1.  **Saga & Character Information (JSON below):** Details about the saga's genre and the characters to feature.")
+            appendLine("    $coverContextJson")
+            appendLine()
+            appendLine("Visual Direction:")
+            visualDirection?.let {
+                appendLine("This rules dictate how you should describe the icon composition")
+                appendLine(it)
+            } ?: run {
+                appendLine("Ensure to render this art style description matching with the reference image")
+                appendLine(GenrePrompts.artStyle(genre))
+                appendLine("*The accents are design elements, not the primary light source for the character.")
+                appendLine(GenrePrompts.getColorEmphasisDescription(genre))
+            }
 
-             **CRITICAL CONTEXT FOR YOU (THE AI IMAGE PROMPT ENGINEER):**
-             1.  **Saga & Character Information (JSON below):** Details about the saga's genre and the characters to feature.
-                 $coverContextJson
+            appendLine("This description must:")
+            appendLine("*   Integrate the **Character Details**.")
+            appendLine(
+                "*Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
+            )
+            appendLine("**Character Focus and Framing (CRITICAL - INJECTION OF VISUAL DIRECTION):**")
+            appendLine(ImagePrompts.descriptionRules(genre))
+            appendLine("**Final Prompt Structure (Mandatory Order):**")
+            appendLine("1.  **Technical Foundation (Composed of Injected Data):**")
+            appendLine(
+                "* Start the prompt with the **Framing, Zoom Level, and Cropping Intention** (e.g., \"ULTRA CLOSE-UP... Very tight shot, Subject fills entire frame...\").",
+            )
+            appendLine(
+                "* Immediately follow with the **Foundational Art Style** (Grand Classical oil painting...) and the **Key Lighting Style** (Dramatic Rembrandt lighting...) and **Color Palette**.",
+            )
+            appendLine("2.  **Narrative & Character Core (Crucial for Vibe):**")
+            appendLine(
+                " * **CRITICAL POSE RULE (Anti-Static):** The Agent MUST ensure the character's pose, head angle, and gaze are **dynamic and non-symmetrical**.",
+            )
+            appendLine(
+                "The character MUST NOT be looking directly and neutrally into the camera (Avoid \"Straight on gaze\", \"Neutral head angle\"). The head should be **tilted, turned, or angled to create tension**.",
+            )
+            appendLine(
+                "* Integrate the Characters Details and a **high-value narrative opening** that defines the character's *VIBE* and *EMOTION*. This section must focus on **Expression, Pose, and Story Context**, adapting them to the Framing. (e.g., \"A hauntingly beautiful and fiercely determined Vanya, captured in a moment of restrained fury.\").",
+            )
+            appendLine(
+                "* The Agent MUST use the 'Character Details' to create a **dynamic and expressive pose** that fits the close-up framing.",
+            )
+            appendLine(
+                "* **Action Focus:** For ULTRA CLOSE-UP, the dynamism must be expressed through **head/neck movement, hair movement, expression intensity, or interaction with an object just outside the frame**.",
+            )
+            appendLine(ImagePrompts.imageHighlight(genre))
 
-             **CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**
-             1.  **Foundational Art Style:**
-                 *   The primary rendering style for the cover MUST be: `${GenrePrompts.artStyle(content.data.genre)}`.
-             2.  **Specific Color Application Instructions:**
-                 *   The following rules dictate the color palette and light composition for the image generation, are applied:
-                 `${GenrePrompts.getColorEmphasisDescription(content.data.genre)}`.
-                 *   **Important Clarification on Color:**
-                     *   **CRUCIAL: DO NOT use these genre colors to tint the overall image, characters' base skin tones, hair (beyond tiny accents), or main clothing areas.** Characters' base colors should be preserved and appear natural.
-                     *   Lighting on characters should be primarily dictated by the foundational art style, not an overall color cast from the genre accents.
+            appendLine(
+                "* **CRITICAL - ACTION DYNAMISM MANDATE:** The Agent **MUST NOT** use the exact example phrase 'Vanya lunges forward from the darkness, her neck strained, the motion captured as strands of hair whip across her jawline.'",
+            )
+            appendLine(
+                "* The Agent MUST replace passive descriptions with a **unique, active, and dynamic phrasing** that conveys energy and tension.",
+            )
+            appendLine(
+                "* The generated action MUST be **original** for the current image and consistent with the pose/scene described in the 'NARRATIVE & COMPOSITION CORE' (e.g., if the mood is 'Contemplative', the action could be 'She braces her body against the biting wind, her posture radiating stoic defiance,' OR 'Her hand tightens around the dagger hilt in a reflexive gesture of protection').",
+            )
+            appendLine("* **Goal:** The description must convey **energy and tension** without repeating the boilerplate example.")
 
-             **YOUR TASK (Output a single text string for the Image Generation Model):**
-             Generate a single, highly detailed, unambiguous, and visually rich English text description for an AI image generation model. This description MUST create a **MINIMALISTIC CHAPTER COVER FOCUSED ON THE CHARACTERS**.
-
-             The description must:
-             1.  **Prioritize Character Depiction:**
-                 *   High Focus on the character(s) listed in `charactersInvolved` from the JSON context. Incorporate them on the mood and environment.
-                 *   Ensure their appearance and expression are primarily inspired by their individual Visual Reference Images. **Their POSE, however, should be DRAMATIC and EXPRESSIVE, derived from their context within the chapter (implied by the 'chapterTitle' and 'sagaGenre') or their inherent character traits, rather than a direct copy from any visual reference.** The overall compositional Visual Reference Image can inspire the *framing* of these dynamic poses.
-                 *   If multiple characters are present, their interaction or composition should be clear and engaging, suitable for a cover.
-                 *   Ensure to place characters in dramatic and dynamic poses providing more emotion on the generated image.
-            3.  **Adherence to Directives:**
-                 *   Render the scene in the **Foundational Art Style**.
-                 *   Ensure the description implies that characters characteristics are preserved and follow the visual reference provided.
-             4.  **Visual Reference Synthesis:**
-                 *   **Heavily rely on the general Visual Reference Image for overall art style, compositional framing (suitable for a minimalistic character-focused cover), character pose *inspiration* (not direct replication), and mood.**
-                 *   The specific CHARACTERS are dictated by the `charactersInvolved` in the JSON. Their individual appearances are inspired by their respective Visual Reference Images.
-                 *   Synthesize these character appearances into the artistic and compositional framework derived from the general Visual Reference Image, **ensuring the poses are dynamic and narratively suggestive for the chapter cover.** Describe these poses vividly.
-                 *   The prompt must NOT mention any Visual Reference Image directly. It must be a self-contained description.
-             5.  **No Text or borders: **
-                 *   Focus entirely on the art description, ensure that no text from the context is described in the final result.
-             YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS.
-            """.trimIndent()
+            appendLine(
+                "**CRITICAL:** The Agent MUST rewrite the character description to be consistent with the first element of the prompt, ensuring the focus is unambiguous.",
+            )
+            appendLine(
+                "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character\'s Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
+            )
+            appendLine(
+                "***CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.",
+            )
+            appendLine("* CRUCIAL: ENSURE THAT NO TEXT IS RENDERED AT ALL ONLY THE Image")
+            appendLine(
+                "- **Looks:** Describe the character's facial features and physical build (e.g., 'a rugged man with a lean physique', 'a Latina woman with a sophisticated haircut').",
+            )
+            appendLine(
+                "- **Clothing:** Detail their attire, including style, color, and accessories (e.g., 'a vibrant Hawaiian-style shirt', 'a sleek two-piece swimsuit').",
+            )
+            appendLine(
+                "- **Expression:** The face should not be neutral. It must convey a strong emotion or intention. Use terms like 'a hardened, protective gaze', 'a piercing, fatal stare', 'a sardonic smile'.",
+            )
+            appendLine(
+                "- **Pose & Body Language:** Describe their posture and how they interact with the environment. Use dynamic phrases like 'relaxed yet alert posture', 'casually lounging on a car hood', 'body language exuding confidence'.",
+            )
+            appendLine(
+                "Dramatic cover of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].",
+            )
+            appendLine("The background is a vibrant [e.g., neon purple as per genre instructions].")
+            appendLine(
+                "Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their blackpopover, as per genre instructions].",
+            )
+            appendLine(
+                "The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded anime style and studio quality.",
+            )
+            appendLine(
+                "The character should be the absolute focus of the image, filling most of the frame in a compelling, dynamic pose. No other characters or complex backgrounds should be present, ensuring the icon is clean and impactful.",
+            )
+            appendLine("Desired Output: A single, striking icon image. NO TEXT SHOULD BE GENERATED ON THE IMAGE ITSELF.")
+        }.trimIndent()
     }
 }

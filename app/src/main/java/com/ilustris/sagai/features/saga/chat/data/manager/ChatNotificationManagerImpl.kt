@@ -15,10 +15,10 @@ import androidx.core.app.NotificationManagerCompat
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
-import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.NotificationUtils.CHAT_CHANNEL_ID
-import com.ilustris.sagai.core.utils.NotificationUtils.CHAT_NOTIFICATION_ID
-import com.ilustris.sagai.core.utils.cropBitmapToCircle
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.permissions.NotificationUtils.CHAT_CHANNEL_ID
+import com.ilustris.sagai.core.permissions.NotificationUtils.CHAT_NOTIFICATION_ID
+import com.ilustris.sagai.core.file.cropBitmapToCircle
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent

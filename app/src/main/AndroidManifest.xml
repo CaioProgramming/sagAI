@@ -9,6 +9,7 @@
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+
     <application
         android:name=".SagaApp"
         android:allowBackup="true"
@@ -19,12 +20,24 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.SagAI"
+        tools:replace="android:theme"
         tools:targetApi="36">
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.ilustris.sagai.fileprovider"
+            android:grantUriPermissions="true"
+            android:exported="false">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+              android:resource="@xml/filepaths" />
+        </provider>
 
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/Theme.App.Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

@@ -26,10 +26,11 @@ fun Genre.headerFont(): FontFamily {
     val fontResource =
         when (this) {
             Genre.FANTASY -> R.font.dragon_force
-            Genre.SCI_FI -> R.font.ninja_cyber
+            Genre.CYBERPUNK -> R.font.ninja_cyber
             Genre.HORROR -> R.font.pixelwarden
             Genre.HEROES -> R.font.super_energy
             Genre.CRIME -> R.font.broadway
+            Genre.SPACE_OPERA -> R.font.space_runner
             else -> null
         }
     return if (fontResource != null) {
@@ -43,10 +44,11 @@ fun Genre.bodyFont(): FontFamily {
     val fontResource =
         when (this) {
             Genre.FANTASY -> R.font.fondamento_regular
-            Genre.SCI_FI -> R.font.tektur
+            Genre.CYBERPUNK -> R.font.tektur
             Genre.HORROR -> R.font.jersey
             Genre.HEROES -> R.font.comic_book
             Genre.CRIME -> R.font.retro_neon
+            Genre.SPACE_OPERA -> R.font.eightgon
             else -> null
         }
     return if (fontResource != null) {

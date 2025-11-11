@@ -34,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.PlaceholderVerticalAlign
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,8 +52,8 @@ private val DarkColorScheme =
         primary = MaterialColor.BlueA400,
         secondary = MaterialColor.Blue400,
         tertiary = MaterialColor.Teal700,
-        background = MaterialColor.Black,
-        surfaceContainer = MaterialColor.Gray900.darker(.3f),
+        background = MaterialColor.Gray900.darker(.7f),
+        surfaceContainer = MaterialColor.Gray800.darker(.5f),
     )
 
 private val LightColorScheme =
@@ -61,8 +62,8 @@ private val LightColorScheme =
         secondary = MaterialColor.Blue800,
         tertiary = MaterialColor.Teal300,
         onPrimary = MaterialColor.White,
-        background = MaterialColor.White,
-        surfaceContainer = MaterialColor.Gray200,
+        background = MaterialColor.Gray300.lighter(.7f),
+        surfaceContainer = MaterialColor.Gray200.lighter(.5f),
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),
@@ -207,7 +208,10 @@ fun MorphShape(modifier: Modifier) {
 }
 
 @Composable
-fun SagaTitle(modifier: Modifier = Modifier) {
+fun SagaTitle(
+    modifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.titleLarge,
+) {
     val appName = stringResource(R.string.home_title).uppercase()
     val charToReplace = 'A'
     val iconId = "sagaTitleSparkIcon" // Unique ID for the inline content
@@ -230,8 +234,8 @@ fun SagaTitle(modifier: Modifier = Modifier) {
             iconId to
                 InlineTextContent(
                     Placeholder(
-                        width = MaterialTheme.typography.titleLarge.fontSize * .8f,
-                        height = MaterialTheme.typography.titleLarge.fontSize * 1.1f,
+                        width = textStyle.fontSize * .8f,
+                        height = textStyle.fontSize * 1.1f,
                         placeholderVerticalAlign = PlaceholderVerticalAlign.Center, // Changed here
                     ),
                 ) {
@@ -247,12 +251,10 @@ fun SagaTitle(modifier: Modifier = Modifier) {
         text = annotatedString,
         inlineContent = inlineContent,
         style =
-            MaterialTheme.typography.titleLarge.copy(
+            textStyle.copy(
                 fontWeight = FontWeight.Black,
                 textAlign = TextAlign.Center,
             ),
         modifier = modifier,
-        // The color will be inherited from the context or can be set explicitly,
-        // e.g., color = MaterialTheme.colorScheme.onBackground
     )
 }

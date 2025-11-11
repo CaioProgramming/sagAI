@@ -18,7 +18,7 @@
     <string name="saga_saving_hint" >Saving saga</string>
     <string name="new_saga_title">New saga</string>
     <string name="home_title">Sagas</string>
-    <string name="save_saga">Save</string>
+    <string name="save_saga">Save saga</string>
     <string name="character_gallery_title">Characters</string>
     <string name="back_button_description">Back</string>
     <string name="lets_create_saga">Let\'s create your saga</string>
@@ -144,22 +144,22 @@
     <string name="saga_detail_delete_confirmation_message">Are you sure you want to delete this saga? This action cannot be undone.</string>
     <string name="saga_detail_delete_button">Delete</string>
     <string name="saga_detail_cancel_button">Cancel</string>
-    <string name="saga_drawer_act_prefix">Act %1$s</string>
+    <string name="saga_drawer_act_prefix">Act %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d events</string>
-    <string name="saga_drawer_events_since_last_chapter">%1$d events in chapter.</string>
+    <string name="saga_drawer_events_since_last_chapter">%d events in chapter.</string>
     <string name="saga_detail_progress_title">Progress</string>
     <string name="saga_detail_section_title_characters">Characters</string>
-    <string name="saga_detail_section_subtitle_characters">%1$d characters</string>
+    <string name="saga_detail_section_subtitle_characters">%d characters</string>
     <string name="saga_detail_section_title_timeline">Events</string>
-    <string name="saga_detail_section_subtitle_timeline">%1$d events</string>
+    <string name="saga_detail_section_subtitle_timeline">%d events</string>
     <string name="saga_detail_section_title_chapters">Chapters</string>
-    <string name="saga_detail_section_subtitle_chapters">%1$d chapters</string>
+    <string name="saga_detail_section_subtitle_chapters">%d chapters</string>
     <string name="saga_detail_section_title_wiki">Wiki</string>
-    <string name="saga_detail_section_subtitle_wiki">%1$d items</string>
+    <string name="saga_detail_section_subtitle_wiki">%d items</string>
     <string name="saga_detail_section_title_acts">Acts</string>
-    <string name="saga_detail_section_subtitle_acts">%1$d acts</string>
-    <string name="saga_detail_status_ended">Finished on %1$s</string>
-    <string name="saga_detail_status_created">Created on %1$s</string>
+    <string name="saga_detail_section_subtitle_acts">%d acts</string>
+    <string name="saga_detail_status_ended">Finished on %s</string>
+    <string name="saga_detail_status_created">Created on %s</string>
     <string name="saga_detail_journey_of">The journey of</string>
     <string name="saga_detail_messages_label">Messages</string>
     <string name="saga_detail_see_your_now">See your</string>
@@ -194,8 +194,8 @@
     <string name="dialog_exit_dismiss_button_new_saga">Stay</string>
     <string name="notification_explanation">To notify you about new messages in your saga when you\'re not in the app, please allow notification permission.</string>
     <string name="continue_text">continue</string>
-    <string name="notification_title">New message on %1$s</string>
-    <string name="notification_playing_act">Playing act %1$s</string>
+    <string name="notification_title">New message on %s</string>
+    <string name="notification_playing_act">Playing act %s</string>
     <string name="notification_action_pause" translatable="false">Pause</string>
     <string name="notification_action_play" translatable="false">Play</string>
     <string name="saga_detail_relationships_section_title">Relationships</string>
@@ -218,5 +218,70 @@
     <string name="tone_sad">Sad</string>
     <string name="tone_melancholic">Melancholic</string>
     <string name="tone_cynical">Cynical</string>
+
+    <!-- Genre Titles -->
+    <string name="genre_fantasy">Fantasy</string>
+    <string name="genre_scifi">Cyberpunk</string>
+    <string name="genre_horror">Horror</string>
+    <string name="genre_heroes">Heroes</string>
+    <string name="genre_crime">Crime City</string>
+    <string name="genre_space_opera">Space Opera</string>
+    <string name="settings_title">Settings</string>
+    <string name="memory_usage">Storage Usage</string>
+    <string name="premium_first_title">Dive into unique universes and turn your ideas into unforgettable stories. With Sagas Pro, your creativity comes alive and every chapter becomes a visually immersive experience.</string>
+    <string name="premium_description">Create deep narratives, explore new worlds, and bring your characters to life with features that take your saga to the next level. Feel the difference of storytelling with unlimited freedom and inspiration.</string>
+    <string name="premium_sign_up">Try now</string>
+    <string name="premium_cancel_sign_up">Cancel signature</string>
+    <string name="sagas_storage">Sagas data</string>
+    <string name="cache">Cache data</string>
+    <string name="other">Other Data</string>
+    <string name="preferences">Preferences</string>
+    <string name="notifications">Notifications</string>
+
+    <string name="notifications_description">Receive notifications about updates to your sagas while you are outside the app.\nYour notifications will not be tracked and will be sent directly from your device.</string>
+    <string name="smart_fix" translatable="false">Smart Fix</string>
+
+    <string name="smart_fix_description">Receive automatic AI correction suggestions based on your story and theme. The suggestions help to enrich the vocabulary and add depth to the narrative.</string>
+    <string name="clear_data_button">Clear Data</string>
+    <string name="clear_data_dialog_title">Clear All Data</string>
+    <string name="clear_data_dialog_message">This will erase all your stories and settings. Are you sure you want to continue? You can always start fresh!</string>
+    <string name="clear_data_dialog_confirm">Yes, wipe everything</string>
+    <string name="clear_data_dialog_cancel">No, keep my data</string>
+    <string name="clear_cache">Clear cache</string>
+    <string name="restore_purchases">Restore purchases</string>
+    <string name="not_premium_title_label">Join</string>
+    <string name="premium_label_title">You are</string>
+    <string name="subscribe">Subscribe</string>
+    <string name="premium_already">Subscription active</string>
+    <string name="chapter_number_label">Chapter %s</string>
+    <string name="try_again">Try again</string>
+    <string name="chapter_finished">Chapter %s Finished</string>
+    <string name="chapter_updated">Chapter %s updated.</string>
+    <string name="see_more">Ver mais</string>
+    <string name="empty" translatable="false" />
+    <string name="timeline_generated_successfully">Timeline %s finished.</string>
+    <string name="timeline_updated">Timeline %s updated.</string>
+    <string name="act_finished">Act %s finished.</string>
+    <string name="unexpected_error">Sorry an unexpected error has occurred.</string>
+    <string name="message_reply_error">Error while replying message.</string>
+    <string name="configure">Configure</string>
+
+
+
+    <string name="storage_permission_title">Backup</string>
+    <string name="storage_permission_description">To securely save your sagas and all related images, the app needs you to choose a preferred folder for backups. We promise to keep everything safe!</string>
+    <string name="notifications_permission_title">Notifications Permission</string>
+    <string name="notifications_permission_description">To keep you updated on your saga\'s progress and important events, please allow notifications. Don\'t miss a single adventure!</string>
+    <string name="permission_required_title">Permission Needed</string>
+    <string name="permission_required_description">This feature needs a little help to work its magic. Could you please grant the required permission?</string>
+    <string name="confirm_permission_button">Grant Permission</string>
+    <string name="backup">Backup</string>
+    <string name="new_character_message">%s joined the history</string>
+    <string name="backup_disabled">Nao foi possivel habilitar o backup</string>
+    <string name="signatures_title">Subscriptions</string>
+    <string name="wiki_updated">Updated wikis</string>
+    <string name="review_chapter">Review Chapter</string>
+    <string name="ending">Chapter %s updated.</string>
+    <string name="review_items">Review Items</string>
 
 </resources>

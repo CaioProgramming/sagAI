@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.saga.detail.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInOutCubic
@@ -18,8 +17,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -30,29 +29,27 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -81,51 +78,59 @@ import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import androidx.graphics.shapes.CornerRounding
-import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.relations.ui.RelationShipCard
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
+import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.home.data.model.rankByHour
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.AnimatedEmotionalShape
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
-import com.ilustris.sagai.features.saga.chat.domain.model.rankMentions
-import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
-import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.saga.chat.ui.components.title
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.features.saga.detail.review.ui.ReviewDetails
+import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
+import com.ilustris.sagai.features.share.ui.EmotionShareView
+import com.ilustris.sagai.features.share.ui.HistoryShareView
+import com.ilustris.sagai.features.share.ui.PlayStyleShareView
+import com.ilustris.sagai.features.share.ui.RelationsShareView
+import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.ui.animations.AnimatedChapterGridBackground
 import com.ilustris.sagai.ui.animations.PoppingAvatarsBackground
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import com.ilustris.sagai.ui.theme.toEasing
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -149,16 +154,22 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
-enum class ReviewPages {
-    INTRO,
-    PLAYSTYLE,
-    CHARACTERS,
-    CHAPTERS,
-    CONCLUSION,
+enum class ReviewPages(
+    val shareType: ShareType? = null,
+) {
+    INTRO(ShareType.PLAYSTYLE),
+    PLAYSTYLE(ShareType.EMOTIONS),
+    CHARACTERS(ShareType.RELATIONS),
+    CHAPTERS(ShareType.HISTORY),
+    CONCLUSION(ShareType.EMOTIONS),
     DETAILS,
 }
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalComposeUiApi::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
+)
 @Composable
 fun SagaReview(
     content: SagaContent,
@@ -169,23 +180,19 @@ fun SagaReview(
     val pagerState = rememberPagerState { ReviewPages.entries.size }
     val genre = content.data.genre
     var showIndicators by remember { mutableStateOf(true) }
-    var bottomTint by remember {
-        mutableStateOf(genre.colorPalette().random())
-    }
-    val tintAnimation by animateColorAsState(
-        targetValue = bottomTint,
-        animationSpec = tween(1000),
-        label = "colorAnimation",
-    )
+
     val animatedGradientBrush =
         if (showIndicators) {
-            genre.color.gradientFade()
+            genre.color.solidGradient()
         } else {
             MaterialTheme.colorScheme.background.solidGradient()
         }
 
     var currentProgress by remember { mutableFloatStateOf(0f) }
     var isPlaying by remember { mutableStateOf(true) }
+    var shareSaga by remember { mutableStateOf(false) }
+    val currentPage = ReviewPages.entries[pagerState.currentPage]
+    val shareType = currentPage.shareType
 
     LaunchedEffect(pagerState.currentPage) {
         showIndicators = pagerState.currentPage != ReviewPages.entries.size - 1
@@ -236,7 +243,7 @@ fun SagaReview(
                         })
                     },
             ) {
-                val (reviewIndicators, contentView, topFade, bottomFade) = createRefs()
+                val (reviewIndicators, contentView, topFade, shareButton) = createRefs()
 
                 HorizontalPager(
                     pagerState,
@@ -290,25 +297,15 @@ fun SagaReview(
                     if (showIndicators) 1f else 0f,
                 )
 
-                Box(
-                    Modifier
-                        .constrainAs(topFade) {
-                            top.linkTo(parent.top)
-                            start.linkTo(parent.start)
-                            end.linkTo(parent.end)
-                        }.fillMaxWidth()
-                        .fillMaxHeight(.5f)
-                        .background(fadeGradientTop()),
-                )
-
                 Column(
                     modifier =
                         Modifier
                             .constrainAs(reviewIndicators) {
-                                top.linkTo(parent.top, margin = 50.dp)
+                                top.linkTo(parent.top)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }.alpha(indicatorsAlpha),
+                            }.background(fadeGradientTop())
+                            .alpha(indicatorsAlpha),
                 ) {
                     Row(
                         modifier =
@@ -375,658 +372,53 @@ fun SagaReview(
                         )
                     }
                 }
-            }
-        }
-    }
-}
 
-@Composable
-fun ReviewDetails(saga: SagaContent) {
-    val genre = saga.data.genre
-    val brush = genre.gradient()
-    val bodyFont = genre.bodyFont()
-    val headerFont = genre.headerFont()
-    val messageCount =
-        remember {
-            saga.flatMessages().count()
-        }
-    val messageTypeRanking =
-        remember {
-            saga.flatMessages().rankMessageTypes().filter { it.second > 0 }
-        }
-    val characters = saga.getCharacters(true)
-    val charactersRanking =
-        remember {
-            saga
-                .flatMessages()
-                .rankTopCharacters(characters)
-        }
-
-    val mentionsRanking =
-        remember {
-            saga
-                .flatMessages()
-                .rankMentions(characters)
-        }
-
-    val mentionsCount =
-        remember {
-            mentionsRanking
-                .sumOf {
-                    it.second
-                }
-        }
-
-    val hourRanking =
-        remember {
-            saga.rankByHour()
-        }
-
-    LazyColumn {
-        stickyHeader {
-            SagaTopBar(
-                saga.data.title,
-                "",
-                genre,
-                isLoading = true,
-                modifier =
+                Row(
                     Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .fillMaxWidth()
-                        .padding(top = 25.dp),
-            )
-        }
-
-        item {
-            AsyncImage(
-                model = saga.data.icon,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .fillParentMaxHeight(.4f)
-                        .effectForGenre(genre)
-                        .selectiveColorHighlight(genre.selectiveHighlight()),
-            )
-        }
-
-        item {
-            Text(
-                saga.data.description,
-                style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    ),
-                modifier = Modifier.padding(16.dp),
-            )
-        }
-
-        saga.data.review?.let {
-            item {
-                Text(
-                    it.introduction,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                ) {
-                    Text(
-                        messageCount.toString(),
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontFamily = headerFont,
-                                brush = brush,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-                    Text(
-                        stringResource(R.string.review_page_messages_label),
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = bodyFont,
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier = Modifier.alpha(.4f),
-                    )
-                }
-            }
-
-            item {
-                Text(
-                    it.playstyle,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            item {
-                MessagesRankChart(
-                    saga,
-                    messageTypeRanking,
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .fillParentMaxHeight(.5f),
-                )
-            }
-
-            item {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                    thickness = 1.dp,
-                )
-            }
-
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                ) {
-                    Text(
-                        mentionsCount.toString(),
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontFamily = headerFont,
-                                brush = brush,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-                    Text(
-                        stringResource(R.string.review_page_character_mentions_label),
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = bodyFont,
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier = Modifier.alpha(.4f),
-                    )
-                }
-            }
-
-            item {
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .constrainAs(shareButton) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                        }.clickable(enabled = shareType != null) {
+                            shareSaga = true
+                        }.fillMaxWidth()
+                        .background(
+                            fadeGradientBottom(),
+                        ).padding(24.dp)
+                        .gradientFill(genre.gradient(true)),
+                    horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    items(charactersRanking) {
-                        Column(
+                    Text(
+                        "Compartilhar",
+                        style =
+                            MaterialTheme.typography.labelLarge.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.SemiBold,
+                            ),
+                    )
+
+                    Icon(
+                        painterResource(R.drawable.ic_share),
+                        contentDescription = null,
+                        modifier =
                             Modifier
-                                .padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            CharacterAvatar(
-                                it.first,
-                                borderSize = 2.dp,
-                                genre = genre,
-                                modifier =
-                                    Modifier
-                                        .padding(8.dp)
-                                        .clip(CircleShape)
-                                        .size(120.dp)
-                                        .padding(8.dp),
-                            )
-
-                            Text(
-                                it.first.name,
-                                style =
-                                    MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                        textAlign = TextAlign.Center,
-                                        fontFamily = genre.bodyFont(),
-                                    ),
-                            )
-                        }
-                    }
-                }
-            }
-
-            item {
-                CharactersChart(
-                    charactersRanking,
-                    mentionsRanking,
-                    genre,
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .fillParentMaxHeight(.5f),
-                )
-            }
-
-            item {
-                Text(
-                    stringResource(R.string.saga_detail_relationships_section_title),
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.headerFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            item {
-                LazyRow {
-                    items(saga.relationships) { relation ->
-                        RelationShipCard(
-                            content = relation,
-                            saga = saga,
-                            modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .requiredWidthIn(max = 300.dp),
-                        )
-                    }
-                }
-            }
-
-            item {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                    thickness = 1.dp,
-                )
-            }
-
-            item {
-                Text(
-                    "Horário mais jogado",
-                    style =
-                        MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = genre.headerFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            item {
-                HourRankChart(
-                    hourRanking,
-                    genre,
-                    modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .fillParentMaxHeight(.5f),
-                )
-            }
-
-            item {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 12.dp)
-                            .fillMaxWidth(),
-                    thickness = 1.dp,
-                )
-            }
-
-            item {
-                Text(
-                    it.actsInsight,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = bodyFont,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            item {
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.onBackground.copy(.1f),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                    thickness = 1.dp,
-                )
-            }
-
-            item {
-                Text(
-                    it.conclusion,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = bodyFont,
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                    modifier = Modifier.padding(16.dp),
-                )
-            }
-
-            saga.data.emotionalReview?.let {
-                item {
-                    Text(
-                        "Sobre você",
-                        style =
-                            MaterialTheme.typography.titleMedium.copy(
-                                fontFamily = genre.headerFont(),
-                                color = MaterialTheme.colorScheme.onBackground,
-                            ),
-                        modifier = Modifier.padding(16.dp),
+                                .padding(8.dp)
+                                .size(12.dp)
+                                .gradientFill(genre.gradient()),
                     )
                 }
-
-                item {
-                    Text(
-                        it,
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = bodyFont,
-                                color = MaterialTheme.colorScheme.onBackground,
-                            ),
-                        modifier = Modifier.padding(16.dp),
-                    )
-                }
-            }
-
-            item {
-                Spacer(Modifier.height(50.dp))
             }
         }
     }
-}
 
-@Composable
-private fun CharactersChart(
-    charactersRanking: List<Pair<Character, Int>>,
-    mentionsRanking: List<Pair<Character, Int>>,
-    genre: Genre,
-    modifier: Modifier,
-) {
-    val data =
-        remember {
-            listOf(
-                Bars(
-                    label = "Ranking de personagens",
-                    values =
-                        charactersRanking
-                            .map {
-                                List(2) { index ->
-                                    val color = (
-                                        it.first.hexColor.hexToColor()
-                                            ?: genre.color
-                                    )
-                                    val colorEffect = if (index == 0) color else color.darker(.3f)
-                                    val mentionsForCharacter =
-                                        mentionsRanking.find { character -> it.first.id == character.first.id }?.second
-                                            ?: 0
-
-                                    val displayValue =
-                                        if (index == 0) it.second else mentionsForCharacter
-
-                                    val suffix = if (index % 2 == 0) "messages" else "mentions"
-
-                                    Bars.Data(
-                                        label = "${it.first.name}",
-                                        value = displayValue.toDouble(),
-                                        color = colorEffect.solidGradient(),
-                                    )
-                                }
-                            }.flatten(),
-                ),
-            )
-        }
-
-    Box(modifier = modifier) {
-        ColumnChart(
-            modifier = Modifier.fillMaxSize(),
-            data = data,
-            gridProperties =
-                GridProperties(
-                    enabled = false,
-                ),
-            dividerProperties =
-                DividerProperties(
-                    false,
-                ),
-            popupProperties =
-                PopupProperties(
-                    containerColor = genre.color,
-                    cornerRadius = genre.cornerSize(),
-                    textStyle =
-                        MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = genre.iconColor,
-                        ),
-                    contentBuilder = { dataIndex, valueIndex, value ->
-                        val suffix = if (valueIndex % 2 == 0) "messages" else "mentions"
-                        "${value.toInt()} $suffix"
-                    },
-                ),
-            labelHelperProperties =
-                LabelHelperProperties(
-                    true,
-                    textStyle =
-                        MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
-                ),
-            labelProperties =
-                LabelProperties(
-                    true,
-                    textStyle =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                        ),
-                ),
-            indicatorProperties =
-                HorizontalIndicatorProperties(
-                    enabled = false,
-                ),
-            barProperties =
-                BarProperties(
-                    cornerRadius =
-                        Bars.Data.Radius.Rectangle(
-                            topRight = genre.cornerSize(),
-                            topLeft = genre.cornerSize(),
-                        ),
-                    spacing = 8.dp,
-                    thickness = 20.dp,
-                ),
-            animationSpec =
-                spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow,
-                ),
-        )
-    }
-}
-
-@Composable
-private fun MessagesRankChart(
-    saga: SagaContent,
-    messagesRanking: List<Pair<SenderType, Int>>,
-    modifier: Modifier,
-) {
-    val genre = saga.data.genre
-    val typeTitles =
-        messagesRanking.map {
-            it.first.title()
-        }
-    RowChart(
-        modifier = modifier,
-        data =
-            remember {
-                messagesRanking.mapIndexed { i, value ->
-                    Bars(
-                        typeTitles[i],
-                        values =
-                            listOf(
-                                Bars.Data(
-                                    label = typeTitles[i],
-                                    value = value.second.toDouble(),
-                                    color =
-                                        if (i == 0) {
-                                            genre.color.solidGradient()
-                                        } else {
-                                            Brush.verticalGradient(
-                                                genre.color.darkerPalette(i + 2),
-                                            )
-                                        },
-                                ),
-                            ),
-                    )
-                }
-            },
-        dividerProperties =
-            DividerProperties(
-                false,
-            ),
-        labelHelperProperties =
-            LabelHelperProperties(
-                true,
-                textStyle =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    ),
-            ),
-        labelProperties =
-            LabelProperties(
-                textStyle =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    ),
-                enabled = true,
-            ),
-        popupProperties =
-            PopupProperties(
-                containerColor = genre.color,
-                cornerRadius = genre.cornerSize(),
-                textStyle =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = genre.iconColor,
-                    ),
-            ),
-        gridProperties =
-            GridProperties(
-                enabled = false,
-            ),
-        barProperties =
-            BarProperties(
-                spacing = 4.dp,
-                thickness = 24.dp,
-                cornerRadius =
-                    Bars.Data.Radius.Rectangle(
-                        topRight = genre.cornerSize(),
-                        bottomRight = genre.cornerSize(),
-                    ),
-            ),
-    )
-}
-
-@Composable
-private fun HourRankChart(
-    hourRanking: Map<Int, List<MessageContent>>,
-    genre: Genre,
-    modifier: Modifier,
-) {
-    val label =
-        MaterialTheme.typography.labelMedium.copy(
-            fontFamily = genre.bodyFont(),
-        )
-    LineChart(
-        modifier = modifier,
-        data =
-            remember {
-                listOf(
-                    Line(
-                        label = "Hora mais jogada",
-                        values = hourRanking.map { it.value.size.toDouble() },
-                        color = Brush.verticalGradient(genre.colorPalette()),
-                        firstGradientFillColor = genre.color,
-                        secondGradientFillColor = Color.Transparent,
-                        strokeAnimationSpec = tween(2000, easing = EaseInOutCubic),
-                        gradientAnimationDelay = 1000,
-                        drawStyle = DrawStyle.Stroke(width = 2.dp),
-                        popupProperties =
-                            PopupProperties(
-                                containerColor = genre.color,
-                                cornerRadius = genre.cornerSize(),
-                                textStyle =
-                                    label.copy(
-                                        color = genre.iconColor,
-                                    ),
-                                contentBuilder = { dataIndex, valueIndex, value ->
-                                    "${value.toInt()} messages"
-                                },
-                            ),
-                    ),
-                )
-            },
-        gridProperties =
-            GridProperties(
-                enabled = false,
-            ),
-        labelHelperProperties =
-            LabelHelperProperties(
-                enabled = true,
-                textStyle =
-                    MaterialTheme.typography.labelMedium.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                    ),
-            ),
-        indicatorProperties =
-            HorizontalIndicatorProperties(
-                enabled = false,
-            ),
-        dividerProperties =
-            DividerProperties(
-                false,
-            ),
-        labelProperties =
-            LabelProperties(
-                enabled = true,
-                labels = hourRanking.map { "${it.key}h" },
-                padding = 16.dp,
-                textStyle =
-                    MaterialTheme.typography.labelSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .7f),
-                    ),
-            ),
-        animationMode =
-            AnimationMode.Together(delayBuilder = {
-                it * 500L
-            }),
+    ShareSheet(
+        content,
+        shareSaga,
+        onDismiss = {
+            shareSaga = false
+        },
+        shareType = shareType ?: ShareType.PLAYSTYLE,
     )
 }
 
@@ -1134,7 +526,7 @@ fun ReviewIntroduction(
                         ),
                     onAnimationFinished = {
                         showText = true
-                        imageFraction = .6f
+                        imageFraction = .4f
                     },
                     modifier =
                         Modifier
@@ -1158,111 +550,106 @@ fun PlayStylePage(content: SagaContent) {
         mutableStateOf(false)
     }
 
+    val topTone =
+        remember {
+            content
+                .flatMessages()
+                .filterCharacterMessages(content.mainCharacter?.data)
+                .rankEmotionalTone()
+        }
+    val infiniteTransition = rememberInfiniteTransition()
+    val firstTone = remember { topTone.first().first }
+    val shapeA =
+        remember {
+            RoundedPolygon.star(
+                4,
+                rounding = CornerRounding(5f),
+            )
+        }
+    val shapeB =
+        remember {
+            firstTone.starShape()
+        }
+
+    val morphProgress by
+        infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1f,
+            animationSpec =
+                infiniteRepeatable(
+                    tween(
+                        10.seconds.toInt(DurationUnit.MILLISECONDS),
+                        easing = firstTone.toEasing(),
+                    ),
+                    repeatMode = Reverse,
+                ),
+            label = "morph",
+        )
+
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                tween(
+                    easing = firstTone.toEasing(),
+                    durationMillis = 10.seconds.toInt(DurationUnit.MILLISECONDS),
+                ),
+            ),
+    )
+
     LaunchedEffect(Unit) {
         coroutineScope.launch {
             delay(2.seconds)
             showText = true
         }
     }
-    Column(
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalArrangement = Arrangement.Center,
         modifier =
             Modifier
-                .padding(top = 100.dp)
+                .padding(16.dp)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .animateContentSize(
-                    animationSpec = tween(500, easing = EaseIn),
-                ),
+                .animateContentSize(),
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .animateContentSize()
-                    .padding(16.dp),
-        ) {
-            val topTone =
-                remember {
-                    content
-                        .flatMessages()
-                        .filterCharacterMessages(content.mainCharacter?.data)
-                        .rankEmotionalTone()
-                }
-            val infiniteTransition = rememberInfiniteTransition()
-            val firstTone = remember { topTone.first().first }
-            val shapeA =
-                remember {
-                    RoundedPolygon.star(
-                        4,
-                        rounding = CornerRounding(5f),
-                    )
-                }
-            val shapeB =
-                remember {
-                    firstTone.starShape()
-                }
+        item(span = { GridItemSpan(2) }) {
+            Spacer(Modifier.size(50.dp))
+        }
 
-            val morph =
-                remember {
-                    Morph(shapeA, shapeB)
-                }
-
-            val morphProgress by
-                infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec =
-                        infiniteRepeatable(
-                            tween(
-                                3.seconds.toInt(DurationUnit.MILLISECONDS),
-                                easing = firstTone.toEasing(),
-                            ),
-                            repeatMode = Reverse,
-                        ),
-                    label = "morph",
-                )
-
-            val rotation by infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec =
-                    infiniteRepeatable(
-                        tween(
-                            easing = firstTone.toEasing(),
-                            durationMillis = 3.seconds.toInt(DurationUnit.MILLISECONDS),
-                        ),
-                    ),
-            )
-
+        item(span = { GridItemSpan(2) }) {
             AnimatedEmotionalShape(
                 Modifier
-                    .size(200.dp)
+                    .aspectRatio(1f)
+                    .padding(16.dp)
                     .reactiveShimmer(true),
                 firstTone,
                 morphProgress,
                 rotation,
-                outlineBrush = Brush.verticalGradient(
-                    firstTone.color.darkerPalette(factor = .3f),
-                ),
-                 backgroundBrush = genre.gradient(false, targetValue = 300f),
-                glowColor = genre.color,
+                outlineBrush = firstTone.color.solidGradient(),
+                backgroundBrush = Brush.verticalGradient(genre.shimmerColors()),
+                glowColor = genre.iconColor,
             )
+        }
 
+        item(span = { GridItemSpan(2) }) {
             Text(
                 topTone.first().first.getTitle(),
                 style =
                     MaterialTheme.typography.displaySmall.copy(
                         fontFamily = genre.headerFont(),
                         color = genre.iconColor,
+                        textAlign = TextAlign.Center,
                     ),
+                modifier = Modifier.fillMaxWidth(),
             )
+        }
 
-            AnimatedVisibility(showText, enter = fadeIn() + slideInVertically(), exit = fadeOut()) {
-                content.data.review?.playstyle?.let {
+        if (showText) {
+            content.data.review?.playstyle?.let {
+                item(span = { GridItemSpan(2) }) {
                     SimpleTypewriterText(
                         it,
                         style =
@@ -1282,54 +669,56 @@ fun PlayStylePage(content: SagaContent) {
                     )
                 }
             }
+        }
 
-            AnimatedVisibility(showCards) {
-                Column {
+        if (showCards) {
+            item(span = { GridItemSpan(2) }) {
+                Text(
+                    stringResource(R.string.review_page_messages_rank_title),
+                    style =
+                        MaterialTheme.typography.titleMedium.copy(
+                            fontFamily = genre.headerFont(),
+                            color = genre.color,
+                        ),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 8.dp)
+                            .fillMaxWidth(),
+                )
+            }
+
+            items(topTone) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val position = topTone.indexOf(it)
+
                     Text(
-                        stringResource(R.string.review_page_messages_rank_title),
+                        "${position + 1}. ${it.first.getTitle()}",
                         style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.headerFont(),
-                                color = genre.color,
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.Bold,
+                                color = it.first.color,
                             ),
-                        modifier =
-                            Modifier
-                                .padding(vertical = 8.dp)
-                                .fillMaxWidth(),
                     )
 
-                    topTone.forEach {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            val position = topTone.indexOf(it)
-
-                            Text(
-                                "${position + 1}. ${it.first.getTitle()}",
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        fontWeight = FontWeight.Bold,
-                                        color = it.first.color,
-                                    ),
-                            )
-
-                            Text(
-                                it.second.size.toString(),
-                                style =
-                                    MaterialTheme.typography.bodyLarge.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        fontWeight = FontWeight.Normal,
-                                    ),
-                                modifier = Modifier.alpha(.5f),
-                            )
-                        }
-                    }
-
-                    Spacer(Modifier.height(50.dp))
+                    Text(
+                        it.second.size.toString(),
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.Normal,
+                            ),
+                        modifier = Modifier.alpha(.5f),
+                    )
                 }
             }
+        }
+
+        item(span = { GridItemSpan(2) }) {
+            Spacer(Modifier.size(50.dp))
         }
     }
 }
@@ -1382,8 +771,15 @@ fun MentionsPage(content: SagaContent) {
         horizontalArrangement = Arrangement.Center,
     ) {
         item(span = { GridItemSpan(2) }) {
+            Spacer(Modifier.height(50.dp))
+        }
+
+        item(span = { GridItemSpan(2) }) {
             Column(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -1450,7 +846,10 @@ fun MentionsPage(content: SagaContent) {
                                     fontFamily = genre.headerFont(),
                                     fontWeight = FontWeight.Bold,
                                 ),
-                            modifier = Modifier.padding(vertical = 8.dp),
+                            modifier =
+                                Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(vertical = 8.dp),
                         )
 
                         Row(
@@ -1462,30 +861,33 @@ fun MentionsPage(content: SagaContent) {
                             val topCharacters = ranking.take(3)
 
                             if (topCharacters.size == 3) {
-                                CharacterAvatar(
+                                CharacterYearbookItem(
                                     topCharacters.last().getCharacterExcluding(mainCharacter?.data),
-                                    genre = genre,
+                                    genre,
+                                    imageModifier = Modifier.size(80.dp),
                                     modifier =
                                         Modifier
-                                            .size(80.dp),
+                                            .clip(genre.shape()),
                                 )
 
-                                CharacterAvatar(
+                                CharacterYearbookItem(
                                     topCharacters
                                         .first()
                                         .getCharacterExcluding(mainCharacter?.data),
                                     genre = genre,
+                                    imageModifier = Modifier.size(100.dp),
                                     modifier =
                                         Modifier
-                                            .size(100.dp),
+                                            .clip(genre.shape()),
                                 )
 
-                                CharacterAvatar(
+                                CharacterYearbookItem(
                                     topCharacters[1].getCharacterExcluding(mainCharacter?.data),
                                     genre = genre,
+                                    imageModifier = Modifier.size(80.dp),
                                     modifier =
                                         Modifier
-                                            .size(80.dp),
+                                            .clip(genre.shape()),
                                 )
                             }
                         }
@@ -1505,21 +907,18 @@ fun MentionsPage(content: SagaContent) {
                                 .padding(8.dp)
                                 .animateItem(),
                     ) {
-                        SingleRelationShipCard(
-                            content,
-                            it.getCharacterExcluding(character.data),
-                            it,
-                            false,
-                            Modifier.fillMaxWidth(),
-                        )
+                        content.findCharacter(it.getCharacterExcluding(character.data).id)?.let  { character ->
+                            SingleRelationShipCard(
+                                content,
+                                character,
+                                it,
+                                false,
+                                showUpdates = true,
+                                Modifier.fillMaxWidth(),
+                            )
+                        }
 
-                        Text(
-                            "${it.relationshipEvents.size} Atualizações",
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                ),
-                        )
+
                     }
                 }
             }

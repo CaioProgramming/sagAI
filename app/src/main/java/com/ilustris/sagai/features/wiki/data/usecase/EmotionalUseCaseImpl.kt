@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.emotionalSummary
+import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 class EmotionalUseCaseImpl

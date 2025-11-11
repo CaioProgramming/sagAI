@@ -1,17 +1,13 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.network.body.ColorPreset
-import com.ilustris.sagai.core.network.body.Effects
-import com.ilustris.sagai.core.network.body.FramingPreset
-import com.ilustris.sagai.core.network.body.ImageStyling
-import com.ilustris.sagai.core.network.body.LightningPreset
-import com.ilustris.sagai.core.network.body.StylePreset
 import com.ilustris.sagai.core.utils.currentLanguage
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.Genre.CRIME
+import com.ilustris.sagai.features.newsaga.data.model.Genre.CYBERPUNK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
+import com.ilustris.sagai.features.newsaga.data.model.Genre.HEROES
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
-import com.ilustris.sagai.features.newsaga.data.model.Genre.SCI_FI
+import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
 
 object GenrePrompts {
     fun detail(genre: Genre) = "theme: ${genre.name}"
@@ -20,88 +16,141 @@ object GenrePrompts {
         when (genre) {
             FANTASY ->
                 """
-                Classical oil painting,
-                rich impasto texture, visible brushstrokes,
-                strong chiaroscuro.
-                natural lighting.
-                ethereal aesthetic.
-                Harmonious colors, authentic painterly grain.
-                """
+        Art Technique: Painterly brushstrokes (loose impasto)
+        Key Lighting Style: SUBTLE CHIAROSCURO / ATMOSPHERIC RENDERING
+        Texture / Materiality: CANVAS OIL with VISIBLE BRUSHSTROKES and LOOSE IMPASTO
+        Aesthetic Era / Influence: Romanticism; Pre-Raphaelite
+        Cultural/Artistic Reference: John William Waterhouse (atmospheric rendering)
+        Dynamic Color Palette: MUTED EARTH TONES, LOW SATURATION, WARM/COOL CONTRAST
 
-            SCI_FI ->
+        Mood: Epic, wistful, and mysterious — a sense of ancient fate and quiet reverence. Emphasize wonder over action.
+        Ambience: Soft, volumetric natural light (dawn/dusk), drifting mist or smoke, distant weather elements (storm clouds or light rain), and small localized warm light accents (fire, sigils, glowing artifacts).
+        """
+
+            CYBERPUNK ->
                 """
-                **True 80s-90s Retro Anime Cel Art Style.**
-                Think classic theatrical anime features and OVAs: bold, clean inked outlines with varied line weight.
-                **Distinct Cel Shading:** Hard-edged shadows, flat color fills, and a limited but impactful color palette. Avoid overly smooth gradients or photorealistic textures.
-                Subtle film grain or animation cel artifacting is desirable.
-                Inspired by the visual aesthetics of works like Akira, Ghost in the Shell (1995), and Bubblegum Crisis.
-                The character rendering should strictly adhere to this classic cel animation look.
-                Cyberpunk elements should be integrated within this specific retro anime framework.
-                Backgrounds can be detailed yet stylized, often with a melancholic or industrial feel, fitting the era. **For character icons, however, the background inspired by these elements should be significantly simplified, perhaps to bold graphic shapes, a minimalist abstract texture, or a tastefully blurred representation, ensuring the character remains the dominant focus and the icon is uncluttered.**
-                """
+        Art Technique: TRADITIONAL ANIME CEL SHADING (Zero Gradients)
+        Line Detail: BOLD, VARIED LINE WEIGHT
+        Texture / Materiality: FILM GRAIN, ANIMATION CEL ARTIFACTING
+        Aesthetic Era / Influence: 80s/90s OVA, AKIRA/GHOST IN THE SHELL (1995) AESTHETIC
+        Dynamic Color Palette: LIMITED NEON AND INDUSTRIAL PALETTE (High Saturation Contrast)
+
+        Mood: Neon-noir, melancholic, and tense — characters feel isolated within a noisy, decaying metropolis.
+        Ambience: Rain-slick streets, atmospheric haze and steam, scattered neon signs (accented purple), shallow depth-of-field with out-of-focus backgrounds to emphasize the subject. Subtle motion blur on distant lights is allowed.
+        """
 
             HORROR ->
                 """
-                pixel art,
-                32-bit,
-                retro game art,
-                pixelated,
-                blocky shading.
-                Haunted and Mystique dark aesthetic.
-                Mystique haunted pale blue background.
-                """
+        Art Technique: 32-BIT PIXEL ART with BLOCKY SHADING
+        Texture / Materiality: RETRO GAME ART PIXELATION
+        Aesthetic Era / Influence: PS1/SEGA SATURN HORROR GAME AESTHETIC
+        Vibe / Mood Aesthetic: HAUNTED, MYSTIQUE DARK AESTHETIC
+        Dynamic Color Palette: LIMITED DARK AND PALE BLUE PALETTE
 
-            Genre.HEROES -> {
+        Mood: Oppressive, uncanny, and creeping dread — prioritize psychological unease over explicit gore.
+        Ambience: Low-key, desaturated environment with heavy shadows and subtle volumetric fog; minimal and muted highlights only where needed to draw attention to small, eerie details.
+        """
+
+            HEROES -> {
                 """
-                Comic book art style, characterized by clean and detailed line work,
-                anatomically accurate figures, and dynamic poses.
-                The shading is subtle, utilizing cross-hatching and texture to create depth.
-                Lighting is dramatic, with strong highlights and shadows emphasizing form.
-                The color palette is primarily teal and white, accented with darker tones to create a sense of depth and atmosphere.
-                The overall aesthetic evokes the superhero comics of the 1990s, with a slightly painterly quality.  
-                """
+        Art Technique: COMIC BOOK ART STYLE (Clean and Detailed Line Work)
+        Line Detail: ANATOMICALLY ACCURATE FIGURES, SUBTLE CROSS-HATCHING FOR DEPTH
+        Key Lighting Style: DRAMATIC LIGHTING with STRONG HIGHLIGHTS and SHADOWS
+        Texture / Materiality: SLIGHTLY PAINTERLY QUALITY with TEXTURE
+        Aesthetic Era / Influence: SUPERHERO COMICS OF THE 1990s
+        Dynamic Color Palette: PRIMARILY TEAL AND WHITE, ACCENTED WITH DARKER TONES
+
+        Mood: Heroic, gritty optimism — confident and grounded, with emotional stakes.
+        Ambience: Urban nightscapes with high-contrast rim lighting, audible but unseen city life (sirens, distant traffic), and clean, focused lighting on the subject to convey importance.
+        """
             }
 
-            Genre.CRIME ->
+            CRIME ->
                 """
-                highly detailed comic book cover art, in the style of stylized gritty realism.
-                rendered with strong, defined contours and very expressive linework.
-                The aesthetic is dream-like and luxurious, with soft, diffused lighting creating a hazy, glowing atmosphere.
-                **A subtle vintage glow effect overlays the entire image, reminiscent of analog photography from the 1980s, adding a layer of nostalgia and warmth.
-                ** The color palette is dominated by ethereal pinks, lavenders, and muted oranges, accented with teal blues.
-                The scene is infused with elements of sublime luxury and opulent living, such as high-end sports cars, extravagant yachts, or lavish beachfront villas.
-                The background is either a detailed urban streetscape with city neon signs, or a desolate beachfront at dusk. Both environments should have a sense of underlying tension and lawlessness.
-                The visual framing gives significant emphasis to the expansive sky, ensuring a prominent display of the sunset colors.
-                The backdrop is a vibrant Miami Vice/Vice City-inspired sunset, with the sky dominated by unsettling neon pinks and oranges, blending into deep, ominous purples and teals over a turbulent ocean.
+                Art Technique: RAW, GRAPHIC NOIR ILLUSTRATION, DIGITAL SKETCH ART. **CONSISTENT, MATURE, AND ASSERTIVE LINEWORK.** **ROUGH, ANGULAR BRUSH/PEN MARKS.**
+                Line Detail: DELIBERATELY IMPERFECT OUTLINES — uneven line weight, quick hatch accents, occasional feathering and scratch marks
+                Surface & Texture: INK BLEEDS AND BLOTCHES, SUBTLE HALFTONE SPECKLE, INK BLEEDS AND BLOTCHES; add tactile authenticity
+                Aesthetic Influence: Contemporary indie/noir comics and hand-printed zines — tactile, rushed, and immediate
+        
+                Figure & Facial Treatment: UN-IDEALIZED, EXPRESSIVE FACES — asymmetry, small scars/freckles, rough stubble, simplified noses and lips; avoid polished features or smooth retouching. Prioritize expression and shape over micro-detail.
+                Rendering: FLAT COLOR BLOCKS with minimal modulation; use large planar shadow patches (no soft gradients), sparse cross-hatching for form, and intentional negative space.
+        
+                Color Palette: Vibrant tones reminiscent from Miami Vice Aesthetic.
+                Lighting & Shading: HIGH-CONTRAST, GRAPHIC SHADING — heavy blacks, bold shadow shapes, little mid-tone refinement. Keep highlights minimal and matte; avoid glossy speculars.
+        
+                Composition & Ambience: TROPICAL MIAMI-VICE AMBIENCE — sparse backgrounds with clear tropical cues: palm silhouettes, pastel art-deco facades, low ocean horizon at sunset, and neon reflections on wet pavement or chrome. The foreground character should remain dominant and graphic against these suggestive, not-over-detailed backgrounds. Focus the composition on the character and the surrounding atmosphere rather than any framed or panelled presentation.
+        
+                IMPORTANT RENDERING NOTE (CRITICAL FOR IMAGE MODELS):
+                Render this style as a single, full-bleed, edge-to-edge illustration suitable for final raster output (PNG/JPEG). DO NOT produce comic-page elements or simulate panels in the composition. Specifically forbid: panels, gutters, borders, inset frames, speech balloons, caption boxes, numbered panels, or any page-layout artifacts. The image must read as one complete canvas with no visible page or panel structure.
+        
+                Rendering Guidance (for prompt engineers / generators):
+                - Do NOT include borders, panels, gutters, frames, or any visible edge lines. The image MUST be rendered without borders or frames and should read as a single, unframed illustration focused on the character and ambience.
+                - Do NOT generate speech bubbles, captions, or panel numbering. Avoid any UI-like overlays or comic layout cues.
+                - Eyes & Facial Details: Keep eyes and facial features SIMPLE and MATTE — solid or minimally detailed pupils/irises, flat catch-free highlights (or none), minimal eyelid shading, and graphic lashes/lines. Do NOT add sparkles, glossy catchlights, lens flares, or any decorative illumination that 'prettifies' the face. Avoid micro-specular highlights, glossy skin reflections, or any cosmetic glow. Favor expressive inked marks and flat tonal planes.
+                - Reduce facial micro-detail: avoid pores, smooth gradients, or photoreal skin. Prefer bold silhouette and expressive marks.
+                - Emphasize hand-made artifacts: paper grain, halftone speckle, ink edges, slight registration imperfections.
+                - Keep color flat and declarative; use accent color as a focal pop, not a global tint — apply pastel sunset gradients to background planes only if they remain flat and slightly textured.
+                - Preserve imperfect, sketchy linework: avoid perfectly clean vector lines or photographic clarity. Prioritize technique, texture, and tactile surface detail over decorative or beautifying effects.
+        
+                Suggested negative tokens to include when prompting models: 'panel', 'comic panel', 'gutter', 'speech bubble', 'caption', 'page', 'panel border', 'speech balloon'.
+        
+                Mood: Raw, rash, emotionally immediate — glamorous and decadent in subject matter, but tactile and hand-made in execution. Think Miami 80s neon decadence filtered through a hurried indie-comic print.
+        """
+
+            SPACE_OPERA ->
                 """
+        Art Technique: CLASSIC GOLDEN AGE COMIC ART
+        Line Detail: BOLD, CLEAN, AND CONSISTENT INK OUTLINES
+        Color Application: FLAT PRIMARY COLOR BLOCKING (ZERO GRADIENTS)
+        Texture / Materiality: SMOOTH, CLEAN INKING
+        Aesthetic Era / Influence: 1940s/1950s GOLDEN AGE COMICS
+        Figure Style: POWERFUL, HEROIC, AND STYLIZED ANATOMY
+        Vibe / Mood Aesthetic: ADVENTUROUS AND OPTIMISTIC
+
+        Mood: Vast, aspirational, and wonder-filled — evoke exploration and cosmic scale.
+        Ambience: Minimalist starfields, soft cosmic fog or nebula backdrops, gentle backlighting to create silhouettes and emphasize scale without cluttering the frame.
+        """
         }
 
     fun getColorEmphasisDescription(genre: Genre): String =
         when (genre) {
             FANTASY ->
                 """
-                The background Dominated by a strong, evocative red color scheme, featuring deep scarlet, crimson, fiery orange-red, and burgundy tones.
-                The background is composed of voluminous, dramatic cloud formations intensely lit with these red and orange hues, creating a powerful, ambient glow that permeates the entire scene.
-                The lighting is an intense, almost apocalyptic, reddish-orange glow, suggesting either an epic, burning sunset or the aftermath of a fiery event, casting everything in a warm yet foreboding light with deep, rich shadows.
-                **CRUCIAL:** The character's overall skin tone, hair color (apart from tiny accents), and primary clothing colors MUST retain their natural, distinct hues and NOT be tinted red.
-                The red accents should be isolated and clearly defined.
+                **CRITICAL: These warm colors MUST be incorporated as design elements or local light sources. Select one or more options for this warm accentuation:**
+                - `The character's sword hilt/blade glows with a subtle orange-red light`
+                - `Intricate, gold/red enameling on the character's armor plating`
+                - `A small, localized fire, torch, or glowing magical sigil in the scene`
+                - `Deep crimson or orange-red fabric elements (e.g., scarf, cloak lining, flag)`
+                - `Scattered ground elements in warm colors (e.g., red/orange flowers, specific colored gems, cracked lava/stone)`
+                **CRUCIAL:** The warm tones are for **specific accents and localized light reflection**, not the overall ambient light or background color.
+                The lighting should be predominantly natural (daylight, torchlight, moonlight) as appropriate for the scene, with only small, focused areas reflecting the warm accent color (e.g., rim light from the glowing sword).
+             
+                    2.1. **Background and Ambient Context (ATMOSPHERIC PRIORITY):**
+                    The Agent MUST describe the environment to set a strong, evocative mood (the "Ambient Context"), but this description **must not dictate the composition's framing or depth of field.** The final prompt must clearly state that the background serves as the setting for the character.
+                    * **Mandatory Adaptation:** The image generation model is internally instructed to **apply a depth of field that supports the chosen Framing (e.g., a shallow depth of field for Macro Shots, or a clear focus for Wider Shots),** ensuring the primary subject remains sharp and dominant.
+                    * **Contextual Elements (Fantasy):** Use elements like `ancient ruins`, `crumbled stone`, `stormy sky`, `swirling mist`, or `fantasy forest` to define the setting. The Agent should describe these elements in a way that provides **texture and atmosphere**, not necessarily vast, clear detail.
+                    
+                    **CRITICAL:** The Agent must ensure the Ambient Context description is concise and supports the visual mood (Epic, Somber, etc.) without contradicting the framing term (e.g., 'MACRO SHOT').
                 """
 
-            SCI_FI ->
+            CYBERPUNK ->
                 """
-                The overall scene should capture a moody, retro-anime cyberpunk aesthetic, with a strong emphasis on purple, drawing inspiration from visuals like a character in a neon-lit city at dusk.
+                **Specific Color Application Instructions:**
+                *The following rules dictate how the genre's key color (purple) is applied.  Imagine a striking visual effect where purple is used as a focused accent, similar to how a brightly colored detail might stand out against a muted background – think a vibrant neon sign in a dark alley.*
+                
 
                 **Background & Ambient Lighting:**
-                The background should evoke a cyberpunk city at dusk or night, featuring sources of **subtle ambient purple neon lighting** that cast a moody glow. This could manifest as reflections off wet surfaces, distant city lights, or atmospheric haze, creating an environment rich with purple hues without being uniformly purple. For character icons, this background should be significantly simplified to bold graphic shapes, a minimalist abstract texture, or a tastefully blurred representation, still retaining the purple atmospheric feel and ensuring the character remains the dominant focus.
-
-                **Character Purple Highlights & Details:**
-                While the character's primary clothing, skin, and hair colors must remain distinct and true to their base design (as per the CRUCIAL rule below), integrate **more pronounced and thoughtfully placed purple light details and highlights** in the following ways:
-                *   **Reflective Surfaces:** Catch subtle but clear purple reflections on metallic parts of clothing (zippers, buckles), cybernetics, weapons, or accessories.
-                *   **Edge Lighting/Rim Lighting:** Use sharp purple rim lighting to define parts of the character's silhouette against the darker background, suggesting they are being hit by distinct purple light sources from the environment.
-                *   **Emissive Details:** Enhance or add elements like glowing purple cybernetic eye details (irises, small implants), thin luminous purple circuit patterns on clothing (not coloring the whole garment), subtle purple light strips on gear, or faint highlights on individual small pieces of tech. These elements should feel like they are emitting a soft purple light.
-                *   **Subtle Cast Light:** Allow a *very subtle* and localized cast of purple light onto areas of the character immediately adjacent to strong purple light sources or their own emissive details. Avoid tinting large surfaces or the character's overall complexion.
-
-                **CRUCIAL:** The character's overall skin tone, hair color (apart from specific, small glowing accents like streaks or cybernetic parts), and primary clothing colors MUST retain their natural, distinct hues and NOT be globally tinted purple. The purple elements should be targeted highlights, reflections, and light sources, enhancing the cyberpunk feel without altering the character's core color palette. The goal is a sophisticated interplay of light, not a purple wash.
+                Establish a subtle cyberpunk atmosphere with **ambient purple neon lighting** and atmospheric haze.
+                The background should be suggestive of a city at dusk, but remain *subdued and out of focus* to ensure the character remains the dominant element. 
+                **The primary focus of the image MUST be the character's face and upper body.**
+                
+                **Character Purple Highlights:** Integrate **pronounced purple light details and highlights** to create a visually arresting effect. Think of purple as a "pop" of color that draws the eye:
+                *   **Focused Accents:** Use purple for key accent elements – glowing cybernetic implants, illuminated details on clothing, or a striking purple light source casting shadows.
+                *   **Rim Lighting:** Apply subtle purple rim lighting to define the character's silhouette.
+                *   **Emissive Details:** Enhance details like cybernetic eyes or circuit patterns with a purple glow.
+                
+                **CRUCIAL:** Maintain the character's natural skin tone, hair color, and clothing colors. **Do NOT globally tint the character purple.** Purple should be used for *focused, impactful highlights* – not as an overall color wash.  The goal is to create a visually striking contrast, where the purple elements immediately capture the viewer's attention. **Do not add any new accessories or items to the character that are not already described in the Character Context.**
+                                
                 """
 
             HORROR ->
@@ -110,7 +159,7 @@ object GenrePrompts {
                 Character accents, if any, must be **extremely minimal, desaturated, and applied to very small details**: for instance, a faint, chilling blue reflection in the eyes, or a tiny, barely perceptible grey pattern on dark clothing.
                 **CRUCIAL:** The character should appear largely devoid of vibrant color, blending with the bleak, desaturated environment. Avoid any noticeable color accents that would break the monochromatic feel. The character's skin should appear pale or shadowed, not tinted by any accent color.
                 """
-            Genre.HEROES ->
+            HEROES ->
                 """
                 Urban environment.
                 The color palette is dominated by vivid blues and teals, accented with black, white, and yellow.
@@ -118,14 +167,62 @@ object GenrePrompts {
                 bathed in a cool blue light.
                 """
 
-            Genre.CRIME ->
+            CRIME ->
                 """
-                Tropical environment.
-                The color palette is dominated by vivid pink and orange, accented with teal blues.
-                The background is a detailed beach at a sunset, with a sense of calm and tranquility.
-                In a  Miami Vice aesthetic with pink highlights at the sky and dramatic cinematic lights.
+                Tropical urban environment: pastel sunset skies over palm-lined boulevards, art-deco storefronts, and wet reflective surfaces that catch neon trims.
+                Color Palette: pastel sunsets (pinks, lavenders, muted oranges) and teal/cyan accents, balanced with muted base tones from the artStyle (dusty mauve, desaturated olive). Use neon highlights sparingly as small reflective pops on chrome, puddles, or signage.
+                Application Notes: Maintain the flat, printed color treatment from the CRIME art style — do not apply glossy or photoreal glows. Neon should read like printed ink or paint reflections (sharp, localized), not a global color wash over the scene.
+                Ambience: Glamorous, decadent Miami‑80s vibe paired with urban grit — palm silhouettes, boardwalk hints, distant nightlife. Keep background detail suggestive and minimal so the character and hand-inked texture remain the focal point.
+                """
+
+            SPACE_OPERA ->
+                """
+                **Background & Ambient Lighting:**
+                Establish a subtle, dark, and atmospheric starry sky background.
+                The background should be:
+                ** minimalist, out of focus, and stylized, resembling a simple painted backdrop with soft, ethereal cosmic dust and small, sparkling stars**.
+                Use soft gradients and subtle textures to create a sense of depth without being overly detailed.
+                The primary focus of the image MUST be the character's face and upper body.
                 """
         }.trimIndent()
+
+    @Suppress("unused")
+    fun cinematographyComposition(genre: Genre) =
+        buildString {
+            when (genre) {
+                CRIME -> {
+                    appendLine(
+                        "*The composition MUST emphasize **intense psychological tension and dramatic observation**. Use **cinematic staging** to create emotional distance or scrutiny, such as **observing a character from behind a pane of glass (like a luxury car window) or through heavy shadow/neon reflection**. Focus on aesthetic of **decadent tropical luxury** and urban grit.",
+                    )
+                    appendLine(
+                        "*  The framing should prioritize **emotional reaction and narrative stage setting** (e.g., dual portrait with visual barrier) over direct physical confrontation.",
+                    )
+                }
+
+                CYBERPUNK -> {
+                    appendLine(
+                        "The composition MUST emphasize tension and dramatic melancholy. With high focus on characters emotions and world building.",
+                    )
+                    appendLine("Focus on **cinematic staging** to create emotional distance or scrutiny")
+                    appendLine("Paying attention to futuristic details and intense emotions.")
+                }
+
+                else -> {
+                    appendLine("Focus on characters involved")
+                    appendLine("Creating angles that focus on their conflicts and emotions")
+                }
+            }
+        }
+
+    fun colorAccent(genre: Genre) =
+        when (genre) {
+            FANTASY -> "Crimson/Red"
+            CYBERPUNK -> "Luminous purple/Neon magenta"
+            HORROR -> "Ash gray/Faded cerulean blue"
+            HEROES -> "Midnight blue/Electric blue"
+            CRIME -> "Hot pink/Electric magenta"
+            SPACE_OPERA -> "Cyan/Deep cerulean blue"
+        }
 
     fun nameDirectives(genre: Genre) =
 
@@ -139,7 +236,7 @@ object GenrePrompts {
                 // AVOID overly modern, generic, or overtly tech-sounding names (e.g., John, Mary, Smith, unit numbers, cyber-names).
                 """
 
-            SCI_FI ->
+            CYBERPUNK ->
                 """
                 // - Aim for names that blend futuristic, cyberpunk, or slightly exotic sounds.
                 // - Consider influences from Japanese, tech-inspired, or gritty Western phonetics.
@@ -156,7 +253,7 @@ object GenrePrompts {
                 // - Avoid names that are overtly heroic, futuristic, or melodramatic.
                """
 
-            Genre.HEROES ->
+            HEROES ->
                 """
                 // - Aim for names that feel grounded, contemporary, and reflect a diverse urban environment.
                 // - Consider influences from street culture, hip-hop, graffiti art, and modern city life.
@@ -169,13 +266,20 @@ object GenrePrompts {
                 // - Think about names that could easily become a street tag or a whispered legend.
                 """
 
-            Genre.CRIME ->
+            CRIME ->
                 """
                 // - Aim for names fitting a crime drama set in a stylized neon city.
                 // - Blend gritty street nicknames with classic, timeless first names.
                 // - Consider influences from 80s Miami/LA crime fiction, Latin and Anglo names common in ${currentLanguage()} locales.
                 // - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
                 // - Avoid overtly sci-fi or fantasy elements.
+                """
+            SPACE_OPERA ->
+                """
+                Concept: Evoke exploration, cosmic significance, advanced scientific concepts, or ancient, wise origins.
+                Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
+                Avoid: Overtly aggressive or militaristic names, overly "hard" sci-fi jargon (unless for specific tech), modern slang.
+                Try: Names with soft vowels and unique consonant combinations (e.g., Lyra, Orion, Xylos, Aetheria).    
                 """
         }.plus("Try common names in ${currentLanguage()}").trimIndent()
 
@@ -203,7 +307,7 @@ object GenrePrompts {
                 * Maintain a sense of wonder, mystery, or impending doom as appropriate for the scene.
                 """
 
-            SCI_FI ->
+            CYBERPUNK ->
                 """
              // This directive defines the specific linguistic style for the Cyberpunk/Dystopian Sci-Fi genre.
             // NPCs and narrative voice should reflect a gritty, tech-infused, and often cynical tone.
@@ -248,7 +352,7 @@ object GenrePrompts {
                     * Avoid explicit and graphic descriptions of the horror, opting instead to hint at what is indescribable to heighten the reader's fear.
                      
                """
-            Genre.HEROES ->
+            HEROES ->
                 """
                 // This directive defines the specific linguistic style for the Urban Hero genre.
                 // NPCs and narrative voice should reflect a contemporary, street-smart, and often gritty tone, blending realism with a sense of hidden potential.
@@ -272,7 +376,7 @@ object GenrePrompts {
                     * The narrative should subtly hint at the hidden potential and extraordinary abilities that exist beneath the surface of everyday life.
                 """
 
-            Genre.CRIME ->
+            CRIME ->
                 """
                 // This directive defines the specific linguistic style for the Crime City genre.
                 // NPCs and narration should evoke 80s crime drama with a neon-soaked, Miami Vice mood.
@@ -292,6 +396,14 @@ object GenrePrompts {
                     * Visual metaphors that evoke neon nights, ocean breeze, and rumbling engines.
                     * Emphasize rim lighting, silhouettes against pink-yellow dusk, and reflective wet streets.
                     * Keep descriptions cinematic but slightly imperfect and gritty.
+                """
+            SPACE_OPERA ->
+                """
+                Vocabulary: Galactic exploration, profound discoveries, cosmic phenomena,
+                ancient alien civilizations, advanced technology, philosophical ponderings about existence.
+                Formality: Varies from adventurous and eloquent (explorers, scientists) to mysterious and ancient (alien entities).
+                Phrasing: Evocative and grand, with a sense of wonder and epic scope.
+                Tone: Aspirational, mysterious, awe-inspiring, adventurous, contemplative.
                 """
         }.trimIndent()
 }

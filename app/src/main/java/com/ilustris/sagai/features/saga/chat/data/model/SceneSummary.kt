@@ -6,4 +6,5 @@ data class SceneSummary(
     val immediateObjective: String?,
     val currentConflict: String?,
     val mood: String?,
+    val currentTimeOfDay: String?,
 )

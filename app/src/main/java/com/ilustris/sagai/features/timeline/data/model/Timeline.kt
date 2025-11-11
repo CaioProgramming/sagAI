@@ -31,4 +31,5 @@ data class Timeline(
     val createdAt: Long = Calendar.getInstance().timeInMillis,
     @ColumnInfo(index = true)
     val chapterId: Int,
+    val currentObjective: String? = null,
 )

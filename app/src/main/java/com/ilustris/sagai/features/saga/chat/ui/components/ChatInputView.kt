@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,11 +36,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -87,6 +90,7 @@ import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
@@ -109,27 +113,24 @@ fun ChatInputView(
 ) {
     val action = sendType
     val inputBrush =
-        if (isGenerating) {
-            content.data.genre.gradient(
-                true,
-                gradientType = GradientType.LINEAR,
-                duration = 2.seconds,
-            )
-        } else {
-            Color.Transparent.solidGradient()
-        }
+        content.data.genre.gradient(
+            isGenerating,
+            duration = 2.seconds,
+        )
 
     var charactersExpanded by remember {
         mutableStateOf(false)
     }
 
     val glowRadius by animateFloatAsState(
-        if (isGenerating.not()) 0f else 30f,
+        if (isGenerating.not()) 15f else 30f,
     )
-    val inputShape = RoundedCornerShape(content.data.genre.cornerSize())
+    val backgroundColor by animateColorAsState(
+        if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
+    )
+    val inputShape = remember { content.data.genre.shape() }
 
     rememberModalBottomSheetState(skipPartiallyExpanded = false)
-    rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -142,7 +143,8 @@ fun ChatInputView(
 
     Column(
         modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .imePadding(),
     ) {
         AnimatedVisibility(charactersExpanded && content.characters.isNotEmpty()) {
             LazyColumn(
@@ -173,7 +175,12 @@ fun ChatInputView(
                                         newText,
                                     )
 
-                                onUpdateInput(TextFieldValue(textReplacement, TextRange(textReplacement.length)))
+                                onUpdateInput(
+                                    TextFieldValue(
+                                        textReplacement,
+                                        TextRange(textReplacement.length),
+                                    ),
+                                )
 
                                 charactersExpanded = false
                             },
@@ -263,13 +270,13 @@ fun ChatInputView(
             Column(
                 modifier =
                     Modifier
+                        .verticalScroll(rememberScrollState())
                         .fillMaxWidth()
                         .border(1.dp, inputBrush, inputShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer, inputShape)
+                        .background(backgroundColor, inputShape)
                         .padding(4.dp),
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
                             .fillMaxWidth(),
@@ -285,6 +292,7 @@ fun ChatInputView(
                     BasicTextField(
                         inputField,
                         enabled = isGenerating.not(),
+                        maxLines = if (isGenerating) 1 else Int.MAX_VALUE,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                         keyboardActions =
                             KeyboardActions(onSend = {
@@ -322,33 +330,39 @@ fun ChatInputView(
                             Box(
                                 contentAlignment = Alignment.CenterStart,
                                 modifier =
-                                    Modifier.reactiveShimmer(
-                                        isGenerating,
-                                        content.data.genre.shimmerColors(),
-                                    ),
+                                    Modifier
+                                        .padding(boxPadding)
+                                        .reactiveShimmer(
+                                            isGenerating,
+                                            content.data.genre.shimmerColors(),
+                                        ),
                             ) {
-                                if (inputField.text.isEmpty()) {
-                                    AnimatedContent(action) {
-                                        Text(
-                                            it.hint(),
-                                            style = textStyle,
-                                            maxLines = 1,
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(boxPadding)
-                                                    .alpha(.4f),
-                                        )
-                                    }
-                                } else {
-                                    Box(Modifier.padding(boxPadding)) {
-                                        innerTextField()
-                                    }
+                                val textAlpha by animateFloatAsState(
+                                    if (inputField.text.isEmpty()) 0f else 1f,
+                                )
+                                val hintAlpha by animateFloatAsState(
+                                    if (inputField.text.isEmpty()) 1f else 0f,
+                                )
+                                AnimatedContent(action, modifier = Modifier.alpha(hintAlpha)) {
+                                    Text(
+                                        it.hint(),
+                                        style = textStyle,
+                                        maxLines = 1,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .alpha(.4f),
+                                    )
+                                }
+
+                                Box(Modifier.alpha(textAlpha)) {
+                                    innerTextField()
                                 }
                             }
                         },
                         modifier =
                             Modifier
+                                .align(Alignment.CenterVertically)
                                 .weight(1f)
                                 .animateContentSize(),
                     )
@@ -357,6 +371,7 @@ fun ChatInputView(
                         inputField.text.isNotEmpty(),
                         enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
                         exit = scaleOut(animationSpec = tween(easing = EaseIn)),
+                        modifier = Modifier.align(Alignment.Bottom),
                     ) {
                         val buttonColor by animateColorAsState(
                             if (isGenerating.not()) {
@@ -461,10 +476,6 @@ fun ChatInputView(
                 }
             }
         }
-
-        if (isImeVisible) {
-            Spacer(Modifier.height(50.dp))
-        }
     }
 
     val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -496,9 +507,13 @@ fun ChatInputView(
                     Column(
                         modifier =
                             Modifier
+                                .padding(16.dp)
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceContainer, genre.shape())
-                                .padding(16.dp),
+                                .border(1.dp, genre.color.gradientFade(), genre.shape())
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    genre.shape(),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
@@ -525,18 +540,27 @@ fun ChatInputView(
 
                         AnimatedVisibility(it.status != TypoStatus.FIX) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Button(enabled = isEnabled, onClick = {
-                                    it.suggestedText?.let { text ->
-                                        onUpdateInput(
-                                            TextFieldValue(
-                                                it.suggestedText,
-                                                TextRange(it.suggestedText.length),
-                                            ),
-                                        )
-                                    }
-                                    sendMessage(true)
-                                    isEnabled = false
-                                }, colors = ButtonDefaults.buttonColors().copy(containerColor = genre.color)) {
+                                Button(
+                                    enabled = isEnabled,
+                                    shape = genre.shape(),
+                                    onClick = {
+                                        it.suggestedText?.let { text ->
+                                            onUpdateInput(
+                                                TextFieldValue(
+                                                    it.suggestedText,
+                                                    TextRange(it.suggestedText.length),
+                                                ),
+                                            )
+                                        }
+                                        sendMessage(true)
+                                        isEnabled = false
+                                    },
+                                    colors =
+                                        ButtonDefaults.buttonColors().copy(
+                                            containerColor = genre.color,
+                                            contentColor = genre.iconColor,
+                                        ),
+                                ) {
                                     Text(
                                         "Corrigir",
                                         style =
@@ -553,9 +577,13 @@ fun ChatInputView(
                                         sendMessage(true)
                                         isEnabled = false
                                     },
+                                    shape = genre.shape(),
                                     colors =
                                         ButtonDefaults.textButtonColors().copy(
-                                            contentColor = genre.color,
+                                            contentColor =
+                                                MaterialTheme.colorScheme.onBackground.copy(
+                                                    alpha = .5f,
+                                                ),
                                         ),
                                 ) {
                                     Text(
@@ -563,7 +591,6 @@ fun ChatInputView(
                                         style =
                                             MaterialTheme.typography.labelMedium.copy(
                                                 fontFamily = genre.bodyFont(),
-                                                color = genre.iconColor,
                                             ),
                                     )
                                 }

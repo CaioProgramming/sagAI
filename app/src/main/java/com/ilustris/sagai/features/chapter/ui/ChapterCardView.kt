@@ -1,7 +1,11 @@
 package com.ilustris.sagai.features.chapter.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,7 +16,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -20,16 +30,23 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
+import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
 
 @Composable
@@ -37,42 +54,76 @@ fun ChapterCardView(
     saga: SagaContent,
     chapter: Chapter,
     modifier: Modifier,
+    showTitle: Boolean = true
 ) {
     val genre = saga.data.genre
     val shape = RoundedCornerShape(genre.cornerSize())
-    Column(modifier) {
-        AsyncImage(
-            chapter.coverImage,
-            contentDescription = chapter.title,
-            contentScale = ContentScale.Crop,
-            placeholder = painterResource(R.drawable.ic_spark),
-            fallback = painterResource(R.drawable.ic_spark),
-            modifier =
-                Modifier
-                    .clip(shape)
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .effectForGenre(genre)
-                    .selectiveColorHighlight(genre.selectiveHighlight()),
-        )
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            Modifier
+                .clip(shape)
+                .border(1.dp, genre.color.gradientFade(), genre.shape())
+                .background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
+            var textAlpha by remember {
+                mutableFloatStateOf(0f)
+            }
+            AsyncImage(
+                chapter.coverImage,
+                contentDescription = chapter.title,
+                contentScale = ContentScale.Crop,
+                onError = {
+                    textAlpha = 1f
+                },
+                onSuccess = {
+                    textAlpha = 0f
+                },
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .effectForGenre(genre)
+                        .selectiveColorHighlight(genre.selectiveHighlight()),
+            )
 
-        Text(
-            text = chapter.title,
-            maxLines = 1,
-            style =
-                MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = genre.bodyFont(),
-                    textAlign = TextAlign.Start,
-                ),
-            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth(),
-        )
+            Text(
+                saga.chapterNumber(chapter).toRoman(),
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = genre.headerFont(),
+                        textAlign = TextAlign.Center,
+                        brush = genre.gradient(),
+                    ),
+                modifier =
+                    Modifier
+                        .alpha(textAlpha)
+                        .padding(6.dp)
+                        .align(Alignment.Center),
+            )
+        }
+
+        if(showTitle){
+            Text(
+                text = chapter.title,
+                maxLines = 1,
+                style =
+                    MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = genre.bodyFont(),
+                        textAlign = TextAlign.Center,
+                    ),
+                modifier =
+                    Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
+            )
+        }
     }
 }
 
 @Preview(showBackground = true, device = "id:pixel_9a")
 @Composable
 fun ChapterCardViewPreview() {
-    val genre = Genre.FANTASY
     val chapters =
         listOf(
             Chapter(
@@ -103,7 +154,10 @@ fun ChapterCardViewPreview() {
             columns = GridCells.Fixed(2),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.padding(8.dp).fillMaxSize(),
+            modifier =
+                Modifier
+                    .padding(8.dp)
+                    .fillMaxSize(),
         ) {
             items(chapters.size) { index ->
                 ChapterCardView(
@@ -114,7 +168,7 @@ fun ChapterCardViewPreview() {
                                 genre = Genre.FANTASY,
                             ),
                         ),
-                    modifier = Modifier.fillMaxWidth().fillMaxHeight(.4f),
+                    modifier = Modifier.aspectRatio(1f),
                 )
             }
         }

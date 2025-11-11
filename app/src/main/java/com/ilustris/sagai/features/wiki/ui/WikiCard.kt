@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -57,23 +58,10 @@ fun WikiCard(
     modifier: Modifier,
     expanded: Boolean = false,
 ) {
-    var isExpanded by remember { mutableStateOf(expanded) }
     Column(
         modifier =
             modifier
-                .clip(RoundedCornerShape(genre.cornerSize()))
-                .border(
-                    width = 1.dp,
-                    brush = genre.color.gradientFade(),
-                    shape =
-                        RoundedCornerShape(
-                            genre.cornerSize(),
-                        ),
-                ).clickable { isExpanded = !isExpanded }
-                .padding(16.dp)
-                .animateContentSize(
-                    tween(easing = FastOutSlowInEasing),
-                ),
+                ,
     ) {
         val tag = wiki.emojiTag ?: emptyString()
 
@@ -86,7 +74,7 @@ fun WikiCard(
                 ),
             color = MaterialTheme.colorScheme.onBackground,
         )
-        AnimatedVisibility(isExpanded) {
+        AnimatedVisibility(expanded) {
             Text(
                 text = wiki.content,
                 style =
@@ -107,7 +95,7 @@ fun WikiCardPreview() {
         LazyVerticalGrid(columns = GridCells.Fixed(2)) {
             Genre.entries.forEach {
                 item(span = { GridItemSpan(2) }) {
-                    Text(it.title, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    Text(stringResource(it.title), textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
                 }
 
                 items(WikiType.entries) { type ->

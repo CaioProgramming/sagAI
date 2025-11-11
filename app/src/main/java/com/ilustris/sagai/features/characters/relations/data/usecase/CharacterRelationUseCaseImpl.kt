@@ -12,8 +12,11 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationGener
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.characters.relations.data.repository.CharacterRelationRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import kotlinx.coroutines.delay
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 class CharacterRelationUseCaseImpl
     @Inject
@@ -27,7 +30,7 @@ class CharacterRelationUseCaseImpl
         ): RequestResult<Unit> =
             executeRequest {
                 val prompt = CharacterPrompts.generateCharacterRelation(timeline, saga)
-                val generatedRelationsData = gemmaClient.generate<List<RelationGeneration>>(prompt)!!
+                val generatedRelationsData = gemmaClient.generate<List<RelationGeneration>>(prompt, describeOutput = false)!!
 
                 val updatedRelations =
                     generatedRelationsData.map { relationData ->
@@ -65,7 +68,10 @@ class CharacterRelationUseCaseImpl
         ) = executeRequest {
             checkNotNull(firstCharacter)
             checkNotNull(secondCharacter)
-            assert(firstCharacter.id != secondCharacter.id)
+            if (firstCharacter.id == secondCharacter.id) {
+                Log.e(javaClass.simpleName, "A character cannot have a relationship with themselves")
+                return@executeRequest null
+            }
 
             val existingRelationshipContent =
                 saga.relationships.find { rc ->
@@ -91,6 +97,20 @@ class CharacterRelationUseCaseImpl
                     )
                 relationRepository.insertRelationAndEvent(newCharacterRelation, timeline.id)
             } else {
+                val timelineContent = saga.findTimeline(timeline.id)
+                val relationAlreadyUpdatedAtTimeline =
+                    timelineContent
+                        ?.updatedRelationshipDetails
+                        ?.find { it.data.id == existingRelationshipContent.data.id }
+
+                if (relationAlreadyUpdatedAtTimeline != null) {
+                    Log.e(
+                        javaClass.simpleName,
+                        "The relation between ${firstCharacter.name} and ${secondCharacter.name} has already been updated in this timeline.",
+                    )
+                    return@executeRequest null
+                }
+
                 relationRepository.addEventToRelation(
                     relationId = existingRelationshipContent.data.id,
                     timelineId = timeline.id,

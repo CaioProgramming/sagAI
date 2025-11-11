@@ -4,8 +4,6 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
-import com.google.firebase.ai.type.Schema
-import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.features.home.data.model.Saga
 import java.util.Calendar
 
@@ -32,17 +30,6 @@ data class Wiki(
     val sagaId: Int,
     val timelineId: Int? = null,
 )
-
-data class WikiGen(
-    val wikis: List<Wiki>,
-) {
-    companion object {
-        fun customSchema() =
-            Schema.obj(
-                mapOf("wikis" to Schema.array(items = toFirebaseSchema(Wiki::class.java))),
-            )
-    }
-}
 
 enum class WikiType {
     LOCATION,

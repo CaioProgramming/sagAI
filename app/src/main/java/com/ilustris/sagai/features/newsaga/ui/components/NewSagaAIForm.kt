@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -54,8 +55,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -82,7 +81,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -103,6 +101,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.ui.presentation.FormState
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.MorphPolygonShape
@@ -113,6 +112,7 @@ import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradientAnimation
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -151,10 +151,6 @@ fun NewSagaAIForm(
     val textFont = genre?.bodyFont()
     var showReview by remember { mutableStateOf(false) }
     var showText by remember { mutableStateOf(false) }
-    val blurRadius by animateDpAsState(
-        targetValue = if (showText) 50.dp else 0.dp,
-        label = "BlurRadius",
-    )
 
     LaunchedEffect(isLoading) {
         if (isLoading) {
@@ -232,7 +228,7 @@ fun NewSagaAIForm(
                 modifier =
                     Modifier
                         .fillMaxSize()
-                        .gradientFill(gradientAnimation(holographicGradient)),
+                        .reactiveShimmer(true, genre?.shimmerColors() ?: holographicGradient.plus(Color.Transparent)),
             )
         }
         Column(
@@ -279,17 +275,12 @@ fun NewSagaAIForm(
                     label = "themeScale",
                 )
 
-                val backBlur by animateDpAsState(
-                    if (showText) 25.dp else 0.dp,
-                )
-
                 this@Column.AnimatedVisibility(
                     genre != null,
                     enter = scaleIn() + fadeIn(),
                     exit = scaleOut() + fadeOut(),
                     modifier =
                         Modifier
-                            .blur(backBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                             .align(Alignment.Center),
                 ) {
                     val (dx, dy) = polarOffsetDp(80.dp, 45f)
@@ -321,7 +312,6 @@ fun NewSagaAIForm(
                     exit = fadeOut() + scaleOut(),
                     modifier =
                         Modifier
-                            .blur(backBlur, edgeTreatment = BlurredEdgeTreatment.Unbounded)
                             .align(Alignment.Center),
                 ) {
                     val (dx, dy) = polarOffsetDp(96.dp, 220f)
@@ -357,8 +347,7 @@ fun NewSagaAIForm(
                     modifier =
                         Modifier
                             .align(Alignment.Center)
-                            .wrapContentSize()
-                            .blur(blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded),
+                            .wrapContentSize(),
                 ) {
                     if (it) {
                         BlurredGlowContainer(
@@ -387,21 +376,14 @@ fun NewSagaAIForm(
                             }
                         }
                     } else {
-                        val fullStarCount = Genre.entries.size * 100
-                        val starCount = if (showText) 0 else fullStarCount
-                        val blurStar by animateDpAsState(
-                            if (showText) 25.dp else 0.dp,
-                        )
-                        val background by animateColorAsState(
-                            if (showText) color else Color.Transparent,
-                        )
+                        val starCount = Genre.entries.size * 100
+
+                        val background = Color.Transparent
                         Box(
                             modifier =
                                 Modifier
-                                    .blur(blurStar)
                                     .align(Alignment.Center)
                                     .clip(shape)
-                                    .background(background)
                                     .size(100.dp),
                         ) {
                             StarryTextPlaceholder(
@@ -415,36 +397,35 @@ fun NewSagaAIForm(
                         }
                     }
                 }
+            }
 
-                this@Column.AnimatedVisibility(
-                    showText,
-                    modifier = Modifier.align(Alignment.Center),
-                ) {
-                    AnimatedContent(aiState.message, transitionSpec = {
-                        slideInVertically() + fadeIn(tween(400)) togetherWith scaleOut() +
-                            fadeOut(
-                                tween(200),
-                            )
-                    }) {
-                        it?.let { _ ->
-                            Text(
-                                aiState.message ?: emptyString(),
-                                style =
-                                    MaterialTheme.typography.bodyLarge.copy(
-                                        brush = brush,
-                                        fontFamily = textFont,
-                                        fontWeight = FontWeight.Bold,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .animateContentSize(tween(500, easing = EaseIn))
-                                        .clickable {
-                                            showText = false
-                                        },
-                            )
-                        }
-                    }
+            AnimatedContent(
+                aiState.message,
+                modifier = Modifier.fillMaxWidth(),
+                transitionSpec = {
+                    slideInVertically() + fadeIn(tween(400)) togetherWith scaleOut() +
+                        fadeOut(
+                            tween(200),
+                        )
+                },
+            ) {
+                it?.let { _ ->
+                    Text(
+                        aiState.message ?: emptyString(),
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                brush = brush,
+                                fontFamily = textFont,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                            ),
+                        modifier =
+                            Modifier
+                                .animateContentSize(tween(500, easing = EaseIn))
+                                .clickable {
+                                    showText = false
+                                },
+                    )
                 }
             }
 
@@ -463,7 +444,7 @@ fun NewSagaAIForm(
                 )
 
                 Text(
-                    "Ver mais",
+                    stringResource(R.string.see_more),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = textFont,
@@ -487,7 +468,7 @@ fun NewSagaAIForm(
                     GenreAvatar(
                         it,
                         true,
-                        sagaForm.saga.genre == it,
+                        isSelected = sagaForm.saga.genre == it,
                         modifier = Modifier.wrapContentSize(),
                     ) {
                         selectGenre(it)
@@ -530,9 +511,10 @@ fun NewSagaAIForm(
             Row(
                 modifier =
                     Modifier
-                        .padding(12.dp)
+                        .imePadding()
+                        .padding(16.dp)
                         .fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 TextField(
@@ -558,21 +540,6 @@ fun NewSagaAIForm(
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                         ),
-                    leadingIcon = {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            colorFilter =
-                                ColorFilter.tint(
-                                    genre?.color ?: MaterialTheme.colorScheme.onBackground,
-                                ),
-                            modifier =
-                                Modifier
-                                    .alpha(.5f)
-                                    .size(32.dp)
-                                    .reactiveShimmer(isLoading),
-                        )
-                    },
                     shape = inputShape,
                     textStyle =
                         MaterialTheme.typography.labelSmall.copy(
@@ -692,7 +659,7 @@ fun NewSagaAIForm(
                         ) {
                             Box(Modifier.fillMaxSize().gradientFill(brush), contentAlignment = Alignment.Center) {
                                 if (it.name.isEmpty()) {
-                                    Icon(Icons.Rounded.Person, "Character")
+                                    Icon(painterResource(R.drawable.ic_eye_mask), "Character")
                                 } else {
                                     Text(
                                         it.name.first().toString(),

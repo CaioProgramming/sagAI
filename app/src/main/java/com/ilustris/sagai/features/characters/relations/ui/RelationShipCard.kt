@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -20,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -48,6 +46,7 @@ import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
@@ -56,12 +55,12 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.components.buildCharactersAnnotatedString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findTimeline
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -76,8 +75,8 @@ fun RelationShipCard(
     modifier: Modifier = Modifier,
 ) {
     var showDetailSheet by remember { mutableStateOf(false) }
-    val genre = saga.data.genre
-    val brush = content.getBrush(genre)
+    val genre = remember { saga.data.genre }
+    val brush = remember { content.getBrush(genre) }
     Column(
         modifier =
             modifier
@@ -98,14 +97,22 @@ fun RelationShipCard(
             }
         Row(
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxWidth().height(150.dp).padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(150.dp)
+                    .padding(16.dp),
         ) {
             CharacterAvatar(
                 firstCharacter,
                 firstCharacter.hexColor.hexToColor(),
                 genre = genre,
                 innerPadding = 0.dp,
-                modifier = Modifier.size(avatarSize).offset(x = 15.dp).zIndex(1f),
+                modifier =
+                    Modifier
+                        .size(avatarSize)
+                        .offset(x = 15.dp)
+                        .zIndex(1f),
             )
 
             CharacterAvatar(
@@ -113,10 +120,14 @@ fun RelationShipCard(
                 secondCharacter.hexColor.hexToColor(),
                 innerPadding = 0.dp,
                 genre = genre,
-                modifier = Modifier.size(avatarSize).offset(x = (-15).dp),
+                modifier =
+                    Modifier
+                        .size(avatarSize)
+                        .offset(x = (-15).dp),
             )
         }
-        val relation = content.relationshipEvents.lastOrNull()
+        val relation = remember { content.sortedByEvents(saga.flatEvents().map { it.data }).firstOrNull() }
+
         relation?.let {
             Text(
                 relation.emoji,
@@ -162,15 +173,23 @@ fun RelationShipCard(
 @Composable
 fun SingleRelationShipCard(
     saga: SagaContent,
-    character: Character,
+    character: CharacterContent,
     content: RelationshipContent,
     showText: Boolean = true,
+    showUpdates: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val genre = saga.data.genre
 
+    val timelineEvents = remember { saga.flatEvents().map { it.data } }
+
     var showDetailSheet by remember { mutableStateOf(false) }
     val brush = content.getBrush(genre)
+    val relationshipEvents =
+        remember {
+            content.sortedByEvents(timelineEvents)
+        }
+
     Column(
         modifier =
             modifier
@@ -184,13 +203,13 @@ fun SingleRelationShipCard(
     ) {
         Row(horizontalArrangement = Arrangement.Center) {
             CharacterAvatar(
-                character,
-                character.hexColor.hexToColor(),
+                character.data,
+                character.data.hexColor.hexToColor(),
                 genre = genre,
                 modifier = Modifier.size(100.dp),
             )
         }
-        content.relationshipEvents.lastOrNull()?.let { relation ->
+        relationshipEvents.firstOrNull()?.let { relation ->
             Text(
                 relation.emoji,
                 style = MaterialTheme.typography.headlineMedium,
@@ -211,6 +230,16 @@ fun SingleRelationShipCard(
                     relation.description,
                     style = MaterialTheme.typography.bodyMedium.copy(fontFamily = genre.bodyFont()),
                     textAlign = TextAlign.Center,
+                )
+            }
+
+            if (showUpdates) {
+                Text(
+                    "${content.relationshipEvents.size} Atualizações",
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
                 )
             }
         }
@@ -236,6 +265,17 @@ fun RelationShipSheet(
     val genre = saga.data.genre
     val firstCharacter = content.characterOne
     val secondCharacter = content.characterTwo
+    val sortRelationsByTimeline =
+        remember {
+            content.sortedByEvents(saga.flatEvents().map { it.data })
+        }
+
+    val lastRelationEvent =
+        remember {
+            sortRelationsByTimeline.lastOrNull()?.let {
+                saga.findTimeline(it.timelineId)
+            }
+        }
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
@@ -261,7 +301,11 @@ fun RelationShipSheet(
                     firstCharacter.hexColor.hexToColor(),
                     genre = genre,
                     innerPadding = 0.dp,
-                    modifier = Modifier.size(64.dp).offset(x = 15.dp).zIndex(1f),
+                    modifier =
+                        Modifier
+                            .size(64.dp)
+                            .offset(x = 15.dp)
+                            .zIndex(1f),
                 )
 
                 CharacterAvatar(
@@ -269,7 +313,10 @@ fun RelationShipSheet(
                     secondCharacter.hexColor.hexToColor(),
                     innerPadding = 0.dp,
                     genre = genre,
-                    modifier = Modifier.size(64.dp).offset(x = (-15).dp),
+                    modifier =
+                        Modifier
+                            .size(64.dp)
+                            .offset(x = (-15).dp),
                 )
             }
         }
@@ -296,32 +343,34 @@ fun RelationShipSheet(
             )
         }
 
-        item {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(16.dp),
-            ) {
+        lastRelationEvent?.let {
+            item {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp),
+                ) {
+                    Text(
+                        "Última atualização",
+                        style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
+                        modifier = Modifier.alpha(.4f),
+                    )
 
-
-                Text(
-                    "Última atualização",
-                    style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
-                    modifier = Modifier.alpha(.4f),
-                )
-
-                Text(
-                    content.relationshipEvents
-                        .last()
-                        .timestamp
-                        .formatDate(DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR),
-                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
-                    modifier = Modifier.alpha(.8f).padding(8.dp),
-                )
+                    Text(
+                        it.data
+                            .createdAt
+                            .formatDate(DateFormatOption.HOUR_MINUTE_DAY_OF_MONTH_YEAR),
+                        style = MaterialTheme.typography.labelMedium.copy(fontFamily = genre.bodyFont()),
+                        modifier =
+                            Modifier
+                                .alpha(.8f)
+                                .padding(8.dp),
+                    )
+                }
             }
         }
 
         if (content.relationshipEvents.isNotEmpty()) {
-            items(content.relationshipEvents) {
+            items(sortRelationsByTimeline) {
                 RelationshipEventCard(
                     relationshipEvent = it,
                     content = content,
@@ -344,15 +393,15 @@ fun RelationShipCardPreview() {
             data = Saga(id = 1, title = "My Saga", genre = Genre.FANTASY),
             mainCharacter =
                 CharacterContent(
-                    data = Character(id = 1, name = "Main Hero", details = Details()),
+                    data = Character(id = 1, name = "Main Hero", details = Details(), profile = CharacterProfile()),
                 ),
             characters =
                 listOf(
                     CharacterContent(
-                        data = Character(id = 1, name = "Main Hero", details = Details()),
+                        data = Character(id = 1, name = "Main Hero", details = Details(), profile = CharacterProfile()),
                     ),
                     CharacterContent(
-                        data = Character(id = 2, name = "Sidekick", details = Details()),
+                        data = Character(id = 2, name = "Sidekick", details = Details(), profile = CharacterProfile()),
                     ),
                 ),
         )
@@ -374,6 +423,7 @@ fun RelationShipCardPreview() {
                     name = "Main Hero",
                     details = Details(),
                     hexColor = "#FF0000",
+                    profile = CharacterProfile(),
                 ),
             characterTwo =
                 Character(
@@ -381,6 +431,7 @@ fun RelationShipCardPreview() {
                     name = "Sidekick",
                     details = Details(),
                     hexColor = "#00FF00",
+                    profile = CharacterProfile(),
                 ),
             relationshipEvents =
                 listOf(
@@ -414,14 +465,16 @@ fun RelationShipCardPreview() {
 fun SingleRelationShipCardPreview() {
     val saga =
         SagaContent(
-            data = Saga(id = 1, title = "My Saga", genre = Genre.SCI_FI),
+            data = Saga(id = 1, title = "My Saga", genre = Genre.CYBERPUNK),
             mainCharacter =
                 CharacterContent(
-                    data = Character(id = 1, name = "Space Captain", details = Details()),
+                    data = Character(id = 1, name = "Space Captain", details = Details(), profile = CharacterProfile()),
                 ),
         )
     val character =
-        Character(id = 2, name = "Alien Ally", details = Details(), hexColor = "#0000FF")
+        CharacterContent(
+            data = Character(id = 2, name = "Alien Ally", details = Details(), hexColor = "#0000FF", profile = CharacterProfile()),
+        )
     val content =
         RelationshipContent(
             data =
@@ -434,8 +487,8 @@ fun SingleRelationShipCardPreview() {
                     description = "They fight for the galaxy.",
                     emoji = "🚀",
                 ),
-            characterOne = Character(id = 1, name = "Space Captain", details = Details()),
-            characterTwo = character,
+            characterOne = Character(id = 1, name = "Space Captain", details = Details(), profile = CharacterProfile()),
+            characterTwo = character.data,
             relationshipEvents =
                 listOf(
                     RelationshipUpdateEvent(
@@ -467,6 +520,7 @@ fun RelationShipSheetPreview() {
                             id = 1,
                             name = "Survivor",
                             details = Details(),
+                            profile = CharacterProfile(),
                         ),
                 ),
         )
@@ -488,6 +542,7 @@ fun RelationShipSheetPreview() {
                     name = "Survivor",
                     details = Details(),
                     hexColor = "#AABBCC",
+                    profile = CharacterProfile(),
                 ),
             characterTwo =
                 Character(
@@ -495,6 +550,7 @@ fun RelationShipSheetPreview() {
                     name = "Ghost",
                     details = Details(),
                     hexColor = "#CCBBAA",
+                    profile = CharacterProfile(),
                 ),
             relationshipEvents =
                 listOf(
@@ -605,7 +661,11 @@ fun RelationshipEventCard(
                 firstCharacter.hexColor.hexToColor(),
                 genre = genre,
                 innerPadding = 0.dp,
-                modifier = Modifier.size(32.dp).offset(x = 5.dp).zIndex(1f),
+                modifier =
+                    Modifier
+                        .size(32.dp)
+                        .offset(x = 5.dp)
+                        .zIndex(1f),
             )
 
             CharacterAvatar(
@@ -613,7 +673,10 @@ fun RelationshipEventCard(
                 secondCharacter.hexColor.hexToColor(),
                 innerPadding = 0.dp,
                 genre = genre,
-                modifier = Modifier.size(32.dp).offset(x = (-5).dp),
+                modifier =
+                    Modifier
+                        .size(32.dp)
+                        .offset(x = (-5).dp),
             )
         }
 

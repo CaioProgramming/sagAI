@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
+import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -40,12 +41,28 @@ object CharacterPrompts {
             appendLine(
                 "YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.",
             )
+            appendLine("**MANDATORY OUTPUT STRUCTURE & ORDER OF INFLUENCE (CRITICAL):**")
+            appendLine(
+                "The generated text prompt string **MUST** strictly adhere to the following segment order, prioritizing **keywords** over descriptive sentences, to ensure correct influence for the image generation model:",
+            )
+            appendLine(
+                "**Segment A (Highest Priority - MUST be the first 10-15 words): Style and Technique Keywords.** (e.g., EXTREME CLOSE-UP PORTRAIT, TIGHT HEADSHOT, 1960s POP ART, LICHTENSTEIN STYLE, SOLID BLACK SHADOWS, BEN-DAY DOTS.)",
+            )
+            appendLine(
+                "**Segment B (High Priority): Character Identity and Inferred Emotion** (e.g., Ellis, Asian human female, bounty hunter, determined and pragmatic expression...)",
+            )
+            appendLine(
+                "**Segment C (Medium Priority): Physical Details and Attire** (e.g., Short black hair with red streaks, dark brown eyes, space suit...)",
+            )
+            appendLine(
+                "**Segment D (Lowest Priority): Background and Final Directives** (e.g., Stylized starry sky. NO TEXT. Negative prompts:...)",
+            )
             appendLine("**CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**")
             appendLine("1.  **Foundational Art Style:**")
-            appendLine("The primary rendering style for the portrait MUST be:")
+            appendLine("The primary rendering style for the portrait **MUST** be:")
             appendLine(GenrePrompts.artStyle(genre))
             appendLine("2.  **Specific Color Application Instructions:**")
-            appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.title}\") are applied:")
+            appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.name}\") are applied:")
             appendLine(GenrePrompts.getColorEmphasisDescription(genre))
             appendLine("**Important Clarification on Color:**")
             appendLine("*These color rules are primarily for:")
@@ -69,10 +86,14 @@ object CharacterPrompts {
                 "* * Composition Reference Image * * (which the final image model will also receive as Bitmaps).Your generated text prompt MUST:",
             )
             appendLine(
-                "***From the Style Reference Image**: Identify and verbally articulate its key artistic elements (e.g., 'impressionistic oil painting style', 'vibrant cel-shaded anime aesthetic', 'gritty photorealistic textures', 'specific color palettes', 'lighting techniques').",
+                "Analyze the Style Reference Image for its dominant rendering techniques, lighting style, and color palette. Describe these elements in detail.",
             )
             appendLine(
-                "***From the Composition Reference Image**: Identify and verbally articulate its core compositional features (e.g., 'is it a close-up, medium shot, or full body?', 'what is the camera angle?', 'how is the subject framed or posed?', 'what is the depth of field like?'). If the Composition Reference Image's overall framing isn't a direct portrait (e.g., it's a wider scene), your description must explain how its compositional essence can be effectively **translated and adapted into a compelling Dramatic Character Portrait**.",
+                "Deconstruct the Composition Reference Image, noting the camera angle, framing, subject placement, and depth of field. Explain how these elements can be adapted to create a compelling portrait.",
+            )
+
+            appendLine(
+                "Ensure the character's details, style, and composition blend together to create a visually harmonious and believable image.",
             )
             appendLine(
                 "Your goal is to translate the *vibe, style, and compositional cues* of BOTH reference images into a rich textual description. Do not just say 'replicate the references'; instead, *describe WHAT defining characteristics to replicate and adapt* in vivid textual detail, ensuring these are rendered within the **Foundational Art Style** and adhere to the **Color Application Instructions**.",
@@ -92,10 +113,10 @@ object CharacterPrompts {
             )
             // --- ASPECT RATIO / FRAMING ---
             appendLine(
-                "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body unless explicitly required.",
+                "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body.",
             )
 
-            appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.title}).")
+            appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.name}).")
             appendLine(ImagePrompts.conversionGuidelines(genre))
             appendLine("**Image Generation Model Inputs Overview (for your awareness when crafting the text prompt):**")
             appendLine("*   **Text Prompt:** (The string you will generate)")
@@ -109,7 +130,8 @@ object CharacterPrompts {
                         "image",
                         "sagaId",
                         "joinedAt",
-                        "appearance",
+                        "emojified",
+                        "abilities",
                     ),
                 ),
             )
@@ -134,6 +156,7 @@ object CharacterPrompts {
                     "physicalTraits",
                     "hexColor",
                     "firstSceneId",
+                    "emojified",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
             appendLine(characters.formatToJsonArray(characterExclusions))
@@ -145,7 +168,7 @@ object CharacterPrompts {
     ) = buildString {
         appendLine("Write a character description for a new character in the story.")
         appendLine("Saga Context:")
-        appendLine(saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions)) // Assuming ChatPrompts.sagaExclusions is defined
+        appendLine(saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions))
         appendLine("/ 🚨🚨🚨 NEW CHARACTER CREATION SOURCE MATERIAL (CRITICAL) 🚨🚨🚨")
         appendLine("// The following JSON object is the **ABSOLUTE AND UNALTERABLE SOURCE** for the new character's core identity.")
         appendLine("// You MUST extract all character details exclusively from this object.")
@@ -153,62 +176,62 @@ object CharacterPrompts {
         appendLine("// This is the ONLY source for the character to be created .")
         appendLine(description)
         appendLine(CharacterGuidelines.creationGuideline)
-        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE THEME ${saga.data.genre.title}.")
+        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE History THEME ${saga.data.genre.name}.")
     }.trimIndent()
 
     fun characterLoreGeneration(
         timeline: Timeline,
         characters: List<Character>,
     ) = """
-                                             You are a narrative AI assistant tasked with tracking individual character progression based on specific timeline events.
-                                             The 'Current Timeline Event' below describes a recent occurrence in the saga.
-                                             The 'List of Characters in Saga' provides context on all characters currently part of the story.
+                                                                                                                                             You are a narrative AI assistant tasked with tracking individual character progression based on specific timeline events.
+                                                                                                                                             The 'Current Timeline Event' below describes a recent occurrence in the saga.
+                                                                                                                                             The 'List of Characters in Saga' provides context on all characters currently part of the story.
 
-                                             // CORE OBJECTIVE: Extract and summarize individual character events from a narrative.
+                                                                                                                                             // CORE OBJECTIVE: Extract and summarize individual character events from a narrative.
 
-                                             // --- CONTEXT ---
-                                             // TimelineContext: ${
+                                                                                                                                             // --- CONTEXT ---
+                                                                                                                                             // TimelineContext: ${
         timeline.toJsonFormatExcludingFields(
             listOf("id", "emotionalReview", "chapterId"),
         )
     }
 
-                                             // Characters Context: ${
+                                                                                                                                             // Characters Context: ${
         characters.toJsonFormatExcludingFields(
             fieldsToExclude = listOf("details", "id", "image", "hexColor", "sagaId", "joinedAt"),
         )
     }
 
-                                             // --- MANDATORY OUTPUT STRUCTURE ---
-                                             // The output MUST be a JSON array. The response must NOT include any additional text, explanations, or parentheses.
-                                             // The structure of each object in the array MUST follow this exact format:
-                                             /*
-                                             [
-                                               {
-                                                 "characterName": "Character Name",
-                                                 "description": "A concise update (1-2 sentences) about the character's actions or impact in this event.",
-                                                 "title": "Short, descriptive title for the character's event."
-                                               },
-                                               {
-                                                 "characterName": "Another Character",
-                                                 "description": "Update about the second character.",
-                                                 "title": "Event title for this character."
-                                               }
-                                             ]
-                                             */
+                                                                                                                                             // --- MANDATORY OUTPUT STRUCTURE ---
+                                                                                                                                             // The output MUST be a JSON array. The response must NOT include any additional text, explanations, or parentheses.
+                                                                                                                                             // The structure of each object in the array MUST follow this exact format:
+                                                                                                                                             /*
+                                                                                                                                             [
+                                                                                                                                               {
+                                                                                                                                                 "characterName": "Character Name",
+                                                                                                                                                 "description": "A concise update (1-2 sentences) about the character's actions or impact in this event.",
+                                                                                                                                                 "title": "Short, descriptive title for the character's event."
+                                                                                                                                               },
+                                                                                                                                               {
+                                                                                                                                                 "characterName": "Another Character",
+                                                                                                                                                 "description": "Update about the second character.",
+                                                                                                                                                 "title": "Event title for this character."
+                                                                                                                                               }
+                                                                                                                                             ]
+                                                                                                                                             */
 
-                                             // --- STEP-BY-STEP INSTRUCTIONS ---
-                                             // Follow these steps rigorously to generate the JSON array:
+                                                                                                                                             // --- STEP-BY-STEP INSTRUCTIONS ---
+                                                                                                                                             // Follow these steps rigorously to generate the JSON array:
 
-                                             // 1. ANALYSIS: Carefully read the 'TimelineContext' and identify which characters from the 'Characters Context' were **directly involved** or **significantly impacted** by the event.
-                                             // 
-2. FILTERING: Exclude characters that had no discernible role.
-                                             // 3. GENERATION: For EACH identified character, write a brief 'description' and a relevant 'title', focusing ONLY on the events described in the 'TimelineContext'.
-                                             // 4. ASSEMBLY: Construct the JSON array with the character objects.
+                                                                                                                                             // 1. ANALYSIS: Carefully read the 'TimelineContext' and identify which characters from the 'Characters Context' were **directly involved** or **significantly impacted** by the event.
+                                                                                                                                             // 
+                                                                                                                                            2. FILTERING: Exclude characters that had no discernible role.
+                                                                                                                                             // 3. GENERATION: For EACH identified character, write a brief 'description' and a relevant 'title', focusing ONLY on the events described in the 'TimelineContext'.
+                                                                                                                                             // 4. ASSEMBLY: Construct the JSON array with the character objects.
 
-                                             // --- CURRENT EVENT ---
-                                             // TimelineContext:
-                                             ${
+                                                                                                                                             // --- CURRENT EVENT ---
+                                                                                                                                             // TimelineContext:
+                                                                                                                                             ${
         timeline.toJsonFormatExcludingFields(
             listOf(
                 "id",
@@ -219,13 +242,13 @@ object CharacterPrompts {
     }
 
 
-                                             // Characters Context:
-                                             ${
+                                                                                                                                             // Characters Context:
+                                                                                                                                             ${
         characters.toJsonFormatExcludingFields(
             fieldsToExclude = listOf("details", "id", "image", "hexColor", "sagaId", "joinedAt"),
         )
     }
-                                          
+                                                                                                                                          
         """.trimIndent()
 
     fun generateCharacterRelation(
@@ -247,13 +270,7 @@ object CharacterPrompts {
 
         REQUIRED OUTPUT SCHEMA (JSON array of objects):
         [
-          {
-            "firstCharacter": "ExactNameFromList",
-            "secondCharacter": "ExactNameFromList",
-            "relationEmoji": "🤝",
-            "title": "Short, assertive title",
-            "description": "1–2 sentence concise summary of the relationship established or evolved in this event."
-          }
+           ${toJsonMap(RelationGeneration::class.java)}
         ]
 
         FIELD DEFINITIONS (for precision):
@@ -271,10 +288,10 @@ object CharacterPrompts {
         5) If multiple distinct relationships are present, include multiple objects in the array. If none, return [].
 
         CONTEXT:
-        // Timeline Event (sanitized):
+        Timeline Event:
         ${timeline.toJsonFormatExcludingFields(listOf("id", "emotionalReview", "chapterId"))}
 
-        // Characters (names must be used EXACTLY as listed):
-        ${saga.getCharacters().toJsonFormatExcludingFields(listOf("id", "image", "hexColor", "details", "sagaId", "joinedAt"))}
+        Characters (names must be used EXACTLY as listed):
+        ${saga.getCharacters().toJsonFormatExcludingFields(listOf("id", "image", "hexColor", "details", "sagaId", "joinedAt", "profile"))}
         """
 }

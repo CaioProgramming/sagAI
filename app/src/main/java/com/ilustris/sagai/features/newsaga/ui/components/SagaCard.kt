@@ -24,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +44,7 @@ import kotlin.time.DurationUnit
 @Composable
 fun SagaCard(
     saga: Saga,
+    bitmap: ImageBitmap? = null,
     modifier: Modifier,
 ) {
     val cornerSize = saga.genre.cornerSize()
@@ -66,7 +68,7 @@ fun SagaCard(
             .clipToBounds(),
     ) {
         AsyncImage(
-            saga.icon,
+            bitmap ?: saga.icon,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             onSuccess = {

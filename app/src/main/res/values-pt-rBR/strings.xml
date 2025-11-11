@@ -123,22 +123,22 @@
     <string name="saga_detail_delete_confirmation_message">Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.</string>
     <string name="saga_detail_delete_button">Excluir</string>
     <string name="saga_detail_cancel_button">Cancelar</string>
-    <string name="saga_drawer_act_prefix">Ato %1$s</string>
+    <string name="saga_drawer_act_prefix">Ato %s</string>
     <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
     <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
     <string name="saga_detail_progress_title">Progresso</string>
     <string name="saga_detail_section_title_characters">Personagens</string>
-    <string name="saga_detail_section_subtitle_characters">%1$d personagens</string>
+    <string name="saga_detail_section_subtitle_characters">%d personagens</string>
     <string name="saga_detail_section_title_timeline">Eventos</string>
-    <string name="saga_detail_section_subtitle_timeline">%1$d eventos</string>
+    <string name="saga_detail_section_subtitle_timeline">%d eventos</string>
     <string name="saga_detail_section_title_chapters">Capítulos</string>
-    <string name="saga_detail_section_subtitle_chapters">%1$d capítulos</string>
+    <string name="saga_detail_section_subtitle_chapters">%d capítulos</string>
     <string name="saga_detail_section_title_wiki">Wiki</string>
-    <string name="saga_detail_section_subtitle_wiki">%1$d itens</string>
+    <string name="saga_detail_section_subtitle_wiki">%d itens</string>
     <string name="saga_detail_section_title_acts">Atos</string>
-    <string name="saga_detail_section_subtitle_acts">%1$d atos</string>
-    <string name="saga_detail_status_ended">Finalizado em %1$s</string>
-    <string name="saga_detail_status_created">Criado em %1$s</string>
+    <string name="saga_detail_section_subtitle_acts">%d atos</string>
+    <string name="saga_detail_status_ended">Finalizado em %s</string>
+    <string name="saga_detail_status_created">Criado em %s</string>
     <string name="saga_detail_journey_of">A jornada de</string>
     <string name="saga_detail_messages_label">Mensagens</string>
     <string name="saga_detail_see_your_now">Veja Agora seu</string>
@@ -174,8 +174,8 @@
     <string name="chat_card_unknown_character">Desconhecido</string>
     <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
     <string name="continue_text">continuar</string>
-    <string name="notification_title">Nova mensagem em %1$s</string>
-    <string name="notification_playing_act">Jogando ato %1$s</string>
+    <string name="notification_title">Nova mensagem em %s</string>
+    <string name="notification_playing_act">Jogando ato %s</string>
     <string name="saga_detail_relationships_section_title">Relacionamentos</string>
     <string name="character_tooltip_empty_message">Descreva seu herói para revelar o cartão — nome, traços e um vislumbre da história.</string>
     <string name="starring">Estrelando</string>
@@ -197,4 +197,67 @@
     <string name="tone_melancholic">Melancólico</string>
     <string name="tone_cynical">Cínico</string>
 
+    <!-- Saga Genres -->
+    <string name="genre_fantasy">Fantasia</string>
+    <string name="genre_scifi">Cyberpunk</string>
+    <string name="genre_horror">Terror</string>
+    <string name="genre_heroes">Heróis</string>
+    <string name="genre_crime">Crime City</string>
+    <string name="genre_space_opera">Ópera Espacial</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="memory_usage">Uso de memória</string>
+    <string name="premium_first_title">Mergulhe em universos únicos e transforme suas ideias em histórias inesquecíveis. Com Sagas Pro, sua criatividade ganha vida e cada capítulo se torna uma experiência envolvente e visualmente imersiva.</string>
+    <string name="premium_description">Crie narrativas profundas, explore novos mundos e dê vida aos seus personagens com recursos que elevam sua saga a outro nível. Sinta a diferença de contar histórias com liberdade e inspiração ilimitada.</string>
+    <string name="premium_sign_up">Experimente agora</string>
+    <string name="premium_cancel_sign_up">Cancelar Assinatura</string>
+    <string name="sagas_storage">Armazenamento de suas sagas</string>
+    <string name="cache">Dados em Cache</string>
+    <string name="other">Outros dados</string>
+    <string name="preferences">Preferências</string>
+    <string name="notifications">Notificações</string>
+    <string name="notifications_description">Receba notificações de atualizações de suas sagas enquanto estiver fora do app.  Suas notificações não serão rastreadas e serão enviadas diretamente do seu dispositivo.</string>
+    <string name="clear_data_button">Limpar dados</string>
+
+    <!-- Clear Data Confirmation Dialog Strings -->
+    <string name="clear_data_dialog_title">Apagar todos os dados</string>
+    <string name="clear_data_dialog_message">Isso irá apagar todas as suas histórias e configurações. Tem certeza que deseja continuar? Você sempre pode começar do zero!</string>
+    <string name="clear_data_dialog_confirm">Sim, apagar tudo</string>
+    <string name="clear_data_dialog_cancel">Não, manter meus dados</string>
+    <string name="clear_cache">Limpar cache</string>
+    <string name="restore_purchases">Restaurar compras</string>
+    <string name="not_premium_title_label">Junte-se ao</string>
+    <string name="premium_label_title">Você é</string>
+    <string name="subscribe">Assinar</string>
+    <string name="premium_already">Assinatura ativa</string>
+    <string name="chapter_number_label">Capítulo %s</string>
+    <string name="try_again">Tentar novamente</string>
+    <string name="ending">Capítulo %s atualizado.</string>
+    <string name="chapter_updated">Capítulo %s atualizado.</string>
+    <string name="see_more">Ver mais</string>
+    <string name="timeline_generated_successfully">Evento %s finalizado.</string>
+    <string name="chapter_finished">Capítulo %s finalizado.</string>
+    <string name="timeline_updated">Evento %s atualizado.</string>
+    <string name="act_finished">Ato %s finalizado</string>
+    <string name="unexpected_error">Ocorreu um erro inesperado</string>
+
+    <string name="smart_fix_description">Receba sugestões automáticas de correção por IA com base na sua história e tema. As sugestões ajudam a enriquecer o vocabulário e a adicionar profundidade à narrativa.</string>
+
+
+    <string name="message_reply_error">Ocorreu um erro ao responder sua mensagem.</string>
+    <string name="configure">Configurar</string>
+
+    <string name="storage_permission_title">Permissão de armazenamento</string>
+    <string name="storage_permission_description">Para salvar suas sagas e todas as imagens relacionadas, precisamos de acesso ao armazenamento do seu dispositivo. Seus dados são salvos localmente.</string>
+    <string name="notifications_permission_title">Permissão para Notificações</string>
+    <string name="notifications_permission_description">Para mantermos você atualizado sobre o progresso da sua saga e eventos importantes, por favor, nos permita enviar notificações.</string>
+    <string name="permission_required_title">Permissão Necessária</string>
+    <string name="permission_required_description">Este recurso precisa de uma permissão especial para funcionar. Poderia nos ajudar com isso?</string>
+    <string name="confirm_permission_button">Conceder Permissão</string>
+    <string name="backup">Backup</string>
+    <string name="new_character_message">%s juntou-se a história!</string>
+    <string name="backup_disabled">Nao foi possivel habilitar o backup</string>
+    <string name="signatures_title">Assinaturas</string>
+    <string name="wiki_updated">Wiki atualizada</string>
+    <string name="review_chapter">Revisar Capitulo</string>
+    <string name="review_items">Revisar itens</string>
 </resources>

@@ -48,6 +48,128 @@ fun loadShaderFromAssetsOnce(assetFileName: String): String? {
     }.value
 }
 
+fun Genre.colorTones() =
+    when (this) {
+        Genre.FANTASY -> FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
+        Genre.CYBERPUNK -> SciFiColorTones.CYBERPUNK_NEON_NIGHT
+        Genre.HORROR -> HorrorColorTones.MOONLIGHT_MYSTIQUE
+        Genre.HEROES -> HeroColorTones.URBAN_COMIC_VIBRANCY
+        Genre.CRIME -> CrimeColorTones.MIAMI_NEON_SUNSET
+        Genre.SPACE_OPERA -> FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
+    }
+
+fun Genre.shaderParams(
+    customGrain: Float? = null,
+    focusRadius: Float? = null,
+    pixelSize: Float? = null,
+) = when (this) {
+    Genre.FANTASY ->
+        ShaderParams(
+            grainIntensity = customGrain ?: .2f,
+            softFocusRadius = focusRadius ?: .04f,
+            saturation = .4f,
+            contrast = 1.3f,
+            brightness = -0.05f,
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            vignetteStrength = 0.2f,
+            vignetteSoftness = 0.7f,
+            pixelationBlockSize = 0f,
+            colorTemperature = .1f,
+        )
+    Genre.CYBERPUNK ->
+        ShaderParams(
+            grainIntensity = customGrain ?: .15f,
+            bloomThreshold = .3f,
+            bloomIntensity = .2f,
+            bloomRadius = 1.3f,
+            softFocusRadius = focusRadius ?: .2f,
+            saturation = .5f,
+            contrast = 1.8f,
+            brightness = -.02f,
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            vignetteStrength = .3f,
+            vignetteSoftness = 1f,
+            pixelationBlockSize = 0.0f,
+            colorTemperature = .05f.unaryMinus(), // Slightly cool for Sci-Fi
+        )
+    Genre.HORROR ->
+        ShaderParams(
+            grainIntensity = .1f,
+            bloomThreshold = 0.4f,
+            bloomIntensity = 0.1f,
+            bloomRadius = 1.0f,
+            softFocusRadius = 0f,
+            saturation = .5f,
+            contrast = 1.5f,
+            brightness = .1f.unaryMinus(),
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            vignetteStrength = 1f,
+            vignetteSoftness = 0.8f,
+            pixelationBlockSize = pixelSize ?: 3.5f,
+            colorTemperature = .3f.unaryMinus(),
+        )
+    Genre.HEROES -> {
+        ShaderParams(
+            grainIntensity = customGrain ?: .2f,
+            bloomThreshold = 0f,
+            bloomIntensity = 0f,
+            bloomRadius = 0f,
+            softFocusRadius = focusRadius ?: .2f,
+            saturation = .9f,
+            contrast = 1.3f,
+            brightness = .05f,
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            vignetteStrength = .1f,
+            vignetteSoftness = 1f,
+            pixelationBlockSize = 0.0f,
+            colorTemperature = .15f,
+        )
+    }
+    Genre.CRIME ->
+        ShaderParams(
+            grainIntensity = customGrain ?: .14f,
+            softFocusRadius = focusRadius ?: .12f,
+            saturation = .7f,
+            contrast = 1.5f,
+            brightness = .02f.unaryMinus(),
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            vignetteStrength = .2f,
+            vignetteSoftness = 1f,
+            pixelationBlockSize = 0.0f,
+            colorTemperature = .15f.unaryMinus(),
+        )
+    Genre.SPACE_OPERA ->
+        ShaderParams(
+            grainIntensity = customGrain ?: .2f,
+            bloomThreshold = .3f,
+            bloomIntensity = .15f,
+            bloomRadius = 1.0f,
+            softFocusRadius = focusRadius ?: .3f,
+            saturation = .6f,
+            contrast = 1.4f,
+            brightness = 0f,
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = 0.25f,
+            vignetteStrength = .25f,
+            vignetteSoftness = 0.9f,
+            pixelationBlockSize = 0.0f,
+            colorTemperature = 0f,
+        )
+    else ->
+        ShaderParams()
+}
+
 @Composable
 fun Modifier.effectForGenre(
     genre: Genre,
@@ -93,16 +215,17 @@ fun Modifier.effectForGenre(
     // Define shader parameters based on Genre
     val fantasyPalette = FantasyColorTones.ETHEREAL_CYAN_STARLIGHT
     val cyberpunkPalette = SciFiColorTones.CYBERPUNK_NEON_NIGHT
-    val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE // Use the defined horror palette
+    val horrorPalette = HorrorColorTones.MOONLIGHT_MYSTIQUE
     val heroPalette = HeroColorTones.URBAN_COMIC_VIBRANCY
     val crimePalette = CrimeColorTones.MIAMI_NEON_SUNSET
+    val spaceOperaPalette = FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
     val uniformValues =
         remember(genre, pixelSize) {
             when (genre) {
                 Genre.FANTASY ->
                     ShaderParams(
                         grainIntensity = customGrain ?: .2f,
-                        softFocusRadius = focusRadius ?: .4f,
+                        softFocusRadius = focusRadius ?: .04f,
                         saturation = .4f,
                         contrast = 1.3f,
                         brightness = -0.05f,
@@ -114,23 +237,23 @@ fun Modifier.effectForGenre(
                         pixelationBlockSize = 0f,
                         colorTemperature = .1f,
                     )
-                Genre.SCI_FI ->
+                Genre.CYBERPUNK ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .1f,
+                        grainIntensity = customGrain ?: .15f,
                         bloomThreshold = .3f,
                         bloomIntensity = .2f,
                         bloomRadius = 1.3f,
                         softFocusRadius = focusRadius ?: .2f,
-                        saturation = .65f,
-                        contrast = 1.7f,
-                        brightness = -.05f,
+                        saturation = .5f,
+                        contrast = 1.8f,
+                        brightness = -.02f,
                         highlightTint = cyberpunkPalette.highlightTint,
                         shadowTint = cyberpunkPalette.shadowTint,
                         tintStrength = cyberpunkPalette.defaultTintStrength,
                         vignetteStrength = .3f,
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
-                        colorTemperature = 1f.unaryMinus(), // Slightly cool for Sci-Fi
+                        colorTemperature = .05f.unaryMinus(), // Slightly cool for Sci-Fi
                     )
                 Genre.HORROR ->
                     ShaderParams(
@@ -171,11 +294,11 @@ fun Modifier.effectForGenre(
                 }
                 Genre.CRIME ->
                     ShaderParams(
-                        grainIntensity = customGrain ?: .1f,
-                        softFocusRadius = focusRadius ?: 1f,
-                        saturation = 1f,
-                        contrast = 1.6f,
-                        brightness = .01f,
+                        grainIntensity = customGrain ?: .14f,
+                        softFocusRadius = focusRadius ?: .12f,
+                        saturation = .7f,
+                        contrast = 1.5f,
+                        brightness = .02f.unaryMinus(),
                         highlightTint = crimePalette.highlightTint,
                         shadowTint = crimePalette.shadowTint,
                         tintStrength = crimePalette.defaultTintStrength,
@@ -183,6 +306,24 @@ fun Modifier.effectForGenre(
                         vignetteSoftness = 1f,
                         pixelationBlockSize = 0.0f,
                         colorTemperature = .15f.unaryMinus(),
+                    )
+                Genre.SPACE_OPERA ->
+                    ShaderParams(
+                        grainIntensity = customGrain ?: .2f,
+                        bloomThreshold = .3f,
+                        bloomIntensity = .15f,
+                        bloomRadius = 1.0f,
+                        softFocusRadius = focusRadius ?: .3f,
+                        saturation = .6f,
+                        contrast = 1.4f,
+                        brightness = 0f,
+                        highlightTint = spaceOperaPalette.highlightTint,
+                        shadowTint = spaceOperaPalette.shadowTint,
+                        tintStrength = 0.25f,
+                        vignetteStrength = .25f,
+                        vignetteSoftness = 0.9f,
+                        pixelationBlockSize = 0.0f,
+                        colorTemperature = 0f,
                     )
                 else ->
                     ShaderParams()
@@ -252,35 +393,10 @@ data class ShaderParams(
 
 @Composable
 fun Modifier.fallbackEffect(genre: Genre): Modifier {
-    val saturation =
-        when (genre) {
-            Genre.FANTASY -> .6f
-            Genre.SCI_FI -> .4f
-            Genre.HORROR -> .1f
-            Genre.HEROES -> .7f
-            Genre.CRIME -> .7f
-            else -> 1.0f
-        }
-
-    val brightnessValue =
-        when (genre) {
-            Genre.FANTASY -> .02f
-            Genre.SCI_FI -> -0.01f
-            Genre.HORROR -> -0.1f
-            Genre.HEROES -> .03f
-            Genre.CRIME -> .02f
-            else -> 0f
-        }
-
-    val contrastValue =
-        when (genre) {
-            Genre.FANTASY -> 1.2f
-            Genre.SCI_FI -> 1.4f
-            Genre.HORROR -> 1.6f
-            Genre.HEROES -> 1.3f
-            Genre.CRIME -> 1.2f
-            else -> 1.0f
-        }
+    val shaderParams = genre.shaderParams()
+    val saturation = shaderParams.saturation
+    val brightnessValue = shaderParams.brightness
+    val contrastValue = shaderParams.contrast
 
     var modifier: Modifier = this
 

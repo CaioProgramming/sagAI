@@ -110,13 +110,11 @@ fun ChapterContent(
                             it.data.id,
                         )
                     ChapterContentView(
-                        it.data,
+                        it,
                         saga,
                         imageSize = 500.dp,
                         modifier = chapterModifier.fillMaxWidth(),
-                    ) { chapter ->
-                        viewModel.generateIcon(saga, it)
-                    }
+                    )
                 }
 
                 item {

@@ -15,11 +15,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -28,6 +33,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -48,6 +54,7 @@ import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
+import com.ilustris.sagai.features.settings.ui.SettingsView
 import com.ilustris.sagai.ui.theme.SagaTitle
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -69,14 +76,7 @@ enum class Routes(
 ) {
     HOME(icon = R.drawable.ic_spark, view = { nav, padding, _, _ ->
         HomeView(nav, padding)
-    }, title = R.string.home_title, topBarContent = {
-        SagaTitle(
-            Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(start = 16.dp, end = 16.dp, top = 50.dp),
-        )
-    }),
+    }, topBarContent = {}, title = R.string.home_title),
     CHAT(
         view = { nav, padding, transitionScope, snack ->
             val arguments = nav.currentBackStackEntry?.arguments
@@ -94,18 +94,26 @@ enum class Routes(
         showBottomNav = false,
     ),
     PROFILE,
-    SETTINGS,
-    NEW_SAGA(title = R.string.new_saga_title, deepLink = "saga://new_saga", showBottomNav = false, topBarContent = {
-        Box(modifier = Modifier.size(0.dp))
-    }, view = { nav, padding, _, _ ->
-        Box(
-            Modifier
-                .padding(padding)
-                .fillMaxSize(),
-        ) {
+    SETTINGS(
+        title = R.string.settings_title,
+        showBottomNav = false,
+        view = { nav, padding, _, _ ->
+            SettingsView()
+        },
+        topBarContent = { Box {} },
+    ),
+    NEW_SAGA(
+        title = R.string.new_saga_title,
+        deepLink = "saga://new_saga",
+        showBottomNav = false,
+        topBarContent = {
+
+        },
+        view = { nav, padding, _, _ ->
+
             NewSagaView(nav)
-        }
-    }),
+        },
+    ),
     SAGA_DETAIL(
         view = { nav, padding, _, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
@@ -271,7 +279,7 @@ fun String.findRoute(): Routes? =
             "Route find:",
             "findRoute: trying to match(${it.name}) $mappedDeepLink with $mappedRoute",
         )
-        it.name.lowercase() == this || mappedDeepLink == mappedRoute
+        it.name.equals(this, true) || mappedDeepLink == mappedRoute
     }
 
 fun String.sanitizeDeepLink() = this.substringBeforeLast("/")

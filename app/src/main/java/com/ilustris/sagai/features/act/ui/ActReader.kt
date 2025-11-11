@@ -24,6 +24,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -62,33 +64,33 @@ fun ActReader(saga: SagaContent) {
 
         saga.acts.forEach { act ->
             stickyHeader {
-                Column(
+                Text(
+                    act.data.title,
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            fontFamily = genre.headerFont(),
+                            textAlign = TextAlign.Center,
+                            brush = Brush.verticalGradient(genre.color.darkerPalette()),
+                        ),
                     modifier =
                         Modifier
                             .background(MaterialTheme.colorScheme.background)
-                            .padding(top = 50.dp)
-                            .fillMaxWidth(),
-                ) {
-                    Text(
-                        act.data.title,
-                        style =
-                            MaterialTheme.typography.headlineSmall.copy(
-                                fontFamily = genre.headerFont(),
-                                textAlign = TextAlign.Center,
-                                brush = Brush.verticalGradient(genre.color.darkerPalette()),
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .fillMaxWidth(),
-                    )
-
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
-                        modifier = Modifier.fillMaxWidth().height(1.dp),
-                    )
-                }
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                )
             }
+            item {
+                Text(
+                    act.data.introduction,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+
             items(act.chapters) {
                 val shape = RoundedCornerShape(genre.cornerSize())
                 Column(
@@ -99,9 +101,6 @@ fun ActReader(saga: SagaContent) {
                     AsyncImage(
                         model = it.data.coverImage,
                         contentDescription = it.data.title,
-                        placeholder = painterResource(R.drawable.ic_spark),
-                        error = painterResource(R.drawable.ic_spark),
-                        fallback = painterResource(R.drawable.ic_spark),
                         contentScale = ContentScale.Crop,
                         modifier =
                             Modifier
@@ -147,6 +146,32 @@ fun ActReader(saga: SagaContent) {
                             modifier = Modifier.padding(vertical = 8.dp).height(1.dp),
                         )
                     }
+                }
+            }
+
+            item {
+                Text(
+                    act.data.content,
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = genre.bodyFont(),
+                        ),
+                    modifier = Modifier.padding(16.dp),
+                )
+            }
+
+            act.data.emotionalReview?.let {
+                item {
+                    Text(
+                        it,
+                        style =
+                            MaterialTheme.typography.labelLarge.copy(
+                                fontFamily = genre.bodyFont(),
+                                fontWeight = FontWeight.Normal,
+                                fontStyle = FontStyle.Italic,
+                            ),
+                        modifier = Modifier.padding(16.dp).alpha(.4f),
+                    )
                 }
             }
 

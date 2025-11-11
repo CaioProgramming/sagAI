@@ -4,11 +4,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -26,6 +28,7 @@ class SagaDetailViewModel
     constructor(
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val remoteConfig: FirebaseRemoteConfig,
+        private val billingService: BillingService,
     ) : ViewModel() {
         private val _state = MutableStateFlow<State>(State.Loading)
         val state: StateFlow<State> = _state.asStateFlow()
@@ -35,11 +38,17 @@ class SagaDetailViewModel
         val showIntro = MutableStateFlow(false)
         val showReview = MutableStateFlow(false)
 
+        val showPremiumSheet = MutableStateFlow(false)
+
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
                 remoteConfig.fetchAndActivate()
                 emotionalCardReference.value = remoteConfig.getString(EMOTIONAL_CARD_CONFIG)
             }
+        }
+
+        fun togglePremiumSheet() {
+            showPremiumSheet.value = !showPremiumSheet.value
         }
 
         fun fetchSagaDetails(sagaId: String) {
@@ -50,11 +59,15 @@ class SagaDetailViewModel
                 sagaDetailUseCase.fetchSaga(sagaId.toInt()).collectLatest { saga ->
                     saga?.let { data ->
                         _state.value = State.Success(data)
+                        this@SagaDetailViewModel.saga.value = data
                         if (data.data.isEnded) {
                             fetchEmotionalCardReference()
+                            if (data.data.emotionalReview.isNullOrEmpty()) {
+                                viewModelScope.launch(Dispatchers.Main) {
+                                    createSagaEmotionalReview()
+                                }
+                            }
                         }
-                        this@SagaDetailViewModel.saga.value = data
-                        // Trigger intro sequence only once per fetch
                         launchIntroSequence()
                     }
                 }
@@ -96,6 +109,10 @@ class SagaDetailViewModel
 
         fun regenerateIcon() {
             val currentSaga = saga.value ?: return
+            val isPremium = billingService.isPremium()
+            if (isPremium.not()) {
+                showPremiumSheet.value = true
+            }
             isGenerating.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase.regenerateSagaIcon(
@@ -115,18 +132,18 @@ class SagaDetailViewModel
             }
         }
 
-        fun createEmotionalReview(timelineContent: TimelineContent) {
+        fun generateTimelineContent(timelineContent: TimelineContent) {
             val currentSaga = saga.value ?: return
             viewModelScope.launch {
                 isGenerating.value = true
-                sagaDetailUseCase.createTimelineReview(currentSaga, timelineContent)
+                sagaDetailUseCase.generateTimelineContent(currentSaga, timelineContent)
                 isGenerating.value = false
             }
         }
 
         fun createSagaEmotionalReview() {
             val currentSaga = saga.value ?: return
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.value = true
                 sagaDetailUseCase.createSagaEmotionalReview(currentSaga)
                 isGenerating.value = false
@@ -137,6 +154,15 @@ class SagaDetailViewModel
             viewModelScope.launch {
                 delay(2.seconds)
                 showIntro.value = false
+            }
+        }
+
+        fun reviewWiki(wikis: List<Wiki>) {
+            val currentsaga = saga.value ?: return
+            viewModelScope.launch {
+                isGenerating.emit(true)
+                sagaDetailUseCase.reviewWiki(currentsaga, wikis)
+                isGenerating.emit(false)
             }
         }
     }

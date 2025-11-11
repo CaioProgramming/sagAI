@@ -28,10 +28,6 @@ fun Class<*>.toSchema(
         return Schema.enumeration(enumConstants, nullable = nullable)
     }
 
-    if (this.name.contains(Long::class.simpleName.toString(), true)) {
-        return Schema.long(nullable = true)
-    }
-
     return when (this) {
         String::class.java -> {
             Schema.string(
@@ -41,6 +37,12 @@ fun Class<*>.toSchema(
 
         Int::class.java, Integer::class.java -> {
             Schema.integer(
+                nullable = nullable,
+            )
+        }
+
+        Long::class.java -> {
+            Schema.long(
                 nullable = nullable,
             )
         }
@@ -63,12 +65,6 @@ fun Class<*>.toSchema(
             )
         }
 
-        Long::class.java -> {
-            Schema.long(
-                nullable = nullable,
-            )
-        }
-
         List::class.java, Array::class.java -> {
             val itemType =
                 this.genericInterfaces
@@ -80,15 +76,14 @@ fun Class<*>.toSchema(
             Schema.array(
                 itemType?.toSchema(nullable = nullable, excludeFields = excludeFields)
                     ?: Schema.string(nullable = nullable),
-            ) // Default to string array for lists/arrays
+            )
         }
 
         else -> {
-            Log.i("SAGAI_MAPPER", "toSchema: mapping ${this.name} as object}")
             Schema.obj(
                 properties = this.toSchemaMap(excludeFields),
                 nullable = nullable,
-            ) // Default fallback
+            )
         }
     }
 }
@@ -104,23 +99,8 @@ fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String,
                     .find { member -> member.name == it.name }
                     ?.returnType
                     ?.isMarkedNullable
+            Log.d("SchemaMapper", "Mapping field ${it.name} nullable: $memberIsNullable type: ${it.type.name}")
             it.name to it.type.toSchema(memberIsNullable == true, excludeFields)
-        }
-
-fun joinDeclaredFields(
-    clazz: Class<*>,
-    replaceSpecifFieldType: Pair<String, String>? = null,
-): String =
-    clazz
-        .declaredFields
-        .filter {
-            it.name != "\$stable"
-        }.joinToString(separator = ",\n") {
-            if (replaceSpecifFieldType != null && it.name == replaceSpecifFieldType.first) {
-                "\"${replaceSpecifFieldType.first}\": \"${replaceSpecifFieldType.second}\""
-            } else {
-                "\"${it.name}\": \"${it.type.toString().removePackagePrefix()}\""
-            }
         }
 
 fun String.removePackagePrefix(): String =
@@ -161,8 +141,8 @@ fun toJsonMap(
                         fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
                         fieldType == Boolean::class.java -> "false"
                         fieldType == Double::class.java -> "0.0"
-                        fieldType == Float::class.java -> "0.0f"
-                        fieldType == Long::class.java -> "0L"
+                        fieldType == Float::class.java -> "0.0"
+                        fieldType == Long::class.java -> "0"
                         List::class.java.isAssignableFrom(fieldType) ||
                             Array::class.java.isAssignableFrom(
                                 fieldType,
@@ -326,4 +306,16 @@ fun Int.toRoman(): String {
         }
     }
     return result.toString()
+}
+
+fun Long.formatFileSize(): String {
+    val kb = this / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1 -> String.format(Locale.getDefault(), "%.2f GB", gb)
+        mb >= 1 -> String.format(Locale.getDefault(), "%.2f MB", mb)
+        kb >= 1 -> String.format(Locale.getDefault(), "%.2f KB", kb)
+        else -> String.format(Locale.getDefault(), "%d B", this)
+    }
 }

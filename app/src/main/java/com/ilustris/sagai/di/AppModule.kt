@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.work.WorkManager
 import coil3.ImageLoader
 import coil3.request.crossfade
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
-import com.google.firebase.remoteconfig.ktx.remoteConfig
+import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.gson.Gson
 import com.ilustris.sagai.core.ai.GemmaClient
@@ -15,14 +15,20 @@ import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
+import com.ilustris.sagai.core.datastore.DataStorePreferences
+import com.ilustris.sagai.core.datastore.DataStorePreferencesImpl
+import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.core.file.FileCacheService
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.FileManager
+import com.ilustris.sagai.core.file.GenreReferenceHelper
+import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
-import com.ilustris.sagai.core.network.FreePikApiService
-import com.ilustris.sagai.core.utils.FileCacheService
-import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.ImageCropHelper
+import com.ilustris.sagai.core.permissions.PermissionService
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -45,20 +51,28 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
+import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManagerImpl
-import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManager
-import com.ilustris.sagai.features.saga.chat.domain.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
+import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupServiceImpl
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepositoryImpl
+import com.ilustris.sagai.features.saga.datasource.ReactionRepositoryImpl
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCase
 import com.ilustris.sagai.features.saga.detail.data.usecase.SagaDetailUseCaseImpl
+import com.ilustris.sagai.features.settings.domain.SettingsUseCase
+import com.ilustris.sagai.features.settings.domain.SettingsUseCaseImpl
+import com.ilustris.sagai.features.share.domain.SharePlayUseCase
+import com.ilustris.sagai.features.share.domain.SharePlayUseCaseImpl
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepositoryImpl
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -83,6 +97,30 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
+    fun providesFileManager(
+        @ApplicationContext context: Context,
+        fileHelper: FileHelper,
+    ) = FileManager(
+        fileHelper,
+        context,
+    )
+
+    @Provides
+    @Singleton
+    fun providesPermissionService(
+        @ApplicationContext context: Context,
+    ) = PermissionService(context)
+
+    @Provides
+    @Singleton
+    fun providesBackupService(
+        @ApplicationContext context: Context,
+        preferences: DataStorePreferences,
+        fileHelper: FileHelper,
+    ) = BackupService(context, preferences, fileHelper)
+
+    @Provides
+    @Singleton
     fun provideImageCropHelper(): ImageCropHelper = ImageCropHelper()
 
     @Provides
@@ -101,7 +139,7 @@ object AppModule {
         @ApplicationContext context: Context,
         firebaseRemoteConfig: FirebaseRemoteConfig,
         imageLoader: ImageLoader,
-    ) = com.ilustris.sagai.core.utils.GenreReferenceHelper(
+    ) = GenreReferenceHelper(
         context,
         firebaseRemoteConfig,
         imageLoader,
@@ -143,10 +181,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesCloudFlareApiService() = FreePikApiService()
-
-    @Provides
-    @Singleton
     fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
         val remoteConfig = Firebase.remoteConfig
         val configSettings =
@@ -159,15 +193,28 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImagenClient(
-        freePikApiService: FreePikApiService,
         firebaseRemoteConfig: FirebaseRemoteConfig,
-    ): ImagenClient = ImagenClientImpl(freePikApiService, firebaseRemoteConfig)
+        billingService: BillingService,
+        gemmaClient: GemmaClient,
+    ): ImagenClient = ImagenClientImpl(billingService, firebaseRemoteConfig, gemmaClient)
 
     @Provides
     @Singleton
     fun provideMediaPlayerManager(
         @ApplicationContext context: Context,
     ): MediaPlayerManager = MediaPlayerManagerImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideBillingService(
+        @ApplicationContext context: Context,
+    ): BillingService = BillingService(context)
+
+    @Provides
+    @Singleton
+    fun provideDataStorePreferences(
+        @ApplicationContext context: Context,
+    ): DataStorePreferences = DataStorePreferencesImpl(context)
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -175,6 +222,9 @@ object AppModule {
 abstract class UseCaseModule {
     @Binds
     abstract fun providesNotificationManager(notificationManagerImpl: ChatNotificationManagerImpl): ChatNotificationManager
+
+    @Binds
+    abstract fun providesSaveShare(sharePlayUseCaseImpl: SharePlayUseCaseImpl): SharePlayUseCase
 
     @Binds
     abstract fun providesEmotionalUseCase(emotionalUseCaseImpl: EmotionalUseCaseImpl): EmotionalUseCase
@@ -216,6 +266,12 @@ abstract class UseCaseModule {
     abstract fun providesGetInputSuggestionsUseCase(
         getInputSuggestionsUseCaseImpl: GetInputSuggestionsUseCaseImpl,
     ): GetInputSuggestionsUseCase
+
+    @Binds
+    abstract fun provideSettingsUseCase(getSettingsUseCaseImpl: SettingsUseCaseImpl): SettingsUseCase
+
+    @Binds
+    abstract fun providesSagaBackupService(sagaBackupServiceImpl: SagaBackupServiceImpl): SagaBackupService
 }
 
 @InstallIn(ViewModelComponent::class)
@@ -249,6 +305,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindsActRepository(actRepositoryImpl: ActRepositoryImpl): ActRepository
+
+    @Binds
+    abstract fun bindsReactionRepository(reactionRepositoryImpl: ReactionRepositoryImpl): ReactionRepository
 }
 
 @Module

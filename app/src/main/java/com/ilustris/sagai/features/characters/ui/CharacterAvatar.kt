@@ -34,6 +34,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -41,6 +42,7 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
 
 @Composable
@@ -58,12 +60,19 @@ fun CharacterAvatar(
     pixelation: Float? = null,
 ) {
     val characterColor = character.hexColor.hexToColor() ?: genre.color
+    val borderBrush =
+        borderColor?.solidGradient() ?: Brush.verticalGradient(
+            listOf(
+                characterColor,
+                genre.iconColor,
+            ),
+        )
     Box(
         modifier
             .reactiveShimmer(isLoading, genre.shimmerColors())
             .border(
                 borderSize,
-                borderColor ?: characterColor,
+                borderBrush,
                 CircleShape,
             ).clip(CircleShape)
             .padding(innerPadding)
@@ -92,6 +101,7 @@ fun CharacterAvatar(
                     ).fillMaxSize()
                     .effectForGenre(
                         genre,
+                        useFallBack = character.emojified,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
                         pixelSize = pixelation,

@@ -58,6 +58,7 @@ fun Modifier.grayScale(saturationFactor: Float = 1f): Modifier {
     }
 }
 
+
 fun Modifier.invertedColors(): Modifier {
     val invertMatrix =
         ColorMatrix(
@@ -97,6 +98,15 @@ fun Modifier.invertedColors(): Modifier {
         }
     }
 }
+
+fun Color.toHex(): String {
+    val red = (this.red * 255).toInt()
+    val green = (this.green * 255).toInt()
+    val blue = (this.blue * 255).toInt()
+    val alpha = (this.alpha * 255).toInt()
+    return String.format("#%02x%02x%02x%02x", alpha, red, green, blue)
+}
+
 
 fun Modifier.brightness(brightnessFactor: Float): Modifier {
     val brightnessMatrix =

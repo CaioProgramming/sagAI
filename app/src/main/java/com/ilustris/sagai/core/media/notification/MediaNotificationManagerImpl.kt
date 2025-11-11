@@ -4,7 +4,6 @@ import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
 import android.support.v4.media.session.MediaSessionCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -13,9 +12,9 @@ import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.media.MediaPlayerService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
-import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.NotificationUtils
-import com.ilustris.sagai.core.utils.scaleBitmapForNotification // Import the new utility function
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.permissions.NotificationUtils
+import com.ilustris.sagai.core.file.scaleBitmapForNotification // Import the new utility function
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.qualifiers.ApplicationContext

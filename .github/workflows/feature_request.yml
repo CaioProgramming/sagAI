@@ -1,0 +1,49 @@
+name: PR Description from Feature.md
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  update_pr_description:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Read Feature.md
+        id: feature_md
+        run: |
+          if [ -f "Feature.md" ]; then
+            content=$(cat Feature.md)
+            delimiter=$(openssl rand -hex 8)
+            echo "content<<$delimiter" >> $GITHUB_OUTPUT
+            echo "$content" >> $GITHUB_OUTPUT
+            echo "$delimiter" >> $GITHUB_OUTPUT
+          else
+            echo "content=No Feature.md file found." >> $GITHUB_OUTPUT
+          fi
+
+      - name: Update PR description
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+            });
+            
+            const newBody = `${{ steps.feature_md.outputs.content }}`;
+            
+            if (pr.body !== newBody) {
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.issue.number,
+                body: newBody,
+              });
+            }
+

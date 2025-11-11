@@ -68,6 +68,7 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
     buildFeatures {
         compose = true
         buildConfig = true
@@ -99,6 +100,8 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.android)
     implementation(libs.androidx.lifecycle.process)
+    implementation(libs.androidx.compose.ui.unit)
+    implementation(libs.androidx.compose.ui.graphics)
     ksp(libs.androidx.hilt.compiler)
     implementation(libs.androidx.core.splashscreen)
 
@@ -109,6 +112,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.compose.charts)
+    implementation(libs.auto.background.remover)
 
     // Retrofit & OkHttp
     implementation(libs.retrofit.core)
@@ -134,7 +138,8 @@ dependencies {
     implementation(libs.hypnoticcanvas.shaders)
     implementation(libs.google.generativeai)
     implementation(libs.face.detection)
-
+    implementation(libs.billing.ktx)
+    implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.play.services)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

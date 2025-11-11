@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -79,9 +80,13 @@ fun SagaFormCards(
             cardFace = it.next
         },
         front = {
+            val genreTitle =
+                sagaForm.saga.genre?.title?.let {
+                    stringResource(it)
+                } ?: emptyString()
             ReviewCard(
                 sagaForm.saga.title,
-                sagaForm.saga.genre?.title ?: emptyString(),
+                genreTitle,
                 sagaForm.saga.description,
                 sagaForm.saga.genre,
             )

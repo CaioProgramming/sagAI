@@ -240,10 +240,11 @@ fun Modifier.dashedBorder(
 fun Genre?.cornerSize() =
     when (this) {
         Genre.FANTASY -> 20.dp
-        Genre.SCI_FI -> 10.dp
+        Genre.CYBERPUNK -> 10.dp
         Genre.HORROR -> 7.dp
         Genre.HEROES -> 4.dp
         Genre.CRIME -> 25.dp
+        Genre.SPACE_OPERA -> 5.dp
         else -> 0.dp
     }
 

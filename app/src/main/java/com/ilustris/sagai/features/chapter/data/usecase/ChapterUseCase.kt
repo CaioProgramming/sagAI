@@ -36,4 +36,9 @@ interface ChapterUseCase {
         saga: SagaContent,
         chapterContent: ChapterContent,
     ): RequestResult<ChapterGeneration>
+
+    suspend fun reviewChapter(
+        saga: SagaContent,
+        chapterContent: ChapterContent,
+    )
 }

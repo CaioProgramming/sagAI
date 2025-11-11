@@ -5,6 +5,7 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.PrimaryKey
+import com.google.firebase.ai.type.Schema
 import com.ilustris.sagai.features.home.data.model.Saga
 
 @Entity(
@@ -30,10 +31,11 @@ data class Character(
     @Embedded
     val details: Details,
     @Embedded
-    val profile: CharacterProfile = CharacterProfile(),
+    val profile: CharacterProfile,
     val joinedAt: Long = 0L,
     @ColumnInfo(index = true)
     val firstSceneId: Int? = null,
+    val emojified: Boolean = false,
 )
 
 data class Abilities(

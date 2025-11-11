@@ -1,7 +1,11 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
+import androidx.annotation.StringRes
+import com.ilustris.sagai.R
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
+import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 
@@ -15,19 +19,6 @@ sealed class ChatState {
     ) : ChatState()
 }
 
-data class SnackBarState(
-    val title: String,
-    val text: String,
-    val redirectAction: Triple<ChatAction, String, Any?>? = null,
-)
-
-enum class ChatAction {
-    RESEND,
-    OPEN_TIMELINE,
-    OPEN_CHARACTER,
-    RETRY_AI_RESPONSE,
-}
-
 data class ActDisplayData(
     val content: ActContent,
     val isComplete: Boolean,
@@ -35,7 +26,7 @@ data class ActDisplayData(
 )
 
 data class ChapterDisplayData(
-    val chapter: Chapter,
+    val chapter: ChapterContent,
     val isComplete: Boolean,
     val timelineSummaries: List<TimelineContent>,
 )

@@ -1,29 +1,40 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
-import android.graphics.Bitmap
+import android.util.Log
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.decodeToImageBitmap
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
-import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImageRules
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asError
-import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.core.utils.FileHelper
-import com.ilustris.sagai.core.utils.GenreReferenceHelper
+import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.GenreReferenceHelper
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findChapterAct
+import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.delay
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -32,6 +43,8 @@ class ChapterUseCaseImpl
     @Inject
     constructor(
         private val chapterRepository: ChapterRepository,
+        private val timelineRepository: TimelineRepository,
+        private val wikiUseCase: WikiUseCase,
         private val gemmaClient: GemmaClient,
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
@@ -59,8 +72,31 @@ class ChapterUseCaseImpl
                             currentChapter = chapterContent,
                         ),
                     requireTranslation = true,
-                    skipRunning = true,
                 )!!
+        }
+
+        override suspend fun reviewChapter(
+            saga: SagaContent,
+            chapterContent: ChapterContent,
+        ) {
+            delay(3.seconds)
+            if (chapterContent.data.introduction.isEmpty()) {
+                generateChapterIntroduction(saga, chapterContent.data, saga.findChapterAct(chapterContent.data)!!)
+            }
+            cleanUpEmptyTimeLines(chapterContent)
+            wikiUseCase.mergeWikis(saga, chapterContent.events.map { it.updatedWikis }.flatten())
+        }
+
+        private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {
+            val emptyEvents = chapter.events.filter { it.isComplete().not() }.map { it.data }
+            if (emptyEvents.isEmpty()) {
+                Log.w(javaClass.simpleName, "cleanUpEmptyTimeLines: No timelines to clean up")
+                return
+            }
+            emptyEvents.forEach { timeline ->
+                timelineRepository.deleteTimeline(timeline)
+            }
+            Log.w(javaClass.simpleName, "cleanUpEmptyTimeLines: Removed ${emptyEvents.size} timelines")
         }
 
         @OptIn(PublicPreviewAPI::class)
@@ -69,20 +105,14 @@ class ChapterUseCaseImpl
             saga: SagaContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                val characters = chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
+                val characters =
+                    chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
                 val coverBitmap = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
                 val coverReference =
                     coverBitmap?.let {
                         ImageReference(
                             it,
                             ImageGuidelines.compositionReferenceGuidance,
-                        )
-                    }
-                val styleReference =
-                    genreReferenceHelper.getGenreStyleReference(saga.data.genre).getSuccess()?.let {
-                        ImageReference(
-                            it,
-                            ImageGuidelines.styleReferenceGuidance,
                         )
                     }
                 val charactersIcons =
@@ -101,32 +131,59 @@ class ChapterUseCaseImpl
                             )
                         }
                     }
-                val imageReferences =
-                    listOf(coverReference, styleReference)
-                        .plus(charactersIcons)
-                        .filterNotNull()
+
+                val visualComposition =
+                    imagenClient
+                        .extractComposition(
+                            listOfNotNull(coverReference),
+                        ).getSuccess()
+                val coverContext =
+                    mapOf(
+                        "featuredCharacters" to
+                            characters.formatToJsonArray(
+                                listOf(
+                                    "id",
+                                    "image",
+                                    "sagaId",
+                                    "joinedAt",
+                                    "emojified",
+                                    "hexColor",
+                                    "firstSceneId",
+                                    "abilities",
+                                    "carriedItems",
+                                    "backstory",
+                                ),
+                            ),
+                    )
+
+                val coverContextJson = coverContext.toJsonFormat()
+                val coverPrompt =
+                    SagaPrompts.iconDescription(
+                        saga.data.genre,
+                        coverContextJson,
+                        visualComposition,
+                    )
                 val promptGeneration =
                     gemmaClient.generate<String>(
-                        ChapterPrompts.coverDescription(
-                            saga,
-                            chapter.data,
-                            characters,
-                        ),
-                        references = imageReferences,
+                        coverPrompt,
+                        references = charactersIcons,
                         requireTranslation = false,
-                        skipRunning = true,
-                    )
+                    )!!
                 val genCover =
                     imagenClient
                         .generateImage(
-                            promptGeneration!!.plus(ImageRules.TEXTUAL_ELEMENTS),
-                            listOfNotNull(coverReference).plus(charactersIcons),
-                        )
+                            promptGeneration.plus(ImagePrompts.criticalGenerationRule()),
+                        )!!
+
                 val coverFile =
-                    fileHelper.saveFile(chapter.data.title, genCover, path = "${saga.data.id}/chapters/")
+                    fileHelper.saveFile(
+                        chapter.data.title,
+                        genCover,
+                        path = "${saga.data.id}/chapters/",
+                    )!!
                 val newChapter =
                     chapter.data.copy(
-                        coverImage = coverFile?.path ?: emptyString(),
+                        coverImage = coverFile.path,
                     )
 
                 chapterRepository.updateChapter(newChapter)
@@ -143,9 +200,24 @@ class ChapterUseCaseImpl
             act: ActContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                delay(400)
-                val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
-                val intro = gemmaClient.generate<String>(prompt, requireTranslation = true, skipRunning = true)!!
+                val contextSummary =
+                    gemmaClient.generate<SceneSummary>(
+                        ChatPrompts.sceneSummarizationPrompt(
+                            saga,
+                            saga
+                                .flatMessages()
+                                .sortedByDescending { it.message.timestamp }
+                                .take(UpdateRules.LORE_UPDATE_LIMIT)
+                                .map { it.joinMessage(true).formatToString(true) },
+                        ),
+                    )
+                val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act, contextSummary)
+                delay(2.seconds)
+                val intro =
+                    gemmaClient.generate<String>(
+                        prompt,
+                        requireTranslation = true,
+                    )!!
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)
             }

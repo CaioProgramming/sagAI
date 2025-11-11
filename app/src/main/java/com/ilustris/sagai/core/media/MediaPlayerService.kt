@@ -15,7 +15,7 @@ import com.ilustris.sagai.R
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
-import com.ilustris.sagai.core.utils.FileHelper
+import com.ilustris.sagai.core.file.FileHelper
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import javax.inject.Inject

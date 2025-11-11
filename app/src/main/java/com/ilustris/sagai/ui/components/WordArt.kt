@@ -2,29 +2,15 @@ package com.ilustris.sagai.ui.components
 
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.BlurredEdgeTreatment
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -35,12 +21,14 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -51,7 +39,6 @@ import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.lighter
-import effectForGenre
 
 @Composable
 fun WordArtText(
@@ -120,15 +107,20 @@ fun WordArtText(
 
                     // 1. Extrusion Layers
                     for (i in numberOfExtrusionLayers downTo 1) {
-                        val shadow = if (i == numberOfExtrusionLayers) {
-                            if (glowColor != null) {
-                                Shadow(
-                                    glowColor,
-                                    offset = Offset(0f, 0f),
-                                    blurRadius = glowRadiusFactor
-                                )
-                            } else null
-                        } else null
+                        val shadow =
+                            if (i == numberOfExtrusionLayers) {
+                                if (glowColor != null) {
+                                    Shadow(
+                                        glowColor,
+                                        offset = Offset(0f, 0f),
+                                        blurRadius = glowRadiusFactor,
+                                    )
+                                } else {
+                                    null
+                                }
+                            } else {
+                                null
+                            }
                         drawText(
                             textLayoutResult = textLayoutResult,
                             color = extrusionColor,
@@ -147,7 +139,7 @@ fun WordArtText(
     ) {
         Text(
             text = text,
-            style = baseTextStyle.copy(brush = mainTextBrush),
+            style = baseTextStyle.copy(brush = mainTextBrush, textAlign = TextAlign.Center),
         )
     }
 }
@@ -168,15 +160,16 @@ fun Genre.stylisedText(
                 fontFamily = this.headerFont(),
                 topColor = palette.first(),
                 bottomColor = palette.last(),
-                numberOfExtrusionLayers = 0,
-                outlineColor = MaterialTheme.colorScheme.background,
-                extrusionColor = palette.last(),
-                glowAlpha = .5f,
+                numberOfExtrusionLayers = 1,
+                outlineWidthFactor = .1f,
+                outlineColor = color.darker(.5f),
+                extrusionColor = palette.last().darker(.3f),
+                glowAlpha = .6f,
                 glowColor = color,
                 glowRadiusFactor = 15f,
             )
         }
-        Genre.SCI_FI -> {
+        Genre.CYBERPUNK -> {
             val palette = this.colorPalette()
             WordArtText(
                 text = text,
@@ -253,6 +246,26 @@ fun Genre.stylisedText(
                 rotationX = 10f,
             )
         }
+        Genre.SPACE_OPERA -> {
+            val palette = this.colorPalette()
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = color,
+                bottomColor = palette.last(),
+                extrusionColor = palette.first().darker(.5f),
+                extrusionDepthFactor = 0.04f,
+                numberOfExtrusionLayers = 8,
+                outlineColor = iconColor,
+                outlineWidthFactor = 0.08f,
+                rotationX = 20f,
+                glowColor = color,
+                glowRadiusFactor = 8f,
+                glowAlpha = .7f,
+            )
+        }
         else -> {
             // Default fallback using palette
             val palette = this.colorPalette()
@@ -268,8 +281,6 @@ fun Genre.stylisedText(
     }
 }
 
-
-
 @Preview(
     showBackground = true,
     uiMode = Configuration.UI_MODE_NIGHT_YES or Configuration.UI_MODE_TYPE_NORMAL,
@@ -280,7 +291,7 @@ fun WordArtTextPreview() {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Genre.entries.forEach {
                 it.stylisedText(
-                    it.title,
+                    stringResource(it.title),
                 )
             }
         }

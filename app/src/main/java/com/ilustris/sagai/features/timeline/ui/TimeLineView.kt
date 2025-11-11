@@ -23,9 +23,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,6 +49,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,21 +58,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
@@ -87,34 +87,30 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedTransitionActionItemModifier
 import com.ilustris.sagai.features.saga.detail.ui.titleAndSubtitle
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.features.timeline.presentation.TimelineViewModel
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.components.EmotionalCard
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
-import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.genresGradient
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
-import ir.ehsannarmani.compose_charts.extensions.split
 import kotlinx.coroutines.delay
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -212,6 +208,13 @@ fun TimeLineContent(
                                     it.data.id,
                                     saga.data.id,
                                 )
+                            val cardEnabled =
+                                remember {
+                                    it.data.emotionalReview.isNullOrEmpty() ||
+                                        it.characterEventDetails.isEmpty() ||
+                                        it.updatedRelationshipDetails.isEmpty() ||
+                                        it.updatedWikis.isEmpty()
+                                }
                             TimeLineCard(
                                 it,
                                 saga,
@@ -222,7 +225,7 @@ fun TimeLineContent(
                                     eventModifier
                                         .animateContentSize()
                                         .clip(genre.shape())
-                                        .clickable(it.data.emotionalReview.isNullOrEmpty()) {
+                                        .clickable(cardEnabled) {
                                             generateEmotionalReview(it)
                                         },
                             )
@@ -329,9 +332,13 @@ fun TimeLineCard(
                 saga.data.icon,
                 showSpark,
                 genre,
-                Modifier
-                    .size(50.dp)
-                    .border(2.dp, genre.color, CircleShape),
+                saga.data.title
+                    .first()
+                    .uppercase(),
+                modifier =
+                    Modifier
+                        .size(50.dp)
+                        .border(2.dp, genre.color, CircleShape),
             )
 
             if (isLast.not()) {
@@ -357,28 +364,27 @@ fun TimeLineCard(
                         width = Dimension.fillToConstraints
                     },
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    event.title,
-                    style =
-                        MaterialTheme.typography.titleSmall.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = genre.color,
-                            fontWeight = FontWeight.SemiBold,
-                        ),
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    event.createdAt.formatDate(),
-                    style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = textColor.copy(alpha = .4f),
-                            fontWeight = FontWeight.Light,
-                            fontFamily = genre.bodyFont(),
-                            textAlign = TextAlign.End,
-                        ),
-                )
-            }
+            Text(
+                event.title,
+                style =
+                    MaterialTheme.typography.titleSmall.copy(
+                        fontFamily = genre.bodyFont(),
+                        color = genre.color,
+                        fontWeight = FontWeight.SemiBold,
+                    ),
+                modifier = Modifier.fillMaxWidth(),
+            )
+
+            Text(
+                event.createdAt.formatDate(),
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = textColor.copy(alpha = .4f),
+                        fontWeight = FontWeight.Light,
+                        fontFamily = genre.bodyFont(),
+                        textAlign = TextAlign.End,
+                    ),
+            )
 
             AnimatedVisibility(showText) {
                 Column {
@@ -510,6 +516,7 @@ fun TimeLineCard(
                             showText = true,
                             showReference = false,
                             showSpark = it.character.id == saga.mainCharacter?.data?.id,
+                            iconSize = 32.dp,
                             modifier = Modifier.padding(top = 8.dp),
                             onSelectCharacter = {
                                 openCharacters.invoke()
@@ -619,11 +626,15 @@ fun TimeLineCard(
                                 modifier =
                                     Modifier
                                         .padding(16.dp)
-                                        .shadow(3.dp, genre.shape(), spotColor = genre.color)
-                                        .background(
-                                            MaterialTheme.colorScheme.background,
-                                            genre.shape(),
-                                        ).fillMaxWidth(),
+                                        .clip(genre.shape())
+                                        .border(
+                                            width = 1.dp,
+                                            brush = genre.color.gradientFade(),
+                                            shape =
+                                                RoundedCornerShape(
+                                                    genre.cornerSize(),
+                                                ),
+                                        ).padding(16.dp),
                                 true,
                             )
                         }
@@ -640,6 +651,7 @@ fun TimeLineSimpleCard(
     saga: SagaContent,
     showText: Boolean = true,
     modifier: Modifier = Modifier,
+    requestReview: (TimelineContent) -> Unit = {},
 ) {
     val genre = saga.data.genre
     val event = eventContent.data
@@ -658,7 +670,7 @@ fun TimeLineSimpleCard(
             .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f), genre.shape())
             .padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -668,23 +680,39 @@ fun TimeLineSimpleCard(
                 saga.data.icon,
                 true,
                 genre,
-                Modifier
-                    .size(32.dp)
-                    .border(1.dp, genre.color, CircleShape),
+                saga.data.title
+                    .first()
+                    .uppercase(),
+                modifier =
+                    Modifier
+                        .size(32.dp)
+                        .border(1.dp, genre.color, CircleShape),
             )
 
-            Text(
-                event.title,
-                style =
-                    MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = genre.bodyFont(),
-                        color = genre.color,
-                        fontWeight = FontWeight.SemiBold,
-                    ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
+            Column(modifier = Modifier.padding(8.dp).weight(1f)) {
+                Text(
+                    event.title,
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = genre.bodyFont(),
+                            color = genre.color,
+                            fontWeight = FontWeight.SemiBold,
+                        ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    event.createdAt.formatDate(),
+                    style =
+                        MaterialTheme.typography.labelSmall.copy(
+                            color = textColor.copy(alpha = .4f),
+                            fontWeight = FontWeight.Light,
+                            fontFamily = genre.bodyFont(),
+                            textAlign = TextAlign.End,
+                        ),
+                )
+            }
         }
 
         AnimatedVisibility(showText) {
@@ -709,36 +737,96 @@ fun TimeLineSimpleCard(
             )
         }
 
-        Text(
-            event.createdAt.formatDate(),
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    color = textColor.copy(alpha = .4f),
-                    fontWeight = FontWeight.Light,
-                    fontFamily = genre.bodyFont(),
-                    textAlign = TextAlign.End,
-                ),
-        )
+        AnimatedVisibility(
+            eventContent.canBeReviewed(),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        ) {
+            Row(
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .clip(genre.shape())
+                        .clickable {
+                            requestReview(eventContent)
+                        }.gradientFill(genre.gradient())
+                        .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    painterResource(R.drawable.ic_review),
+                    null,
+                    tint = genre.color,
+                    modifier = Modifier.padding(4.dp).size(24.dp).padding(2.dp),
+                )
+                Text(
+                    text = "Revisar evento",
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
+        }
     }
 }
 
 @Composable
-private fun AvatarTimelineIcon(
+fun AvatarTimelineIcon(
     icon: String,
     showSpark: Boolean,
     genre: Genre,
+    placeHolderChar: String = "S",
+    backgroundColor: Color? = null,
+    borderColor: Color? = null,
+    borderWidth: Dp = 1.dp,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier) {
+    val border =
+        borderColor?.solidGradient() ?: Brush.verticalGradient(
+            listOf(genre.color, genre.colorPalette().last(), genre.iconColor),
+        )
+    val background =
+        backgroundColor?.gradientFade() ?: genre.color.gradientFade()
+    Box(
+        modifier
+            .border(borderWidth, border, CircleShape)
+            .background(
+                background,
+                CircleShape,
+            ),
+    ) {
+        var textVisible by remember {
+            mutableFloatStateOf(0f)
+        }
+
         AsyncImage(
             model = icon,
             contentDescription = null,
             contentScale = ContentScale.Crop,
+            onState = {
+                textVisible =
+                    if (it !is coil3.compose.AsyncImagePainter.State.Success) {
+                        1f
+                    } else {
+                        0f
+                    }
+            },
             modifier =
                 Modifier
                     .clip(CircleShape)
                     .fillMaxSize()
                     .effectForGenre(genre),
+        )
+
+        Text(
+            placeHolderChar,
+            style =
+                MaterialTheme.typography.titleSmall.copy(
+                    fontFamily = genre.headerFont(),
+                    brush =
+                        Brush.verticalGradient(
+                            genre.color.darkerPalette(factor = .2f),
+                        ),
+                ),
+            modifier = Modifier.alpha(textVisible).align(Alignment.Center),
         )
 
         if (showSpark) {
@@ -771,6 +859,7 @@ fun TimeLineCard(
     showIndicator: Boolean = false,
     isLast: Boolean = false,
     modifier: Modifier = Modifier,
+    iconSize: Dp = 50.dp,
     onSelectCharacter: (Character) -> Unit = {},
     onSelectReference: (Timeline) -> Unit = {},
 ) {
@@ -807,12 +896,15 @@ fun TimeLineCard(
                     eventDetails.character.image,
                     showSpark,
                     genre,
-                    Modifier
-                        .size(50.dp)
-                        .border(2.dp, genre.color, CircleShape)
-                        .clickable {
-                            onSelectCharacter(eventDetails.character)
-                        },
+                    eventDetails.character.name
+                        .first()
+                        .uppercase(),
+                    modifier =
+                        Modifier
+                            .size(iconSize)
+                            .clickable {
+                                onSelectCharacter(eventDetails.character)
+                            },
                 )
 
                 if (showIndicator && isLast.not()) {
@@ -829,9 +921,9 @@ fun TimeLineCard(
             Column(
                 modifier =
                     Modifier
-                        .padding(16.dp)
+                        .padding(horizontal = 16.dp)
                         .constrainAs(contentView) {
-                            top.linkTo(parent.top)
+                            top.linkTo(iconView.top)
                             start.linkTo(iconView.end)
                             end.linkTo(parent.end)
                             width = Dimension.fillToConstraints
@@ -913,7 +1005,7 @@ fun TimeLineCard(
                             MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = genre.bodyFont(),
                                 color = textColor,
-                                textAlign = TextAlign.Justify,
+                                textAlign = TextAlign.Start,
                             ),
                     )
                 }
@@ -967,12 +1059,17 @@ fun TimelineCharacterAttachment(
                     eventDetails.character.image,
                     true,
                     genre,
-                    Modifier
-                        .size(32.dp)
-                        .border(2.dp, genre.color, CircleShape)
-                        .clickable {
-                            onSelectCharacter(eventDetails.character)
-                        },
+                    eventDetails.character.name
+                        .first()
+                        .uppercase(),
+                    backgroundColor = eventDetails.character.hexColor.hexToColor(),
+                    modifier =
+                        Modifier
+                            .size(32.dp)
+                            .border(2.dp, genre.color, CircleShape)
+                            .clickable {
+                                onSelectCharacter(eventDetails.character)
+                            },
                 )
 
                 if (showIndicator && isLast.not()) {
@@ -1042,7 +1139,7 @@ fun TimelineCharacterAttachment(
                         MaterialTheme.typography.bodyMedium.copy(
                             fontFamily = genre.bodyFont(),
                             color = textColor,
-                            textAlign = TextAlign.Justify,
+                            textAlign = TextAlign.Start,
                         ),
                 )
 

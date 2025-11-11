@@ -4,9 +4,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.room.Embedded
 import androidx.room.Relation
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.ui.theme.hexToColor
+import kotlin.collections.sortedByDescending
 
 data class RelationshipContent(
     @Embedded
@@ -47,4 +50,9 @@ data class RelationshipContent(
             charactersColors,
         )
     }
+
+    fun sortedByEvents(events: List<Timeline>) =
+        relationshipEvents.sortedByDescending {
+            events.find { event -> event.id == it.timelineId }?.createdAt
+        }
 }

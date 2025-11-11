@@ -2,6 +2,7 @@ package com.ilustris.sagai.features.characters.relations.data.model
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.ilustris.sagai.features.timeline.data.model.Timeline // Assuming this is the correct import for Timeline
 
@@ -12,17 +13,16 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline // Assuming this
             entity = CharacterRelation::class,
             parentColumns = ["id"],
             childColumns = ["relationId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.CASCADE,
         ),
         ForeignKey(
-            entity = Timeline::class, // Make sure Timeline::class is resolved correctly
+            entity = Timeline::class,
             parentColumns = ["id"],
             childColumns = ["timelineId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
-    // Optional: Add indices for faster querying if needed
-    // indices = [Index(value = ["relationId"]), Index(value = ["timelineId"])]
+    indices = [Index(value = ["relationId"]), Index(value = ["timelineId"])]
 )
 data class RelationshipUpdateEvent(
     @PrimaryKey(autoGenerate = true)
@@ -32,5 +32,8 @@ data class RelationshipUpdateEvent(
     val title: String,
     val description: String,
     val emoji: String,
-    val timestamp: Long = System.currentTimeMillis()
-)
+    val timestamp: Long = System.currentTimeMillis(),
+) {
+
+
+}

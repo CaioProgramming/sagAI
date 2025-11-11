@@ -8,7 +8,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 fun List<Any>.formatToJsonArray(excludingFields: List<String> = emptyList()) =
-    joinToString(separator = ",\n") { it.toJsonFormatExcludingFields(excludingFields) }
+    joinToString(prefix = "[", postfix = "]", separator = ",\n") { it.toJsonFormatExcludingFields(excludingFields) }
 
 fun sortCharactersByMessageCount(
     characters: List<Character>,

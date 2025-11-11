@@ -2,11 +2,16 @@
 
 package com.ilustris.sagai.features.home.ui
 
+import android.Manifest
+import android.app.Activity
+import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -16,33 +21,51 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -51,18 +74,27 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.file.BACKUP_PERMISSION
+import com.ilustris.sagai.core.file.backup.toSaga
+import com.ilustris.sagai.core.file.backup.ui.BackupSheet
+import com.ilustris.sagai.core.permissions.PermissionComponent
+import com.ilustris.sagai.core.permissions.PermissionService
+import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -72,21 +104,32 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
+import com.ilustris.sagai.features.premium.PremiumCard
+import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.settings.ui.SettingsView
+import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.navigation.Routes
+import com.ilustris.sagai.ui.navigation.Routes.SETTINGS
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
+import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkLoader
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 
@@ -96,35 +139,90 @@ import kotlin.time.Duration.Companion.seconds
 fun HomeView(
     navController: NavHostController,
     padding: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel(),
 ) {
+    val viewModel: HomeViewModel = hiltViewModel()
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
     val showDebugButton by viewModel.showDebugButton.collectAsStateWithLifecycle()
     val startFakeSaga by viewModel.startDebugSaga.collectAsStateWithLifecycle()
     val dynamicNewSagaTexts by viewModel.dynamicNewSagaTexts.collectAsStateWithLifecycle()
-    val isLoadingDynamicPrompts by viewModel.isLoadingDynamicPrompts.collectAsStateWithLifecycle()
-    ChatList(
-        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
-        padding = padding,
-        showDebugButton = showDebugButton,
-        dynamicNewSagaTexts = dynamicNewSagaTexts,
-        isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-        onCreateNewChat = {
-            navController.navigateToRoute(Routes.NEW_SAGA)
-        },
-        onSelectSaga = { sagaData ->
-            navController.navigateToRoute(
-                Routes.CHAT,
-                mapOf(
-                    "sagaId" to sagaData.id.toString(),
-                    "isDebug" to sagaData.isDebug.toString(),
-                ),
-            )
-        },
-        createFakeSaga = {
-            viewModel.createFakeSaga()
-        },
-    )
+    val isLoadingDynamicPrompts = dynamicNewSagaTexts == null
+    val billingState by viewModel.billingState.collectAsStateWithLifecycle()
+    var showPremiumSheet by remember { mutableStateOf(false) }
+    var showBackupSheet by remember { mutableStateOf(viewModel.showRecoverSheet.value) }
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
+    val drawerState = rememberDrawerState(DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.checkForBackups()
+    }
+
+    BackHandler(enabled = drawerState.isOpen) {
+        if (drawerState.isOpen) {
+            coroutineScope.launch {
+                drawerState.close()
+            }
+        }
+    }
+
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        Box(Modifier.fillMaxSize()) {
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                        ModalDrawerSheet(
+                            drawerContainerColor = MaterialTheme.colorScheme.background,
+                        ) { SettingsView() }
+                    }
+                },
+            ) {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    ChatList(
+                        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
+                        padding = padding,
+                        showDebugButton = showDebugButton,
+                        dynamicNewSagaTexts = dynamicNewSagaTexts,
+                        isLoadingDynamicPrompts = isLoadingDynamicPrompts,
+                        isPremium = billingState is BillingState.SignatureEnabled,
+                        onCreateNewChat = {
+                            val isPremium = billingState == BillingState.SignatureEnabled
+                            val freeSagasCount = sagas.count { it.data.isEnded.not() }
+                            if (freeSagasCount <= 3 || isPremium) {
+                                navController.navigateToRoute(Routes.NEW_SAGA)
+                            } else {
+                                showPremiumSheet = true
+                            }
+                        },
+                        onSelectSaga = { sagaData ->
+                            navController.navigateToRoute(
+                                Routes.CHAT,
+                                mapOf(
+                                    "sagaId" to sagaData.id.toString(),
+                                    "isDebug" to sagaData.isDebug.toString(),
+                                ),
+                            )
+                        },
+                        createFakeSaga = {
+                            viewModel.createFakeSaga()
+                        },
+                        openPremiumSheet = {
+                            showPremiumSheet = true
+                        },
+                        recoverSagas = {
+                            showBackupSheet = true
+                        },
+                        openSettings = {
+                            coroutineScope.launch {
+                                drawerState.open()
+                            }
+                        },
+                    )
+                }
+            }
+        }
+    }
     LaunchedEffect(startFakeSaga) {
         startFakeSaga?.let {
             navController.navigateToRoute(
@@ -136,6 +234,24 @@ fun HomeView(
             )
         }
     }
+
+    PremiumView(
+        isVisible = showPremiumSheet,
+        onDismiss = {
+            showPremiumSheet = false
+        },
+    )
+
+    if (showBackupSheet) {
+        BackupSheet(true, {
+            showBackupSheet = false
+        })
+    }
+
+    StarryLoader(
+        isLoading,
+        loadingMessage,
+    )
 }
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -146,15 +262,47 @@ private fun ChatList(
     showDebugButton: Boolean,
     dynamicNewSagaTexts: DynamicSagaPrompt?,
     isLoadingDynamicPrompts: Boolean,
+    isPremium: Boolean = false,
+    backupAvailable: Boolean = false,
+    recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
+    openPremiumSheet: () -> Unit = {},
+    openSettings: () -> Unit = {},
 ) {
     LazyColumn(
         modifier =
-            Modifier.padding(padding),
+            Modifier
+                .animateContentSize()
+                .padding(padding),
     ) {
-        if (showDebugButton) { // Condition updated
+        stickyHeader {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier =
+                    Modifier.statusBarsPadding(),
+            ) {
+                Box(Modifier.size(24.dp))
+                SagaTitle(
+                    Modifier
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.background),
+                )
+                IconButton(onClick = {
+                    openSettings()
+                }, modifier = Modifier.size(32.dp)) {
+                    Icon(
+                        painterResource(R.drawable.ic_settings),
+                        contentDescription = stringResource(R.string.settings_title),
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+
+        if (showDebugButton) {
             item {
                 val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
                 Row(
@@ -208,6 +356,7 @@ private fun ChatList(
             Row(
                 modifier =
                     Modifier
+                        .animateItem()
                         .padding(16.dp)
                         .reactiveShimmer(
                             true,
@@ -297,8 +446,59 @@ private fun ChatList(
                     ?.timestamp
             },
         ) {
-            ChatCard(it, isEnabled = showDebugButton) {
-                onSelectSaga(it.data)
+            ChatCard(
+                it,
+                Modifier
+                    .animateItem()
+                    .clickable {
+                        if (!it.data.isDebug || showDebugButton) {
+                            onSelectSaga(it.data)
+                        }
+                    },
+            )
+        }
+
+        if (isLoadingDynamicPrompts.not()) {
+            item {
+                PremiumCard(
+                    isPremium,
+                    onClick = openPremiumSheet,
+                    modifier =
+                        Modifier
+                            .animateItem()
+                            .padding(16.dp),
+                )
+            }
+
+            if (backupAvailable) {
+                item {
+                    Box(
+                        Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Button(onClick = {
+                            recoverSagas.invoke()
+                        }, colors = ButtonDefaults.textButtonColors()) {
+                            Icon(
+                                painterResource(R.drawable.ic_restore),
+                                null,
+                                modifier =
+                                    Modifier
+                                        .padding(horizontal = 8.dp)
+                                        .size(24.dp),
+                            )
+                            Text(
+                                "Restaurar histórias",
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        fontWeight = FontWeight.Light,
+                                    ),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -307,119 +507,28 @@ private fun ChatList(
 @Composable
 fun ChatCard(
     saga: SagaContent,
-    isEnabled: Boolean = false,
-    onClick: () -> Unit = {},
+    modifier: Modifier = Modifier,
 ) {
     val sagaData = saga.data
     Column {
         Row(
             modifier =
-                Modifier
-                    .clickable {
-                        if (!saga.data.isDebug || isEnabled) {
-                            onClick()
-                        }
-                    }.fillMaxWidth()
+                modifier
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(15.dp))
                     .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val imageLoaded =
-                remember {
-                    mutableStateOf(false)
-                }
-            Box(
-                modifier =
-                    Modifier
-                        .size(64.dp)
-                        .clip(CircleShape),
-            ) {
-                if (saga.data.isDebug.not()) {
-                    val borderBrush = if (sagaData.isEnded) sagaData.genre.gradient() else sagaData.genre.color.solidGradient()
-                    AsyncImage(
-                        sagaData.icon,
-                        contentDescription = sagaData.title,
-                        contentScale = ContentScale.Crop,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .border(
-                                    2.dp,
-                                    saga.data.genre.color,
-                                    CircleShape,
-                                ).padding(4.dp)
-                                .background(
-                                    sagaData.genre.color,
-                                    CircleShape,
-                                ).clip(CircleShape)
-                                .fillMaxSize()
-                                .effectForGenre(
-                                    sagaData.genre,
-                                    pixelSize = 1.3f,
-                                ).selectiveColorHighlight(
-                                    sagaData.genre.selectiveHighlight(),
-                                ),
-                        onSuccess = {
-                            imageLoaded.value = true
-                        },
-                    )
-                } else {
-                    Image(
-                        painterResource(R.drawable.ic_bug),
-                        contentDescription = null,
-                        colorFilter =
-                            ColorFilter.tint(
-                                sagaData.genre.iconColor,
-                            ),
-                        contentScale = ContentScale.Fit,
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .border(2.dp, sagaData.genre.color, CircleShape)
-                                .padding(4.dp),
-                    )
-
-                    LaunchedEffect(Unit) {
-                        imageLoaded.value = true
-                    }
-                }
-
-                this@Row.AnimatedVisibility(
-                    imageLoaded.value.not(),
-                    modifier = Modifier.align(Alignment.Center),
-                ) {
-                    Text(
-                        sagaData.title
-                            .first()
-                            .uppercaseChar()
-                            .toString(),
-                        style =
-                            MaterialTheme.typography.bodyLarge.copy(
-                                fontFamily = sagaData.genre.headerFont(),
-                                color = sagaData.genre.iconColor,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
-                }
-
-                if (saga.data.isEnded) {
-                    Image(
-                        painterResource(R.drawable.ic_spark),
-                        contentDescription = null,
-                        colorFilter =
-                            ColorFilter.tint(
-                                sagaData.genre.color,
-                            ),
-                        modifier =
-                            Modifier
-                                .offset(y = 6.dp)
-                                .size(24.dp)
-                                .align(
-                                    Alignment.BottomCenter,
-                                ).reactiveShimmer(true),
-                    )
-                }
-            }
+            AvatarTimelineIcon(
+                saga.data.icon,
+                saga.data.isEnded,
+                saga.data.genre,
+                saga.data.title
+                    .first()
+                    .uppercase(),
+                borderWidth = 2.dp,
+                modifier = Modifier.size(48.dp),
+            )
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -485,7 +594,11 @@ fun ChatCard(
                         ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(vertical = 4.dp).fillMaxWidth().alpha(.8f),
+                    modifier =
+                        Modifier
+                            .padding(vertical = 4.dp)
+                            .fillMaxWidth()
+                            .alpha(.8f),
                 )
             }
         }
@@ -555,14 +668,13 @@ fun HomeViewPreview() {
                     }
                 ChatList(
                     sagas = previewChats,
-                    showDebugButton = true, // Example for preview
+                    showDebugButton = true,
                     dynamicNewSagaTexts =
                         DynamicSagaPrompt(
                             "Dynamic Title Preview",
                             "Dynamic Subtitle Preview",
                         ),
-                    // Example for preview
-                    isLoadingDynamicPrompts = false, // Example for preview
+                    isLoadingDynamicPrompts = false,
                 )
             }
         }

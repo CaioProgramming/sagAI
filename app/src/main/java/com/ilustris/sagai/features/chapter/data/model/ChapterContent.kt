@@ -34,4 +34,6 @@ data class ChapterContent(
     fun fetchCharacters(saga: SagaContent) = saga.getCharacters().filter { this.data.featuredCharacters.contains(it.id) }
 
     fun fetchChapterMessages() = events.flatMap { it.messages }
+
+    fun fetchChapterWikis() = events.map { it.updatedWikis }.flatten()
 }

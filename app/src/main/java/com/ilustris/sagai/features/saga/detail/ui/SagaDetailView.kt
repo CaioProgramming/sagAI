@@ -16,7 +16,6 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -46,9 +45,6 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
-import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -83,11 +79,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -122,28 +116,28 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.home.data.model.relationshipsSortedByEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineContent
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.components.AutoResizeText
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
@@ -178,6 +172,7 @@ fun SagaDetailView(
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     val emotionalCardReference by viewModel.emotionalCardReference.collectAsStateWithLifecycle()
     val showReview by viewModel.showReview.collectAsStateWithLifecycle()
+    val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
             showDeleteConfirmation = false
@@ -219,6 +214,9 @@ fun SagaDetailView(
                     else -> section = DetailAction.BACK
                 }
             },
+            reviewWiki = {
+                viewModel.reviewWiki(it)
+            },
             createReview = {
                 viewModel.createReview()
             },
@@ -234,7 +232,7 @@ fun SagaDetailView(
                 }
             },
             createTimelineReview = {
-                viewModel.createEmotionalReview(it)
+                viewModel.generateTimelineContent(it)
             },
         )
     }
@@ -313,6 +311,8 @@ fun SagaDetailView(
         }
     }
 
+    PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
+
     LaunchedEffect(Unit) {
         viewModel.fetchSagaDetails(sagaId)
     }
@@ -358,7 +358,7 @@ fun LazyListScope.SagaDrawerContent(
 
             Column(
                 Modifier
-                    .padding(16.dp)
+                    .padding(horizontal = 12.dp, vertical = 0.dp)
                     .border(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
@@ -434,7 +434,7 @@ fun LazyListScope.SagaDrawerContent(
                                     isLast = eventsInChapter.indexOf(event) == eventsInChapter.lastIndex,
                                     modifier =
                                         Modifier
-                                            .padding(horizontal = 16.dp)
+                                            .padding(horizontal = 8.dp)
                                             .alpha(.7f),
                                 )
                             }
@@ -505,6 +505,7 @@ fun SagaDetailContentView(
     emotionalCardReference: String,
     onChangeSection: (DetailAction) -> Unit = {},
     onBackClick: (DetailAction) -> Unit = {},
+    reviewWiki: (List<Wiki>) -> Unit = {},
     createReview: () -> Unit,
     openReview: () -> Unit,
     closeReview: () -> Unit,
@@ -649,6 +650,9 @@ fun SagaDetailContentView(
                                                 {
                                                     onBackClick(currentSection)
                                                 },
+                                                reviewWiki = {
+                                                    reviewWiki(it)
+                                                },
                                                 titleModifier =
                                                     Modifier.sharedElement(
                                                         rememberSharedContentState(
@@ -676,7 +680,7 @@ fun SagaDetailContentView(
                                                     onChangeSection(action)
                                                 },
                                                 openEmotionalReview = {
-                                                    if (sagaContent.data.emotionalReview == null) {
+                                                    if (sagaContent.data.emotionalReview.isNullOrEmpty()) {
                                                         createEmotionalReview()
                                                     } else {
                                                         showEmotionalReview = true
@@ -780,61 +784,6 @@ fun SagaDetailContentViewPreview() {
 }
 
 @Composable
-fun WikiContent(
-    saga: SagaContent,
-    onBackClick: () -> Unit,
-    titleModifier: Modifier = Modifier,
-) {
-    Box {
-        val gridState = rememberLazyGridState()
-        val titleAndSubtitle =
-            DetailAction.WIKI.titleAndSubtitle(saga)
-        val genre = saga.data.genre
-        LazyVerticalGrid(columns = GridCells.Fixed(2), state = gridState) {
-            item(span = { GridItemSpan(2) }) {
-                Text(
-                    titleAndSubtitle.first,
-                    style =
-                        MaterialTheme.typography.displayMedium.copy(
-                            fontFamily = genre.headerFont(),
-                        ),
-                    modifier = titleModifier.padding(16.dp).fillMaxWidth(),
-                )
-            }
-            items(saga.wikis) { wiki ->
-                WikiCard(
-                    wiki,
-                    saga.data.genre,
-                    modifier =
-                        Modifier
-                            .padding(20.dp)
-                            .fillMaxWidth(),
-                )
-            }
-        }
-
-        AnimatedVisibility(
-            gridState.canScrollBackward,
-            enter = fadeIn(tween(400, delayMillis = 200)),
-            exit = fadeOut(tween(200)),
-        ) {
-            SagaTopBar(
-                titleAndSubtitle.first,
-                titleAndSubtitle.second,
-                saga.data.genre,
-                onBackClick = { onBackClick() },
-                actionContent = { Box(Modifier.size(24.dp)) },
-                modifier =
-                    Modifier
-                        .background(MaterialTheme.colorScheme.background)
-                        .fillMaxWidth()
-                        .padding(top = 50.dp, start = 16.dp),
-            )
-        }
-    }
-}
-
-@Composable
 fun ActContent(saga: SagaContent) {
     ActReader(saga)
 }
@@ -891,7 +840,7 @@ private fun SagaDetailInitialView(
                 fontWeight = FontWeight.Bold,
             )
         val gridState = rememberLazyGridState()
-        val genre = saga.data.genre
+        val genre = remember { saga.data.genre }
         with(animationScopes.first) {
             AnimatedContent(showTitleOnly) {
                 if (it) {
@@ -917,15 +866,15 @@ private fun SagaDetailInitialView(
                         var highlightParams by remember {
                             mutableStateOf(genreHighlight)
                         }
+                        val chapters = remember { saga.flatChapters().filter { it.isComplete() } }
+                        val events = remember { saga.flatEvents().filter { it.isComplete() } }
+                        val messages = remember { saga.flatMessages() }
+                        val relationships = remember { saga.relationshipsSortedByEvents() }
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(columnCount),
                             modifier = modifier,
                             state = gridState,
                         ) {
-                            val chapters = saga.flatChapters().filter { it.isComplete() }
-                            val events = saga.flatEvents().filter { it.isComplete() }
-                            val messages = saga.flatMessages()
-
                             item(span = {
                                 GridItemSpan(columnCount)
                             }) {
@@ -953,9 +902,9 @@ private fun SagaDetailInitialView(
 
                                             Text(
                                                 saga.data.title,
-                                                maxLines = 1,
+                                                maxLines = 2,
                                                 style =
-                                                    MaterialTheme.typography.displayMedium.copy(
+                                                    MaterialTheme.typography.displaySmall.copy(
                                                         fontFamily = saga.data.genre.headerFont(),
                                                         brush = saga.data.genre.gradient(true),
                                                         textAlign = TextAlign.Center,
@@ -973,7 +922,7 @@ private fun SagaDetailInitialView(
                                                             animatedVisibilityScope = this@AnimatedContent,
                                                         ).reactiveShimmer(
                                                             true,
-                                                            duration = 10.seconds,
+                                                            duration = 5.seconds,
                                                         ),
                                             )
                                         }
@@ -983,6 +932,9 @@ private fun SagaDetailInitialView(
                                             null,
                                             modifier =
                                                 Modifier
+                                                    .align(Alignment.CenterHorizontally)
+                                                    .padding(32.dp)
+                                                    .size(100.dp)
                                                     .clickable {
                                                         if (saga.data.icon.isEmpty()) {
                                                             selectSection(DetailAction.REGENERATE)
@@ -992,35 +944,28 @@ private fun SagaDetailInitialView(
                                                     ),
                                         )
 
-                                        AutoResizeText(
+                                        Text(
                                             saga.data.title,
-                                            maxLines = 1,
+                                            maxLines = 2,
                                             style =
                                                 MaterialTheme.typography.displayMedium.copy(
                                                     fontFamily = saga.data.genre.headerFont(),
                                                     brush = saga.data.genre.gradient(true),
-                                                    shadow =
-                                                        Shadow(
-                                                            Color.Black,
-                                                            offset = Offset(0f, 1f),
-                                                            blurRadius = .5f,
-                                                        ),
                                                     textAlign = TextAlign.Center,
                                                 ),
                                             modifier =
                                                 Modifier
-                                                    .background(fadeGradientBottom())
-                                                    .fillMaxWidth()
                                                     .padding(16.dp)
+                                                    .fillMaxWidth()
                                                     .sharedElement(
                                                         rememberSharedContentState(
-                                                            key =
-                                                                DetailAction.BACK.sharedElementTitleKey(
-                                                                    saga.data.id,
-                                                                ),
+                                                            key = "saga-style-header",
                                                         ),
-                                                        animatedVisibilityScope = animationScopes.second,
-                                                    ).reactiveShimmer(true, duration = 10.seconds),
+                                                        animatedVisibilityScope = this@AnimatedContent,
+                                                    ).reactiveShimmer(
+                                                        true,
+                                                        duration = 5.seconds,
+                                                    ),
                                         )
                                     }
                                 }
@@ -1086,15 +1031,15 @@ private fun SagaDetailInitialView(
                                 }
                             }
 
-                            item(span = { GridItemSpan(columnCount) }) {
-                                Text(
-                                    stringResource(R.string.starring),
-                                    style = sectionStyle,
-                                    modifier = Modifier.padding(16.dp),
-                                )
-                            }
-
                             saga.mainCharacter?.let {
+                                item(span = { GridItemSpan(columnCount) }) {
+                                    Text(
+                                        stringResource(R.string.starring),
+                                        style = sectionStyle,
+                                        modifier = Modifier.padding(16.dp),
+                                    )
+                                }
+
                                 item(span = { GridItemSpan(columnCount) }) {
                                     Box(
                                         Modifier
@@ -1114,18 +1059,18 @@ private fun SagaDetailInitialView(
                                             modifier =
                                                 Modifier
                                                     .fillMaxSize()
-                                                    .effectForGenre(genre)
-                                                    .selectiveColorHighlight(highlightParams),
+                                                    .effectForGenre(genre, useFallBack = true),
                                             contentScale = ContentScale.Crop,
                                         )
 
                                         Box(
                                             Modifier
                                                 .align(Alignment.BottomCenter)
+                                                .fillMaxWidth()
+                                                .fillMaxHeight(.8f)
                                                 .background(
                                                     fadeGradientBottom(genre.color),
-                                                ).fillMaxWidth()
-                                                .fillMaxHeight(),
+                                                ),
                                         )
 
                                         Column(
@@ -1139,16 +1084,15 @@ private fun SagaDetailInitialView(
                                             Text(
                                                 it.data.name,
                                                 style =
-                                                    MaterialTheme.typography.titleLarge.copy(
+                                                    MaterialTheme.typography.headlineMedium.copy(
                                                         fontFamily = genre.headerFont(),
-                                                        textAlign = TextAlign.Center,
                                                         color = genre.iconColor,
                                                     ),
                                                 modifier =
                                                     Modifier.reactiveShimmer(
                                                         true,
                                                         genre.shimmerColors(),
-                                                        duration = 15.seconds,
+                                                        duration = 10.seconds,
                                                     ),
                                             )
 
@@ -1156,9 +1100,8 @@ private fun SagaDetailInitialView(
                                                 it.data.backstory,
                                                 maxLines = 4,
                                                 style =
-                                                    MaterialTheme.typography.bodyMedium.copy(
+                                                    MaterialTheme.typography.labelMedium.copy(
                                                         fontFamily = genre.bodyFont(),
-                                                        textAlign = TextAlign.Justify,
                                                         color = genre.iconColor,
                                                     ),
                                             )
@@ -1259,7 +1202,7 @@ private fun SagaDetailInitialView(
                                             selectSection(DetailAction.CHARACTERS)
                                         }, modifier = Modifier.size(24.dp)) {
                                             Icon(
-                                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                painterResource(R.drawable.round_arrow_forward_ios_24),
                                                 contentDescription = stringResource(R.string.saga_detail_view_characters_action),
                                             )
                                         }
@@ -1315,7 +1258,7 @@ private fun SagaDetailInitialView(
                                     }
                                 }
 
-                                if (saga.relationships.isNotEmpty()) {
+                                if (relationships.isNotEmpty()) {
                                     item(span = { GridItemSpan(columnCount) }) {
                                         Text(
                                             stringResource(R.string.saga_detail_relationships_section_title),
@@ -1330,9 +1273,7 @@ private fun SagaDetailInitialView(
                                     item(span = { GridItemSpan(columnCount) }) {
                                         LazyRow {
                                             items(
-                                                saga.relationships
-                                                    .filter { it.relationshipEvents.isNotEmpty() }
-                                                    .sortedByDescending { it.relationshipEvents.last().timestamp },
+                                                relationships,
                                             ) { relation ->
                                                 RelationShipCard(
                                                     content = relation,
@@ -1382,7 +1323,7 @@ private fun SagaDetailInitialView(
                                                 )
                                             }, modifier = Modifier.size(24.dp)) {
                                                 Icon(
-                                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                    painterResource(R.drawable.round_arrow_forward_ios_24),
                                                     contentDescription = stringResource(R.string.saga_detail_view_timeline_action),
                                                 )
                                             }
@@ -1459,7 +1400,7 @@ private fun SagaDetailInitialView(
                                                 selectSection(DetailAction.WIKI)
                                             }, modifier = Modifier.size(24.dp)) {
                                                 Icon(
-                                                    Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                    painterResource(R.drawable.round_arrow_forward_ios_24),
                                                     contentDescription = stringResource(R.string.saga_detail_view_wiki_action),
                                                 )
                                             }
@@ -1529,7 +1470,7 @@ private fun SagaDetailInitialView(
                                             )
                                         }, modifier = Modifier.size(24.dp)) {
                                             Icon(
-                                                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                                                painterResource(R.drawable.round_arrow_forward_ios_24),
                                                 contentDescription = stringResource(R.string.saga_detail_view_chapters_action),
                                             )
                                         }
@@ -1768,14 +1709,15 @@ private fun SagaDetailInitialView(
                             )
                         }
 
-                        val tooltipState = androidx.compose.material3.rememberTooltipState(isPersistent = true)
+                        val tooltipState =
+                            androidx.compose.material3.rememberTooltipState(isPersistent = true)
                         val tooltipPositionProvider =
                             androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
                                 spacingBetweenTooltipAndAnchor = 8.dp,
                             )
                         val coroutineScope = rememberCoroutineScope()
                         if (BuildConfig.DEBUG) {
-                           Box(Modifier.align(Alignment.BottomEnd)) {
+                            Box(Modifier.align(Alignment.BottomEnd)) {
                                 TooltipBox(
                                     tooltipPositionProvider,
                                     state = tooltipState,
@@ -1865,7 +1807,7 @@ private fun SagaDetailInitialView(
                                                 .size(48.dp),
                                     ) {
                                         Icon(
-                                            Icons.Rounded.Build,
+                                            painterResource(R.drawable.outline_filter_vintage_24),
                                             null,
                                             tint = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.size(24.dp),

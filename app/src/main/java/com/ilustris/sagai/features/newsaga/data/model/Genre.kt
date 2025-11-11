@@ -1,46 +1,16 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
 import ai.atick.material.MaterialColor
-import android.annotation.SuppressLint
-import android.graphics.RectF
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
-import androidx.compose.animation.core.EaseOutCubic // Added
-import androidx.compose.animation.core.animateDpAsState // Added
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.offset
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.TextUnit
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.ui.components.WordArtText
 import com.ilustris.sagai.ui.theme.filters.SelectiveColorParams
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.headerFont
-import kotlinx.coroutines.delay
-import kotlin.random.Random
 
 enum class
 Genre(
-    val title: String,
+    @StringRes
+    val title: Int,
     val color: Color,
     val iconColor: Color,
     @DrawableRes
@@ -48,14 +18,14 @@ Genre(
     val ambientMusicConfigKey: String,
 ) {
     FANTASY(
-        title = "Fantasia",
+        title = R.string.genre_fantasy,
         color = MaterialColor.Red800,
         iconColor = Color.White,
         background = R.drawable.fantasy,
         ambientMusicConfigKey = "fantasy_ambient_music_url",
     ),
-    SCI_FI(
-        title = "Cyberpunk",
+    CYBERPUNK(
+        title = R.string.genre_scifi,
         color = MaterialColor.DeepPurpleA200,
         iconColor = Color.White,
         background = R.drawable.scifi,
@@ -63,7 +33,7 @@ Genre(
     ),
 
     HORROR(
-        title = "Terror",
+        title = R.string.genre_horror,
         color = MaterialColor.BlueGray200,
         iconColor = Color.Black,
         background = R.drawable.horror,
@@ -71,49 +41,49 @@ Genre(
     ),
 
     HEROES(
-        title = "Heróis",
+        title = R.string.genre_heroes,
         color = MaterialColor.Blue900,
         iconColor = Color.White,
         background = R.drawable.hero,
         ambientMusicConfigKey = "heroes_ambient_music_url",
     ),
     CRIME(
-        title = "Crime City",
+        title = R.string.genre_crime,
         color = MaterialColor.PinkA100,
         iconColor = Color.White,
         background = R.drawable.crime,
         ambientMusicConfigKey = "crime_ambient_music_url",
     ),
-}
 
-@StringRes
-fun Genre.getNamePlaceholderResId(): Int =
-    when (this) {
-        Genre.FANTASY -> R.string.character_form_placeholder_name_fantasy
-        Genre.SCI_FI -> R.string.character_form_placeholder_name_scifi
-        else -> R.string.character_form_placeholder_name
-    }
+    SPACE_OPERA(
+        title = R.string.genre_space_opera,
+        color = MaterialColor.CyanA700,
+        iconColor = Color.Black,
+        background = R.drawable.space_opera,
+        ambientMusicConfigKey = "space_opera_ambient_music_url",
+    ),
+}
 
 fun Genre.selectiveHighlight(): SelectiveColorParams =
     when (this) {
         Genre.FANTASY ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = 1f,
-                saturationThreshold = .5f,
-                lightnessThreshold = .5f,
+                hueTolerance = .85f,
+                saturationThreshold = .6f,
+                lightnessThreshold = .25f,
                 highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .4f,
+                desaturationFactorNonTarget = .5f,
             )
 
-        Genre.SCI_FI ->
+        Genre.CYBERPUNK ->
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = 1f,
-                saturationThreshold = .5f,
-                lightnessThreshold = .7f,
+                hueTolerance = .11f,
+                saturationThreshold = .15f,
+                lightnessThreshold = .47f,
                 highlightSaturationBoost = 2f,
-                desaturationFactorNonTarget = .7f,
+                desaturationFactorNonTarget = .5f,
             )
 
         Genre.HORROR ->
@@ -138,21 +108,31 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.CRIME ->
             SelectiveColorParams(
                 targetColor = color,
+                hueTolerance = .05f,
+                saturationThreshold = .13f,
+                lightnessThreshold = .10f,
+                highlightSaturationBoost = 1.4f,
+                desaturationFactorNonTarget = .4f,
+            )
+        Genre.SPACE_OPERA ->
+            SelectiveColorParams(
+                targetColor = color,
                 hueTolerance = 1f,
-                saturationThreshold = .52f,
-                lightnessThreshold = .46f,
-                highlightSaturationBoost = 3f,
-                desaturationFactorNonTarget = .3f,
+                saturationThreshold = .5f,
+                lightnessThreshold = .5f,
+                highlightSaturationBoost = 2f,
+                desaturationFactorNonTarget = .4f,
             )
     }
 
 fun Genre.defaultHeaderImage() =
     when (this) {
         Genre.FANTASY -> R.drawable.fantasy_card
-        Genre.SCI_FI -> R.drawable.scifi_card
+        Genre.CYBERPUNK -> R.drawable.scifi_card
         Genre.HORROR -> R.drawable.horror_card
         Genre.HEROES -> R.drawable.hero_card
         Genre.CRIME -> R.drawable.crime_card
+        Genre.SPACE_OPERA -> R.drawable.space_opera_card
     }
 
 fun Genre.shimmerColors() =
@@ -168,12 +148,12 @@ fun Genre.colorPalette() =
         Genre.FANTASY ->
             listOf(
                 MaterialColor.Red900,
-                MaterialColor.Pink200,
+                MaterialColor.OrangeA200,
                 MaterialColor.DeepOrange600,
-                MaterialColor.Red500,
+                MaterialColor.RedA200,
             )
 
-        Genre.SCI_FI ->
+        Genre.CYBERPUNK ->
             listOf(
                 MaterialColor.Purple500,
                 MaterialColor.Teal800,
@@ -203,5 +183,12 @@ fun Genre.colorPalette() =
                 MaterialColor.PinkA100,
                 MaterialColor.Amber300,
                 MaterialColor.YellowA200,
+            )
+        Genre.SPACE_OPERA ->
+            listOf(
+                MaterialColor.CyanA700,
+                MaterialColor.LightBlueA400,
+                MaterialColor.TealA400,
+                MaterialColor.LimeA200,
             )
     }
