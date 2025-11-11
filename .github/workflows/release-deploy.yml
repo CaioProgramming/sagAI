@@ -76,13 +76,13 @@ jobs:
           name: apk-${{ env.BUILD_VARIANT }}
           path: ${{ steps.build_apk.outputs.apk }}
 
-      - name: Firebase App Distribution Action
-        uses: hasretsariyer/firebase-app-distribution-github-action@v1.0.0
-        with:
-          firebase_token: ${{ secrets.FIREBASE_CI }}
-          app_id: ${{ secrets.FIREBASE_ID }}
-          app_file: ${{ steps.build_apk.outputs.apk }}
-          tester_groups: alpha-testers
+  #      - name: Firebase App Distribution Action
+  #        uses: hasretsariyer/firebase-app-distribution-github-action@v1.0.0
+  #        with:
+  #          firebase_token: ${{ secrets.FIREBASE_CI }}
+  #          app_id: ${{ secrets.FIREBASE_ID }}
+  #          app_file: ${{ steps.build_apk.outputs.apk }}
+  #          tester_groups: alpha-testers
 
   release-review:
     runs-on: ubuntu-latest
