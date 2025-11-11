@@ -138,7 +138,10 @@ class TimelineUseCaseImpl
                     )
                     delay(5.seconds)
                 } else {
-                    Log.w(javaClass.simpleName, "generateTimelineContent: Emotional Review Already created")
+                    Log.w(
+                        javaClass.simpleName,
+                        "generateTimelineContent: Emotional Review Already created",
+                    )
                 }
                 if (timelineContent.characterEventDetails.isEmpty() ||
                     timelineContent.updatedRelationshipDetails.isEmpty()
@@ -146,7 +149,10 @@ class TimelineUseCaseImpl
                     updateCharacters(timelineContent.data, saga)
                     delay(5.seconds)
                 } else {
-                    Log.w(javaClass.simpleName, "generateTimelineContent: Characters already updated on this event")
+                    Log.w(
+                        javaClass.simpleName,
+                        "generateTimelineContent: Characters already updated on this event",
+                    )
                 }
 
                 if (timelineContent.updatedWikis.isEmpty()) {
@@ -155,7 +161,10 @@ class TimelineUseCaseImpl
                         saga,
                     )
                 } else {
-                    Log.w(javaClass.simpleName, "generateTimelineContent: Wikis already updated on this event")
+                    Log.w(
+                        javaClass.simpleName,
+                        "generateTimelineContent: Wikis already updated on this event",
+                    )
                 }
             }
 
@@ -168,7 +177,13 @@ class TimelineUseCaseImpl
             wikisToUpdateOrAdd.forEach { generatedWiki ->
                 val existingWiki =
                     saga.wikis.find { wiki ->
-                        wiki.title.contentEquals(generatedWiki.title, true)
+                        wiki.title
+                            .trim()
+                            .lowercase()
+                            .contentEquals(
+                                generatedWiki.title.trim().lowercase(),
+                                true,
+                            )
                     }
                 if (existingWiki != null) {
                     Log.d(

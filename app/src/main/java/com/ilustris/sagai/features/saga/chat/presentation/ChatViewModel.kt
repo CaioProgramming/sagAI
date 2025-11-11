@@ -95,7 +95,7 @@ class ChatViewModel
         private fun updateSnackBar(snackBarState: SnackBarState) {
             viewModelScope.launch {
                 snackBarMessage.value = snackBarState
-                delay(15.seconds)
+                delay(10.seconds)
                 snackBarMessage.value = null
                 isLoading.value = false
             }

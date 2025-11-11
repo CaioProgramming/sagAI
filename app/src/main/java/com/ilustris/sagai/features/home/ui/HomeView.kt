@@ -149,11 +149,14 @@ fun HomeView(
     val billingState by viewModel.billingState.collectAsStateWithLifecycle()
     var showPremiumSheet by remember { mutableStateOf(false) }
     var showBackupSheet by remember { mutableStateOf(viewModel.showRecoverSheet.value) }
-    val backupAvailable by viewModel.backupAvailable.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        viewModel.checkForBackups()
+    }
 
     BackHandler(enabled = drawerState.isOpen) {
         if (drawerState.isOpen) {

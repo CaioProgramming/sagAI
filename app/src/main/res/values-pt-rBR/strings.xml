@@ -259,4 +259,5 @@
     <string name="signatures_title">Assinaturas</string>
     <string name="wiki_updated">Wiki atualizada</string>
     <string name="review_chapter">Revisar Capitulo</string>
+    <string name="review_items">Revisar itens</string>
 </resources>

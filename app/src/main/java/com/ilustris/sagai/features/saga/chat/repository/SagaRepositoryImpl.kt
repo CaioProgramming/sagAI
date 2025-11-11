@@ -5,6 +5,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
@@ -113,7 +114,7 @@ class SagaRepositoryImpl
             val newIcon =
                 imagenClient.generateImage(
                     buildString {
-                        appendLine(metaPrompt)
+                        appendLine(metaPrompt.plus(ImagePrompts.criticalGenerationRule()))
                     },
                     listOfNotNull(characterIcon),
                 )!!

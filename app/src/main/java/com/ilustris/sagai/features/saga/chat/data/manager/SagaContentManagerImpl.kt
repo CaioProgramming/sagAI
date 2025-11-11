@@ -511,8 +511,9 @@ class SagaContentManagerImpl
                     "checkNarrativeProgression: Progression step ${narrativeStep.javaClass.simpleName}",
                 )
 
+                var action: RequestResult<Any>? = null
                 startProcessing {
-                    val action: RequestResult<Any> =
+                    action =
                         when (narrativeStep) {
                             NarrativeStep.StartAct -> createAct(saga)
                             is NarrativeStep.GenerateSagaEnding -> generateEnding(saga)
@@ -538,6 +539,7 @@ class SagaContentManagerImpl
                     val act = saga.currentActInfo
                     val chapter = act?.currentChapterInfo
                     val timeline = chapter?.currentEventInfo
+
                     sendDebugMessage(
                         """
                         Narrative progression  #$progressionCounter completed, no limits reached.
@@ -553,11 +555,13 @@ class SagaContentManagerImpl
                         messages since last event: ${timeline?.messages?.size} of ${UpdateRules.LORE_UPDATE_LIMIT} per Event.
                         """.trimIndent(),
                     )
+                }
 
-                    action
-                        .onSuccessAsync {
-                            validatePostAction(saga, narrativeStep, action.success)
-                        }.onFailureAsync {
+                action
+                    ?.onSuccessAsync {
+                        validatePostAction(saga, narrativeStep, action.success)
+                    }?.onFailureAsync {
+                        if (isRetrying) {
                             updateSnackBar(
                                 snackBar(
                                     context.getString(R.string.unexpected_error),
@@ -567,11 +571,10 @@ class SagaContentManagerImpl
                                     }
                                 },
                             )
-                            if (isRetrying.not()) {
-                                checkNarrativeProgression(saga, true)
-                            }
+                        } else {
+                            checkNarrativeProgression(saga, true)
                         }
-                }
+                    }
             }
         }
 
@@ -625,6 +628,7 @@ class SagaContentManagerImpl
                         val currentAct = saga.currentActInfo!!
                         (result.value as? Chapter)?.let {
                             startProcessing {
+                                if (currentAct.currentChapterInfo != null) error("Chapter already set")
                                 actUseCase.updateAct(
                                     currentAct.data.copy(currentChapterId = it.id),
                                 )
@@ -674,10 +678,8 @@ class SagaContentManagerImpl
                                         data = chapter,
                                     )
                                 withContext(Dispatchers.IO) {
-                                    delay(5.seconds)
                                     chapterUseCase.generateChapterCover(chapterContent, saga)
                                 }
-                                delay(3.seconds)
                                 chapterUseCase.reviewChapter(saga, chapterContent)
                             }
                         }
@@ -720,14 +722,12 @@ class SagaContentManagerImpl
             saga: SagaContent,
         ) {
             withContext(Dispatchers.IO) {
-                delay(5.seconds)
-
                 saga.flatEvents().find { it.data.id == timeline.id }?.let { content ->
                     timelineUseCase.generateTimelineContent(saga, content.copy(data = timeline))
 
                     updateSnackBar(
                         snackBar(
-                            context.getString(R.string.timeline_updated, timeline.title),
+                            context.getString(R.string.timeline_generated_successfully, timeline.title),
                         ),
                     )
                 }

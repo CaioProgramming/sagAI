@@ -82,7 +82,7 @@ class CharacterUseCaseImpl
         ): RequestResult<Pair<Character, String>> =
             executeRequest(false) {
                 // TODO REMOVE FORCED PREMIUM
-                val isPremium = billingService.isPremium()
+                val isPremium = true // billingService.isPremium()
 
                 val portraitReference =
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
@@ -139,7 +139,7 @@ class CharacterUseCaseImpl
 
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription, canByPass = false)!!
+                        .generateImage(translatedDescription.plus(ImagePrompts.criticalGenerationRule()), canByPass = false)!!
                         .apply {
                             if (isPremium.not()) {
                                 this.removeBackground(context, true)

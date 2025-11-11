@@ -52,24 +52,25 @@ class HomeViewModel
 
         val billingState = homeUseCase.billingState
 
+
+
         init {
             checkDebug()
             getDynamicPrompts()
-            observeSagas()
         }
 
-        private fun observeSagas() {
+        fun checkForBackups() {
             viewModelScope.launch {
-                sagas.collect { sagaContents ->
-                    val isBackupEnabled = backupService.backupEnabled().first()
-                    if (isBackupEnabled) {
-                        backupService.getBackedUpSagas().onSuccessAsync {
-                            _backupAvailable.emit(it.filterBackups(sagaContents.map { it.data }).isNotEmpty())
-                        }
-                    }
+                backupService.getBackedUpSagas().onSuccessAsync {
+                    val availableSagas = sagas.first()
+                    _backupAvailable.emit(
+                        it.filterBackups(availableSagas.map { it.data }).isNotEmpty()
+                    )
                 }
             }
         }
+
+
 
         private fun getDynamicPrompts() {
             viewModelScope.launch {

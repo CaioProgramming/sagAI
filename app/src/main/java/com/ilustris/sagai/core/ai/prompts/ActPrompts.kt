@@ -7,10 +7,12 @@ import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
-import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
+import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ActPrompts {
     @Suppress("ktlint:standard:max-line-length")
@@ -118,7 +120,24 @@ object ActPrompts {
         saga: SagaContent,
         previousAct: ActContent? = null,
     ): String {
-        val actTitle = "Act ${saga.actNumber(previousAct?.data) + 1}"
+        val actNumber = if (previousAct == null) 1 else saga.actNumber(previousAct.data) + 1
+        val actTitle = "Act $actNumber"
+
+        val recentEvents = saga.flatEvents().map { it.data }.takeLast(6)
+        val recentMsgs = saga.flatMessages().map { it.message }.takeLast(8)
+
+        fun List<Timeline>.toBulletList(): String {
+            if (this.isEmpty()) return ""
+            return this.joinToString(separator = "\n") { t -> "- ${t.title}: ${t.content.take(120).replace('\n', ' ')}" }
+        }
+
+        fun List<Message>.toBulletList(): String {
+            if (this.isEmpty()) return ""
+            return this.joinToString(separator = "\n") { m -> "- ${m.speakerName ?: m.senderType}: ${m.text.take(140).replace('\n', ' ')}" }
+        }
+
+        val recentTimelineBullets = recentEvents.toBulletList()
+        val recentMessagesBullets = recentMsgs.toBulletList()
 
         return buildString {
             appendLine("CONTEXT:")
@@ -132,12 +151,27 @@ object ActPrompts {
             appendLine("### Main Character:")
             appendLine(saga.mainCharacter?.data?.toJsonFormatExcludingFields(ChatPrompts.characterExclusions))
 
+            if (recentTimelineBullets.isNotBlank()) {
+                appendLine("## Latest Timeline (most recent events):")
+                appendLine(recentTimelineBullets)
+            }
+
+            if (recentMessagesBullets.isNotBlank()) {
+                appendLine("## Recent Messages (most recent player/narrative messages):")
+                appendLine(recentMessagesBullets)
+            }
+
             if (previousAct == null) {
-                // This is the very first Act of the Saga
                 appendLine("## Task: Write the Opening Introduction")
-                appendLine(
-                    "This is the very beginning of the entire saga. Your introduction must immediately immerse the reader into the world described in the 'Saga Overview'.",
-                )
+                if (recentTimelineBullets.isNotBlank() || recentMessagesBullets.isNotBlank()) {
+                    appendLine(
+                        "This is the very beginning of the entire saga. Your introduction must immediately immerse the reader into the world described in the 'Saga Overview'. Use the 'Latest Timeline' and 'Recent Messages' sections to ground the opening and to reference the immediate cliffhanger or recent event that motivates the story when applicable.",
+                    )
+                } else {
+                    appendLine(
+                        "This is the very beginning of the entire saga. Your introduction must immediately immerse the reader into the world described in the 'Saga Overview'. Build your opening from the saga's overview and main character details; do not reference timeline or messages because none are available.",
+                    )
+                }
                 appendLine(
                     "1.  **Establish the Atmosphere:** Open with descriptive language that sets the scene, tone, and genre defined in the saga's context.",
                 )
@@ -145,10 +179,9 @@ object ActPrompts {
                     "2.  **Introduce the Initial State:** Hint at the current state of the world or the main character's initial situation without giving too much away.",
                 )
                 appendLine(
-                    "3.  **Create a Hook:** Conclude with a compelling hook—a question, a mysterious event, or a statement that creates intrigue and makes the reader eager to know what happens next.",
+                    "3.  **Create a Hook:** Conclude with a compact, compelling hook that makes the reader eager to know what happens next.",
                 )
             } else {
-                // This is a subsequent Act, requiring a bridge from the previous one.
                 appendLine("## Previous Act Summary:")
                 appendLine(
                     previousAct.data.toJsonFormatExcludingFields(
@@ -157,25 +190,31 @@ object ActPrompts {
                 )
                 appendLine("")
                 appendLine("## Task: Write a Transitional Introduction")
+                if (recentTimelineBullets.isNotBlank() || recentMessagesBullets.isNotBlank()) {
+                    appendLine(
+                        "This introduction must serve as a bridge from the previous Act. Use the 'Latest Timeline' and 'Recent Messages' sections to reference the immediate cliffhanger or final beats from the previous act and set the stage for the new act.",
+                    )
+                } else {
+                    appendLine(
+                        "This introduction must serve as a bridge from the previous Act. Concisely reference the closing beats from the Previous Act Summary and set the stage for the new act; no recent timeline or message data is available.",
+                    )
+                }
                 appendLine(
-                    "This introduction must serve as a bridge from the previous Act. It should gracefully re-immerse the reader into the story.",
+                    "1.  **Acknowledge the Past (brief):** Concisely reference the closing event or lingering mood from the 'Previous Act Summary'.",
                 )
+                appendLine("2.  **Re-establish the Scene (concise):** Set the new scene and indicate any tonal shift since the last act.")
                 appendLine(
-                    "1.  **Acknowledge the Past:** Briefly reference the closing events or the lingering mood from the 'Previous Act Summary'. You might start by describing the immediate aftermath or the passage of time since the last act's conclusion.",
-                )
-                appendLine(
-                    "2.  **Re-establish the Scene:** Set the new scene. Where are we now? What is the current atmosphere? Has the tone shifted since the last act?",
-                )
-                appendLine(
-                    "3.  **Propel the Narrative Forward:** Conclude with a strong forward-looking statement or hook that clearly signals the new direction, conflict, or central question of this new Act.",
+                    "3.  **Propel the Narrative Forward (compact hook):** End with a short forward-facing sentence that signals the new direction or conflict.",
                 )
             }
+
             appendLine("")
             appendLine("## Style & Format Guidelines:")
-            appendLine(
-                "- **Length:** Aim for a medium-length introduction, around 2-3 substantial paragraphs (approximately 100-150 words). This gives you space to build atmosphere without overwhelming the UI.",
-            )
+            appendLine("- **Length:** Maximum of 2 paragraphs. Keep the introduction compact — aim for ~80-140 words total.")
             appendLine("- **Tone:** The tone must be literary and engaging, matching the saga's genre.")
+            appendLine(
+                "- **Use Context:** Explicitly leverage the 'Latest Timeline' and 'Recent Messages' to make the final sentence/hook connect naturally to the saga's most recent cliffhanger.",
+            )
             appendLine(
                 "- **Output:** Provide ONLY the introduction text. Do not include titles, quotation marks, or any other meta-commentary.",
             )

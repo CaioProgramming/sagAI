@@ -33,41 +33,41 @@ object EmotionalPrompt {
                 emotionalToneRanking.entries.joinToString(separator = "; ") { "${it.key}: ${it.value} occurrences" }
             }
 
-        return """
-        You are an AI expert in behavioral analysis and emotional intelligence.
-        Your task is to analyze a list of the user/player's direct textual inputs and a provided ranking of their observed emotional tones. Based on BOTH of these, generate a thoughtful summary of their overall emotional behavior, prevailing sentiment, and underlying intentions for a specific period.
+        val messagesString = if (texts.isEmpty()) "No user messages were provided." else texts.joinToString("\n") { "- $it" }
 
-        **Inputs Provided to You:**
-        1.  **Observed Emotional Tone Ranking:** This primary input shows the frequency of different emotional tones detected from the user's behavior over a period (e.g., "JOYFUL: 5 occurrences; CYNICAL: 3 occurrences"). This ranking indicates the dominant or most frequent emotions.
-            - Current Ranking: $rankingString
-        2.  **User's Direct Messages/Actions:** A list of direct statements, decisions, or actions from the user/player. These provide the specific examples and context for HOW the ranked emotions were expressed.
-
-        **Your Goal:**
-        Synthesize insights from BOTH the `Observed Emotional Tone Ranking` and the `User's Direct Messages/Actions` into a thoughtful, medium-length summary (around 2-3 sentences).
-        - Your summary MUST reflect the dominant emotions indicated by the `Observed Emotional Tone Ranking`.
-        - It should then use the `User's Direct Messages/Actions` to understand and describe *how* these dominant emotions manifested in the user's behavior, style, and intentions.
-
-        **Analytical Process:**
-        1.  **Understand Dominant Emotions from Ranking:** First, identify the most frequent or "highest-ranking" emotions from the `Observed Emotional Tone Ranking`. These are your primary focus.
-        2.  **Contextualize with User Messages:** Review the `User's Direct Messages/Actions` to find specific examples or expressions that align with these dominant emotions. Analyze the style, implications, and underlying intentions in these messages.
-            *   For example, if the ranking shows "CYNICAL" as high, look for cynical statements in the user's messages.
-        3.  **Consider Nuance and Intensity (Conceptual Weight):** While the ranking gives frequency, also consider the inherent intensity of certain emotions when you see them in the user's text. For example:
-            *   **High-Impact Expressions (if observed in text, these add weight even if frequency in ranking is moderate):** Strong, clearly articulated emotions (Obvious Joy, Intense Anger, Palpable Fear), defining personality traits (Cynicism, Sarcasm, Deep Empathy, Unwavering Determination).
-            *   **Lower-Impact Expressions:** Mild curiosity, slight surprise, neutral observations.
-        4.  **Synthesize into a Summary:** Your summary should lead with the dominant emotional themes suggested by the ranking and then illustrate them with insights derived from the user's messages.
-
-        **Output Requirements:**
-        - The summary MUST clearly reflect the dominant emotional tones identified from the `Observed Emotional Tone Ranking`.
-        - It should use details from the user's messages to explain *how* these emotions were expressed or what they imply about the user's intentions or personality.
-        - Aim for a medium length (around 2-3 sentences).
-        - Go beyond surface-level emotions. Infer the 'why' behind the user's actions and expressions.
-        - Maintain a neutral and objective tone.
-        - Do NOT contain specific plot details, character names (other than 'the player'), or locations from the story. Focus on emotional and behavioral patterns.
-        - Do NOT output any introductory phrases, just the summary itself.
-
-        User's Direct Messages/Actions to analyze in light of the ranking:
-        ${texts.joinToString("", prefix = "- ")}
-        """
+        return buildString {
+            appendLine("You are a compassionate, clinically-minded AI trained in psychological observation and emotional insight.")
+            appendLine(
+                "Your task is to read the player's direct messages together with an observed emotional tone ranking and produce a concise, psychologist-style summary of their emotional stance and underlying intentions.",
+            )
+            appendLine()
+            appendLine("Inputs Provided to You:")
+            appendLine("1. Observed Emotional Tone Ranking: $rankingString")
+            appendLine("2. User's Direct Messages/Actions:")
+            appendLine(messagesString)
+            appendLine()
+            appendLine("Your Goal:")
+            appendLine(
+                "- Integrate the ranking and the messages to craft a focused, 2-3 sentence summary that reads like a warm, professional psychological observation.",
+            )
+            appendLine("- Lead with the dominant emotional themes and then briefly illustrate how these appeared in the user's messages.")
+            appendLine()
+            appendLine("Analytical Notes:")
+            appendLine(
+                "- Prioritize the highest-frequency tones from the ranking but give conceptual weight to intense expressions found in the messages.",
+            )
+            appendLine("- Consider both frequency and intensity: a less frequent but very intense expression can be important.")
+            appendLine(
+                "- Avoid plot details, names, or locations; focus on emotional patterns, intentions, and likely personality tendencies.",
+            )
+            appendLine()
+            appendLine("Output Requirements:")
+            appendLine("- Output ONLY the concise summary, plain text, 2-3 sentences, no headings or extra commentary.")
+            appendLine("- Use a gentle, empathic clinical tone — observant and nonjudgmental, speaking generally about 'the player'.")
+            appendLine(
+                "- If the inputs are insufficient to be confident, default to neutral phrasing while still offering a brief observation.",
+            )
+        }.trim()
     }
 
     fun generateEmotionalProfile(summary: List<String>) =

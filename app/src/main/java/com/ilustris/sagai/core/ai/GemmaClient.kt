@@ -25,6 +25,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Singleton
@@ -35,6 +36,13 @@ class GemmaClient
     ) : AIClient() {
         @PublishedApi
         internal val requestMutex = Mutex()
+
+        // If an exception happens during generate(), this will be set to a non-null Duration
+        // and the next call to generate() will delay for that amount before attempting the request.
+        // When a request completes successfully, this is reset to null.
+        @PublishedApi
+        @Volatile
+        internal var retryDelay: Duration? = null
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
@@ -69,10 +77,13 @@ class GemmaClient
             filterOutputFields: List<String> = emptyList(),
         ): T? =
             withContext(Dispatchers.IO) {
+                retryDelay?.let {
+                    Log.e(javaClass.simpleName, "generate: Trying delay to avoid rate limit.")
+                    delay(it)
+                }
+
                 requestMutex.withLock {
                     try {
-                        delay(2.seconds)
-
                         val client =
                             com.google.ai.client.generativeai.GenerativeModel(
                                 modelName = modelName(),
@@ -116,6 +127,9 @@ class GemmaClient
 
                         val content = client.generateContent(inputContent)
 
+                        // Request succeeded — reset any retry delay because the service is operating again.
+                        retryDelay = null
+
                         val response = content.text
                         Log.d(javaClass.simpleName, "Input content: ${inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}")
                         Log.i(
@@ -148,8 +162,11 @@ class GemmaClient
 
                         val cleanedJsonString = response.sanitizeAndExtractJsonString()
                         val typeToken = object : TypeToken<T>() {}
+                        delay(2.seconds)
                         Gson().fromJson(cleanedJsonString, typeToken.type)
                     } catch (e: Exception) {
+                        retryDelay = 3.seconds
+
                         Log.e(this@GemmaClient::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)
                         FirebaseCrashlytics.getInstance().recordException(e, {
                             key("model", modelName())

@@ -277,7 +277,6 @@ fun ChatInputView(
                         .padding(4.dp),
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
                     modifier =
                         Modifier
                             .fillMaxWidth(),
@@ -363,6 +362,7 @@ fun ChatInputView(
                         },
                         modifier =
                             Modifier
+                                .align(Alignment.CenterVertically)
                                 .weight(1f)
                                 .animateContentSize(),
                     )
@@ -371,6 +371,7 @@ fun ChatInputView(
                         inputField.text.isNotEmpty(),
                         enter = scaleIn(animationSpec = tween(easing = LinearOutSlowInEasing)),
                         exit = scaleOut(animationSpec = tween(easing = EaseIn)),
+                        modifier = Modifier.align(Alignment.Bottom),
                     ) {
                         val buttonColor by animateColorAsState(
                             if (isGenerating.not()) {

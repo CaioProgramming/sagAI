@@ -48,7 +48,7 @@ fun ReactionsView(
                         .size(24.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.background, CircleShape)
-                        .padding(4.dp),
+                        .padding(2.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(text = reaction.data.emoji, style = MaterialTheme.typography.labelSmall)

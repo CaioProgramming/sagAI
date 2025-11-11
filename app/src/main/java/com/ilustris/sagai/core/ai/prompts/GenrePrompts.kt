@@ -67,16 +67,36 @@ object GenrePrompts {
 
             CRIME ->
                 """
-        Art Technique: EXPRESSIVE INK LINE WORK with VISIBLE SCRATCHY HATCHING
-        Texture / Materiality: GRITTY, ROUGH INK TEXTURE
-        Line Detail: VARIABLE LINE WEIGHT AND MINIMAL FACIAL CONTOUR HATCHING
-        Color Application: FLAT COLOR BLOCKING (ZERO GRADIENTS) with SUBTLE COLOR BLEED
-        Aesthetic Era / Influence: MODERN INDEPENDENT COMIC ART
-        Figure Style: DYNAMIC, EXPRESSIVE ANATOMY, MATURE, NON-IDEALIZED FACIAL FEATURES
-
-        Mood: Tense, stylish, and melancholic — a slow-burning dramatic tone that emphasizes moral ambiguity.
-        Ambience: Tropical coastal city — palm-lined boulevards, beachfront skyline, pastel art-deco buildings, neon-lit boardwalks, and modern urban life (luxury cars, speedboats, street vendors). Think Miami Vice / GTA Vice City: humid air, sunset glow, reflective wet streets, and a blend of glamour and decay.
+                Art Technique: RAW, GRAPHIC NOIR ILLUSTRATION, DIGITAL SKETCH ART. **CONSISTENT, MATURE, AND ASSERTIVE LINEWORK.** **ROUGH, ANGULAR BRUSH/PEN MARKS.**
+                Line Detail: DELIBERATELY IMPERFECT OUTLINES — uneven line weight, quick hatch accents, occasional feathering and scratch marks
+                Surface & Texture: INK BLEEDS AND BLOTCHES, SUBTLE HALFTONE SPECKLE, INK BLEEDS AND BLOTCHES; add tactile authenticity
+                Aesthetic Influence: Contemporary indie/noir comics and hand-printed zines — tactile, rushed, and immediate
+        
+                Figure & Facial Treatment: UN-IDEALIZED, EXPRESSIVE FACES — asymmetry, small scars/freckles, rough stubble, simplified noses and lips; avoid polished features or smooth retouching. Prioritize expression and shape over micro-detail.
+                Rendering: FLAT COLOR BLOCKS with minimal modulation; use large planar shadow patches (no soft gradients), sparse cross-hatching for form, and intentional negative space.
+        
+                Color Palette: Vibrant tones reminiscent from Miami Vice Aesthetic.
+                Lighting & Shading: HIGH-CONTRAST, GRAPHIC SHADING — heavy blacks, bold shadow shapes, little mid-tone refinement. Keep highlights minimal and matte; avoid glossy speculars.
+        
+                Composition & Ambience: TROPICAL MIAMI-VICE AMBIENCE — sparse backgrounds with clear tropical cues: palm silhouettes, pastel art-deco facades, low ocean horizon at sunset, and neon reflections on wet pavement or chrome. The foreground character should remain dominant and graphic against these suggestive, not-over-detailed backgrounds. Focus the composition on the character and the surrounding atmosphere rather than any framed or panelled presentation.
+        
+                IMPORTANT RENDERING NOTE (CRITICAL FOR IMAGE MODELS):
+                Render this style as a single, full-bleed, edge-to-edge illustration suitable for final raster output (PNG/JPEG). DO NOT produce comic-page elements or simulate panels in the composition. Specifically forbid: panels, gutters, borders, inset frames, speech balloons, caption boxes, numbered panels, or any page-layout artifacts. The image must read as one complete canvas with no visible page or panel structure.
+        
+                Rendering Guidance (for prompt engineers / generators):
+                - Do NOT include borders, panels, gutters, frames, or any visible edge lines. The image MUST be rendered without borders or frames and should read as a single, unframed illustration focused on the character and ambience.
+                - Do NOT generate speech bubbles, captions, or panel numbering. Avoid any UI-like overlays or comic layout cues.
+                - Eyes & Facial Details: Keep eyes and facial features SIMPLE and MATTE — solid or minimally detailed pupils/irises, flat catch-free highlights (or none), minimal eyelid shading, and graphic lashes/lines. Do NOT add sparkles, glossy catchlights, lens flares, or any decorative illumination that 'prettifies' the face. Avoid micro-specular highlights, glossy skin reflections, or any cosmetic glow. Favor expressive inked marks and flat tonal planes.
+                - Reduce facial micro-detail: avoid pores, smooth gradients, or photoreal skin. Prefer bold silhouette and expressive marks.
+                - Emphasize hand-made artifacts: paper grain, halftone speckle, ink edges, slight registration imperfections.
+                - Keep color flat and declarative; use accent color as a focal pop, not a global tint — apply pastel sunset gradients to background planes only if they remain flat and slightly textured.
+                - Preserve imperfect, sketchy linework: avoid perfectly clean vector lines or photographic clarity. Prioritize technique, texture, and tactile surface detail over decorative or beautifying effects.
+        
+                Suggested negative tokens to include when prompting models: 'panel', 'comic panel', 'gutter', 'speech bubble', 'caption', 'page', 'panel border', 'speech balloon'.
+        
+                Mood: Raw, rash, emotionally immediate — glamorous and decadent in subject matter, but tactile and hand-made in execution. Think Miami 80s neon decadence filtered through a hurried indie-comic print.
         """
+
             SPACE_OPERA ->
                 """
         Art Technique: CLASSIC GOLDEN AGE COMIC ART
@@ -149,10 +169,10 @@ object GenrePrompts {
 
             CRIME ->
                 """
-                Tropical urban environment: a vibrant coastal city with palm trees, beachfront boardwalks, pastel art-deco and modern high-rises, and active street life.
-                The color palette is dominated by vivid pink and orange, accented with teal blues.
-                The background is a detailed beach at sunset with neon highlights along the boardwalk, conveying modern life (cars, speedboats, palm-lined boulevards) and a sense of both leisure and latent danger.
-                In a Miami Vice / GTA Vice City aesthetic with pink highlights at the sky, dramatic cinematic lighting, and wet reflective surfaces.
+                Tropical urban environment: pastel sunset skies over palm-lined boulevards, art-deco storefronts, and wet reflective surfaces that catch neon trims.
+                Color Palette: pastel sunsets (pinks, lavenders, muted oranges) and teal/cyan accents, balanced with muted base tones from the artStyle (dusty mauve, desaturated olive). Use neon highlights sparingly as small reflective pops on chrome, puddles, or signage.
+                Application Notes: Maintain the flat, printed color treatment from the CRIME art style — do not apply glossy or photoreal glows. Neon should read like printed ink or paint reflections (sharp, localized), not a global color wash over the scene.
+                Ambience: Glamorous, decadent Miami‑80s vibe paired with urban grit — palm silhouettes, boardwalk hints, distant nightlife. Keep background detail suggestive and minimal so the character and hand-inked texture remain the focal point.
                 """
 
             SPACE_OPERA ->
@@ -166,6 +186,7 @@ object GenrePrompts {
                 """
         }.trimIndent()
 
+    @Suppress("unused")
     fun cinematographyComposition(genre: Genre) =
         buildString {
             when (genre) {

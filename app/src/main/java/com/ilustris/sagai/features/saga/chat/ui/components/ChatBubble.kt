@@ -165,6 +165,14 @@ fun ChatBubble(
                             width = Dimension.fillToConstraints
                         },
                 ) {
+                    val bubbleModifier = if (isUser) {
+                        Modifier.wrapContentSize().background(bubbleStyle.backgroundColor, bubbleShape)
+                    } else {
+                        Modifier.wrapContentSize()
+                            .background(MaterialTheme.colorScheme.surfaceContainer, bubbleShape)
+                            .background(bubbleStyle.backgroundColor.copy(alpha = .3f), bubbleShape)
+
+                    }
                     TypewriterText(
                         text = message.text,
                         isAnimated = isAnimated,
@@ -177,9 +185,7 @@ fun ChatBubble(
                         onTextClick = {
                         },
                         modifier =
-                            Modifier
-                                .wrapContentSize()
-                                .background(bubbleStyle.backgroundColor, bubbleShape)
+                            bubbleModifier
                                 .clip(bubbleShape)
                                 .padding(16.dp)
                                 .align(alignment)
@@ -652,8 +658,8 @@ fun ChatBubble(
                             shadow =
                                 Shadow(
                                     color = genre.color,
-                                    offset = Offset(4f, 4f),
-                                    blurRadius = 10f,
+                                    offset = Offset(0f, 0f),
+                                    blurRadius = 5f,
                                 ),
                         ),
                     onTextClick = { },
@@ -758,7 +764,7 @@ data class BubbleStyle(
             genre: Genre,
             canAnimate: Boolean,
         ) = BubbleStyle(
-            backgroundColor = genre.color.saturate(0.3f),
+            backgroundColor = genre.color,
             textColor = genre.iconColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
             animationDuration = 5.seconds,

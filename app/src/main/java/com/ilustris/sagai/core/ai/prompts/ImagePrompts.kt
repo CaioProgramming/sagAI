@@ -6,6 +6,34 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 object ImagePrompts {
+    fun criticalGenerationRule() =
+        buildString {
+            appendLine("*CRITICAL RULE* — ABSOLUTE FULL-BLEED FINAL ART (NON-NEGOTIABLE):")
+            appendLine(
+                "The generated image MUST be a finished, full-canvas (full-bleed) raster artwork that fills the entire frame. Under no circumstances may the image contain borders, frames, panels, inset artwork, or any graphic element that implies a framed or unfinished asset.",
+            )
+            appendLine()
+            appendLine("ABSOLUTE FORBIDDEN ELEMENTS (Do NOT render any of the following within the image):")
+            appendLine("- Any text or typography (titles, captions, labels, EXIF overlays)")
+            appendLine("- Logos, brand marks, signatures, trademarks, watermarks, stamps, or artist credits")
+            appendLine(
+                "- Borders, decorative frames, matting, rounded-corner masks, inset panels, picture-in-picture, film strips, polaroid edges",
+            )
+            appendLine("- UI elements, overlays, HUDs, icons, progress bars, buttons, or any interface chrome")
+            appendLine("- Letterbox/pillarbox bars, black bars, bleed/crop marks, registration marks, rulers, or guide lines")
+            appendLine("- Transparent background, alpha channel output, or any partially rendered region implying non-final art")
+            appendLine()
+            appendLine("COMPOSITION ENFORCEMENTS:")
+            appendLine(
+                "- The artwork must fill the entire output canvas. If necessary, allow natural subject cropping at edges to maintain a full-bleed composition.",
+            )
+            appendLine(
+                "- The output must be a flattened raster (e.g., PNG/JPEG with no alpha) representing final artwork; do not present layered, masked, or panelled compositions.",
+            )
+            appendLine("- Do not render frames or simulated frames as visual effects (no faux-matte or simulated print borders).")
+            appendLine()
+        }
+
     fun conversionGuidelines(genre: Genre) =
         """
         **Guidelines for Conversion and Expansion:**
@@ -113,59 +141,47 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
         buildString {
             appendLine("You are analyzing ONE composition reference image:")
             appendLine(
-                "1. **Image A (Composition Reference):** This single reference dictates layout, framing, lighting, lens feel, and photographic treatment. Use this image as the sole source for all observable photographic cues.",
+                "1. **Image A (Composition Reference):** This single reference dictates layout, framing, lens feel, and photographic treatment. Use this image as the sole source for all observable photographic cues.",
             )
             appendLine("")
             appendLine(
-                "Your task is to extract EIGHT concise, photography-focused composition components based only on Image A. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the extracted phrases/terms, each prepended by its respective label (e.g., 'Framing: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS, OR EXPLANATIONS.**",
+                "Your task is to extract FOUR concise, photography-and-style-focused composition components based only on Image A. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the extracted phrases/terms, each prepended by its respective label (for example: 'Framing: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS, OR EXPLANATIONS.**",
             )
             appendLine("")
-            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (8 points):**")
-            appendLine("1. Framing: [Value]")
-            appendLine("2. Zoom Level / Proximity: [Value]")
-            appendLine("3. Cropping Intention: [Value]")
-            appendLine("4. Key Lighting Style: [Value]")
-            appendLine("5. Camera Angle: [Value]")
-            appendLine("6. Lens / Focal Length: [Value]")
-            appendLine("7. Depth of Field / Bokeh: [Value]")
-            appendLine("8. Motion / Shutter Treatment: [Value]")
+            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (4 points):**")
+            appendLine("1. Framing & Crop Intention: [Value]")
+            appendLine("2. Lens Feel & Perspective: [Value]")
+            appendLine("3. Depth of Field & Bokeh: [Value]")
+            appendLine("4. Key Lighting Style & Contrast: [Value]")
             appendLine("")
 
-            appendLine("**Extract these details directly from IMAGE A:**")
+            appendLine("**Guidelines for filling each label (be precise, concise, and model-friendly):**")
+
             appendLine(
-                "1.  **Framing:** [Pick the most accurate photographic framing term (e.g., FULL BODY, 3/4, WAIST-UP, BUST-UP, HEADSHOT). Be consistent with Cropping Intention.]",
+                "1. Framing & Crop Intention: Use the exact photographic framing term (e.g., CLOSE-UP, BUST-UP, HEADSHOT) and explicitly describe the body crop and subject fill (e.g., 'CLOSE-UP, subject fills ~85%, cropped at shoulders, tight focus on eyes').",
             )
             appendLine(
-                "2.  **Zoom Level / Proximity:** [Describe camera-subject distance in photographic terms: e.g., 'Close (tight on face)', 'Mid (waist-up)', 'Wide (environmental)'. Indicate if facial expression is dominant.]",
+                "2. Lens Feel & Perspective: Describe the perceptual effect and provide an approximate focal length range: e.g., 'Short tele compressed portrait look (85–135mm approx), natural facial proportions' or 'Mild wide-angle feel (35–50mm approx)'.",
             )
             appendLine(
-                "3.  **Cropping Intention:** [Describe how the subject is intentionally cut by the frame (explicit pose/gaze guidance). Keep this neutral — focus on pose/gaze and compositional crop only (no clothing or prop details).]",
+                "3. Depth of Field & Bokeh: State DOF and its effect on the background: e.g., 'Shallow DOF, creamy bokeh, strong subject isolation' or 'Deep focus, sharp background'.",
             )
             appendLine(
-                "4.  **Key Lighting Style:** [State the primary lighting technique and its photographic effect: e.g., 'Hard rim lighting with deep shadows', 'High-key even fill', 'Split lighting with strong contrast', 'Backlit silhouette'. Mention directionality and contrast briefly.]",
-            )
-            appendLine(
-                "5.  **Camera Angle:** [Specify the camera angle: e.g., Low-angle (heroic), High-angle (vulnerable), Eye-level (neutral), Dutch/canted. Include a short note on impact (e.g., 'Low-angle — imposing').]",
-            )
-            appendLine(
-                "6.  **Lens / Focal Length:** [Estimate lens feel: e.g., 'Wide (24–35mm) — exaggerated perspective', 'Standard (35–50mm)', 'Short tele (85–135mm) — compressed perspective'. If exact mm cannot be inferred, give the perceptual effect and an approximate range.]",
-            )
-            appendLine(
-                "7.  **Depth of Field / Bokeh:** [Describe DOF: e.g., 'Shallow DOF with creamy bokeh', 'Deep focus (everything sharp)', 'Moderate DOF with subject separation'. Note any visible out-of-focus shapes or background separation.]",
-            )
-            appendLine(
-                "8.  **Motion / Shutter Treatment:** [Describe whether motion is frozen or implied: e.g., 'Crisp frozen action (fast shutter)', 'Intentional motion blur (slow shutter)', 'Subject motion with sharp face and blurred limbs'. Keep to short, specific phrases.]",
+                "4. Key Lighting Style & Contrast: Describe main light direction/quality (soft/hard key) and contrast: e.g., 'Soft key from camera-right, subtle fill, low-medium contrast portrait' or 'Hard side light, high contrast, dramatic shadows'.",
             )
 
             appendLine("")
-            appendLine("**IMPLEMENTATION RULES FOR THE AGENT:**")
+            appendLine("**OUTPUT RULES (STRICT):**")
             appendLine(
-                "- Base every field on directly observable photographic cues (crop lines, shadow/hight contrast, edge sharpness, background separation, blur, perspective distortion).",
+                "- Output MUST consist of exactly the four labeled lines above in the same order, each with a concise bracketed value. No extra lines, headings, or commentary are allowed.",
             )
             appendLine(
-                "- If a value is uncertain, provide the most likely photographic perceptual description and add a tight approximate range (e.g., 'Short tele (85–105mm approx)').",
+                "- Use measured, unambiguous terms (percent ranges, approximate focal-length ranges). Prefer short, declarative phrases focused on visual effect.",
             )
-            appendLine("- Output must be exactly the eight labeled lines above with their bracketed values; no extra commentary.")
+            appendLine(
+                "- Base every field solely on directly observable photographic cues (crop lines, blur, perspective, shadow falloff, and surface texture).",
+            )
+            appendLine("- Do not mention the reference image or instructions in the output. Provide only the labeled values.")
         }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -173,32 +189,59 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
         buildString {
             appendLine("**Injected Detail — Photographic Light Accent:**")
             appendLine(
-                "Create exactly ONE short phrase (6-16 words) describing a subtle photographic light accent using ${GenrePrompts.colorAccent(
+                "Create exactly ONE short phrase (6-14 words) describing a subtle photographic light accent using ${GenrePrompts.colorAccent(
                     genre,
                 )}.",
             )
             appendLine("")
+            appendLine("Core Intent:")
+            appendLine("1. Make the accent feel organic and photographic — not a graphic neon outline or harsh glow contour.")
+            appendLine(
+                "2. Use the accent to subtly lift and define a single small area (jawline, eye catch, collarbone, hair edge) so it becomes a striking, theme-defining detail.",
+            )
+            appendLine("")
             appendLine("Light Properties:")
             appendLine("1. Role: Secondary/supporting light only — not the main illumination")
-            appendLine("2. Purpose: Create a focused highlight that guides the viewer's eye")
-            appendLine("3. Character: Subtle, photographic, intentional — avoid narrative light sources")
+            appendLine("2. Purpose: Create a focused highlight that guides the viewer's eye and adds a tactile sense of materiality")
+            appendLine(
+                "3. Character: Smooth, organic, and photographic — think diffusion, soft rim, micro-speculars, slight halation — NOT a hard neon contour",
+            )
             appendLine("")
             appendLine("Required Elements (include all):")
             appendLine("1. Position: Name exact spot ('edge of jawline', 'upper right hairline', 'inner corner of eye')")
-            appendLine("2. Intensity: State level (soft/medium) and spread (tight/gradual)")
-            appendLine("3. Surface: Describe one material interaction ('specular on skin', 'diffused in hair')")
+            appendLine(
+                "2. Intensity & Falloff: State level (soft/medium), spread (tight/gradual), and emphasize a natural falloff (no abrupt halo)",
+            )
+            appendLine(
+                "3. Surface Interaction: Describe one material interaction ('soft specular on skin', 'subtle sheen on wet lips', 'diffused highlight in hair')",
+            )
             appendLine("")
             appendLine("Technical Constraints:")
-            appendLine("* Keep color influence subtle (max 10-15% of total lighting)")
-            appendLine("* Must work with main lighting, not fight it")
-            appendLine("* Focus on edge highlights, rim lights, or small focused accents")
-            appendLine("* No narrative sources (avoid devices, props, or environmental sources)")
+            appendLine("* Keep color influence subtle (max 8-12% of total lighting) — enough to be noticeable but not overpowering")
+            appendLine(
+                "* No glow contour, halo, or hard neon outline around the subject; avoid terms like 'glowing rim', 'thick neon edge', or 'haloed silhouette'.",
+            )
+            appendLine(
+                "* Prefer descriptions that imply scattering or diffusion (e.g., 'organic wash', 'soft edge', 'gradual falloff', 'micro-speculars')",
+            )
+            appendLine("* Must integrate with the main lighting — not compete with it; works as an accent, not a separate light source")
             appendLine("")
-            appendLine("Example Format:")
-            appendLine("'soft ${GenrePrompts.colorAccent(genre)} rim light along left jawline, medium fade, pearl highlight on skin'")
-            appendLine("'subtle ${GenrePrompts.colorAccent(genre)} catch light in eyes, low intensity, clean specular'")
+            appendLine("Output Examples (use these tones as templates):")
+            appendLine("'soft ${GenrePrompts.colorAccent(genre)} edge wash along left jawline, gradual falloff, delicate specular on skin'")
+            appendLine(
+                "'subtle ${GenrePrompts.colorAccent(genre)} catch light in eyes, low intensity, micro-specular sparkle, natural fade'",
+            )
             appendLine("")
-            appendLine("Output this single phrase before the Narrative Core section.")
+            appendLine("Formatting and Placement:")
+            appendLine("- Output this single short phrase (6-14 words) before the Narrative Core section.")
+            appendLine(
+                "- Phrase must mention exact position, intensity/falloff, and one surface interaction. Keep it photographic and concise.",
+            )
+            appendLine("")
+            appendLine("Why this matters:")
+            appendLine(
+                "A well-placed, smoothly rendered color accent can transform a portrait from flat to cinematic — it should read as a believable photographic artifact that reinforces the genre color and theme without feeling graphic or artificial.",
+            )
         }
 
     fun descriptionRules(genre: Genre) =

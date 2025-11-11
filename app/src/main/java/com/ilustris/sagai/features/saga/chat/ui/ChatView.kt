@@ -18,8 +18,13 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode.Reverse
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -39,6 +44,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -46,6 +52,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -177,6 +184,7 @@ import effectForGenre
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
@@ -554,6 +562,10 @@ fun ChatContent(
         }
     }
 
+    LaunchedEffect(inputValue) {
+        objectiveExpanded = false
+    }
+
     with(sharedTransitionScope) {
         Box {
             val blur by animateDpAsState(
@@ -569,7 +581,7 @@ fun ChatContent(
                     null,
                     colorFilter =
                         ColorFilter.tint(
-                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.surfaceContainer,
                         ),
                     modifier =
                         Modifier
@@ -578,9 +590,9 @@ fun ChatContent(
                                 isPlaying,
                                 shimmerColors = saga.genre.colorPalette(),
                                 duration = 10.seconds,
-                                targetValue = 200f,
+                                targetValue = 300f,
                             ).fillMaxSize(.5f)
-                            .alpha(.6f),
+                            .alpha(.5f),
                 )
 
                 ConstraintLayout(
@@ -632,15 +644,7 @@ fun ChatContent(
                             }.fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
-                    ) {
-                        StarryTextPlaceholder(
-                            starCount = 100,
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .gradientFill(content.data.genre.gradient()),
-                        )
-                    }
+                    )
 
                     AnimatedVisibility(
                         state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not(),
@@ -699,16 +703,32 @@ fun ChatContent(
                             val currentObjective =
                                 content.getCurrentTimeLine()?.data?.currentObjective
 
+                            val infiniteTransition = rememberInfiniteTransition()
+                            val scaleAnimation =
+                                infiniteTransition.animateFloat(
+                                    1f,
+                                    1.3f,
+                                    infiniteRepeatable(
+                                        tween(
+                                            1.seconds.toInt(DurationUnit.MILLISECONDS),
+                                            easing = EaseIn,
+                                        ),
+                                        repeatMode = Reverse,
+                                    ),
+                                )
+
                             Image(
                                 painterResource(R.drawable.ic_spark),
                                 contentDescription = null,
                                 colorFilter = ColorFilter.tint(content.data.genre.color),
                                 modifier =
                                     Modifier
+                                        .scale(if (isGenerating) scaleAnimation.value else 1f)
                                         .clip(CircleShape)
                                         .clickable(enabled = currentObjective?.isNotEmpty() == true) {
                                             objectiveExpanded = true
                                         }.size(24.dp)
+                                        .reactiveShimmer(isGenerating)
                                         .sharedElement(
                                             rememberSharedContentState(
                                                 key = "current_objective_${content.data.id}",

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -169,6 +170,7 @@ fun WikiContent(
                                     Modifier
                                         .align(Alignment.Center)
                                         .clip(genre.shape())
+                                        .padding(8.dp)
                                         .clickable {
                                             reviewWiki(wikis)
                                         },
@@ -179,7 +181,7 @@ fun WikiContent(
                                     tint = genre.color,
                                     modifier =
                                         Modifier
-                                            .size(50.dp)
+                                            .size(48.dp)
                                             .padding(8.dp),
                                 )
                                 Text(
@@ -195,6 +197,10 @@ fun WikiContent(
                         }
                     }
                 }
+            }
+
+            item(span = { GridItemSpan(2) }) {
+                Spacer(Modifier.size(50.dp))
             }
         }
 

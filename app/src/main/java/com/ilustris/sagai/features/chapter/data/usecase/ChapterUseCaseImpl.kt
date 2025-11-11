@@ -10,6 +10,7 @@ import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -17,6 +18,7 @@ import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
@@ -113,13 +115,6 @@ class ChapterUseCaseImpl
                             ImageGuidelines.compositionReferenceGuidance,
                         )
                     }
-                val styleReference =
-                    genreReferenceHelper.getGenreStyleReference(saga.data.genre).getSuccess()?.let {
-                        ImageReference(
-                            it,
-                            ImageGuidelines.styleReferenceGuidance,
-                        )
-                    }
                 val charactersIcons =
                     characters.mapNotNull { character ->
 
@@ -140,13 +135,25 @@ class ChapterUseCaseImpl
                 val visualComposition =
                     imagenClient
                         .extractComposition(
-                            listOfNotNull(coverReference, styleReference),
+                            listOfNotNull(coverReference),
                         ).getSuccess()
                 val coverContext =
                     mapOf(
-                        "saga" to saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
-                        "chapter" to chapter.data.toJsonFormatIncludingFields(listOf("title", "overview", "introduction")),
-                        "featuredCharacters" to characters.map { it.name },
+                        "featuredCharacters" to
+                            characters.formatToJsonArray(
+                                listOf(
+                                    "id",
+                                    "image",
+                                    "sagaId",
+                                    "joinedAt",
+                                    "emojified",
+                                    "hexColor",
+                                    "firstSceneId",
+                                    "abilities",
+                                    "carriedItems",
+                                    "backstory",
+                                ),
+                            ),
                     )
 
                 val coverContextJson = coverContext.toJsonFormat()
@@ -165,18 +172,18 @@ class ChapterUseCaseImpl
                 val genCover =
                     imagenClient
                         .generateImage(
-                            promptGeneration,
-                            charactersIcons,
-                        )
+                            promptGeneration.plus(ImagePrompts.criticalGenerationRule()),
+                        )!!
+
                 val coverFile =
                     fileHelper.saveFile(
                         chapter.data.title,
                         genCover,
                         path = "${saga.data.id}/chapters/",
-                    )
+                    )!!
                 val newChapter =
                     chapter.data.copy(
-                        coverImage = coverFile?.path ?: emptyString(),
+                        coverImage = coverFile.path,
                     )
 
                 chapterRepository.updateChapter(newChapter)
