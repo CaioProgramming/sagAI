@@ -96,7 +96,7 @@ jobs:
         uses: google-github-actions/run-gemini-cli@v0.1.14
         with:
           gemini_api_key: ${{ secrets.GEMINI_KEY }}
-          command: "@gemini-cli /review --release"
+          prompt: '/gemini-review focus on delivered features based on the git log'
 
       - name: Delivering artifact 🚚
         uses: OrjanSkarnes/pull-request-commenter@1.2.3

@@ -17,7 +17,7 @@ jobs:
         uses: google-github-actions/run-gemini-cli@v0.1.14
         with:
           gemini_api_key: ${{ secrets.GEMINI_KEY }}
-          command: "@gemini-cli /review"
+          prompt: '/gemini-review focus on new feature delivery based on the git log'
 
       - name: Update PR description
         uses: actions/github-script@v6
