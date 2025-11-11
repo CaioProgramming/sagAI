@@ -1,4 +1,90 @@
-release-review:
+name: Release Deploy 🚀
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      buildVariant:
+        description: 'Gradle build variant to assemble (Debug or Release)'
+        required: true
+        default: 'Debug'
+
+jobs:
+  build-apk:
+    # Run for pull requests only if the PR has the 'feature' label; for push/workflow_dispatch, run as usual
+    if: >-
+      ${{ github.event_name != 'pull_request' || contains(join(github.event.pull_request.labels.*.name, ','), 'feature') }}
+    runs-on: ubuntu-latest
+
+    env:
+      # Module that produces the APK
+      ANDROID_MODULE: app
+      # Default variant; can be overridden via workflow_dispatch input
+      BUILD_VARIANT: ${{ github.event.inputs.buildVariant || 'Debug' }}
+
+    steps:
+      - name: 🧰 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔐 Make script executable
+        run: chmod +x scripts/prepare-config.sh
+
+      - name: ⚙️ Prepare config.properties
+        shell: bash
+        env:
+          GEMINI_KEY: ${{ secrets.GEMINI_KEY }}
+        run: |
+          set -euo pipefail
+          echo "[CI] Working dir: $(pwd)"
+          ./scripts/prepare-config.sh
+
+      - name: ☕ Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 🧱 Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 🗄️ Enable caches
+        run: echo "Using Gradle cache via setup-gradle action"
+
+      - name: 🔧 chmod gradlew
+        run: chmod +x ./gradlew
+
+      - name: 🏗️ Build APK
+        id: build_apk
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "[CI] Building APK with scripts/build-apk.sh"
+          bash scripts/build-apk.sh --module "${ANDROID_MODULE}" --variant "${BUILD_VARIANT}" | tee build_apk_output.txt
+          APK_LINE=$(grep '^apk=' build_apk_output.txt)
+          if [ -z "$APK_LINE" ]; then
+            echo "No apk output from build-apk.sh" >&2
+            exit 1
+          fi
+          echo "$APK_LINE" >> "$GITHUB_OUTPUT"
+      - name: ⬆️ Upload artifact
+        id: upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ env.BUILD_VARIANT }}
+          path: ${{ steps.build_apk.outputs.apk }}
+
+      - name: Firebase App Distribution Action
+        uses: hasretsariyer/firebase-app-distribution-github-action@v1.0.0
+        with:
+          firebase_token: ${{ secrets.FIREBASE_CI }}
+          app_id: ${{ secrets.FIREBASE_ID }}
+          app_file: ${{ steps.build_apk.outputs.apk }}
+          tester_groups: alpha-testers
+
+  release-review:
     runs-on: ubuntu-latest
     needs: build-apk
     steps:
