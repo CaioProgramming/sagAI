@@ -17,12 +17,12 @@ jobs:
         run: |
           if [ -f "Feature.md" ]; then
             content=$(cat Feature.md)
-            content="${content//'%'/'%25'}"
-            content="${content//$''/'%0A'}"
-            content="${content//$''/'%0D'}"
-            echo "::set-output name=content::$content"
+            delimiter=$(openssl rand -hex 8)
+            echo "content<<$delimiter" >> $GITHUB_OUTPUT
+            echo "$content" >> $GITHUB_OUTPUT
+            echo "$delimiter" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=content::No Feature.md file found."
+            echo "content=No Feature.md file found." >> $GITHUB_OUTPUT
           fi
 
       - name: Update PR description
