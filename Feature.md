@@ -2,7 +2,7 @@
 
 ## ⭐What's new:
 
-- Merge branch 'develop' into feature/genre/space-odyssey
+- Refactor: Enhance AI prompts, error handling, and UI
 - feat: Bump version to 1.5.0
 - Fix: Enable premium features in debug builds
 - Refactor: Overhaul image prompts and streamline generation logic
@@ -37,4 +37,4 @@
 - Refactor: Integrate BillingService and limit free sagas
 - Refactor: Integrate BillingService and limit free sagas
 - Refactor: Add billing library and new emoji rendering prompt
-
+- changing version and removing migrations from develop
