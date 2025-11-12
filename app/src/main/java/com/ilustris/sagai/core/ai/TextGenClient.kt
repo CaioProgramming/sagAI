@@ -10,43 +10,39 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.crashlytics.recordException
+import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
-import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 
 class TextGenClient(
-    private val remoteConfigService: RemoteConfigService,
+    private val firebaseRemoteConfig: FirebaseRemoteConfig,
 ) : AIClient() {
     companion object {
         const val TEXT_GEN_MODEL_FLAG = "textGenModel"
+        const val DEFAULT_TEXT_GEN_MODEL = "gemini-2.5-flash-lite"
     }
 
-    suspend fun modelName() = remoteConfigService.getString(TEXT_GEN_MODEL_FLAG)
+    fun modelName() =
+        firebaseRemoteConfig.getString(TEXT_GEN_MODEL_FLAG).let {
+            it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
+        }
 
-    override suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
-        val model = modelName() ?: error("No Model provided")
-
-        Log.i(
-            "TextGenClient",
-            "Using text model: $model from Remote Config (flag: '$TEXT_GEN_MODEL_FLAG')",
-        )
-        return Firebase
+    override suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel =
+        Firebase
             .ai(backend = GenerativeBackend.googleAI())
             .generativeModel(
-                modelName = model,
+                modelName = modelName(),
                 generationConfig = generationConfig,
             )
-    }
 
     suspend inline fun <reified T> generate(
         prompt: String,
         requireTranslation: Boolean = true,
         customSchema: Schema? = null,
     ): T? {
-        val model = modelName() ?: error("No Model provided")
-
+        val aiModel = modelName()
         try {
             val model =
                 if (T::class.java == String::class.java) {
@@ -71,10 +67,7 @@ class TextGenClient(
                     prompt
                 }
             val content = model.generateContent(fullPrompt)
-            Log.i(
-                javaClass.simpleName,
-                "generating with model: $model\nPrompt size: ${fullPrompt.length} chars.",
-            )
+            Log.i(javaClass.simpleName, "generating with model: $aiModel")
             Log.d(
                 javaClass.simpleName,
                 "content generation result: ${content.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}",
@@ -92,7 +85,7 @@ class TextGenClient(
         } catch (e: Exception) {
             e.printStackTrace()
             FirebaseCrashlytics.getInstance().recordException(e, {
-                key("model", model)
+                key("model", aiModel)
             })
             return null
         }
