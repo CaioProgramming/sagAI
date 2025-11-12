@@ -12,7 +12,6 @@ import com.google.firebase.crashlytics.recordException
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
@@ -37,27 +36,25 @@ class GemmaClient
         @PublishedApi
         internal val requestMutex = Mutex()
 
-        // If an exception happens during generate(), this will be set to a non-null Duration
-        // and the next call to generate() will delay for that amount before attempting the request.
-        // When a request completes successfully, this is reset to null.
         @PublishedApi
         @Volatile
         internal var retryDelay: Duration? = null
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
-            const val DEFAULT_SUMMARIZATION_MODEL = "gemini-2.0-flash-lite"
+            const val KEY_FLAG = "FIREBASE_KEY"
         }
 
         fun modelName() =
             firebaseRemoteConfig.getString(SUMMARIZATION_MODEL_FLAG).let {
                 it.ifEmpty {
-                    Log.e(
-                        javaClass.simpleName,
-                        "buildModel: Firebase flag $SUMMARIZATION_MODEL_FLAG value not retrieved",
-                    )
-                    DEFAULT_SUMMARIZATION_MODEL
+                    error("Couldn't fetch gemma Model")
                 }
+            }
+
+        fun apiConfig() =
+            firebaseRemoteConfig.getString(KEY_FLAG).ifEmpty {
+                error("Couldn't fetch firebase key")
             }
 
         override fun buildModel(generationConfig: GenerationConfig): GenerativeModel? {
@@ -87,7 +84,7 @@ class GemmaClient
                         val client =
                             com.google.ai.client.generativeai.GenerativeModel(
                                 modelName = modelName(),
-                                apiKey = BuildConfig.APIKEY,
+                                apiKey = apiConfig(),
                                 generationConfig {
                                     temperature = temperatureRandomness
                                 },

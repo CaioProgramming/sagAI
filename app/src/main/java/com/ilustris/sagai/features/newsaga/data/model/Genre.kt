@@ -55,6 +55,15 @@ Genre(
         ambientMusicConfigKey = "crime_ambient_music_url",
     ),
 
+    SHINOBI(
+        title = R.string.genre_shinobi,
+        // Deep wine / cinnabar red - distinct from Fantasy red
+        color = MaterialColor.Red900,
+        iconColor = Color.White,
+        background = R.drawable.shinobi_background,
+        ambientMusicConfigKey = "shinobi_ambient_music_url",
+    ),
+
     SPACE_OPERA(
         title = R.string.genre_space_opera,
         color = MaterialColor.CyanA700,
@@ -114,6 +123,16 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.4f,
                 desaturationFactorNonTarget = .4f,
             )
+        Genre.SHINOBI ->
+            SelectiveColorParams(
+                targetColor = color,
+                // tight hue tolerance to preserve that specific wine red accent
+                hueTolerance = .02f,
+                saturationThreshold = .18f,
+                lightnessThreshold = .12f,
+                highlightSaturationBoost = 1.8f,
+                desaturationFactorNonTarget = .45f,
+            )
         Genre.SPACE_OPERA ->
             SelectiveColorParams(
                 targetColor = color,
@@ -132,6 +151,7 @@ fun Genre.defaultHeaderImage() =
         Genre.HORROR -> R.drawable.horror_card
         Genre.HEROES -> R.drawable.hero_card
         Genre.CRIME -> R.drawable.crime_card
+        Genre.SHINOBI -> R.drawable.shinobi_card
         Genre.SPACE_OPERA -> R.drawable.space_opera_card
     }
 
@@ -183,6 +203,13 @@ fun Genre.colorPalette() =
                 MaterialColor.PinkA100,
                 MaterialColor.Amber300,
                 MaterialColor.YellowA200,
+            )
+        Genre.SHINOBI ->
+            listOf(
+                MaterialColor.Red900,
+                MaterialColor.Indigo700,
+                MaterialColor.BlueGray900,
+                MaterialColor.Amber700,
             )
         Genre.SPACE_OPERA ->
             listOf(

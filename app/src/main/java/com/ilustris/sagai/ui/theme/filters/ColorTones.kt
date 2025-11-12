@@ -144,3 +144,18 @@ object SpaceOperaTones {
 
     val allTones = listOf(COSMIC_TWILIGHT)
 }
+
+object ShinobiColorTones {
+    val BLOOD_MOON_ASSASSIN =
+        ColorTonePalette(
+            name = "Blood Moon Assassin",
+            highlightTint = Triple(0.95f, 0.92f, 0.9f), // Off-white, slightly warm
+            shadowTint = Triple(0.7f, 0.15f, 0.15f), // Deep, slightly desaturated red
+            defaultTintStrength = 0.35f,
+        )
+
+    val allTones =
+        listOf(
+            BLOOD_MOON_ASSASSIN,
+        )
+}

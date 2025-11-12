@@ -2,8 +2,12 @@ import android.graphics.RenderEffect
 import android.graphics.RuntimeShader
 import android.os.Build
 import android.util.Log
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asComposeRenderEffect
@@ -11,14 +15,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
-import com.ilustris.sagai.features.newsaga.data.model.Genre // Your Genre class
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
 import com.ilustris.sagai.ui.theme.filters.CrimeColorTones
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
 import com.ilustris.sagai.ui.theme.filters.HeroColorTones
-import com.ilustris.sagai.ui.theme.filters.HorrorColorTones // Import HorrorColorTones
+import com.ilustris.sagai.ui.theme.filters.HorrorColorTones
 import com.ilustris.sagai.ui.theme.filters.SciFiColorTones
+import com.ilustris.sagai.ui.theme.filters.ShinobiColorTones
 import com.ilustris.sagai.ui.theme.grayScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -56,6 +61,7 @@ fun Genre.colorTones() =
         Genre.HEROES -> HeroColorTones.URBAN_COMIC_VIBRANCY
         Genre.CRIME -> CrimeColorTones.MIAMI_NEON_SUNSET
         Genre.SPACE_OPERA -> FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
+        Genre.SHINOBI -> ShinobiColorTones.BLOOD_MOON_ASSASSIN
     }
 
 fun Genre.shaderParams(
@@ -335,7 +341,11 @@ fun Modifier.effectForGenre(
             composableSize = newSize
         }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
-                runtimeShader.setFloatUniform("iResolution", composableSize.width.toFloat(), composableSize.height.toFloat())
+                runtimeShader.setFloatUniform(
+                    "iResolution",
+                    composableSize.width.toFloat(),
+                    composableSize.height.toFloat(),
+                )
                 runtimeShader.setFloatUniform("iTime", timeState)
                 runtimeShader.setFloatUniform("u_grainIntensity", uniformValues.grainIntensity)
                 runtimeShader.setFloatUniform("u_bloomThreshold", uniformValues.bloomThreshold)
@@ -360,8 +370,14 @@ fun Modifier.effectForGenre(
                 runtimeShader.setFloatUniform("u_tintStrength", uniformValues.tintStrength)
                 runtimeShader.setFloatUniform("u_vignetteStrength", uniformValues.vignetteStrength)
                 runtimeShader.setFloatUniform("u_vignetteSoftness", uniformValues.vignetteSoftness)
-                runtimeShader.setFloatUniform("u_pixelationBlockSize", uniformValues.pixelationBlockSize)
-                runtimeShader.setFloatUniform("u_colorTemperature", uniformValues.colorTemperature) // Set the new uniform
+                runtimeShader.setFloatUniform(
+                    "u_pixelationBlockSize",
+                    uniformValues.pixelationBlockSize,
+                )
+                runtimeShader.setFloatUniform(
+                    "u_colorTemperature",
+                    uniformValues.colorTemperature,
+                ) // Set the new uniform
 
                 renderEffect =
                     RenderEffect

@@ -9,7 +9,6 @@ import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.file.backup.RestorableSaga
@@ -25,7 +24,6 @@ import java.io.FileInputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
-import kotlin.collections.emptyList
 
 class BackupService(
     private val context: Context,
@@ -78,12 +76,12 @@ class BackupService(
             null
         }
 
-    private suspend fun getBackupManifests(backupRoot: DocumentFile): List<SagaManifest> {
-        val manifestFile = backupRoot.findFile(MANIFEST_FILE_NAME) ?: return emptyList()
-        val json = readTextFromUri(manifestFile.uri) ?: return emptyList()
+    private suspend fun getBackupManifests(backupRoot: DocumentFile): List<SagaManifest>? {
+        val manifestFile = backupRoot.findFile(MANIFEST_FILE_NAME) ?: return null
+        val json = readTextFromUri(manifestFile.uri) ?: return null
         return Gson()
             .fromJson(json, Array<SagaManifest>::class.java)
-            ?.toList() ?: emptyList()
+            ?.toList()
     }
 
     private fun getIconFromZip(
@@ -114,8 +112,8 @@ class BackupService(
 
     suspend fun getBackedUpSagas() =
         executeRequest {
-            val backupRoot = getBackupRoot() ?: return@executeRequest emptyList()
-            val manifests = getBackupManifests(backupRoot)
+            val backupRoot = getBackupRoot() ?: error("No backup folder")
+            val manifests = getBackupManifests(backupRoot) ?: error("No manifest founded")
 
             manifests.map {
                 val icon = getIconFromZip(backupRoot, it.zipFileName, it.iconName)
@@ -312,7 +310,7 @@ class BackupService(
             }
 
             // 3. Save the file's byte array to the correct destination
-            val dirPath = destinationDir?.path ?: return@forEach
+            destinationDir?.path ?: return@forEach
             val newFile = fileHelper.saveFile(bytes, destinationDir.path, destinationFile.name) ?: return@forEach
 
             pathTranslationMap.add(path to newFile.absolutePath)

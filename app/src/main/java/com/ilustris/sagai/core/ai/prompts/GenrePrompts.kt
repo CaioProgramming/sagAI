@@ -7,6 +7,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre.CYBERPUNK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HEROES
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
+import com.ilustris.sagai.features.newsaga.data.model.Genre.SHINOBI
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
 
 object GenrePrompts {
@@ -95,6 +96,27 @@ object GenrePrompts {
                 Suggested negative tokens to include when prompting models: 'panel', 'comic panel', 'gutter', 'speech bubble', 'caption', 'page', 'panel border', 'speech balloon'.
         
                 Mood: Raw, rash, emotionally immediate — glamorous and decadent in subject matter, but tactile and hand-made in execution. Think Miami 80s neon decadence filtered through a hurried indie-comic print.
+                """
+
+            SHINOBI ->
+                """
+        Art Technique: SUMI-E (Japanese ink wash painting) translated to digital illustration — economy of brush strokes, bold inks, and controlled negative space.
+        Brushwork: EXPRESSIVE, SPONTANEOUS BRUSH MARKS with strong calligraphic lines; use dry-brush textures, ink bleeds, and controlled splatters to evoke traditional inks.
+        Texture / Materiality: RICE-PAPER/GRAIN suggestion — subtle paper texture, visible fiber, and ink absorption artifacts.
+        Aesthetic Influence: Classical Japanese ink painters, Yoshitoshi, Hokusai (line economy), and modern sumi-e adaptations.
+
+        Figure & Facial Treatment: UN-IDEALIZED, STYLIZED FEATURES — simplified, expressive faces with minimal detail; focus on silhouette, posture, and gesture over photoreal micro-detail.
+        Rendering: MONOCHROME WITH SELECTIVE COLOR ACCENTS — primarily black ink, washed grays, and a deep wine red used sparingly as the thematic accent (e.g., sash, blood, lantern light, or clan sigil). Avoid glossy or specular highlights; prefer matte ink effects.
+
+        Color Palette: Deep wine red (distinct from Fantasy reds), charcoal blacks, indigo tones, and muted gold for subtle ornaments.
+        Lighting & Shading: SUBTLE WASHES AND TONAL LAYERS rather than sharp rim lights — use diluted ink washes to suggest volume and atmospheric depth.
+
+        Composition & Ambience: FEUDAL JAPAN / SHADOWED TEMPLE GROUNDS — misty bamboo groves, tiled roofs, stone lanterns, paper screens, and narrow alleys. Keep backgrounds suggestive and minimal to preserve the sumi-e aesthetic and focus on gesture and mood.
+
+        CRITICAL RENDERING NOTE (ABSOLUTE):
+        Render as a full-bleed, edge-to-edge illustration with NO BORDERS, FRAMES, TEXT, OR UI ARTIFACTS. The output must be a clean composition suitable for final printing or display.
+
+        Mood: Quiet, disciplined, and tense — honor-bound restraint with potential mythic undertones (onyo, yokai) if the user opts into mythological elements.
         """
 
             SPACE_OPERA ->
@@ -175,6 +197,23 @@ object GenrePrompts {
                 Ambience: Glamorous, decadent Miami‑80s vibe paired with urban grit — palm silhouettes, boardwalk hints, distant nightlife. Keep background detail suggestive and minimal so the character and hand-inked texture remain the focal point.
                 """
 
+            SHINOBI ->
+                """
+                **Specific Color Application Instructions (SHINOBI):**
+
+                The primary accent is a DEEP WINE RED (distinct from Fantasy red). Use it sparingly as a focused, organic pigment: a sash, a lantern's inner glow, a clan sigil, or a few brush-stroke accents. The red should feel like ink mixed onto paper rather than a digital neon overlay.
+
+                Background & Ambient Lighting:
+                Keep the ambient lighting subdued — misted moonlight, soft paper-lamp glow, or diluted ink-wash atmospheres. Background elements (bamboo, stone lanterns, distant rooftops) should remain minimal and slightly desaturated so the wine-red accents read clearly.
+
+                Application Rules:
+                - Use deep wine red as localized pigment; do NOT globally tint skin or entire background.
+                - Avoid digital bloom, strong glows, or glossy specular highlights. Prefer matte ink-like absorption and soft, organic light falloff.
+                - Emphasize handcrafted stroke edges and ink bleeding where the red meets paper or cloth.
+
+                Ambience: Quiet, ceremonial, and slightly mythic — if mythological elements are present, integrate the red as ritual pigment or symbolic markings rather than decorative neon.
+                """
+
             SPACE_OPERA ->
                 """
                 **Background & Ambient Lighting:**
@@ -207,6 +246,18 @@ object GenrePrompts {
                     appendLine("Paying attention to futuristic details and intense emotions.")
                 }
 
+                SHINOBI -> {
+                    appendLine(
+                        "Emphasize poise, gesture, and negative space. Use vertical compositions (bamboo, paper screens) and asymmetrical framing to suggest tradition and discipline.",
+                    )
+                    appendLine(
+                        "Favor contemplative, slightly off-center compositions — observe the character in motion or mid-gesture rather than posed directly to camera.",
+                    )
+                    appendLine(
+                        "Use layered planes (foreground silhouettes, mid-ground action, washed background) to create depth while keeping the sumi-e economy of detail.",
+                    )
+                }
+
                 else -> {
                     appendLine("Focus on characters involved")
                     appendLine("Creating angles that focus on their conflicts and emotions")
@@ -221,6 +272,7 @@ object GenrePrompts {
             HORROR -> "Ash gray/Faded cerulean blue"
             HEROES -> "Midnight blue/Electric blue"
             CRIME -> "Hot pink/Electric magenta"
+            SHINOBI -> "Deep wine red / Cinnabar"
             SPACE_OPERA -> "Cyan/Deep cerulean blue"
         }
 
@@ -273,6 +325,13 @@ object GenrePrompts {
                 // - Consider influences from 80s Miami/LA crime fiction, Latin and Anglo names common in ${currentLanguage()} locales.
                 // - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
                 // - Avoid overtly sci-fi or fantasy elements.
+                """
+            SHINOBI ->
+                """
+                // - Aim for names rooted in feudal Japan or stylized adaptations that fit the setting.
+                // - Consider short, evocative names or clan-like monikers (e.g., "Aka-ryu", "Kage", "Hanae", "Shirogane").
+                // - Blend historical Japanese-sounding names with terse nicknames suitable for operatives and covert figures.
+                // - Avoid overtly modern slang or sci-fi terminology.
                 """
             SPACE_OPERA ->
                 """
@@ -391,11 +450,6 @@ object GenrePrompts {
                     * Cool, tense, and stylish. Understated bravado with subtext; terse exchanges and loaded pauses.
                     * Noir sensibility meets pop neon. Melancholic glamour and danger.
                     * Pacing: Snappy during action or interrogation; laconic and moody between beats.
-                
-                3. Narrative Voice:
-                    * Visual metaphors that evoke neon nights, ocean breeze, and rumbling engines.
-                    * Emphasize rim lighting, silhouettes against pink-yellow dusk, and reflective wet streets.
-                    * Keep descriptions cinematic but slightly imperfect and gritty.
                 """
             SPACE_OPERA ->
                 """
@@ -404,6 +458,27 @@ object GenrePrompts {
                 Formality: Varies from adventurous and eloquent (explorers, scientists) to mysterious and ancient (alien entities).
                 Phrasing: Evocative and grand, with a sense of wonder and epic scope.
                 Tone: Aspirational, mysterious, awe-inspiring, adventurous, contemplative.
+                """
+            SHINOBI ->
+                """
+                // This directive defines the specific linguistic style for the Shinobi (Mythical Feudal Japan) genre.
+                // NPCs and narrative voice should evoke a sense of discipline, tradition, and underlying tension.
+                
+                1.  Language & Vocabulary:
+                    * Terminology: Use terms related to feudal Japan, martial arts, espionage, and honor (e.g., "shogun," "daimyo," "samurai," "ronin," "kunoichi," "jutsu," "katana," "oni," "yokai").
+                    * Formality: Dialogue should be respectful and often formal, reflecting the hierarchical society. Use honorifics where appropriate (e.g., "-san," "-sama").
+                    * Phrasing: Sentences are often concise and deliberate. Avoid unnecessary words.
+                    * Profanity (Conditional): Extremely rare. Insults are more about dishonor than vulgarity.
+                
+                2.  Tone & Delivery:
+                    * Reserved & Disciplined: Characters speak with restraint and precision. Emotion is shown through subtext, not overt displays.
+                    * Tense & Mysterious: A constant undercurrent of suspicion, hidden motives, and political intrigue.
+                    * Respectful & Traditional: Speech reflects a deep respect for tradition, duty, and honor.
+                    * Pacing: Dialogue can be slow and measured, with meaningful pauses.
+                
+                3.  Narrative Voice:
+                    * Descriptions should focus on atmosphere—the rustle of bamboo, the glint of a blade in moonlight, the quiet tension of a room.
+                    * Maintain a sense of quiet grace and lethal potential.
                 """
         }.trimIndent()
 }

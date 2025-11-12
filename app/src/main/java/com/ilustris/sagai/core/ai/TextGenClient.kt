@@ -14,7 +14,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toFirebaseSchema
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 
 class TextGenClient(
@@ -22,12 +21,11 @@ class TextGenClient(
 ) : AIClient() {
     companion object {
         const val TEXT_GEN_MODEL_FLAG = "textGenModel"
-        const val DEFAULT_TEXT_GEN_MODEL = "gemini-2.5-flash-lite"
     }
 
     fun modelName() =
-        firebaseRemoteConfig.getString(TEXT_GEN_MODEL_FLAG).let {
-            it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
+        firebaseRemoteConfig.getString(TEXT_GEN_MODEL_FLAG).ifEmpty {
+            error("Couldn't get gemini model")
         }
 
     override fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
