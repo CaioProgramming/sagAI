@@ -5,15 +5,10 @@ import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.ImagePart
 import com.google.ai.client.generativeai.type.TextPart
 import com.google.ai.client.generativeai.type.generationConfig
-import com.google.firebase.ai.GenerativeModel
-import com.google.firebase.ai.type.GenerationConfig
-import com.google.firebase.crashlytics.FirebaseCrashlytics
-import com.google.firebase.crashlytics.recordException
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
@@ -32,41 +27,31 @@ import kotlin.time.Duration.Companion.seconds
 class GemmaClient
     @Inject
     constructor(
-        private val firebaseRemoteConfig: FirebaseRemoteConfig,
+        private val remoteConfigService: RemoteConfigService,
     ) : AIClient() {
         @PublishedApi
         internal val requestMutex = Mutex()
 
-        // If an exception happens during generate(), this will be set to a non-null Duration
-        // and the next call to generate() will delay for that amount before attempting the request.
-        // When a request completes successfully, this is reset to null.
         @PublishedApi
         @Volatile
         internal var retryDelay: Duration? = null
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
-            const val DEFAULT_SUMMARIZATION_MODEL = "gemini-2.0-flash-lite"
+            const val KEY_FLAG = "FIREBASE_KEY"
         }
 
-        fun modelName() =
-            firebaseRemoteConfig.getString(SUMMARIZATION_MODEL_FLAG).let {
+        suspend fun modelName() =
+            remoteConfigService.getString(SUMMARIZATION_MODEL_FLAG)?.let {
                 it.ifEmpty {
-                    Log.e(
-                        javaClass.simpleName,
-                        "buildModel: Firebase flag $SUMMARIZATION_MODEL_FLAG value not retrieved",
-                    )
-                    DEFAULT_SUMMARIZATION_MODEL
+                    error("Couldn't fetch gemma Model")
                 }
-            }
+            } ?: error("Couldn't get Flag value")
 
-        override fun buildModel(generationConfig: GenerationConfig): GenerativeModel? {
-            Log.i(
-                this::class.java.simpleName,
-                "Using summarization model: ${modelName()}",
-            )
-            return null
-        }
+        suspend fun apiConfig(): String =
+            remoteConfigService.getString(KEY_FLAG)?.ifEmpty {
+                error("Couldn't fetch firebase key")
+            } ?: error("Flag Value unavailable.")
 
         suspend inline fun <reified T> generate(
             prompt: String,
@@ -77,6 +62,7 @@ class GemmaClient
             filterOutputFields: List<String> = emptyList(),
         ): T? =
             withContext(Dispatchers.IO) {
+                val model = modelName()
                 retryDelay?.let {
                     Log.e(javaClass.simpleName, "generate: Trying delay to avoid rate limit.")
                     delay(it)
@@ -86,8 +72,8 @@ class GemmaClient
                     try {
                         val client =
                             com.google.ai.client.generativeai.GenerativeModel(
-                                modelName = modelName(),
-                                apiKey = BuildConfig.APIKEY,
+                                modelName = model,
+                                apiKey = apiConfig(),
                                 generationConfig {
                                     temperature = temperatureRandomness
                                 },
@@ -106,7 +92,15 @@ class GemmaClient
                                 }
                             }
 
-                        Log.i(this@GemmaClient::class.java.simpleName, "Requesting ${modelName()}")
+                        Log.i(
+                            this@GemmaClient::class.java.simpleName,
+                            "Requesting $model\nPrompt with ${
+                                fullPrompt.length +
+                                    references.filterNotNull().sumOf {
+                                        it.description.length
+                                    }
+                            } chars.",
+                        )
 
                         val contentParts =
                             buildList {
@@ -166,11 +160,11 @@ class GemmaClient
                         Gson().fromJson(cleanedJsonString, typeToken.type)
                     } catch (e: Exception) {
                         retryDelay = 3.seconds
-
-                        Log.e(this@GemmaClient::class.java.simpleName, "Error in Generation(${modelName()}): ${e.message}", e)
-                        FirebaseCrashlytics.getInstance().recordException(e, {
-                            key("model", modelName())
-                        })
+                        Log.e(
+                            this@GemmaClient::class.java.simpleName,
+                            "Error in Generation($model): ${e.message}",
+                            e,
+                        )
                         Log.e(javaClass.simpleName, "failed to generate content for prompt: $prompt")
                         null
                     }
