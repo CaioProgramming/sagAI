@@ -29,6 +29,7 @@ import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
 import com.ilustris.sagai.features.act.data.usecase.ActUseCase
@@ -165,7 +166,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesSummarizationClient(firebaseRemoteConfig: FirebaseRemoteConfig): GemmaClient = GemmaClient(firebaseRemoteConfig)
+    fun providesSummarizationClient(remoteConfigService: RemoteConfigService): GemmaClient = GemmaClient(remoteConfigService)
 
     @Provides
     @Singleton
@@ -184,11 +185,16 @@ object AppModule {
     fun provideFirebaseRemoteConfig(): FirebaseRemoteConfig {
         val remoteConfig = Firebase.remoteConfig
         val configSettings =
-            remoteConfigSettings { minimumFetchIntervalInSeconds = 3600 }
+            remoteConfigSettings {
+                minimumFetchIntervalInSeconds = 60
+            }
         remoteConfig.setConfigSettingsAsync(configSettings)
-        remoteConfig.fetchAndActivate()
         return remoteConfig
     }
+
+    @Provides
+    @Singleton
+    fun providesRemoteConfigService(): RemoteConfigService = RemoteConfigService()
 
     @Provides
     @Singleton

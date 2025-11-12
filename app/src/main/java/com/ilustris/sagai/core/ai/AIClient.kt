@@ -5,7 +5,7 @@ import com.google.firebase.ai.type.GenerationConfig
 import java.util.Locale
 
 abstract class AIClient {
-    abstract fun buildModel(generationConfig: GenerationConfig): GenerativeModel?
+    open suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel? = null
 
     fun modelLanguage(): String {
         val locale = Locale.getDefault()

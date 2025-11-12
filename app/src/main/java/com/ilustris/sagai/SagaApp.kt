@@ -4,8 +4,8 @@ import android.app.Application
 import com.google.firebase.Firebase
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
-import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.permissions.NotificationUtils
+import com.ilustris.sagai.core.services.BillingService
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +31,7 @@ class SagaApp : Application() {
         val remoteConfig = Firebase.remoteConfig
         val configSettings =
             remoteConfigSettings {
-                minimumFetchIntervalInSeconds = 3000
+                minimumFetchIntervalInSeconds = 60 * 3
             }
         remoteConfig.setConfigSettingsAsync(configSettings)
         remoteConfig.fetchAndActivate()
