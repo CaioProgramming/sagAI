@@ -29,21 +29,20 @@ class TextGenClient(
             it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
         }
 
-    override suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
-        Log.i("TextGenClient", "Using text model: ${modelName()} from Remote Config (flag: '$TEXT_GEN_MODEL_FLAG')")
-        return Firebase
+    override suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel =
+        Firebase
             .ai(backend = GenerativeBackend.googleAI())
             .generativeModel(
                 modelName = modelName(),
                 generationConfig = generationConfig,
             )
-    }
 
     suspend inline fun <reified T> generate(
         prompt: String,
         requireTranslation: Boolean = true,
         customSchema: Schema? = null,
     ): T? {
+        val aiModel = modelName()
         try {
             val model =
                 if (T::class.java == String::class.java) {
@@ -68,7 +67,7 @@ class TextGenClient(
                     prompt
                 }
             val content = model.generateContent(fullPrompt)
-            Log.i(javaClass.simpleName, "generating with model: ${modelName()}")
+            Log.i(javaClass.simpleName, "generating with model: $aiModel")
             Log.d(
                 javaClass.simpleName,
                 "content generation result: ${content.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}",
@@ -86,7 +85,7 @@ class TextGenClient(
         } catch (e: Exception) {
             e.printStackTrace()
             FirebaseCrashlytics.getInstance().recordException(e, {
-                key("model", modelName())
+                key("model", aiModel)
             })
             return null
         }
