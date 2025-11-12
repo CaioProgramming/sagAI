@@ -86,7 +86,7 @@ accompanist-navigation-animation = { group = "com.google.accompanist", name = "a
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashScreen" }
 
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "33.14.0" }
-firebase-ai = { group = "com.google.firebase", name = "firebase-ai", version="" }
+firebase-ai = { group = "com.google.firebase", name = "firebase-ai" }
 firebase-config-ktx = { group = "com.google.firebase", name = "firebase-config-ktx" }
 firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }

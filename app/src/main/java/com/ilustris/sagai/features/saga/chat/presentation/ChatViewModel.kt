@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.presentation
 
+import MessageStatus
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -23,6 +24,7 @@ import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -82,9 +84,12 @@ class ChatViewModel
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
         val inputValue = MutableStateFlow(TextFieldValue())
-        val sendType = MutableStateFlow(SenderType.USER)
+        val sendType = MutableStateFlow(SenderType.CHARACTER)
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
+
+        // currently selected speaking character (initially mainCharacter when saga loads)
+        val selectedCharacter: MutableStateFlow<CharacterContent?> = MutableStateFlow(null)
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
         private var currentActCountForService: Int = 0
@@ -212,6 +217,12 @@ class ChatViewModel
             }
         }
 
+        fun updateCharacter(characterContent: CharacterContent) {
+            viewModelScope.launch {
+                selectedCharacter.emit(characterContent)
+            }
+        }
+
         private fun observeSaga() {
             viewModelScope.launch {
                 content
@@ -223,7 +234,7 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        val canAnimateTitle = content.value == null
+                        content.value == null
 
                         val allMessages =
                             messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
@@ -241,6 +252,10 @@ class ChatViewModel
                                 sagaContent.getCharacters(),
                                 sagaContent.flatMessages(),
                             )
+
+                        if (selectedCharacter.value == null) {
+                            sagaContent.mainCharacter?.let { updateCharacter(it) }
+                        }
 
                         checkIfUpdatesService(sagaContent)
                         validateCharacterMessageUpdates(sagaContent)
@@ -474,7 +489,8 @@ class ChatViewModel
             val sendType = sendType.value
 
             val saga = content.value ?: return
-            val mainCharacter = saga.mainCharacter ?: return
+            val mainCharacter = selectedCharacter.value?.data ?: saga.mainCharacter?.data
+            if (mainCharacter == null) return
             val currentTimeline = content.value?.getCurrentTimeLine()
             if (currentTimeline == null) {
                 sagaContentManager.checkNarrativeProgression(content.value)
@@ -489,9 +505,9 @@ class ChatViewModel
                     val message =
                         Message(
                             text = text.text,
-                            speakerName = mainCharacter.data.name,
+                            speakerName = mainCharacter.name,
                             senderType = sendType,
-                            characterId = mainCharacter.data.id,
+                            characterId = mainCharacter.id,
                             timelineId = currentTimeline.data.id,
                         )
                     sendMessage(message, true)
@@ -557,12 +573,18 @@ class ChatViewModel
 
                 updateLoading(isFromUser)
                 resetSuggestions()
+                val characterId =
+                    if (message.senderType == SenderType.NARRATOR) {
+                        null
+                    } else {
+                        message.characterId ?: characterReference?.id
+                    }
                 messageUseCase
                     .saveMessage(
                         saga,
                         message.copy(
                             sagaId = saga.data.id,
-                            characterId = message.characterId ?: characterReference?.id,
+                            characterId = characterId,
                         ),
                         isFromUser,
                     ).onSuccess {
@@ -709,13 +731,15 @@ class ChatViewModel
                         )
                         sagaContentManager.setProcessing(false)
                         isLoading.value = false
-                        snackBar(
-                            context.getString(R.string.message_reply_error),
-                        ) {
-                            action {
-                                resendMessage(message)
-                            }
-                        }
+                        updateSnackBar(
+                            snackBar(
+                                context.getString(R.string.message_reply_error),
+                            ) {
+                                action {
+                                    resendMessage(message)
+                                }
+                            },
+                        )
                     }
             }
         }

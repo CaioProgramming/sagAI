@@ -229,7 +229,7 @@ fun Genre.stylisedText(
             }
         }
         Genre.HEROES -> {
-            val palette = this.colorPalette()
+            this.colorPalette()
             // Comic hero style: strong rotation and long extrusion. Use HEROES blues instead of yellow/red.
             WordArtText(
                 text = text,
@@ -266,6 +266,28 @@ fun Genre.stylisedText(
                 glowAlpha = .7f,
             )
         }
+
+        Genre.SHINOBI -> {
+            val palette = this.colorPalette()
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = palette[1],
+                bottomColor = color,
+                extrusionColor = color.darker(),
+                extrusionDepthFactor = .02f,
+                numberOfExtrusionLayers = 5,
+                outlineColor = iconColor,
+                outlineWidthFactor = .02f,
+                rotationX = 35f,
+                glowColor = iconColor,
+                glowRadiusFactor = 5f,
+                glowAlpha = 1f,
+            )
+        }
+
         else -> {
             // Default fallback using palette
             val palette = this.colorPalette()

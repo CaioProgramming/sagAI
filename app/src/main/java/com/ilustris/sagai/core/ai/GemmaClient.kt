@@ -38,7 +38,6 @@ class GemmaClient
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
-            const val KEY_FLAG = "FIREBASE_KEY"
         }
 
         suspend fun modelName() =
@@ -171,3 +170,5 @@ class GemmaClient
                 }
             }
     }
+
+const val KEY_FLAG = "FIREBASE_KEY"

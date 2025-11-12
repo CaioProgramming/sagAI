@@ -172,6 +172,26 @@ fun Genre.shaderParams(
             pixelationBlockSize = 0.0f,
             colorTemperature = 0f,
         )
+
+    Genre.SHINOBI ->
+        ShaderParams(
+            grainIntensity = customGrain ?: .15f,
+            bloomThreshold = .6f,
+            bloomIntensity = .05f,
+            bloomRadius = 0.8f,
+            softFocusRadius = focusRadius ?: .03f,
+            saturation = .5f,
+            contrast = 2f,
+            brightness = .1f.unaryMinus(),
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength * 0.1f, // reduzir força do tint
+            vignetteStrength = .3f,
+            vignetteSoftness = 0.6f,
+            pixelationBlockSize = pixelSize ?: 0.0f,
+            colorTemperature = 0f,
+        )
+
     else ->
         ShaderParams()
 }

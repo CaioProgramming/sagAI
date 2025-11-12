@@ -57,7 +57,7 @@ Genre(
 
     SHINOBI(
         title = R.string.genre_shinobi,
-        color = MaterialColor.Red900,
+        color = Color(0xff880101),
         iconColor = Color.White,
         background = R.drawable.shinobi_background,
         ambientMusicConfigKey = "shinobi_ambient_music_url",
@@ -166,7 +166,7 @@ fun Genre.colorPalette() =
     when (this) {
         Genre.FANTASY ->
             listOf(
-                MaterialColor.Red900,
+                color,
                 MaterialColor.OrangeA200,
                 MaterialColor.DeepOrange600,
                 MaterialColor.RedA200,
@@ -174,7 +174,7 @@ fun Genre.colorPalette() =
 
         Genre.CYBERPUNK ->
             listOf(
-                MaterialColor.Purple500,
+                color,
                 MaterialColor.Teal800,
                 MaterialColor.DeepPurple800,
                 MaterialColor.PinkA100,
@@ -182,7 +182,7 @@ fun Genre.colorPalette() =
 
         Genre.HORROR ->
             listOf(
-                MaterialColor.BlueGray100,
+                color,
                 MaterialColor.BlueGray700,
                 MaterialColor.LightBlue50,
                 MaterialColor.BlueGray300,
@@ -190,7 +190,7 @@ fun Genre.colorPalette() =
 
         Genre.HEROES ->
             listOf(
-                MaterialColor.Blue500,
+                color,
                 MaterialColor.Blue900,
                 MaterialColor.LightBlue300,
                 MaterialColor.RedA200,
@@ -198,21 +198,21 @@ fun Genre.colorPalette() =
 
         Genre.CRIME ->
             listOf(
-                MaterialColor.PinkA200,
+                color,
                 MaterialColor.PinkA100,
                 MaterialColor.Amber300,
                 MaterialColor.YellowA200,
             )
         Genre.SHINOBI ->
             listOf(
-                MaterialColor.Red900,
+                color,
                 MaterialColor.Brown100,
                 MaterialColor.Pink100,
                 MaterialColor.Indigo600,
             )
         Genre.SPACE_OPERA ->
             listOf(
-                MaterialColor.CyanA700,
+                color,
                 MaterialColor.LightBlueA400,
                 MaterialColor.TealA400,
                 MaterialColor.LimeA200,

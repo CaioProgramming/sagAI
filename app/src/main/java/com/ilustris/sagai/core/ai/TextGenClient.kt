@@ -5,33 +5,28 @@ import com.google.firebase.Firebase
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerationConfig
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.generationConfig
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.crashlytics.recordException
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 
 class TextGenClient(
-    private val firebaseRemoteConfig: FirebaseRemoteConfig,
+    private val remoteConfigService: RemoteConfigService,
 ) : AIClient() {
     companion object {
         const val TEXT_GEN_MODEL_FLAG = "textGenModel"
-        const val DEFAULT_TEXT_GEN_MODEL = "gemini-2.5-flash-lite"
     }
 
-    fun modelName() =
-        firebaseRemoteConfig.getString(TEXT_GEN_MODEL_FLAG).let {
-            it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
-        }
+    suspend fun modelName() = remoteConfigService.getString(TEXT_GEN_MODEL_FLAG) ?: error("Couldn't fetch model")
 
     override suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel =
         Firebase
-            .ai(backend = GenerativeBackend.googleAI())
+            .ai()
             .generativeModel(
                 modelName = modelName(),
                 generationConfig = generationConfig,

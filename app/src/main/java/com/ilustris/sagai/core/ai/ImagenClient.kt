@@ -2,21 +2,19 @@ package com.ilustris.sagai.core.ai
 
 import android.graphics.Bitmap
 import android.util.Log
-import com.google.firebase.BuildConfig
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.toJsonFormat
 import javax.inject.Inject
 
@@ -36,7 +34,7 @@ class ImagenClientImpl
     @Inject
     constructor(
         val billingService: BillingService,
-        private val firebaseRemoteConfig: FirebaseRemoteConfig,
+        private val remoteConfigService: RemoteConfigService,
         private val gemmaClient: GemmaClient,
     ) : ImagenClient {
         companion object {
@@ -44,24 +42,25 @@ class ImagenClientImpl
             private const val TAG = "🖼️ Image Generation"
         }
 
-        val modelName by lazy {
-            val premiumModel = firebaseRemoteConfig.getString(IMAGE_PREMIUM_MODEL_FLAG)
-            premiumModel
-        }
+        suspend fun modelName() =
+            remoteConfigService.getString(IMAGE_PREMIUM_MODEL_FLAG)
+                ?: error("Couldn't find model for Image generation")
 
         override suspend fun generateImage(
             prompt: String,
             references: List<ImageReference>,
             canByPass: Boolean,
-        ): Bitmap? =
-            try {
+        ): Bitmap? {
+            val modelName = modelName()
+            return try {
                 val isPremiumUser = billingService.isPremium()
                 val imageModel =
-                    Firebase.ai(backend = GenerativeBackend.googleAI()).generativeModel(
+                    Firebase.ai().generativeModel(
                         modelName = modelName,
                         generationConfig =
                             generationConfig {
-                                responseModalities = listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
+                                responseModalities =
+                                    listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
                             },
                     )
                 val promptBuilder =
@@ -77,8 +76,14 @@ class ImagenClientImpl
                 }
                 val content = imageModel.generateContent(promptBuilder)
                 Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
-                Log.d(TAG, "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}")
-                Log.i(javaClass.simpleName, "Generating image($modelName) with prompt:\n${promptBuilder.toJsonFormat()}")
+                Log.d(
+                    TAG,
+                    "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}",
+                )
+                Log.i(
+                    javaClass.simpleName,
+                    "Generating image($modelName) with prompt:\n${promptBuilder.toJsonFormat()}",
+                )
 
                 content
                     .candidates
@@ -92,6 +97,7 @@ class ImagenClientImpl
                 e.printStackTrace()
                 null
             }
+        }
 
         override suspend fun extractComposition(references: List<ImageReference>) =
             executeRequest {

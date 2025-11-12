@@ -100,24 +100,31 @@ object GenrePrompts {
 
             SHINOBI ->
                 """
-        Art Technique: SUMI-E (Japanese ink wash painting) translated to digital illustration — economy of brush strokes, bold inks, and controlled negative space.
-        Brushwork: EXPRESSIVE, SPONTANEOUS BRUSH MARKS with strong calligraphic lines; use dry-brush textures, ink bleeds, and controlled splatters to evoke traditional inks.
-        Texture / Materiality: RICE-PAPER/GRAIN suggestion — subtle paper texture, visible fiber, and ink absorption artifacts.
-        Aesthetic Influence: Classical Japanese ink painters, Yoshitoshi, Hokusai (line economy), and modern sumi-e adaptations.
+                Art Technique: JAPANESE SUMI-E INK WASH PAINTING (Suiboku-ga), EMPHASIS ON ECONOMY OF BRUSHSTROKES AND NEGATIVE SPACE.
+                Nihonga influence for color application.
+                Brushwork: BOLD, IMPERFECT, AND HIGHLY TEXTURAL BRUSH STROKES (Hone-gaki/dry-brush) that clearly convey energy and form.
+                Use controlled ink bleeds, water/wash artifacts, and visible spontaneity to avoid a "clean digital" look.
+                Prioritize the weight and flow of the ink.
+                Texture / Materiality: AUTHENTIC AGED RICE-PAPER (WASHI) TEXTURE — Visible paper grain, slight ocre tint, and natural ink absorption/blotches.
+                Add subtle ink spatters/splatters for dynamism. Aesthetic Influence: Master Sumi-e (Sesshū Tōyō), Gekiga (raw, expressive comic style), and Zen philosophy (simplicity, spontaneity).
 
-        Figure & Facial Treatment: UN-IDEALIZED, STYLIZED FEATURES — simplified, expressive faces with minimal detail; focus on silhouette, posture, and gesture over photoreal micro-detail.
-        Rendering: MONOCHROME WITH SELECTIVE COLOR ACCENTS — primarily black ink, washed grays, and a deep wine red used sparingly as the thematic accent (e.g., sash, blood, lantern light, or clan sigil). Avoid glossy or specular highlights; prefer matte ink effects.
-
-        Color Palette: Deep wine red (distinct from Fantasy reds), charcoal blacks, indigo tones, and muted gold for subtle ornaments.
-        Lighting & Shading: SUBTLE WASHES AND TONAL LAYERS rather than sharp rim lights — use diluted ink washes to suggest volume and atmospheric depth.
-
-        Composition & Ambience: FEUDAL JAPAN / SHADOWED TEMPLE GROUNDS — misty bamboo groves, tiled roofs, stone lanterns, paper screens, and narrow alleys. Keep backgrounds suggestive and minimal to preserve the sumi-e aesthetic and focus on gesture and mood.
-
-        CRITICAL RENDERING NOTE (ABSOLUTE):
-        Render as a full-bleed, edge-to-edge illustration with NO BORDERS, FRAMES, TEXT, OR UI ARTIFACTS. The output must be a clean composition suitable for final printing or display.
-
-        Mood: Quiet, disciplined, and tense — honor-bound restraint with potential mythic undertones (onyo, yokai) if the user opts into mythological elements.
-        """
+                Figure & Facial Treatment: MINIMALIST AND EXPRESSIVE — Features often simplified or obscured by shadow/mist/hair. Focus on silhouette and gestural energy (Sei).
+                Avoid smooth skin or polished features. The character's form is suggested more by the surrounding ink wash than by hard outlines.
+                Rendering: HIGH-CONTRAST MONOCHROME (Pure Black to White Paper) with a SINGLE, VITAL COLOR ACCENT.
+                Form is built using layered, transparent diluted ink washes (Bokashi) and strong areas of solid black.
+                
+                Color Palette: MONOCHROME BASE with VIBRANT CRIMSON RED as the only accent.
+                Lighting & Shading: DRAMATIC SHADOWS AND CONTRAST created by DENSITY OF INK WASH versus Pristine Negative Space. Use atmospheric depth (mist/fog) to diffuse light and suggest volume, rather than complex digital rim lights.
+                
+                Composition & Ambience: FEUDAL JAPANESE HIGH DRAMA — Ambience is suggested (e.g., castle rooftops, bamboo silhouette) rather than fully drawn.
+                Composition must heavily utilize and celebrate the white/negative space.
+                Focus on the character's immediate action or emotion.
+                
+                CRITICAL RENDERING NOTE (ABSOLUTE): Render as a full-bleed, edge-to-edge illustration with NO BORDERS, FRAMES, TEXT, OR UI ARTIFACTS.
+                The output must be a clean composition suitable for final printing or display.
+                
+                Mood: Raw, spontaneous, intensely focused, and visually powerful through simplicity.
+                """
 
             SPACE_OPERA ->
                 """

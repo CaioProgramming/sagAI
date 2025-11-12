@@ -8,8 +8,6 @@ package com.ilustris.sagai.features.saga.chat.ui
 
 import android.Manifest
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -18,7 +16,6 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode.Reverse
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
@@ -44,7 +41,6 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,7 +48,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -96,7 +91,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -150,9 +144,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
-import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
-import com.ilustris.sagai.features.saga.detail.ui.sharedElementTitleKey
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -208,6 +200,7 @@ fun ChatView(
     val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
     val loreProgress by viewModel.loreUpdateProgress.collectAsStateWithLifecycle()
     val context = LocalActivity.current
+    val selectedCharacter by viewModel.selectedCharacter.collectAsStateWithLifecycle()
     val input by viewModel.inputValue.collectAsStateWithLifecycle()
     val senderType by viewModel.sendType.collectAsStateWithLifecycle()
     val typoFix by viewModel.typoFixMessage.collectAsStateWithLifecycle()
@@ -325,6 +318,7 @@ fun ChatView(
                                             onUpdateInput = viewModel::updateInput,
                                             onUpdateSenders = viewModel::updateSendType,
                                             characters = characters,
+                                            currentCharacter = selectedCharacter,
                                             titleModifier =
                                                 Modifier.sharedElement(
                                                     rememberSharedContentState(
@@ -359,6 +353,7 @@ fun ChatView(
                                             selectCharacter = {
                                                 showCharacter = it
                                             },
+                                            updateCharacter = viewModel::updateCharacter,
                                         )
                                     }
                                 }
@@ -499,6 +494,7 @@ fun ChatContent(
     updateProgress: Float = 0f,
     snackBar: SnackBarState? = null,
     sharedTransitionScope: SharedTransitionScope,
+    currentCharacter: CharacterContent?,
     onSendMessage: (Boolean) -> Unit = { },
     onUpdateInput: (TextFieldValue) -> Unit = { },
     onUpdateSenders: (SenderType) -> Unit = { },
@@ -511,6 +507,7 @@ fun ChatContent(
     requestNewCharacter: (String) -> Unit = {},
     reviewEvent: (TimelineContent) -> Unit = {},
     reviewChapter: (ChapterContent) -> Unit = {},
+    updateCharacter: (CharacterContent) -> Unit = {},
 ) {
     val saga = remember { content.data }
     val timeline = remember { content.getCurrentTimeLine() }
@@ -601,8 +598,8 @@ fun ChatContent(
                             top = padding.calculateTopPadding(),
                         ).fillMaxSize(),
                 ) {
-                    val coroutineScope = rememberCoroutineScope()
-                    val (debugControls, messages, chatInput, topBar, bottomFade, snackBarView, loreProgress) = createRefs()
+                    rememberCoroutineScope()
+                    val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
 
                     ChatList(
                         saga = content,
@@ -667,6 +664,7 @@ fun ChatContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .wrapContentHeight(),
+                            selectedCharacter = currentCharacter,
                             typoFix = typoFix,
                             inputField = inputValue,
                             sendType = actualSender,
@@ -674,6 +672,7 @@ fun ChatContent(
                             onUpdateInput = onUpdateInput,
                             onUpdateSender = onUpdateSenders,
                             suggestions = suggestions,
+                            onSelectCharacter = updateCharacter,
                         )
                     }
 
@@ -767,9 +766,6 @@ fun ChatContent(
 
                     val backgroundColor by animateColorAsState(
                         if (snackBar != null) saga.genre.color else Color.Transparent,
-                    )
-                    val progressColor by animateColorAsState(
-                        if (snackBar == null) saga.genre.color else content.data.genre.iconColor,
                     )
 
                     Column(

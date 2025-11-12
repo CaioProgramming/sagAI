@@ -13,10 +13,7 @@ enum class SenderType {
     companion object {
         fun filterUserInputTypes() =
             SenderType.entries.filter {
-                it == USER ||
-                    it == THOUGHT ||
-                    it == ACTION ||
-                    it == NARRATOR
+                it != USER
             }
     }
 }

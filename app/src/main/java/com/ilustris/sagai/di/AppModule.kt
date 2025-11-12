@@ -199,10 +199,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImagenClient(
-        firebaseRemoteConfig: FirebaseRemoteConfig,
+        remoteConfigService: RemoteConfigService,
         billingService: BillingService,
         gemmaClient: GemmaClient,
-    ): ImagenClient = ImagenClientImpl(billingService, firebaseRemoteConfig, gemmaClient)
+    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient)
 
     @Provides
     @Singleton
