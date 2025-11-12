@@ -19,7 +19,7 @@ Genre(
 ) {
     FANTASY(
         title = R.string.genre_fantasy,
-        color = MaterialColor.Red800,
+        color = MaterialColor.RedA400,
         iconColor = Color.White,
         background = R.drawable.fantasy,
         ambientMusicConfigKey = "fantasy_ambient_music_url",
@@ -57,7 +57,6 @@ Genre(
 
     SHINOBI(
         title = R.string.genre_shinobi,
-        // Deep wine / cinnabar red - distinct from Fantasy red
         color = MaterialColor.Red900,
         iconColor = Color.White,
         background = R.drawable.shinobi_background,
@@ -207,9 +206,9 @@ fun Genre.colorPalette() =
         Genre.SHINOBI ->
             listOf(
                 MaterialColor.Red900,
-                MaterialColor.Indigo700,
-                MaterialColor.BlueGray900,
-                MaterialColor.Amber700,
+                MaterialColor.Brown100,
+                MaterialColor.Pink100,
+                MaterialColor.Indigo600,
             )
         Genre.SPACE_OPERA ->
             listOf(
