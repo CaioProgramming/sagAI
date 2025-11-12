@@ -162,7 +162,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesTextGenClient(firebaseRemoteConfig: FirebaseRemoteConfig): TextGenClient = TextGenClient(firebaseRemoteConfig)
+    fun providesTextGenClient(remoteConfigService: RemoteConfigService): TextGenClient = TextGenClient(remoteConfigService)
 
     @Provides
     @Singleton
