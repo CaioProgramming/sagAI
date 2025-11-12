@@ -14,7 +14,6 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString
 import com.ilustris.sagai.core.utils.toFirebaseSchema
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 
 class TextGenClient(
@@ -30,7 +29,7 @@ class TextGenClient(
             it.ifEmpty { DEFAULT_TEXT_GEN_MODEL }
         }
 
-    override fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
+    override suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel {
         Log.i("TextGenClient", "Using text model: ${modelName()} from Remote Config (flag: '$TEXT_GEN_MODEL_FLAG')")
         return Firebase
             .ai(backend = GenerativeBackend.googleAI())
