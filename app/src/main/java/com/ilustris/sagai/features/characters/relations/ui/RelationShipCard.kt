@@ -235,7 +235,7 @@ fun SingleRelationShipCard(
 
             if (showUpdates) {
                 Text(
-                    "${content.relationshipEvents.size} Atualizações",
+                    stringResource(id = R.string.updates_count, content.relationshipEvents.size),
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontFamily = genre.bodyFont(),
@@ -350,7 +350,7 @@ fun RelationShipSheet(
                     modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
-                        "Última atualização",
+                        stringResource(id = R.string.last_update),
                         style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
                         modifier = Modifier.alpha(.4f),
                     )

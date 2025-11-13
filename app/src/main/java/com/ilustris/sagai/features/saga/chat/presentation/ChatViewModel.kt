@@ -746,6 +746,7 @@ class ChatViewModel
 
         fun createCharacter(contextDescription: String) {
             viewModelScope.launch(Dispatchers.IO) {
+                isLoading.emit(true)
                 sagaContentManager
                     .generateCharacter(
                         contextDescription,
@@ -763,7 +764,8 @@ class ChatViewModel
                                 }
                             },
                         )
-                    }.onFailure {
+                        isLoading.emit(false)
+                    }.onFailureAsync {
                         updateSnackBar(
                             snackBar(
                                 message = "Ocorreu um erro ao criar o personagem",
@@ -773,6 +775,7 @@ class ChatViewModel
                                 }
                             },
                         )
+                        isLoading.emit(false)
                     }
             }
         }

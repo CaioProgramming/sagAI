@@ -1,8 +1,11 @@
 package com.ilustris.sagai.core.ai
 
 import android.util.Log
+import com.google.ai.client.generativeai.type.BlockThreshold
 import com.google.ai.client.generativeai.type.Content
+import com.google.ai.client.generativeai.type.HarmCategory
 import com.google.ai.client.generativeai.type.ImagePart
+import com.google.ai.client.generativeai.type.SafetySetting
 import com.google.ai.client.generativeai.type.TextPart
 import com.google.ai.client.generativeai.type.generationConfig
 import com.google.gson.Gson
@@ -55,7 +58,7 @@ class GemmaClient
         suspend inline fun <reified T> generate(
             prompt: String,
             references: List<ImageReference?> = emptyList(),
-            temperatureRandomness: Float = 0f,
+            temperatureRandomness: Float = .5f,
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
@@ -76,6 +79,13 @@ class GemmaClient
                                 generationConfig {
                                     temperature = temperatureRandomness
                                 },
+                                safetySettings =
+                                    HarmCategory.entries.map {
+                                        SafetySetting(
+                                            it,
+                                            BlockThreshold.NONE,
+                                        )
+                                    },
                             )
 
                         val fullPrompt =

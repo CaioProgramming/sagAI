@@ -410,13 +410,12 @@ fun LazyListScope.SagaDrawerContent(
                                 null,
                                 Modifier.size(24.dp),
                             )
-                            Text(
-                                stringResource(
-                                    R.string.saga_drawer_chapter_events_count,
-                                    chapter.data.title.ifEmpty { "Capítulo em andamento..." },
-                                    eventsInChapter.size,
-                                ),
-                                style =
+                                                            Text(
+                                                            stringResource(
+                                                                R.string.saga_drawer_chapter_events_count,
+                                                                chapter.data.title.ifEmpty { stringResource(id = R.string.chapter_in_progress) },
+                                                                eventsInChapter.size,
+                                                            ),                                style =
                                     MaterialTheme.typography.titleSmall.copy(
                                         fontFamily = content.data.genre.bodyFont(),
                                         fontWeight = FontWeight.Bold,
@@ -442,7 +441,7 @@ fun LazyListScope.SagaDrawerContent(
 
                         if (chapter.isComplete().not()) {
                             Text(
-                                "${eventsInChapter.size} of ${UpdateRules.CHAPTER_UPDATE_LIMIT} events",
+                                stringResource(id = R.string.events_count, eventsInChapter.size, UpdateRules.CHAPTER_UPDATE_LIMIT),
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
                                         fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
@@ -472,7 +471,7 @@ fun LazyListScope.SagaDrawerContent(
                                         ?.size
 
                                 Text(
-                                    "$messageCount of ${UpdateRules.LORE_UPDATE_LIMIT} messages",
+                                    stringResource(id = R.string.messages_count, messageCount, UpdateRules.LORE_UPDATE_LIMIT),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
                                             fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
@@ -1528,7 +1527,7 @@ private fun SagaDetailInitialView(
                                                 Modifier.fillMaxSize(),
                                         )
                                         Text(
-                                            "Veja sua história completa",
+                                            stringResource(id = R.string.see_full_story),
                                             textAlign = TextAlign.Center,
                                             style =
                                                 MaterialTheme.typography.headlineSmall.copy(
@@ -1603,7 +1602,7 @@ private fun SagaDetailInitialView(
                                                     .padding(horizontal = 16.dp, vertical = 24.dp),
                                         ) {
                                             Text(
-                                                "Jornada Interior",
+                                                stringResource(id = R.string.inner_journey),
                                                 style =
                                                     MaterialTheme.typography.headlineSmall.copy(
                                                         fontWeight = FontWeight.Bold,
@@ -1612,7 +1611,7 @@ private fun SagaDetailInitialView(
                                             )
 
                                             Text(
-                                                "Sua história não está apenas no que você fez, mas em como você sentiu.",
+                                                stringResource(id = R.string.inner_journey_description),
                                                 style =
                                                     MaterialTheme.typography.bodySmall.copy(),
                                             )
@@ -1637,7 +1636,7 @@ private fun SagaDetailInitialView(
                                                 Modifier.fillMaxSize(),
                                         )
                                         Text(
-                                            "Continue avançando em sua história...",
+                                            stringResource(id = R.string.keep_moving_forward),
                                             textAlign = TextAlign.Center,
                                             style =
                                                 MaterialTheme.typography.headlineSmall.copy(
@@ -1729,10 +1728,10 @@ private fun SagaDetailInitialView(
                                                     genre.shape(),
                                                 ).padding(8.dp),
                                         ) {
-                                            Text("Ajuste de imagem")
+                                            Text(stringResource(id = R.string.image_adjustment))
 
                                             SimpleSlider(
-                                                "Hue tolerance",
+                                                stringResource(id = R.string.hue_tolerance),
                                                 maxValue = 1f,
                                                 value = highlightParams.hueTolerance,
                                             ) { value ->
@@ -1741,7 +1740,7 @@ private fun SagaDetailInitialView(
                                             }
 
                                             SimpleSlider(
-                                                "Saturation threshold",
+                                                stringResource(id = R.string.saturation_threshold),
                                                 maxValue = 1f,
                                                 value = highlightParams.saturationThreshold,
                                             ) { value ->
@@ -1750,7 +1749,7 @@ private fun SagaDetailInitialView(
                                             }
 
                                             SimpleSlider(
-                                                "Lightness threshold",
+                                                stringResource(id = R.string.lightness_threshold),
                                                 maxValue = 1f,
                                                 value = highlightParams.lightnessThreshold,
                                             ) { value ->
@@ -1759,7 +1758,7 @@ private fun SagaDetailInitialView(
                                             }
 
                                             SimpleSlider(
-                                                "Highlight boost",
+                                                stringResource(id = R.string.highlight_boost),
                                                 maxValue = 2f,
                                                 value = highlightParams.highlightSaturationBoost,
                                             ) { value ->
@@ -1768,7 +1767,7 @@ private fun SagaDetailInitialView(
                                             }
 
                                             SimpleSlider(
-                                                "Highlight lightness boost",
+                                                stringResource(id = R.string.highlight_lightness_boost),
                                                 maxValue = 2f,
                                                 value = highlightParams.highlightLightnessBoost,
                                             ) { value ->
@@ -1777,7 +1776,7 @@ private fun SagaDetailInitialView(
                                             }
 
                                             SimpleSlider(
-                                                "Desaturation Factor",
+                                                stringResource(id = R.string.desaturation_factor),
                                                 maxValue = 1f,
                                                 value = highlightParams.desaturationFactorNonTarget,
                                             ) { value ->

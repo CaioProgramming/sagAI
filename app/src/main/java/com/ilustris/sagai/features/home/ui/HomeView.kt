@@ -492,7 +492,7 @@ private fun ChatList(
                                         .size(24.dp),
                             )
                             Text(
-                                "Restaurar histórias",
+                                stringResource(id = R.string.restore_sagas),
                                 style =
                                     MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.Light,

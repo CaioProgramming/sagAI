@@ -1,0 +1,452 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="urn:oasis:names:tc:xliff:document:1.2" xmlns:ns2="http://schemas.android.com/tools">
+    <string-array name="character_form_gender_options">
+        <item>Masculino</item>
+        <item>Feminino</item>
+    </string-array>
+    <plurals name="mtrl_badge_content_description">
+    <item quantity="one">%d nova notificação</item>
+    <item quantity="other">%d novas notificações</item>
+  </plurals>
+    <string msgid="5976598919945601918" name="abc_action_bar_home_description">"Navegar para a página inicial"</string>
+    <string msgid="8388173803310557296" name="abc_action_bar_up_description">"Navegar para cima"</string>
+    <string msgid="3937310113216875497" name="abc_action_menu_overflow_description">"Mais opções"</string>
+    <string msgid="4692188335987374352" name="abc_action_mode_done">"Concluído"</string>
+    <string msgid="1189761859438369441" name="abc_activity_chooser_view_see_all">"Ver tudo"</string>
+    <string msgid="2165779757652331008" name="abc_activitychooserview_choose_application">"Selecionar um app"</string>
+    <string msgid="4215997306490295099" name="abc_capital_off">"DESATIVADO"</string>
+    <string msgid="884982626291842264" name="abc_capital_on">"ATIVADO"</string>
+    <string msgid="8833365367933412986" name="abc_menu_alt_shortcut_label">"Alt+"</string>
+    <string msgid="2223301931652355242" name="abc_menu_ctrl_shortcut_label">"Ctrl+"</string>
+    <string msgid="838001238306846836" name="abc_menu_delete_shortcut_label">"delete"</string>
+    <string msgid="7986526966204849475" name="abc_menu_enter_shortcut_label">"enter"</string>
+    <string msgid="375214403600139847" name="abc_menu_function_shortcut_label">"Function+"</string>
+    <string msgid="4192209724446364286" name="abc_menu_meta_shortcut_label">"Meta+"</string>
+    <string msgid="4741552369836443843" name="abc_menu_shift_shortcut_label">"Shift+"</string>
+    <string msgid="5473865519181928982" name="abc_menu_space_shortcut_label">"espaço"</string>
+    <string msgid="6180552449598693998" name="abc_menu_sym_shortcut_label">"Sym+"</string>
+    <string msgid="5520303668377388990" name="abc_prepend_shortcut_label">"Menu+"</string>
+    <string msgid="7208076849092622260" name="abc_search_hint">"Pesquisar…"</string>
+    <string msgid="3741173234950517107" name="abc_searchview_description_clear">"Limpar consulta"</string>
+    <string msgid="693312494995508443" name="abc_searchview_description_query">"Consulta de pesquisa"</string>
+    <string msgid="3417662926640357176" name="abc_searchview_description_search">"Pesquisar"</string>
+    <string msgid="1486535517437947103" name="abc_searchview_description_submit">"Enviar consulta"</string>
+    <string msgid="2293578557972875415" name="abc_searchview_description_voice">"Pesquisa por voz"</string>
+    <string msgid="8875138169939072951" name="abc_shareactionprovider_share_with">"Compartilhar com"</string>
+    <string msgid="9055268688411532828" name="abc_shareactionprovider_share_with_application">"Compartilhar com <ns1:g id="APPLICATION_NAME">%s</ns1:g>"</string>
+    <string msgid="1656852541809559762" name="abc_toolbar_collapse_description">"Recolher"</string>
+    <string name="act_finished">Ato %s finalizado</string>
+    <string msgid="389117264260014992" name="autofill">"Preenchimento automático"</string>
+    <string name="back_button_description">Voltar</string>
+    <string name="backup">Backup</string>
+    <string name="backup_disabled">Nao foi possivel habilitar o backup</string>
+    <string name="bottomsheet_action_collapse">Fechar a página inferior</string>
+    <string name="bottomsheet_action_expand">Abrir a página inferior</string>
+    <string name="bottomsheet_action_expand_halfway">Expandir até a metade</string>
+    <string name="bottomsheet_drag_handle_clicked">Alça de arrastar tocada duas vezes</string>
+    <string name="bottomsheet_drag_handle_content_description">Alça de arrastar</string>
+    <string name="cache">Dados em Cache</string>
+    <string msgid="881409763997275156" name="call_notification_answer_action">"Atender"</string>
+    <string msgid="8793775615905189152" name="call_notification_answer_video_action">"Vídeo"</string>
+    <string msgid="3229508546291798546" name="call_notification_decline_action">"Recusar"</string>
+    <string msgid="2659457946726154263" name="call_notification_hang_up_action">"Desligar"</string>
+    <string msgid="6107532579223922871" name="call_notification_incoming_text">"Alguém está ligando"</string>
+    <string msgid="8623827134497363134" name="call_notification_ongoing_text">"Chamada em andamento"</string>
+    <string msgid="59049573811482460" name="call_notification_screening_text">"Filtrando uma ligação recebida"</string>
+    <string name="chapter_finished">Capítulo %s finalizado.</string>
+    <string name="chapter_number_label">Capítulo %s</string>
+    <string name="chapter_updated">Capítulo %s atualizado.</string>
+    <string name="character_counter_content_description">Caracteres inseridos: %1$d de %2$d</string>
+    <string name="character_counter_overflowed_content_description">Limite de %2$d caracteres excedido em %1$d</string>
+    <string name="character_form_image_content_description">Silhueta do personagem</string>
+    <string name="character_form_label_clothing_accessories">Acessórios</string>
+    <string name="character_form_label_clothing_body">Roupa (Corpo)</string>
+    <string name="character_form_label_clothing_footwear">Calçados</string>
+    <string name="character_form_label_ethnicity">Etnia</string>
+    <string name="character_form_label_eyes">Cor e Detalhes dos Olhos</string>
+    <string name="character_form_label_hair">Descrição do Cabelo</string>
+    <string name="character_form_label_mouth">Boca e Lábios</string>
+    <string name="character_form_label_name">Nome</string>
+    <string name="character_form_label_occupation">Ocupação</string>
+    <string name="character_form_label_race">Raça / Espécie</string>
+    <string name="character_form_label_scars">Cicatrizes e Marcas</string>
+    <string name="character_form_label_style_vibe">Estilo/Vibe</string>
+    <string name="character_form_label_weapons_gear">Armas &amp; Equipamentos (opcional)</string>
+    <string name="character_form_placeholder_appearance_details">Estrutura geral, altura, pele, cabelo, traços físicos distintos…</string>
+    <string name="character_form_placeholder_backstory">Breve origem, eventos chave da vida, motivações…</string>
+    <string name="character_form_placeholder_clothing_accessories">Ex: Manto com capuz, amuleto, cinto de utilidades, máscara de respiração</string>
+    <string name="character_form_placeholder_clothing_attire">Roupa típica, armadura, acessórios, estilo de vestimenta…</string>
+    <string name="character_form_placeholder_clothing_body">Ex: Armadura de couro, vestes, traje ambiental, trapos</string>
+    <string name="character_form_placeholder_clothing_footwear">Ex: Botas resistentes, sandálias, descalço, botas gravitacionais</string>
+    <string name="character_form_placeholder_ethnicity">Ex: Serrano, Costeiro, Nômade, Urbano</string>
+    <string name="character_form_placeholder_eyes">Ex: Azul penetrante, heterocromia, vermelho brilhante, multifacetado</string>
+    <string name="character_form_placeholder_facial_features">Olhos (cor, formato), nariz, boca, maxilar, cicatrizes, tatuagens…</string>
+    <string name="character_form_placeholder_hair">Ex: Longo, esvoaçante, trançado, careca, gavinhas bioluminescentes</string>
+    <string name="character_form_placeholder_mouth">Ex: Lábios finos, carnudos, frequentemente sorrindo, com presas</string>
+    <string name="character_form_placeholder_name">Ex: Kaelen, Unidade 734, Sussurro do Vento</string>
+    <string name="character_form_placeholder_name_fantasy">Ex: Elara, Sir Kaelen, Anya Flecha Ligeira</string>
+    <string name="character_form_placeholder_name_scifi">Ex: Unidade 734, Jax Riker, Nova Kylo</string>
+    <string name="character_form_placeholder_occupation">Ocupação</string>
+    <string name="character_form_placeholder_personality">Ex: Estóico, espirituoso, cínico, bondoso</string>
+    <string name="character_form_placeholder_race">Ex: Humano, Elfo, Anão, Ciborgue, Ktharr</string>
+    <string name="character_form_placeholder_scars">Ex: Uma longa cicatriz sobre o olho esquerdo, tatuagens tribais, implantes cibernéticos</string>
+    <string name="character_form_placeholder_style_vibe">Estilo/Vibe</string>
+    <string name="character_form_placeholder_weapons_gear">Armas &amp; Equipamentos</string>
+    <string name="character_form_title_appearance_details">Detalhes de vestimenta</string>
+    <string name="character_form_title_backstory">História</string>
+    <string name="character_form_title_clothing_attire">Vestuário &amp; Traje</string>
+    <string name="character_form_title_facial_features">Traços Faciais</string>
+    <string name="character_form_title_gender">Gênero</string>
+    <string name="character_form_title_quick_details">Detalhes Rápidos</string>
+    <string name="character_gallery_title">Personagens</string>
+    <string name="character_tooltip_empty_message">Descreva seu herói para revelar o cartão — nome, traços e um vislumbre da história.</string>
+    <string name="chat_card_saga_begins">Sua saga começa agora!</string>
+    <string name="chat_card_saga_ended">Sua saga chegou ao fim.</string>
+    <string name="chat_card_unknown_character">Desconhecido</string>
+    <string name="clear_cache">Limpar cache</string>
+    <string name="clear_data_button">Limpar dados</string>
+    <string name="clear_data_dialog_cancel">Não, manter meus dados</string>
+    <string name="clear_data_dialog_confirm">Sim, apagar tudo</string>
+    <string name="clear_data_dialog_message">Isso irá apagar todas as suas histórias e configurações. Tem certeza que deseja continuar? Você sempre pode começar do zero!</string>
+    <string name="clear_data_dialog_title">Apagar todos os dados</string>
+    <string name="clear_text_end_icon_content_description">Limpar texto</string>
+    <string msgid="406453423630273620" name="close_drawer">"Fechar menu de navegação"</string>
+    <string msgid="7573152094250666567" name="close_sheet">"Fechar planilha"</string>
+    <string msgid="2523291102206661146" name="common_google_play_services_enable_button">Ativar</string>
+    <string msgid="227660514972886228" name="common_google_play_services_enable_text">%1$s só funciona com o Google Play Services ativado.</string>
+    <string msgid="5122002158466380389" name="common_google_play_services_enable_title">Ativar o Google Play Services</string>
+    <string msgid="7153882981874058840" name="common_google_play_services_install_button">Instalar</string>
+    <string name="common_google_play_services_install_text">O app %1$s não funciona sem o Google Play Services, o qual não está instalado no seu dispositivo.</string>
+    <string msgid="7215213145546190223" name="common_google_play_services_install_title">Instalar o Google Play Services</string>
+    <string name="common_google_play_services_notification_channel_name">Disponibilidade do Google Play Services</string>
+    <string name="common_google_play_services_notification_ticker">Erro do Google Play Services</string>
+    <string name="common_google_play_services_unknown_issue">O app %1$s está com problemas com o Google Play Services. Tente novamente.</string>
+    <string name="common_google_play_services_unsupported_text">O app %1$s não funciona sem o Google Play Services, o qual não é compatível com seu dispositivo.</string>
+    <string msgid="6556509956452265614" name="common_google_play_services_update_button">Atualizar</string>
+    <string msgid="9053896323427875356" name="common_google_play_services_update_text">%1$s só funciona com uma versão atualizada do Google Play Services.</string>
+    <string msgid="6006316683626838685" name="common_google_play_services_update_title">Atualizar o Google Play Services</string>
+    <string name="common_google_play_services_updating_text">%1$s não funciona sem o Google Play Services, o qual está sendo atualizado no momento.</string>
+    <string name="common_google_play_services_wear_update_text">É necessária uma nova versão do Google Play Services. Ele será atualizado em breve.</string>
+    <string name="common_open_on_phone">Abrir no smartphone</string>
+    <string name="common_signin_button_text">Fazer login</string>
+    <string name="common_signin_button_text_long">Fazer login com o Google</string>
+    <string name="configure">Configurar</string>
+    <string name="confirm_permission_button">Conceder Permissão</string>
+    <string name="continue_text">continuar</string>
+    <string msgid="8038256446254964252" name="default_error_message">"Entrada inválida"</string>
+    <string msgid="6312721426453364202" name="default_popup_window_title">"Janela pop-up"</string>
+    <string name="dialog_exit_confirm_button_new_saga">Sair</string>
+    <string name="dialog_exit_dismiss_button_new_saga">Ficar</string>
+    <string name="dialog_exit_message_new_saga">A IA está trabalhando no momento. Tem certeza que deseja sair? Seu progresso pode ser perdido.</string>
+    <string name="dialog_exit_title_new_saga">Sair da Criação?</string>
+    <string msgid="1890207353314751437" name="dropdown_menu">"Menu suspenso"</string>
+    <string name="emotional_card_title">Review emocional</string>
+    <string name="ending">Capítulo %s atualizado.</string>
+    <string name="error_a11y_label">Erro: inválido</string>
+    <string name="error_icon_content_description">Erro</string>
+    <string name="exposed_dropdown_menu_content_description">Mostrar menu suspenso</string>
+    <string name="genre_crime">Crime City</string>
+    <string name="genre_fantasy">Fantasia</string>
+    <string name="genre_heroes">Heróis</string>
+    <string name="genre_horror">Terror</string>
+    <string name="genre_scifi">Cyberpunk</string>
+    <string name="genre_shinobi">Shinobi</string>
+    <string name="genre_space_opera">Ópera Espacial</string>
+    <string name="home_create_new_saga_subtitle">Crie uma nova aventura e deixe a IA te guiar.</string>
+    <string name="home_create_new_saga_title">Criar nova saga</string>
+    <string name="home_debug_session_icon_desc">Sessão de Depuração</string>
+    <string name="home_new_chat_journey_begins_title">A jornada começa aqui</string>
+    <string name="home_new_chat_start_button">Começar</string>
+    <string name="home_start_debug_session_title">Iniciar Sessão de Depuração</string>
+    <string name="home_test_with_fake_messages_subtitle">Testar com mensagens falsas.</string>
+    <string name="home_title">Sagas</string>
+    <string name="icon_content_description">Ícone de caixa de diálogo</string>
+    <string msgid="6827826412747255547" name="in_progress">"Em andamento"</string>
+    <string msgid="7933458017204019916" name="indeterminate">"Parcialmente selecionada"</string>
+    <string name="item_view_role_description">Guia</string>
+    <string name="lets_create_saga">Vamos criar sua saga</string>
+    <string name="lets_create_saga_subtitle">A IA vai te ajudar a dar vida a tudo; não seja tímido com os detalhes da sua jornada.</string>
+    <string msgid="2988463736136100848" name="m3c_bottom_sheet_collapse_description">"Fechar página inferior"</string>
+    <string msgid="1555567894577437024" name="m3c_bottom_sheet_dismiss_description">"Dispensar página inferior"</string>
+    <string msgid="8403354765404029791" name="m3c_bottom_sheet_drag_handle_description">"Alça de arrastar"</string>
+    <string msgid="6670819569745899763" name="m3c_bottom_sheet_expand_description">"Abrir página inferior"</string>
+    <string msgid="3010635850035863127" name="m3c_bottom_sheet_pane_title">"Página inferior"</string>
+    <string msgid="8166741421776570875" name="m3c_date_input_headline">"Data informada"</string>
+    <string msgid="229313757840775812" name="m3c_date_input_headline_description">"Data informada: %1$s"</string>
+    <string msgid="6116910750161463197" name="m3c_date_input_invalid_for_pattern">"A data não está no padrão esperado: %1$s"</string>
+    <string msgid="2521768508935305279" name="m3c_date_input_invalid_not_allowed">"Data não permitida: %1$s"</string>
+    <string msgid="7052898923934555305" name="m3c_date_input_invalid_year_range">"A data está fora do intervalo de anos esperado: %1$s a %2$s"</string>
+    <string msgid="2895559812010326913" name="m3c_date_input_label">"Data"</string>
+    <string msgid="1237013946323089826" name="m3c_date_input_no_input_description">"Nenhum"</string>
+    <string msgid="7306227249789210568" name="m3c_date_input_title">"Selecionar data"</string>
+    <string msgid="7605002211875882969" name="m3c_date_picker_headline">"Data selecionada"</string>
+    <string msgid="3664277305226978227" name="m3c_date_picker_headline_description">"Seleção atual: %1$s"</string>
+    <string msgid="8436650776581492840" name="m3c_date_picker_navigate_to_year_description">"Navegar para o ano de %1$s"</string>
+    <string msgid="5811000998184572395" name="m3c_date_picker_no_selection_description">"Nenhum"</string>
+    <string msgid="7813882352367152251" name="m3c_date_picker_scroll_to_earlier_years">"Role a tela para mostrar anos anteriores"</string>
+    <string msgid="5727367015496556177" name="m3c_date_picker_scroll_to_later_years">"Role a tela para mostrar anos seguintes"</string>
+    <string msgid="1804346892470238807" name="m3c_date_picker_switch_to_calendar_mode">"Usar o modo de entrada na agenda"</string>
+    <string msgid="395627960681594326" name="m3c_date_picker_switch_to_day_selection">"Deslize para selecionar um ano ou toque para voltar à seleção de dia"</string>
+    <string msgid="2219746470065162704" name="m3c_date_picker_switch_to_input_mode">"Usar o modo de entrada de texto"</string>
+    <string msgid="7142101321095356500" name="m3c_date_picker_switch_to_next_month">"Mudar para o próximo mês"</string>
+    <string msgid="228438865139394590" name="m3c_date_picker_switch_to_previous_month">"Mudar para o mês anterior"</string>
+    <string msgid="791651718641787594" name="m3c_date_picker_switch_to_year_selection">"Usar a seleção de ano"</string>
+    <string msgid="7430790972741451689" name="m3c_date_picker_title">"Selecionar data"</string>
+    <string msgid="3199387177749801575" name="m3c_date_picker_today_description">"Hoje"</string>
+    <string msgid="2068382232816991922" name="m3c_date_picker_year_picker_pane_title">"Seletor de ano visível"</string>
+    <string msgid="3190049423327661366" name="m3c_date_range_input_invalid_range_input">"Período inválido"</string>
+    <string msgid="3148384720560189467" name="m3c_date_range_input_title">"Informar datas"</string>
+    <string msgid="2138321128465719402" name="m3c_date_range_picker_day_in_range">"Dentro do período"</string>
+    <string msgid="4947636797751277713" name="m3c_date_range_picker_end_headline">"Data de término"</string>
+    <string msgid="602077859540990149" name="m3c_date_range_picker_scroll_to_next_month">"Role a tela para mostrar o mês seguinte"</string>
+    <string msgid="4592174524846109496" name="m3c_date_range_picker_scroll_to_previous_month">"Role a tela para mostrar o mês anterior"</string>
+    <string msgid="4665981448952749820" name="m3c_date_range_picker_start_headline">"Data de início"</string>
+    <string msgid="3134165431120340385" name="m3c_date_range_picker_title">"Selecionar datas"</string>
+    <string msgid="7617233117134790350" name="m3c_dialog">"Caixa de diálogo"</string>
+    <string msgid="3177828188723359358" name="m3c_dropdown_menu_collapsed">"Fechado"</string>
+    <string msgid="2360841780724299882" name="m3c_dropdown_menu_expanded">"Aberto"</string>
+    <string msgid="8687821690726149911" name="m3c_dropdown_menu_toggle">"Ativar/desativar o menu suspenso"</string>
+    <string msgid="6072492480528318635" name="m3c_floating_toolbar_collapse">"Fechar barra de ferramentas"</string>
+    <string msgid="6880757017246780255" name="m3c_floating_toolbar_expand">"Abrir barra de ferramentas"</string>
+    <string msgid="6152806324422087846" name="m3c_search_bar_search">"Pesquisar"</string>
+    <string msgid="6152755701819882931" name="m3c_snackbar_dismiss">"Dispensar"</string>
+    <string msgid="3868801555855510515" name="m3c_snackbar_pane_title">"Alerta"</string>
+    <string msgid="7655536806087401899" name="m3c_suggestions_available">"Sugestões abaixo"</string>
+    <string msgid="409352516511718051" name="m3c_time_input_dialog_title">"Insira a hora"</string>
+    <string msgid="2786685010796619560" name="m3c_time_picker_am">"AM"</string>
+    <string msgid="7412665527536641863" name="m3c_time_picker_dialog_title">"Selecione o horário"</string>
+    <string msgid="2349193472625211372" name="m3c_time_picker_hour">"Hora"</string>
+    <string msgid="9179527532316922345" name="m3c_time_picker_hour_24h_suffix">"%1$d horas"</string>
+    <string msgid="8876759303332837035" name="m3c_time_picker_hour_selection">"Selecione a hora"</string>
+    <string msgid="3458167507790628988" name="m3c_time_picker_hour_suffix">"%1$dh"</string>
+    <string msgid="6973808109666874069" name="m3c_time_picker_hour_text_field">"por hora"</string>
+    <string msgid="4313071914266462005" name="m3c_time_picker_minute">"Minuto"</string>
+    <string msgid="4699133535056739733" name="m3c_time_picker_minute_selection">"Selecione os minutos"</string>
+    <string msgid="5064177921781937179" name="m3c_time_picker_minute_suffix">"%1$d minutos"</string>
+    <string msgid="7661234488295443182" name="m3c_time_picker_minute_text_field">"por minutos"</string>
+    <string msgid="5865171949528594571" name="m3c_time_picker_period_toggle_description">"Selecione AM ou PM"</string>
+    <string msgid="6616362054113087709" name="m3c_time_picker_pm">"PM"</string>
+    <string msgid="4145073906612931838" name="m3c_time_picker_toggle_keyboard">"Mudar para o modo de entrada de texto para informar o horário"</string>
+    <string msgid="8841786098195101324" name="m3c_time_picker_toggle_touch">"Mudar para o modo de relógio para informar o horário"</string>
+    <string msgid="1805687647081129904" name="m3c_tooltip_long_press_label">"Mostrar dica"</string>
+    <string msgid="5460405025248574620" name="m3c_tooltip_pane_description">"Dica"</string>
+    <string msgid="6564222473543418073" name="m3c_wide_navigation_rail_close_rail">"Fechar coluna"</string>
+    <string msgid="8350283435461615411" name="m3c_wide_navigation_rail_pane_title">"Coluna de navegação"</string>
+    <string name="material_clock_toggle_content_description">Selecionar AM ou PM</string>
+    <string name="material_hour_24h_suffix">%1$s horas</string>
+    <string name="material_hour_selection">Selecionar horário</string>
+    <string name="material_hour_suffix">%1$s em ponto</string>
+    <string name="material_minute_selection">Selecione os minutos</string>
+    <string name="material_minute_suffix">%1$s minutos</string>
+    <string name="material_timepicker_am">AM</string>
+    <string name="material_timepicker_clock_mode_description">Alterne para o modo de relógio para informar o horário.</string>
+    <string name="material_timepicker_hour">Hora</string>
+    <string name="material_timepicker_minute">Minuto</string>
+    <string name="material_timepicker_pm">PM</string>
+    <string name="material_timepicker_select_time">Selecionar horário</string>
+    <string name="material_timepicker_text_input_mode_description">Alterne para o modo de entrada de texto para informar o horário.</string>
+    <string msgid="8471891128988107974" name="mc2_snackbar_pane_title">"Alerta"</string>
+    <string name="memory_usage">Uso de memória</string>
+    <string name="message_reply_error">Ocorreu um erro ao responder sua mensagem.</string>
+    <string name="mtrl_badge_numberless_content_description">Nova notificação</string>
+    <string name="mtrl_checkbox_state_description_checked">Marcada</string>
+    <string name="mtrl_checkbox_state_description_indeterminate">Parcialmente marcada</string>
+    <string name="mtrl_checkbox_state_description_unchecked">Desmarcada</string>
+    <string name="mtrl_chip_close_icon_content_description">Remover %1$s</string>
+    <string name="mtrl_exceed_max_badge_number_content_description" ns2:ignore="PluralsCandidate">Mais de %1$d novas notificações</string>
+    <string name="mtrl_picker_a11y_next_month">Alterar para o próximo mês</string>
+    <string name="mtrl_picker_a11y_prev_month">Alterar para o mês anterior</string>
+    <string name="mtrl_picker_announce_current_range_selection">Seleção da data de início: %1$s. Seleção da data de término: %2$s</string>
+    <string name="mtrl_picker_announce_current_selection">Seleção atual: %1$s</string>
+    <string name="mtrl_picker_announce_current_selection_none">nenhuma</string>
+    <string name="mtrl_picker_cancel">Cancelar</string>
+    <string name="mtrl_picker_confirm">OK</string>
+    <string name="mtrl_picker_date_header_selected">%1$s</string>
+    <string name="mtrl_picker_date_header_title">Selecionar data</string>
+    <string name="mtrl_picker_date_header_unselected">Data selecionada</string>
+    <string name="mtrl_picker_day_of_week_column_header">%1$s</string>
+    <string name="mtrl_picker_end_date_description">Data de término: %1$s</string>
+    <string name="mtrl_picker_invalid_format">Formato inválido.</string>
+    <string name="mtrl_picker_invalid_format_example">Exemplo: %1$s</string>
+    <string name="mtrl_picker_invalid_format_use">Usar %1$s</string>
+    <string name="mtrl_picker_invalid_range">Intervalo inválido.</string>
+    <string name="mtrl_picker_navigate_to_current_year_description">Ir para o ano atual %1$d</string>
+    <string name="mtrl_picker_navigate_to_year_description">Ir para o ano %1$d</string>
+    <string name="mtrl_picker_out_of_range">Fora do intervalo: %1$s</string>
+    <string name="mtrl_picker_range_header_only_end_selected">Data de início – %1$s</string>
+    <string name="mtrl_picker_range_header_only_start_selected">%1$s – Data de término</string>
+    <string name="mtrl_picker_range_header_selected">%1$s – %2$s</string>
+    <string name="mtrl_picker_range_header_title">Selecionar intervalo</string>
+    <string name="mtrl_picker_range_header_unselected">Data de início – Data de término</string>
+    <string name="mtrl_picker_save">Salvar</string>
+    <string name="mtrl_picker_start_date_description">Data de início: %1$s</string>
+    <string name="mtrl_picker_text_input_date_hint">Data</string>
+    <string name="mtrl_picker_text_input_date_range_end_hint">Data de término</string>
+    <string name="mtrl_picker_text_input_date_range_start_hint">Data de início</string>
+    <string name="mtrl_picker_text_input_day_abbr">d</string>
+    <string name="mtrl_picker_text_input_month_abbr">m</string>
+    <string name="mtrl_picker_text_input_year_abbr">a</string>
+    <string name="mtrl_picker_today_description">Hoje %1$s</string>
+    <string name="mtrl_picker_toggle_to_calendar_input_mode">Mudar para o modo de entrada da agenda</string>
+    <string name="mtrl_picker_toggle_to_day_selection">Toque para mudar para a visualização de agenda</string>
+    <string name="mtrl_picker_toggle_to_text_input_mode">Mudar para o modo de entrada de texto</string>
+    <string name="mtrl_picker_toggle_to_year_selection">Toque para mudar para a visualização \"Ano\"</string>
+    <string name="mtrl_timepicker_cancel">Cancelar</string>
+    <string name="mtrl_timepicker_confirm">OK</string>
+    <string msgid="542007171693138492" name="navigation_menu">"Menu de navegação"</string>
+    <string name="new_character_message">%s juntou-se a história!</string>
+    <string name="new_saga_title">Nova saga</string>
+    <string name="next">Continuar</string>
+    <string name="no_internet_connection_message">Verifique sua conexão e tente novamente</string>
+    <string name="no_internet_connection_title">Sem conexão de internet</string>
+    <string name="not_premium_title_label">Junte-se ao</string>
+    <string msgid="6610465462668679431" name="not_selected">"Não selecionado"</string>
+    <string name="notification_explanation">Para se manter atualizado sobre sua saga quando estiver fora do app, permita as notificações.</string>
+    <string name="notification_playing_act">Jogando ato %s</string>
+    <string name="notification_title">Nova mensagem em %s</string>
+    <string name="notifications">Notificações</string>
+    <string name="notifications_description">Receba notificações de atualizações de suas sagas enquanto estiver fora do app.  Suas notificações não serão rastreadas e serão enviadas diretamente do seu dispositivo.</string>
+    <string name="notifications_permission_description">Para mantermos você atualizado sobre o progresso da sua saga e eventos importantes, por favor, nos permita enviar notificações.</string>
+    <string name="notifications_permission_title">Permissão para Notificações</string>
+    <string name="other">Outros dados</string>
+    <string name="password_toggle_content_description">Exibir senha</string>
+    <string name="permission_required_description">Este recurso precisa de uma permissão especial para funcionar. Poderia nos ajudar com isso?</string>
+    <string name="permission_required_title">Permissão Necessária</string>
+    <string name="personality_title">Personalidade</string>
+    <string name="preferences">Preferências</string>
+    <string name="premium_already">Assinatura ativa</string>
+    <string name="premium_cancel_sign_up">Cancelar Assinatura</string>
+    <string name="premium_description">Crie narrativas profundas, explore novos mundos e dê vida aos seus personagens com recursos que elevam sua saga a outro nível. Sinta a diferença de contar histórias com liberdade e inspiração ilimitada.</string>
+    <string name="premium_first_title">Mergulhe em universos únicos e transforme suas ideias em histórias inesquecíveis. Com Sagas Pro, sua criatividade ganha vida e cada capítulo se torna uma experiência envolvente e visualmente imersiva.</string>
+    <string name="premium_label_title">Você é</string>
+    <string name="premium_sign_up">Experimente agora</string>
+    <string msgid="5941395253238309765" name="range_end">"Fim do intervalo"</string>
+    <string msgid="7097486360902471446" name="range_start">"Início do intervalo"</string>
+    <string name="restore_purchases">Restaurar compras</string>
+    <string name="review_chapter">Revisar Capitulo</string>
+    <string name="review_items">Revisar itens</string>
+    <string name="review_page_character_mentions_label">Mencões a personagens</string>
+    <string name="review_page_characters_rank_title">Rank de personagens</string>
+    <string name="review_page_for_playing">POR JOGAR</string>
+    <string name="review_page_messages_label">Mensagens</string>
+    <string name="review_page_messages_rank_title">Rank de mensagens</string>
+    <string name="review_page_most_mentioned_title">Mais mencionados</string>
+    <string name="review_page_most_present_title">Mais presentes</string>
+    <string name="review_page_surprise_awaits">Uma supresa lhe aguarda...</string>
+    <string name="review_page_thank_you">Obrigado</string>
+    <string name="review_page_your_journey_title">Sua jornada</string>
+    <string name="saga">Saga</string>
+    <string name="saga_character_description">Quem você vai ser?</string>
+    <string name="saga_character_description_subtitle">Descreva seu personagem, aparência, personalidade, estilo…</string>
+    <string name="saga_description">Por onde começamos?</string>
+    <string name="saga_description_hint">Descreva sua história…</string>
+    <string name="saga_description_subtitle">Vamos definir o início dessa aventura; não se preocupe com os detalhes, vamos melhorando juntos.</string>
+    <string name="saga_detail_cancel_button">Cancelar</string>
+    <string name="saga_detail_delete_button">Excluir</string>
+    <string name="saga_detail_delete_confirmation_message">Tem certeza que deseja excluir esta saga? Esta ação não pode ser desfeita.</string>
+    <string name="saga_detail_delete_confirmation_title">Confirmar Exclusão</string>
+    <string name="saga_detail_delete_saga_button">Excluir Saga</string>
+    <string name="saga_detail_description_section_title">Descrição</string>
+    <string name="saga_detail_journey_of">A jornada de</string>
+    <string name="saga_detail_messages_label">Mensagens</string>
+    <string name="saga_detail_no_events_placeholder">Nenhum evento registrado</string>
+    <string name="saga_detail_no_wiki_info_placeholder">Nenhuma informação salva</string>
+    <string name="saga_detail_progress_title">Progresso</string>
+    <string name="saga_detail_recap_button">Recap</string>
+    <string name="saga_detail_relationships_section_title">Relacionamentos</string>
+    <string name="saga_detail_section_subtitle_acts">%d atos</string>
+    <string name="saga_detail_section_subtitle_chapters">%d capítulos</string>
+    <string name="saga_detail_section_subtitle_characters">%d personagens</string>
+    <string name="saga_detail_section_subtitle_timeline">%d eventos</string>
+    <string name="saga_detail_section_subtitle_wiki">%d itens</string>
+    <string name="saga_detail_section_title_acts">Atos</string>
+    <string name="saga_detail_section_title_chapters">Capítulos</string>
+    <string name="saga_detail_section_title_characters">Personagens</string>
+    <string name="saga_detail_section_title_timeline">Eventos</string>
+    <string name="saga_detail_section_title_wiki">Wiki</string>
+    <string name="saga_detail_see_your_now">Veja Agora seu</string>
+    <string name="saga_detail_status_created">Criado em %s</string>
+    <string name="saga_detail_status_ended">Finalizado em %s</string>
+    <string name="saga_detail_timeline_section_title">Linha do tempo</string>
+    <string name="saga_detail_view_acts_action">Ver atos</string>
+    <string name="saga_detail_view_chapters_action">Ver capítulos</string>
+    <string name="saga_detail_view_characters_action">Ver personagens</string>
+    <string name="saga_detail_view_timeline_action">Ver Linha do tempo</string>
+    <string name="saga_detail_view_wiki_action">Ver wiki</string>
+    <string name="saga_drawer_act_prefix">Ato %s</string>
+    <string name="saga_drawer_chapter_events_count">%1$s - %2$d eventos</string>
+    <string name="saga_drawer_events_since_last_chapter">%1$d eventos desde o último capitulo.</string>
+    <string name="saga_genre">Qual o tema da sua Saga?</string>
+    <string name="saga_genre_hint">Escolha um tema para sua história</string>
+    <string name="saga_genre_subtitle">Em qual universo vai se passar sua saga?</string>
+    <string name="saga_saving">Hora de construir esse mundo!</string>
+    <string name="saga_saving_hint">Salvando saga</string>
+    <string name="saga_saving_subtitle">Deixa comigo; vou construir seu mundo em alguns instantes,</string>
+    <string name="saga_title_hint">Um nome épico que combine com você</string>
+    <string name="sagas_storage">Armazenamento de suas sagas</string>
+    <string name="save_saga">Salvar</string>
+    <string msgid="6264217191555673260" name="search_menu_title">"Pesquisar"</string>
+    <string name="searchview_clear_text_content_description">Limpar texto</string>
+    <string name="searchview_navigation_content_description">Voltar</string>
+    <string name="see_more">Ver mais</string>
+    <string msgid="6043586758067023" name="selected">"Selecionado"</string>
+    <string name="sender_type_action_description">Uma ação que seu personagem está fazendo.</string>
+    <string name="sender_type_action_hint">Qual ação seu personagem realiza?</string>
+    <string name="sender_type_action_title">Ação</string>
+    <string name="sender_type_character_description">Faça uma pergunta para um personagem específico sobre a história.</string>
+    <string name="sender_type_character_hint">Pergunte algo a um personagem específico…</string>
+    <string name="sender_type_default_hint">Digite sua mensagem…</string>
+    <string name="sender_type_narrator_description">Complete a história com eventos externos ou acontecimentos no ambiente.</string>
+    <string name="sender_type_narrator_hint">Descreva o que acontece em seguida…</string>
+    <string name="sender_type_narrator_title">Narrar</string>
+    <string name="sender_type_new_chapter_description">Inicie um novo capítulo na história; isso irá gerar um novo resumo para sua saga.</string>
+    <string name="sender_type_new_chapter_hint">Isso iniciará um novo capítulo. O que acontece?</string>
+    <string name="sender_type_new_character_description">Adicione um novo personagem à sua história; ele poderá interagir com o personagem principal e demais personagens.</string>
+    <string name="sender_type_new_character_hint">Descreva o novo personagem (nome, aparência, etc.)</string>
+    <string name="sender_type_new_character_title">Novo Personagem</string>
+    <string name="sender_type_thought_description">O que seu personagem está pensando, quais seus planos e receios.</string>
+    <string name="sender_type_thought_hint">O que seu personagem está pensando?</string>
+    <string name="sender_type_thought_title">Pensar</string>
+    <string name="sender_type_user_description">Fala do seu personagem, o que ele diz na conversa atual.</string>
+    <string name="sender_type_user_hint">Enviar nova mensagem</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="side_sheet_accessibility_pane_title">Página lateral</string>
+    <string name="signatures_title">Assinaturas</string>
+    <string name="smart_fix_description">Receba sugestões automáticas de correção por IA com base na sua história e tema. As sugestões ajudam a enriquecer o vocabulário e a adicionar profundidade à narrativa.</string>
+    <string msgid="2792228137354697160" name="snackbar_pane_title">"Alerta"</string>
+    <string name="starring">Estrelando</string>
+    <string name="start_saga">Pronto para iniciar sua saga?</string>
+    <string name="start_saga_subtitle">Comece com o nome da sua história.</string>
+    <string msgid="4139871816613051306" name="state_empty">"Vazio"</string>
+    <string msgid="5834637030682409883" name="state_off">"Desativado"</string>
+    <string msgid="1490883874751719580" name="state_on">"Ativado"</string>
+    <string msgid="6277540029070332960" name="status_bar_notification_info_overflow">"999+"</string>
+    <string name="storage_permission_description">Para salvar suas sagas e todas as imagens relacionadas, precisamos de acesso ao armazenamento do seu dispositivo. Seus dados são salvos localmente.</string>
+    <string name="storage_permission_title">Permissão de armazenamento</string>
+    <string name="subscribe">Assinar</string>
+    <string msgid="2561197295334830845" name="switch_role">"Chave"</string>
+    <string msgid="1672349317127674378" name="tab">"Guia"</string>
+    <string msgid="5946805113151406391" name="template_percent">"<ns1:g id="PERCENTAGE">%1$d</ns1:g>%%"</string>
+    <string name="timeline_generated_successfully">Evento %s finalizado.</string>
+    <string name="timeline_updated">Evento %s atualizado.</string>
+    <string name="tone_angry">Zangado</string>
+    <string name="tone_anxious">Ansioso</string>
+    <string name="tone_calm">Calmo</string>
+    <string name="tone_concerned">Preocupado</string>
+    <string name="tone_curious">Curioso</string>
+    <string name="tone_cynical">Cínico</string>
+    <string name="tone_determined">Determinado</string>
+    <string name="tone_empathetic">Empático</string>
+    <string name="tone_frustrated">Frustrado</string>
+    <string name="tone_hopeful">Esperançoso</string>
+    <string name="tone_joyful">Alegre</string>
+    <string name="tone_melancholic">Melancólico</string>
+    <string name="tone_neutral">Neutro</string>
+    <string name="tone_sad">Triste</string>
+    <string msgid="3765533235322692011" name="tooltip_description">"dica"</string>
+    <string msgid="3124740595719787496" name="tooltip_label">"mostrar dica"</string>
+    <string name="try_again">Tentar novamente</string>
+    <string name="unexpected_error">Ocorreu um erro inesperado</string>
+    <string name="user_action_title">Falar</string>
+    <string name="wiki_updated">Wiki atualizada</string>
+</resources>

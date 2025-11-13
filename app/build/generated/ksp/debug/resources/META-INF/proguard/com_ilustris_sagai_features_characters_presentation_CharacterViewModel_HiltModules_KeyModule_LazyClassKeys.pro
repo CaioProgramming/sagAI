@@ -1,0 +1,1 @@
+-keep,allowobfuscation,allowshrinking class com.ilustris.sagai.features.characters.presentation.CharacterViewModel

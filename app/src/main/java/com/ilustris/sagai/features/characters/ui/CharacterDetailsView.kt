@@ -194,7 +194,7 @@ fun CharacterDetailsContent(
                         ) {
                             Image(
                                 painterResource(R.drawable.ic_spark),
-                                "Compartilhar personagem",
+                                stringResource(id = R.string.share_character_cd),
                                 modifier =
                                     Modifier
                                         .size(24.dp)
@@ -299,7 +299,7 @@ fun CharacterDetailsContent(
                     )
 
                     Text(
-                        "Mensagens",
+                        stringResource(id = R.string.messages_label),
                         style =
                             MaterialTheme.typography.bodySmall.copy(
                                 fontFamily = genre.bodyFont(),

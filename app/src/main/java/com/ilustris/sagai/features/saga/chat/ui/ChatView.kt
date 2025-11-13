@@ -278,7 +278,7 @@ fun ChatView(
                         is ChatState.Error ->
                             AnimatedVisibility(isGenerating.not()) {
                                 EmptyMessagesView(
-                                    text = "Saga não encontrada.",
+                                    text = stringResource(id = R.string.saga_not_found),
                                     brush =
                                         gradientAnimation(
                                             holographicGradient,
@@ -751,7 +751,7 @@ fun ChatContent(
 
                         SagaTopBar(
                             saga.title,
-                            "${content.flatMessages().size} mensagens",
+                            stringResource(id = R.string.messages_count_label, content.flatMessages().size),
                             saga.genre,
                             isLoading = isGenerating,
                             onBackClick = onBack,
@@ -845,14 +845,14 @@ fun ChatContent(
                                 onValueChange = { fakeMessageCountText = it },
                                 label = {
                                     Text(
-                                        "Debug controls",
+                                        stringResource(id = R.string.debug_controls),
                                         style = textStyle,
                                         modifier = Modifier.scale(.9f),
                                     )
                                 },
                                 placeholder = {
                                     Text(
-                                        "Number of Fake Messages",
+                                        stringResource(id = R.string.fake_messages_placeholder),
                                         style = textStyle,
                                         modifier = Modifier.alpha(.7f),
                                     )
@@ -940,18 +940,17 @@ fun ChatContent(
                                             key = "current_objective_${content.data.id}",
                                         ),
                                         animatedVisibilityScope = this@AnimatedVisibility,
-                                    ),
-                        )
-                        Text(
-                            "Objetivo atual",
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    textAlign = TextAlign.Center,
-                                ),
-                            modifier = Modifier.alpha(.6f),
-                        )
-
+                                                                            ),
+                                                                    )
+                                                            Text(
+                                                                stringResource(id = R.string.current_objective),
+                                                                style =
+                                                                    MaterialTheme.typography.labelMedium.copy(
+                                                                        fontFamily = genre.bodyFont(),
+                                                                        textAlign = TextAlign.Center,
+                                                                    ),
+                                                                modifier = Modifier.alpha(.6f),
+                                                            )
                         Text(
                             it,
                             style =
@@ -1011,7 +1010,7 @@ fun ChatContent(
 
 @Composable
 private fun EmptyMessagesView(
-    text: String = "Comece a escrever sua saga!",
+    text: String = stringResource(id = R.string.start_writing_saga),
     brush: Brush,
     modifier: Modifier,
 ) {
@@ -1021,7 +1020,7 @@ private fun EmptyMessagesView(
                 Modifier
                     .size(200.dp)
                     .align(Alignment.CenterHorizontally),
-            description = "No messages",
+            description = stringResource(id = R.string.no_messages_cd),
             brush = brush,
         )
 
@@ -1237,7 +1236,7 @@ fun ChatList(
 
             item {
                 Text(
-                    "Sua saga chegou ao fim em ${saga.data.endedAt.formatDate()}",
+                    stringResource(id = R.string.saga_ended_on, saga.data.endedAt.formatDate()),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = saga.data.genre.bodyFont(),
@@ -1377,9 +1376,7 @@ fun ChatList(
                 item {
                     val title =
                         chapter.chapter.data.title.ifEmpty {
-                            "Capitulo ${
-                                saga.chapterNumber(chapter.chapter.data).toRoman()
-                            }"
+                            stringResource(id = R.string.chapter_title_template, saga.chapterNumber(chapter.chapter.data).toRoman())
                         }
                     Text(
                         title,
@@ -1421,7 +1418,7 @@ fun ChatList(
             item {
                 val title =
                     act.content.data.title
-                        .ifEmpty { "Ato ${saga.actNumber(act.content.data).toRoman()}" }
+                        .ifEmpty { stringResource(id = R.string.act_title_template, saga.actNumber(act.content.data).toRoman()) }
                 Text(
                     title,
                     style =

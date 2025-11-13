@@ -164,7 +164,7 @@ fun TimeLineContent(
                 acts.forEach { actContent ->
                     item {
                         Text(
-                            actContent.data.title.ifEmpty { "Ato ${(acts.indexOf(actContent) + 1).toRoman()}" },
+                            actContent.data.title.ifEmpty { stringResource(id = R.string.act_title, (acts.indexOf(actContent) + 1).toRoman()) },
                             style =
                                 MaterialTheme.typography.displaySmall.copy(
                                     fontFamily = genre.headerFont(),
@@ -176,14 +176,15 @@ fun TimeLineContent(
                                     .fillMaxWidth()
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    ).padding(16.dp),
+                                    )
+                                    .padding(16.dp),
                         )
                     }
                     actContent.chapters.forEach { chapter ->
                         stickyHeader {
                             Text(
                                 chapter.data.title.ifEmpty {
-                                    "Capítulo ${saga.chapterNumber(chapter.data).toRoman()}"
+                                    stringResource(id = R.string.chapter_title, saga.chapterNumber(chapter.data).toRoman())
                                 },
                                 style =
                                     MaterialTheme.typography.titleMedium.copy(
@@ -196,7 +197,8 @@ fun TimeLineContent(
                                         .fillMaxWidth()
                                         .background(
                                             MaterialTheme.colorScheme.background,
-                                        ).padding(16.dp),
+                                        )
+                                        .padding(16.dp),
                             )
                         }
 
@@ -456,7 +458,9 @@ fun TimeLineCard(
                                     null,
                                     colorFilter = ColorFilter.tint(genre.color),
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier.size(24.dp).padding(4.dp),
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(4.dp),
                                 )
 
                                 Text(
@@ -634,7 +638,8 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        ).padding(16.dp),
+                                        )
+                                        .padding(16.dp),
                                 true,
                             )
                         }
@@ -689,7 +694,9 @@ fun TimeLineSimpleCard(
                         .border(1.dp, genre.color, CircleShape),
             )
 
-            Column(modifier = Modifier.padding(8.dp).weight(1f)) {
+            Column(modifier = Modifier
+                .padding(8.dp)
+                .weight(1f)) {
                 Text(
                     event.title,
                     style =
@@ -748,7 +755,8 @@ fun TimeLineSimpleCard(
                         .clip(genre.shape())
                         .clickable {
                             requestReview(eventContent)
-                        }.gradientFill(genre.gradient())
+                        }
+                        .gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -757,11 +765,14 @@ fun TimeLineSimpleCard(
                     painterResource(R.drawable.ic_review),
                     null,
                     tint = genre.color,
-                    modifier = Modifier.padding(4.dp).size(24.dp).padding(2.dp),
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .size(24.dp)
+                        .padding(2.dp),
                 )
                 Text(
-                    text = "Revisar evento",
-                    style = MaterialTheme.typography.labelLarge,
+                    text = stringResource(R.string.review_event_label),
+                    style = MaterialTheme.typography.labelMedium,
                 )
             }
         }
@@ -826,7 +837,9 @@ fun AvatarTimelineIcon(
                             genre.color.darkerPalette(factor = .2f),
                         ),
                 ),
-            modifier = Modifier.alpha(textVisible).align(Alignment.Center),
+            modifier = Modifier
+                .alpha(textVisible)
+                .align(Alignment.Center),
         )
 
         if (showSpark) {
@@ -967,7 +980,8 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }.alpha(.4f),
+                                }
+                                .alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(

@@ -36,6 +36,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.layer.drawLayer
@@ -118,16 +119,18 @@ fun CharacterShareView(
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.shadow(10.dp, genre.shape(), spotColor = genre.color)
-                    .clip(genre.shape())
+                    }.shadow(10.dp, RectangleShape, spotColor = genre.color)
+                    .clip(RectangleShape)
+                    .background(genre.color, RectangleShape)
                     .clickable {
                         coroutineScope.launch {
+                            delay(1.seconds)
                             viewModel.startSaving()
                             graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
                                 viewModel.saveBitmap(bitmap, ShareType.CHARACTER.name)
                             }
                         }
-                    }.background(genre.color, genre.shape()),
+                    },
             ) {
                 Box(
                     modifier =

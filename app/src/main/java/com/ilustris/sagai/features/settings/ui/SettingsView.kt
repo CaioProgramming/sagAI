@@ -142,7 +142,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text =
-                        memoryUsage?.formatFileSize() ?: "---",
+                        memoryUsage?.formatFileSize() ?: stringResource(id = R.string.not_available),
                     style =
                         MaterialTheme.typography.headlineSmall.copy(
                             fontWeight = FontWeight.Bold,
@@ -372,7 +372,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                         .size(24.dp),
                             )
                             Text(
-                                "Restaurar histórias",
+                                stringResource(id = R.string.restore_sagas),
                                 style =
                                     MaterialTheme.typography.labelLarge.copy(
                                         fontWeight = FontWeight.Light,

@@ -81,10 +81,9 @@ class FileCacheService(
         val currentDateTime = System.currentTimeMillis()
         val file = directory.resolve(fileName.plus(currentDateTime).plus(".png").replace(" ", ""))
         return try {
-            val fileOutputStream = FileOutputStream(file)
-            data.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
-            fileOutputStream.flush()
-            fileOutputStream.close()
+            FileOutputStream(file).use { fileOutputStream ->
+                data.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream)
+            }
             if (file.exists() && file.length() > 0) {
                 file
             } else {

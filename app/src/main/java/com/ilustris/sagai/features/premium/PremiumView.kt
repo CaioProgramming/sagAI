@@ -277,7 +277,7 @@ fun PremiumTitle(
             textStyle = titleStyle,
         )
         Text(
-            "Pro",
+            stringResource(id = R.string.pro_label),
             modifier = Modifier.alpha(.6f),
             style = MaterialTheme.typography.labelSmall,
         )
