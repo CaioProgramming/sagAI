@@ -1,49 +1,57 @@
 package com.ilustris.sagai.core.ai.prompts
 
 object CharacterGuidelines {
-    val creationGuideline =
-        """
-        **CHARACTER DETAILS REFERENCE (STRICT ADHERENCE REQUIRED):**
-         // The following message is the **ABSOLUTE AND UNALTERABLE SOURCE** for the character's core identity.
-         // From this reference message, you **MUST EXTRACT AND USE EXACTLY** the character's:
-         // 1.  **NAME**:
-         //     -   If a name is explicitly mentioned (e.g., "John", "Seraphina") in the input, you **MUST USE IT EXACTLY**.
-         //     -   **If NO name is mentioned** in this message (e.g., "a mysterious stranger", "an old woman"), you **MUST INVENT a new, unique, and fitting name** for the character. The invented name must make sense within the saga's genre and context.
-         //     -   **DO NOT USE "Unknown", "Desconhecido", "Stranger", or similar generic terms for the character's name.** Always provide a proper, specific name.
-         // 2.  **GENDER**: Derive from explicit mentions or strong implications (e.g., "jovem guerreira" (young warrior) or "cavaleiro" (knight)). If gender is not explicitly stated or clearly implied, you may invent it.
-         A highly precise, objective, and detailed description of the character's physical appearance and typical attire.
-         // 4.  **Personality hints**: Use ALL hints provided in this message you can also improve using the context of the message and saga.
-         // 5. **RACE**: 
-          - Use ALL details provided in this message.
-          - **If no race is specified assume that its a human**
-         // 6. **Ethnicity**: Use ALL details provided in this message.
-            - Use ALL details provided in this message.
-            - **If no ethnicity is specified use a random etnicity(caucasian, black, asian, latin)**
-         // **Instructions for 'details.facialDetails':**
-         // - This field must contain a highly specific and objective description of the character's **face and head, including hair**.
-         // - It should focus on all visual elements from the neck up.
-         // - This field must contain a **highly specific, objective, and concise** description of the character's face and head, including hair.
-         // - **Avoid excessive or unnecessary embellishments.** Focus on unique, defining traits.
-         // - Include precise details on:
-         //   - **Hair:** (e.g., "long, braided, silver-grey hair tied back in a complex knot," "short, spiky, electric blue hair with shaved sides," "balding with short black stubble around the ears"). Mention style, length, color, and texture.
-         //   - **Skin Tone & Complexion:** (e.g., "pale, almost translucent skin with a faint blue tint," "deep, warm brown skin with tribal markings around the eyes").
-         //   - **Eyes:** (e.g., "piercing, emerald-green eyes with dilated pupils," "deep-set, dark brown eyes with subtle glowing cybernetic enhancements around the iris," "one blind, milky white eye and one sharp, grey eye"). Mention color, shape, and any unique features.
-         //   - **Facial Features:** (e.g., "sharp jawline and prominent cheekbones," "thin, downturned lips," "aquiline nose," "a distinct scar running from his left eyebrow to his jaw").
-         //   - **Distinctive Facial Marks/Augmentations:** (e.g., "facial piercings – small silver hoop above left eyebrow and a subtle chin stud," "intricate circuit-like tattoo over the left temple").
-         // - **Example for facialDetails:** "Pale, almost greyish white skin contrasted by short, spiky, dark purple hair. Eyes are bright, synthetic yellow orbs with a faint internal glow. A series of intricate circuit-like tattoos coil around his neck and right side of his face."
-         // **Instructions for 'details':**
-         The descriptions in this field is CRITICAL and a should be a consistent visual and optimized representation for high-fidelity image generation.
-         // **Instructions for 'details.clothing':**
-         // - This field must contain a highly specific and objective description SOLELY of the character's typical attire and accessories.
-         // - Focus on their signature clothing style, key items of clothing, predominant colors, materials, and any unique features or accessories.
-         // - Mention how the clothing fits their role in the theme.
-         // - **Avoid excessive or unnecessary embellishments.** Focus on unique, defining elements of their typical outfit.
-         // - **Example for clothing:** "A dark, form-fitting tactical suit with reinforced knee pads and glowing crimson accents on the shoulders.
-         It features numerous utility pouches on the belt and concealed pockets. Often accompanied by a low-profile rebreather mask worn around his neck."
-         Instructions for hexColor:
-         ** USE ONLY SOLID VIBRANT COLORS AVOID BLACK OR WHITE.
-          **Instructions for APPEARANCE** Summarize all provided details from details field creating a concise description.
-        """.trimIndent()
+    val creationGuideline = buildString {
+        appendLine("**CHARACTER DETAILS REFERENCE (STRICT ADHERENCE REQUIRED):**")
+        appendLine("// The following message is the **ABSOLUTE AND UNALTERABLE SOURCE** for the character's core identity.")
+        appendLine("// From this reference message, you **MUST EXTRACT AND USE EXACTLY** the character's details.")
+        appendLine("// The generated character MUST be deeply contextualized within the saga's theme, genre, and existing narrative. Every detail should feel like it belongs in this specific world.")
+        appendLine("")
+        appendLine("**NAME**:")
+        appendLine("- If a name is explicitly mentioned (e.g., \"John\", \"Seraphina\"), you **MUST USE IT EXACTLY**.")
+        appendLine("- If NO name is mentioned (e.g., \"a mysterious stranger\"), you **MUST INVENT a new, unique, and fitting name**. The name must align with the saga's genre and context.")
+        appendLine("- **DO NOT USE generic placeholders** like \"Unknown\", \"Stranger\", etc.")
+        appendLine("")
+        appendLine("**GENDER**:")
+        appendLine("- Derive from explicit mentions or strong implications. If not specified, invent one that fits the context.")
+        appendLine("")
+        appendLine("**RACE & ETHNICITY**:")
+        appendLine("- Use ALL details provided.")
+        appendLine("- If race is not specified, assume **human**.")
+        appendLine("- If ethnicity is not specified, choose a suitable one (e.g., caucasian, black, asian, latin) that enriches the character's background within the story's context.")
+        appendLine("")
+        appendLine("**PROFILE (`profile`)**:")
+        appendLine("- **`occupation`**: Define the character's role or job. It must be relevant to the saga's world (e.g., \"Starship Pilot\", \"Royal Guard\", \"Cyberneticist\").")
+        appendLine("- **`personality`**: Describe the character's key personality traits, derived from the source message and expanded to fit their role and backstory.")
+        appendLine("")
+        appendLine("**DETAILS (`details`)**:")
+        appendLine("// This section is CRITICAL for visual representation and must be detailed and consistent.")
+        appendLine("")
+        appendLine("**1. Physical Traits (`physicalTraits`)**:")
+        appendLine("   - **`facialDetails`**:")
+        appendLine("     - **Hair, Eyes, Mouth, Jawline, Distinctive Marks**: Provide specific, objective descriptions. Example: \"Short, spiky, electric blue hair\", \"Piercing, emerald-green eyes\", \"A distinct scar running from the left eyebrow to the jaw\".")
+        appendLine("   - **`bodyFeatures`**:")
+        appendLine("     - **`buildAndPosture`**: e.g., \"Lithe and agile build, always stands tall and alert.\"")
+        appendLine("     - **`skinAppearance`**: e.g., \"Weathered, sun-tanned skin from years in the desert.\"")
+        appendLine("     - **`distinguishFeatures`**: e.g., \"A series of intricate tribal tattoos covering the left arm.\"")
+        appendLine("")
+        appendLine("**2. Clothing (`clothing`)**:")
+        appendLine("// Must be highly contextualized to the saga's theme, genre, and the character's occupation.")
+        appendLine("- **`outfitDescription`**: Describe the typical attire. What do they wear and why? Example: \"A worn leather duster over a patched-up spacesuit, showing years of rough travel.\"")
+        appendLine("- **`accessories`**: Mention items that add personality and context. Example: \"A silver locket always worn around the neck,\" \"Goggles with multiple lenses for different environments.\"")
+        appendLine("- **`carriedItems`**: Include items the character usually has with them, such as **weapons**, tools, or personal belongings. Example: \"A holstered plasma pistol on the right hip,\" \"A satchel filled with ancient maps and artifacts.\"")
+        appendLine("")
+        appendLine("**3. Abilities (`abilities`)**:")
+        appendLine("// Must be relevant to the character's role and the challenges they might face in the saga.")
+        appendLine("- **`skillsAndProficiencies`**: List the character's trained skills. Example: \"Expert marksman with all forms of laser weaponry,\" \"Fluent in three galactic languages.\"")
+        appendLine("- **`uniqueOrSignatureTalents`**: Describe any special or unique talents. Example: \"The innate ability to sense electrical currents,\" \"A photographic memory for star charts.\"")
+        appendLine("")
+        appendLine("**BACKSTORY (`backstory`)**:")
+        appendLine("- Create a concise backstory that explains the character's origin, motivations, and how they fit into the saga's world. It should be consistent with all the details above.")
+        appendLine("")
+        appendLine("**HEX COLOR (`hexColor`)**:")
+        appendLine("- **USE ONLY SOLID, VIBRANT COLORS.** Avoid black, white, or dull shades. The color should represent the character's essence.")
+    }.trimIndent()
 }
 
 object ImageGuidelines {
