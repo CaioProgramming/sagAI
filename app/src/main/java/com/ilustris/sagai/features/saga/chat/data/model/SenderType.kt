@@ -4,10 +4,10 @@ import com.ilustris.sagai.core.utils.emptyString
 
 enum class SenderType {
     USER,
+    CHARACTER,
     THOUGHT,
     ACTION,
     NARRATOR,
-    CHARACTER,
     ;
 
     companion object {

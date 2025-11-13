@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import MessageStatus
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedContent
@@ -81,14 +82,12 @@ import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.saturate
 import com.ilustris.sagai.ui.theme.shape
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -165,14 +164,20 @@ fun ChatBubble(
                             width = Dimension.fillToConstraints
                         },
                 ) {
-                    val bubbleModifier = if (isUser) {
-                        Modifier.wrapContentSize().background(bubbleStyle.backgroundColor, bubbleShape)
-                    } else {
-                        Modifier.wrapContentSize()
-                            .background(MaterialTheme.colorScheme.surfaceContainer, bubbleShape)
-                            .background(bubbleStyle.backgroundColor.copy(alpha = .3f), bubbleShape)
-
-                    }
+                    val bubbleModifier =
+                        if (isUser) {
+                            Modifier
+                                .wrapContentSize()
+                                .background(bubbleStyle.backgroundColor, bubbleShape)
+                        } else {
+                            Modifier
+                                .wrapContentSize()
+                                .background(MaterialTheme.colorScheme.surfaceContainer, bubbleShape)
+                                .background(
+                                    bubbleStyle.backgroundColor.copy(alpha = .3f),
+                                    bubbleShape,
+                                )
+                        }
                     TypewriterText(
                         text = message.text,
                         isAnimated = isAnimated,
@@ -249,12 +254,10 @@ fun ChatBubble(
                         }
 
                         val relationWithMainCharacter =
-                            remember {
-                                mainCharacter
-                                    ?.findRelationship(character.id)
-                                    ?.sortedByEvents(content.flatEvents().map { it.data })
-                                    ?.firstOrNull()
-                            }
+                            mainCharacter
+                                ?.findRelationship(character.id)
+                                ?.sortedByEvents(content.flatEvents().map { it.data })
+                                ?.firstOrNull()
 
                         if (isUser.not()) {
                             relationWithMainCharacter?.let {
@@ -314,6 +317,7 @@ fun ChatBubble(
                         style =
                             MaterialTheme.typography.labelSmall.copy(
                                 color = MaterialTheme.colorScheme.onBackground,
+                                fontFamily = genre.bodyFont(),
                             ),
                     )
 

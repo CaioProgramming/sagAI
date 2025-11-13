@@ -2,12 +2,8 @@
 
 package com.ilustris.sagai.features.home.ui
 
-import android.Manifest
-import android.app.Activity
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
@@ -19,28 +15,23 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,7 +42,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
@@ -72,9 +62,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -87,13 +74,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.file.BACKUP_PERMISSION
-import com.ilustris.sagai.core.file.backup.toSaga
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
-import com.ilustris.sagai.core.permissions.PermissionComponent
-import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
@@ -103,9 +85,8 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.newsaga.ui.components.SagaCard
 import com.ilustris.sagai.features.premium.PremiumCard
+import com.ilustris.sagai.features.premium.PremiumTitle
 import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
@@ -114,21 +95,16 @@ import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.navigation.Routes
-import com.ilustris.sagai.ui.navigation.Routes.SETTINGS
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkLoader
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
-import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
-import effectForGenre
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
@@ -280,15 +256,39 @@ private fun ChatList(
         stickyHeader {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
                 modifier =
                     Modifier.statusBarsPadding(),
             ) {
                 Box(Modifier.size(24.dp))
-                SagaTitle(
-                    Modifier
-                        .weight(1f)
-                        .background(MaterialTheme.colorScheme.background),
-                )
+                AnimatedContent(
+                    isPremium,
+                    modifier =
+                        Modifier
+                            .align(Alignment.CenterVertically)
+                            .weight(1f)
+                            .background(MaterialTheme.colorScheme.background),
+                ) {
+                    if (it) {
+                        PremiumTitle(
+                            modifier =
+                                Modifier
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                    ) {
+                                        openPremiumSheet()
+                                    }.wrapContentWidth()
+                                    .align(Alignment.CenterVertically),
+                            titleStyle =
+                                MaterialTheme.typography.titleLarge,
+                            brush = Brush.linearGradient(holographicGradient),
+                        )
+                    } else {
+                        SagaTitle()
+                    }
+                }
+
                 IconButton(onClick = {
                     openSettings()
                 }, modifier = Modifier.size(32.dp)) {
@@ -459,15 +459,17 @@ private fun ChatList(
         }
 
         if (isLoadingDynamicPrompts.not()) {
-            item {
-                PremiumCard(
-                    isPremium,
-                    onClick = openPremiumSheet,
-                    modifier =
-                        Modifier
-                            .animateItem()
-                            .padding(16.dp),
-                )
+            if (isPremium.not()) {
+                item {
+                    PremiumCard(
+                        isPremium,
+                        onClick = openPremiumSheet,
+                        modifier =
+                            Modifier
+                                .animateItem()
+                                .padding(16.dp),
+                    )
+                }
             }
 
             if (backupAvailable) {
@@ -669,6 +671,7 @@ fun HomeViewPreview() {
                 ChatList(
                     sagas = previewChats,
                     showDebugButton = true,
+                    isPremium = true,
                     dynamicNewSagaTexts =
                         DynamicSagaPrompt(
                             "Dynamic Title Preview",

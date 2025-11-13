@@ -4,18 +4,16 @@ package com.ilustris.sagai.features.saga.chat.ui.components
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,6 +31,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -47,8 +46,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -100,7 +97,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ChatInputView(
     content: SagaContent,
@@ -110,10 +107,11 @@ fun ChatInputView(
     inputField: TextFieldValue,
     sendType: SenderType,
     typoFix: TypoFix?,
+    selectedCharacter: CharacterContent? = null,
+    sharedTransitionScope: SharedTransitionScope,
     onUpdateInput: (TextFieldValue) -> Unit,
     onUpdateSender: (SenderType) -> Unit,
     onSendMessage: (Boolean) -> Unit,
-    selectedCharacter: CharacterContent? = null,
     onSelectCharacter: (CharacterContent) -> Unit = {},
 ) {
     val action = sendType
@@ -203,6 +201,11 @@ fun ChatInputView(
 
         val isImeVisible = WindowInsets.isImeVisible
         val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
+
+        LaunchedEffect(isImeVisible) {
+            characterSelectionExpanded = false
+        }
+
         AnimatedVisibility(suggestionsEnabled) {
             LazyRow(
                 modifier =
@@ -214,6 +217,7 @@ fun ChatInputView(
                 items(suggestions) {
                     Button(
                         onClick = {
+                            characterSelectionExpanded = false
                             onUpdateInput(
                                 TextFieldValue(
                                     it.text,
@@ -263,29 +267,63 @@ fun ChatInputView(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            AnimatedContent(
-                selectedCharacter,
-                modifier =
-                    Modifier
-                        .align(Alignment.Bottom),
-                transitionSpec = {
-                    fadeIn() + scaleIn() togetherWith fadeOut()
-                },
-            ) { character ->
-                character?.let {
-                    CharacterAvatar(
-                        it.data,
-                        genre = content.data.genre,
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .clickable {
-                                    characterSelectionExpanded = true
-                                },
-                    )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(8.dp)) {
+            with(sharedTransitionScope) {
+                AnimatedContent(
+                    characterSelectionExpanded,
+                    modifier = Modifier.align(Alignment.Bottom),
+                ) {
+                    if (it) {
+                        LazyColumn(
+                            modifier =
+                                Modifier
+                                    .widthIn(max = 200.dp)
+                                    .heightIn(max = 300.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            horizontalAlignment = Alignment.Start,
+                        ) {
+                            items(content.characters.reversed()) {
+                                CharacterAvatar(
+                                    it.data,
+                                    genre = content.data.genre,
+                                    modifier =
+                                        Modifier
+                                            .sharedElement(
+                                                rememberSharedContentState(
+                                                    "character-${it.data.id}-icon",
+                                                ),
+                                                this@AnimatedContent,
+                                            ).padding(8.dp)
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .clickable {
+                                                onSelectCharacter(it)
+                                                characterSelectionExpanded = false
+                                            },
+                                )
+                            }
+                        }
+                    } else {
+                        selectedCharacter?.let {
+                            CharacterAvatar(
+                                it.data,
+                                genre = content.data.genre,
+                                modifier =
+                                    Modifier
+                                        .sharedElement(
+                                            rememberSharedContentState(
+                                                "character-${it.data.id}-icon",
+                                            ),
+                                            this,
+                                        ).padding(8.dp)
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .clickable {
+                                            characterSelectionExpanded = true
+                                        },
+                            )
+                        }
+                    }
                 }
             }
 
@@ -293,8 +331,7 @@ fun ChatInputView(
                 modifier =
                     Modifier
                         .align(Alignment.Bottom)
-                        .fillMaxWidth()
-                        .padding(8.dp),
+                        .weight(1f),
                 inputBrush,
                 glowRadius,
                 shape = inputShape,
@@ -508,45 +545,6 @@ fun ChatInputView(
                     }
                 }
             }
-        }
-    }
-
-    DropdownMenu(
-        characterSelectionExpanded,
-        onDismissRequest = {
-            characterSelectionExpanded = false
-        },
-        shape = content.data.genre.shape(),
-        border = BorderStroke(1.dp, content.data.genre.color),
-        containerColor = MaterialTheme.colorScheme.surfaceContainer,
-        scrollState = rememberScrollState(),
-        modifier = Modifier.padding(8.dp),
-    ) {
-        val characters = remember { content.characters }
-        characters.forEach {
-            DropdownMenuItem(
-                text = {
-                    Text(
-                        it.data.name,
-                        style =
-                            MaterialTheme.typography.labelLarge.copy(
-                                fontFamily = content.data.genre.bodyFont(),
-                            ),
-                    )
-                },
-                leadingIcon = {
-                    CharacterAvatar(
-                        it.data,
-                        genre = content.data.genre,
-                        modifier =
-                            Modifier.size(32.dp),
-                    )
-                },
-                onClick = {
-                    onSelectCharacter(it)
-                    characterSelectionExpanded = false
-                },
-            )
         }
     }
 

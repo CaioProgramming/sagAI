@@ -4,16 +4,9 @@ package com.ilustris.sagai.features.premium
 
 import android.content.res.Configuration
 import androidx.activity.compose.LocalActivity
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
-import androidx.compose.animation.core.EaseInBounce
-import androidx.compose.animation.core.RepeatMode.*
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -27,19 +20,14 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -69,7 +57,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.services.BillingState
 import com.ilustris.sagai.core.utils.emptyString
@@ -276,12 +263,13 @@ fun PremiumView(
 fun PremiumTitle(
     titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
     brush: Brush = Brush.horizontalGradient(holographicGradient),
+    modifier: Modifier = Modifier,
 ) {
     Row(
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         modifier =
-            Modifier
+            modifier
                 .reactiveShimmer(true)
                 .gradientFill(brush),
     ) {
@@ -321,8 +309,10 @@ fun PremiumCard(
                 modifier =
                     Modifier
                         .border(1.dp, Color.White.gradientFade(), RoundedCornerShape(5.dp))
-                        .background(Brush.verticalGradient(holographicGradient, endY = 150f), RoundedCornerShape(5.dp))
-                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            Brush.verticalGradient(holographicGradient, endY = 150f),
+                            RoundedCornerShape(5.dp),
+                        ).clip(RoundedCornerShape(10.dp))
                         .size(24.dp)
                         .padding(4.dp),
             )
@@ -335,7 +325,7 @@ fun PremiumCard(
                 val premiumText = if (isUserPro) R.string.premium_already else R.string.premium_first_title
 
                 Text(
-                   stringResource(premiumText),
+                    stringResource(premiumText),
                     modifier = Modifier.alpha(.4f),
                     style =
                         MaterialTheme.typography.labelSmall.copy(
@@ -382,7 +372,7 @@ fun PremiumCardPreview() {
     SagAIScaffold {
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             PremiumCard(isUserPro = false)
             PremiumCard(isUserPro = true)
