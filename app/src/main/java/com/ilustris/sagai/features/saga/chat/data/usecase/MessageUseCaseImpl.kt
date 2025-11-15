@@ -5,7 +5,6 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -64,12 +63,27 @@ class MessageUseCaseImpl
                 )!!
             }
 
+        override suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?> =
+            executeRequest {
+                gemmaClient.generate<SceneSummary>(
+                    ChatPrompts.sceneSummarizationPrompt(
+                        saga = saga,
+                        recentMessages =
+                            saga
+                                .flatMessages()
+                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                                .map { it.joinMessage(true).formatToString() },
+                    ),
+                )
+            }
+
         override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
 
         override suspend fun saveMessage(
             saga: SagaContent,
             message: Message,
             isFromUser: Boolean,
+            sceneSummary: SceneSummary?,
         ) = executeRequest {
             val tone =
                 if (isFromUser) {
@@ -94,7 +108,12 @@ class MessageUseCaseImpl
             withContext(Dispatchers.IO) {
                 generateReaction(
                     saga,
-                    MessageContent(newMessage, saga.getCharacters().find { it.id == newMessage.characterId }, emptyList()),
+                    MessageContent(
+                        newMessage,
+                        saga.getCharacters().find { it.id == newMessage.characterId },
+                        emptyList(),
+                    ),
+                    sceneSummary,
                 )
             }
             newMessage
@@ -109,6 +128,7 @@ class MessageUseCaseImpl
         override suspend fun generateMessage(
             saga: SagaContent,
             message: MessageContent,
+            sceneSummary: SceneSummary?,
         ): RequestResult<MessageGen> =
             executeRequest {
                 if (isDebugModeEnabled) {
@@ -133,18 +153,6 @@ class MessageUseCaseImpl
                     fakeMessageGen.asSuccess()
                 }
 
-                val sceneSummary =
-                    gemmaClient.generate<SceneSummary>(
-                        ChatPrompts.sceneSummarizationPrompt(
-                            saga = saga,
-                            recentMessages =
-                                saga
-                                    .flatMessages()
-                                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                    .map { it.joinMessage(true).formatToString() },
-                        ),
-                    )
-
                 val charactersInScene =
                     sceneSummary?.charactersPresent?.mapNotNull { characterName ->
                         saga.getCharacters().find {
@@ -153,7 +161,7 @@ class MessageUseCaseImpl
                     } ?: emptyList()
 
                 val genText =
-                    textGenClient.generate<MessageGen>(
+                    gemmaClient.generate<MessageGen>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
                             message =
@@ -169,7 +177,6 @@ class MessageUseCaseImpl
                                     charactersPresent = charactersInScene.map { it.name },
                                 ),
                         ),
-                        true,
                     )
 
                 genText!!
@@ -178,19 +185,10 @@ class MessageUseCaseImpl
         suspend fun generateReaction(
             saga: SagaContent,
             message: MessageContent,
+            sceneSummary: SceneSummary?,
         ) = executeRequest {
             delay(2.seconds)
-            val sceneSummary =
-                gemmaClient.generate<SceneSummary>(
-                    ChatPrompts.sceneSummarizationPrompt(
-                        saga = saga,
-                        recentMessages =
-                            saga
-                                .flatMessages()
-                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                .map { it.joinMessage(true).formatToString() },
-                    ),
-                )!!
+            if (sceneSummary == null) error("Can't define reactions without context.")
             if (sceneSummary.charactersPresent.isEmpty()) {
                 Log.w(javaClass.simpleName, "generateReaction: No characters related to react")
                 return@executeRequest
@@ -244,10 +242,14 @@ class MessageUseCaseImpl
                                     messageId = message.message.id,
                                     characterId = it.data.id,
                                     emoji = reaction.reaction,
+                                    thought = reaction.thought,
                                 ),
                             )
                         } else {
-                            Log.w(javaClass.simpleName, "generateReaction: Character can't react to itself.")
+                            Log.w(
+                                javaClass.simpleName,
+                                "generateReaction: Character can't react to itself.",
+                            )
                         }
                     }
             }

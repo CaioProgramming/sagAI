@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import kotlinx.coroutines.flow.Flow
@@ -16,6 +17,7 @@ interface MessageUseCase {
         saga: SagaContent,
         message: Message,
         isFromUser: Boolean,
+        sceneSummary: SceneSummary?,
     ): RequestResult<Message>
 
     suspend fun deleteMessage(messageId: Long)
@@ -25,6 +27,7 @@ interface MessageUseCase {
     suspend fun generateMessage(
         saga: SagaContent,
         message: MessageContent,
+        sceneSummary: SceneSummary?,
     ): RequestResult<MessageGen>
 
     suspend fun updateMessage(message: Message): RequestResult<Message>
@@ -38,4 +41,6 @@ interface MessageUseCase {
         message: String,
         lastMessage: String?,
     ): RequestResult<TypoFix?>
+
+    suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?>
 }

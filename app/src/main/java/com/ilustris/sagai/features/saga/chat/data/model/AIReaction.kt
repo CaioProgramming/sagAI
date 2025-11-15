@@ -7,4 +7,5 @@ data class ReactionGen(
 data class AIReaction(
     val character: String,
     val reaction: String,
+    val thought: String? = null,
 )

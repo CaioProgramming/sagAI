@@ -35,6 +35,7 @@ object ChatRules {
         
         **1. STORY PROGRESSION IS MANDATORY & ADAPTIVE:** The story MUST always progress and **adapt meaningfully to the player's choices and dialogue**, even if it means changing the NPC's approach or the narrative direction. Never generate a response that results in narrative stagnation or a loop where the player is presented with the same information or scenario repeatedly without new, meaningful developments.
         * **DO NOT REPEAT:** Absolutely DO NOT COPY OR REPEAT ANY PART OF THE 'LAST TURN'S OUTPUT / CURRENT CONTEXT' OR 'CONVERSATION HISTORY' IN YOUR RESPONSE'S 'text' FIELD. Every generated message (narrative or dialogue) must be unique in its phrasing and content.
+        * **INTEGRATION OF NEW PLAYER ELEMENTS:** If the Player introduces a new character, location, or element (e.g., 'Isabel') that is not present in the 'CURRENT SAGA CAST' or 'Progression Context', you **MUST** accept it as canon and integrate it immediately into the narrative coherently (Refer to 'STRICT NEW CHARACTER CREATION PROTOCOL' for formatting).
         
         **2. MAINTAIN CONVERSATIONAL AND SCENE INTEGRITY:**
         * **Focus:** When a character is actively engaged in dialogue or the player just interacted with a specific NPC/element, your response MUST logically continue that specific interaction or describe the immediate, relevant outcome.

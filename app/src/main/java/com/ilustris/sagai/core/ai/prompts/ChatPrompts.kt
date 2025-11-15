@@ -4,7 +4,6 @@ import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -69,6 +68,9 @@ object ChatPrompts {
         sceneSummary?.let {
             appendLine("## Progression Context")
             appendLine("Guide your response to align with the story's progression based on this summary:")
+            appendLine(
+                "Attention: Your absolute priority for plot progression must be the escalation of the 'currentConflict' and the direct advancement of the 'immediateObjective'. Use the 'mood' to dictate the tone of the narration and dialogues.",
+            )
             appendLine(sceneSummary.toJsonFormat())
         }
 
@@ -89,6 +91,13 @@ object ChatPrompts {
         appendLine(ActPrompts.actDirective(directive))
 
         appendLine("## NPC Actions & Thoughts")
+        appendLine(
+            """
+            **NPC AGENCY PRIORITY:** The NPC must be actively engaged. In situations of:
+            a) **Conflict/Combat:** Prioritize the use of the `ACTION` message type to describe the NPC's attack, defense, or significant movement, making the combat feel more tangible (e.g., 'Elara unsheathes her dagger.').
+            b) **Character Development:** Use the `THOUGHT` message type sparingly to reveal crucial internal conflicts or motivations that direct dialogue does not immediately convey.
+            """.trimIndent(),
+        )
         appendLine("- NPCs can perform actions (`ACTION`) or have thoughts (`THOUGHT`).")
         appendLine("- **CRITICAL**: For NPC `ACTION` or `THOUGHT`, set `speakerName` to the NPC's name.")
         appendLine(
@@ -147,43 +156,67 @@ object ChatPrompts {
         messageToReact: String,
         relationships: List<RelationshipContent>,
     ) = buildString {
-        appendLine("Your task is to generate relatable reactions to the player message in the saga")
-        appendLine("Saga context:")
+        appendLine("You are an AI assistant that generates character reactions for an interactive story.")
+        appendLine("Your task is to generate a relatable reaction to a player's message, including an emoji and a brief internal thought.")
+
+        appendLine("\n## Saga Context")
         appendLine(saga.toJsonFormatExcludingFields(sagaExclusions))
-        appendLine("History current context:")
+
+        appendLine("\n## Scene Summary")
+        appendLine("This is the current situation:")
         appendLine(summary.toJsonFormat())
-        appendLine("Player context:")
+
+        appendLine("\n## Player Information")
+        appendLine("Main Character: ${mainCharacter.data.name}")
         appendLine(mainCharacter.data.toJsonFormatExcludingFields(characterExclusions))
-        appendLine("Player relationships with present characters:")
+
+        appendLine("\n## Character Relationships")
+        appendLine("Relationships between the player and characters currently in the scene:")
         appendLine(
             relationships.joinToString(";\n") {
-                val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "Nothing related"
-                "${it.characterOne.name} & ${it.characterTwo.name}: $lastEvent"
+                val lastEvent =
+                    it.relationshipEvents.lastOrNull()?.title ?: "No significant events."
+                "${it.characterOne.name} & ${it.characterTwo.name}: Current status -> $lastEvent"
             },
         )
 
-        appendLine("Generate reactions only to characters present in the scene summary.")
-        appendLine("React properly to the message and the scene summary.")
-        appendLine("Your reaction must be only a single emoji, no text nor descriptions.")
-        appendLine("The last message in the conversation was:")
-        appendLine("'$messageToReact'")
-        appendLine("Base your reactions on characters personality and relationship with the player.")
-        appendLine("Your output needs to be: ")
-        appendLine("{ reactions: [ ${toJsonMap(AIReaction::class.java)} ]  }")
+        appendLine("\n## Instructions")
+        appendLine("1.  **Analyze the Message:** Read the player's last message below and understand its emotional and narrative impact.")
+        appendLine("    - Player's Message: '$messageToReact'")
+        appendLine(
+            "2.  **Generate Reactions:** For each character present in the scene summary (`summary.charactersPresent`), create a reaction.",
+        )
+        appendLine("    - **CRITICAL RULE:** Only generate reactions for characters listed in `summary.charactersPresent`.")
+        appendLine("3.  **Reaction Content:** Each reaction must include:")
+        appendLine("    - `reaction`: A single emoji that represents the character's immediate feeling.")
+        appendLine("    - `thought`: A short, internal thought (max 12 words). This is a private feeling, NOT spoken dialogue.")
+        appendLine(
+            "4.  **Context is Key:** Base reactions on each character's personality, their relationship with the player, and the current scene context.",
+        )
+
+        appendLine("\n## Output Format")
+        appendLine("Your response MUST be a JSON object in the following format:")
+        appendLine(
+            """{ "reactions": [ ${AIReaction::class.java.simpleName}(character="CharacterName", reaction="emoji", thought="A short internal thought.") ] }""",
+        )
     }.trimIndent()
 
     fun sceneSummarizationPrompt(
         saga: SagaContent,
         recentMessages: List<String> = emptyList(),
     ) = buildString {
-        appendLine("You task is generate a concise, AI-optimized summary of the current scene in an interactive story.")
+        appendLine(
+            "Your task is to generate a **MAXIMUM 300-TOKEN**, concise, AI-optimized summary of the current **CRITICAL** scene status.",
+        )
         appendLine("This summary will be used exclusively as context for subsequent AI requests and will NOT be shown to the user.")
         appendLine("Your goal:")
         appendLine(
             "- Provide only the most relevant details needed to maintain accurate story progression and avoid misleading information.",
         )
-        appendLine("- Avoid redundant or already established information.")
-        appendLine("- Focus on immediate context: location, characters present, current objective, active conflict, and mood.")
+        appendLine(" **Prioritize** details that directly impact the next dialogue turn or scene transition.")
+        appendLine(
+            "- **Focus on Active State:** Location, Characters present, **Player's Intent/Last Action**, Current Objective, **Active Conflict/Tension**, and prevailing Mood.",
+        )
         appendLine("- If any field is not relevant or unknown, omit it.")
         appendLine()
         appendLine("Saga Context:")

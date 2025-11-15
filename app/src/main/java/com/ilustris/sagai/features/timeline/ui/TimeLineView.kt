@@ -23,7 +23,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,8 +37,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +54,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -88,7 +84,6 @@ import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedTransitionActionItemModifier
@@ -164,7 +159,12 @@ fun TimeLineContent(
                 acts.forEach { actContent ->
                     item {
                         Text(
-                            actContent.data.title.ifEmpty { stringResource(id = R.string.act_title, (acts.indexOf(actContent) + 1).toRoman()) },
+                            actContent.data.title.ifEmpty {
+                                stringResource(
+                                    id = R.string.act_title,
+                                    (acts.indexOf(actContent) + 1).toRoman(),
+                                )
+                            },
                             style =
                                 MaterialTheme.typography.displaySmall.copy(
                                     fontFamily = genre.headerFont(),
@@ -176,8 +176,7 @@ fun TimeLineContent(
                                     .fillMaxWidth()
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    )
-                                    .padding(16.dp),
+                                    ).padding(16.dp),
                         )
                     }
                     actContent.chapters.forEach { chapter ->
@@ -197,8 +196,7 @@ fun TimeLineContent(
                                         .fillMaxWidth()
                                         .background(
                                             MaterialTheme.colorScheme.background,
-                                        )
-                                        .padding(16.dp),
+                                        ).padding(16.dp),
                             )
                         }
 
@@ -458,9 +456,10 @@ fun TimeLineCard(
                                     null,
                                     colorFilter = ColorFilter.tint(genre.color),
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .padding(4.dp),
+                                    modifier =
+                                        Modifier
+                                            .size(24.dp)
+                                            .padding(4.dp),
                                 )
 
                                 Text(
@@ -638,8 +637,7 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        )
-                                        .padding(16.dp),
+                                        ).padding(16.dp),
                                 true,
                             )
                         }
@@ -694,9 +692,12 @@ fun TimeLineSimpleCard(
                         .border(1.dp, genre.color, CircleShape),
             )
 
-            Column(modifier = Modifier
-                .padding(8.dp)
-                .weight(1f)) {
+            Column(
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .weight(1f),
+            ) {
                 Text(
                     event.title,
                     style =
@@ -755,8 +756,7 @@ fun TimeLineSimpleCard(
                         .clip(genre.shape())
                         .clickable {
                             requestReview(eventContent)
-                        }
-                        .gradientFill(genre.gradient())
+                        }.gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -765,14 +765,18 @@ fun TimeLineSimpleCard(
                     painterResource(R.drawable.ic_review),
                     null,
                     tint = genre.color,
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .size(24.dp)
-                        .padding(2.dp),
+                    modifier =
+                        Modifier
+                            .padding(4.dp)
+                            .size(24.dp)
+                            .padding(2.dp),
                 )
                 Text(
                     text = stringResource(R.string.review_event_label),
-                    style = MaterialTheme.typography.labelMedium,
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
                 )
             }
         }
@@ -837,9 +841,10 @@ fun AvatarTimelineIcon(
                             genre.color.darkerPalette(factor = .2f),
                         ),
                 ),
-            modifier = Modifier
-                .alpha(textVisible)
-                .align(Alignment.Center),
+            modifier =
+                Modifier
+                    .alpha(textVisible)
+                    .align(Alignment.Center),
         )
 
         if (showSpark) {
@@ -980,8 +985,7 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }
-                                .alpha(.4f),
+                                }.alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(

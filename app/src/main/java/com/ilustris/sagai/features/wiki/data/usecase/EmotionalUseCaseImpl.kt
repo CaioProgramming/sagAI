@@ -3,12 +3,7 @@ package com.ilustris.sagai.features.wiki.data.usecase
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asError
-import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.emotionalSummary
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 class EmotionalUseCaseImpl
@@ -29,10 +24,11 @@ class EmotionalUseCaseImpl
                     )!!
             }
 
-        override suspend fun generateEmotionalProfile(saga: SagaContent): RequestResult<String> =
+        override suspend fun generateEmotionalProfile(emotionalSummary: List<String>): RequestResult<String> =
             executeRequest {
+                if (emotionalSummary.isEmpty()) error("No summary provided can't generate profile.")
                 gemmaClient.generate<String>(
-                    prompt = EmotionalPrompt.generateEmotionalProfile(saga.emotionalSummary()),
+                    prompt = EmotionalPrompt.generateEmotionalProfile(emotionalSummary),
                 )!!
             }
     }

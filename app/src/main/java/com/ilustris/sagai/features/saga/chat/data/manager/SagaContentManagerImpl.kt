@@ -26,6 +26,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -50,7 +51,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -302,6 +302,33 @@ class SagaContentManagerImpl
                         saga,
                         timelineContent,
                     ).onSuccessAsync {
+                        CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                Log.i(
+                                    javaClass.simpleName,
+                                    "Starting nickname analysis after event review.",
+                                )
+                                val lastMessages =
+                                    (
+                                        saga
+                                            .flatMessages()
+                                            .takeLast(
+                                                15,
+                                            ).map { it.message.text } + timelineContent.data.content
+                                    ).filter { it.isNotEmpty() }
+                                characterUseCase.findAndSuggestNicknames(saga, lastMessages)
+                                Log.i(
+                                    javaClass.simpleName,
+                                    "Nickname analysis completed successfully.",
+                                )
+                            } catch (e: Exception) {
+                                Log.e(
+                                    javaClass.simpleName,
+                                    "Error during nickname analysis: ${e.message}",
+                                )
+                                e.printStackTrace()
+                            }
+                        }
                         SnackBarState(
                             message = context.getString(R.string.timeline_updated, timelineContent.data.title),
                         )
@@ -425,27 +452,12 @@ class SagaContentManagerImpl
                     } else {
                         actUseCase.generateAct(saga).getSuccess()!!
                     }
-                val emotionalRanking =
-                    currentAct.chapters
-                        .map { it.events }
-                        .map {
-                            it.map { event ->
-                                event.emotionalRanking(saga.mainCharacter?.data)
-                            }
-                        }.flatten()
-                        .flatMap { it.entries }
-                        .associate { it.key to it.value }
 
                 val emotionalReview =
-                    generateEmotionalReview(
-                        currentAct.chapters.mapIndexed { i, chapter ->
-                            """
-                        ${i + 1} - ${chapter.data.title}
-                        ${chapter.data.emotionalReview}    
-                        """
-                        },
-                        emotionalRanking,
-                    ).getSuccess()
+                    emotionalUseCase
+                        .generateEmotionalProfile(
+                            currentAct.chapters.mapNotNull { it.data.emotionalReview },
+                        ).getSuccess()
                 val updatedActData =
                     currentAct.data.copy(
                         title = genAct.title,
@@ -750,7 +762,8 @@ class SagaContentManagerImpl
                 }
                 setNarrativeProcessingStatus(true)
                 val endingMessage = sagaHistoryUseCase.generateEndMessage(saga).getSuccess()!!
-                val emotionalEnding = emotionalUseCase.generateEmotionalProfile(saga).getSuccess()
+                val emotionalEnding =
+                    emotionalUseCase.generateEmotionalProfile(saga.emotionalSummary()).getSuccess()
                 sagaHistoryUseCase
                     .updateSaga(
                         saga.data.copy(

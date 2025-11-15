@@ -33,6 +33,7 @@ import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaContentUIMapper
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
@@ -88,7 +89,8 @@ class ChatViewModel
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
 
-        // currently selected speaking character (initially mainCharacter when saga loads)
+        private var aiTurns = 0
+
         val selectedCharacter: MutableStateFlow<CharacterContent?> = MutableStateFlow(null)
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
@@ -185,7 +187,7 @@ class ChatViewModel
 
         fun retryAiResponse(message: Message?) {
             message?.let {
-                replyMessage(message)
+                replyMessage(message, null)
             }
         }
 
@@ -555,6 +557,8 @@ class ChatViewModel
         private fun sendMessage(
             message: Message,
             isFromUser: Boolean = false,
+            aiCanReply: Boolean = false,
+            sceneSummary: SceneSummary? = null,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
@@ -579,6 +583,8 @@ class ChatViewModel
                     } else {
                         message.characterId ?: characterReference?.id
                     }
+                val sceneSummary = messageUseCase.getSceneContext(saga).getSuccess()
+
                 messageUseCase
                     .saveMessage(
                         saga,
@@ -587,10 +593,15 @@ class ChatViewModel
                             characterId = characterId,
                         ),
                         isFromUser,
+                        sceneSummary,
                     ).onSuccess {
                         resetSuggestions()
                         updateLoading(false)
-                        handleNewMessage(it, isFromUser)
+                        handleNewMessage(
+                            message = it,
+                            isFromUser = isFromUser,
+                            sceneSummary = sceneSummary,
+                        )
                     }.onFailure {
                         snackBar(
                             "Ocorreu um erro ao salvar a mensagem",
@@ -616,33 +627,19 @@ class ChatViewModel
         }
 
         private fun handleNewMessage(
-            it: Message,
+            message: Message,
             isFromUser: Boolean,
+            sceneSummary: SceneSummary?,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
-                when (isFromUser) {
-                    true -> {
-                        if (sagaContentManager.isInDebugMode().not()) {
-                            replyMessage(it)
-                        }
-                    }
-
-                    else -> {
-                        delay(2.seconds)
-                        sagaContentManager.setProcessing(false)
-                    }
+                updateLoading(false)
+                if (isFromUser) {
+                    replyMessage(message, sceneSummary)
                 }
             }
         }
 
-        fun regenerateTimeline(timelineContent: TimelineContent) {
-            val saga = content.value ?: return
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.regenerateTimeline(saga, timelineContent)
-            }
-        }
-
-        private fun generateSuggestions() {
+        private fun generateSuggestions(sceneSummary: SceneSummary? = null) {
             viewModelScope.launch(Dispatchers.IO) {
                 if (sagaContentManager.isInDebugMode()) {
                     return@launch
@@ -652,7 +649,7 @@ class ChatViewModel
 
                 Log.d(
                     javaClass.simpleName,
-                    "generateSuggestions: checking if is generating -> $isGenerating",
+                    "generateSuggestions: checking if is generating -> ${isGenerating.value}",
                 )
                 if (isGenerating.value || isLoading.value) {
                     return@launch
@@ -668,13 +665,17 @@ class ChatViewModel
                     currentTimeline.messages,
                     currentSaga.mainCharacter?.data,
                     currentSaga,
+                    sceneSummary,
                 ).onSuccess {
                     suggestions.value = it
                 }
             }
         }
 
-        private fun replyMessage(message: Message) {
+        private fun replyMessage(
+            message: Message,
+            sceneSummary: SceneSummary?,
+        ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val timeline = saga.getCurrentTimeLine()
@@ -695,19 +696,21 @@ class ChatViewModel
                     .generateMessage(
                         saga = saga,
                         message = newMessage,
+                        sceneSummary = sceneSummary,
                     ).onSuccessAsync { genMessage ->
                         if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
                             createCharacter(
                                 buildString {
                                     appendLine("New character context:")
                                     appendLine(genMessage.newCharacter.toJsonFormat())
-                                    newMessage?.let {
+                                    newMessage.let {
                                         appendLine("Previous Message context:")
                                         appendLine(newMessage.toJsonFormat())
                                     }
                                 },
                             )
                         }
+
                         sendMessage(
                             genMessage.message.copy(
                                 characterId = null,
@@ -715,6 +718,7 @@ class ChatViewModel
                                 id = 0,
                                 status = MessageStatus.OK,
                             ),
+                            aiCanReply = aiTurns > 0,
                         )
                         if (newMessage.message.status == MessageStatus.ERROR) {
                             messageUseCase.updateMessage(
@@ -723,7 +727,12 @@ class ChatViewModel
                                 ),
                             )
                         }
+
+                        delay(3.seconds)
+                        generateSuggestions(sceneSummary)
+                        sagaContentManager.setProcessing(false)
                     }.onFailureAsync {
+                        aiTurns = 0
                         messageUseCase.updateMessage(
                             message.copy(
                                 status = MessageStatus.ERROR,
@@ -744,9 +753,30 @@ class ChatViewModel
             }
         }
 
+        private fun checkAiTurns(
+            sceneSummary: SceneSummary?,
+            saga: SagaContent,
+        ) {
+            if (sceneSummary == null) {
+                aiTurns = 0
+                return
+            }
+            if (aiTurns == 0) {
+                val npcCount =
+                    (
+                        sceneSummary.charactersPresent.filter {
+                            it.equals(saga.mainCharacter?.data?.name, true).not()
+                        }
+                    ).size
+                aiTurns = npcCount
+                Log.d(javaClass.simpleName, "AI reply cycle started. Max turns: $aiTurns")
+        }
+        }
+
         fun createCharacter(contextDescription: String) {
+            isLoading.value = true
+
             viewModelScope.launch(Dispatchers.IO) {
-                isLoading.emit(true)
                 sagaContentManager
                     .generateCharacter(
                         contextDescription,

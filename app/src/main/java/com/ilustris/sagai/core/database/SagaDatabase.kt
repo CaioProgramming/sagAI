@@ -4,7 +4,6 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.sqlite.db.SupportSQLiteDatabase // Added for MigrationSpec
 import com.ilustris.sagai.core.database.converters.IntListConverter
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.source.ActDao
@@ -43,8 +42,12 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         RelationshipUpdateEvent::class,
         Reaction::class,
     ],
-    version = 3,
+    version = 5,
     exportSchema = true,
+    autoMigrations = [
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5),
+    ],
 )
 @TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {

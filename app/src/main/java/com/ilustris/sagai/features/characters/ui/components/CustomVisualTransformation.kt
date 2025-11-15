@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.characters.ui.components
 
 import ai.atick.material.MaterialColor
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.text.AnnotatedString
@@ -12,20 +11,13 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
-import androidx.core.graphics.toColorInt
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.darker
-import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.lighter
-import kotlin.text.indexOf
 
 data class AnnotationRule(
     val searchTerm: String,
@@ -62,20 +54,22 @@ fun buildCharactersAnnotatedString(
     text: String,
     mainCharacter: Character?,
     characters: List<Character>,
-    genre: Genre
+    genre: Genre,
 ) = buildAnnotatedString {
-    val annotationRules = charactersStyleRules(
-        mainCharacter,
-        characters,
-        genre
-    )
-    val annotationStyleGroup = AnnotationStyleGroup(
-        tag = "character_tag",
-        rules = annotationRules
-    )
+    val annotationRules =
+        charactersStyleRules(
+            mainCharacter,
+            characters,
+            genre,
+        )
+    val annotationStyleGroup =
+        AnnotationStyleGroup(
+            tag = "character_tag",
+            rules = annotationRules,
+        )
     return buildStyleAnnotation(
         text,
-        listOf(annotationStyleGroup)
+        listOf(annotationStyleGroup),
     )
 }
 
@@ -84,33 +78,48 @@ fun charactersStyleRules(
     characters: List<Character>,
     genre: Genre,
     shadowColor: Color = Color.Black,
-    ) =
-        characters.map { character ->
-            val characterColor = character.hexColor.hexToColor() ?: genre.color.lighter(.3f)
-            val shadow =
-                Shadow(
-                    color = shadowColor,
-                    blurRadius = 2f,
-                    offset = Offset(.5f, .3f),
-                )
+) = characters.flatMap { character ->
+    val characterColor = character.hexColor.hexToColor() ?: genre.color.lighter(.3f)
+    val shadow =
+        Shadow(
+            color = shadowColor,
+            blurRadius = 2f,
+            offset = Offset(.5f, .3f),
+        )
 
-            val mainColor = if (character.id == mainCharacter?.id) genre.color else characterColor
-            val font = if (character.id == mainCharacter?.id) genre.headerFont() else genre.bodyFont()
-            val span =
-                SpanStyle(
-                    fontWeight = FontWeight.Normal,
-                    fontFamily = font,
-                    shadow = shadow,
-                    color = mainColor,
-                )
+    val mainColor = if (character.id == mainCharacter?.id) genre.color else characterColor
+    val font = if (character.id == mainCharacter?.id) genre.headerFont() else genre.bodyFont()
+    val span =
+        SpanStyle(
+            fontWeight = FontWeight.Normal,
+            fontFamily = font,
+            shadow = shadow,
+            color = mainColor,
+        )
 
+    val nameVariations =
+        buildList {
+            add(character.name)
+            character.lastName?.let {
+                add(it)
+            }
+            character.nicknames?.let {
+                addAll(it)
+            }
+        }
+
+    nameVariations
+        .asSequence()
+        .filter { it.length >= 3 }
+        .distinct()
+        .map { name ->
             AnnotationRule(
-                searchTerm = character.name,
+                searchTerm = name,
                 annotationValue = "character:${character.id}",
                 spanStyle = span,
             )
-        }
-
+        }.toList()
+}
 
 fun buildWikiAndCharactersAnnotation(
     text: String,
@@ -120,16 +129,16 @@ fun buildWikiAndCharactersAnnotation(
     wiki: List<Wiki>,
     shadowColor: Color = Color.Black,
 ): AnnotatedString {
-
     val characterStyleGroup =
         AnnotationStyleGroup(
             tag = "character_tag",
-            rules = charactersStyleRules(
-                mainCharacter,
-                characters,
-                genre,
-                shadowColor,
-            ),
+            rules =
+                charactersStyleRules(
+                    mainCharacter,
+                    characters,
+                    genre,
+                    shadowColor,
+                ),
         )
 
     val wikiRules =
@@ -165,7 +174,7 @@ fun buildStyleAnnotation(
 
     styleItems.forEach { group ->
         group.rules.forEach { rule ->
-            var startIndex = text.indexOf(rule.searchTerm)
+            var startIndex = text.indexOf(rule.searchTerm, ignoreCase = true)
             while (startIndex != -1) {
                 val endIndex = startIndex + rule.searchTerm.length
                 addStyle(
@@ -180,7 +189,7 @@ fun buildStyleAnnotation(
                     start = startIndex,
                     end = endIndex,
                 )
-                startIndex = text.indexOf(rule.searchTerm, startIndex + 1)
+                startIndex = text.indexOf(rule.searchTerm, startIndex + 1, ignoreCase = true)
             }
         }
     }

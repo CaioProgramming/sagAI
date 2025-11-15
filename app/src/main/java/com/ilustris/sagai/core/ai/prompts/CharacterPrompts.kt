@@ -1,15 +1,11 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts // Added import
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts // Added import
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -282,18 +278,29 @@ object CharacterPrompts {
         )
     }.trimIndent()
 
+    @Suppress("ktlint:standard:max-line-length")
     fun findNickNames(
         characters: List<Character>,
         messages: List<Message>,
     ) = buildString {
-        appendLine("You are a linguistic analyst AI. Your task is to analyze a conversation and identify unique, context-specific nicknames for characters.")
-        appendLine("Your goal is to find informal names that have emerged from the characters' interactions and story events, not just simple descriptors from their profiles.")
+        appendLine(
+            "You are a linguistic analyst AI. Your task is to analyze a conversation and identify unique, context-specific nicknames for characters.",
+        )
+        appendLine(
+            "Your goal is to find informal names that have emerged from the characters' interactions and story events, not just simple descriptors from their profiles.",
+        )
         appendLine()
         appendLine("## CORE INSTRUCTIONS:")
         appendLine("1.  **Analyze the provided messages** to find informal names or nicknames used to refer to the characters.")
-        appendLine("2.  **Focus on Uniqueness:** The nicknames must be distinctive and not generic. They should feel like a unique identifier for that character within the story's context.")
-        appendLine("3.  **Avoid Generic Terms:** Do NOT extract common nouns or roles as nicknames (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). The name must be a proper noun or a very specific epithet.")
-        appendLine("4.  **Context is Key:** The nickname should arise from the character's actions, relationships, or specific events in the narrative provided in the messages. It should not be a direct attribute from their profile (like their job or a visible characteristic).")
+        appendLine(
+            "2.  **Focus on Uniqueness:** The nicknames must be distinctive and not generic. They should feel like a unique identifier for that character within the story's context.",
+        )
+        appendLine(
+            "3.  **Avoid Generic Terms:** Do NOT extract common nouns or roles as nicknames (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). The name must be a proper noun or a very specific epithet.",
+        )
+        appendLine(
+            "4.  **Context is Key:** The nickname should arise from the character's actions, relationships, or specific events in the narrative provided in the messages. It should not be a direct attribute from their profile (like their job or a visible characteristic).",
+        )
         appendLine("5.  **Do not use names already in the character's profile** (e.g., their actual name or known aliases).")
         appendLine()
         appendLine("## CONTEXT:")
@@ -305,7 +312,9 @@ object CharacterPrompts {
         appendLine()
         appendLine("## REQUIRED OUTPUT FORMAT:")
         appendLine("Respond ONLY with a valid JSON array. Do not include any other text, explanations, or markdown.")
-        appendLine("The JSON array must follow this exact format: `[{\"characterName\": \"Character Full Name\", \"newNicknames\": [\"nickname1\", \"nickname2\"]}]`")
+        appendLine(
+            "The JSON array must follow this exact format: `[{\"characterName\": \"Character Full Name\", \"newNicknames\": [\"nickname1\", \"nickname2\"]}]`",
+        )
         appendLine("- Only include characters for whom you found one or more valid, unique nicknames that meet the criteria above.")
         appendLine("- If no new, valid nicknames are found for any character, return an empty array `[]`.")
     }.trimIndent()

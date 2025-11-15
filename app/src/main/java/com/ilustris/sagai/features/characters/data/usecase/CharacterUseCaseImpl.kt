@@ -241,4 +241,65 @@ class CharacterUseCaseImpl
             timeline: Timeline,
             saga: SagaContent,
         ): RequestResult<Unit> = characterRelationUseCase.generateCharacterRelation(timeline, saga)
+
+        override suspend fun findAndSuggestNicknames(
+            saga: SagaContent,
+            lastMessages: List<String>,
+        ): RequestResult<Unit> =
+            executeRequest {
+                try {
+                    Log.i(
+                        javaClass.simpleName,
+                        "Analyzing last ${lastMessages.size} messages for nicknames...",
+                    )
+                    val charactersList = saga.getCharacters()
+                    val prompt =
+                        buildString {
+                            appendLine("Analyze the following messages to find new informal names or nicknames for the characters listed.")
+                            appendLine("\nCharacters: $charactersList")
+                            appendLine("\nRecent Messages: $lastMessages")
+                            appendLine(
+                                "\nRespond ONLY with a JSON array in the format: '[{\"characterName\": \"Character Full Name\", \"newNicknames\": [\"nickname1\", \"nickname2\"]}]'",
+                            )
+                            appendLine(
+                                "\nOnly include characters for whom you found new nicknames. If no new nicknames are found, return an empty array.",
+                            )
+                        }
+
+                    val suggestions =
+                        gemmaClient.generate<List<com.ilustris.sagai.features.characters.data.model.NicknameSuggestion>>(
+                            prompt,
+                        )
+
+                    if (suggestions.isNullOrEmpty()) {
+                        Log.i(javaClass.simpleName, "No new nicknames found.")
+                        return@executeRequest
+                    }
+
+                    Log.i(javaClass.simpleName, "Found ${suggestions.size} nickname suggestions.")
+
+                    suggestions.forEach { suggestion ->
+                        saga.findCharacter(suggestion.characterName)?.let { characterContent ->
+                            val currentNicknames =
+                                (characterContent.data.nicknames ?: emptyList()).toMutableList()
+                            val newNicknames =
+                                suggestion.newNicknames.filter { !currentNicknames.contains(it) && it.length > 2 }
+                            if (newNicknames.isNotEmpty()) {
+                                val updatedCharacter =
+                                    characterContent.data.copy(
+                                        nicknames = (currentNicknames + newNicknames).distinct(),
+                                    )
+                                updateCharacter(updatedCharacter)
+                                Log.i(
+                                    javaClass.simpleName,
+                                    "Updated character ${updatedCharacter.name} with new nicknames: $newNicknames",
+                                )
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                Log.e(javaClass.simpleName, "Error suggesting nicknames: ${e.message}")
+                e.printStackTrace()
+            }
+        }
     }

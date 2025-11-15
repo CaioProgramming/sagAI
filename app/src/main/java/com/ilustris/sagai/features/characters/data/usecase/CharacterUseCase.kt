@@ -37,4 +37,12 @@ interface CharacterUseCase {
         timeline: Timeline,
         saga: SagaContent,
     ): RequestResult<Unit>
+
+    /**
+     * Analyzes recent messages to find and suggest new nicknames for characters.
+     */
+    suspend fun findAndSuggestNicknames(
+        saga: SagaContent,
+        lastMessages: List<String>,
+    ): RequestResult<Unit>
 }

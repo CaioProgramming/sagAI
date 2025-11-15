@@ -111,7 +111,7 @@ class SagaDetailUseCaseImpl
             executeRequest {
                 val request =
                     emotionalUseCase
-                        .generateEmotionalProfile(currentSaga)
+                        .generateEmotionalProfile(currentSaga.emotionalSummary())
                         .getSuccess()!!
 
                 sagaRepository

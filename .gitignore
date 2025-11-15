@@ -19,3 +19,4 @@ local.properties
 /.idea/
 .gemini/
 gha-creds-*.json
+/app/build/

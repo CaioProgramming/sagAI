@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,8 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,7 +37,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -48,13 +44,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.ui.SingleRelationShipCard
 import com.ilustris.sagai.features.characters.ui.components.CharacterStats
@@ -62,20 +57,15 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -205,22 +195,37 @@ fun CharacterDetailsContent(
                                 colorFilter = ColorFilter.tint(characterColor),
                             )
 
-                            Text(
-                                character.name,
-                                textAlign = TextAlign.Center,
-                                style =
-                                    MaterialTheme.typography.displaySmall.copy(
-                                        fontFamily = genre.headerFont(),
-                                        brush =
-                                            Brush.verticalGradient(
-                                                listOf(
-                                                    genre.color,
-                                                    characterColor,
-                                                    genre.iconColor,
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                    textAlign = TextAlign.Center,
+                                    style =
+                                        MaterialTheme.typography.displaySmall.copy(
+                                            fontFamily = genre.headerFont(),
+                                            brush =
+                                                Brush.verticalGradient(
+                                                    listOf(
+                                                        genre.color,
+                                                        characterColor,
+                                                        genre.iconColor,
+                                                    ),
                                                 ),
-                                            ),
-                                    ),
-                            )
+                                        ),
+                                )
+                                character.nicknames?.let {
+                                    if (it.isNotEmpty()) {
+                                        Text(
+                                            text = "aka: ${character.nicknames.joinToString(", ")}",
+                                            style =
+                                                MaterialTheme.typography.titleMedium.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    color = characterColor.copy(alpha = 0.8f),
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                        )
+                                    }
+                                }
+                            }
 
                             Text(
                                 character.profile.occupation,
@@ -251,16 +256,37 @@ fun CharacterDetailsContent(
                     )
                 }
                 item {
-                    Text(
-                        character.name,
-                        textAlign = TextAlign.Center,
-                        style =
-                            MaterialTheme.typography.displayMedium.copy(
-                                fontFamily = genre.headerFont(),
-                                brush =
-                                    Brush.verticalGradient(listOf(characterColor, genre.iconColor, genre.color)),
-                            ),
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                            textAlign = TextAlign.Center,
+                            style =
+                                MaterialTheme.typography.displayMedium.copy(
+                                    fontFamily = genre.headerFont(),
+                                    brush =
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                characterColor,
+                                                genre.iconColor,
+                                                genre.color,
+                                            ),
+                                        ),
+                                ),
+                        )
+                        character.nicknames?.let {
+                            if (it.isNotEmpty()) {
+                                Text(
+                                    text = "aka: ${character.nicknames.joinToString(", ")}",
+                                    style =
+                                        MaterialTheme.typography.titleMedium.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color = characterColor.copy(alpha = 0.8f),
+                                            textAlign = TextAlign.Center,
+                                        ),
+                                )
+                            }
+                        }
+                    }
                 }
 
                 item {
@@ -272,7 +298,10 @@ fun CharacterDetailsContent(
                                 color = characterColor,
                                 textAlign = TextAlign.Center,
                             ),
-                        modifier = Modifier.fillMaxWidth().padding(8.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
                     )
                 }
             }
@@ -397,8 +426,6 @@ fun CharacterDetailsContent(
                                             .padding(16.dp)
                                             .requiredWidthIn(max = 300.dp),
                                 )
-
-
                             }
                         }
                     }
