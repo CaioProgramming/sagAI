@@ -1,1 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.ilustris.sagai.features.share.presentation.SharePlayViewModel

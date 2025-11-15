@@ -1,9 +1,0 @@
-<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:aapt="http://schemas.android.com/aapt"
-    android:drawable="@drawable/ic_spark_splash">
-
-    <target
-        android:name="spark_path"
-        android:animation="@animator/splash_icon_animator" />
-
-</animated-vector>

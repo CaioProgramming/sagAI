@@ -1,1 +1,0 @@
--keep,allowobfuscation,allowshrinking class com.ilustris.sagai.core.file.backup.ui.BackupViewModel
