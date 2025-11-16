@@ -571,9 +571,11 @@ fun SagaDetailContentView(
                     },
                 ) {
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        Scaffold { _ ->
+                        Scaffold { innerPadding ->
 
-                            SharedTransitionLayout {
+                            SharedTransitionLayout(
+                                modifier = Modifier.padding(innerPadding)
+                            ) {
                                 AnimatedContent(
                                     currentSection,
                                     transitionSpec = {
@@ -600,16 +602,16 @@ fun SagaDetailContentView(
                                                     onBackClick(currentSection)
                                                 },
                                                 titleModifier =
-                                                    Modifier.sharedElement(
-                                                        rememberSharedContentState(
-                                                            key =
-                                                                DetailAction.CHARACTERS
-                                                                    .sharedElementTitleKey(
-                                                                        sagaContent.data.id,
-                                                                    ),
-                                                        ),
-                                                        animatedVisibilityScope = this,
+                                                Modifier.sharedElement(
+                                                    rememberSharedContentState(
+                                                        key =
+                                                        DetailAction.CHARACTERS
+                                                            .sharedElementTitleKey(
+                                                                sagaContent.data.id,
+                                                            ),
                                                     ),
+                                                    animatedVisibilityScope = this,
+                                                ),
                                             )
 
                                         DetailAction.TIMELINE ->
@@ -617,16 +619,16 @@ fun SagaDetailContentView(
                                                 sagaContent,
                                                 animationScopes = this@SharedTransitionLayout to this,
                                                 titleModifier =
-                                                    Modifier.sharedElement(
-                                                        rememberSharedContentState(
-                                                            key =
-                                                                DetailAction.TIMELINE
-                                                                    .sharedElementTitleKey(
-                                                                        sagaContent.data.id,
-                                                                    ),
-                                                        ),
-                                                        animatedVisibilityScope = this,
+                                                Modifier.sharedElement(
+                                                    rememberSharedContentState(
+                                                        key =
+                                                        DetailAction.TIMELINE
+                                                            .sharedElementTitleKey(
+                                                                sagaContent.data.id,
+                                                            ),
                                                     ),
+                                                    animatedVisibilityScope = this,
+                                                ),
                                                 generateEmotionalReview = {
                                                     createTimelineReview(it)
                                                 },
@@ -641,16 +643,16 @@ fun SagaDetailContentView(
                                                 sagaContent,
                                                 animationScopes = this@SharedTransitionLayout to this,
                                                 titleModifier =
-                                                    Modifier.sharedElement(
-                                                        rememberSharedContentState(
-                                                            key =
-                                                                DetailAction.CHAPTERS
-                                                                    .sharedElementTitleKey(
-                                                                        sagaContent.data.id,
-                                                                    ),
-                                                        ),
-                                                        animatedVisibilityScope = this,
+                                                Modifier.sharedElement(
+                                                    rememberSharedContentState(
+                                                        key =
+                                                        DetailAction.CHAPTERS
+                                                            .sharedElementTitleKey(
+                                                                sagaContent.data.id,
+                                                            ),
                                                     ),
+                                                    animatedVisibilityScope = this,
+                                                ),
                                                 onBackClick = {
                                                     onBackClick(currentSection)
                                                 },
@@ -666,16 +668,16 @@ fun SagaDetailContentView(
                                                     reviewWiki(it)
                                                 },
                                                 titleModifier =
-                                                    Modifier.sharedElement(
-                                                        rememberSharedContentState(
-                                                            key =
-                                                                DetailAction.WIKI
-                                                                    .sharedElementTitleKey(
-                                                                        sagaContent.data.id,
-                                                                    ),
-                                                        ),
-                                                        animatedVisibilityScope = this,
+                                                Modifier.sharedElement(
+                                                    rememberSharedContentState(
+                                                        key =
+                                                        DetailAction.WIKI
+                                                            .sharedElementTitleKey(
+                                                                sagaContent.data.id,
+                                                            ),
                                                     ),
+                                                    animatedVisibilityScope = this,
+                                                ),
                                             )
 
                                         DetailAction.ACTS -> ActContent(sagaContent)
@@ -685,9 +687,9 @@ fun SagaDetailContentView(
                                                 emotionalReviewIconUrl = emotionalCardReference,
                                                 animationScopes = this@SharedTransitionLayout to this,
                                                 modifier =
-                                                    Modifier
-                                                        .animateContentSize()
-                                                        .fillMaxSize(),
+                                                Modifier
+                                                    .animateContentSize()
+                                                    .fillMaxSize(),
                                                 selectSection = { action ->
                                                     onChangeSection(action)
                                                 },
@@ -727,9 +729,9 @@ fun SagaDetailContentView(
                                     },
                                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                     modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .fillMaxHeight(),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(),
                                     dragHandle = {
                                         Box {}
                                     },
@@ -746,9 +748,9 @@ fun SagaDetailContentView(
                                     },
                                     sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
                                     modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .fillMaxHeight(),
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .fillMaxHeight(),
                                     containerColor = MaterialTheme.colorScheme.background,
                                 ) {
                                     EmotionalSheet(sagaContent, emotionalCardReference)
