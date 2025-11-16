@@ -20,4 +20,6 @@ local.properties
 .gemini/
 gha-creds-*.json
 /app/build/
+.kotlin/
+.junie/
 .kotlin/sessions/

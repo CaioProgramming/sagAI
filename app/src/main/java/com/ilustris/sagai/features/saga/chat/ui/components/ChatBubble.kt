@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
@@ -142,10 +141,10 @@ fun ChatBubble(
         -> {
             ConstraintLayout(
                 modifier =
-                modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                    .animateContentSize(),
+                    modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .animateContentSize(),
             ) {
                 val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
                 val (messageText, characterAvatar, messageTime, retryButton, reactions) = createRefs()
@@ -191,20 +190,20 @@ fun ChatBubble(
                         onTextClick = {
                         },
                         modifier =
-                        bubbleModifier
-                            .clip(bubbleShape)
-                            .padding(16.dp)
-                            .align(alignment)
-                            .animateContentSize()
-                            .padding(4.dp)
-                            .reactiveShimmer(isLoading, genre.shimmerColors()),
+                            bubbleModifier
+                                .clip(bubbleShape)
+                                .padding(16.dp)
+                                .align(alignment)
+                                .animateContentSize()
+                                .padding(4.dp)
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = genre.bodyFont(),
-                            color = bubbleStyle.textColor,
-                            textAlign = TextAlign.Start,
-                        ),
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Normal,
+                                fontFamily = genre.bodyFont(),
+                                color = bubbleStyle.textColor,
+                                textAlign = TextAlign.Start,
+                            ),
                         onTextUpdate = {
                         },
                         onAnimationFinished = {
@@ -227,8 +226,7 @@ fun ChatBubble(
                             } else {
                                 start.linkTo(parent.start)
                             }
-                        }
-                        .clip(CircleShape)
+                        }.clip(CircleShape)
                         .size(avatarSize),
                 ) {
                     messageContent.character?.let { character ->
@@ -246,12 +244,12 @@ fun ChatBubble(
                                 pixelation = 0f,
                                 grainRadius = 0f,
                                 modifier =
-                                Modifier
-                                    .padding(8.dp)
-                                    .fillMaxSize()
-                                    .clickable {
-                                        openCharacters(characters.find { c -> c.data.id == character.id })
-                                    },
+                                    Modifier
+                                        .padding(8.dp)
+                                        .fillMaxSize()
+                                        .clickable {
+                                            openCharacters(characters.find { c -> c.data.id == character.id })
+                                        },
                             )
                         }
 
@@ -266,20 +264,21 @@ fun ChatBubble(
                                 Text(
                                     it.emoji,
                                     style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        shadow =
-                                        Shadow(
-                                            color = character.hexColor.hexToColor()
-                                                ?: genre.color,
-                                            offset = Offset(2f, 2f),
-                                            blurRadius = 0f,
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            shadow =
+                                                Shadow(
+                                                    color =
+                                                        character.hexColor.hexToColor()
+                                                            ?: genre.color,
+                                                    offset = Offset(2f, 2f),
+                                                    blurRadius = 0f,
+                                                ),
                                         ),
-                                    ),
                                     modifier =
-                                    Modifier
-                                        .animateContentSize()
-                                        .align(Alignment.BottomCenter)
-                                        .padding(2.dp),
+                                        Modifier
+                                            .animateContentSize()
+                                            .align(Alignment.BottomCenter)
+                                            .padding(2.dp),
                                 )
                             }
                         }
@@ -290,8 +289,7 @@ fun ChatBubble(
                             Modifier
                                 .clickable {
                                     requestNewCharacter()
-                                }
-                                .size(24.dp)
+                                }.size(24.dp)
                                 .gradientFill(genre.gradient()),
                         )
                     }
@@ -299,30 +297,31 @@ fun ChatBubble(
 
                 Row(
                     modifier =
-                    Modifier.constrainAs(messageTime) {
-                        top.linkTo(messageText.bottom)
-                        if (isUser) {
-                            end.linkTo(messageText.end, margin = 16.dp)
-                        } else {
-                            start.linkTo(messageText.start, margin = 16.dp)
-                        }
-                    },
+                        Modifier
+                            .constrainAs(messageTime) {
+                                top.linkTo(messageText.bottom)
+                                if (isUser) {
+                                    end.linkTo(messageText.end, margin = 16.dp)
+                                } else {
+                                    start.linkTo(messageText.start, margin = 16.dp)
+                                }
+                            }.padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     val containsWiki =
                         wiki.any {
                             message.text.contains(it.title, true) ||
-                                    message.text.contains(it.content, true)
+                                message.text.contains(it.content, true)
                         }
 
                     Text(
                         message.timestamp.formatHours(),
                         style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontFamily = genre.bodyFont(),
-                        ),
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontFamily = genre.bodyFont(),
+                            ),
                     )
 
                     AnimatedVisibility(
@@ -347,59 +346,60 @@ fun ChatBubble(
                     }
                 }
 
-                                AnimatedVisibility(
-                                    visible = messageContent.reactions.isNotEmpty(),
-                                    modifier =
-                                    Modifier.constrainAs(reactions) {
-                                        top.linkTo(messageText.bottom, margin = (-12).dp)
-                                        if (isUser.not()) {
-                                            end.linkTo(messageText.end, margin = 8.dp)
-                                        } else {
-                                            start.linkTo(messageText.start, margin = 8.dp)
-                                        }
-                                    },
-                                ) {
-                                    ReactionsView(
-                                        reactions = messageContent.reactions,
-                                        genre = genre
-                                    ) {
-                                        onReactionsClick(messageContent)
-                                    }
-                                }
+                AnimatedVisibility(
+                    visible = messageContent.reactions.isNotEmpty(),
+                    modifier =
+                        Modifier.constrainAs(reactions) {
+                            top.linkTo(messageText.bottom, margin = (-12).dp)
+                            if (isUser.not()) {
+                                end.linkTo(messageText.end, margin = 8.dp)
+                            } else {
+                                start.linkTo(messageText.start, margin = 8.dp)
+                            }
+                        },
+                ) {
+                    ReactionsView(
+                        reactions = messageContent.reactions,
+                        genre = genre,
+                    ) {
+                        onReactionsClick(messageContent)
+                    }
+                }
                 AnimatedVisibility(
                     message.status == MessageStatus.ERROR,
                     modifier =
-                    Modifier.constrainAs(retryButton) {
-                        top.linkTo(messageText.top, margin = (-4).dp)
-                        if (isUser) {
-                            end.linkTo(messageText.start, margin = (-12).dp)
-                        } else {
-                            start.linkTo(messageText.end, margin = (-12).dp)
-                        }
-                    },
+                        Modifier.constrainAs(retryButton) {
+                            top.linkTo(messageText.top, margin = (-4).dp)
+                            if (isUser) {
+                                end.linkTo(messageText.start, margin = (-12).dp)
+                            } else {
+                                start.linkTo(messageText.end, margin = (-12).dp)
+                            }
+                        },
                 ) {
                     IconButton(
                         onClick = {
                             onRetry(messageContent)
                         },
                         modifier =
-                        Modifier
-                            .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-                            .size(24.dp),
+                            Modifier
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .size(24.dp),
                         colors =
-                        IconButtonDefaults
-                            .iconButtonColors()
-                            .copy(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.error,
-                            ),
+                            IconButtonDefaults
+                                .iconButtonColors()
+                                .copy(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
                     ) {
                         Icon(
                             painterResource(R.drawable.baseline_refresh_24),
                             "Tentar novamente",
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .fillMaxSize(),
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .fillMaxSize(),
                         )
                     }
                 }
@@ -410,17 +410,18 @@ fun ChatBubble(
             val thoughtBubbleShape =
                 ThoughtBubbleShape(
                     cornerRadius = cornerSize,
-                    tailAlignment = bubbleStyle.tailAlignment
+                    tailAlignment = bubbleStyle.tailAlignment,
+                    tailHeight = 0.dp,
+                    tailWidth = 0.dp,
                 )
             ConstraintLayout(
                 modifier =
-                modifier
-                    .padding(8.dp)
-                    .fillMaxWidth()
-                    .animateContentSize(),
+                    modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .animateContentSize(),
             ) {
-                val (messageText, characterAvatar, messageTime, retryButton, starPlaceholder) = createRefs()
-                val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
+                val (messageText, characterAvatar, messageTime, retryButton, _) = createRefs()
 
                 var starAlpha by remember { mutableFloatStateOf(1f) }
                 val alphaAnimation by animateFloatAsState(
@@ -430,29 +431,30 @@ fun ChatBubble(
                 )
                 val blurAnimation by animateFloatAsState(
                     targetValue = if (starAlpha == 1f) 0f else 1f,
-                    label = "blurAnimation"
+                    label = "blurAnimation",
                 )
 
                 Box(
-                    modifier = Modifier
-                        .constrainAs(messageText) {
-                            top.linkTo(parent.top)
-                            if (isUser) {
-                                end.linkTo(characterAvatar.start, margin = 8.dp)
-                            } else {
-                                start.linkTo(characterAvatar.end, margin = 8.dp)
-                            }
-                            width = Dimension.wrapContent
-                        }
-                        .wrapContentSize()
-                        .dashedBorder(
-                            strokeWidth = 1.dp,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                            shape = thoughtBubbleShape,
-                            dashLength = 10.dp,
-                            gapLength = 5.dp
-                        )
-                        .padding(2.dp)
+                    modifier =
+                        Modifier
+                            .constrainAs(messageText) {
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom)
+                                if (isUser) {
+                                    start.linkTo(parent.start, margin = 50.dp)
+                                    end.linkTo(characterAvatar.start, margin = 8.dp)
+                                } else {
+                                    start.linkTo(characterAvatar.end, margin = 8.dp)
+                                    end.linkTo(parent.end, margin = 50.dp)
+                                }
+                                width = Dimension.fillToConstraints
+                            }.dashedBorder(
+                                strokeWidth = 1.dp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                shape = thoughtBubbleShape,
+                                dashLength = 10.dp,
+                                gapLength = 5.dp,
+                            ),
                 ) {
                     TypewriterText(
                         text = message.text,
@@ -463,33 +465,32 @@ fun ChatBubble(
                         characters = content.getCharacters(),
                         wiki = wiki,
                         modifier =
-                        Modifier
-                            .padding(16.dp)
-                            .alpha(blurAnimation)
-                            .reactiveShimmer(isLoading, genre.shimmerColors()),
+                            Modifier
+                                .padding(16.dp)
+                                .alpha(blurAnimation)
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontStyle = FontStyle.Italic,
-                            textAlign = TextAlign.Center,
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialTheme.colorScheme.onBackground,
-                        ),
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontStyle = FontStyle.Italic,
+                                textAlign = TextAlign.Center,
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                            ),
                         onTextClick = {},
                     )
 
                     StarryTextPlaceholder(
                         modifier =
-                        Modifier
-                            .matchParentSize()
-                            .alpha(alphaAnimation)
-                            .clip(thoughtBubbleShape)
-                            .clickable {
-                                starAlpha = 0f
-                            }
-                            .background(
-                                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
-                                thoughtBubbleShape,
-                            ),
+                            Modifier
+                                .matchParentSize()
+                                .alpha(alphaAnimation)
+                                .clip(thoughtBubbleShape)
+                                .clickable {
+                                    starAlpha = 0f
+                                }.background(
+                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
+                                    thoughtBubbleShape,
+                                ),
                         starColor = genre.color,
                     )
                 }
@@ -503,81 +504,80 @@ fun ChatBubble(
                         pixelation = 0f,
                         grainRadius = 0f,
                         modifier =
-                        Modifier
-                            .constrainAs(characterAvatar) {
-                                bottom.linkTo(messageText.bottom)
-                                if (isUser) {
-                                    end.linkTo(parent.end)
-                                } else {
-                                    start.linkTo(parent.start)
-                                }
-                            }
-                            .size(32.dp)
-                            .clickable {
-                                openCharacters(characters.find { c -> c.data.id == it.id })
-                            },
+                            Modifier
+                                .constrainAs(characterAvatar) {
+                                    bottom.linkTo(messageText.bottom)
+                                    if (isUser) {
+                                        end.linkTo(parent.end)
+                                    } else {
+                                        start.linkTo(parent.start)
+                                    }
+                                }.size(32.dp)
+                                .clickable {
+                                    openCharacters(characters.find { c -> c.data.id == it.id })
+                                },
                     )
                 }
 
-
                 Row(
                     modifier =
-                    Modifier.constrainAs(messageTime) {
-                        top.linkTo(messageText.bottom)
-                        if (isUser) {
-                            end.linkTo(messageText.end, margin = 16.dp)
-                        } else {
-                            start.linkTo(messageText.start, margin = 16.dp)
-                        }
-                    },
+                        Modifier
+                            .constrainAs(messageTime) {
+                                top.linkTo(messageText.bottom)
+                                if (isUser) {
+                                    end.linkTo(messageText.end, margin = 16.dp)
+                                } else {
+                                    start.linkTo(messageText.start, margin = 16.dp)
+                                }
+                            }.padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         message.timestamp.formatHours(),
                         style =
-                        MaterialTheme.typography.labelSmall.copy(
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontFamily = genre.bodyFont(),
-                        ),
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontFamily = genre.bodyFont(),
+                            ),
                     )
                 }
-
 
                 AnimatedVisibility(
                     message.status == MessageStatus.ERROR,
                     modifier =
-                    Modifier.constrainAs(retryButton) {
-                        top.linkTo(messageText.top, margin = (-4).dp)
-                        if (isUser) {
-                            end.linkTo(messageText.start, margin = (-12).dp)
-                        } else {
-                            start.linkTo(messageText.end, margin = (-12).dp)
-                        }
-                    },
+                        Modifier.constrainAs(retryButton) {
+                            top.linkTo(messageText.top, margin = (-4).dp)
+                            if (isUser) {
+                                end.linkTo(messageText.start, margin = (-12).dp)
+                            } else {
+                                start.linkTo(messageText.end, margin = (-12).dp)
+                            }
+                        },
                 ) {
                     IconButton(
                         onClick = {
                             onRetry(messageContent)
                         },
                         modifier =
-                        Modifier
-                            .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-                            .size(24.dp),
+                            Modifier
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .size(24.dp),
                         colors =
-                        IconButtonDefaults
-                            .iconButtonColors()
-                            .copy(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.error,
-                            ),
+                            IconButtonDefaults
+                                .iconButtonColors()
+                                .copy(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
                     ) {
                         Icon(
                             painterResource(R.drawable.baseline_refresh_24),
                             "Tentar novamente",
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .fillMaxSize(),
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .fillMaxSize(),
                         )
                     }
                 }
@@ -593,9 +593,9 @@ fun ChatBubble(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier =
-                    Modifier.align(
-                        Alignment.Center,
-                    ),
+                        Modifier.align(
+                            Alignment.Center,
+                        ),
                 ) {
                     messageContent.character?.let {
                         CharacterAvatar(
@@ -605,12 +605,12 @@ fun ChatBubble(
                             genre = genre,
                             pixelation = 0f,
                             modifier =
-                            Modifier
-                                .clip(CircleShape)
-                                .size(32.dp)
-                                .clickable {
-                                    openCharacters(characters.find { c -> c.data.id == it.id })
-                                },
+                                Modifier
+                                    .clip(CircleShape)
+                                    .size(32.dp)
+                                    .clickable {
+                                        openCharacters(characters.find { c -> c.data.id == it.id })
+                                    },
                         )
                     }
                     TypewriterText(
@@ -622,51 +622,51 @@ fun ChatBubble(
                         characters = content.getCharacters(),
                         wiki = wiki,
                         modifier =
-                        Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .background(
-                                Color.Black,
-                                shape = RoundedCornerShape(genre.cornerSize()),
-                            )
-                            .padding(16.dp)
-                            .reactiveShimmer(isLoading, genre.shimmerColors()),
+                            Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .background(
+                                    Color.Black,
+                                    shape = RoundedCornerShape(genre.cornerSize()),
+                                ).padding(16.dp)
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontStyle = FontStyle.Italic,
-                            textAlign = TextAlign.Center,
-                            fontFamily = genre.bodyFont(),
-                            color = MaterialColor.Amber400,
-                        ),
+                            MaterialTheme.typography.labelMedium.copy(
+                                fontStyle = FontStyle.Italic,
+                                textAlign = TextAlign.Center,
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialColor.Amber400,
+                            ),
                         onTextClick = { },
                     )
 
                     AnimatedVisibility(
                         message.status == MessageStatus.ERROR,
                         modifier =
-                        Modifier.align(Alignment.CenterHorizontally),
+                            Modifier.align(Alignment.CenterHorizontally),
                     ) {
                         IconButton(
                             onClick = {
                                 onRetry(messageContent)
                             },
                             modifier =
-                            Modifier
-                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-                                .size(24.dp),
+                                Modifier
+                                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                    .size(24.dp),
                             colors =
-                            IconButtonDefaults
-                                .iconButtonColors()
-                                .copy(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                                    contentColor = MaterialTheme.colorScheme.error,
-                                ),
+                                IconButtonDefaults
+                                    .iconButtonColors()
+                                    .copy(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.error,
+                                    ),
                         ) {
                             Icon(
                                 painterResource(R.drawable.baseline_refresh_24),
                                 "Tentar novamente",
-                                modifier = Modifier
-                                    .padding(4.dp)
-                                    .fillMaxSize(),
+                                modifier =
+                                    Modifier
+                                        .padding(4.dp)
+                                        .fillMaxSize(),
                             )
                         }
                     }
@@ -674,13 +674,13 @@ fun ChatBubble(
                     AnimatedVisibility(
                         visible = messageContent.reactions.isNotEmpty(),
                         modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .align(Alignment.CenterHorizontally),
+                            Modifier
+                                .padding(vertical = 8.dp)
+                                .align(Alignment.CenterHorizontally),
                     ) {
                         ReactionsView(
                             reactions = messageContent.reactions,
-                            genre = genre
+                            genre = genre,
                         ) {
                             onReactionsClick(messageContent)
                         }
@@ -700,34 +700,34 @@ fun ChatBubble(
                     characters = content.getCharacters(),
                     wiki = wiki,
                     modifier =
-                    modifier
-                        .padding(16.dp)
-                        .reactiveShimmer(isLoading, genre.shimmerColors())
-                        .fillMaxWidth(),
+                        modifier
+                            .padding(16.dp)
+                            .reactiveShimmer(isLoading, genre.shimmerColors())
+                            .fillMaxWidth(),
                     style =
-                    MaterialTheme.typography.bodyMedium.copy(
-                        fontStyle = FontStyle.Italic,
-                        textAlign = TextAlign.Justify,
-                        fontFamily = genre.bodyFont(),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        shadow =
-                        Shadow(
-                            color = genre.color,
-                            offset = Offset(0f, 0f),
-                            blurRadius = 5f,
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            textAlign = TextAlign.Justify,
+                            fontFamily = genre.bodyFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            shadow =
+                                Shadow(
+                                    color = genre.color,
+                                    offset = Offset(0f, 0f),
+                                    blurRadius = 5f,
+                                ),
                         ),
-                    ),
                     onTextClick = { },
                 )
 
                 AnimatedVisibility(
                     visible = messageContent.reactions.isNotEmpty(),
                     modifier =
-                    Modifier.padding(vertical = 8.dp),
+                        Modifier.padding(vertical = 8.dp),
                 ) {
                     ReactionsView(
                         reactions = messageContent.reactions,
-                        genre = genre
+                        genre = genre,
                     ) {
                         onReactionsClick(messageContent)
                     }
@@ -758,10 +758,10 @@ fun ChatBubblePreview() {
                     Text(
                         "This is a ${genre.name} chat",
                         style =
-                        MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = genre.headerFont(),
-                            brush = genre.gradient(),
-                        ),
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontFamily = genre.headerFont(),
+                                brush = genre.gradient(),
+                            ),
                         modifier = Modifier.padding(16.dp),
                     )
                 }
@@ -769,28 +769,28 @@ fun ChatBubblePreview() {
                 items(SenderType.entries) {
                     ChatBubble(
                         messageContent =
-                        MessageContent(
-                            Message(
-                                id = 0,
-                                text = "This is a test message! To demonstrate the ${it.name}.",
-                                senderType = it,
-                                timestamp = System.currentTimeMillis(),
-                                sagaId = 0,
-                                timelineId = 0,
+                            MessageContent(
+                                Message(
+                                    id = 0,
+                                    text = "This is a test message! To demonstrate the ${it.name}.",
+                                    senderType = it,
+                                    timestamp = System.currentTimeMillis(),
+                                    sagaId = 0,
+                                    timelineId = 0,
+                                ),
+                                character = character,
+                                reactions = emptyList(),
                             ),
-                            character = character,
-                            reactions = emptyList(),
-                        ),
                         content =
-                        SagaContent(
-                            data =
-                            Saga(
-                                title = "Test",
-                                description = "Test",
-                                genre = genre,
+                            SagaContent(
+                                data =
+                                    Saga(
+                                        title = "Test",
+                                        description = "Test",
+                                        genre = genre,
+                                    ),
+                                mainCharacter = null,
                             ),
-                            mainCharacter = null,
-                        ),
                     )
                 }
             }
