@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -89,6 +90,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -106,6 +108,13 @@ fun ChatBubble(
     onReactionsClick: (MessageContent) -> Unit = {},
     requestNewCharacter: () -> Unit = {},
 ) {
+    var tooltipData by remember { mutableStateOf<Any?>(null) }
+
+    tooltipData?.let {
+        AnnotationTooltip(data = it) {
+            tooltipData = null
+        }
+    }
     val message = messageContent.message
     val sender = message.senderType
     val mainCharacter = content.mainCharacter
@@ -187,7 +196,8 @@ fun ChatBubble(
                         wiki = wiki,
                         duration = duration,
                         easing = EaseIn,
-                        onTextClick = {
+                        onAnnotationClick = { data ->
+                            tooltipData = data
                         },
                         modifier =
                             bubbleModifier
@@ -476,7 +486,9 @@ fun ChatBubble(
                                 fontFamily = genre.bodyFont(),
                                 color = MaterialTheme.colorScheme.onBackground,
                             ),
-                        onTextClick = {},
+                        onAnnotationClick = { data ->
+                            tooltipData = data
+                        },
                     )
 
                     StarryTextPlaceholder(
@@ -636,7 +648,9 @@ fun ChatBubble(
                                 fontFamily = genre.bodyFont(),
                                 color = MaterialColor.Amber400,
                             ),
-                        onTextClick = { },
+                        onAnnotationClick = { data ->
+                            tooltipData = data
+                        },
                     )
 
                     AnimatedVisibility(
@@ -717,9 +731,42 @@ fun ChatBubble(
                                     blurRadius = 5f,
                                 ),
                         ),
-                    onTextClick = { },
+                    onAnnotationClick = { data ->
+                        tooltipData = data
+                    },
                 )
 
+                AnimatedVisibility(
+                    message.status == MessageStatus.ERROR,
+                    modifier =
+                        Modifier.align(Alignment.CenterHorizontally),
+                ) {
+                    IconButton(
+                        onClick = {
+                            onRetry(messageContent)
+                        },
+                        modifier =
+                            Modifier
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .size(24.dp),
+                        colors =
+                            IconButtonDefaults
+                                .iconButtonColors()
+                                .copy(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.baseline_refresh_24),
+                            "Tentar novamente",
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .fillMaxSize(),
+                        )
+                    }
+                }
                 AnimatedVisibility(
                     visible = messageContent.reactions.isNotEmpty(),
                     modifier =

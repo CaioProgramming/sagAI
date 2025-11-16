@@ -44,16 +44,16 @@ fun TypewriterText(
     wiki: List<Wiki>,
     onAnimationFinished: () -> Unit = { },
     onTextUpdate: (String) -> Unit = { },
-    onTextClick: () -> Unit = { },
+    onAnnotationClick: (Any?) -> Unit = { },
 ) {
     var textTarget by remember { mutableIntStateOf(0) }
     val charIndex by animateIntAsState(
         targetValue = textTarget,
         animationSpec =
-            tween(
-                duration.toInt(DurationUnit.MILLISECONDS),
-                easing = easing,
-            ),
+        tween(
+            duration.toInt(DurationUnit.MILLISECONDS),
+            easing = easing,
+        ),
         finishedListener = { onAnimationFinished() },
     )
 
@@ -84,14 +84,24 @@ fun TypewriterText(
         text = wikiAnnotation,
         style = style,
         onClick = { offset ->
-            wikiAnnotation
-                .getStringAnnotations(tag = "character_tag", start = offset, end = offset)
-                .firstOrNull()
-                ?.let { annotation ->
-                    if (textTarget == text.length) {
-                        onTextClick()
-                    }
+            if (textTarget == text.length) {
+                val characterAnnotation = wikiAnnotation
+                    .getStringAnnotations(tag = "character_tag", start = offset, end = offset)
+                    .firstOrNull()
+
+                val wikiAnnotation = wikiAnnotation
+                    .getStringAnnotations(tag = "wiki_tag", start = offset, end = offset)
+                    .firstOrNull()
+
+                characterAnnotation?.let { annotation ->
+                    val character = characters.find { it.id == annotation.item }
+                    onAnnotationClick(character)
                 }
+                wikiAnnotation?.let { annotation ->
+                    val wikiData = wiki.find { it.id == annotation.item }
+                    onAnnotationClick(wikiData)
+                }
+            }
         },
         modifier = modifier,
     )
