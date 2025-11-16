@@ -6,6 +6,7 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.core.utils.toAINormalize
 
 fun List<Any>.formatToJsonArray(excludingFields: List<String> = emptyList()) =
     joinToString(prefix = "[", postfix = "]", separator = ",\n") { it.toJsonFormatExcludingFields(excludingFields) }
@@ -32,4 +33,10 @@ fun sortCharactersContentByMessageCount(
             message.character?.id == character.data.id ||
                 message.message.speakerName.equals(character.data.name, true)
         }
+}
+
+fun List<Any>.formatToAINormalize(excludingFields: List<String> = emptyList()): String {
+    return this.joinToString("\n\n") { item ->
+        item.toAINormalize(excludingFields)
+    }
 }
