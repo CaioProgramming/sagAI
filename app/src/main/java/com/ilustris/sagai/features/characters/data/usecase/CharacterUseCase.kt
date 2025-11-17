@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import kotlinx.coroutines.flow.Flow
 
 interface CharacterUseCase {
@@ -38,11 +39,8 @@ interface CharacterUseCase {
         saga: SagaContent,
     ): RequestResult<Unit>
 
-    /**
-     * Analyzes recent messages to find and suggest new nicknames for characters.
-     */
     suspend fun findAndSuggestNicknames(
         saga: SagaContent,
-        lastMessages: List<String>,
+        timelineContent: TimelineContent,
     ): RequestResult<Unit>
 }

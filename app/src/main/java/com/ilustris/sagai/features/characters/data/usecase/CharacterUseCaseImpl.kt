@@ -24,6 +24,7 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
+import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
@@ -35,6 +36,7 @@ import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.toHex
 import com.slowmac.autobackgroundremover.removeBackground
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -244,34 +246,25 @@ class CharacterUseCaseImpl
 
         override suspend fun findAndSuggestNicknames(
             saga: SagaContent,
-            lastMessages: List<String>,
+            timelineContent: TimelineContent,
         ): RequestResult<Unit> =
             executeRequest {
                 try {
-                    Log.i(
-                        javaClass.simpleName,
-                        "Analyzing last ${lastMessages.size} messages for nicknames...",
-                    )
                     val charactersList = saga.getCharacters()
                     val prompt =
-                        buildString {
-                            appendLine("Analyze the following messages to find new informal names or nicknames for the characters listed.")
-                            appendLine("\nCharacters: $charactersList")
-                            appendLine("\nRecent Messages: $lastMessages")
-                            appendLine(
-                                "\nRespond ONLY with a JSON array in the format: '[{\"characterName\": \"Character Full Name\", \"newNicknames\": [\"nickname1\", \"nickname2\"]}]'",
-                            )
-                            appendLine(
-                                "\nOnly include characters for whom you found new nicknames. If no new nicknames are found, return an empty array.",
-                            )
-                        }
-
-                    val suggestions =
-                        gemmaClient.generate<List<com.ilustris.sagai.features.characters.data.model.NicknameSuggestion>>(
-                            prompt,
+                        CharacterPrompts.findNickNames(
+                            charactersList,
+                            timelineContent.messages.map { it.message },
+                            timelineContent.data,
+                            saga.data,
                         )
 
-                    if (suggestions.isNullOrEmpty()) {
+                    val suggestions =
+                        gemmaClient.generate<List<NicknameSuggestion>>(
+                            prompt,
+                        )!!
+
+                    if (suggestions.isEmpty()) {
                         Log.i(javaClass.simpleName, "No new nicknames found.")
                         return@executeRequest
                     }
@@ -287,7 +280,7 @@ class CharacterUseCaseImpl
                             if (newNicknames.isNotEmpty()) {
                                 val updatedCharacter =
                                     characterContent.data.copy(
-                                        nicknames = (currentNicknames + newNicknames).distinct(),
+                                        nicknames = (newNicknames).distinct(),
                                     )
                                 updateCharacter(updatedCharacter)
                                 Log.i(
@@ -297,9 +290,9 @@ class CharacterUseCaseImpl
                             }
                         }
                     }
-            } catch (e: Exception) {
-                Log.e(javaClass.simpleName, "Error suggesting nicknames: ${e.message}")
-                e.printStackTrace()
+                } catch (e: Exception) {
+                    Log.e(javaClass.simpleName, "Error suggesting nicknames: ${e.message}")
+                    e.printStackTrace()
+                }
             }
-        }
     }

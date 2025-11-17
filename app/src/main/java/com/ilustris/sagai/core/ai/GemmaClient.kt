@@ -20,7 +20,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Singleton
@@ -34,7 +33,7 @@ class GemmaClient
 
         @PublishedApi
         @Volatile
-        internal var retryDelay: Duration? = null
+        internal var retryDelay: Int? = null
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
@@ -63,8 +62,11 @@ class GemmaClient
             withContext(Dispatchers.IO) {
                 val model = modelName()
                 retryDelay?.let {
-                    Log.e(javaClass.simpleName, "generate: Trying delay to avoid rate limit.")
-                    delay(it)
+                    Log.e(
+                        javaClass.simpleName,
+                        "generate: Trying delay $retryDelay seconds to avoid rate limit.",
+                    )
+                    delay(it.seconds)
                 }
 
                 requestMutex.withLock {
@@ -120,7 +122,6 @@ class GemmaClient
 
                         val content = client.generateContent(inputContent)
 
-                        // Request succeeded — reset any retry delay because the service is operating again.
                         retryDelay = null
 
                         val response = content.text
@@ -155,16 +156,26 @@ class GemmaClient
 
                         val cleanedJsonString = response.sanitizeAndExtractJsonString()
                         val typeToken = object : TypeToken<T>() {}
-                        delay(2.seconds)
                         Gson().fromJson(cleanedJsonString, typeToken.type)
                     } catch (e: Exception) {
-                        retryDelay = 3.seconds
+                        retryDelay = retryDelay?.let {
+                            it + it
+                        } ?: run {
+                            2
+                        }
                         Log.e(
                             this@GemmaClient::class.java.simpleName,
                             "Error in Generation($model): ${e.message}",
                             e,
                         )
-                        Log.e(javaClass.simpleName, "failed to generate content for prompt: $prompt")
+                        Log.e(
+                            javaClass.simpleName,
+                            "failed to generate content for prompt:\n$prompt\n",
+                        )
+                        Log.w(
+                            javaClass.simpleName,
+                            "$retryDelay seconds delay will be applied on the next request.",
+                        )
                         null
                     }
                 }

@@ -308,15 +308,14 @@ class SagaContentManagerImpl
                                     javaClass.simpleName,
                                     "Starting nickname analysis after event review.",
                                 )
-                                val lastMessages =
-                                    (
-                                        saga
-                                            .flatMessages()
-                                            .takeLast(
-                                                15,
-                                            ).map { it.message.text } + timelineContent.data.content
-                                    ).filter { it.isNotEmpty() }
-                                characterUseCase.findAndSuggestNicknames(saga, lastMessages)
+                                (
+                                    saga
+                                        .flatMessages()
+                                        .takeLast(
+                                            15,
+                                        ).map { it.message }
+                                )
+                                characterUseCase.findAndSuggestNicknames(saga, timelineContent)
                                 Log.i(
                                     javaClass.simpleName,
                                     "Nickname analysis completed successfully.",
