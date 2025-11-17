@@ -30,9 +30,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import kotlinx.coroutines.delay
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class ChapterUseCaseImpl
     @Inject
@@ -74,7 +72,6 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             chapterContent: ChapterContent,
         ) {
-            delay(3.seconds)
             if (chapterContent.data.introduction.isEmpty()) {
                 generateChapterIntroduction(saga, chapterContent.data, saga.findChapterAct(chapterContent.data)!!)
             }
@@ -207,7 +204,6 @@ class ChapterUseCaseImpl
                         ),
                     )
                 val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act, contextSummary)
-                delay(2.seconds)
                 val intro =
                     gemmaClient.generate<String>(
                         prompt,

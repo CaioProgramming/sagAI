@@ -18,7 +18,6 @@ import com.ilustris.sagai.core.media.MediaPlayerService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -55,6 +54,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -100,7 +100,7 @@ class ChatViewModel
         val smartSuggestionsEnabled = MutableStateFlow(true)
 
         private fun updateSnackBar(snackBarState: SnackBarState) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 snackBarMessage.value = snackBarState
                 delay(10.seconds)
                 snackBarMessage.value = null
@@ -122,20 +122,20 @@ class ChatViewModel
             observeAmbientMusicServiceControl()
             observePreferences()
             observeSnackBarUpdates()
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.loadSaga(sagaId)
             }
         }
 
         fun observeSnackBarUpdates() =
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.snackBarUpdate.collect {
                     it?.let { snackBarState -> sendSnackBarMessage(snackBarState) }
                 }
             }
 
         private fun observePreferences() {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 settingsUseCase.getSmartSuggestionsEnabled().collect {
                     smartSuggestionsEnabled.emit(it)
                 }
@@ -180,7 +180,7 @@ class ChatViewModel
         }
 
         fun checkSaga() {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager.checkNarrativeProgression(content.value)
             }
         }
@@ -202,7 +202,7 @@ class ChatViewModel
                 buildString {
                     appendLine("Character name: $name")
                     appendLine("Character context on story:")
-                    appendLine(mentions.joinToString(";\n") { it.message.text })
+                    appendLine(mentions.takeLast(5).joinToString(";\n") { it.message.text })
                 },
             )
         }
@@ -220,13 +220,13 @@ class ChatViewModel
         }
 
         fun updateCharacter(characterContent: CharacterContent) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 selectedCharacter.emit(characterContent)
             }
         }
 
         private fun observeSaga() {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 content
                     .collectLatest { sagaContent ->
                         if (sagaContent == null) {
@@ -275,7 +275,7 @@ class ChatViewModel
         }
 
         private fun titleAnimation() {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 delay(3.seconds)
                 showTitle.emit(false)
             }
@@ -470,7 +470,7 @@ class ChatViewModel
         }
 
         private fun sendSnackBarMessage(snackBarState: SnackBarState) {
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 snackBarMessage.value = snackBarState
                 delay(15.seconds)
                 snackBarMessage.value = null
@@ -568,10 +568,7 @@ class ChatViewModel
                             (mainCharacter != null && message.characterId == mainCharacter.id)
                     }
 
-                inputValue.value =
-                    inputValue.value.copy(
-                        text = emptyString(),
-                    )
+                inputValue.value = TextFieldValue()
 
                 updateLoading(isFromUser)
                 resetSuggestions()
@@ -592,7 +589,7 @@ class ChatViewModel
                         ),
                         isFromUser,
                         sceneSummary,
-                    ).onSuccess {
+                    ).onSuccessAsync {
                         resetSuggestions()
                         updateLoading(false)
                         handleNewMessage(
@@ -600,7 +597,14 @@ class ChatViewModel
                             isFromUser = isFromUser,
                             sceneSummary = sceneSummary,
                         )
-                    }.onFailure {
+                        withContext(Dispatchers.IO) {
+                            messageUseCase.generateReaction(
+                                saga,
+                                message = it,
+                                sceneSummary = sceneSummary,
+                            )
+                        }
+                    }.onFailureAsync {
                         snackBar(
                             "Ocorreu um erro ao salvar a mensagem",
                         ) {
@@ -657,7 +661,6 @@ class ChatViewModel
                 if (currentSaga.data.isEnded) return@launch
                 val currentTimeline = currentSaga.getCurrentTimeLine() ?: return@launch
                 if (currentTimeline.messages.isEmpty()) return@launch
-                suggestions.emit(emptyList())
 
                 suggestionUseCase(
                     currentTimeline.messages,
@@ -718,7 +721,7 @@ class ChatViewModel
                                 speakerName =
                                     genMessage.newCharacter?.name
                                         ?: genMessage.message.speakerName,
-                                    ),
+                            ),
                         )
                         if (newMessage.message.status == MessageStatus.ERROR) {
                             messageUseCase.updateMessage(
@@ -727,10 +730,9 @@ class ChatViewModel
                                 ),
                             )
                         }
-
+                        sagaContentManager.setProcessing(false)
                         delay(3.seconds)
                         generateSuggestions(sceneSummary)
-                        sagaContentManager.setProcessing(false)
                     }.onFailureAsync {
                         aiTurns = 0
                         messageUseCase.updateMessage(
@@ -753,28 +755,8 @@ class ChatViewModel
             }
         }
 
-        private fun checkAiTurns(
-            sceneSummary: SceneSummary?,
-            saga: SagaContent,
-        ) {
-            if (sceneSummary == null) {
-                aiTurns = 0
-                return
-            }
-            if (aiTurns == 0) {
-                val npcCount =
-                    (
-                        sceneSummary.charactersPresent.filter {
-                            it.equals(saga.mainCharacter?.data?.name, true).not()
-                        }
-                    ).size
-                aiTurns = npcCount
-                Log.d(javaClass.simpleName, "AI reply cycle started. Max turns: $aiTurns")
-            }
-        }
-
         fun createCharacter(contextDescription: String) {
-            isLoading.value = true
+            updateLoading(true)
 
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager
@@ -794,7 +776,7 @@ class ChatViewModel
                                 }
                             },
                         )
-                        isLoading.emit(false)
+                        updateLoading(false)
                     }.onFailureAsync {
                         updateSnackBar(
                             snackBar(
@@ -805,7 +787,7 @@ class ChatViewModel
                                 }
                             },
                         )
-                        isLoading.emit(false)
+                        updateLoading(false)
                     }
             }
         }

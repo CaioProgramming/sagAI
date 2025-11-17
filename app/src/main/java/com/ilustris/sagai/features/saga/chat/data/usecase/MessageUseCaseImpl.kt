@@ -9,7 +9,6 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -28,9 +27,7 @@ import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -105,17 +102,6 @@ class MessageUseCaseImpl
                     ),
                 )
 
-            withContext(Dispatchers.IO) {
-                generateReaction(
-                    saga,
-                    MessageContent(
-                        newMessage,
-                        saga.getCharacters().find { it.id == newMessage.characterId },
-                        emptyList(),
-                    ),
-                    sceneSummary,
-                )
-            }
             newMessage
         }
 
@@ -181,22 +167,16 @@ class MessageUseCaseImpl
                 genText!!
             }
 
-        suspend fun generateReaction(
+        override suspend fun generateReaction(
             saga: SagaContent,
-            message: MessageContent,
+            message: Message,
             sceneSummary: SceneSummary?,
         ) = executeRequest {
             delay(2.seconds)
             if (sceneSummary == null) error("Can't define reactions without context.")
-            if (sceneSummary.charactersPresent.isEmpty()) {
-                Log.w(javaClass.simpleName, "generateReaction: No characters related to react")
-                return@executeRequest
-            }
+            if (sceneSummary.charactersPresent.isEmpty()) error("generateReaction: No characters related to react")
 
-            if (message.message.senderType == SenderType.THOUGHT) {
-                Log.w(javaClass.simpleName, "generateReaction: Thought message cannot react")
-                return@executeRequest
-            }
+            if (message.senderType == SenderType.THOUGHT) error("generateReaction: Thought message cannot be reacted")
 
             val charactersIds =
                 sceneSummary.charactersPresent
@@ -225,20 +205,19 @@ class MessageUseCaseImpl
                     summary = sceneSummary,
                     mainCharacter = saga.mainCharacter,
                     relationships = relationships,
-                    messageToReact = message.joinMessage().formatToString(),
+                    messageToReact = message,
                 )
 
-            delay(1.seconds)
-            val reaction = gemmaClient.generate<ReactionGen>(prompt)
+            val reaction = gemmaClient.generate<ReactionGen>(prompt)!!
 
-            reaction?.reactions?.forEach { reaction ->
+            reaction.reactions.forEach { reaction ->
                 saga.characters
                     .find { it.data.name.equals(reaction.character, ignoreCase = true) }
                     ?.let {
-                        if (it.data.id != message.character?.id) {
+                        if (it.data.id != message.characterId) {
                             reactionRepository.saveReaction(
                                 Reaction(
-                                    messageId = message.message.id,
+                                    messageId = message.id,
                                     characterId = it.data.id,
                                     emoji = reaction.reaction,
                                     thought = reaction.thought,

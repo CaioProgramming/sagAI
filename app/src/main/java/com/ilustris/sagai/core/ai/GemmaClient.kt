@@ -36,7 +36,7 @@ class GemmaClient
         internal var retryDelay: Int? = null
 
         @Volatile
-        private var lastTokenCount: Int = 0
+        var lastTokenCount: Int = 0
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"

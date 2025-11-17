@@ -295,7 +295,7 @@
     <string name="chapter_title_template">Capítulo %s</string>
     <string name="act_title_template">Ato %s</string>
     <string name="restore_sagas">Restaurar histórias</string>
-    <string name="not_available">---</string>
     <string name="updates_count">%d Atualizações</string>
     <string name="last_update">Última atualização</string>
+    <string name="chat_view_subtitle">Ato %1$s - Capítulo %2$s</string>
 </resources>

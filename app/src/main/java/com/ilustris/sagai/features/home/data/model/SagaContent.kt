@@ -16,7 +16,6 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipC
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import kotlin.jvm.javaClass
 
 data class SagaContent(
     @Embedded
@@ -121,7 +120,7 @@ fun SagaContent.relationshipsSortedByEvents() =
             it.copy(relationshipEvents = it.sortedByEvents(flatEvents().map { it.data }))
         }.filter { it.relationshipEvents.isNotEmpty() }
 
-fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
+fun SagaContent.chapterNumber(chapter: Chapter?) = if (chapter == null) 0 else flatChapters().indexOfFirst { it.data.id == chapter?.id } + 1
 
 fun SagaContent.actNumber(act: Act?): Int =
     acts.find { it.data.id == act?.id }?.let { requestedAct ->

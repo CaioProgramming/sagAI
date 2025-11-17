@@ -89,6 +89,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -127,7 +128,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
@@ -385,13 +385,15 @@ fun ChatView(
             content?.data?.genre,
             modifier =
                 Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(32.dp)
+                    .clip(content?.data?.genre?.shape() ?: RectangleShape)
                     .clickable {
                         if (snackBarMessage?.action == null) {
                             viewModel.dismissSnackBar()
                         }
-                    }.align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 32.dp),
+                    },
         ) {
             when (it) {
                 is SnackAction.OpenDetails -> {
@@ -764,12 +766,18 @@ fun ChatContent(
                             )
                         }
 
+                        val subtitle =
+                            stringResource(
+                                R.string.chat_view_subtitle,
+                                content.actNumber(content.currentActInfo?.data).toRoman(),
+                                content
+                                    .chapterNumber(content.currentActInfo?.currentChapterInfo?.data)
+                                    .toRoman(),
+                            )
+
                         SagaTopBar(
                             saga.title,
-                            stringResource(
-                                id = R.string.messages_count_label,
-                                content.flatMessages().size,
-                            ),
+                            subtitle,
                             saga.genre,
                             isLoading = isGenerating,
                             onBackClick = onBack,
@@ -1246,7 +1254,7 @@ fun ChatList(
             val genre = saga.data.genre
 
             if (act.isComplete) {
-                item {
+                item(key = act.content.data.id) {
                     ActComponent(
                         act.content,
                         saga.acts.indexOf(act.content) + 1,
@@ -1261,7 +1269,7 @@ fun ChatList(
             act.chapters.reversed().forEach { chapter ->
 
                 if (chapter.isComplete) {
-                    item {
+                    item(key = chapter.chapter.data.id) {
                         ChapterContentView(
                             chapter.chapter,
                             saga,
@@ -1285,7 +1293,7 @@ fun ChatList(
                 chapter.timelineSummaries.reversed().forEach { timeline ->
 
                     if (timeline.isComplete()) {
-                        item {
+                        item(key = timeline.data.id) {
                             TimeLineSimpleCard(
                                 timeline,
                                 saga,
@@ -1329,7 +1337,7 @@ fun ChatList(
                         )
                     }
 
-                    item {
+                    item(key = "${timeline.data.id}-spark") {
                         Box(
                             Modifier
                                 .padding(8.dp)
@@ -1349,27 +1357,23 @@ fun ChatList(
                     }
                 }
 
-                if (chapter.chapter.data.introduction
-                        .isNotEmpty()
-                ) {
-                    item {
-                        Text(
-                            chapter.chapter.data.introduction,
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    textAlign = TextAlign.Justify,
-                                ),
-                            modifier =
-                                Modifier
-                                    .animateItem()
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                        )
-                    }
+                item(key = "${chapter.chapter.data.id}-intro") {
+                    Text(
+                        chapter.chapter.data.introduction,
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = genre.bodyFont(),
+                                textAlign = TextAlign.Justify,
+                            ),
+                        modifier =
+                            Modifier
+                                .animateItem()
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                    )
                 }
 
-                item {
+                item(key = "${chapter.chapter.data.id}-title") {
                     val title =
                         chapter.chapter.data.title.ifEmpty {
                             stringResource(
@@ -1396,7 +1400,7 @@ fun ChatList(
             if (act.content.data.introduction
                     .isNotEmpty()
             ) {
-                item {
+                item(key = "${act.content.data.id}-intro") {
                     Text(
                         act.content.data.introduction,
                         style =
@@ -1414,7 +1418,7 @@ fun ChatList(
                 }
             }
 
-            item {
+            item(key = "${act.content.data.id}-title") {
                 val title =
                     act.content.data.title
                         .ifEmpty {
@@ -1438,7 +1442,7 @@ fun ChatList(
                 )
             }
         }
-        item {
+        item(key = "saga-${saga.data.id}-header") {
             SagaHeader(
                 saga = saga.data,
                 modifier =
@@ -1469,7 +1473,10 @@ fun CharactersTopIcons(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        itemsIndexed(charactersToDisplay) { index, character ->
+        itemsIndexed(
+            charactersToDisplay,
+            key = { _, character -> character.id },
+        ) { index, character ->
             val overlapAmountPx = with(density) { overlapAmount.toPx() }
             CharacterAvatar(
                 character,

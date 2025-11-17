@@ -43,4 +43,10 @@ interface MessageUseCase {
     ): RequestResult<TypoFix?>
 
     suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?>
+
+    suspend fun generateReaction(
+        saga: SagaContent,
+        message: Message,
+        sceneSummary: SceneSummary?,
+    ): RequestResult<Unit>
 }

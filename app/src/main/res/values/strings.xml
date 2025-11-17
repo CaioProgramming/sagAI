@@ -318,8 +318,9 @@
     <string name="chapter_title_template">Chapter %s</string>
     <string name="act_title_template">Act %s</string>
     <string name="restore_sagas">Restore sagas</string>
-    <string name="not_available">---</string>
+    <string name="not_available" translatable="false">---</string>
     <string name="updates_count">%d Updates</string>
     <string name="last_update">Last update</string>
+    <string name="chat_view_subtitle">Act %1$s - Chapter %2$s</string>
 
 </resources>

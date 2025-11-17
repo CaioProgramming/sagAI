@@ -681,17 +681,15 @@ class SagaContentManagerImpl
                     }
 
                     is NarrativeStep.GenerateChapter -> {
-                        endChapter(saga.currentActInfo)
                         (result.value as? Chapter)?.let { chapter ->
                             startProcessing {
                                 val chapterContent =
                                     saga.flatChapters().find { it.data.id == chapter.id }!!.copy(
                                         data = chapter,
                                     )
-                                withContext(Dispatchers.IO) {
-                                    chapterUseCase.generateChapterCover(chapterContent, saga)
-                                }
+                                chapterUseCase.generateChapterCover(chapterContent, saga)
                                 chapterUseCase.reviewChapter(saga, chapterContent)
+                                endChapter(saga.currentActInfo)
                             }
                         }
                     }

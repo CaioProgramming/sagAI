@@ -3,7 +3,6 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.utils.listToAINormalize
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
@@ -154,22 +153,22 @@ object ChatPrompts {
         summary: SceneSummary,
         saga: Saga,
         mainCharacter: CharacterContent,
-        messageToReact: String,
+        messageToReact: Message,
         relationships: List<RelationshipContent>,
     ) = buildString {
         appendLine("You are an AI assistant that generates character reactions for an interactive story.")
         appendLine("Your task is to generate a relatable reaction to a player's message, including an emoji and a brief internal thought.")
 
-        appendLine("\n## Saga Context")
-        appendLine(saga.toJsonFormatExcludingFields(sagaExclusions))
+        appendLine("## Saga Context")
+        appendLine(saga.toAINormalize(sagaExclusions))
 
-        appendLine("\n## Scene Summary")
+        appendLine("## Scene Summary")
         appendLine("This is the current situation:")
-        appendLine(summary.toJsonFormat())
+        appendLine(summary.toAINormalize())
 
         appendLine("\n## Player Information")
         appendLine("Main Character: ${mainCharacter.data.name}")
-        appendLine(mainCharacter.data.toJsonFormatExcludingFields(characterExclusions))
+        appendLine(mainCharacter.data.toAINormalize(characterExclusions))
 
         appendLine("\n## Character Relationships")
         appendLine("Relationships between the player and characters currently in the scene:")
