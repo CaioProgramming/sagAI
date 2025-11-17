@@ -35,8 +35,13 @@ class GemmaClient
         @Volatile
         internal var retryDelay: Int? = null
 
+        @Volatile
+        private var lastTokenCount: Int = 0
+
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
+            const val INPUT_TOKEN_LIMIT = 15000
+            const val REACTIVE_DELAY_THRESHOLD = 0.7f
         }
 
         suspend fun modelName() =
@@ -60,6 +65,10 @@ class GemmaClient
             filterOutputFields: List<String> = emptyList(),
         ): T? =
             withContext(Dispatchers.IO) {
+                if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
+                    Log.w(javaClass.simpleName, "Applying reactive delay due to high token count in last request.")
+                    delay(2.seconds)
+                }
                 val model = modelName()
                 retryDelay?.let {
                     Log.e(
@@ -89,7 +98,12 @@ class GemmaClient
                                 appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
                                 if (T::class != String::class && describeOutput) {
                                     appendLine("Follow this structure:")
-                                    appendLine(toJsonMap(T::class.java, filteredFields = filterOutputFields))
+                                    appendLine(
+                                        toJsonMap(
+                                            T::class.java,
+                                            filteredFields = filterOutputFields,
+                                        ),
+                                    )
                                 }
                             }
 
@@ -121,16 +135,27 @@ class GemmaClient
                             )
 
                         val content = client.generateContent(inputContent)
-
+                        lastTokenCount = content.usageMetadata?.promptTokenCount ?: 0
                         retryDelay = null
+                        if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
+                            lastTokenCount = 0
+                        }
 
                         val response = content.text
-                        Log.d(javaClass.simpleName, "Input content: ${inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}")
+
+                        Log.d(
+                            javaClass.simpleName,
+                            "Input content: ${
+                                inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)
+                            }",
+                        )
                         Log.i(
                             javaClass.simpleName,
-                            "Generated content: ${content.toJsonFormatExcludingFields(
-                                AI_EXCLUDED_FIELDS,
-                            )}",
+                            "Generated content: ${
+                                content.toJsonFormatExcludingFields(
+                                    AI_EXCLUDED_FIELDS,
+                                )
+                            }",
                         )
 
                         val promptDescription =
@@ -159,7 +184,11 @@ class GemmaClient
                         Gson().fromJson(cleanedJsonString, typeToken.type)
                     } catch (e: Exception) {
                         retryDelay = retryDelay?.let {
-                            it + it
+                            if (it > 30) {
+                                it / 2
+                            } else {
+                                it + it
+                            }
                         } ?: run {
                             2
                         }
