@@ -2,8 +2,8 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts.sagaExclusions
-import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -16,30 +16,33 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import kotlin.text.appendLine
 
 object ChapterPrompts {
     fun chapterSummary(sagaContent: SagaContent) =
-        if (sagaContent.currentActInfo?.chapters?.isEmpty() == true) {
-            "No chapters written yet on this act,"
-        } else {
-            """
-        **CURRENT ACT CHAPTERS (Most Recent First):**
-        // This section provides the summaries of chapters already written in the current act.
-        // Use this to understand the immediate narrative progression and context within the act.
-        ${sagaContent.currentActInfo?.chapters?.filter { it.isComplete() }?.map { it.data }?.reversed()?.formatToJsonArray(
-                listOf(
-                    "id",
-                    "emotionalReview",
-                    "actId",
-                    "currentEventId",
-                    "coverImage",
-                    "createdAt",
-                    "featuredCharacters",
-                ),
-            )}
-            
-        """
+        buildString {
+            sagaContent.currentActInfo
+                ?.chapters
+                ?.filter { it.isComplete() }
+                ?.map { it.data }
+                ?.let { chapters ->
+                    if (chapters.isNotEmpty()) {
+                        appendLine("**CURRENT ACT CHAPTERS Overview:**")
+                        appendLine("This section provides the summaries of chapters already written in the current act")
+                        appendLine("// Use this to understand the immediate narrative progression and context within the act.")
+                        appendLine(
+                            chapters.listToAINormalize(
+                                listOf(
+                                    "id",
+                                    "actId",
+                                    "currentEventId",
+                                    "coverImage",
+                                    "createdAt",
+                                    "featuredCharacters",
+                                ),
+                            ),
+                        )
+                    }
+                }
         }
 
     fun chapterIntroductionPrompt(
@@ -88,15 +91,15 @@ object ChapterPrompts {
 
             appendLine("## CONTEXT")
             appendLine("### Saga Overview:")
-            appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusions))
+            appendLine(sagaContent.data.toAINormalize(sagaExclusions))
             appendLine()
 
             appendLine("### Main Character:")
-            appendLine(sagaContent.mainCharacter?.data?.toJsonFormatExcludingFields(excludedFields))
+            appendLine(sagaContent.mainCharacter?.data?.toAINormalize(excludedFields))
 
             contextSummary?.let {
                 appendLine("### Latest Scene Summary (What JUST Happened):")
-                appendLine(it.toJsonFormat())
+                appendLine(it.toAINormalize())
                 appendLine()
             }
 
@@ -107,7 +110,7 @@ object ChapterPrompts {
 
             if (chaptersInAct.isNotEmpty()) {
                 appendLine("### Summaries of Previous Chapters in this Act:")
-                appendLine(chaptersInAct.formatToJsonArray(chapterExclusions))
+                appendLine(chaptersInAct.listToAINormalize(chapterExclusions))
                 appendLine()
             }
 

@@ -1,22 +1,20 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object TimelinePrompts {
     fun timeLineDetails(currentChapter: ChapterContent?) =
         buildString {
-            val events = currentChapter?.events
-            if (events?.isEmpty() == true) {
-                appendLine("No events saved yet on this chapter.")
-            } else {
+            val events = currentChapter?.events?.filter { it.isComplete() }?.map { it.data }
+            if (events?.isNotEmpty() == true) {
                 appendLine("**CURRENT CHAPTER TIMELINE (Most Recent Events):**")
                 appendLine("// This section provides the most recent events from the chapter's timeline.")
                 appendLine("// Use this to understand the immediate plot progression and current situation.")
                 appendLine(
-                    events?.filter { it.isComplete() }?.map { it.data }?.formatToJsonArray(
+                    events.toAINormalize(
                         listOf(
                             "emotionalReview",
                             "chapterId",

@@ -1,12 +1,8 @@
 package com.ilustris.sagai.core.utils
 
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.features.timeline.data.model.Timeline
-import com.ilustris.sagai.core.utils.toAINormalize
 
 fun List<Any>.formatToJsonArray(excludingFields: List<String> = emptyList()) =
     joinToString(prefix = "[", postfix = "]", separator = ",\n") { it.toJsonFormatExcludingFields(excludingFields) }
@@ -35,8 +31,7 @@ fun sortCharactersContentByMessageCount(
         }
 }
 
-fun List<Any>.formatToAINormalize(excludingFields: List<String> = emptyList()): String {
-    return this.joinToString("\n\n") { item ->
-        item.toAINormalize(excludingFields)
+fun List<Any>.listToAINormalize(excludingFields: List<String> = emptyList()): String =
+    this.joinToString(separator = ";\n") { item ->
+        "• ${item.toAINormalize(excludingFields)}"
     }
-}

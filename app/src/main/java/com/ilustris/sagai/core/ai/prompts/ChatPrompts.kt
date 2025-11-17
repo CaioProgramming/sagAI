@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -19,7 +20,7 @@ object ChatPrompts {
     val messageExclusions =
         listOf(
             "id",
-            "timeStamp",
+            "timestamp",
             "sagaId",
             "characterId",
             "timelineId",
@@ -75,10 +76,10 @@ object ChatPrompts {
         }
 
         appendLine("## Saga & Player Context")
-        appendLine("SAGA: ${saga.data.toJsonFormatExcludingFields(sagaExclusions)}")
+        appendLine("SAGA CONTEXT: ${saga.data.toAINormalize(sagaExclusions)}")
         appendLine(
-            "PLAYER: ${
-                saga.mainCharacter?.data.toJsonFormatExcludingFields(
+            "PLAYER CONTEXT: ${
+                saga.mainCharacter?.data.toAINormalize(
                     characterExclusions,
                 )
             }",
@@ -119,7 +120,7 @@ object ChatPrompts {
         appendLine(conversationHistory(lastMessages))
 
         appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:**")
-        appendLine(message.toJsonFormatExcludingFields(messageExclusions))
+        appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
 
     @Suppress("ktlint:standard:max-line-length")
@@ -203,28 +204,23 @@ object ChatPrompts {
 
     fun sceneSummarizationPrompt(
         saga: SagaContent,
-        recentMessages: List<String> = emptyList(),
+        recentMessages: List<Message> = emptyList(),
     ) = buildString {
-        appendLine(
-            "Your task is to generate a **MAXIMUM 300-TOKEN**, concise, AI-optimized summary of the current **CRITICAL** scene status.",
-        )
+        appendLine("You task is generate a concise, AI-optimized summary of the current scene in an interactive story.")
         appendLine("This summary will be used exclusively as context for subsequent AI requests and will NOT be shown to the user.")
         appendLine("Your goal:")
         appendLine(
             "- Provide only the most relevant details needed to maintain accurate story progression and avoid misleading information.",
         )
-        appendLine(" **Prioritize** details that directly impact the next dialogue turn or scene transition.")
-        appendLine(
-            "- **Focus on Active State:** Location, Characters present, **Player's Intent/Last Action**, Current Objective, **Active Conflict/Tension**, and prevailing Mood.",
-        )
+        appendLine("- Avoid redundant or already established information.")
+        appendLine("- Focus on immediate context: location, characters present, current objective, active conflict, and mood.")
         appendLine("- If any field is not relevant or unknown, omit it.")
         appendLine()
         appendLine("Saga Context:")
-        appendLine("Title: ${saga.data.title}")
-        appendLine("Description: ${saga.data.description}")
-        appendLine("Genre: ${saga.data.genre}")
+        appendLine(saga.data.toAINormalize(sagaExclusions))
+
         appendLine("PLAYER CONTEXT DATA:")
-        appendLine(saga.mainCharacter?.data.toJsonFormatExcludingFields(characterExclusions))
+        appendLine(saga.mainCharacter?.data.toAINormalize(characterExclusions))
         appendLine("Player relationships:")
         if (saga.mainCharacter?.relationships.isNullOrEmpty()) {
             appendLine("No relationships yet.")
@@ -237,45 +233,64 @@ object ChatPrompts {
             )
         }
 
-        appendLine("Player last events:")
-        if (saga.mainCharacter?.events.isNullOrEmpty()) {
-            appendLine("No events yet.")
-        } else {
+        saga.mainCharacter?.let {
+            val events = it.events.map { it.event }
+            if (events.isNotEmpty()) {
+                appendLine("Player last events:")
+                appendLine(
+                    events.listToAINormalize(
+                        listOf(
+                            "id",
+                            "characterId",
+                            "createdAt",
+                            "gameTimelineId",
+                        ),
+                    ),
+                )
+            }
+        }
+        val characters = saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }
+        if (characters.isNotEmpty()) {
+            appendLine("Current Saga Characters:")
             appendLine(
-                saga.mainCharacter.events.map { it.event }.takeLast(5).formatToJsonArray(
-                    listOf("gameTimelineId", "characterId", "id", "createdAt"),
+                characters.listToAINormalize(characterExclusions),
+            )
+        }
+        saga.currentActInfo?.currentChapterInfo?.data?.let {
+            appendLine("Current Chapter Data:")
+            appendLine(
+                it.toAINormalize(
+                    listOf(
+                        "id",
+                        "actId",
+                        "currentEventId",
+                        "createdAt",
+                        "featuredCharacters",
+                    ),
                 ),
             )
         }
-        appendLine("Current Saga Characters:")
-        val characters = saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }
-        if (characters.isEmpty()) {
-            appendLine("No other characters yet.")
-        } else {
-            appendLine(
-                characters.joinToString(";\n") {
-                    it.toJsonFormatExcludingFields(characterExclusions)
-                },
-            )
-        }
-        appendLine("Current Chapter Context:")
-        appendLine("Introduction: ")
-        appendLine(
-            saga.currentActInfo
-                ?.currentChapterInfo
-                ?.data
-                ?.introduction ?: "No introduction available.",
-        )
         appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
-        appendLine("Recent Chapter Summaries:")
         appendLine(ChapterPrompts.chapterSummary(saga))
         appendLine()
-        appendLine("Recent Acts Overview:")
         appendLine(ActPrompts.actsOverview(saga))
         appendLine()
         appendLine("Recent Messages (for context, do NOT repeat):")
         appendLine("[")
-        appendLine(recentMessages.joinToString(separator = ";\n"))
+        appendLine(
+            recentMessages.joinToString(separator = ";\n") {
+                it.toAINormalize(
+                    listOf(
+                        "id",
+                        "timeStamp",
+                        "sagaId",
+                        "characterId",
+                        "timelineId",
+                        "status",
+                    ),
+                )
+            },
+        )
         appendLine("]")
         appendLine()
     }.trimIndent()
@@ -295,6 +310,6 @@ object ChatPrompts {
             appendLine("Conversation History")
             appendLine("Use this history for context, but do NOT repeat it in your response.")
             appendLine("Pay attention to `speakerName` and `senderType`.")
-            appendLine(lastMessages.formatToJsonArray(excludingFields = messageExclusions))
+            appendLine(lastMessages.listToAINormalize(excludingFields = messageExclusions))
         }
 }

@@ -71,8 +71,8 @@ class MessageUseCaseImpl
                         recentMessages =
                             saga
                                 .flatMessages()
-                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                .map { it.joinMessage(true).formatToString() },
+                                .map { it.message }
+                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT),
                     ),
                 )
             }
@@ -148,7 +148,6 @@ class MessageUseCaseImpl
                             message = fakeReply,
                             shouldCreateCharacter = false,
                             newCharacter = null,
-                            shouldEndSaga = false,
                         )
                     fakeMessageGen.asSuccess()
                 }
@@ -161,7 +160,7 @@ class MessageUseCaseImpl
                     } ?: emptyList()
 
                 val genText =
-                    gemmaClient.generate<MessageGen>(
+                    textGenClient.generate<MessageGen>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
                             message =

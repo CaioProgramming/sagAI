@@ -404,3 +404,28 @@ fun Long.formatFileSize(): String {
         else -> String.format(Locale.getDefault(), "%d B", this)
     }
 }
+
+fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
+    if (this == null) return ""
+    val fields = this::class.java.declaredFields
+    val standardExclusions = listOf("\$stable", "companion")
+    val allExclusions = fieldsToExclude + standardExclusions
+
+    return fields
+        .mapNotNull { field ->
+            if (field.name in allExclusions) return@mapNotNull null
+            field.isAccessible = true
+            val valueString =
+                when (val value = field.get(this)) {
+                    is List<*> -> value.joinToString(", ")
+                    is Array<*> -> value.joinToString(", ")
+                    else -> value?.toString()
+                }
+
+            if (valueString.isNullOrBlank() || valueString == "[]") {
+                null
+            } else {
+                "${field.name}: $valueString"
+            }
+        }.joinToString("\n")
+}

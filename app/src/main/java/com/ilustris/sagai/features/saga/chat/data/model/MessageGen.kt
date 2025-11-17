@@ -7,5 +7,4 @@ data class MessageGen(
     val message: Message,
     val newCharacter: CharacterInfo? = null,
     val shouldCreateCharacter: Boolean = false,
-    val shouldEndSaga: Boolean = false,
 )

@@ -17,12 +17,8 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
@@ -32,7 +28,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
 import kotlinx.coroutines.delay
@@ -206,9 +201,9 @@ class ChapterUseCaseImpl
                             saga,
                             saga
                                 .flatMessages()
-                                .sortedByDescending { it.message.timestamp }
-                                .take(UpdateRules.LORE_UPDATE_LIMIT)
-                                .map { it.joinMessage(true).formatToString(true) },
+                                .map { it.message }
+                                .sortedByDescending { it.timestamp }
+                                .take(UpdateRules.LORE_UPDATE_LIMIT),
                         ),
                     )
                 val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act, contextSummary)

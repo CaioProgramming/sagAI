@@ -1,6 +1,14 @@
 package com.ilustris.sagai.ui.theme
 
-import androidx.compose.animation.core.*
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBounce
+import androidx.compose.animation.core.Easing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.ClickableText
@@ -50,10 +58,10 @@ fun TypewriterText(
     val charIndex by animateIntAsState(
         targetValue = textTarget,
         animationSpec =
-        tween(
-            duration.toInt(DurationUnit.MILLISECONDS),
-            easing = easing,
-        ),
+            tween(
+                duration.toInt(DurationUnit.MILLISECONDS),
+                easing = easing,
+            ),
         finishedListener = { onAnimationFinished() },
     )
 
@@ -85,20 +93,24 @@ fun TypewriterText(
         style = style,
         onClick = { offset ->
             if (textTarget == text.length) {
-                val characterAnnotation = wikiAnnotation
-                    .getStringAnnotations(tag = "character_tag", start = offset, end = offset)
-                    .firstOrNull()
+                val characterAnnotation =
+                    wikiAnnotation
+                        .getStringAnnotations(tag = "character_tag", start = offset, end = offset)
+                        .firstOrNull()
 
-                val wikiAnnotation = wikiAnnotation
-                    .getStringAnnotations(tag = "wiki_tag", start = offset, end = offset)
-                    .firstOrNull()
+                val wikiAnnotation =
+                    wikiAnnotation
+                        .getStringAnnotations(tag = "wiki_tag", start = offset, end = offset)
+                        .firstOrNull()
 
                 characterAnnotation?.let { annotation ->
-                    val character = characters.find { it.id == annotation.item }
+                    val characterId = annotation.item.split(":").lastOrNull()
+                    val character = characters.find { it.id.toString() == characterId }
                     onAnnotationClick(character)
                 }
                 wikiAnnotation?.let { annotation ->
-                    val wikiData = wiki.find { it.id == annotation.item }
+                    val wikiId = annotation.item.split(":").lastOrNull()
+                    val wikiData = wiki.find { it.id.toString() == wikiId }
                     onAnnotationClick(wikiData)
                 }
             }

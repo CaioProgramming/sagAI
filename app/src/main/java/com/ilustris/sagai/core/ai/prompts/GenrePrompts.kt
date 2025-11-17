@@ -101,11 +101,11 @@ object GenrePrompts {
             SHINOBI ->
                 """
                 Art Technique: JAPANESE SUMI-E INK WASH PAINTING (Suiboku-ga), EMPHASIS ON ECONOMY OF BRUSHSTROKES AND NEGATIVE SPACE.
-                Nihonga influence for color application.
+                CRITICAL NOTE: THE STYLE IS BLACK AND WHITE. NO COLOR OR TINTS, NOT EVEN OFF-WHITE TONES FOR SKIN OR PAPER.
                 Brushwork: BOLD, IMPERFECT, AND HIGHLY TEXTURAL BRUSH STROKES (Hone-gaki/dry-brush) that clearly convey energy and form.
                 Use controlled ink bleeds, water/wash artifacts, and visible spontaneity to avoid a "clean digital" look.
                 Prioritize the weight and flow of the ink.
-                Texture / Materiality: AUTHENTIC AGED RICE-PAPER (WASHI) TEXTURE — Visible paper grain, slight ocre tint, and natural ink absorption/blotches.
+                Texture / Materiality: AUTHENTIC RICE-PAPER (WASHI) TEXTURE — Visible paper grain and natural ink absorption/blotches. THE PAPER IS PURE WHITE, NOT TINTED.
                 Add subtle ink spatters/splatters for dynamism. Aesthetic Influence: Master Sumi-e (Sesshū Tōyō), Gekiga (raw, expressive comic style), and Zen philosophy (simplicity, spontaneity).
 
                 Figure & Facial Treatment: MINIMALIST AND EXPRESSIVE — Features often simplified or obscured by shadow/mist/hair. Focus on silhouette and gestural energy (Sei).

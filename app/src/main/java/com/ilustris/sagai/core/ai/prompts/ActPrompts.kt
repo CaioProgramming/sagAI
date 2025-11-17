@@ -1,7 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ActConclusionContext
-import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.listToAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -223,14 +223,13 @@ object ActPrompts {
 
     fun actsOverview(saga: SagaContent) =
         buildString {
-            appendLine("## SAGA ACTS OVERVIEW")
-            appendLine("// This overview provides a summary of all acts in the saga to inform narrative consistency and progression.")
-            appendLine("// Use this information to maintain continuity and reference past events as needed.")
-            if (saga.acts.isEmpty()) {
-                appendLine("No acts created yet.")
-            } else {
+            val acts = saga.acts.filter { it.isComplete() }.map { it.data }
+            if (saga.acts.isNotEmpty()) {
+                appendLine("## SAGA ACTS OVERVIEW")
+                appendLine("// This overview provides a summary of all acts in the saga to inform narrative consistency and progression.")
+                appendLine("// Use this information to maintain continuity and reference past events as needed.")
                 appendLine(
-                    saga.acts.filter { it.isComplete() }.map { it.data }.formatToJsonArray(
+                    acts.listToAINormalize(
                         excludingFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
                     ),
                 )

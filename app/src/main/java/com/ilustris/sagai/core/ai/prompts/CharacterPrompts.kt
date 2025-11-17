@@ -1,7 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.listToAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -156,7 +156,7 @@ object CharacterPrompts {
                     "emojified",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
-            appendLine(characters.formatToJsonArray(characterExclusions))
+            appendLine(characters.listToAINormalize(characterExclusions))
         }
 
     fun characterGeneration(

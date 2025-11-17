@@ -154,6 +154,7 @@ fun ReactionsView(
                                 CharacterAvatar(
                                     character = reaction.character,
                                     genre = genre,
+                                    innerPadding = 0.dp,
                                     borderSize = 1.dp,
                                     softFocusRadius = 0f,
                                     grainRadius = 0f,

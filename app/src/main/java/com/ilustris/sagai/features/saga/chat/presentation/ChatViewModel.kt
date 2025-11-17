@@ -557,8 +557,6 @@ class ChatViewModel
         private fun sendMessage(
             message: Message,
             isFromUser: Boolean = false,
-            aiCanReply: Boolean = false,
-            sceneSummary: SceneSummary? = null,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
@@ -717,8 +715,10 @@ class ChatViewModel
                                 timelineId = timeline.data.id,
                                 id = 0,
                                 status = MessageStatus.OK,
-                            ),
-                            aiCanReply = aiTurns > 0,
+                                speakerName =
+                                    genMessage.newCharacter?.name
+                                        ?: genMessage.message.speakerName,
+                                    ),
                         )
                         if (newMessage.message.status == MessageStatus.ERROR) {
                             messageUseCase.updateMessage(
@@ -770,7 +770,7 @@ class ChatViewModel
                     ).size
                 aiTurns = npcCount
                 Log.d(javaClass.simpleName, "AI reply cycle started. Max turns: $aiTurns")
-        }
+            }
         }
 
         fun createCharacter(contextDescription: String) {

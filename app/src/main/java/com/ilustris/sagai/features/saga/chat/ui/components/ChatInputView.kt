@@ -14,6 +14,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,10 +32,13 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
@@ -52,6 +56,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -72,12 +77,14 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterHorizontalView
+import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -132,7 +139,6 @@ fun ChatInputView(
         if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
     )
     val inputShape = remember { content.data.genre.shape() }
-    var characterSelectionExpanded by remember { mutableStateOf(false) }
 
     rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val focusManager = LocalFocusManager.current
@@ -201,6 +207,7 @@ fun ChatInputView(
 
         val isImeVisible = WindowInsets.isImeVisible
         val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
+        var characterSelectionExpanded by remember { mutableStateOf(false) }
 
         LaunchedEffect(isImeVisible) {
             characterSelectionExpanded = false
@@ -267,62 +274,102 @@ fun ChatInputView(
             }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(8.dp)) {
-            with(sharedTransitionScope) {
-                AnimatedContent(
-                    characterSelectionExpanded,
-                    modifier = Modifier.align(Alignment.Bottom),
-                ) {
-                    if (it) {
-                        LazyColumn(
-                            modifier =
-                                Modifier
-                                    .widthIn(max = 200.dp)
-                                    .heightIn(max = 300.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            horizontalAlignment = Alignment.Start,
-                        ) {
-                            items(content.characters.reversed()) {
-                                CharacterAvatar(
-                                    it.data,
-                                    genre = content.data.genre,
-                                    modifier =
-                                        Modifier
-                                            .sharedElement(
-                                                rememberSharedContentState(
-                                                    "character-${it.data.id}-icon",
-                                                ),
-                                                this@AnimatedContent,
-                                            ).padding(8.dp)
-                                            .size(36.dp)
-                                            .clip(CircleShape)
-                                            .clickable {
-                                                onSelectCharacter(it)
-                                                characterSelectionExpanded = false
-                                            },
-                                )
-                            }
-                        }
-                    } else {
-                        selectedCharacter?.let {
-                            CharacterAvatar(
-                                it.data,
-                                genre = content.data.genre,
-                                modifier =
-                                    Modifier
-                                        .sharedElement(
-                                            rememberSharedContentState(
-                                                "character-${it.data.id}-icon",
-                                            ),
-                                            this,
-                                        ).padding(8.dp)
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .clickable {
-                                            characterSelectionExpanded = true
-                                        },
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.Bottom,
+            modifier = Modifier.padding(8.dp),
+        ) {
+            val characterToolTipState =
+                androidx.compose.material3.rememberTooltipState(
+                    isPersistent = true,
+                )
+            val tooltipPositionProvider =
+                androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
+                    spacingBetweenTooltipAndAnchor = 4.dp,
+                )
+
+            LaunchedEffect(characterSelectionExpanded) {
+                if (characterSelectionExpanded) {
+                    characterToolTipState.show()
+                } else {
+                    characterToolTipState.dismiss()
+                }
+            }
+            TooltipBox(
+                positionProvider = tooltipPositionProvider,
+                state = characterToolTipState,
+                modifier =
+                    Modifier
+                        .align(Alignment.Bottom)
+                        .padding(8.dp),
+                onDismissRequest = {
+                    characterSelectionExpanded = false
+                },
+                tooltip = {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        modifier =
+                            Modifier
+                                .heightIn(max = 300.dp)
+                                .fillMaxWidth(.5f)
+                                .border(
+                                    1.dp,
+                                    content.data.genre.color
+                                        .gradientFade(),
+                                    content.data.genre.shape(),
+                                ).background(
+                                    MaterialTheme.colorScheme.background,
+                                    content.data.genre.shape(),
+                                ),
+                    ) {
+                        item(span = { GridItemSpan(maxLineSpan) }) {
+                            Text(
+                                "Selecionar personagem",
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        textAlign = TextAlign.Center,
+                                    ),
+                                modifier = Modifier.padding(8.dp),
                             )
                         }
+                        items(content.characters) {
+                            CharacterYearbookItem(
+                                it.data,
+                                content.data.genre,
+                                imageModifier =
+                                    Modifier
+                                        .clickable {
+                                            onSelectCharacter(it)
+                                            characterSelectionExpanded = false
+                                        }.size(36.dp),
+                                textStyle =
+                                    MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                    ),
+                            )
+                        }
+                    }
+                },
+            ) {
+                AnimatedContent(
+                    selectedCharacter,
+                    transitionSpec = {
+                        scaleIn() togetherWith scaleOut()
+                    },
+                ) {
+                    it?.let { character ->
+                        CharacterAvatar(
+                            character.data,
+                            genre = content.data.genre,
+                            modifier =
+                                Modifier
+                                    .size(36.dp)
+                                    .clip(CircleShape)
+                                    .clickable {
+                                        characterSelectionExpanded = true
+                                    },
+                        )
                     }
                 }
             }

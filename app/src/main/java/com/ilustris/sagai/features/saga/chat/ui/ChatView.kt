@@ -478,6 +478,22 @@ fun ChatView(
         }) {
             requiredPermission = null
         }
+
+        AnimatedVisibility(
+            isGenerating,
+            modifier = Modifier.fillMaxSize(),
+            enter = fadeIn(tween(500)),
+            exit = scaleOut() + fadeOut(),
+        ) {
+            StarryTextPlaceholder(
+                Modifier
+                    .fillMaxSize()
+                    .reactiveShimmer(
+                        true,
+                        content?.data?.genre?.shimmerColors() ?: holographicGradient,
+                    ),
+            )
+        }
     }
 }
 
@@ -979,19 +995,6 @@ fun ChatContent(
                         )
                     }
                 }
-            }
-
-            AnimatedVisibility(
-                isGenerating,
-                modifier = Modifier.fillMaxSize(),
-                enter = fadeIn(tween(500)),
-                exit = scaleOut() + fadeOut(),
-            ) {
-                StarryTextPlaceholder(
-                    Modifier
-                        .fillMaxSize()
-                        .reactiveShimmer(true, saga.genre.shimmerColors()),
-                )
             }
         }
     }

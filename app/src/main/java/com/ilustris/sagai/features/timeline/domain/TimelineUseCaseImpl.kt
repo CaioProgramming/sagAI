@@ -4,13 +4,11 @@ import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.LorePrompts
-import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
@@ -119,9 +117,12 @@ class TimelineUseCaseImpl
                 val objectivePrompt =
                     ChatPrompts.sceneSummarizationPrompt(
                         saga,
-                        saga.flatMessages().takeLast(UpdateRules.LORE_UPDATE_LIMIT).map {
-                            it.joinMessage(true).formatToString(true)
-                        },
+                        saga
+                            .flatMessages()
+                            .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                            .map {
+                                it.message
+                            },
                     )
                 gemmaClient.generate<SceneSummary>(objectivePrompt)!!.immediateObjective!!
             }

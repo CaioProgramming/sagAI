@@ -119,6 +119,7 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging.interceptor)
+    implementation("br.com.vexpera:kotlin-toon:1.0.0")
 
     implementation(libs.material.colors)
     implementation(libs.accompanist.ui.controller)
