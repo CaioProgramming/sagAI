@@ -182,7 +182,7 @@ fun Genre.shaderParams(
             softFocusRadius = focusRadius ?: .1f,
             saturation = .6f,
             contrast = 1.3f,
-            brightness = .05f.unaryMinus(),
+            brightness = .15f.unaryMinus(),
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,

@@ -130,7 +130,6 @@ import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -160,6 +159,7 @@ import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
@@ -604,18 +604,18 @@ fun ChatContent(
                     null,
                     colorFilter =
                         ColorFilter.tint(
-                            MaterialTheme.colorScheme.surfaceContainer,
+                            MaterialTheme.colorScheme.surfaceContainer.darker(.2f),
                         ),
                     modifier =
                         Modifier
                             .align(Alignment.Center)
                             .reactiveShimmer(
                                 isPlaying,
-                                shimmerColors = saga.genre.colorPalette(),
+                                shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
-                                targetValue = 300f,
+                                targetValue = 1000f,
                             ).fillMaxSize(.5f)
-                            .alpha(.5f),
+                            .alpha(.3f),
                 )
 
                 ConstraintLayout(
@@ -767,13 +767,17 @@ fun ChatContent(
                         }
 
                         val subtitle =
-                            stringResource(
-                                R.string.chat_view_subtitle,
-                                content.actNumber(content.currentActInfo?.data).toRoman(),
-                                content
-                                    .chapterNumber(content.currentActInfo?.currentChapterInfo?.data)
-                                    .toRoman(),
-                            )
+                            if (saga.isEnded) {
+                                stringResource(id = R.string.chat_card_saga_ended)
+                            } else {
+                                stringResource(
+                                    R.string.chat_view_subtitle,
+                                    content.actNumber(content.currentActInfo?.data).toRoman(),
+                                    content
+                                        .chapterNumber(content.currentActInfo?.currentChapterInfo?.data)
+                                        .toRoman(),
+                                )
+                            }
 
                         SagaTopBar(
                             saga.title,
@@ -1177,7 +1181,7 @@ fun ChatList(
     }
 
     LazyColumn(
-        modifier.animateContentSize(),
+        modifier,
         state = listState,
         horizontalAlignment = Alignment.CenterHorizontally,
         reverseLayout = true,
@@ -1247,6 +1251,7 @@ fun ChatList(
                         MaterialTheme.typography.labelSmall.copy(
                             fontFamily = saga.data.genre.bodyFont(),
                         ),
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -1475,7 +1480,7 @@ fun CharactersTopIcons(
     ) {
         itemsIndexed(
             charactersToDisplay,
-            key = { _, character -> character.id },
+            key = { index, character -> "character-$index-${character.id}-${character.name}" },
         ) { index, character ->
             val overlapAmountPx = with(density) { overlapAmount.toPx() }
             CharacterAvatar(

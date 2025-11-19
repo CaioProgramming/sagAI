@@ -1,13 +1,10 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
 
@@ -30,10 +27,14 @@ object SharePrompts {
         )
 
     fun playStylePrompt(
-        character: Character,
+        character: CharacterContent,
         sagaContent: SagaContent,
     ) = buildString {
-        val emotionalRanking = sagaContent.flatMessages().rankEmotionalTone()
+        val emotionalRanking =
+            sagaContent
+                .flatMessages()
+                .filter { it.character?.id == character.data.id }
+                .rankEmotionalTone()
         appendLine(
             "You are a world-class copywriter, creating minimalist, highly impactful, and curiosity-driven slogans.",
         )
@@ -52,12 +53,24 @@ object SharePrompts {
             "4. CORE LOGIC: The message must reflect the player's dominant emotional tones, colored by the character's personality. Example: For a 'Guardian' with dominant 'Determination', a good result is TITLE: 'Unbreakable', TEXT: 'The Unwavering Shield'.",
         )
         appendLine("5. SPOILER-FREE: Do not mention specific plot points, names, or locations.")
-        appendLine("Dominant Emotional Tones (ranked): ")
-        appendLine(emotionalRanking.joinToString(", ") { "${it.first.name} (${it.second.size})" })
+        appendLine(SagaPrompts.mainContext(sagaContent))
         appendLine("The character's personality profile is:")
-        appendLine(character.profile.toJsonFormat())
-        appendLine("Saga context: ")
-        appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExcludedFields))
+        appendLine(character.data.profile.toAINormalize())
+        appendLine("Dominant Emotional Tones (ranked): ")
+        emotionalRanking.forEach {
+            appendLine("${it.first.name} - ${it.second.size} messages")
+        }
+        appendLine("Character events through history: ")
+        appendLine(
+            character.events.map { it.event }.listToAINormalize(
+                listOf(
+                    "id",
+                    "characterId",
+                    "gameTimelineId",
+                    "createdAt",
+                ),
+            ),
+        )
         appendLine("Generate the title, text, and caption for the player's unique playstyle now.")
     }
 
@@ -79,14 +92,15 @@ object SharePrompts {
             )
             appendLine("Saga's Overall Emotional Review: ")
             appendLine(saga.data.emotionalReview)
-            appendLine("Key Act Emotional Reviews: ")
-            appendLine(saga.acts.joinToString(";") { it.data.emotionalReview.toString() })
+
+            appendLine("History developed emotional review: ")
+            appendLine(saga.emotionalSummary())
             appendLine("Character's Core Archetype: ")
             appendLine(
                 saga.mainCharacter
                     ?.data
                     ?.profile
-                    .toJsonFormat(),
+                    .toAINormalize(),
             )
             appendLine(
                 "Write the title, text, and caption for this profound, fourth-wall-breaking note now.",
@@ -110,18 +124,14 @@ object SharePrompts {
             )
             appendLine("4. SPOILER-FREE: Absolutely no spoilers.")
             appendLine("5. TONE: Must match the provided Saga Genre.")
-            appendLine("Saga Genre: ${saga.data.genre.name}")
-            appendLine("Saga Title and Description (for context only): ")
-            appendLine(saga.data.title)
-            appendLine(saga.data.description)
-            appendLine("Summary of the Saga's Acts: ")
-            appendLine(saga.acts.map { it.data }.toJsonFormatExcludingFields(listOf("id", "sagaId", "emotionalReview", "currentChapterId")))
+            append(SagaPrompts.mainContext(saga))
+            appendLine("History context: ")
+            appendLine(saga.acts.joinToString(".\n") { it.actSummary(saga) })
             appendLine("Generate the title, text, and caption for the story teaser now.")
         }
 
     fun relationsPrompt(saga: SagaContent) =
         buildString {
-            val relationsRank = saga.mainCharacter?.rankRelationships() ?: emptyList()
             appendLine(
                 "You are a master of dramatic irony and high-concept taglines.",
             )
@@ -137,24 +147,9 @@ object SharePrompts {
                 "3. CAPTION: A very short, brand-aligned phrase (max 4 words) that hints at the theme of connection (e.g., 'Some bonds are unbreakable.', 'Trust is a weapon.').",
             )
             appendLine("4. SPOILER-FREE: No character names or specific plot twists.")
-            if (relationsRank.isEmpty()) {
-                appendLine(
-                    "Context: The story has no specific character relationships. Focus on the theme of isolation or a solitary journey.",
-                )
-            } else {
-                appendLine(
-                    "Context: Use the following relationship arcs to find the core dramatic conflict.",
-                )
-                appendLine(
-                    relationsRank.joinToString(prefix = "-", separator = ".") {
-                        " ${it.characterOne.name}'s relationship with ${it.characterTwo.name}: ${it.relationshipEvents.joinToString(
-                            " -> ",
-                        ) { event -> event.title }}"
-                    },
-                )
-            }
-            appendLine("Saga context: ")
-            appendLine(saga.data.toJsonFormatExcludingFields(sagaExcludedFields.plus("endMessage").plus("review")))
+            append(SagaPrompts.mainContext(saga))
+            appendLine("Main Character Relationships Context: ")
+            append(saga.mainCharacter?.summarizeRelationships())
             appendLine("Generate the title, text, and caption that teases the tension within the saga's relationships.")
         }
 
@@ -162,22 +157,11 @@ object SharePrompts {
         characterContent: CharacterContent,
         sagaContent: SagaContent,
     ) = buildString {
-        val character = characterContent.data
-        val events = sagaContent.flatEvents().map { it.data }
-        val sagaExclusion =
-            listOf(
-                "id",
-                "icon",
-                "createdAt",
-                "mainCharacterId",
-                "isDebug",
-                "endMessage",
-                "currentActId",
-                "endedAt",
-                "review",
-                "emotionalReview",
-                "isEnded",
-            )
+        val emotionalRanking =
+            sagaContent
+                .flatMessages()
+                .filter { it.character?.id == characterContent.data.id }
+                .rankEmotionalTone()
         appendLine(
             "You are a world-class storyteller, tasked with creating a compelling, shareable snapshot of a character from a rich RPG saga.",
         )
@@ -194,39 +178,23 @@ object SharePrompts {
         )
         appendLine("4. SPOILER-FREE: Do not reveal major plot twists, character deaths, or the final outcome of the saga.")
         appendLine("5. TONE: The tone must be consistent with the character's personality and the saga's genre.")
-
-        appendLine("Saga context:")
-        appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusion))
-
-        appendLine("Character's Context:")
+        append(SagaPrompts.mainContext(sagaContent, characterContent))
+        appendLine("The character's personality profile is:")
+        appendLine(characterContent.data.profile.toAINormalize())
+        appendLine("Dominant Emotional Tones (ranked): ")
+        emotionalRanking.forEach {
+            appendLine("${it.first.name} - ${it.second.size} messages")
+        }
+        appendLine("Character events through history: ")
         appendLine(
-            character.toJsonFormatExcludingFields(
-                listOf("id", "sagaId", "details", "image", "hexColor", "joinedAt", "firstSceneId", "emojified"),
+            characterContent.events.map { it.event }.listToAINormalize(
+                listOf(
+                    "id",
+                    "characterId",
+                    "gameTimelineId",
+                    "createdAt",
+                ),
             ),
         )
-
-        if (characterContent.events.isNotEmpty()) {
-            appendLine("Character's Events:")
-            appendLine(
-                characterContent
-                    .sortEventsByTimeline(events)
-                    .map { it.event }
-                    .formatToJsonArray(listOf("id", "characterId", "gameTimelineId", "createdAt")),
-            )
-        }
-
-        if (characterContent.relationships.isNotEmpty()) {
-            appendLine("Character's Relationships:")
-            appendLine(
-                characterContent
-                    .sortRelationsByTimeline(events)
-                    .joinToString(",\n") {
-                        "${it.characterOne.name} & ${it.characterTwo.name} ${it.relationshipEvents.lastOrNull()?.emoji ?: emptyString()}:\n" +
-                            it.relationshipEvents.formatToJsonArray(
-                                listOf("id", "emoji", "timelineId", "timestamp", "relationId"),
-                            )
-                    },
-            )
-        }
     }
 }

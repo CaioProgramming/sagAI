@@ -2,13 +2,12 @@ package com.ilustris.sagai.features.characters.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.ilustris.sagai.core.utils.listToAINormalize
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.find
 
 data class CharacterContent(
     @Embedded
@@ -45,6 +44,15 @@ data class CharacterContent(
         relationships.find {
             it.characterOne.id == characterId ||
                 it.characterTwo.id == characterId
+        }
+
+    fun summarizeRelationships() =
+        relationships.sortedBy { it.relationshipEvents.size }.joinToString(";\n") {
+            "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}:\n${
+                it.relationshipEvents.takeLast(5).listToAINormalize(
+                    listOf("timestamp", "relationId", "timelineId", "id"),
+                )
+            }"
         }
 
     fun rankRelationships() = relationships.sortedByDescending { it.relationshipEvents.size }

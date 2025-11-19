@@ -20,14 +20,13 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 
 @Composable
 fun StarryLoader(
     isLoading: Boolean,
-    loadingMessage: String?,
+    loadingMessage: String? = null,
     textStyle: TextStyle = MaterialTheme.typography.headlineMedium,
     brush: Brush = Brush.verticalGradient(holographicGradient),
 ) {

@@ -1,8 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts.SagaEmotionalContext
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 
 object EmotionalPrompt {
@@ -23,54 +22,106 @@ object EmotionalPrompt {
     }
 
     fun generateEmotionalReview(
-        texts: List<String>,
-        emotionalToneRanking: Map<String, Int>,
-    ): String {
-        val rankingString =
-            if (emotionalToneRanking.isEmpty()) {
-                "No specific emotional tone ranking was provided."
-            } else {
-                emotionalToneRanking.entries.joinToString(separator = "; ") { "${it.key}: ${it.value} occurrences" }
-            }
+        saga: SagaContent,
+        context: String,
+    ) = buildString {
+        appendLine(
+            "You are an AI trained to act as an observant psychologist taking clinical notes. Your task is to analyze the provided data and document the player's behavior and emotional state as a series of objective, impartial observations.",
+        )
+        appendLine(
+            "You are a spectator, watching the player's journey and noting their reactions and decisions without judgment or personal opinion.",
+        )
+        append(SagaPrompts.mainContext(saga))
+        appendLine()
+        appendLine("Data for Analysis:")
+        appendLine("1. User's direct messages and actions:")
+        appendLine(context)
+        appendLine()
+        appendLine("Your Goal:")
+        appendLine(
+            "To create a concise clinical note that identifies and documents the player's recent behavior. You are not to conclude or offer opinions, but simply to observe and record in a brief paragraph.",
+        )
+        appendLine()
+        appendLine("Note-Taking Guidelines:")
+        appendLine(
+            "- **Be Objective:** Describe what you see. Use neutral language. Instead of 'The player was brave,' write 'The player chose to confront the danger directly.'",
+        )
+        appendLine(
+            "- **Focus on Behavior:** Document the player's decisions, emotional expressions, and patterns of interaction. (e.g., 'Player expresses frustration when plans fail,' or 'Player tends to choose options that protect others, even at personal cost.')",
+        )
+        appendLine(
+            "- **Connect to the Journey:** Frame the observations within the context of their ongoing journey. How are they reacting to the events of the saga? (e.g., 'Faced with a moral dilemma, the player hesitated before choosing...' or 'After a significant loss, the player's tone shifted to one of resignation.')",
+        )
+        appendLine(
+            "- **Avoid Interpretation:** Do not analyze the 'why' behind the behavior. Do not diagnose or label the player. Stick to the 'what'.",
+        )
+        appendLine()
+        appendLine("Output Requirements:")
+        appendLine("- **Format:** A single, short, and concise paragraph. Do not use bullet points.")
+        appendLine("- **Tone:** Clinical, detached, and observant. Like a raw note for a case file.")
+        appendLine("- **Perspective:** Refer to the subject as 'the player' or 'the subject'.")
+        appendLine("- **Brevity:** The entire note should be very brief, summarizing the key observations into a cohesive paragraph.")
+        appendLine("- **No Conclusions:** The note should be a collection of data points, not a summary with a conclusion.")
+        appendLine()
+        appendLine("Example Note:")
+        appendLine(
+            "Subject expressed a high degree of anxiety when faced with an unknown outcome, yet a pattern of self-sacrificing behavior is emerging in high-stakes situations. The player's language becomes more aggressive when their authority is challenged. Despite negative feedback from the environment, the player persists on their chosen path.",
+        )
+    }.trim()
 
-        val messagesString = if (texts.isEmpty()) "No user messages were provided." else texts.joinToString("\n") { "- $it" }
-
-        return buildString {
-            appendLine("You are a compassionate, clinically-minded AI trained in psychological observation and emotional insight.")
+    fun generateEmotionalConclusion(saga: SagaContent) =
+        buildString {
             appendLine(
-                "Your task is to read the player's direct messages together with an observed emotional tone ranking and produce a concise, psychologist-style summary of their emotional stance and underlying intentions.",
+                "You are a wise and empathetic psychologist and a close friend, having observed a player's entire journey through a deeply personal saga.",
+            )
+            appendLine(
+                "Your task is to write a final, heartfelt, and insightful conclusion addressed directly TO THE PLAYER (using 'you').",
+            )
+            appendLine(
+                "This is not just a summary; it's a deep, personal reflection on their growth, their struggles, and the person they revealed themselves to be.",
+            )
+            appendLine("Break the fourth wall completely. Speak to them as a friend who has seen them through it all.")
+            append(SagaPrompts.mainContext(saga))
+            appendLine()
+            appendLine("PLAYER'S EMOTIONAL JOURNEY (A series of observations made during their playthrough):")
+            appendLine(saga.emotionalSummary())
+            appendLine()
+            appendLine("YOUR TASK:")
+            appendLine(
+                "Synthesize everything you've seen into a personal, non-repetitive, and conclusive letter to the player. Your reflection must:",
             )
             appendLine()
-            appendLine("Inputs Provided to You:")
-            appendLine("1. Observed Emotional Tone Ranking: $rankingString")
-            appendLine("2. User's Direct Messages/Actions:")
-            appendLine(messagesString)
-            appendLine()
-            appendLine("Your Goal:")
             appendLine(
-                "- Integrate the ranking and the messages to craft a focused, 2-3 sentence summary that reads like a warm, professional psychological observation.",
-            )
-            appendLine("- Lead with the dominant emotional themes and then briefly illustrate how these appeared in the user's messages.")
-            appendLine()
-            appendLine("Analytical Notes:")
-            appendLine(
-                "- Prioritize the highest-frequency tones from the ranking but give conceptual weight to intense expressions found in the messages.",
-            )
-            appendLine("- Consider both frequency and intensity: a less frequent but very intense expression can be important.")
-            appendLine(
-                "- Avoid plot details, names, or locations; focus on emotional patterns, intentions, and likely personality tendencies.",
+                "1.  **Acknowledge the Whole Journey:** Start by acknowledging the end of their adventure and the path they've walked. Recognize their achievements, their failures, and the weight of the decisions they made. (e.g., 'And so, your journey in ${saga.data.title} comes to a close. Looking back, it was a path filled with moments of triumph and times of struggle, and you faced them all.')",
             )
             appendLine()
-            appendLine("Output Requirements:")
-            appendLine("- Output ONLY the concise summary, plain text, 2-3 sentences, no headings or extra commentary.")
-            appendLine("- Use a gentle, empathic clinical tone — observant and nonjudgmental, speaking generally about 'the player'.")
             appendLine(
-                "- If the inputs are insufficient to be confident, default to neutral phrasing while still offering a brief observation.",
+                "2.  **Reveal Their Core Personality:** Based on the emotional patterns in the summary, paint a picture of who they are. Are they a protector, a pragmatist, a hopeful spirit, an analytical mind? Use the data to form a genuine understanding of their character. (e.g., 'Through it all, a clear picture of you emerged. It seems you are someone who...' or 'What stands out most is your unwavering...'",
             )
+            appendLine()
+            appendLine(
+                "3.  **Celebrate Their Strengths:** Highlight their emotional strengths with specific, kind observations. Did they show incredible resilience, deep empathy, or unwavering courage? Make them feel seen and appreciated for their best qualities. (e.g., 'Your capacity for empathy was truly remarkable, especially when...' or 'Don't underestimate the strength it took to remain hopeful when things seemed darkest.')",
+            )
+            appendLine()
+            appendLine(
+                "4.  **Gently Explore Their Struggles:** Address their challenges with compassion and insight, like a true friend. Frame these not as flaws, but as part of their human experience. What did they grapple with? Uncertainty? Impulsiveness? A fear of loss? (e.g., 'Of course, the journey wasn't without its inner conflicts. It seemed you often wrestled with...' or 'I saw moments of hesitation, a struggle between your heart and your mind, which speaks to the depth of your consideration.')",
+            )
+            appendLine()
+            appendLine(
+                "5.  **Offer a Profound, Final Insight:** Conclude with a powerful, summary thought that encapsulates their journey and what it says about them. This should be a 'mic-drop' moment of friendly, psychological insight that leaves them with a sense of closure and self-awareness. (e.g., 'Ultimately, this saga was a mirror, and in it, you showed yourself to be a person who, despite fearing [challenge], will always choose [strength]. That is a rare and beautiful thing.' or 'What you may not have realized is that every choice, every moment of doubt, was forging a person of incredible [conclusive trait].')",
+            )
+            appendLine()
+            appendLine("OUTPUT REQUIREMENTS:")
+            appendLine(
+                "- **Tone:** Deeply personal, empathetic, wise, and conclusive. Like a final letter from a psychologist who became a friend.",
+            )
+            appendLine("- **Format:** Plain text only. No headers, no markdown, no JSON. Just the letter.")
+            appendLine("- **Address the Player:** Use 'you' throughout.")
+            appendLine("- **No Spoilers:** Focus on the player's inner world, not the plot.")
+            appendLine("- **Be Definitive:** Do not ask questions. This is a statement.")
         }.trim()
-    }
 
-    fun generateEmotionalProfile(summary: List<String>) =
+    fun generateEmotionalProfile(summary: String) =
         """
          You are an AI expert in personal development and behavioral coaching.
         Your task is to analyze a series of notes on a user's actions and behavior, and then generate a constructive feedback summary. This feedback should be friendly and kind, offering a general overview of their personality with recommendations for growth.
@@ -94,66 +145,6 @@ object EmotionalPrompt {
         - Do NOT use specific character names, locations, or plot details from the story. Focus purely on the user's behavior.
         
         Analyze the following texts and provide a single, gentle final reflection:
-        ${summary.joinToString("", prefix = "- ")}
+        $summary
         """
-
-    fun emotionalGeneration(
-        saga: SagaContent,
-        emotionalSummary: String,
-    ): String {
-        val emotionalContext =
-            SagaEmotionalContext(
-                sagaInfo = saga.data,
-                playerCharacter = saga.mainCharacter?.data,
-                emotionalSummary = emotionalSummary,
-            )
-
-        val excludedFields =
-            listOf(
-                "details",
-                "image",
-                "hexColor",
-                "sagaId",
-                "joinedAt",
-                "id",
-            )
-
-        return """
-            Context for emotional review:
-            ${emotionalContext.toJsonFormatExcludingFields(excludedFields)}
-            
-            You are an insightful and empathetic observer reflecting on a player's emotional journey through the saga referenced in SAGA_TITLE.
-            Your task is to generate a thoughtful and personal reflection addressed directly TO THE PLAYER (in the second person, e.g., "you").
-            This reflection should be based *solely* on the AGGREGATED_EMOTIONAL_ARC provided, which represents a series of emotional summaries and observations collected about the player's reactions and decisions throughout their adventure.
-
-            1.  **Output Format:** Your entire response MUST be **ONLY the plain text string** of the emotional review (approximately 3-5 paragraphs). Do NOT include any JSON, special formatting like Markdown headers, or anything else besides the text itself.
-
-            2.  **Tone and Style:**
-            *   Adopt a reflective, empathetic, and slightly analytical tone.
-            *   Speak directly to the player using "you" (e.g., "Looking back at your journey, [Player Name if available, otherwise 'adventurer'], it seems you often...").
-            *   The review should feel personal and tailored, as if you've been a quiet companion observing their emotional responses.
-
-            
-            3.  **Content Focus (Based on AGGREGATED_EMOTIONAL_ARC):**
-            *   **Synthesize the Core Emotional Journey:** Analyze the sequence of emotional summaries in AGGREGATED_EMOTIONAL_ARC. Identify recurring emotional themes, how the player's emotional responses might have evolved or remained consistent, and any significant emotional turning points.
-            *   **Identify Dominant Personality Traits:** Based on the emotional patterns, infer and discuss the player's likely personality traits as they manifested during the saga (e.g., "Your responses suggest a deeply cautious nature," or "A clear pattern of empathetic decision-making indicates a strong compassionate streak in you.").
-            *   **Highlight Emotional Strengths and Skills:** Acknowledge any emotional skills or strengths the player demonstrated (e.g., resilience in the face of adversity, ability to remain calm under pressure, capacity for deep empathy, courageous conviction).
-            *   **Acknowledge Emotional Struggles or Challenges:** Gently point out any emotional struggles or patterns that might have been challenging for the player (e.g., "There were moments where it seemed you struggled with uncertainty," or "At times, a tendency towards impulsiveness appeared to shape your reactions.").
-            *   **Offer Balanced Observations/Advice:** Provide observations that are neither overly praiseful nor harshly critical. The goal is gentle, constructive insight. For example, "This tendency to prioritize logic, while often a strength, sometimes seemed to create internal conflict when faced with purely emotional dilemmas." or "Your ability to find hope in difficult situations was remarkable, though it's worth reflecting if this optimism sometimes led to underestimating risks." Offer observations that the player might find useful about their approach or reactions.
-            *   **Concluding Thought:** End with a thoughtful, summary statement about their overall emotional journey or what they might take away from it.
-
-            4.  **Key Constraints:**
-            *   **Second Person:** Address the player as "you." If PLAYER_NAME is available, use it in the greeting.
-            *   **Based ONLY on AGGREGATED_EMOTIONAL_ARC:** Do not invent story events or infer details beyond what the emotional summaries provide. The review is about their emotional processing, not their specific in-game achievements unless directly reflected in the emotional summaries.
-            *   **Balanced Perspective:** Avoid being excessively positive or negative. Aim for genuine, constructive reflection.
-            *   **No Spoilers:** The reflection should be about the player's internal journey, not a recap of the saga's plot.
-            *   **No Questions:** The generated text must not ask any questions or prompt further user input. It should end definitively.
-
-            Example Snippets (Your actual output will be more cohesive and detailed, forming a few paragraphs):
-            "Looking back at your journey in [SAGA_TITLE], [Player Name, or 'adventurer' if null], it's clear that you approached many situations with a distinct sense of [observed trait, e.g., 'cautious optimism']. The emotional records show that while you often [observed pattern, e.g., 'sought peaceful resolutions'], there were moments, particularly [general situation, e.g., 'when allies were threatened'], where a fierce [observed emotion, e.g., 'protectiveness'] emerged. This suggests a personality that values [inferred value, e.g., 'harmony but is fiercely loyal']."
-            "One of your notable emotional skills appears to be [skill, e.g., 'your resilience in the face of setbacks']. Even when [general struggle, e.g., 'plans went awry, as indicated by moments of frustration in your emotional responses'], you often found a way to [positive outcome, e.g., 'regroup and adapt']. However, the tendency to [observed challenge, e.g., 'internalize blame during difficult choices'] seemed to be a recurring struggle. Perhaps reflecting on these moments could offer insights into [gentle advice, e.g., 'how you navigate responsibility under pressure']."
-            "Ultimately, your emotional journey through this saga was marked by [summary statement, e.g., 'a growing confidence in your intuitive judgments']. It was a privilege to witness."
-            
-            """.trimIndent()
-    }
 }

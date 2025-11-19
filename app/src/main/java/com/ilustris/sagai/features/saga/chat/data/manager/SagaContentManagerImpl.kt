@@ -6,7 +6,6 @@ import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
@@ -26,18 +25,14 @@ import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.emotionalSummary
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
-import com.ilustris.sagai.features.saga.chat.domain.model.rankEmotionalTone
-import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -206,72 +201,31 @@ class SagaContentManagerImpl
             chapter: ChapterContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                chapterUseCase
-                    .updateChapter(
-                        chapter.data.copy(
-                            currentEventId = null,
-                        ),
-                    )
-
                 val chapterUpdate =
                     chapterUseCase
                         .generateChapter(
                             saga,
                             chapter,
-                        ).getSuccess()
-                val genChapterCharacters =
-                    chapterUpdate?.featuredCharacters?.mapNotNull { charactersNames ->
-                        saga.characters
-                            .find {
-                                it.data.name.equals(
-                                    charactersNames,
-                                    ignoreCase = true,
-                                )
-                            }?.data
-                            ?.id
-                    }
+                        ).onSuccessAsync {
+                            chapterUseCase.updateChapter(chapter.data.copy(currentEventId = null))
+                            updateSnackBar(
+                                snackBar(
+                                    message =
+                                        context.getString(
+                                            R.string.chapter_finished,
+                                            it?.title,
+                                        ),
+                                ),
+                            )
+                        }.onFailureAsync {
+                            updateSnackBar(
+                                SnackBarState(
+                                    message = context.getString(R.string.unexpected_error),
+                                ),
+                            )
+                        }
 
-                val featuredCharacters =
-                    chapter
-                        .fetchChapterMessages()
-                        .rankTopCharacters(saga.getCharacters())
-                        .take(3)
-                        .map { it.first.id }
-
-                val emotionalReview =
-                    generateEmotionalReview(
-                        chapter.events.filter { it.isComplete() }.mapIndexed { i, event ->
-                            """
-                            ${i + 1} - ${event.data.title}: ${
-                                event.messages.rankEmotionalTone().first().first.name
-                            }
-                            ${event.data.emotionalReview ?: "No emotional review created on this event."}   
-                            """.trimIndent()
-                        },
-                        emotionalRanking =
-                            chapter.events
-                                .map { it.emotionalRanking(saga.mainCharacter?.data) }
-                                .flatMap { it.entries }
-                                .associate { it.key to it.value },
-                    )
-
-                val newChapter =
-                    chapter.data.copy(
-                        title = chapterUpdate?.title ?: chapter.data.title,
-                        overview = chapterUpdate?.overview ?: chapter.data.overview,
-                        featuredCharacters = genChapterCharacters ?: featuredCharacters,
-                        emotionalReview = emotionalReview.getSuccess(),
-                    )
-
-                updateSnackBar(
-                    snackBar(
-                        message = context.getString(R.string.chapter_finished, newChapter.title),
-                    ),
-                )
-
-                chapterUseCase.updateChapter(
-                    newChapter,
-                )
+                chapterUpdate.getSuccess()!!
             }
 
         override suspend fun reviewWiki(wikiItems: List<Wiki>) {
@@ -389,12 +343,6 @@ class SagaContentManagerImpl
                     )
             }
 
-        private suspend fun generateEmotionalReview(
-            content: List<String>,
-            emotionalRanking: Map<String, Int>,
-        ) = emotionalUseCase
-            .generateEmotionalReview(content.filter { it.isNotEmpty() }, emotionalRanking)
-
         private suspend fun updateTimeline(
             saga: SagaContent,
             content: TimelineContent,
@@ -436,7 +384,7 @@ class SagaContentManagerImpl
                     javaClass.simpleName,
                     "updating act(${saga.currentActInfo?.data?.id})",
                 )
-                val genAct =
+                val newAct =
                     if (isDebugModeEnabled) {
                         Log.i(
                             javaClass.simpleName,
@@ -449,27 +397,14 @@ class SagaContentManagerImpl
                             sagaId = saga.data.id,
                         )
                     } else {
-                        actUseCase.generateAct(saga).getSuccess()!!
+                        actUseCase.generateAct(saga, currentAct).getSuccess()!!
                     }
 
-                val emotionalReview =
-                    emotionalUseCase
-                        .generateEmotionalProfile(
-                            currentAct.chapters.mapNotNull { it.data.emotionalReview },
-                        ).getSuccess()
-                val updatedActData =
-                    currentAct.data.copy(
-                        title = genAct.title,
-                        content = genAct.content,
-                        emotionalReview = emotionalReview ?: emptyString(),
-                    )
-                val newAct = actUseCase.updateAct(updatedActData)
                 updateSnackBar(
                     snackBar(
                         message = context.getString(R.string.chapter_finished, newAct.title),
                     ),
                 )
-                endAct(saga)
                 newAct
             }
 
@@ -694,6 +629,10 @@ class SagaContentManagerImpl
                         }
                     }
 
+                    is NarrativeStep.GenerateAct -> {
+                        endAct(saga)
+                    }
+
                     is NarrativeStep.NoActionNeeded -> {
                         checkObjective()
                     }
@@ -744,7 +683,7 @@ class SagaContentManagerImpl
         }
 
         private suspend fun createEndingMessage(saga: SagaContent) =
-            try {
+            executeRequest {
                 if (isDebugModeEnabled) {
                     sendDebugMessage("Generating debug end message")
                     val message = "Congratulations on completing this saga!"
@@ -757,21 +696,18 @@ class SagaContentManagerImpl
                             ),
                         ).asSuccess()
                 }
-                setNarrativeProcessingStatus(true)
                 val endingMessage = sagaHistoryUseCase.generateEndMessage(saga).getSuccess()!!
                 val emotionalEnding =
-                    emotionalUseCase.generateEmotionalProfile(saga.emotionalSummary()).getSuccess()
+                    emotionalUseCase.generateEmotionalConclusion(saga).getSuccess()
                 sagaHistoryUseCase
                     .updateSaga(
                         saga.data.copy(
                             endMessage = endingMessage,
                             isEnded = true,
                             endedAt = System.currentTimeMillis(),
-                            emotionalReview = emotionalEnding ?: emptyString(),
+                            emotionalReview = emotionalEnding,
                         ),
-                    ).asSuccess()
-            } catch (e: Exception) {
-                e.asError()
+                    )
             }
 
         override suspend fun generateCharacter(description: String): RequestResult<Character> =

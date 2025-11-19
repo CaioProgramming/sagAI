@@ -512,7 +512,7 @@ class ChatViewModel
                             characterId = mainCharacter.id,
                             timelineId = currentTimeline.data.id,
                         )
-                    sendMessage(message, true)
+                    sendMessage(message, true, null)
                     return@launch
                 }
 
@@ -557,7 +557,9 @@ class ChatViewModel
         private fun sendMessage(
             message: Message,
             isFromUser: Boolean = false,
+            sceneSummary: SceneSummary?,
         ) {
+            updateLoading(isFromUser)
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val mainCharacter = content.value!!.mainCharacter?.data
@@ -570,7 +572,6 @@ class ChatViewModel
 
                 inputValue.value = TextFieldValue()
 
-                updateLoading(isFromUser)
                 resetSuggestions()
                 val characterId =
                     if (message.senderType == SenderType.NARRATOR) {
@@ -578,7 +579,7 @@ class ChatViewModel
                     } else {
                         message.characterId ?: characterReference?.id
                     }
-                val sceneSummary = messageUseCase.getSceneContext(saga).getSuccess()
+                val sceneSummary = sceneSummary ?: messageUseCase.getSceneContext(saga).getSuccess()
 
                 messageUseCase
                     .saveMessage(
@@ -677,6 +678,7 @@ class ChatViewModel
             message: Message,
             sceneSummary: SceneSummary?,
         ) {
+            updateLoading(true)
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val timeline = saga.getCurrentTimeLine()
@@ -684,8 +686,7 @@ class ChatViewModel
                     sagaContentManager.checkNarrativeProgression(saga)
                     return@launch
                 }
-                sagaContentManager.setProcessing(true)
-                isLoading.emit(true)
+
                 val newMessage =
                     MessageContent(
                         message = message,
@@ -722,6 +723,8 @@ class ChatViewModel
                                     genMessage.newCharacter?.name
                                         ?: genMessage.message.speakerName,
                             ),
+                            false,
+                            sceneSummary,
                         )
                         if (newMessage.message.status == MessageStatus.ERROR) {
                             messageUseCase.updateMessage(
@@ -817,7 +820,7 @@ class ChatViewModel
                             sagaId = currentSaga.data.id,
                             timelineId = timeline.data.id,
                         )
-                    sendMessage(fakeUserMessage, isFromUser = false)
+                    sendMessage(fakeUserMessage, false, null)
                     delay(100)
                 }
                 Log.d("ChatViewModel", "Finished enqueuing $count fake messages.")

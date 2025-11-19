@@ -18,9 +18,7 @@ interface SagaDetailUseCase {
 
     suspend fun resetReview(content: SagaContent)
 
-    suspend fun createEmotionalReview(content: SagaContent): RequestResult<Saga>
-
-    suspend fun createSagaEmotionalReview(currentSaga: SagaContent): RequestResult<Saga>
+    suspend fun createEmotionalConclusion(currentSaga: SagaContent): RequestResult<Saga>
 
     suspend fun generateTimelineContent(
         saga: SagaContent,

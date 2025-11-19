@@ -67,7 +67,8 @@ class GemmaClient
             withContext(Dispatchers.IO) {
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
                     Log.w(javaClass.simpleName, "Applying reactive delay due to high token count in last request.")
-                    delay(2.seconds)
+                    retryDelay = 5
+                    delay((retryDelay ?: 5).seconds)
                 }
                 val model = modelName()
                 retryDelay?.let {

@@ -2,29 +2,23 @@ package com.ilustris.sagai.features.act.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ActPrompts
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.ActPurpose
-import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
-import kotlinx.coroutines.delay
+import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class ActUseCaseImpl
     @Inject
     constructor(
         private val actRepository: ActRepository,
         private val gemmaClient: GemmaClient,
+        private val emotionalUseCase: EmotionalUseCase,
     ) : ActUseCase {
         override fun getActsBySagaId(sagaId: Int): Flow<List<Act>> = actRepository.getActsBySagaId(sagaId)
 
@@ -40,10 +34,26 @@ class ActUseCaseImpl
             actRepository.deleteActsForSaga(sagaId)
         }
 
-        override suspend fun generateAct(saga: SagaContent): RequestResult<Act> =
+        override suspend fun generateAct(
+            saga: SagaContent,
+            actContent: ActContent,
+        ): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
-                gemmaClient.generate<Act>(titlePrompt)!!
+                val newAct = gemmaClient.generate<Act>(titlePrompt)!!
+
+                val actUpdate =
+                    updateAct(
+                        actContent.data.copy(
+                            id = 0,
+                            sagaId = saga.data.id,
+                            currentChapterId = null,
+                            title = newAct.title,
+                            content = newAct.content,
+                        ),
+                    )
+
+                generateEmotionalProfile(saga, actContent.copy(data = actUpdate)).getSuccess()!!
             }
 
         private fun generateActPrompt(saga: SagaContent) =
@@ -60,8 +70,6 @@ class ActUseCaseImpl
                 else -> ActPurpose.THIRD_ACT_PURPOSE
             }
 
-        override fun getActContent(actId: Int): Flow<ActContent?> = actRepository.getActContent(actId)
-
         override suspend fun generateActIntroduction(
             saga: SagaContent,
             act: Act,
@@ -74,5 +82,19 @@ class ActUseCaseImpl
             val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
             actRepository
                 .updateAct(act.copy(introduction = intro))
+        }
+
+        override suspend fun generateEmotionalProfile(
+            saga: SagaContent,
+            act: ActContent,
+        ) = executeRequest {
+            val profile =
+                emotionalUseCase
+                    .generateEmotionalProfile(
+                        saga,
+                        act.emotionalSummary(saga),
+                    ).getSuccess()!!
+
+            actRepository.updateAct(act.data.copy(emotionalReview = profile))
         }
     }

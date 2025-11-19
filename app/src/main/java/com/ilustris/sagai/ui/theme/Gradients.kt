@@ -275,6 +275,7 @@ fun Modifier.reactiveShimmer(
         ),
     duration: Duration = 5.seconds,
     targetValue: Float = 500f,
+    repeatMode: RepeatMode = RepeatMode.Reverse,
 ): Modifier {
     val infiniteTransition = rememberInfiniteTransition()
     val offsetAnimation =
@@ -284,7 +285,7 @@ fun Modifier.reactiveShimmer(
             animationSpec =
                 infiniteRepeatable(
                     tween(duration.toInt(DurationUnit.MILLISECONDS), easing = LinearEasing),
-                    repeatMode = RepeatMode.Reverse,
+                    repeatMode = repeatMode,
                 ),
         )
 

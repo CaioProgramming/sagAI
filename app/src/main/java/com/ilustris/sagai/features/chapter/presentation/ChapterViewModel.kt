@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.chapter.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -24,12 +23,25 @@ class ChapterViewModel
 
         val isGenerating = MutableStateFlow(false)
 
+        fun init(sagaContent: SagaContent?) {
+            saga.value = sagaContent
+        }
+
         fun loadSaga(sagaId: String?) {
             if (sagaId == null) return
-            viewModelScope.launch {
+            viewModelScope.launch(Dispatchers.IO) {
                 sagaHistoryUseCase.getSagaById(sagaId.toInt()).collect {
                     saga.value = it
                 }
+            }
+        }
+
+        fun reviewChapter(chapter: ChapterContent) {
+            val currentSaga = saga.value ?: return
+            viewModelScope.launch(Dispatchers.IO) {
+                isGenerating.emit(true)
+                chapterUseCase.reviewChapter(currentSaga, chapter)
+                isGenerating.emit(false)
             }
         }
 

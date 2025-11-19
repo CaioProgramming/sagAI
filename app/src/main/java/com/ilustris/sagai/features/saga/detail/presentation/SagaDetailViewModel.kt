@@ -102,8 +102,10 @@ class SagaDetailViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
                     .createReview(currentSaga)
+                    .onSuccessAsync {
+                        showReview.emit(true)
+                    }
                 isGenerating.value = false
-                showReview.emit(true)
             }
         }
 
@@ -145,7 +147,7 @@ class SagaDetailViewModel
             val currentSaga = saga.value ?: return
             viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.value = true
-                sagaDetailUseCase.createSagaEmotionalReview(currentSaga)
+                sagaDetailUseCase.createEmotionalConclusion(currentSaga)
                 isGenerating.value = false
             }
         }

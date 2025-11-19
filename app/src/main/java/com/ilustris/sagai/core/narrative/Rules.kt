@@ -1,7 +1,5 @@
 package com.ilustris.sagai.core.narrative
 
-import com.ilustris.sagai.features.characters.data.model.Character
-
 object UpdateRules {
     const val MAX_ACTS_LIMIT = 3
 
@@ -71,52 +69,4 @@ object ActDirectives {
         
         
         """
-
-    const val CONCLUSION_DIRECTIVE =
-        """
-        ## SAGA CONCLUSION DIRECTIVE
-        // This directive guides the Saga Master on how to bring the saga to a definitive end, adapting to the narrative's evolution.
-        
-        1.  **Dynamic Definition of Saga's Ultimate Goal:** As the Saga Master, you are responsible for defining and continuously refining the **Saga's Ultimate Goal** as the narrative unfolds. This ultimate goal should emerge organically from the core conflicts, mysteries, and stakes you introduce, evolving with the player's discoveries, choices, and the deepening plot. It represents the overarching objective that, once resolved, brings definitive closure to the entire saga.
-        
-        2.  **Trigger for Conclusion:** The saga MUST conclude definitively when the player's actions lead directly to the successful fulfillment of **this dynamically defined ultimate goal**. This means:
-            * The primary conflict of the saga has been resolved.
-            * The central mystery has been unveiled and acted upon in a conclusive manner.
-            * The player has achieved the final, overarching objective that the story has been building towards.
-        
-        3.  **Narrative of Conclusion:** Once the trigger is met, the NARRATOR MUST provide a clear, conclusive, and satisfying narrative message that explicitly states the saga has ended. This message should:
-            * Summarize the outcome of the player's actions in relation to the ultimate goal.
-            * Provide a sense of definitive closure to the main plotline.
-            * Be written in a tone appropriate for the saga's genre (e.g., epic, bittersweet, triumphant, somber).
-        
-        4.  **Finality of Response:** This concluding narrative message MUST be the *final message* of the saga. After this message, the player should understand that no further actions or messages are expected from them within this particular saga. The response should **NOT** prompt further action or dialogue. It should be a definitive "THE END."
-        
-        5.  **Programmatic Signal for End:** When the saga's conclusion is triggered and the final narrative message is generated, you MUST set the `shouldEndSaga` flag in the JSON response to `true`. This provides a clear signal for the application to cease further player input for this saga.    
-        """
-}
-
-object CharacterFormRules {
-    const val MAX_NAME_LENGTH = 30
-    const val MAX_BACKSTORY_LENGTH = 500
-    const val MAX_OCCUPATION_LENGTH = 50
-    const val MAX_STYLE_LENGTH = 100
-    const val MAX_APPEARANCE_LENGTH = 300
-    const val MAX_WEAPONS_LENGTH = 100
-
-    // New constants for FacialFeatures
-    const val MAX_HAIR_LENGTH = 150
-    const val MAX_EYES_LENGTH = 100
-    const val MAX_MOUTH_LENGTH = 100
-    const val MAX_SCARS_LENGTH = 150
-
-    // New constants for Clothing
-    const val MAX_CLOTHING_BODY_LENGTH = 200
-    const val MAX_CLOTHING_ACCESSORIES_LENGTH = 150
-    const val MAX_CLOTHING_FOOTWEAR_LENGTH = 100
-
-    // New constants for Personality, Ethnicity, and Race
-    const val MAX_PERSONALITY_LENGTH = 300
-    const val MAX_ETHNICITY_LENGTH = 100
-    const val MAX_RACE_LENGTH = 100
-
 }

@@ -154,15 +154,12 @@ fun SagaContent.rankByHour() =
         }.toSortedMap()
 
 fun SagaContent.emotionalSummary() =
-    acts
-        .map {
-            """
-            Act ${it.data.title}: ${it.data.emotionalReview}
-            ${it.chapters.joinToString(
-                ";",
-            ) { chapter -> "${chapterNumber(chapter.data)} Chapter ${chapter.data.title}: ${chapter.data.emotionalReview}" } }
-            """.trimIndent()
+    buildString {
+        acts.forEach {
+            it.emotionalSummary(this@emotionalSummary)
+            appendLine("Emotional profile on ${it.data.title}: ${it.data.emotionalReview}")
         }
+    }
 
 @Suppress("ktlint:standard:max-line-length")
 fun SagaContent.generateCharacterRelationsSummary(): String {
