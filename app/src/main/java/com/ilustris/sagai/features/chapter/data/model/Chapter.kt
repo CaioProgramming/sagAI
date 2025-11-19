@@ -20,12 +20,7 @@ data class Chapter(
     @ColumnInfo(index = true)
     val actId: Int,
     val featuredCharacters: List<Int> = emptyList(),
-) {
-    companion object {
-        val CHAPTER_EXCLUSIONS =
-            listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters")
-    }
-}
+)
 
 data class ChapterGeneration(
     val title: String,

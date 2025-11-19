@@ -18,6 +18,9 @@ import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
 object ChapterPrompts {
+    val CHAPTER_EXCLUSIONS =
+        listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters")
+
     fun chapterSummary(sagaContent: SagaContent) =
         buildString {
             sagaContent.currentActInfo
@@ -266,8 +269,6 @@ object ChapterPrompts {
             } ?: run {
                 appendLine("Ensure to render this art style description matching with the reference image")
                 appendLine(GenrePrompts.artStyle(genre))
-                appendLine("*The accents are design elements, not the primary light source for the character.")
-                appendLine(GenrePrompts.getColorEmphasisDescription(genre))
             }
 
             appendLine("This description must:")

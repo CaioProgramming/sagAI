@@ -214,16 +214,9 @@ object ChatPrompts {
         appendLine("- Avoid redundant or already established information.")
         appendLine("- Focus on immediate context: location, characters present, current objective, active conflict, and mood.")
         appendLine("- If any field is not relevant or unknown, omit it.")
-        appendLine()
-        appendLine("Saga Context:")
-        appendLine(saga.data.toAINormalize(sagaExclusions))
-
-        appendLine("PLAYER CONTEXT DATA:")
-        appendLine(saga.mainCharacter?.data.toAINormalize(characterExclusions))
-        appendLine("Player relationships:")
-        if (saga.mainCharacter?.relationships.isNullOrEmpty()) {
-            appendLine("No relationships yet.")
-        } else {
+        appendLine(SagaPrompts.mainContext(saga))
+        if (!saga.mainCharacter?.relationships.isNullOrEmpty()) {
+            appendLine("Player relationships:")
             appendLine(
                 saga.mainCharacter.relationships.joinToString(";\n") {
                     val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "Nothing related"
@@ -257,41 +250,13 @@ object ChatPrompts {
         }
         saga.currentActInfo?.currentChapterInfo?.data?.let {
             appendLine("Current Chapter Data:")
-            appendLine(
-                it.toAINormalize(
-                    listOf(
-                        "id",
-                        "actId",
-                        "currentEventId",
-                        "createdAt",
-                        "featuredCharacters",
-                    ),
-                ),
-            )
+            appendLine(it.toAINormalize(ChapterPrompts.CHAPTER_EXCLUSIONS))
         }
         appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
         appendLine(ChapterPrompts.chapterSummary(saga))
-        appendLine()
         appendLine(ActPrompts.actsOverview(saga))
-        appendLine()
         appendLine("Recent Messages (for context, do NOT repeat):")
-        appendLine("[")
-        appendLine(
-            recentMessages.joinToString(separator = ";\n") {
-                it.toAINormalize(
-                    listOf(
-                        "id",
-                        "timeStamp",
-                        "sagaId",
-                        "characterId",
-                        "timelineId",
-                        "status",
-                    ),
-                )
-            },
-        )
-        appendLine("]")
-        appendLine()
+        appendLine(recentMessages.listToAINormalize(messageExclusions))
     }.trimIndent()
 
     private fun conversationStyleAndPacing() =

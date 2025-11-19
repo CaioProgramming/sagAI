@@ -62,7 +62,6 @@ object CharacterPrompts {
             appendLine(GenrePrompts.artStyle(genre))
             appendLine("2.  **Specific Color Application Instructions:**")
             appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.name}\") are applied:")
-            appendLine(GenrePrompts.getColorEmphasisDescription(genre))
             appendLine("**Important Clarification on Color:**")
             appendLine("*These color rules are primarily for:")
             appendLine(

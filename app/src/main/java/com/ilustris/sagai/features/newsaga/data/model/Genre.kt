@@ -15,21 +15,18 @@ Genre(
     val iconColor: Color,
     @DrawableRes
     val background: Int,
-    val ambientMusicConfigKey: String,
 ) {
     FANTASY(
         title = R.string.genre_fantasy,
         color = MaterialColor.RedA400,
         iconColor = Color.White,
         background = R.drawable.fantasy,
-        ambientMusicConfigKey = "fantasy_ambient_music_url",
     ),
     CYBERPUNK(
         title = R.string.genre_scifi,
         color = MaterialColor.DeepPurpleA200,
         iconColor = Color.White,
         background = R.drawable.scifi,
-        ambientMusicConfigKey = "scifi_ambient_music_url",
     ),
 
     HORROR(
@@ -37,7 +34,6 @@ Genre(
         color = MaterialColor.BlueGray200,
         iconColor = Color.Black,
         background = R.drawable.horror,
-        ambientMusicConfigKey = "horror_ambient_music_url",
     ),
 
     HEROES(
@@ -45,14 +41,12 @@ Genre(
         color = MaterialColor.Blue900,
         iconColor = Color.White,
         background = R.drawable.hero,
-        ambientMusicConfigKey = "heroes_ambient_music_url",
     ),
     CRIME(
         title = R.string.genre_crime,
         color = MaterialColor.PinkA100,
         iconColor = Color.White,
         background = R.drawable.crime,
-        ambientMusicConfigKey = "crime_ambient_music_url",
     ),
 
     SHINOBI(
@@ -60,7 +54,6 @@ Genre(
         color = Color(0xff880101),
         iconColor = Color.White,
         background = R.drawable.shinobi_background,
-        ambientMusicConfigKey = "shinobi_ambient_music_url",
     ),
 
     SPACE_OPERA(
@@ -68,8 +61,10 @@ Genre(
         color = MaterialColor.CyanA700,
         iconColor = Color.Black,
         background = R.drawable.space_opera,
-        ambientMusicConfigKey = "space_opera_ambient_music_url",
     ),
+    ;
+
+    val ambientMusicConfigKey: String = "${this.name}_ambient_music_url".lowercase()
 }
 
 fun Genre.selectiveHighlight(): SelectiveColorParams =

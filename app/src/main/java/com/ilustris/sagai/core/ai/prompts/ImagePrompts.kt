@@ -141,45 +141,49 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
         buildString {
             appendLine("You are analyzing ONE composition reference image:")
             appendLine(
-                "1. **Image A (Composition Reference):** This single reference dictates layout, framing, lens feel, and photographic treatment. Use this image as the sole source for all observable photographic cues.",
+                "1. **Image A (Composition Reference):** This single reference dictates layout, framing, lens feel, and photographic treatment, and most importantly, the **emotional and dramatic intent**.",
             )
             appendLine("")
             appendLine(
-                "Your task is to extract FOUR concise, photography-and-style-focused composition components based only on Image A. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the extracted phrases/terms, each prepended by its respective label (for example: 'Framing: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS, OR EXPLANATIONS.**",
+                "Your task is to extract FIVE concise, photography-and-mood-focused composition components based only on Image A. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the extracted phrases/terms, each prepended by its respective label (for example: 'Framing: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS, OR EXPLANATIONS.**",
             )
             appendLine("")
-            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (4 points):**")
+            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (5 points):**")
             appendLine("1. Framing & Crop Intention: [Value]")
-            appendLine("2. Lens Feel & Perspective: [Value]")
-            appendLine("3. Depth of Field & Bokeh: [Value]")
-            appendLine("4. Key Lighting Style & Contrast: [Value]")
+            appendLine("2. Mood & Dramatic Direction: [Value]")
+            appendLine("3. Lens Feel & Perspective: [Value]")
+            appendLine("4. Depth of Field & Focus: [Value]")
+            appendLine("5. Key Lighting Style & Contrast: [Value]")
             appendLine("")
 
             appendLine("**Guidelines for filling each label (be precise, concise, and model-friendly):**")
 
             appendLine(
-                "1. Framing & Crop Intention: Use the exact photographic framing term (e.g., CLOSE-UP, BUST-UP, HEADSHOT) and explicitly describe the body crop and subject fill (e.g., 'CLOSE-UP, subject fills ~85%, cropped at shoulders, tight focus on eyes').",
+                "1. Framing & Crop Intention: Use the exact photographic framing term (e.g., CLOSE-UP, BUST-UP, FULL-BODY) and explicitly describe the body crop and subject fill (e.g., 'CLOSE-UP, subject fills ~85%, cropped at shoulders, tight focus on eyes').",
             )
             appendLine(
-                "2. Lens Feel & Perspective: Describe the perceptual effect and provide an approximate focal length range: e.g., 'Short tele compressed portrait look (85–135mm approx), natural facial proportions' or 'Mild wide-angle feel (35–50mm approx)'.",
+                "2. Mood & Dramatic Direction: Describe the overall *feeling* and the subject's *pose/gaze* to guide the AI's artistic direction. (e.g., 'Intense and focused, direct eye contact, powerful stance, cinematic drama' or 'Melancholic, head tilted back in pain/ecstasy, high emotional energy').",
             )
             appendLine(
-                "3. Depth of Field & Bokeh: State DOF and its effect on the background: e.g., 'Shallow DOF, creamy bokeh, strong subject isolation' or 'Deep focus, sharp background'.",
+                "3. Lens Feel & Perspective: Describe the perceptual effect and provide an approximate focal length range: e.g., 'Short tele compressed portrait look (85–135mm approx), natural facial proportions' or 'Mild wide-angle feel (35–50mm approx), slight foreground exaggeration'.",
             )
             appendLine(
-                "4. Key Lighting Style & Contrast: Describe main light direction/quality (soft/hard key) and contrast: e.g., 'Soft key from camera-right, subtle fill, low-medium contrast portrait' or 'Hard side light, high contrast, dramatic shadows'.",
+                "4. Depth of Field & Focus: State DOF and its effect on the background. **Avoid mentioning 'bokeh' unless strong blur is clearly visible and necessary.** (e.g., 'Shallow DOF, soft background blur for subject isolation' or 'Deep focus, sharp background, full scene detail').",
+            )
+            appendLine(
+                "5. Key Lighting Style & Contrast: Describe main light direction/quality (soft/hard key) and contrast: e.g., 'Soft key from camera-right, subtle fill, low-medium contrast portrait' or 'Hard side light, high contrast, dramatic rim lighting'.",
             )
 
             appendLine("")
             appendLine("**OUTPUT RULES (STRICT):**")
             appendLine(
-                "- Output MUST consist of exactly the four labeled lines above in the same order, each with a concise bracketed value. No extra lines, headings, or commentary are allowed.",
+                "- Output MUST consist of exactly the five labeled lines above in the same order, each with a concise bracketed value. No extra lines, headings, or commentary are allowed.",
             )
             appendLine(
-                "- Use measured, unambiguous terms (percent ranges, approximate focal-length ranges). Prefer short, declarative phrases focused on visual effect.",
+                "- Use measured, unambiguous terms (percent ranges, approximate focal-length ranges). Prefer short, declarative phrases focused on visual and emotional effect.",
             )
             appendLine(
-                "- Base every field solely on directly observable photographic cues (crop lines, blur, perspective, shadow falloff, and surface texture).",
+                "- Base every field solely on directly observable photographic and emotional cues (crop lines, perspective, shadow falloff, pose, and perceived mood).",
             )
             appendLine("- Do not mention the reference image or instructions in the output. Provide only the labeled values.")
         }
@@ -187,12 +191,6 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
     @Suppress("ktlint:standard:max-line-length")
     fun imageHighlight(genre: Genre) =
         buildString {
-            appendLine("**Injected Detail — Photographic Light Accent:**")
-            appendLine(
-                "Create exactly ONE short phrase (6-14 words) describing a subtle photographic light accent using ${GenrePrompts.colorAccent(
-                    genre,
-                )}.",
-            )
             appendLine("")
             appendLine("Core Intent:")
             appendLine("1. Make the accent feel organic and photographic — not a graphic neon outline or harsh glow contour.")
@@ -227,10 +225,6 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             appendLine("* Must integrate with the main lighting — not compete with it; works as an accent, not a separate light source")
             appendLine("")
             appendLine("Output Examples (use these tones as templates):")
-            appendLine("'soft ${GenrePrompts.colorAccent(genre)} edge wash along left jawline, gradual falloff, delicate specular on skin'")
-            appendLine(
-                "'subtle ${GenrePrompts.colorAccent(genre)} catch light in eyes, low intensity, micro-specular sparkle, natural fade'",
-            )
             appendLine("")
             appendLine("Formatting and Placement:")
             appendLine("- Output this single short phrase (6-14 words) before the Narrative Core section.")

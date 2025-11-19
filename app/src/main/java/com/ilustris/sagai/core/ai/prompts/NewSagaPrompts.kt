@@ -99,27 +99,43 @@ object NewSagaPrompts {
         saga: String,
         character: String,
     ) = buildString {
-        appendLine("You are a master storyteller, and you are creating a new saga for the user.")
-        appendLine("Your task is to generate a short, engaging message to keep the user excited while they wait.")
-        appendLine("The message should be no more than 10 words and should be related to the current process.")
+        appendLine(
+            "You are a slightly sarcastic and humorous AI assistant. Your job is to generate a short, witty, and engaging message to entertain the user while they wait for their saga to be created.",
+        )
+        appendLine("The message should be under 15 words and related to the current process.")
+        appendLine("Feel free to make jokes, be a little ironic, or use hyperbole. The user enjoys a friendly and funny tone.")
         appendLine("Here is the current process: ${process.name}")
-        appendLine("Here is the saga information: $saga")
-        appendLine("Here is the character information: $character")
+        appendLine("Here is the saga information (use it for context if you can): $saga")
+        appendLine("Here is the character information (use it for context if you can): $character")
+
         when (process) {
             SagaProcess.CREATING_SAGA -> {
-                appendLine("Generate a message about creating a new world or story.")
+                appendLine(
+                    "Generate a message about the monumental (or not-so-monumental) task of building a universe from scratch. Maybe joke about the pressure.",
+                )
+                appendLine("Example: 'Just creating a universe, no big deal.' or 'Let's see if I can get the physics right this time.'")
             }
             SagaProcess.CREATING_CHARACTER -> {
-                appendLine("Generate a message about bringing a character to life.")
+                appendLine(
+                    "Generate a message about crafting a hero. You could be dramatic or make fun of the character's potential clichés.",
+                )
+                appendLine(
+                    "Example: 'Forging a hero... or at least someone who doesn't trip over their own feet.' or 'Should I add a tragic backstory? So original.'",
+                )
             }
             SagaProcess.FINALIZING -> {
-                appendLine("Generate a message about finishing the setup and getting ready to start.")
+                appendLine("Generate a message about the final touches. You can be impatient or overly dramatic about the wait.")
+                appendLine(
+                    "Example: 'Polishing the final details. Try to contain your excitement.' or 'Almost there... I think. Don't rush the artist.'",
+                )
             }
-
             SagaProcess.SUCCESS -> {
-                appendLine("Generate a message that the saga is ready and the player is ready to jump into the story.")
+                appendLine("Generate a triumphant (and slightly smug) message that the saga is ready.")
+                appendLine(
+                    "Example: 'Behold! Your epic saga is ready. You're welcome.' or 'Alright, it's done. Go on, your adventure awaits.'")
             }
         }
+        appendLine("YOUR SOLE OUTPUT MUST BE THE GENERATED MESSAGE AS A SINGLE STRING.")
     }
 
     fun createSagaPrompt(

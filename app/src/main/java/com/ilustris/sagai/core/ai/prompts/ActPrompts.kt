@@ -3,9 +3,7 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.core.utils.listToAINormalize
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
@@ -14,6 +12,8 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ActPrompts {
+    val ACT_EXCLUSIONS = listOf("id, sagaId, currentChapterId")
+
     @Suppress("ktlint:standard:max-line-length")
     fun generateActConclusion(
         sagaContent: SagaContent,
@@ -48,20 +48,20 @@ object ActPrompts {
             appendLine("Current act data:")
             appendLine(
                 currentActContent.data.toAINormalize(
-                    Act.ACT_EXCLUSIONS,
+                    ACT_EXCLUSIONS,
                 ),
             )
             appendLine("Chapters in current act:")
             appendLine(
                 chapterSummariesInCurrentAct.listToAINormalize(
-                    Chapter.CHAPTER_EXCLUSIONS,
+                    ChapterPrompts.CHAPTER_EXCLUSIONS,
                 ),
             )
             previousAct?.let {
                 appendLine("Previous act context:")
                 appendLine(
                     it.data.toAINormalize(
-                        Act.ACT_EXCLUSIONS,
+                        ACT_EXCLUSIONS,
                     ),
                 )
             }

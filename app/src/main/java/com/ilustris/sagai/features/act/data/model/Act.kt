@@ -31,8 +31,4 @@ data class Act(
     val sagaId: Int? = null,
     @ColumnInfo(index = true)
     val currentChapterId: Int? = null,
-) {
-    companion object {
-        val ACT_EXCLUSIONS = listOf("id, sagaId, currentChapterId")
-    }
-}
+)

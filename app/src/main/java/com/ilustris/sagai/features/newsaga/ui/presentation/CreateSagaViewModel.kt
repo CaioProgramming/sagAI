@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
@@ -181,41 +182,44 @@ class CreateSagaViewModel
         }
 
         fun saveSaga() {
-            val saga = form.value.saga
+            form.value.saga
             val characterInfo = form.value.character
 
             state.value = CreateSagaState(isLoading = true)
             isSaving.value = true
             viewModelScope.launch(Dispatchers.IO) {
                 generateProcessMessage(SagaProcess.CREATING_SAGA)
-                newSagaUseCase
-                    .generateSaga(form.value, chatMessages.value)
-                    .onSuccessAsync {
-                        newSagaUseCase
-                            .createSaga(it)
-                            .onSuccessAsync { sagaOperation ->
-                                generateProcessMessage(SagaProcess.CREATING_CHARACTER)
-                                characterUseCase
-                                    .generateCharacter(
-                                        SagaContent(data = sagaOperation),
-                                        characterInfo.toJsonFormat(),
-                                    ).onSuccessAsync { characterOperation ->
-                                        newSagaUseCase.updateSaga(
-                                            sagaOperation.copy(
-                                                mainCharacterId = characterOperation.id,
-                                            ),
-                                        )
-                                        finalizeCreation(
-                                            sagaOperation,
-                                            characterOperation,
-                                        )
-                                    }
-                            }.onFailure {
-                                sendErrorState(it)
-                            }
-                    }.onFailure {
-                        sendErrorState(it)
+                val generatedSaga = newSagaUseCase.generateSaga(form.value, chatMessages.value)
+                val newSaga =
+                    generatedSaga.getSuccess()?.let {
+                        generateProcessMessage(SagaProcess.CREATING_CHARACTER)
+                        newSagaUseCase.createSaga(it).getSuccess()
                     }
+                val newCharacter =
+                    newSaga?.let {
+                        generateProcessMessage(SagaProcess.CREATING_CHARACTER)
+                        characterUseCase
+                            .generateCharacter(
+                                SagaContent(data = it),
+                                characterInfo.toAINormalize(),
+                            ).getSuccess()
+                    }
+
+                val updatedSaga =
+                    newCharacter?.let {
+                        newSagaUseCase
+                            .updateSaga(newSaga.copy(mainCharacterId = it.id))
+                            .getSuccess()
+                    }
+
+                if (updatedSaga != null) {
+                    finalizeCreation(
+                        updatedSaga,
+                        newCharacter,
+                    )
+                } else {
+                    sendErrorState(Exception("Error saving saga"))
+                }
             }
         }
 

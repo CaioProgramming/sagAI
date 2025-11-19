@@ -113,8 +113,6 @@ object SagaPrompts {
         } ?: run {
             appendLine("Ensure to render this art style description matching with the reference image")
             appendLine(GenrePrompts.artStyle(genre))
-            appendLine("*The accents are design elements, not the primary light source for the character.")
-            appendLine(GenrePrompts.getColorEmphasisDescription(genre))
         }
         appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
         appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
