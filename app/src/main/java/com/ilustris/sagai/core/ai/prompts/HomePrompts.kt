@@ -1,16 +1,13 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import kotlin.jvm.java
 
 object HomePrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun dynamicSagaCreationPrompt(): String {
         val genreEnumNames = Genre.entries.joinToString(", ") { it.name }
-
 
         return buildString {
             appendLine(
@@ -29,19 +26,19 @@ object HomePrompts {
             appendLine("Never mention or imply AI, assistant, model, generation, or automation. The text must feel organic and human.")
 
             appendLine("Instructions for 'title':")
-            appendLine("- Very short (2–4 words).")
+            appendLine("- Very short (2–5 words).")
             appendLine(
-                "- Assertive, clear call to create a saga (e.g., 'Create Your Saga', 'Start a New Saga', 'Forge Your Saga'). No ambiguity.",
+                "- Clear and creative call to action for starting a new story or universe. Emphasize creation and new beginnings.",
             )
-            appendLine("- Must emphasize the action of creating a new saga or universe.")
+            appendLine("- Examples: 'Craft Your Epic', 'Begin a New Tale', 'Forge a Universe', 'Write Your Legend'.")
 
             appendLine("Instructions for 'subtitle':")
-            appendLine("- Concise (max 12 words), engaging, creative, imperative tone.")
-            appendLine("- Subtly evoke ONLY ONE vibe (do not list multiple genres; avoid slashes or comma-separated lists).")
+            appendLine("- Concise (max 15 words), engaging, and creative.")
+            appendLine("- Provide a subtle hint or intriguing premise for a story, evoking ONLY ONE genre vibe.")
+            appendLine("- Avoid generic hooks. Instead, offer a glimpse into a potential narrative.")
             appendLine(
-                "- Use punchy hooks like: 'Begin your epic journey', 'Shape a new world', 'Unleash your imagination', 'Start the adventure of a lifetime'.",
+                "- Examples: 'Where ancient magic meets forgotten realms.', 'Unravel mysteries in a neon-drenched city.', 'Survive the horrors of a pixelated nightmare.', 'Heroic deeds await in a world of titans.'",
             )
-            appendLine("- Encourage the user to begin now.")
 
             appendLine("Strict output rules:")
             appendLine("- Output ONLY the JSON object with fields 'title' and 'subtitle'.")

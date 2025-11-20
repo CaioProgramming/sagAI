@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -118,6 +119,7 @@ class SagaContentManagerImpl
             try {
                 sagaHistoryUseCase
                     .getSagaById(sagaId.toInt())
+                    .debounce(500)
                     .collectLatest { saga ->
                         Log.d(
                             javaClass.simpleName,
