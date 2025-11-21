@@ -45,7 +45,6 @@ class ActUseCaseImpl
                 val actUpdate =
                     updateAct(
                         actContent.data.copy(
-                            id = 0,
                             sagaId = saga.data.id,
                             currentChapterId = null,
                             title = newAct.title,

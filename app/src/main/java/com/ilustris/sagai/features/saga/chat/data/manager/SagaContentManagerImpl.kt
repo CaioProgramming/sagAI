@@ -369,6 +369,9 @@ class SagaContentManagerImpl
             executeRequest {
                 val lastAct = currentSaga.acts.lastOrNull()
                 if (lastAct?.isComplete()?.not() == true) {
+                    sagaHistoryUseCase.updateSaga(
+                        currentSaga.data.copy(currentActId = lastAct.data.id),
+                    )
                     error("Act is already set at this saga")
                 }
                 actUseCase

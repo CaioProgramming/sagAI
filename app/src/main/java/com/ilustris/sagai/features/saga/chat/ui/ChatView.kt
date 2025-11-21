@@ -12,6 +12,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -34,6 +35,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,6 +93,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
@@ -145,6 +148,7 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
+import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
@@ -615,8 +619,7 @@ fun ChatContent(
                                 shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
                                 targetValue = 1000f,
-                            )
-                            .fillMaxSize(.5f)
+                            ).fillMaxSize(.5f)
                             .alpha(.3f),
                 )
 
@@ -624,8 +627,7 @@ fun ChatContent(
                     Modifier
                         .padding(
                             top = padding.calculateTopPadding(),
-                        )
-                        .fillMaxSize(),
+                        ).fillMaxSize(),
                 ) {
                     rememberCoroutineScope()
                     val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
@@ -669,8 +671,7 @@ fun ChatContent(
                                 bottom.linkTo(parent.bottom)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }
-                            .fillMaxWidth()
+                            }.fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
                     )
@@ -760,20 +761,20 @@ fun ChatContent(
                                             alpha = .3f,
                                         ),
                                     ),
-                                    modifier =
+                                modifier =
                                     Modifier
                                         .scale(if (isGenerating) scaleAnimation.value else 1f)
                                         .clip(CircleShape)
                                         .clickable(enabled = currentObjective?.isNotEmpty() == true) {
                                             objectiveExpanded = true
-                                        }.size(24.dp)
+                                        }
+                                        .size(24.dp)
                                         .gradientFill(
                                             progressiveBrush(
                                                 content.data.genre.color,
                                                 progress,
                                             ),
-                                        )
-                                        .reactiveShimmer(isGenerating)
+                                        ).reactiveShimmer(isGenerating)
                                         .sharedElement(
                                             rememberSharedContentState(
                                                 key = "current_objective_${content.data.id}",
@@ -1325,22 +1326,61 @@ fun ChatList(
 
                     if (timeline.isComplete()) {
                         item(key = timeline.data.id) {
-                            TimeLineSimpleCard(
-                                timeline,
-                                saga,
-                                modifier =
-                                    Modifier
-                                        .animateItem()
-                                        .padding(16.dp)
-                                        .clip(
-                                            genre.shape(),
-                                        )
-                                        .clickable {
+                            var isExpanded by remember { mutableStateOf(false) }
+                            Box(
+                                Modifier
+                                    .clip(genre.shape())
+                                    .pointerInput(Unit) {
+                                        detectTapGestures(
+                                            onPress = {
+                                                awaitRelease()
+                                                isExpanded = false
+                                            },
+                                            onLongPress = {
+                                                isExpanded = true
+                                            },
+                                        ) {
                                             openSaga()
                                         }
-                                        .fillMaxWidth(),
-                                requestReview = reviewEvent,
-                            )
+                                    },
+                            ) {
+                                SharedTransitionLayout {
+                                    AnimatedContent(isExpanded) {
+                                        if (it) {
+                                            TimeLineCard(
+                                                timeline,
+                                                saga,
+                                                isLast = true,
+                                                modifier =
+                                                    Modifier.sharedElement(
+                                                        rememberSharedContentState(
+                                                            key = "timeline_${timeline.data.id}",
+                                                        ),
+                                                        this,
+                                                    ),
+                                            )
+                                        } else {
+                                            TimeLineSimpleCard(
+                                                timeline,
+                                                saga,
+                                                modifier =
+                                                    Modifier
+                                                        .animateItem()
+                                                        .sharedElement(
+                                                            rememberSharedContentState(
+                                                                key = "timeline_${timeline.data.id}",
+                                                            ),
+                                                            this,
+                                                        ).padding(16.dp)
+                                                        .clip(
+                                                            genre.shape(),
+                                                        ).fillMaxWidth(),
+                                                requestReview = reviewEvent,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
 

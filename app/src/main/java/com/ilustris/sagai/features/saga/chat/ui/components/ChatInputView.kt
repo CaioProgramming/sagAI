@@ -134,7 +134,7 @@ fun ChatInputView(
     }
 
     val glowRadius by animateFloatAsState(
-        if (isGenerating.not()) 5f else 30f,
+        if (isGenerating.not()) 10f else 30f,
     )
     val backgroundColor by animateColorAsState(
         if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
@@ -164,7 +164,8 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(10.dp),
-                    ).heightIn(max = 300.dp)
+                    )
+                    .heightIn(max = 300.dp)
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
@@ -277,7 +278,9 @@ fun ChatInputView(
 
         BlurredGlowContainer(
             modifier =
-                Modifier.fillMaxWidth().padding(16.dp),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             inputBrush,
             glowRadius,
             shape = inputShape,
@@ -287,7 +290,7 @@ fun ChatInputView(
                 verticalAlignment = Alignment.Bottom,
                 modifier =
                     Modifier
-                        .padding(2.dp)
+                        .padding(1.dp)
                         .fillMaxWidth()
                         .border(1.dp, inputBrush, inputShape)
                         .background(backgroundColor, inputShape),
@@ -355,7 +358,8 @@ fun ChatInputView(
                                                 content.data.genre.color
                                                     .gradientFade(),
                                                 content.data.genre.shape(),
-                                            ).background(
+                                            )
+                                            .background(
                                                 MaterialTheme.colorScheme.background,
                                                 content.data.genre.shape(),
                                             ),
@@ -380,7 +384,8 @@ fun ChatInputView(
                                                     .clickable {
                                                         onSelectCharacter(it)
                                                         characterSelectionExpanded = false
-                                                    }.size(36.dp),
+                                                    }
+                                                    .size(36.dp),
                                             textStyle =
                                                 MaterialTheme.typography.labelSmall.copy(
                                                     fontFamily = content.data.genre.bodyFont(),
@@ -479,7 +484,9 @@ fun ChatInputView(
                                         )
                                     }
 
-                                    Box(Modifier.alpha(textAlpha).fillMaxWidth()) {
+                                    Box(Modifier
+                                        .alpha(textAlpha)
+                                        .fillMaxWidth()) {
                                         innerTextField()
                                     }
                                 }
@@ -516,7 +523,8 @@ fun ChatInputView(
                                         .background(
                                             buttonColor,
                                             CircleShape,
-                                        ).size(32.dp),
+                                        )
+                                        .size(32.dp),
                             ) {
                                 AnimatedVisibility(
                                     isGenerating.not(),
@@ -582,7 +590,8 @@ fun ChatInputView(
                                             .gradientFill(brush)
                                             .clickable {
                                                 onUpdateSender(it)
-                                            }.padding(16.dp),
+                                            }
+                                            .padding(16.dp),
                                 ) {
                                     val weight =
                                         if (it == action) FontWeight.Bold else FontWeight.Normal
@@ -646,7 +655,8 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     genre.shape(),
-                                ).padding(16.dp),
+                                )
+                                .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

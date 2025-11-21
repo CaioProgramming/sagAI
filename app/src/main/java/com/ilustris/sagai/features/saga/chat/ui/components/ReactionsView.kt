@@ -50,7 +50,6 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.dashedBorder
-import com.ilustris.sagai.ui.theme.headerFont
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -120,7 +119,7 @@ fun ReactionsView(
                         )
                     },
                 ) {
-                    val animatedSize by animateDpAsState(if (isPeeking) 32.dp else 24.dp)
+                    val animatedSize by animateDpAsState(if (isPeeking) 48.dp else 32.dp)
                     Box(
                         Modifier
                             .size(animatedSize)
@@ -141,7 +140,7 @@ fun ReactionsView(
                                         }
                                     },
                                 )
-                            }.padding(4.dp),
+                            }.padding(2.dp),
                     ) {
                         AnimatedContent(
                             targetState = isPeeking,
@@ -182,8 +181,7 @@ fun ReactionsView(
                                     Text(
                                         text = reaction.data.emoji,
                                         style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontFamily = genre.headerFont(),
+                                            MaterialTheme.typography.labelLarge.copy(
                                                 textAlign = TextAlign.Center,
                                             ),
                                         modifier =
