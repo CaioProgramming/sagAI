@@ -175,7 +175,8 @@ class ChatViewModel
 
         fun appendWiki(wiki: Wiki) {
             viewModelScope.launch(Dispatchers.IO) {
-                inputValue.value = inputValue.value.copy(text = inputValue.value.text + " " + wiki.title)
+                inputValue.value =
+                    inputValue.value.copy(text = inputValue.value.text + " " + wiki.title)
             }
         }
 
@@ -573,7 +574,14 @@ class ChatViewModel
                     } else {
                         message.characterId ?: characterReference?.id
                     }
-                val sceneSummary = sceneSummary ?: messageUseCase.getSceneContext(saga).getSuccess()
+                val sceneSummary =
+                    if (isFromUser.not()) {
+                        sceneSummary
+                    } else {
+                        messageUseCase
+                            .getSceneContext(saga)
+                            .getSuccess()
+                    }
 
                 messageUseCase
                     .saveMessage(
@@ -695,11 +703,8 @@ class ChatViewModel
                         sceneSummary = sceneSummary,
                     ).onSuccessAsync { generatedMessage ->
 
-                        val existingCharacters = saga.getCharacters().map { it.name.lowercase() }
                         val speakerName = generatedMessage.speakerName
-                        val speakerNameTokens = speakerName?.lowercase()?.split(" ") ?: emptyList()
-                        val characterExists =
-                            existingCharacters.any { existingChar -> speakerNameTokens.contains(existingChar) }
+                        val characterExists = saga.findCharacter(speakerName ?: "") != null
 
                         if (speakerName != null &&
                             !characterExists &&

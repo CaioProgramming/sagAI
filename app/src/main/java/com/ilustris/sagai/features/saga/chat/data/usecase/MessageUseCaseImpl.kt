@@ -203,7 +203,7 @@ class MessageUseCaseImpl
                 )
 
             val reaction = gemmaClient.generate<ReactionGen>(prompt)!!
-
+            Log.d(javaClass.simpleName, "generateReaction: ${reaction.reactions.size} reactions generated.")
             reaction.reactions.forEach { reaction ->
                 saga.characters
                     .find { it.data.name.equals(reaction.character, ignoreCase = true) }
@@ -217,6 +217,7 @@ class MessageUseCaseImpl
                                     thought = reaction.thought,
                                 ),
                             )
+                            Log.d(javaClass.simpleName, "Saving reaction from ${it.data.name} at message ${message.id}")
                         } else {
                             Log.w(
                                 javaClass.simpleName,
