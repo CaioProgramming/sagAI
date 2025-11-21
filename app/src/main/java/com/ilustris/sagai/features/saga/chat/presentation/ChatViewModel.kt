@@ -236,15 +236,7 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        content.value == null
-
-                        val allMessages =
-                            messages.value.flatMap { it.content.chapters.flatMap { it.events.flatMap { it.messages } } }
-
-                        if (allMessages.size != sagaContent.flatMessages().size && isGenerating.value.not() && isLoading.value.not()) {
-                            generateSuggestions()
-                        }
-
+                        val previousValue = content.value
                         messages.value =
                             SagaContentUIMapper
                                 .mapToActDisplayData(sagaContent.acts)
@@ -262,7 +254,9 @@ class ChatViewModel
                         checkIfUpdatesService(sagaContent)
                         validateCharacterMessageUpdates(sagaContent)
                         updateProgress(sagaContent)
-                        notifyIfNeeded()
+                        if (previousValue?.flatMessages()?.size != sagaContent.flatMessages().size) {
+                            notifyIfNeeded()
+                        }
                         loadFinished = true
                         content.emit(sagaContent)
                         state.emit(ChatState.Success)
@@ -585,8 +579,8 @@ class ChatViewModel
                     .saveMessage(
                         saga,
                         message.copy(
-                            sagaId = saga.data.id,
                             characterId = characterId,
+                            sagaId = saga.data.id,
                         ),
                         isFromUser,
                         sceneSummary,
@@ -700,6 +694,7 @@ class ChatViewModel
                         message = newMessage,
                         sceneSummary = sceneSummary,
                     ).onSuccessAsync { genMessage ->
+
                         if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
                             createCharacter(
                                 buildString {
@@ -719,9 +714,7 @@ class ChatViewModel
                                 timelineId = timeline.data.id,
                                 id = 0,
                                 status = MessageStatus.OK,
-                                speakerName =
-                                    genMessage.newCharacter?.name
-                                        ?: genMessage.message.speakerName,
+                                speakerName = if (genMessage.shouldCreateCharacter) genMessage.newCharacter?.name else genMessage.message.speakerName,
                             ),
                             false,
                             sceneSummary,

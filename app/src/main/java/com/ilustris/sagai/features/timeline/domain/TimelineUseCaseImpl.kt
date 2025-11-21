@@ -221,8 +221,6 @@ class TimelineUseCaseImpl
         ) = executeRequest {
             characterUseCase.generateCharactersUpdate(timeline, saga)
 
-            delay(3.seconds)
-
             characterUseCase.generateCharacterRelations(timeline, saga)
         }
     }

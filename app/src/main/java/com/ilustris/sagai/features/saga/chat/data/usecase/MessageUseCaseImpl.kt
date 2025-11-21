@@ -146,7 +146,7 @@ class MessageUseCaseImpl
                     } ?: emptyList()
 
                 val genText =
-                    textGenClient.generate<MessageGen>(
+                    gemmaClient.generate<MessageGen>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
                             message =
@@ -162,6 +162,7 @@ class MessageUseCaseImpl
                                     charactersPresent = charactersInScene.map { it.name },
                                 ),
                         ),
+                        useCore = true,
                     )
 
                 genText!!
@@ -172,7 +173,6 @@ class MessageUseCaseImpl
             message: Message,
             sceneSummary: SceneSummary?,
         ) = executeRequest {
-            delay(2.seconds)
             if (sceneSummary == null) error("Can't define reactions without context.")
             if (sceneSummary.charactersPresent.isEmpty()) error("generateReaction: No characters related to react")
 

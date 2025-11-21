@@ -40,6 +40,7 @@ class GemmaClient
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
+            const val CORE_FLAG = "SAGA_CORE"
             const val INPUT_TOKEN_LIMIT = 15000
             const val REACTIVE_DELAY_THRESHOLD = 0.7f
         }
@@ -51,10 +52,21 @@ class GemmaClient
                 }
             } ?: error("Couldn't get Flag value")
 
-        suspend fun apiConfig(): String =
-            remoteConfigService.getString(KEY_FLAG)?.ifEmpty {
-                error("Couldn't fetch firebase key")
-            } ?: error("Flag Value unavailable.")
+        suspend fun coreKey() =
+            remoteConfigService.getString(CORE_FLAG)?.let {
+                it.ifEmpty {
+                    error("Couldn't fetch gemma Model")
+                }
+            } ?: error("Couldn't get Flag value")
+
+        suspend fun apiConfig(useCore: Boolean): String =
+            if (useCore) {
+                coreKey()
+            } else {
+                remoteConfigService.getString(KEY_FLAG)?.ifEmpty {
+                    error("Couldn't fetch firebase key")
+                } ?: error("Flag Value unavailable.")
+            }
 
         suspend inline fun <reified T> generate(
             prompt: String,
@@ -63,6 +75,7 @@ class GemmaClient
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
+            useCore: Boolean = false,
         ): T? =
             withContext(Dispatchers.IO) {
                 if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
@@ -71,20 +84,25 @@ class GemmaClient
                     delay((retryDelay ?: 5).seconds)
                 }
                 val model = modelName()
-                retryDelay?.let {
-                    Log.e(
-                        javaClass.simpleName,
-                        "generate: Trying delay $retryDelay seconds to avoid rate limit.",
-                    )
-                    delay(it.seconds)
+                if (useCore.not()) {
+                    retryDelay?.let {
+                        Log.e(
+                            javaClass.simpleName,
+                            "generate: Trying delay $retryDelay seconds to avoid rate limit.",
+                        )
+                        delay(it.seconds)
+                    }
+                } else {
+                    Log.i(javaClass.simpleName, "generate: Core calls don't require delay.")
                 }
+
 
                 requestMutex.withLock {
                     try {
                         val client =
                             com.google.ai.client.generativeai.GenerativeModel(
                                 modelName = model,
-                                apiKey = apiConfig(),
+                                apiKey = apiConfig(useCore),
                                 generationConfig {
                                     temperature = temperatureRandomness
                                 },

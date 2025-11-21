@@ -25,7 +25,7 @@ class GetInputSuggestionsUseCaseImpl
             sceneSummary: SceneSummary?,
         ): RequestResult<List<Suggestion>> =
             executeRequest(false) {
-                val contextSummary = sceneSummary!!
+                val contextSummary = sceneSummary ?: error("can't generate suggestions without context")
                 val prompt =
                     SuggestionPrompts.generateSuggestionsPrompt(
                         character = currentUserCharacter!!,

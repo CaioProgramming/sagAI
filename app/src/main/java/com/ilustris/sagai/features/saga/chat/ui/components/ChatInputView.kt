@@ -164,8 +164,7 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(10.dp),
-                    )
-                    .heightIn(max = 300.dp)
+                    ).heightIn(max = 300.dp)
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
@@ -276,138 +275,143 @@ fun ChatInputView(
             }
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.Bottom,
-            modifier = Modifier.padding(8.dp),
+        BlurredGlowContainer(
+            modifier =
+                Modifier.fillMaxWidth().padding(16.dp),
+            inputBrush,
+            glowRadius,
+            shape = inputShape,
         ) {
-            val characterToolTipState =
-                androidx.compose.material3.rememberTooltipState(
-                    isPersistent = true,
-                )
-            val tooltipPositionProvider =
-                androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
-                    spacingBetweenTooltipAndAnchor = 4.dp,
-                )
-
-            LaunchedEffect(characterSelectionExpanded) {
-                if (characterSelectionExpanded) {
-                    characterToolTipState.show()
-                } else {
-                    characterToolTipState.dismiss()
-                }
-            }
-            TooltipBox(
-                positionProvider = tooltipPositionProvider,
-                state = characterToolTipState,
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom,
                 modifier =
                     Modifier
-                        .align(Alignment.Bottom)
-                        .padding(8.dp),
-                onDismissRequest = {
-                    characterSelectionExpanded = false
-                },
-                tooltip = {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier =
-                            Modifier
-                                .heightIn(max = 300.dp)
-                                .fillMaxWidth(.5f)
-                                .border(
-                                    1.dp,
-                                    content.data.genre.color
-                                        .gradientFade(),
-                                    content.data.genre.shape(),
-                                )
-                                .background(
-                                    MaterialTheme.colorScheme.background,
-                                    content.data.genre.shape(),
-                                ),
-                    ) {
-                        item(span = { GridItemSpan(maxLineSpan) }) {
-                            Text(
-                                "Selecionar personagem",
-                                style =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        fontFamily = content.data.genre.bodyFont(),
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier = Modifier.padding(8.dp),
-                            )
-                        }
-                        items(content.characters) {
-                            CharacterYearbookItem(
-                                it.data,
-                                content.data.genre,
-                                imageModifier =
-                                    Modifier
-                                        .clickable {
-                                            onSelectCharacter(it)
-                                            characterSelectionExpanded = false
-                                        }
-                                        .size(36.dp),
-                                textStyle =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontFamily = content.data.genre.bodyFont(),
-                                    ),
-                            )
-                        }
-                    }
-                },
+                        .padding(2.dp)
+                        .fillMaxWidth()
+                        .border(1.dp, inputBrush, inputShape)
+                        .background(backgroundColor, inputShape),
             ) {
-                AnimatedContent(
-                    selectedCharacter,
-                    transitionSpec = {
-                        scaleIn() togetherWith scaleOut()
-                    },
-                ) {
-                    it?.let { character ->
-                        CharacterAvatar(
-                            character.data,
-                            genre = content.data.genre,
-                            modifier =
-                                Modifier
-                                    .size(36.dp)
-                                    .clip(CircleShape)
-                                    .clickable {
-                                        characterSelectionExpanded = true
-                                    },
-                        )
+                val characterToolTipState =
+                    androidx.compose.material3.rememberTooltipState(
+                        isPersistent = true,
+                    )
+                val tooltipPositionProvider =
+                    androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
+                        spacingBetweenTooltipAndAnchor = 4.dp,
+                    )
+
+                LaunchedEffect(characterSelectionExpanded) {
+                    if (characterSelectionExpanded) {
+                        characterToolTipState.show()
+                    } else {
+                        characterToolTipState.dismiss()
                     }
                 }
-            }
 
-            BlurredGlowContainer(
-                modifier =
-                    Modifier
-                        .align(Alignment.Bottom)
-                        .weight(1f),
-                inputBrush,
-                glowRadius,
-                shape = inputShape,
-            ) {
                 Column(
                     modifier =
                         Modifier
                             .verticalScroll(rememberScrollState())
-                            .fillMaxWidth()
-                            .border(1.dp, inputBrush, inputShape)
-                            .background(backgroundColor, inputShape)
-                            .padding(4.dp),
+                            .align(Alignment.Bottom)
+                            .heightIn(max = 300.dp)
+                            .weight(1f)
+                            .padding(8.dp),
                 ) {
                     Row(
                         modifier =
                             Modifier
                                 .fillMaxWidth(),
+                        verticalAlignment = Alignment.Bottom,
                     ) {
                         val textStyle =
-                            MaterialTheme.typography.labelLarge.copy(
+                            MaterialTheme.typography.labelMedium.copy(
                                 color = MaterialTheme.colorScheme.onBackground,
                                 fontFamily = content.data.genre.bodyFont(),
                             )
                         val maxLength = 500
                         val tagBackgroundColor = MaterialTheme.colorScheme.background
+
+                        TooltipBox(
+                            positionProvider = tooltipPositionProvider,
+                            state = characterToolTipState,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .size(36.dp),
+                            onDismissRequest = {
+                                characterSelectionExpanded = false
+                            },
+                            tooltip = {
+                                LazyVerticalGrid(
+                                    columns = GridCells.Fixed(2),
+                                    modifier =
+                                        Modifier
+                                            .padding(16.dp)
+                                            .heightIn(max = 300.dp)
+                                            .fillMaxWidth(.5f)
+                                            .border(
+                                                1.dp,
+                                                content.data.genre.color
+                                                    .gradientFade(),
+                                                content.data.genre.shape(),
+                                            ).background(
+                                                MaterialTheme.colorScheme.background,
+                                                content.data.genre.shape(),
+                                            ),
+                                ) {
+                                    item(span = { GridItemSpan(maxLineSpan) }) {
+                                        Text(
+                                            "Selecionar personagem",
+                                            style =
+                                                MaterialTheme.typography.bodyMedium.copy(
+                                                    fontFamily = content.data.genre.bodyFont(),
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                            modifier = Modifier.padding(8.dp),
+                                        )
+                                    }
+                                    items(content.characters) {
+                                        CharacterYearbookItem(
+                                            it.data,
+                                            content.data.genre,
+                                            imageModifier =
+                                                Modifier
+                                                    .clickable {
+                                                        onSelectCharacter(it)
+                                                        characterSelectionExpanded = false
+                                                    }.size(36.dp),
+                                            textStyle =
+                                                MaterialTheme.typography.labelSmall.copy(
+                                                    fontFamily = content.data.genre.bodyFont(),
+                                                ),
+                                        )
+                                    }
+                                }
+                            },
+                        ) {
+                            AnimatedContent(
+                                selectedCharacter,
+                                transitionSpec = {
+                                    scaleIn() togetherWith scaleOut()
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                it?.let { character ->
+                                    CharacterAvatar(
+                                        character.data,
+                                        genre = content.data.genre,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .clip(CircleShape)
+                                                .clickable {
+                                                    characterSelectionExpanded = true
+                                                },
+                                    )
+                                }
+                            }
+                        }
 
                         BasicTextField(
                             inputField,
@@ -475,7 +479,7 @@ fun ChatInputView(
                                         )
                                     }
 
-                                    Box(Modifier.alpha(textAlpha)) {
+                                    Box(Modifier.alpha(textAlpha).fillMaxWidth()) {
                                         innerTextField()
                                     }
                                 }
@@ -512,8 +516,7 @@ fun ChatInputView(
                                         .background(
                                             buttonColor,
                                             CircleShape,
-                                        )
-                                        .size(32.dp),
+                                        ).size(32.dp),
                             ) {
                                 AnimatedVisibility(
                                     isGenerating.not(),
@@ -579,8 +582,7 @@ fun ChatInputView(
                                             .gradientFill(brush)
                                             .clickable {
                                                 onUpdateSender(it)
-                                            }
-                                            .padding(16.dp),
+                                            }.padding(16.dp),
                                 ) {
                                     val weight =
                                         if (it == action) FontWeight.Bold else FontWeight.Normal
@@ -644,8 +646,7 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     genre.shape(),
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

@@ -119,7 +119,7 @@ fun ChatBubble(
     val genre = content.data.genre
     val isUser = messageContent.isUser(mainCharacter?.data)
     val cornerSize = genre.cornerSize()
-    val isAnimated = isUser.not() && canAnimate
+    val isAnimated = canAnimate
     val bubbleStyle =
         remember {
             if (isUser) {
@@ -158,63 +158,63 @@ fun ChatBubble(
         }
     }
 
-    TooltipBox(
-        positionProvider = tooltipPositionProvider,
-        state = reactionToolTipState,
-        onDismissRequest = {
-            tooltipData = null
-        },
-        tooltip = {
-            tooltipData?.let {
-                AnnotationTooltip(data = it, genre = genre)
-            }
-        },
-    ) {
-        when (sender) {
-            SenderType.USER,
-            SenderType.CHARACTER,
-            -> {
-                ConstraintLayout(
-                    modifier =
-                        modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
-                            .animateContentSize(),
-                ) {
-                    val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
-                    val (messageText, characterAvatar, messageTime, retryButton, reactions) = createRefs()
-                    val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
-                    Box(
-                        Modifier
-                            .constrainAs(messageText) {
-                                top.linkTo(parent.top)
-                                bottom.linkTo(parent.bottom)
-                                if (isUser) {
-                                    start.linkTo(parent.start, margin = 50.dp)
-                                    end.linkTo(characterAvatar.start)
-                                } else {
-                                    start.linkTo(characterAvatar.end)
-                                    end.linkTo(parent.end, margin = 50.dp)
-                                }
-                                width = Dimension.fillToConstraints
-                            },
-                    ) {
-                        val bubbleModifier =
+    when (sender) {
+        SenderType.USER,
+        SenderType.CHARACTER,
+        -> {
+            ConstraintLayout(
+                modifier =
+                    modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .animateContentSize(),
+            ) {
+                val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
+                val (messageText, characterAvatar, messageTime, retryButton, reactions) = createRefs()
+                val alignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
+                Box(
+                    Modifier
+                        .constrainAs(messageText) {
+                            top.linkTo(parent.top)
+                            bottom.linkTo(parent.bottom)
                             if (isUser) {
-                                Modifier
-                                    .wrapContentSize()
-                                    .background(bubbleStyle.backgroundColor, bubbleShape)
+                                start.linkTo(parent.start, margin = 50.dp)
+                                end.linkTo(characterAvatar.start)
                             } else {
-                                Modifier
-                                    .wrapContentSize()
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceContainer,
-                                        bubbleShape,
-                                    ).background(
-                                        bubbleStyle.backgroundColor.copy(alpha = .3f),
-                                        bubbleShape,
-                                    )
+                                start.linkTo(characterAvatar.end)
+                                end.linkTo(parent.end, margin = 50.dp)
                             }
+                            width = Dimension.fillToConstraints
+                        },
+                ) {
+                    val bubbleModifier =
+                        if (isUser) {
+                            Modifier
+                                .wrapContentSize()
+                                .background(bubbleStyle.backgroundColor, bubbleShape)
+                        } else {
+                            Modifier
+                                .wrapContentSize()
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceContainer,
+                                    bubbleShape,
+                                ).background(
+                                    bubbleStyle.backgroundColor.copy(alpha = .3f),
+                                    bubbleShape,
+                                )
+                        }
+                    TooltipBox(
+                        positionProvider = tooltipPositionProvider,
+                        state = reactionToolTipState,
+                        onDismissRequest = {
+                            tooltipData = null
+                        },
+                        tooltip = {
+                            tooltipData?.let {
+                                AnnotationTooltip(data = it, genre = genre)
+                            }
+                        },
+                    ) {
                         TypewriterText(
                             text = message.text,
                             isAnimated = isAnimated,
@@ -254,287 +254,390 @@ fun ChatBubble(
                             },
                         )
                     }
+                }
 
-                    Box(
-                        Modifier
-                            .constrainAs(characterAvatar) {
-                                bottom.linkTo(messageText.bottom)
-                                if (isUser) {
-                                    end.linkTo(parent.end)
-                                } else {
-                                    start.linkTo(parent.start)
-                                }
-                            }.clip(CircleShape)
-                            .size(avatarSize),
-                    ) {
-                        messageContent.character?.let { character ->
-                            AnimatedContent(
-                                character,
-                                transitionSpec = {
-                                    fadeIn() + scaleIn() togetherWith scaleOut()
-                                },
-                            ) {
-                                CharacterAvatar(
-                                    it,
-                                    isLoading = isLoading,
-                                    genre = genre,
-                                    borderSize = 2.dp,
-                                    pixelation = 0f,
-                                    grainRadius = 0f,
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize()
-                                            .clickable {
-                                                openCharacters(characters.find { c -> c.data.id == character.id })
-                                            },
-                                )
+                Box(
+                    Modifier
+                        .constrainAs(characterAvatar) {
+                            bottom.linkTo(messageText.bottom)
+                            if (isUser) {
+                                end.linkTo(parent.end)
+                            } else {
+                                start.linkTo(parent.start)
                             }
-
-                            val relationWithMainCharacter =
-                                mainCharacter
-                                    ?.findRelationship(character.id)
-                                    ?.sortedByEvents(content.flatEvents().map { it.data })
-                                    ?.firstOrNull()
-
-                            if (isUser.not()) {
-                                relationWithMainCharacter?.let {
-                                    Text(
-                                        it.emoji,
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                shadow =
-                                                    Shadow(
-                                                        color =
-                                                            character.hexColor.hexToColor()
-                                                                ?: genre.color,
-                                                        offset = Offset(2f, 2f),
-                                                        blurRadius = 0f,
-                                                    ),
-                                            ),
-                                        modifier =
-                                            Modifier
-                                                .animateContentSize()
-                                                .align(Alignment.BottomCenter)
-                                                .padding(2.dp),
-                                    )
-                                }
-                            }
-                        } ?: run {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                null,
-                                Modifier
-                                    .clickable {
-                                        requestNewCharacter()
-                                    }.size(24.dp)
-                                    .gradientFill(genre.gradient()),
+                        }.clip(CircleShape)
+                        .size(avatarSize),
+                ) {
+                    messageContent.character?.let { character ->
+                        AnimatedContent(
+                            character,
+                            transitionSpec = {
+                                fadeIn() + scaleIn() togetherWith scaleOut()
+                            },
+                        ) {
+                            CharacterAvatar(
+                                it,
+                                isLoading = isLoading,
+                                genre = genre,
+                                borderSize = 2.dp,
+                                pixelation = 0f,
+                                grainRadius = 0f,
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .fillMaxSize()
+                                        .clickable {
+                                            openCharacters(characters.find { c -> c.data.id == character.id })
+                                        },
                             )
                         }
-                    }
 
-                    Row(
-                        modifier =
-                            Modifier
-                                .constrainAs(messageTime) {
-                                    top.linkTo(messageText.bottom)
-                                    if (isUser) {
-                                        end.linkTo(messageText.end, margin = 16.dp)
-                                    } else {
-                                        start.linkTo(messageText.start, margin = 16.dp)
-                                    }
-                                }.padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        val containsWiki =
-                            wiki.any {
-                                message.text.contains(it.title, true) ||
-                                    message.text.contains(it.content, true)
-                            }
+                        val relationWithMainCharacter =
+                            mainCharacter
+                                ?.findRelationship(character.id)
+                                ?.sortedByEvents(content.flatEvents().map { it.data })
+                                ?.firstOrNull()
 
-                        Text(
-                            message.timestamp.formatHours(),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    fontFamily = genre.bodyFont(),
-                                ),
-                        )
-
-                        AnimatedVisibility(
-                            containsWiki,
-                            enter = fadeIn(),
-                            exit = fadeOut(),
-                            modifier = Modifier.alpha(.4f),
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    openWiki()
-                                },
-                                modifier = Modifier.size(12.dp),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.round_info_outline_24),
-                                    contentDescription = null,
-                                    tint = genre.iconColor,
-                                    modifier = Modifier.fillMaxSize(),
+                        if (isUser.not()) {
+                            relationWithMainCharacter?.let {
+                                Text(
+                                    it.emoji,
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            shadow =
+                                                Shadow(
+                                                    color =
+                                                        character.hexColor.hexToColor()
+                                                            ?: genre.color,
+                                                    offset = Offset(2f, 2f),
+                                                    blurRadius = 0f,
+                                                ),
+                                        ),
+                                    modifier =
+                                        Modifier
+                                            .animateContentSize()
+                                            .align(Alignment.BottomCenter)
+                                            .padding(2.dp),
                                 )
                             }
                         }
+                    } ?: run {
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            Modifier
+                                .clickable {
+                                    requestNewCharacter()
+                                }.size(24.dp)
+                                .gradientFill(genre.gradient()),
+                        )
                     }
+                }
+
+                Row(
+                    modifier =
+                        Modifier
+                            .constrainAs(messageTime) {
+                                top.linkTo(messageText.bottom)
+                                if (isUser) {
+                                    end.linkTo(messageText.end, margin = 16.dp)
+                                } else {
+                                    start.linkTo(messageText.start, margin = 16.dp)
+                                }
+                            }.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    val containsWiki =
+                        wiki.any {
+                            message.text.contains(it.title, true) ||
+                                message.text.contains(it.content, true)
+                        }
+
+                    Text(
+                        message.timestamp.formatHours(),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
 
                     AnimatedVisibility(
-                        visible = messageContent.reactions.isNotEmpty(),
-                        modifier =
-                            Modifier.constrainAs(reactions) {
-                                top.linkTo(messageText.bottom, margin = (-12).dp)
-                                if (isUser.not()) {
-                                    end.linkTo(messageText.end, margin = 8.dp)
-                                } else {
-                                    start.linkTo(messageText.start, margin = 8.dp)
-                                }
-                            },
-                    ) {
-                        ReactionsView(
-                            reactions = messageContent.reactions,
-                            genre = genre,
-                        ) {
-                            onReactionsClick(messageContent)
-                        }
-                    }
-                    AnimatedVisibility(
-                        message.status == MessageStatus.ERROR,
-                        modifier =
-                            Modifier.constrainAs(retryButton) {
-                                top.linkTo(messageText.top, margin = (-4).dp)
-                                if (isUser) {
-                                    end.linkTo(messageText.start, margin = (-12).dp)
-                                } else {
-                                    start.linkTo(messageText.end, margin = (-12).dp)
-                                }
-                            },
+                        containsWiki,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier.alpha(.4f),
                     ) {
                         IconButton(
                             onClick = {
-                                onRetry(messageContent)
+                                openWiki()
                             },
-                            modifier =
-                                Modifier
-                                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-                                    .size(24.dp),
-                            colors =
-                                IconButtonDefaults
-                                    .iconButtonColors()
-                                    .copy(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                                        contentColor = MaterialTheme.colorScheme.error,
-                                    ),
+                            modifier = Modifier.size(12.dp),
                         ) {
                             Icon(
-                                painterResource(R.drawable.baseline_refresh_24),
-                                "Tentar novamente",
-                                modifier =
-                                    Modifier
-                                        .padding(4.dp)
-                                        .fillMaxSize(),
+                                painterResource(R.drawable.round_info_outline_24),
+                                contentDescription = null,
+                                tint = genre.iconColor,
+                                modifier = Modifier.fillMaxSize(),
                             )
                         }
                     }
                 }
-            }
 
-            SenderType.THOUGHT -> {
-                val thoughtBubbleShape =
-                    ThoughtBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                        tailHeight = 0.dp,
-                        tailWidth = 0.dp,
-                    )
-                ConstraintLayout(
+                AnimatedVisibility(
+                    visible = messageContent.reactions.isNotEmpty(),
                     modifier =
-                        modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
-                            .animateContentSize(),
+                        Modifier.constrainAs(reactions) {
+                            top.linkTo(messageText.bottom, margin = (-12).dp)
+                            if (isUser.not()) {
+                                end.linkTo(messageText.end, margin = 8.dp)
+                            } else {
+                                start.linkTo(messageText.start, margin = 8.dp)
+                            }
+                        },
                 ) {
-                    val (messageText, characterAvatar, messageTime, retryButton, _) = createRefs()
-
-                    var starAlpha by remember { mutableFloatStateOf(1f) }
-                    val alphaAnimation by animateFloatAsState(
-                        targetValue = starAlpha,
-                        animationSpec = tween(1000, easing = FastOutSlowInEasing),
-                        label = "starAlpha",
-                    )
-                    val blurAnimation by animateFloatAsState(
-                        targetValue = if (starAlpha == 1f) 0f else 1f,
-                        label = "blurAnimation",
-                    )
-
-                    Box(
+                    ReactionsView(
+                        reactions = messageContent.reactions,
+                        genre = genre,
+                    ) {
+                        onReactionsClick(messageContent)
+                    }
+                }
+                AnimatedVisibility(
+                    message.status == MessageStatus.ERROR,
+                    modifier =
+                        Modifier.constrainAs(retryButton) {
+                            top.linkTo(messageText.top, margin = (-4).dp)
+                            if (isUser) {
+                                end.linkTo(messageText.start, margin = (-12).dp)
+                            } else {
+                                start.linkTo(messageText.end, margin = (-12).dp)
+                            }
+                        },
+                ) {
+                    IconButton(
+                        onClick = {
+                            onRetry(messageContent)
+                        },
                         modifier =
                             Modifier
-                                .constrainAs(messageText) {
-                                    top.linkTo(parent.top)
-                                    bottom.linkTo(parent.bottom)
-                                    if (isUser) {
-                                        start.linkTo(parent.start, margin = 50.dp)
-                                        end.linkTo(characterAvatar.start, margin = 8.dp)
-                                    } else {
-                                        start.linkTo(characterAvatar.end, margin = 8.dp)
-                                        end.linkTo(parent.end, margin = 50.dp)
-                                    }
-                                    width = Dimension.fillToConstraints
-                                }.dashedBorder(
-                                    strokeWidth = 1.dp,
-                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                                    shape = thoughtBubbleShape,
-                                    dashLength = 10.dp,
-                                    gapLength = 5.dp,
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .size(24.dp),
+                        colors =
+                            IconButtonDefaults
+                                .iconButtonColors()
+                                .copy(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error,
                                 ),
                     ) {
-                        TypewriterText(
-                            text = message.text,
-                            isAnimated = isAnimated,
-                            duration = duration,
-                            genre = genre,
-                            mainCharacter = mainCharacter?.data,
-                            characters = content.getCharacters(),
-                            wiki = wiki,
+                        Icon(
+                            painterResource(R.drawable.baseline_refresh_24),
+                            "Tentar novamente",
                             modifier =
                                 Modifier
-                                    .padding(16.dp)
-                                    .alpha(blurAnimation)
-                                    .reactiveShimmer(isLoading, genre.shimmerColors()),
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontStyle = FontStyle.Italic,
-                                    textAlign = TextAlign.Center,
-                                    fontFamily = genre.bodyFont(),
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                ),
-                            onAnnotationClick = { data ->
-                                tooltipData = data
-                            },
-                        )
-
-                        StarryTextPlaceholder(
-                            modifier =
-                                Modifier
-                                    .matchParentSize()
-                                    .alpha(alphaAnimation)
-                                    .clip(thoughtBubbleShape)
-                                    .clickable {
-                                        starAlpha = 0f
-                                    }.background(
-                                        MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
-                                        thoughtBubbleShape,
-                                    ),
-                            starColor = genre.color,
+                                    .padding(4.dp)
+                                    .fillMaxSize(),
                         )
                     }
+                }
+            }
+        }
 
+        SenderType.THOUGHT -> {
+            val thoughtBubbleShape =
+                ThoughtBubbleShape(
+                    cornerRadius = cornerSize,
+                    tailAlignment = bubbleStyle.tailAlignment,
+                    tailHeight = 0.dp,
+                    tailWidth = 0.dp,
+                )
+            ConstraintLayout(
+                modifier =
+                    modifier
+                        .padding(8.dp)
+                        .fillMaxWidth()
+                        .animateContentSize(),
+            ) {
+                val (messageText, characterAvatar, messageTime, retryButton, _) = createRefs()
+
+                var starAlpha by remember { mutableFloatStateOf(1f) }
+                val alphaAnimation by animateFloatAsState(
+                    targetValue = starAlpha,
+                    animationSpec = tween(1000, easing = FastOutSlowInEasing),
+                    label = "starAlpha",
+                )
+                val blurAnimation by animateFloatAsState(
+                    targetValue = if (starAlpha == 1f) 0f else 1f,
+                    label = "blurAnimation",
+                )
+
+                Box(
+                    modifier =
+                        Modifier
+                            .constrainAs(messageText) {
+                                top.linkTo(parent.top)
+                                bottom.linkTo(parent.bottom)
+                                if (isUser) {
+                                    start.linkTo(parent.start, margin = 50.dp)
+                                    end.linkTo(characterAvatar.start, margin = 8.dp)
+                                } else {
+                                    start.linkTo(characterAvatar.end, margin = 8.dp)
+                                    end.linkTo(parent.end, margin = 50.dp)
+                                }
+                                width = Dimension.fillToConstraints
+                            }.dashedBorder(
+                                strokeWidth = 1.dp,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                shape = thoughtBubbleShape,
+                                dashLength = 10.dp,
+                                gapLength = 5.dp,
+                            ),
+                ) {
+                    TypewriterText(
+                        text = message.text,
+                        isAnimated = isAnimated,
+                        duration = duration,
+                        genre = genre,
+                        mainCharacter = mainCharacter?.data,
+                        characters = content.getCharacters(),
+                        wiki = wiki,
+                        modifier =
+                            Modifier
+                                .padding(16.dp)
+                                .alpha(blurAnimation)
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontStyle = FontStyle.Italic,
+                                textAlign = TextAlign.Center,
+                                fontFamily = genre.bodyFont(),
+                                color = MaterialTheme.colorScheme.onBackground,
+                            ),
+                        onAnnotationClick = { data ->
+                            tooltipData = data
+                        },
+                    )
+
+                    StarryTextPlaceholder(
+                        modifier =
+                            Modifier
+                                .matchParentSize()
+                                .alpha(alphaAnimation)
+                                .clip(thoughtBubbleShape)
+                                .clickable {
+                                    starAlpha = 0f
+                                }.background(
+                                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .4f),
+                                    thoughtBubbleShape,
+                                ),
+                        starColor = genre.color,
+                    )
+                }
+
+                messageContent.character?.let {
+                    CharacterAvatar(
+                        it,
+                        isLoading = isLoading,
+                        borderSize = 2.dp,
+                        genre = genre,
+                        pixelation = 0f,
+                        grainRadius = 0f,
+                        modifier =
+                            Modifier
+                                .constrainAs(characterAvatar) {
+                                    bottom.linkTo(messageText.bottom)
+                                    if (isUser) {
+                                        end.linkTo(parent.end)
+                                    } else {
+                                        start.linkTo(parent.start)
+                                    }
+                                }.size(32.dp)
+                                .clickable {
+                                    openCharacters(characters.find { c -> c.data.id == it.id })
+                                },
+                    )
+                }
+
+                Row(
+                    modifier =
+                        Modifier
+                            .constrainAs(messageTime) {
+                                top.linkTo(messageText.bottom)
+                                if (isUser) {
+                                    end.linkTo(messageText.end, margin = 16.dp)
+                                } else {
+                                    start.linkTo(messageText.start, margin = 16.dp)
+                                }
+                            }.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        message.timestamp.formatHours(),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontFamily = genre.bodyFont(),
+                            ),
+                    )
+                }
+
+                AnimatedVisibility(
+                    message.status == MessageStatus.ERROR,
+                    modifier =
+                        Modifier.constrainAs(retryButton) {
+                            top.linkTo(messageText.top, margin = (-4).dp)
+                            if (isUser) {
+                                end.linkTo(messageText.start, margin = (-12).dp)
+                            } else {
+                                start.linkTo(messageText.end, margin = (-12).dp)
+                            }
+                        },
+                ) {
+                    IconButton(
+                        onClick = {
+                            onRetry(messageContent)
+                        },
+                        modifier =
+                            Modifier
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .size(24.dp),
+                        colors =
+                            IconButtonDefaults
+                                .iconButtonColors()
+                                .copy(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.baseline_refresh_24),
+                            "Tentar novamente",
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .fillMaxSize(),
+                        )
+                    }
+                }
+            }
+        }
+
+        SenderType.ACTION -> {
+            Box(
+                modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier =
+                        Modifier.align(
+                            Alignment.Center,
+                        ),
+                ) {
                     messageContent.character?.let {
                         CharacterAvatar(
                             it,
@@ -542,225 +645,37 @@ fun ChatBubble(
                             borderSize = 2.dp,
                             genre = genre,
                             pixelation = 0f,
-                            grainRadius = 0f,
                             modifier =
                                 Modifier
-                                    .constrainAs(characterAvatar) {
-                                        bottom.linkTo(messageText.bottom)
-                                        if (isUser) {
-                                            end.linkTo(parent.end)
-                                        } else {
-                                            start.linkTo(parent.start)
-                                        }
-                                    }.size(32.dp)
+                                    .clip(CircleShape)
+                                    .size(32.dp)
                                     .clickable {
                                         openCharacters(characters.find { c -> c.data.id == it.id })
                                     },
                         )
                     }
-
-                    Row(
-                        modifier =
-                            Modifier
-                                .constrainAs(messageTime) {
-                                    top.linkTo(messageText.bottom)
-                                    if (isUser) {
-                                        end.linkTo(messageText.end, margin = 16.dp)
-                                    } else {
-                                        start.linkTo(messageText.start, margin = 16.dp)
-                                    }
-                                }.padding(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            message.timestamp.formatHours(),
-                            style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    fontFamily = genre.bodyFont(),
-                                ),
-                        )
-                    }
-
-                    AnimatedVisibility(
-                        message.status == MessageStatus.ERROR,
-                        modifier =
-                            Modifier.constrainAs(retryButton) {
-                                top.linkTo(messageText.top, margin = (-4).dp)
-                                if (isUser) {
-                                    end.linkTo(messageText.start, margin = (-12).dp)
-                                } else {
-                                    start.linkTo(messageText.end, margin = (-12).dp)
-                                }
-                            },
-                    ) {
-                        IconButton(
-                            onClick = {
-                                onRetry(messageContent)
-                            },
-                            modifier =
-                                Modifier
-                                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-                                    .size(24.dp),
-                            colors =
-                                IconButtonDefaults
-                                    .iconButtonColors()
-                                    .copy(
-                                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                                        contentColor = MaterialTheme.colorScheme.error,
-                                    ),
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.baseline_refresh_24),
-                                "Tentar novamente",
-                                modifier =
-                                    Modifier
-                                        .padding(4.dp)
-                                        .fillMaxSize(),
-                            )
-                        }
-                    }
-                }
-            }
-
-            SenderType.ACTION -> {
-                Box(
-                    modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier =
-                            Modifier.align(
-                                Alignment.Center,
-                            ),
-                    ) {
-                        messageContent.character?.let {
-                            CharacterAvatar(
-                                it,
-                                isLoading = isLoading,
-                                borderSize = 2.dp,
-                                genre = genre,
-                                pixelation = 0f,
-                                modifier =
-                                    Modifier
-                                        .clip(CircleShape)
-                                        .size(32.dp)
-                                        .clickable {
-                                            openCharacters(characters.find { c -> c.data.id == it.id })
-                                        },
-                            )
-                        }
-                        TypewriterText(
-                            text = "(${message.text})",
-                            isAnimated = isAnimated,
-                            duration = duration,
-                            genre = genre,
-                            mainCharacter = mainCharacter?.data,
-                            characters = content.getCharacters(),
-                            wiki = wiki,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .background(
-                                        Color.Black,
-                                        shape = RoundedCornerShape(genre.cornerSize()),
-                                    ).padding(16.dp)
-                                    .reactiveShimmer(isLoading, genre.shimmerColors()),
-                            style =
-                                MaterialTheme.typography.labelMedium.copy(
-                                    fontStyle = FontStyle.Italic,
-                                    textAlign = TextAlign.Center,
-                                    fontFamily = genre.bodyFont(),
-                                    color = MaterialColor.Amber400,
-                                ),
-                            onAnnotationClick = { data ->
-                                tooltipData = data
-                            },
-                        )
-
-                        AnimatedVisibility(
-                            message.status == MessageStatus.ERROR,
-                            modifier =
-                                Modifier.align(Alignment.CenterHorizontally),
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    onRetry(messageContent)
-                                },
-                                modifier =
-                                    Modifier
-                                        .border(
-                                            2.dp,
-                                            MaterialTheme.colorScheme.background,
-                                            CircleShape,
-                                        ).size(24.dp),
-                                colors =
-                                    IconButtonDefaults
-                                        .iconButtonColors()
-                                        .copy(
-                                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                                            contentColor = MaterialTheme.colorScheme.error,
-                                        ),
-                            ) {
-                                Icon(
-                                    painterResource(R.drawable.baseline_refresh_24),
-                                    "Tentar novamente",
-                                    modifier =
-                                        Modifier
-                                            .padding(4.dp)
-                                            .fillMaxSize(),
-                                )
-                            }
-                        }
-
-                        AnimatedVisibility(
-                            visible = messageContent.reactions.isNotEmpty(),
-                            modifier =
-                                Modifier
-                                    .padding(vertical = 8.dp)
-                                    .align(Alignment.CenterHorizontally),
-                        ) {
-                            ReactionsView(
-                                reactions = messageContent.reactions,
-                                genre = genre,
-                            ) {
-                                onReactionsClick(messageContent)
-                            }
-                        }
-                    }
-                }
-            }
-
-            SenderType.NARRATOR -> {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     TypewriterText(
-                        text = message.text,
-                        isAnimated = false,
+                        text = "(${message.text})",
+                        isAnimated = isAnimated,
                         duration = duration,
                         genre = genre,
                         mainCharacter = mainCharacter?.data,
                         characters = content.getCharacters(),
                         wiki = wiki,
                         modifier =
-                            modifier
-                                .padding(16.dp)
-                                .reactiveShimmer(isLoading, genre.shimmerColors())
-                                .fillMaxWidth(),
+                            Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .background(
+                                    Color.Black,
+                                    shape = RoundedCornerShape(genre.cornerSize()),
+                                ).padding(16.dp)
+                                .reactiveShimmer(isLoading, genre.shimmerColors()),
                         style =
-                            MaterialTheme.typography.bodyMedium.copy(
+                            MaterialTheme.typography.bodySmall.copy(
                                 fontStyle = FontStyle.Italic,
-                                textAlign = TextAlign.Justify,
+                                textAlign = TextAlign.Center,
                                 fontFamily = genre.bodyFont(),
-                                color = MaterialTheme.colorScheme.onBackground,
-                                shadow =
-                                    Shadow(
-                                        color = genre.color,
-                                        offset = Offset(0f, 0f),
-                                        blurRadius = 5f,
-                                    ),
+                                color = MaterialColor.Amber400,
                             ),
                         onAnnotationClick = { data ->
                             tooltipData = data
@@ -778,8 +693,11 @@ fun ChatBubble(
                             },
                             modifier =
                                 Modifier
-                                    .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
-                                    .size(24.dp),
+                                    .border(
+                                        2.dp,
+                                        MaterialTheme.colorScheme.background,
+                                        CircleShape,
+                                    ).size(24.dp),
                             colors =
                                 IconButtonDefaults
                                     .iconButtonColors()
@@ -798,10 +716,13 @@ fun ChatBubble(
                             )
                         }
                     }
+
                     AnimatedVisibility(
                         visible = messageContent.reactions.isNotEmpty(),
                         modifier =
-                            Modifier.padding(vertical = 8.dp),
+                            Modifier
+                                .padding(vertical = 8.dp)
+                                .align(Alignment.CenterHorizontally),
                     ) {
                         ReactionsView(
                             reactions = messageContent.reactions,
@@ -809,6 +730,85 @@ fun ChatBubble(
                         ) {
                             onReactionsClick(messageContent)
                         }
+                    }
+                }
+            }
+        }
+
+        SenderType.NARRATOR -> {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TypewriterText(
+                    text = message.text,
+                    isAnimated = false,
+                    duration = duration,
+                    genre = genre,
+                    mainCharacter = mainCharacter?.data,
+                    characters = content.getCharacters(),
+                    wiki = wiki,
+                    modifier =
+                        modifier
+                            .padding(16.dp)
+                            .reactiveShimmer(isLoading, genre.shimmerColors())
+                            .fillMaxWidth(),
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontStyle = FontStyle.Italic,
+                            textAlign = TextAlign.Justify,
+                            fontFamily = genre.bodyFont(),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            shadow =
+                                Shadow(
+                                    color = genre.color,
+                                    offset = Offset(0f, 0f),
+                                    blurRadius = 5f,
+                                ),
+                        ),
+                    onAnnotationClick = { data ->
+                        tooltipData = data
+                    },
+                )
+
+                AnimatedVisibility(
+                    message.status == MessageStatus.ERROR,
+                    modifier =
+                        Modifier.align(Alignment.CenterHorizontally),
+                ) {
+                    IconButton(
+                        onClick = {
+                            onRetry(messageContent)
+                        },
+                        modifier =
+                            Modifier
+                                .border(2.dp, MaterialTheme.colorScheme.background, CircleShape)
+                                .size(24.dp),
+                        colors =
+                            IconButtonDefaults
+                                .iconButtonColors()
+                                .copy(
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.baseline_refresh_24),
+                            "Tentar novamente",
+                            modifier =
+                                Modifier
+                                    .padding(4.dp)
+                                    .fillMaxSize(),
+                        )
+                    }
+                }
+                AnimatedVisibility(
+                    visible = messageContent.reactions.isNotEmpty(),
+                    modifier =
+                        Modifier.padding(vertical = 8.dp),
+                ) {
+                    ReactionsView(
+                        reactions = messageContent.reactions,
+                        genre = genre,
+                    ) {
+                        onReactionsClick(messageContent)
                     }
                 }
             }
@@ -892,7 +892,7 @@ data class BubbleStyle(
                 backgroundColor = genre.color,
                 textColor = genre.iconColor,
                 tailAlignment = BubbleTailAlignment.BottomRight,
-                animationDuration = 0.seconds,
+                animationDuration = 2.seconds,
                 horizontalArrangement = Arrangement.End,
                 false,
             )
@@ -904,7 +904,7 @@ data class BubbleStyle(
             backgroundColor = genre.color,
             textColor = genre.iconColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
-            animationDuration = 5.seconds,
+            animationDuration = 3.seconds,
             horizontalArrangement = Arrangement.Start,
             canAnimate,
         )

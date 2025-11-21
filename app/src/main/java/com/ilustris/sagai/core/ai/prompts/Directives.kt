@@ -6,8 +6,6 @@ import java.util.Locale
 object CharacterDirective {
     const val CHARACTER_INTRODUCTION =
         """
-         ${CharacterRules.CRITICAL_RULE}   
-            
         // 🚨🚨🚨 CRITICAL SYSTEM DIRECTIVE: NEW CHARACTER INTRODUCTION PROTOCOL 🚨🚨🚨
         // This protocol dictates the ONLY circumstances under which new characters are introduced.
         // Adherence to this directive is PARAMOUNT for maintaining narrative coherence and preventing character hallucination.
@@ -62,7 +60,7 @@ object ContentGenerationDirective {
              
         """.trimIndent()
 
-  const val PROGRESSION_DIRECTIVE = """
+    const val PROGRESSION_DIRECTIVE = """
         ---
         ## NARRATION & PLAYER ACTION/THOUGHT HANDLING
         Prioritization: Analyze the **INTENT** of the Player's last message. Your response must be a direct, significant, and logical consequence of that stated intent.

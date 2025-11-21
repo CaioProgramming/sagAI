@@ -3,9 +3,11 @@ package com.ilustris.sagai.ui.theme
 import ai.atick.material.MaterialColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -19,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -211,57 +214,6 @@ enum class FadeDirection {
     // You could add more, like corners, etc.
 }
 
-fun Modifier.fadeMask(
-    fadeDirection: FadeDirection,
-    startFadeFraction: Float = 0.0f,
-    endFadeFraction: Float = 0.3f,
-): Modifier =
-    this
-        .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
-        .drawWithCache {
-            val gradientBrush =
-                when (fadeDirection) {
-                    FadeDirection.BOTTOM_TO_TOP ->
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black),
-                            startY = size.height * (1f - startFadeFraction),
-                            endY = size.height * (1f - endFadeFraction),
-                        )
-
-                    FadeDirection.TOP_TO_BOTTOM ->
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Black, Color.Transparent),
-                            startY = size.height * startFadeFraction,
-                            endY = size.height * endFadeFraction,
-                        )
-
-                    FadeDirection.LEFT_TO_RIGHT ->
-                        Brush.horizontalGradient(
-                            colors = listOf(Color.Black, Color.Transparent),
-                            startX = size.width * startFadeFraction,
-                            endX = size.width * endFadeFraction,
-                        )
-
-                    FadeDirection.RIGHT_TO_LEFT ->
-                        Brush.horizontalGradient(
-                            colors = listOf(Color.Transparent, Color.Black),
-                            startX = size.width * (1f - startFadeFraction),
-                            endX = size.width * (1f - endFadeFraction),
-                        )
-                }
-
-            onDrawWithContent {
-                // 1. Draw the original content of the Composable this modifier is applied to
-                drawContent()
-
-                // 2. Draw the gradient mask on top with DstIn blend mode
-                drawRect(
-                    brush = gradientBrush,
-                    blendMode = BlendMode.DstIn,
-                )
-            }
-        }
-
 @Composable
 fun Modifier.reactiveShimmer(
     isPlaying: Boolean,
@@ -354,4 +306,25 @@ fun rememberAnimatedShuffledGradientBrush(
     return remember(animatedColors, createGradient) {
         createGradient(animatedColors)
     }
+}
+
+@Composable
+fun progressiveBrush(
+    tintColor: Color,
+    progress: Float,
+    animationDuration: Int = 1000,
+): Brush {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = animationDuration, easing = FastOutSlowInEasing),
+        label = "progressAnimation",
+    )
+
+    val stop = 1f - animatedProgress
+    return Brush.verticalGradient(
+        0f to Color.Transparent,
+        stop to Color.Transparent,
+        stop + 0.001f to tintColor,
+        1f to tintColor,
+    )
 }
