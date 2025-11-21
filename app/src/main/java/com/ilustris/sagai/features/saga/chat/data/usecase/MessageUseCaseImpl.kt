@@ -115,7 +115,7 @@ class MessageUseCaseImpl
             saga: SagaContent,
             message: MessageContent,
             sceneSummary: SceneSummary?,
-        ): RequestResult<MessageGen> =
+        ): RequestResult<Message> =
             executeRequest {
                 if (isDebugModeEnabled) {
                     Log.d(
@@ -129,13 +129,7 @@ class MessageUseCaseImpl
                             sagaId = saga.data.id,
                             timelineId = saga.getCurrentTimeLine()!!.data.id,
                         )
-                    val fakeMessageGen =
-                        MessageGen(
-                            message = fakeReply,
-                            shouldCreateCharacter = false,
-                            newCharacter = null,
-                        )
-                    fakeMessageGen.asSuccess()
+                    return@executeRequest fakeReply
                 }
 
                 val charactersInScene =
@@ -146,7 +140,7 @@ class MessageUseCaseImpl
                     } ?: emptyList()
 
                 val genText =
-                    gemmaClient.generate<MessageGen>(
+                    gemmaClient.generate<Message>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
                             message =

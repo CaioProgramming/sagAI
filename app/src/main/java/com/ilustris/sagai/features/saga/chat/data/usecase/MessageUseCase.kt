@@ -28,7 +28,7 @@ interface MessageUseCase {
         saga: SagaContent,
         message: MessageContent,
         sceneSummary: SceneSummary?,
-    ): RequestResult<MessageGen>
+    ): RequestResult<Message>
 
     suspend fun updateMessage(message: Message): RequestResult<Message>
 

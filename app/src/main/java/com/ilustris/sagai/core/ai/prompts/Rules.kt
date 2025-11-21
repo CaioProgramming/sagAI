@@ -40,11 +40,8 @@ object ChatRules {
         *   **Original Content Only:** DO NOT repeat or rephrase any text from the 'Conversation History' or 'Last Turn's Output'. Every message must be new.
 
         **2. Character and Dialogue Rules:**
-        *   **Strict Speaker ID:** All dialogue MUST have a `speakerName` that is in the `CURRENT SAGA CAST` or is a new character being created in the same response.
+        *   **Strict Speaker ID:** All dialogue MUST have a `speakerName` that is in the `CURRENT SAGA CAST`.
         *   **Narrative Latch:** If the last message (from `NARRATOR` or `CHARACTER`) introduced or addressed a character, your response MUST focus on that character. Do not switch context until that interaction is resolved.
-        *   **Mandatory Character Creation:** If a new character is mentioned (by narrator or another character) and is not in the `CURRENT SAGA CAST`, you MUST create them. Set `shouldCreateCharacter: true` and provide their `newCharacterInfo`.
-            *   **Example:** If a character says "Go talk to the blacksmith, old man Hemlock", and Hemlock is not in the cast, you must create him.
-        *   **Unique Names:** New characters MUST have unique and fitting names. Do not use placeholders like "Stranger" or "Unknown".
         *   **Dialogue-Free Narrator:** The `NARRATOR` message type is for descriptive text ONLY. It MUST NOT contain any character dialogue.
         *   **Dialogue in `CHARACTER` type:** All character speech MUST be in a separate message with `senderType: "CHARACTER"`.
 

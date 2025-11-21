@@ -693,46 +693,31 @@ class ChatViewModel
                         saga = saga,
                         message = newMessage,
                         sceneSummary = sceneSummary,
-                    ).onSuccessAsync { genMessage ->
+                    ).onSuccessAsync { generatedMessage ->
 
                         val existingCharacters = saga.getCharacters().map { it.name }
-                        val speakerName = genMessage.message.speakerName
+                        val speakerName = generatedMessage.speakerName
 
-                        if (!genMessage.shouldCreateCharacter &&
-                            speakerName != null &&
+                        if (speakerName != null &&
                             speakerName !in existingCharacters &&
-                            genMessage.message.senderType == SenderType.CHARACTER
+                            generatedMessage.senderType == SenderType.CHARACTER
                         ) {
                             createCharacter(
                                 buildString {
                                     appendLine("Character name: $speakerName")
                                     appendLine("Character context on story:")
                                     appendLine("The user said: ${message.text}")
-                                    appendLine("And the new character replied: ${genMessage.message.text}")
-                                },
-                            )
-                        }
-
-                        if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
-                            createCharacter(
-                                buildString {
-                                    appendLine("New character context:")
-                                    appendLine(genMessage.newCharacter.toJsonFormat())
-                                    newMessage.let {
-                                        appendLine("Previous Message context:")
-                                        appendLine(newMessage.toJsonFormat())
-                                    }
+                                    appendLine("And the new character replied: ${generatedMessage.text}")
                                 },
                             )
                         }
 
                         sendMessage(
-                            genMessage.message.copy(
+                            generatedMessage.copy(
                                 characterId = null,
                                 timelineId = timeline.data.id,
                                 id = 0,
                                 status = MessageStatus.OK,
-                                speakerName = if (genMessage.shouldCreateCharacter) genMessage.newCharacter?.name else genMessage.message.speakerName,
                             ),
                             false,
                             sceneSummary,

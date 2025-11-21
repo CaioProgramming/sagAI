@@ -43,7 +43,7 @@ object GenrePrompts {
                 
                 Detail: Hair rendered as "clumps" or shapes with simple highlights, not individual strands. Skin must be matte; reduce micro-detail.
                 Lighting: High-contrast "Rembrandt" lighting with hard-edged, cast shadows. Strong Hard Rim Light is essential to separate characters. No Global Illumination.
-                Texture & Artifacts: Heavy CRT Scanlines, VHS noise, Analog Noise, Chromatic Aberration, and subtle Film Grain to simulate vintage broadcast quality. Blurry/Soft Backgrounds to simulate 4:3 standard definition.
+                Texture & Artifacts: Heavy CRT Scanlines, VHS noise, Analog Noise, Chromatic Aberration, and subtle Film Grain to simulate vintage broadcast quality. 
                 
                 Facial Features: Classic 1990s anime proportions. Large, expressive eyes with prominent specular highlights, sharp noses, and high-contrast hair sheen.
                 
