@@ -695,12 +695,15 @@ class ChatViewModel
                         sceneSummary = sceneSummary,
                     ).onSuccessAsync { generatedMessage ->
 
-                        val existingCharacters = saga.getCharacters().map { it.name }
+                        val existingCharacters = saga.getCharacters().map { it.name.lowercase() }
                         val speakerName = generatedMessage.speakerName
+                        val speakerNameTokens = speakerName?.lowercase()?.split(" ") ?: emptyList()
+                        val characterExists =
+                            existingCharacters.any { existingChar -> speakerNameTokens.contains(existingChar) }
 
                         if (speakerName != null &&
-                            speakerName !in existingCharacters &&
-                            generatedMessage.senderType == SenderType.CHARACTER
+                            !characterExists &&
+                            generatedMessage.senderType != SenderType.NARRATOR
                         ) {
                             createCharacter(
                                 buildString {
