@@ -91,12 +91,15 @@ fun SagaContent.findTimeline(timelineId: Int) = flatEvents().find { it.data.id =
 
 fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id == characterId }
 
-fun SagaContent.findCharacter(name: String): Character? {
+fun SagaContent.findCharacter(name: String): CharacterContent? {
     val normalizedInputNameTokens = name.lowercase().split(" ")
     return characters.find { characterContent ->
-        val characterNameTokens = characterContent.data.name.lowercase().split(" ")
+        val characterNameTokens =
+            characterContent.data.name
+                .lowercase()
+                .split(" ")
         normalizedInputNameTokens.any { inputToken -> characterNameTokens.contains(inputToken) }
-    }?.data
+    }
 }
 
 fun SagaContent.findTimelineChapter(timeline: Timeline) = flatChapters().find { it.data.id == timeline.chapterId }
