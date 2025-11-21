@@ -89,6 +89,7 @@ object ChatPrompts {
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
 
         appendLine(ActPrompts.actDirective(directive))
+        appendLine(conversationHistory(lastMessages))
 
         appendLine("## NPC Actions & Thoughts")
         appendLine(
@@ -115,9 +116,6 @@ object ChatPrompts {
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
         appendLine("Use the conversation style to provide a natural dialogue")
         appendLine(GenrePrompts.conversationDirective(saga.data.genre))
-
-        appendLine(conversationHistory(lastMessages))
-
         appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:**")
         appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
@@ -273,7 +271,9 @@ object ChatPrompts {
         buildString {
             appendLine("Conversation History")
             appendLine("Use this history for context, but do NOT repeat it in your response.")
+            appendLine("The messages are ordered from newest to oldest")
+            appendLine("Consider the newest ones to move history forward")
             appendLine("Pay attention to `speakerName` and `senderType`.")
-            appendLine(lastMessages.listToAINormalize(excludingFields = messageExclusions))
+            appendLine(lastMessages.reversed().listToAINormalize(excludingFields = messageExclusions))
         }
 }
