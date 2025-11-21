@@ -695,6 +695,24 @@ class ChatViewModel
                         sceneSummary = sceneSummary,
                     ).onSuccessAsync { genMessage ->
 
+                        val existingCharacters = saga.getCharacters().map { it.name }
+                        val speakerName = genMessage.message.speakerName
+
+                        if (!genMessage.shouldCreateCharacter &&
+                            speakerName != null &&
+                            speakerName !in existingCharacters &&
+                            genMessage.message.senderType == SenderType.CHARACTER
+                        ) {
+                            createCharacter(
+                                buildString {
+                                    appendLine("Character name: $speakerName")
+                                    appendLine("Character context on story:")
+                                    appendLine("The user said: ${message.text}")
+                                    appendLine("And the new character replied: ${genMessage.message.text}")
+                                },
+                            )
+                        }
+
                         if (genMessage.shouldCreateCharacter && genMessage.newCharacter != null) {
                             createCharacter(
                                 buildString {
