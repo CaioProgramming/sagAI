@@ -6,12 +6,12 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -23,13 +23,10 @@ import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
-import kotlinx.coroutines.delay
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class MessageUseCaseImpl
     @Inject
@@ -134,9 +131,7 @@ class MessageUseCaseImpl
 
                 val charactersInScene =
                     sceneSummary?.charactersPresent?.mapNotNull { characterName ->
-                        saga.getCharacters().find {
-                            it.name.equals(characterName, ignoreCase = true)
-                        }
+                        saga.findCharacter(characterName)
                     } ?: emptyList()
 
                 val genText =
@@ -153,7 +148,12 @@ class MessageUseCaseImpl
                             directive = saga.getDirective(),
                             sceneSummary =
                                 sceneSummary?.copy(
-                                    charactersPresent = charactersInScene.map { it.name },
+                                    charactersPresent =
+                                        charactersInScene.map {
+                                            it.toAINormalize(
+                                                ChatPrompts.characterExclusions,
+                                            )
+                                        },
                                 ),
                         ),
                         useCore = true,

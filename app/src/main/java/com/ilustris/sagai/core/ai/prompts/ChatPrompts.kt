@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.listToAINormalize
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
@@ -50,7 +49,6 @@ object ChatPrompts {
             "emojified",
             "hexColor",
             "firstSceneId",
-            "personality",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -69,9 +67,9 @@ object ChatPrompts {
             appendLine("## Progression Context")
             appendLine("Guide your response to align with the story's progression based on this summary:")
             appendLine(
-                "Attention: Your absolute priority for plot progression must be the escalation of the 'currentConflict' and the direct advancement of the 'immediateObjective'. Use the 'mood' to dictate the tone of the narration and dialogues.",
+                "Attention: Your priority is to create a compelling narrative. This involves balancing plot progression (escalating the 'currentConflict' and advancing the 'immediateObjective') with rich character development. Use the 'mood' to dictate the tone of the narration and dialogues. Let the story breathe; sometimes a quiet moment of reflection or a character interaction that doesn't directly advance the plot is more powerful. Give characters space to develop their personalities and express their own opinions.",
             )
-            appendLine(sceneSummary.toJsonFormat())
+            appendLine(sceneSummary.toAINormalize())
         }
 
         appendLine("## Saga & Player Context")
@@ -94,9 +92,17 @@ object ChatPrompts {
         appendLine("## NPC Actions & Thoughts")
         appendLine(
             """
-            **NPC AGENCY PRIORITY:** The NPC must be actively engaged. In situations of:
-            a) **Conflict/Combat:** Prioritize the use of the `ACTION` message type to describe the NPC's attack, defense, or significant movement, making the combat feel more tangible (e.g., 'Elara unsheathes her dagger.').
-            b) **Character Development:** Use the `THOUGHT` message type sparingly to reveal crucial internal conflicts or motivations that direct dialogue does not immediately convey.
+            **NPC AGENCY & PERSONALITY:** NPCs should feel like living beings with their own motivations, personalities, and opinions.
+            a) **Authentic Behavior:** Characters react based on who they are. This can be through physical actions (`ACTION`), dialogue (`CHARACTER`), or internal thoughts (`THOUGHT`). A character might choose to remain silent, observe, or get lost in thought if it fits their personality and the situation. Not every moment requires an external action.
+            b) **Evaluate the Need for Interaction:** Before generating a response, consider if an interaction is truly necessary. If the player is setting a scene, describing an internal monologue, or if a character is alone, it might be better to continue the narration (`NARRATOR`) or provide a `THOUGHT` rather than forcing a dialogue or action that feels unnatural.
+            c) **Conflict/Combat:** In action-oriented scenes, prioritize `ACTION` to describe attacks, defenses, or significant movements.
+            d) **Character Development:** Use `THOUGHT` to reveal crucial internal conflicts, motivations, or opinions. This is a key tool for character development.
+
+            **INTERACTION RULES:**
+            - **Inner Thoughts Privacy:** Messages marked as `THOUGHT` (or internal monologue) are PRIVATE to the thinker.
+            - **No Direct Replies to Thoughts:** Characters CANNOT directly reply to the content of a `THOUGHT` message. They act as if they don't know what was thought.
+            - **Reacting to Expressions:** Characters CAN react to the *visible behavior* or *expression* accompanying a thought (e.g., "You look deep in thought," or "Why are you smiling?"), but NEVER the content itself.
+            - **Exception:** Only characters explicitly defined as mind-readers or telepaths can reply directly to thoughts.
             """.trimIndent(),
         )
         appendLine("- NPCs can perform actions (`ACTION`) or have thoughts (`THOUGHT`).")
@@ -105,7 +111,7 @@ object ChatPrompts {
             "- `ACTION` (NPC): Concise description of a physical action (e.g., 'Elara unsheathes her dagger.'). The `NARRATOR` describes the wider scene.",
         )
         appendLine(
-            "- `THOUGHT` (NPC): Use **SPARINGLY** for critical insights or internal conflict (e.g., 'He doesn't suspect a thing...'). Show, don't just tell.",
+            "- `THOUGHT` (NPC): Use for critical insights or internal conflict (e.g., 'He doesn't suspect a thing...'). Show, don't just tell.",
         )
         appendLine(
             "- You primarily generate `NARRATOR` (storytelling) and `CHARACTER` (dialogue) messages. Do not generate `ACTION` or `THOUGHT` for the player.",

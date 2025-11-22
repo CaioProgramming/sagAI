@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 class HeroesChatBubbleShape(
     private val tailWidth: Dp = 32.dp, // Increased width for better connection
     private val tailHeight: Dp = 20.dp,
-    private val skew: Dp = 16.dp,
+    private val skew: Dp = 0.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
 ) : Shape {
     override fun createOutline(

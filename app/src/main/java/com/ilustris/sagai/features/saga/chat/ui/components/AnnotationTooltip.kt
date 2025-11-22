@@ -31,6 +31,7 @@ import com.ilustris.sagai.ui.theme.shape
 fun AnnotationTooltip(
     data: Any,
     genre: Genre,
+    shape: androidx.compose.ui.graphics.Shape = genre.shape(),
 ) {
     Column(
         Modifier
@@ -38,15 +39,17 @@ fun AnnotationTooltip(
             .border(
                 1.dp,
                 Brush.verticalGradient(genre.color.darkerPalette(factor = .3f)),
-                genre.shape(),
-            ).background(
+                shape,
+            )
+            .background(
                 Brush.verticalGradient(
                     MaterialTheme.colorScheme.surfaceContainer.darkerPalette(
                         factor = .3f,
                     ),
                 ),
-                genre.shape(),
-            ).padding(16.dp),
+                shape,
+            )
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Row(
