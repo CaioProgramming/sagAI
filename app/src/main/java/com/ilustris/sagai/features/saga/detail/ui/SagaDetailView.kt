@@ -5,6 +5,8 @@ package com.ilustris.sagai.features.saga.detail.ui
 import ai.atick.material.MaterialColor
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.AnimatedVisibility
@@ -83,6 +85,7 @@ import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -91,8 +94,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -101,6 +102,7 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.State
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.features.act.ui.ActReader
 import com.ilustris.sagai.features.act.ui.toRoman
@@ -118,9 +120,9 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.relationshipsSortedByEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -130,21 +132,21 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.ui.EmotionalSheet
 import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
-import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -170,6 +172,8 @@ fun SagaDetailView(
         )
     }
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
+    val backupEnabled by viewModel.backupEnabled.collectAsStateWithLifecycle(initialValue = false)
     val emotionalCardReference by viewModel.emotionalCardReference.collectAsStateWithLifecycle()
     val showReview by viewModel.showReview.collectAsStateWithLifecycle()
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
@@ -196,6 +200,7 @@ fun SagaDetailView(
         showReview = showReview,
         showTitleOnly = showIntro,
         emotionalCardReference = emotionalCardReference,
+        backupEnabled = backupEnabled,
         onChangeSection = {
             section = it
             if (it == DetailAction.DELETE) {
@@ -206,6 +211,9 @@ fun SagaDetailView(
             if (it == DetailAction.REGENERATE) {
                 viewModel.regenerateIcon()
             }
+        },
+        onExportSaga = {
+            viewModel.exportSaga()
         },
         onBackClick = {
             when (it) {
@@ -292,28 +300,29 @@ fun SagaDetailView(
     }
 
     if (isGenerating) {
-        Dialog(
-            onDismissRequest = { },
-            properties =
-                DialogProperties(
-                    dismissOnBackPress = false,
-                    dismissOnClickOutside = false,
-                ),
-        ) {
-            val brush = saga?.data?.genre?.colorPalette() ?: holographicGradient
-            StarryTextPlaceholder(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .gradientFill(gradientAnimation(brush)),
-            )
-        }
+        StarryLoader(
+            isLoading = true,
+            loadingMessage = loadingMessage ?: emptyString(),
+            textStyle = MaterialTheme.typography.labelMedium,
+        )
     }
 
     PremiumView(showPremiumSheet, { viewModel.togglePremiumSheet() })
 
+    LocalContext.current
+
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.CreateDocument("application/zip"),
+        ) { uri ->
+            uri?.let { viewModel.handleExportDestination(it) }
+        }
+
     LaunchedEffect(Unit) {
         viewModel.fetchSagaDetails(sagaId)
+        viewModel.exportLauncher.collect { suggestedFileName ->
+            exportLauncher.launch(suggestedFileName)
+        }
     }
 }
 
@@ -509,6 +518,7 @@ fun SagaDetailContentView(
     paddingValues: PaddingValues,
     showReview: Boolean = false,
     generatingReview: Boolean = false,
+    backupEnabled: Boolean = false,
     emotionalCardReference: String,
     onChangeSection: (DetailAction) -> Unit = {},
     onBackClick: (DetailAction) -> Unit = {},
@@ -518,6 +528,7 @@ fun SagaDetailContentView(
     closeReview: () -> Unit,
     createTimelineReview: (TimelineContent) -> Unit,
     createEmotionalReview: () -> Unit,
+    onExportSaga: () -> Unit = {},
     showTitleOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
@@ -679,6 +690,7 @@ fun SagaDetailContentView(
                                             sagaContent,
                                             emotionalReviewIconUrl = emotionalCardReference,
                                             animationScopes = this@SharedTransitionLayout to this,
+                                            backupEnabled = backupEnabled,
                                             modifier =
                                                 Modifier
                                                     .animateContentSize()
@@ -708,6 +720,7 @@ fun SagaDetailContentView(
                                                     }
                                                 }
                                             },
+                                            onExportSaga = onExportSaga,
                                             showTitleOnly = showTitleOnly,
                                         )
                                     }
@@ -829,6 +842,7 @@ fun SimpleSlider(
 private fun SagaDetailInitialView(
     content: SagaContent?,
     emotionalReviewIconUrl: String,
+    backupEnabled: Boolean,
     modifier: Modifier,
     animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
     selectSection: (DetailAction) -> Unit = {},
@@ -836,6 +850,7 @@ private fun SagaDetailInitialView(
     openEmotionalReview: () -> Unit = {},
     openDrawer: () -> Unit = {},
     onBackClick: () -> Unit = {},
+    onExportSaga: () -> Unit = {},
     showTitleOnly: Boolean = false,
 ) {
     content?.let { saga ->
@@ -906,6 +921,14 @@ private fun SagaDetailInitialView(
                                                 contentScale = ContentScale.Crop,
                                             )
 
+                                            Box(
+                                                Modifier
+                                                    .align(Alignment.BottomCenter)
+                                                    .fillMaxWidth()
+                                                    .fillMaxHeight(.3f)
+                                                    .background(fadeGradientBottom()),
+                                            )
+
                                             Text(
                                                 saga.data.title,
                                                 maxLines = 2,
@@ -918,8 +941,9 @@ private fun SagaDetailInitialView(
                                                 modifier =
                                                     Modifier
                                                         .align(Alignment.BottomCenter)
+                                                        .background(fadeGradientBottom())
+                                                        .padding(16.dp)
                                                         .fillMaxWidth()
-                                                        .padding(8.dp)
                                                         .sharedElement(
                                                             rememberSharedContentState(
                                                                 key = "saga-style-header",
@@ -929,14 +953,6 @@ private fun SagaDetailInitialView(
                                                             true,
                                                             duration = 5.seconds,
                                                         ),
-                                            )
-
-                                            Box(
-                                                Modifier
-                                                    .align(Alignment.BottomCenter)
-                                                    .fillMaxWidth()
-                                                    .fillMaxHeight(.3f)
-                                                    .background(fadeGradientBottom()),
                                             )
                                         }
                                     } else {
@@ -1042,6 +1058,15 @@ private fun SagaDetailInitialView(
                                         )
                                     }
                                 }
+                            }
+
+                            item(span = { GridItemSpan(columnCount) }) {
+                                AnimatedPlaytimeCounter(
+                                    playtimeMs = saga.data.playTimeMs,
+                                    label = stringResource(R.string.playtime_title),
+                                    genre = saga.data.genre,
+                                    textStyle = MaterialTheme.typography.headlineSmall,
+                                )
                             }
 
                             saga.mainCharacter?.let {
@@ -1159,6 +1184,19 @@ private fun SagaDetailInitialView(
                                         )
                                     }
                                 }
+                            }
+
+                            item(span = { GridItemSpan(columnCount) }) {
+                                BackupStatusCard(
+                                    backupEnabled,
+                                    genre,
+                                    onExportClick = {
+                                        onExportSaga()
+                                    },
+                                    Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .fillMaxWidth(),
+                                )
                             }
 
                             item(span = { GridItemSpan(columnCount) }) {
@@ -1832,6 +1870,80 @@ private fun SagaDetailInitialView(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BackupStatusCard(
+    backupEnabled: Boolean,
+    genre: Genre,
+    onExportClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    // Background uses surfaceContainer with subtle onBackground overlay
+    MaterialTheme.colorScheme.surfaceContainer
+    MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f)
+    // Shape from genre
+    val shape = genre.shape()
+    // Icon based on status
+    val iconRes = if (backupEnabled) R.drawable.ic_check_circle else R.drawable.ic_warning
+    val iconTint =
+        if (backupEnabled) {
+            MaterialColor.GreenA100
+        } else {
+            MaterialColor.Yellow200
+        }
+
+    Row(
+        modifier =
+            modifier
+                .alpha(.5f)
+                .border(1.dp, iconTint.darker().gradientFade(), shape)
+                .background(iconTint.copy(alpha = .2f), shape)
+                .padding(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            painter = painterResource(id = iconRes),
+            contentDescription = null,
+            tint = iconTint,
+            modifier = Modifier.size(24.dp),
+        )
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                text =
+                    if (backupEnabled) {
+                        stringResource(R.string.backup_enabled_label)
+                    } else {
+                        stringResource(
+                            R.string.backup_disabled_label,
+                        )
+                    },
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = iconTint.darker(),
+            )
+            Text(
+                text =
+                    if (backupEnabled) {
+                        stringResource(R.string.backup_enabled_message)
+                    } else {
+                        stringResource(R.string.backup_disabled_message)
+                    },
+                style = MaterialTheme.typography.bodySmall,
+                color = iconTint.darker(),
+            )
+        }
+
+        Button(
+            onClick = onExportClick,
+            colors = ButtonDefaults.textButtonColors(contentColor = iconTint.darker()),
+        ) {
+            Text(
+                stringResource(R.string.export_button_label),
+                style = MaterialTheme.typography.labelSmall,
+            )
         }
     }
 }

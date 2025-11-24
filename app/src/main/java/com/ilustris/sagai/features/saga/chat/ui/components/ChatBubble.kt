@@ -97,6 +97,7 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
@@ -346,7 +347,8 @@ fun ChatBubble(
                                 Modifier
                                     .clickable {
                                         requestNewCharacter()
-                                    }.size(24.dp)
+                                    }
+                                    .size(24.dp)
                                     .gradientFill(genre.gradient()),
                             )
                         }
@@ -372,7 +374,8 @@ fun ChatBubble(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 bubbleShape,
-                                            ).background(
+                                            )
+                                            .background(
                                                 bubbleStyle.backgroundColor.copy(alpha = .2f),
                                                 bubbleShape,
                                             )
@@ -389,7 +392,8 @@ fun ChatBubble(
                                         .background(
                                             MaterialTheme.colorScheme.surfaceContainer,
                                             bubbleShape,
-                                        ).dashedBorder(
+                                        )
+                                        .dashedBorder(
                                             strokeWidth = 1.dp,
                                             color =
                                                 MaterialTheme.colorScheme.onBackground.copy(
@@ -514,7 +518,8 @@ fun ChatBubble(
                                                     .clip(bubbleShape)
                                                     .clickable {
                                                         starAlpha = 0f
-                                                    }.background(
+                                                    }
+                                                    .background(
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(
                                                             alpha = .4f,
                                                         ),
@@ -611,10 +616,12 @@ fun ChatBubble(
                                 elevation = 8.dp,
                                 shape = narratorShape,
                                 spotColor = genre.color,
-                            ).background(
+                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
+                            .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                 ) {
                     TypewriterText(
                         text = message.text,

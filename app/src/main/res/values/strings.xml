@@ -318,9 +318,17 @@
     <string name="chapter_title_template">Chapter %s</string>
     <string name="act_title_template">Act %s</string>
     <string name="restore_sagas">Restore sagas</string>
+    <string name="import_saga">Import Saga</string>
     <string name="not_available" translatable="false">---</string>
     <string name="updates_count">%d Updates</string>
     <string name="last_update">Last update</string>
     <string name="chat_view_subtitle">Act %1$s - Chapter %2$s</string>
+    <string name="continue_to_play">Continue exploring your sagas to discover more about your play style!</string>
+
+    <string name="backup_enabled_label">Backup Enabled</string>
+    <string name="backup_disabled_label">Backup Disabled</string>
+    <string name="backup_enabled_message">Your saga is being backed up automatically</string>
+    <string name="backup_disabled_message">Enable backup in settings for automatic protection</string>
+    <string name="export_button_label">Export</string>
 
 </resources>

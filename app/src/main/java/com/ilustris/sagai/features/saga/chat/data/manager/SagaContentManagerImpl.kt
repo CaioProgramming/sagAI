@@ -114,6 +114,20 @@ class SagaContentManagerImpl
 
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
+        override suspend fun updatePlaytime(
+            sagaId: Int,
+            timeInMillis: Long,
+        ) {
+            val currentSaga = content.value ?: return
+            if (currentSaga.data.id != sagaId) return
+
+            val updatedSaga =
+                currentSaga.data.copy(
+                    playTimeMs = currentSaga.data.playTimeMs + timeInMillis,
+                )
+            sagaHistoryUseCase.updateSaga(updatedSaga)
+    }
+
         override suspend fun loadSaga(sagaId: String) {
             Log.d(javaClass.simpleName, "Loading saga: $sagaId")
             try {
@@ -125,9 +139,27 @@ class SagaContentManagerImpl
                             javaClass.simpleName,
                             "Saga flow updated for saga -> $sagaId \n ${saga?.data.toJsonFormat()}",
                         )
-                        content.emit(saga)
+
                         if (saga == null) {
                             Log.e(javaClass.simpleName, "loadSaga: Unexpected error loading saga($sagaId)")
+                            content.emit(null)
+                            return@collectLatest
+                        }
+
+                        val previousSaga = content.value
+                        content.emit(saga)
+
+                        // Check if only playtime changed to avoid re-triggering narrative checks
+                        if (previousSaga != null &&
+                            previousSaga.data.id == saga.data.id &&
+                            previousSaga.data.playTimeMs != saga.data.playTimeMs &&
+                            previousSaga.flatMessages().size == saga.flatMessages().size &&
+                            previousSaga.acts.size == saga.acts.size
+                        ) {
+                            Log.d(
+                                javaClass.simpleName,
+                                "Saga update was only playtime. Skipping narrative check.",
+                            )
                             return@collectLatest
                         }
 
@@ -295,7 +327,8 @@ class SagaContentManagerImpl
             val currentSaga = content.value ?: return
             Log.d(javaClass.simpleName, "Backing up saga ${currentSaga.data.id}")
 
-            sagaHistoryUseCase.backupSaga(currentSaga)
+            val backup = sagaHistoryUseCase.backupSaga(currentSaga)
+            Log.d(javaClass.simpleName, "backupSaga: backup successfull? ${backup.isSuccess}")
         }
 
         override suspend fun enableBackup(uri: Uri?) {

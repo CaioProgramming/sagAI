@@ -135,7 +135,7 @@ class MessageUseCaseImpl
                     } ?: emptyList()
 
                 val genText =
-                    gemmaClient.generate<Message>(
+                    textGenClient.generate<Message>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
                             message =
@@ -156,7 +156,6 @@ class MessageUseCaseImpl
                                         },
                                 ),
                         ),
-                        useCore = true,
                     )
 
                 genText!!

@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
+import android.net.Uri
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -11,6 +12,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -33,6 +35,8 @@ class SagaDetailUseCaseImpl
         private val chapterUseCase: ChapterUseCase,
         private val actUseCase: ActUseCase,
         private val wikiUseCase: WikiUseCase,
+        private val sagaBackupService: SagaBackupService,
+        private val backupService: com.ilustris.sagai.core.file.BackupService,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> =
             sagaRepository
@@ -121,4 +125,11 @@ class SagaDetailUseCaseImpl
         ) {
             wikiUseCase.mergeWikis(currentsaga, wikis)
         }
+
+        override suspend fun exportSaga(
+            sagaId: Int,
+            destinationUri: Uri,
+        ) = sagaBackupService.exportSaga(sagaId, destinationUri)
+
+        override fun getBackupEnabled() = backupService.backupEnabled()
     }

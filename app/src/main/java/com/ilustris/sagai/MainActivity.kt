@@ -51,6 +51,7 @@ import androidx.navigation.compose.rememberNavController
 import com.google.firebase.installations.FirebaseInstallations
 import com.ilustris.sagai.core.network.ConnectivityObserver
 import com.ilustris.sagai.core.network.ui.NoInternetScreen
+import com.ilustris.sagai.ui.components.BlurProvider
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.SagaNavGraph
 import com.ilustris.sagai.ui.navigation.findRoute
@@ -65,7 +66,7 @@ class MainActivity : ComponentActivity() {
     private val deepLinkChannel = Channel<String>(Channel.CONFLATED)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         printFirebaseInstallationAuthToken()
         enableEdgeToEdge()
@@ -103,78 +104,85 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                Scaffold(modifier = Modifier.fillMaxSize(), snackbarHost = {
-                    SnackbarHost(hostState = snackbarHostState) {
-                        Snackbar(
-                            it,
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(15.dp),
-                        )
-                    }
-                }, topBar = {
-                    AnimatedContent(route) {
-                        if (it.topBarContent != null) {
-                            it.topBarContent(navController)
-                        } else {
-                            TopAppBar(
-                                title = {
-                                    Box(modifier = Modifier.fillMaxWidth()) {
-                                        route.title?.let {
-                                            Text(
-                                                text = stringResource(it),
-                                                style = MaterialTheme.typography.titleSmall,
-                                                fontWeight = FontWeight.Medium,
-                                                textAlign = TextAlign.Center,
-                                                modifier =
-                                                    Modifier
-                                                        .padding(16.dp)
-                                                        .fillMaxWidth(),
-                                            )
-                                        } ?: run {
-                                            Image(
-                                                painterResource(R.drawable.ic_spark),
-                                                contentDescription = stringResource(R.string.app_name),
-                                                modifier =
-                                                    Modifier
-                                                        .align(Alignment.Center)
-                                                        .size(24.dp)
-                                                        .align(Alignment.Center),
-                                                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
-                                            )
-                                        }
-                                    }
-                                },
-                                actions = {},
-                                navigationIcon = {
-                                    AnimatedVisibility(route != Routes.HOME) {
-                                        IconButton(onClick = {
-                                            navController.popBackStack()
-                                        }) {
-                                            Icon(
-                                                painterResource(R.drawable.ic_back_left),
-                                                contentDescription = "Back",
-                                                tint = MaterialTheme.colorScheme.onBackground,
-                                            )
-                                        }
-                                    }
-                                },
+                BlurProvider {
+                    Scaffold(modifier = Modifier.fillMaxSize(), snackbarHost = {
+                        SnackbarHost(hostState = snackbarHostState) {
+                            Snackbar(
+                                it,
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                shape = RoundedCornerShape(15.dp),
                             )
                         }
-                    }
-                }, bottomBar = {
-                    // SagaBottomNavigation(navController, route)
-                }) { padding ->
-                    AnimatedContent(isOnline, transitionSpec = {
-                        fadeIn() togetherWith fadeOut()
-                    }) {
-                        if (it) {
-                            SharedTransitionLayout {
-                                Box(modifier = Modifier.fillMaxSize()) {
-                                    SagaNavGraph(navController, padding, this@SharedTransitionLayout, snackbarHostState)
-                                }
+                    }, topBar = {
+                        AnimatedContent(route) {
+                            if (it.topBarContent != null) {
+                                it.topBarContent(navController)
+                            } else {
+                                TopAppBar(
+                                    title = {
+                                        Box(modifier = Modifier.fillMaxWidth()) {
+                                            route.title?.let {
+                                                Text(
+                                                    text = stringResource(it),
+                                                    style = MaterialTheme.typography.titleSmall,
+                                                    fontWeight = FontWeight.Medium,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier =
+                                                        Modifier
+                                                            .padding(16.dp)
+                                                            .fillMaxWidth(),
+                                                )
+                                            } ?: run {
+                                                Image(
+                                                    painterResource(R.drawable.ic_spark),
+                                                    contentDescription = stringResource(R.string.app_name),
+                                                    modifier =
+                                                        Modifier
+                                                            .align(Alignment.Center)
+                                                            .size(24.dp)
+                                                            .align(Alignment.Center),
+                                                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                                                )
+                                            }
+                                        }
+                                    },
+                                    actions = {},
+                                    navigationIcon = {
+                                        AnimatedVisibility(route != Routes.HOME) {
+                                            IconButton(onClick = {
+                                                navController.popBackStack()
+                                            }) {
+                                                Icon(
+                                                    painterResource(R.drawable.ic_back_left),
+                                                    contentDescription = "Back",
+                                                    tint = MaterialTheme.colorScheme.onBackground,
+                                                )
+                                            }
+                                        }
+                                    },
+                                )
                             }
-                        } else {
-                            NoInternetScreen()
+                        }
+                    }, bottomBar = {
+                        // SagaBottomNavigation(navController, route)
+                    }) { padding ->
+                        AnimatedContent(isOnline, transitionSpec = {
+                            fadeIn() togetherWith fadeOut()
+                        }) {
+                            if (it) {
+                                SharedTransitionLayout {
+                                    Box(modifier = Modifier.fillMaxSize()) {
+                                        SagaNavGraph(
+                                            navController,
+                                            padding,
+                                            this@SharedTransitionLayout,
+                                            snackbarHostState,
+                                        )
+                                    }
+                                }
+                            } else {
+                                NoInternetScreen()
+                            }
                         }
                     }
                 }

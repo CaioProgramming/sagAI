@@ -87,43 +87,50 @@ object ChatPrompts {
         appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
 
         appendLine(ActPrompts.actDirective(directive))
+
         appendLine(conversationHistory(lastMessages))
 
         appendLine("## NPC Actions & Thoughts")
         appendLine(
-            """
-            **NPC AGENCY & PERSONALITY:** NPCs should feel like living beings with their own motivations, personalities, and opinions.
-            a) **Authentic Behavior:** Characters react based on who they are. This can be through physical actions (`ACTION`), dialogue (`CHARACTER`), or internal thoughts (`THOUGHT`). A character might choose to remain silent, observe, or get lost in thought if it fits their personality and the situation. Not every moment requires an external action.
-            b) **Evaluate the Need for Interaction:** Before generating a response, consider if an interaction is truly necessary. If the player is setting a scene, describing an internal monologue, or if a character is alone, it might be better to continue the narration (`NARRATOR`) or provide a `THOUGHT` rather than forcing a dialogue or action that feels unnatural.
-            c) **Conflict/Combat:** In action-oriented scenes, prioritize `ACTION` to describe attacks, defenses, or significant movements.
-            d) **Character Development:** Use `THOUGHT` to reveal crucial internal conflicts, motivations, or opinions. This is a key tool for character development.
-
-            **INTERACTION RULES:**
-            - **Inner Thoughts Privacy:** Messages marked as `THOUGHT` (or internal monologue) are PRIVATE to the thinker.
-            - **No Direct Replies to Thoughts:** Characters CANNOT directly reply to the content of a `THOUGHT` message. They act as if they don't know what was thought.
-            - **Reacting to Expressions:** Characters CAN react to the *visible behavior* or *expression* accompanying a thought (e.g., "You look deep in thought," or "Why are you smiling?"), but NEVER the content itself.
-            - **Exception:** Only characters explicitly defined as mind-readers or telepaths can reply directly to thoughts.
-            """.trimIndent(),
-        )
-        appendLine("- NPCs can perform actions (`ACTION`) or have thoughts (`THOUGHT`).")
-        appendLine("- **CRITICAL**: For NPC `ACTION` or `THOUGHT`, set `speakerName` to the NPC's name.")
-        appendLine(
-            "- `ACTION` (NPC): Concise description of a physical action (e.g., 'Elara unsheathes her dagger.'). The `NARRATOR` describes the wider scene.",
+            "**NPC AGENCY & PERSONALITY:** NPCs should feel like living beings with their own motivations, personalities, and opinions.",
         )
         appendLine(
-            "- `THOUGHT` (NPC): Use for critical insights or internal conflict (e.g., 'He doesn't suspect a thing...'). Show, don't just tell.",
+            "a) **Authentic Behavior:** Characters react based on who they are. This can be through physical actions (`ACTION`), dialogue (`CHARACTER`), or internal thoughts (`THOUGHT`). A character might choose to remain silent, observe, or get lost in thought if it fits their personality and the situation. Not every moment requires an external action.",
         )
         appendLine(
-            "- You primarily generate `NARRATOR` (storytelling) and `CHARACTER` (dialogue) messages. Do not generate `ACTION` or `THOUGHT` for the player.",
+            "b) **Evaluate the Need for Interaction:** Before generating a response, consider if an interaction is truly necessary. If the player is setting a scene, describing an internal monologue, or if a character is alone, it might be better to continue the narration (`NARRATOR`) or provide a `THOUGHT` rather than forcing a dialogue or action that feels unnatural.",
+        )
+        appendLine(
+            "c) **Conflict/Combat:** In action-oriented scenes, prioritize `ACTION` to describe attacks, defenses, or significant movements.",
         )
 
-        appendLine(SagaDirective.namingDirective(saga.data.genre))
-        appendLine(conversationStyleAndPacing())
-        appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
-        appendLine("Use the conversation style to provide a natural dialogue")
+        appendLine("## Directives")
+        appendLine(directive)
         appendLine(GenrePrompts.conversationDirective(saga.data.genre))
-        appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:**")
-        appendLine(message.toAINormalize(messageExclusions))
+        appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
+
+        appendLine("## Auteur Instructions")
+        appendLine(
+            "1. **Analyze the Moment**: Is this a high-action scene or an emotional beat? If characters are processing trauma or conflict, **let them breathe**. Do not force the `immediateObjective`.",
+        )
+        appendLine(
+            "2. **Ensemble Focus**: Consider the internal state of **ALL** present characters, not just the protagonist. How does Liana feel seeing Sasha break down? Is Kira impatient? Give them agency.",
+        )
+        appendLine(
+            "3. **Show, Don't Just Tell**: Use `NARRATOR` to describe atmosphere and sensory details, but use `CHARACTER` dialogue to drive the soul of the scene.",
+        )
+        appendLine(
+            "4. **Break Repetition**: If the conversation is looping (e.g., repeated comforting), **CHANGE THE DYNAMIC**. Have a character get frustrated, have an external event interrupt, or have someone propose a radical new idea.",
+        )
+        appendLine(
+            "5. **One-Shot Actions**: If an action was described (e.g., 'bandaging wound'), assume it's done. Move to the consequence.",
+        )
+        appendLine(
+            "6. **Conciseness**: Keep responses under 500 characters unless absolutely necessary. Aim for natural, chat-like brevity. Avoid exhaustive monologues.")
+
+        appendLine("## Output Format")
+        appendLine("Return a JSON object:")
+        appendLine(toJsonMap(Message::class.java, filteredFields = messageExclusions))
     }.trimIndent()
 
     @Suppress("ktlint:standard:max-line-length")

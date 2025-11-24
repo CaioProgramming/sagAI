@@ -9,7 +9,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.components.SnackBarState
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,4 +55,9 @@ interface SagaContentManager {
     suspend fun enableBackup(uri: Uri?)
 
     suspend fun reviewChapter(chapterContent: ChapterContent)
+
+    suspend fun updatePlaytime(
+        sagaId: Int,
+        timeInMillis: Long,
+    )
 }

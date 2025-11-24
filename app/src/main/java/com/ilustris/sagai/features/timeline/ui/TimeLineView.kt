@@ -12,7 +12,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -83,7 +82,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedElementItemKey
@@ -810,9 +808,7 @@ fun AvatarTimelineIcon(
     modifier: Modifier = Modifier,
 ) {
     val border =
-        borderColor?.solidGradient() ?: Brush.verticalGradient(
-            listOf(genre.color, genre.colorPalette().last(), genre.iconColor),
-        )
+        borderColor?.solidGradient() ?: genre.color.solidGradient()
     val background =
         backgroundColor?.gradientFade() ?: genre.color.gradientFade()
     Box(

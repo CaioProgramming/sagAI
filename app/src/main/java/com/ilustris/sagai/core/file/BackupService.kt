@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.google.gson.Gson
+import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.datastore.DataStorePreferences
 import com.ilustris.sagai.core.file.backup.RestorableSaga
@@ -173,37 +174,79 @@ class BackupService(
         }
     }
 
-    suspend fun backupSaga(saga: SagaContent) =
+    suspend fun backupSaga(saga: SagaContent): RequestResult<Uri> =
         executeRequest {
             val backupRoot = getBackupRoot() ?: error("Could not access backup directory")
             val zipFileName = "saga_${saga.data.id}.zip"
             var sagaZipFile = backupRoot.findFile(zipFileName)
-            if (sagaZipFile == null) {
-                sagaZipFile = backupRoot.createFile("application/zip", zipFileName)
+
+            sagaZipFile?.delete()
+
+            sagaZipFile =
+                backupRoot.createFile("application/zip", zipFileName)
                     ?: error("Could not create zip file in backup directory.")
-            }
 
             context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
-                ZipOutputStream(outputStream).use { zipStream ->
-
-                    val backedSaga = normalizeSagaContentPaths(saga)
-                    val sagaJson = Gson().toJson(backedSaga)
-                    zipStream.putNextEntry(ZipEntry(SAGA_JSON_FILE))
-                    zipStream.write(sagaJson.toByteArray())
-                    zipStream.closeEntry()
-
-                    val imagePaths = getAllImageFiles(saga)
-                    imagePaths.forEach { (path, file) ->
-                        if (file.exists()) {
-                            zipStream.putNextEntry(ZipEntry(path))
-                            FileInputStream(file).use { it.copyTo(zipStream) }
-                            zipStream.closeEntry()
-                        }
-                    }
-                }
+                writeSagaToZip(saga, outputStream)
             }
 
             updateManifest(backupRoot, saga, zipFileName)
+            sagaZipFile.uri
+        }
+
+    suspend fun exportSagaToCache(saga: SagaContent): RequestResult<Uri> =
+        executeRequest {
+            val cacheDir = File(context.cacheDir, "exports")
+            if (!cacheDir.exists()) cacheDir.mkdirs()
+
+            // Clean up old exports to avoid clutter
+            cacheDir.listFiles()?.forEach { it.delete() }
+
+            val zipFileName = "saga_${saga.data.id}_export.zip"
+            val zipFile = File(cacheDir, zipFileName)
+
+            zipFile.outputStream().use { outputStream ->
+                writeSagaToZip(saga, outputStream)
+            }
+
+            // Use FileProvider to get a shareable URI
+            androidx.core.content.FileProvider.getUriForFile(
+                context,
+                "com.ilustris.sagai.fileprovider",
+                zipFile,
+            )
+        }
+
+    private fun writeSagaToZip(
+        saga: SagaContent,
+        outputStream: java.io.OutputStream,
+    ) {
+        ZipOutputStream(outputStream).use { zipStream ->
+            val backedSaga = normalizeSagaContentPaths(saga)
+            val sagaJson = Gson().toJson(backedSaga)
+            zipStream.putNextEntry(ZipEntry(SAGA_JSON_FILE))
+            zipStream.write(sagaJson.toByteArray())
+            zipStream.closeEntry()
+
+            val imagePaths = getAllImageFiles(saga)
+            imagePaths.forEach { (path, file) ->
+                if (file.exists()) {
+                    zipStream.putNextEntry(ZipEntry(path))
+                    FileInputStream(file).use { it.copyTo(zipStream) }
+                    zipStream.closeEntry()
+                }
+            }
+        }
+    }
+
+    suspend fun writeExportToUri(
+        saga: SagaContent,
+        destinationUri: Uri,
+    ): RequestResult<Unit> =
+        executeRequest {
+            context.contentResolver.openOutputStream(destinationUri, "w")?.use { outputStream ->
+                writeSagaToZip(saga, outputStream)
+            } ?: error("Could not open output stream for destination URI")
         }
 
     private fun normalizeSagaContentPaths(saga: SagaContent): SagaContent =
@@ -360,6 +403,34 @@ class BackupService(
             e.printStackTrace()
         }
         return null
+    }
+
+    fun updateSagaPaths(
+        saga: SagaContent,
+        pathMap: Map<String, String>,
+    ): SagaContent {
+        val updatePath = { path: String ->
+            pathMap[path] ?: path
+        }
+
+        return saga.copy(
+            data = saga.data.copy(icon = updatePath(saga.data.icon)),
+            characters =
+                saga.characters.map {
+                    it.copy(data = it.data.copy(image = updatePath(it.data.image)))
+                },
+            acts =
+                saga.acts.map { act ->
+                    act.copy(
+                        chapters =
+                            act.chapters.map { chapter ->
+                                chapter.copy(
+                                    data = chapter.data.copy(coverImage = updatePath(chapter.data.coverImage)),
+                                )
+                            },
+                    )
+                },
+        )
     }
 }
 

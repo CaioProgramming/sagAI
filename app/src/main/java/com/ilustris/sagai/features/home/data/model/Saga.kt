@@ -42,4 +42,6 @@ data class Saga(
     val review: Review? = null,
     @ColumnInfo(defaultValue = "")
     val emotionalReview: String? = null,
+    @ColumnInfo(defaultValue = "0")
+    val playTimeMs: Long = 0L,
 )

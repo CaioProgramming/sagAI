@@ -421,15 +421,34 @@ class ChatViewModel
             }
         }
 
+        private var startTime: Long = 0L
+
         override fun onResume(owner: LifecycleOwner) {
             super.onResume(owner)
-            Log.d("ChatViewModel", "Lifecycle: onResume. MediaPlayerService manages its own state.")
+            startTime = System.currentTimeMillis()
+            Log.d(
+                "ChatViewModel",
+                "Lifecycle: onResume. MediaPlayerService manages its own state. Start time: $startTime",
+            )
         }
 
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
             Log.d("ChatViewModel", "Lifecycle: onPause called. Music continues via service if playing.")
             viewModelScope.launch(Dispatchers.IO) {
+                if (startTime != 0L) {
+                    val endTime = System.currentTimeMillis()
+                    val duration = endTime - startTime
+                    val currentSaga = content.value
+                    if (currentSaga != null && duration > 0) {
+                        Log.d(
+                            "ChatViewModel",
+                            "Updating playtime for saga ${currentSaga.data.id}: +${duration}ms",
+                        )
+                        sagaContentManager.updatePlaytime(currentSaga.data.id, duration)
+                    }
+                    startTime = 0L
+                }
                 sagaContentManager.backupSaga()
             }
         }
@@ -681,9 +700,9 @@ class ChatViewModel
             message: Message,
             sceneSummary: SceneSummary?,
         ) {
-            updateLoading(true)
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
+                updateLoading(true)
                 val timeline = saga.getCurrentTimeLine()
                 if (timeline == null) {
                     sagaContentManager.checkNarrativeProgression(saga)

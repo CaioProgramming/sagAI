@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
+import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -29,4 +30,11 @@ interface SagaDetailUseCase {
         currentsaga: SagaContent,
         wikis: List<Wiki>,
     )
+
+    suspend fun exportSaga(
+        sagaId: Int,
+        destinationUri: Uri,
+    ): RequestResult<Unit>
+
+    fun getBackupEnabled(): Flow<Boolean>
 }

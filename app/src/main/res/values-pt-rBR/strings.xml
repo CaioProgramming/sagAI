@@ -298,4 +298,9 @@
     <string name="updates_count">%d Atualizações</string>
     <string name="last_update">Última atualização</string>
     <string name="chat_view_subtitle">Ato %1$s - Capítulo %2$s</string>
+    <string name="backup_enabled_label">Backup Ativado</string>
+    <string name="backup_disabled_label">Backup Desativado</string>
+    <string name="backup_enabled_message">Sua saga está sendo salva automaticamente</string>
+    <string name="backup_disabled_message">Ative o backup nas configurações para proteção automática</string>
+    <string name="export_button_label">Exportar</string>
 </resources>
