@@ -174,9 +174,10 @@ fun buildStyleAnnotation(
 
     styleItems.forEach { group ->
         group.rules.forEach { rule ->
-            var startIndex = text.indexOf(rule.searchTerm, ignoreCase = true)
-            while (startIndex != -1) {
-                val endIndex = startIndex + rule.searchTerm.length
+            val regex = Regex("\\b${Regex.escape(rule.searchTerm)}\\b", RegexOption.IGNORE_CASE)
+            regex.findAll(text).forEach { matchResult ->
+                val startIndex = matchResult.range.first
+                val endIndex = matchResult.range.last + 1
                 addStyle(
                     style = rule.spanStyle,
                     start = startIndex,
@@ -189,7 +190,6 @@ fun buildStyleAnnotation(
                     start = startIndex,
                     end = endIndex,
                 )
-                startIndex = text.indexOf(rule.searchTerm, startIndex + 1, ignoreCase = true)
             }
         }
     }
