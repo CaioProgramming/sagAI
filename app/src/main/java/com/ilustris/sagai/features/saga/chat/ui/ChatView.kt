@@ -146,6 +146,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
+import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
@@ -619,7 +620,8 @@ fun ChatContent(
                                 shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
                                 targetValue = 1000f,
-                            ).fillMaxSize(.5f)
+                            )
+                            .fillMaxSize(.5f)
                             .alpha(.3f),
                 )
 
@@ -627,7 +629,8 @@ fun ChatContent(
                     Modifier
                         .padding(
                             top = padding.calculateTopPadding(),
-                        ).fillMaxSize(),
+                        )
+                        .fillMaxSize(),
                 ) {
                     rememberCoroutineScope()
                     val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
@@ -671,7 +674,8 @@ fun ChatContent(
                                 bottom.linkTo(parent.bottom)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }.fillMaxWidth()
+                            }
+                            .fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
                     )
@@ -685,8 +689,7 @@ fun ChatContent(
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                     width = Dimension.fillToConstraints
-                                }
-                                .padding(vertical = padding.calculateBottomPadding())
+                                }.padding(vertical = padding.calculateBottomPadding())
                                 .animateContentSize(),
                         enter = slideInVertically(),
                         exit = fadeOut(),
@@ -725,8 +728,7 @@ fun ChatContent(
                                     top.linkTo(parent.top)
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
-                                }
-                                .background(MaterialTheme.colorScheme.background),
+                                }.background(MaterialTheme.colorScheme.background),
                     ) {
                         AnimatedVisibility(
                             objectiveExpanded.not(),
@@ -767,14 +769,14 @@ fun ChatContent(
                                         .clip(CircleShape)
                                         .clickable(enabled = currentObjective?.isNotEmpty() == true) {
                                             objectiveExpanded = true
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(
                                             progressiveBrush(
                                                 content.data.genre.color,
                                                 progress,
                                             ),
-                                        ).reactiveShimmer(isGenerating)
+                                        )
+                                        .reactiveShimmer(isGenerating)
                                         .sharedElement(
                                             rememberSharedContentState(
                                                 key = "current_objective_${content.data.id}",
@@ -1218,41 +1220,13 @@ fun ChatList(
         }
         if (saga.data.isEnded && saga.data.endMessage.isNotEmpty()) {
             item {
-                Column(
-                    modifier =
-                        Modifier
-                            .animateItem()
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                            .clickable {
-                                openSaga()
-                            },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        stringResource(R.string.saga_detail_see_your_now),
-                        style =
-                            MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = saga.data.genre.bodyFont(),
-                            ),
-                        modifier = Modifier.alpha(.4f),
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        stringResource(R.string.saga_detail_recap_button),
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontFamily = saga.data.genre.headerFont(),
-                                fontWeight = FontWeight.Bold,
-                                brush = saga.data.genre.gradient(),
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier.reactiveShimmer(
-                                true,
-                            ),
-                    )
-                }
+                RecapHeroCard(
+                    saga,
+                    Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    onClick = { openSaga() },
+                )
             }
 
             item {
@@ -1371,10 +1345,12 @@ fun ChatList(
                                                                 key = "timeline_${timeline.data.id}",
                                                             ),
                                                             this,
-                                                        ).padding(16.dp)
+                                                        )
+                                                        .padding(16.dp)
                                                         .clip(
                                                             genre.shape(),
-                                                        ).fillMaxWidth(),
+                                                        )
+                                                        .fillMaxWidth(),
                                                 requestReview = reviewEvent,
                                             )
                                         }

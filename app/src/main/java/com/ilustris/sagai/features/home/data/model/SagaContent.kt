@@ -91,7 +91,8 @@ fun SagaContent.findTimeline(timelineId: Int) = flatEvents().find { it.data.id =
 
 fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id == characterId }
 
-fun SagaContent.findCharacter(name: String): CharacterContent? {
+fun SagaContent.findCharacter(name: String?): CharacterContent? {
+    if (name == null) return null
     val normalizedInputNameTokens = name.lowercase().split(" ")
     return characters.find { characterContent ->
         val characterNameTokens =

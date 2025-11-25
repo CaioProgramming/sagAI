@@ -66,21 +66,12 @@ object ChatPrompts {
         sceneSummary?.let {
             appendLine("## Progression Context")
             appendLine("Guide your response to align with the story's progression based on this summary:")
-            appendLine(
-                "Attention: Your priority is to create a compelling narrative. This involves balancing plot progression (escalating the 'currentConflict' and advancing the 'immediateObjective') with rich character development. Use the 'mood' to dictate the tone of the narration and dialogues. Let the story breathe; sometimes a quiet moment of reflection or a character interaction that doesn't directly advance the plot is more powerful. Give characters space to develop their personalities and express their own opinions.",
-            )
             appendLine(sceneSummary.toAINormalize())
         }
 
+        appendLine(SagaPrompts.mainContext(saga))
+
         appendLine("## Saga & Player Context")
-        appendLine("SAGA CONTEXT: ${saga.data.toAINormalize(sagaExclusions)}")
-        appendLine(
-            "PLAYER CONTEXT: ${
-                saga.mainCharacter?.data.toAINormalize(
-                    characterExclusions,
-                )
-            }",
-        )
         appendLine(
             CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }),
         )
@@ -104,33 +95,16 @@ object ChatPrompts {
             "c) **Conflict/Combat:** In action-oriented scenes, prioritize `ACTION` to describe attacks, defenses, or significant movements.",
         )
 
-        appendLine("## Directives")
-        appendLine(directive)
-        appendLine(GenrePrompts.conversationDirective(saga.data.genre))
+        appendLine(SagaDirective.namingDirective(saga.data.genre))
+        appendLine(conversationStyleAndPacing())
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
+        appendLine("Use the conversation style to provide a natural dialogue")
+        appendLine(GenrePrompts.conversationDirective(saga.data.genre))
 
-        appendLine("## Auteur Instructions")
-        appendLine(
-            "1. **Analyze the Moment**: Is this a high-action scene or an emotional beat? If characters are processing trauma or conflict, **let them breathe**. Do not force the `immediateObjective`.",
-        )
-        appendLine(
-            "2. **Ensemble Focus**: Consider the internal state of **ALL** present characters, not just the protagonist. How does Liana feel seeing Sasha break down? Is Kira impatient? Give them agency.",
-        )
-        appendLine(
-            "3. **Show, Don't Just Tell**: Use `NARRATOR` to describe atmosphere and sensory details, but use `CHARACTER` dialogue to drive the soul of the scene.",
-        )
-        appendLine(
-            "4. **Break Repetition**: If the conversation is looping (e.g., repeated comforting), **CHANGE THE DYNAMIC**. Have a character get frustrated, have an external event interrupt, or have someone propose a radical new idea.",
-        )
-        appendLine(
-            "5. **One-Shot Actions**: If an action was described (e.g., 'bandaging wound'), assume it's done. Move to the consequence.",
-        )
-        appendLine(
-            "6. **Conciseness**: Keep responses under 500 characters unless absolutely necessary. Aim for natural, chat-like brevity. Avoid exhaustive monologues.")
+        appendLine(conversationHistory(lastMessages))
 
-        appendLine("## Output Format")
-        appendLine("Return a JSON object:")
-        appendLine(toJsonMap(Message::class.java, filteredFields = messageExclusions))
+        appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:**")
+        appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
 
     @Suppress("ktlint:standard:max-line-length")

@@ -18,6 +18,8 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -151,6 +153,7 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -1060,6 +1063,22 @@ private fun SagaDetailInitialView(
                                 }
                             }
 
+                            if (saga.data.isEnded) {
+                                item(span = {
+                                    GridItemSpan(columnCount)
+                                }) {
+                                    RecapHeroCard(
+                                        saga = saga,
+                                        modifier =
+                                            Modifier
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
+                                    ) {
+                                        openReview()
+                                    }
+                                }
+                            }
+
                             item(span = { GridItemSpan(columnCount) }) {
                                 AnimatedPlaytimeCounter(
                                     playtimeMs = saga.data.playTimeMs,
@@ -1144,44 +1163,6 @@ private fun SagaDetailInitialView(
                                                     ),
                                             )
                                         }
-                                    }
-                                }
-                            }
-
-                            if (saga.data.isEnded) {
-                                item(span = {
-                                    GridItemSpan(columnCount)
-                                }) {
-                                    Column(
-                                        modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .fillMaxWidth()
-                                                .clickable {
-                                                    openReview()
-                                                },
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                    ) {
-                                        Text(
-                                            stringResource(R.string.saga_detail_see_your_now),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            modifier = Modifier.alpha(.4f),
-                                            textAlign = TextAlign.Center,
-                                        )
-                                        Text(
-                                            stringResource(R.string.saga_detail_recap_button),
-                                            style =
-                                                MaterialTheme.typography.displaySmall.copy(
-                                                    fontFamily = saga.data.genre.headerFont(),
-                                                    fontWeight = FontWeight.Bold,
-                                                    brush = saga.data.genre.gradient(),
-                                                    textAlign = TextAlign.Center,
-                                                ),
-                                            modifier =
-                                                Modifier.reactiveShimmer(
-                                                    true,
-                                                ),
-                                        )
                                     }
                                 }
                             }
@@ -1944,6 +1925,115 @@ private fun BackupStatusCard(
                 stringResource(R.string.export_button_label),
                 style = MaterialTheme.typography.labelSmall,
             )
+        }
+    }
+}
+
+@Composable
+fun RecapHeroCard(
+    saga: SagaContent,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    val stats =
+        listOf(
+            stringResource(R.string.recap_messages_sent, saga.flatMessages().size),
+            stringResource(R.string.recap_characters_found, saga.characters.size),
+            stringResource(R.string.recap_chapters_lived, saga.flatChapters().size),
+            stringResource(R.string.recap_revisit_now),
+        )
+    var currentIndex by remember { mutableStateOf(0) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(2500)
+            currentIndex = (currentIndex + 1) % stats.size
+        }
+    }
+
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .clip(saga.data.genre.shape())
+                .border(
+                    1.dp,
+                    saga.data.genre.color
+                        .gradientFade(),
+                    saga.data.genre.shape(),
+                ).clickable {
+                    onClick()
+                },
+    ) {
+        saga.mainCharacter?.let {
+            AsyncImage(
+                it.data.image,
+                contentDescription = null,
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .effectForGenre(saga.data.genre),
+                contentScale = ContentScale.Crop,
+            )
+        }
+
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        fadeGradientBottom(saga.data.genre.color),
+                    ),
+        )
+
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .reactiveShimmer(true)
+                    .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Icon(
+                painterResource(id = R.drawable.ic_spark),
+                contentDescription = null,
+                modifier =
+                    Modifier
+                        .padding(16.dp)
+                        .size(24.dp),
+                tint = saga.data.genre.color,
+            )
+
+            Text(
+                text = stringResource(R.string.recap_your_journey),
+                style =
+                    MaterialTheme.typography.headlineMedium.copy(
+                        fontFamily = saga.data.genre.headerFont(),
+                        brush =
+                            saga.data.genre.gradient(),
+                    ),
+            )
+
+            AnimatedContent(
+                targetState = currentIndex,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(500)) + slideInVertically { it } togetherWith
+                        fadeOut(animationSpec = tween(500)) + slideOutVertically { -it }
+                },
+            ) { index ->
+                Text(
+                    text = stats[index],
+                    style =
+                        MaterialTheme.typography.headlineSmall.copy(
+                            color = saga.data.genre.iconColor,
+                            fontFamily = saga.data.genre.bodyFont(),
+                            textAlign = TextAlign.Center,
+                        ),
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
         }
     }
 }

@@ -34,18 +34,22 @@ object GenrePrompts {
             CYBERPUNK ->
                 """
                 Art Technique: Vintage 1980s Anime OVA Cel Animation. FLAT SHADING (Cel Shading) is mandatory. Shadows are hard-edged blocks of color; forbid soft gradients, ambient occlusion, and subsurface scattering.
-                Line Work: Fine, consistent black ink lines for characters; softer, painted lines for backgrounds.
+                Line Work: Delicate, sketchy ink lines with varying weight. Organic cloth folds and realistic mechanical detailing.
                 
                 **COLOR PALETTE & ACCENT:**
-                - Base: Limited 1980s animation palette. Saturated colors only: Magenta #FF00FF, Cyan #00FFFF, Deep Blue #000080. Forbid full-spectrum digital colors.
-                - Mandatory Accent: NEON PURPLE (#B026FF).
-                - Application: Use the accent for a weapon's energy glow, an armor diode, a cybernetic eye or limb part, or a prominent neon sign in the environment.
+                - Base: Muted Blue Tones. Dominant tones of Slate Blue, Cold Steel, and Deep Cool Greys. 
+                    The image should feel desaturated, moody and atmospheric.
+                - Mandatory Accent: DEEP PURPLE. 
+                - Application: Use this accent subtly for deep shadow casting, low-light environmental glow, or muted interface lights. STRICTLY FORBID bright, fluorescent neon pinks or bright purples. The purple must feel "bruised" or metallic.
                 
                 Detail: Hair rendered as "clumps" or shapes with simple highlights, not individual strands. Skin must be matte; reduce micro-detail.
                 Lighting: High-contrast "Rembrandt" lighting with hard-edged, cast shadows. Strong Hard Rim Light is essential to separate characters. No Global Illumination.
-                Texture & Artifacts: Heavy CRT Scanlines, VHS noise, Analog Noise, Chromatic Aberration, and subtle Film Grain to simulate vintage broadcast quality. 
+                Texture & Artifacts: Analog Noise, Chromatic Aberration, and subtle Film Grain to simulate vintage broadcast quality. 
                 
                 Facial Features: Classic 1990s anime proportions. Large, expressive eyes with prominent specular highlights, sharp noses, and high-contrast hair sheen.
+                
+                Mood: Dystopian, melancholic, and vast. A sense of high-tech isolation amidst towering structures.
+                Ambience: Dense vertical metropolis, looming mega-skylines, muted city lights. A feeling of oppressive scale and future decay.
                 
                 Rendering Constraints: Strictly forbid 3D CGI, photorealism, modern digital smoothing/blending techniques, modern anime, digital painting, 3d render, unreal engine, volumetric lighting, smooth shading. The final image must look like a high-quality frame from a vintage laserdisc or a production cel.
                 """

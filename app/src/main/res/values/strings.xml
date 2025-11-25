@@ -330,5 +330,11 @@
     <string name="backup_enabled_message">Your saga is being backed up automatically</string>
     <string name="backup_disabled_message">Enable backup in settings for automatic protection</string>
     <string name="export_button_label">Export</string>
+    <string name="recap_messages_sent">%d messages sent</string>
+    <string name="recap_characters_found">%d characters found</string>
+    <string name="recap_chapters_lived">%d chapters lived</string>
+    <string name="recap_revisit_now">Revisit your saga now</string>
+    <string name="recap_your_journey">Your Journey</string>
+    <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
 
 </resources>

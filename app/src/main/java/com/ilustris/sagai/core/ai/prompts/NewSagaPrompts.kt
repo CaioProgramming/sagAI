@@ -148,6 +148,12 @@ object NewSagaPrompts {
         appendLine("Use the chat history to have better context from the saga: ")
         appendLine(miniChatContent.joinToString { "${it.sender.name}: ${it.text}" })
         appendLine("Generate a saga based on this information.")
+        appendLine("IMPORTANT INSTRUCTIONS FOR THE SAGA DESCRIPTION:")
+        appendLine("1. Keep the description SHORT and CONCISE (max 3 sentences).")
+        appendLine("2. This is an INITIAL KICK OFF, not a full summary.")
+        appendLine("3. DO NOT include spoilers or reveal major plot twists.")
+        appendLine("4. DO NOT provide a large resume of the story history.")
+        appendLine("5. Focus on the setting, the main conflict, and the hook.")
     }
 
     fun characterSavedPrompt(

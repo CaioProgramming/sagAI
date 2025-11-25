@@ -303,4 +303,10 @@
     <string name="backup_enabled_message">Sua saga está sendo salva automaticamente</string>
     <string name="backup_disabled_message">Ative o backup nas configurações para proteção automática</string>
     <string name="export_button_label">Exportar</string>
+    <string name="recap_messages_sent">%d mensagens trocadas</string>
+    <string name="recap_characters_found">%d personagens encontrados</string>
+    <string name="recap_chapters_lived">%d capítulos vividos</string>
+    <string name="recap_revisit_now">Revisite sua saga agora</string>
+    <string name="recap_your_journey">Sua Jornada</string>
+    <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
 </resources>

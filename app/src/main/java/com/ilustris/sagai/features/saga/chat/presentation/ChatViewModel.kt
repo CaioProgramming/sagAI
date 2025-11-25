@@ -149,7 +149,7 @@ class ChatViewModel
                     if (it.not()) {
                         updateSnackBar(
                             snackBarState =
-                                snackBar("Backup desativado. Verifique as permissões, para nao perder o progresso.") {
+                                snackBar(context.getString(R.string.backup_disabled_notification)) {
                                     action {
                                         configureBackup()
                                     }
@@ -471,15 +471,20 @@ class ChatViewModel
                 }
 
             updatableMessages.forEach { message ->
-                val character =
-                    content.getCharacters().find { it.name.equals(message.message.speakerName, true) }
-                character?.let {
-                    messageUseCase.updateMessage(
-                        message.message.copy(
-                            characterId = it.id,
-                            speakerName = it.name,
-                        ),
-                    )
+                if (message.character == null &&
+                    message.message.speakerName
+                        .isNullOrEmpty()
+                        .not()
+                ) {
+                    val character = content.findCharacter(message.message.speakerName)
+                    character?.let {
+                        messageUseCase.updateMessage(
+                            message.message.copy(
+                                characterId = it.data.id,
+                                speakerName = it.data.name,
+                            ),
+                        )
+                    }
                 }
             }
         }
