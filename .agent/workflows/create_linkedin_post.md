@@ -6,9 +6,10 @@ This workflow guides you through creating a LinkedIn update post for Sagas, foll
 and engaging style of the "Dev Diary".
 
 1. **Gather Context from Git**:
-    - **Analyze Commits**: Run `git log -n 15 --oneline develop` to see the latest ~15 commits on
-      the develop branch.
-    - **Analyze Merges**: Run `git log --merges -n 2 --oneline develop` to see the latest 2 merges.
+    - **Identify Branch**: Run `git branch --show-current` to know what we are working on.
+    - **Analyze Commits**: Run `git log -n 15 --oneline` to see the latest ~15 commits on the
+      current branch.
+    - **Analyze Merges**: Run `git log --merges -n 2 --oneline` to see the latest 2 merges.
     - **Synthesize**: Based on these logs, identify the key features, "wins", and technical
       challenges to highlight.
     - **Ask (Optional)**: Only ask the user for clarification if the commit messages are unclear or
