@@ -63,7 +63,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
@@ -608,6 +607,10 @@ fun ChatBubble(
                                                 contentColor = MaterialTheme.colorScheme.error,
                                                 containerColor = Color.Transparent,
                                             ),
+                                        modifier =
+                                            Modifier
+                                                .padding(horizontal = 16.dp)
+                                                .fillMaxWidth(),
                                     ) {
                                         Icon(
                                             painterResource(R.drawable.baseline_refresh_24),
