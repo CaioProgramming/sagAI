@@ -2,6 +2,8 @@
 
 package com.ilustris.sagai.features.saga.chat.ui.components
 
+import android.graphics.Matrix
+import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
@@ -9,8 +11,13 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -68,8 +75,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ShaderBrush
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -88,6 +100,7 @@ import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -141,6 +154,18 @@ fun ChatInputView(
     )
     val inputShape = remember { content.data.genre.shape() }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "rotation",
+    )
+
     rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -164,8 +189,7 @@ fun ChatInputView(
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(10.dp),
-                    )
-                    .heightIn(max = 300.dp)
+                    ).heightIn(max = 300.dp)
                     .fillMaxWidth()
                     .padding(16.dp),
             ) {
@@ -292,8 +316,42 @@ fun ChatInputView(
                     Modifier
                         .padding(1.dp)
                         .fillMaxWidth()
-                        .border(1.dp, inputBrush, inputShape)
-                        .background(backgroundColor, inputShape),
+                        .drawWithContent {
+                            drawContent()
+                            val outline = inputShape.createOutline(size, layoutDirection, this)
+                            if (isGenerating) {
+                                val brush =
+                                    object : ShaderBrush() {
+                                        override fun createShader(size: Size): Shader {
+                                            val shader =
+                                                (
+                                                    sweepGradient(
+                                                        content.data.genre.colorPalette(),
+                                                    ) as ShaderBrush
+                                                ).createShader(size)
+                                            val matrix = Matrix()
+                                            matrix.setRotate(
+                                                rotation,
+                                                size.width / 2,
+                                                size.height / 2,
+                                            )
+                                            shader.setLocalMatrix(matrix)
+                                            return shader
+                                        }
+                                    }
+                                drawOutline(
+                                    outline = outline,
+                                    brush = brush,
+                                    style = Stroke(width = 1.dp.toPx()),
+                                )
+                            } else {
+                                drawOutline(
+                                    outline = outline,
+                                    brush = inputBrush,
+                                    style = Stroke(width = 1.dp.toPx()),
+                                )
+                            }
+                        }.background(backgroundColor, inputShape),
             ) {
                 val characterToolTipState =
                     androidx.compose.material3.rememberTooltipState(
@@ -358,8 +416,7 @@ fun ChatInputView(
                                                 content.data.genre.color
                                                     .gradientFade(),
                                                 content.data.genre.shape(),
-                                            )
-                                            .background(
+                                            ).background(
                                                 MaterialTheme.colorScheme.background,
                                                 content.data.genre.shape(),
                                             ),
@@ -384,8 +441,7 @@ fun ChatInputView(
                                                     .clickable {
                                                         onSelectCharacter(it)
                                                         characterSelectionExpanded = false
-                                                    }
-                                                    .size(36.dp),
+                                                    }.size(36.dp),
                                             textStyle =
                                                 MaterialTheme.typography.labelSmall.copy(
                                                     fontFamily = content.data.genre.bodyFont(),
@@ -484,9 +540,11 @@ fun ChatInputView(
                                         )
                                     }
 
-                                    Box(Modifier
-                                        .alpha(textAlpha)
-                                        .fillMaxWidth()) {
+                                    Box(
+                                        Modifier
+                                            .alpha(textAlpha)
+                                            .fillMaxWidth(),
+                                    ) {
                                         innerTextField()
                                     }
                                 }
@@ -523,8 +581,7 @@ fun ChatInputView(
                                         .background(
                                             buttonColor,
                                             CircleShape,
-                                        )
-                                        .size(32.dp),
+                                        ).size(32.dp),
                             ) {
                                 AnimatedVisibility(
                                     isGenerating.not(),
@@ -590,8 +647,7 @@ fun ChatInputView(
                                             .gradientFill(brush)
                                             .clickable {
                                                 onUpdateSender(it)
-                                            }
-                                            .padding(16.dp),
+                                            }.padding(16.dp),
                                 ) {
                                     val weight =
                                         if (it == action) FontWeight.Bold else FontWeight.Normal
@@ -655,8 +711,7 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     genre.shape(),
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

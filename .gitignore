@@ -23,3 +23,4 @@ gha-creds-*.json
 .kotlin/
 .junie/
 .kotlin/sessions/
+keystore.properties

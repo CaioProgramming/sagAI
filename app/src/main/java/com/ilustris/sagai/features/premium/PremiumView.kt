@@ -13,17 +13,16 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -33,12 +32,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -79,23 +78,34 @@ fun PremiumView(
     onDismiss: () -> Unit = {},
     premiumViewModel: PremiumViewModel = hiltViewModel(),
 ) {
-    val brush = Brush.verticalGradient(holographicGradient)
     val genres = Genre.entries
     var currentIndex by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val genreOffsets = remember { mutableStateListOf(*Array(genres.size) { 0.dp }) }
     val billingState by premiumViewModel.billingState.collectAsState()
     val activity = LocalActivity.current
     val productDetails = (billingState as? BillingState.SignatureDisabled)?.products?.firstOrNull()
-    val offerToken = productDetails?.subscriptionOfferDetails?.firstOrNull()?.offerToken ?: emptyString()
+    val offerToken =
+        productDetails?.subscriptionOfferDetails?.firstOrNull()?.offerToken ?: emptyString()
     val isPremium = billingState is BillingState.SignatureEnabled
+
+    val gridItems =
+        remember(genres) {
+            val items =
+                genres.map { PremiumGridItem.GenreItem(it) }.toMutableList<PremiumGridItem>()
+            val totalCount = items.size
+            val middle = totalCount / 2
+            // Find the nearest multiple of 3 to the middle
+            val splitIndex = (middle / 3) * 3 + if (middle % 3 >= 1.5) 3 else 0
+            // Ensure we don't go out of bounds or insert at the very beginning if not desired
+            val safeIndex = splitIndex.coerceIn(3, totalCount)
+
+            items.add(safeIndex, PremiumGridItem.PremiumAction)
+            items
+        }
 
     if (isVisible) {
         LaunchedEffect(genres) {
             while (true) {
                 delay(1.seconds)
-                genres.forEachIndexed { i, _ ->
-                    genreOffsets[i] = ((Random.nextInt(-16, 16)).dp)
-                }
                 currentIndex = Random.nextInt(genres.size)
             }
         }
@@ -104,69 +114,73 @@ fun PremiumView(
             containerColor = MaterialTheme.colorScheme.surfaceContainer,
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
-            LazyColumn(
-                horizontalAlignment = Alignment.CenterHorizontally,
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
                 modifier = Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(16.dp),
             ) {
-                item {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .fillParentMaxHeight(.4f)
-                            .padding(8.dp),
-                    ) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(3),
-                            userScrollEnabled = false,
-                        ) {
-                            items(genres.size) { index ->
-                                val scale by animateFloatAsState(
-                                    targetValue = if (index == currentIndex) 1f else .8f,
-                                    animationSpec = tween(durationMillis = 500, easing = EaseIn),
-                                )
+                items(
+                    count = gridItems.size,
+                    span = { index ->
+                        when (gridItems[index]) {
+                            is PremiumGridItem.GenreItem -> GridItemSpan(1)
+                            PremiumGridItem.PremiumAction -> GridItemSpan(3)
+                        }
+                    },
+                ) { index ->
+                    when (val item = gridItems[index]) {
+                        is PremiumGridItem.GenreItem -> {
+                            val genreIndex = genres.indexOf(item.genre)
+                            val scale by animateFloatAsState(
+                                targetValue = if (genreIndex == currentIndex) 1f else .9f,
+                                animationSpec = tween(durationMillis = 500, easing = EaseIn),
+                                label = "scale",
+                            )
 
-                                GenreCard(
-                                    genres[index],
-                                    index == currentIndex,
-                                    Modifier
-                                        .fillMaxHeight()
-                                        .aspectRatio(1f)
-                                        .scale(scale),
-                                    false,
-                                ) { }
-                            }
+                            GenreCard(
+                                item.genre,
+                                genreIndex == currentIndex,
+                                Modifier
+                                    .aspectRatio(1f)
+                                    .scale(scale),
+                                false,
+                            ) { }
                         }
 
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            modifier =
-                                Modifier
-                                    .align(Alignment.Center)
-                                    .reactiveShimmer(true)
-                                    .size(64.dp)
-                                    .gradientFill(brush),
-                        )
+                        PremiumGridItem.PremiumAction -> {
+                            Column(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                val text =
+                                    if (isPremium) {
+                                        stringResource(R.string.premium_label_title)
+                                    } else {
+                                        stringResource(
+                                            R.string.not_premium_title_label,
+                                        )
+                                    }
+                                Text(
+                                    text = text,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    textAlign = TextAlign.Center,
+                                )
+                                PremiumTitle(
+                                    titleStyle = MaterialTheme.typography.displaySmall,
+                                    modifier = Modifier.scale(1f),
+                                )
+                            }
+                        }
                     }
                 }
 
-                item {
-                    val text =
-                        if (isPremium.not()) {
-                            stringResource(R.string.not_premium_title_label)
-                        } else {
-                            stringResource(R.string.premium_label_title)
-                        }
-                    Text(
-                        text,
-                        style = MaterialTheme.typography.labelSmall,
-                        modifier = Modifier.alpha(.4f),
-                    )
-                }
-
-                item { PremiumTitle(titleStyle = MaterialTheme.typography.headlineMedium) }
-
-                item {
+                item(span = { GridItemSpan(3) }) {
                     Text(
                         stringResource(R.string.premium_first_title),
                         style = MaterialTheme.typography.bodyMedium,
@@ -174,7 +188,7 @@ fun PremiumView(
                     )
                 }
 
-                item {
+                item(span = { GridItemSpan(3) }) {
                     Text(
                         stringResource(R.string.premium_description),
                         style = MaterialTheme.typography.bodyMedium,
@@ -182,11 +196,14 @@ fun PremiumView(
                     )
                 }
 
-                item {
+                item(span = { GridItemSpan(3) }) {
                     AnimatedVisibility(isPremium.not()) {
                         Button(
                             onClick = {
-                                if (activity != null && productDetails != null && offerToken.isNotEmpty()) {
+                                if (activity != null &&
+                                    productDetails != null &&
+                                    offerToken.isNotEmpty()
+                                ) {
                                     premiumViewModel.purchaseSignature(
                                         activity,
                                         productDetails,
@@ -217,7 +234,7 @@ fun PremiumView(
                         }
                     }
                 }
-                item {
+                item(span = { GridItemSpan(3) }) {
                     val text =
                         if (isPremium.not()) {
                             stringResource(R.string.restore_purchases)
@@ -259,6 +276,14 @@ fun PremiumView(
     }
 }
 
+private sealed interface PremiumGridItem {
+    data class GenreItem(
+        val genre: Genre,
+    ) : PremiumGridItem
+
+    data object PremiumAction : PremiumGridItem
+}
+
 @Composable
 fun PremiumTitle(
     titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
@@ -278,8 +303,11 @@ fun PremiumTitle(
         )
         Text(
             stringResource(id = R.string.pro_label),
-            modifier = Modifier.alpha(.6f),
-            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier,
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    color = TextFieldDefaults.colors().unfocusedPlaceholderColor,
+                ),
         )
     }
 }

@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -57,6 +58,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
@@ -66,7 +68,6 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -200,8 +201,9 @@ fun CharacterDetailsContent(
                                     text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                     textAlign = TextAlign.Center,
                                     style =
-                                        MaterialTheme.typography.displaySmall.copy(
+                                        MaterialTheme.typography.displayMedium.copy(
                                             fontFamily = genre.headerFont(),
+                                            textAlign = TextAlign.Center,
                                             brush =
                                                 Brush.verticalGradient(
                                                     listOf(
@@ -210,6 +212,7 @@ fun CharacterDetailsContent(
                                                         genre.iconColor,
                                                     ),
                                                 ),
+                                            shadow = Shadow(genre.color, blurRadius = 15f),
                                         ),
                                 )
                                 character.nicknames?.let {
@@ -504,7 +507,7 @@ fun CharacterDetailsContent(
                 genre.color,
                 fontFamily = genre.bodyFont(),
             ),
-        brush = genre.gradient(true),
+        brushColors = genre.colorPalette(),
     )
 
     if (shareCharacter) {

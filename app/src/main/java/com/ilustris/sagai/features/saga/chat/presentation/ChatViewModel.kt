@@ -531,6 +531,7 @@ class ChatViewModel
                             senderType = sendType,
                             characterId = mainCharacter.id,
                             timelineId = currentTimeline.data.id,
+                            status = MessageStatus.LOADING,
                         )
                     sendMessage(message, true, null)
                     return@launch
@@ -579,7 +580,6 @@ class ChatViewModel
             isFromUser: Boolean = false,
             sceneSummary: SceneSummary?,
         ) {
-            updateLoading(isFromUser)
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
                 val mainCharacter = content.value!!.mainCharacter?.data
@@ -617,18 +617,22 @@ class ChatViewModel
                         ),
                         isFromUser,
                         sceneSummary,
-                    ).onSuccessAsync {
+                    ).onSuccessAsync { savedMessage ->
                         resetSuggestions()
-                        updateLoading(false)
-                        handleNewMessage(
-                            message = it,
-                            isFromUser = isFromUser,
-                            sceneSummary = sceneSummary,
-                        )
+
+                        // If it's from user, trigger AI reply immediately after saving
+                        if (isFromUser) {
+                            updateLoading(true)
+                            replyMessage(savedMessage, sceneSummary)
+                        } else {
+                            updateLoading(false)
+                        }
+
+                        // Generate reaction asynchronously without blocking
                         withContext(Dispatchers.IO) {
                             messageUseCase.generateReaction(
                                 saga,
-                                message = it,
+                                message = savedMessage,
                                 sceneSummary = sceneSummary,
                             )
                         }
@@ -755,7 +759,7 @@ class ChatViewModel
                             false,
                             sceneSummary,
                         )
-                        if (newMessage.message.status == MessageStatus.ERROR) {
+                        if (newMessage.message.status == MessageStatus.ERROR || newMessage.message.status == MessageStatus.LOADING) {
                             messageUseCase.updateMessage(
                                 newMessage.message.copy(
                                     status = MessageStatus.OK,

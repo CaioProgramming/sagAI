@@ -74,6 +74,7 @@ import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -165,17 +166,21 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                 5.dp,
                                 Brush.verticalGradient(holographicGradient),
                             ),
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .border(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).clickable {
+                        )
+                        .clickable {
                             showPlaythroughSheet = true
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -218,7 +223,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).padding(12.dp),
+                        )
+                        .padding(12.dp),
             ) {
                 Text(
                     text = stringResource(R.string.memory_usage),
@@ -259,9 +265,11 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).clickable {
+                            )
+                            .clickable {
                                 viewModel.clearCache()
-                            }.padding(16.dp),
+                            }
+                            .padding(16.dp),
                 ) {
                     Text(
                         stringResource(R.string.clear_cache),
@@ -309,7 +317,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             .background(
                                 MaterialTheme.colorScheme.surfaceContainer,
                                 RoundedCornerShape(15.dp),
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     storageInfo.forEach { info ->
@@ -394,7 +403,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     .background(
                         MaterialTheme.colorScheme.surfaceContainer,
                         RoundedCornerShape(15.dp),
-                    ).padding(8.dp),
+                    )
+                    .padding(8.dp),
             ) {
                 PreferencesContainer(
                     stringResource(R.string.notifications),
@@ -438,44 +448,14 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     },
                 )
 
-                val launcher =
-                    rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri ->
-                        uri?.let {
-                            viewModel.importSaga(it)
-                        }
-                    }
-
-                Button(
-                    onClick = {
-                        launcher.launch(arrayOf("application/zip"))
-                    },
-                    shape = RoundedCornerShape(15.dp),
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth(),
-                    colors = ButtonDefaults.filledTonalButtonColors(),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_zip),
-                        null,
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 8.dp)
-                                .size(24.dp),
-                    )
-                    Text(
-                        stringResource(R.string.import_saga),
-                        style =
-                            MaterialTheme.typography.labelLarge,
-                    )
-                }
-
                 if (backupEnabled) {
                     Button(onClick = {
                         showBackups = true
                         showBackupSheet = true
-                    }, colors = ButtonDefaults.textButtonColors()) {
+                    },
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        colors = ButtonDefaults.textButtonColors(),
+                    ) {
                         Icon(
                             painterResource(R.drawable.ic_restore),
                             null,
@@ -490,6 +470,54 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                 MaterialTheme.typography.labelLarge.copy(
                                     fontWeight = FontWeight.Light,
                                 ),
+                        )
+                    }
+                }
+
+                val launcher =
+                    rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri ->
+                        uri?.let {
+                            viewModel.importSaga(it)
+                        }
+                    }
+
+                val iconRes = R.drawable.ic_zip
+                val iconTint = MaterialTheme.colorScheme.primary
+
+                val shape = RoundedCornerShape(15.dp)
+
+                Row(
+                    modifier =
+                        Modifier
+                            .padding(vertical = 8.dp)
+                            .fillMaxWidth()
+                            .clip(shape)
+                            .background(iconTint.copy(alpha = .2f), shape)
+                            .clickable {
+                                launcher.launch(arrayOf("application/zip"))
+                            }.padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(24.dp),
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.import_saga),
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            color = iconTint.darker(),
+                        )
+                        Text(
+                            text = "You can import exported sagas and recover your history.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = iconTint.darker(),
                         )
                     }
                 }

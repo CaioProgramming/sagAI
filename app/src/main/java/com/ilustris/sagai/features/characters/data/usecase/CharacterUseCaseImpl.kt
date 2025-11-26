@@ -163,7 +163,7 @@ class CharacterUseCaseImpl
             description: String,
         ): RequestResult<Character> =
             executeRequest {
-                var prompt =
+                val prompt =
                     CharacterPrompts.characterGeneration(
                         sagaContent,
                         description,
@@ -172,6 +172,7 @@ class CharacterUseCaseImpl
                 val newCharacter =
                     gemmaClient.generate<Character>(
                         prompt,
+                        useCore = true,
                         filterOutputFields =
                             listOf(
                                 "id",

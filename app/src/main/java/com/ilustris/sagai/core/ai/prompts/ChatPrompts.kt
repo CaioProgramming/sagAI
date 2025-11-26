@@ -65,7 +65,12 @@ object ChatPrompts {
 
         sceneSummary?.let {
             appendLine("## Progression Context")
-            appendLine("Guide your response to align with the story's progression based on this summary:")
+            appendLine(
+                "This summary provides context on the story's progression. Use it as a background reminder of the main objectives, but do not let it rigidly dictate your response.",
+            )
+            appendLine(
+                "Your primary focus should be on reacting to the player's immediate actions and emotional state, allowing for organic character development.",
+            )
             appendLine(sceneSummary.toAINormalize())
         }
 
@@ -93,6 +98,9 @@ object ChatPrompts {
         )
         appendLine(
             "c) **Conflict/Combat:** In action-oriented scenes, prioritize `ACTION` to describe attacks, defenses, or significant movements.",
+        )
+        appendLine(
+            "d) **Prioritize Character Development:** Your primary role is to facilitate a rich, character-driven story. If the player is exploring their character's inner thoughts, emotions (like trauma or joy), or developing relationships, allow space for that. Acknowledge their emotional state and react appropriately, even if it temporarily pauses the main plot. Your goal is to be a responsive storyteller, not just a plot-pusher. Remember the main objectives, but don't force them if the character needs a moment to process.",
         )
 
         appendLine(SagaDirective.namingDirective(saga.data.genre))

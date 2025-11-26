@@ -83,9 +83,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -122,6 +124,7 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.relationshipsSortedByEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
@@ -149,6 +152,7 @@ import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
@@ -307,6 +311,7 @@ fun SagaDetailView(
             isLoading = true,
             loadingMessage = loadingMessage ?: emptyString(),
             textStyle = MaterialTheme.typography.labelMedium,
+            brushColors = saga?.data?.genre?.colorPalette() ?: holographicGradient,
         )
     }
 
@@ -1955,20 +1960,25 @@ fun RecapHeroCard(
         modifier =
             modifier
                 .fillMaxWidth()
-                .height(140.dp)
-                .clip(saga.data.genre.shape())
+                .height(170.dp)
+                .dropShadow(
+                    RoundedCornerShape(15.dp),
+                    androidx.compose.ui.graphics.shadow.Shadow(
+                        5.dp,
+                        saga.data.genre.gradient(true),
+                    ),
+                ).clip(saga.data.genre.shape())
                 .border(
                     1.dp,
-                    saga.data.genre.color
-                        .gradientFade(),
+                    saga.data.genre.gradient(),
                     saga.data.genre.shape(),
                 ).clickable {
                     onClick()
                 },
     ) {
-        saga.mainCharacter?.let {
+        saga.data.icon.let {
             AsyncImage(
-                it.data.image,
+                it,
                 contentDescription = null,
                 modifier =
                     Modifier
@@ -1983,7 +1993,7 @@ fun RecapHeroCard(
                 Modifier
                     .fillMaxSize()
                     .background(
-                        fadeGradientBottom(saga.data.genre.color),
+                        fadeGradientBottom(),
                     ),
         )
 
@@ -1996,23 +2006,14 @@ fun RecapHeroCard(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.Start,
         ) {
-            Icon(
-                painterResource(id = R.drawable.ic_spark),
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .padding(16.dp)
-                        .size(24.dp),
-                tint = saga.data.genre.color,
-            )
-
             Text(
                 text = stringResource(R.string.recap_your_journey),
                 style =
-                    MaterialTheme.typography.headlineMedium.copy(
+                    MaterialTheme.typography.displaySmall.copy(
                         fontFamily = saga.data.genre.headerFont(),
                         brush =
                             saga.data.genre.gradient(),
+                        shadow = Shadow(saga.data.genre.color, blurRadius = 15f),
                     ),
             )
 

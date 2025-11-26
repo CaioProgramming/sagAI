@@ -43,8 +43,25 @@ android {
     val apikeyProperties = Properties()
     apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
 
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    val keystoreProperties = Properties()
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    }
+
     room {
         schemaDirectory("$projectDir/schemas")
+    }
+
+    signingConfigs {
+        if (keystorePropertiesFile.exists()) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
     }
 
     buildTypes {
@@ -55,6 +72,9 @@ android {
                 "proguard-rules.pro",
             )
             buildConfigField("String", "APIKEY", apikeyProperties.getProperty("GEMINI_KEY"))
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
 
         debug {

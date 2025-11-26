@@ -70,6 +70,7 @@ class ChapterUseCaseImpl
                                 currentChapter = chapterContent,
                             ),
                         requireTranslation = true,
+                        useCore = true,
                     )!!
 
             val genChapterCharacters =
@@ -295,6 +296,7 @@ class ChapterUseCaseImpl
                     gemmaClient.generate<String>(
                         prompt,
                         requireTranslation = true,
+                        useCore = true,
                     )!!
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)

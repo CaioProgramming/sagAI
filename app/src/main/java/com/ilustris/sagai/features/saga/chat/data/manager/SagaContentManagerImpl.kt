@@ -12,7 +12,6 @@ import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileCacheService
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -126,7 +125,7 @@ class SagaContentManagerImpl
                     playTimeMs = currentSaga.data.playTimeMs + timeInMillis,
                 )
             sagaHistoryUseCase.updateSaga(updatedSaga)
-    }
+        }
 
         override suspend fun loadSaga(sagaId: String) {
             Log.d(javaClass.simpleName, "Loading saga: $sagaId")
@@ -141,7 +140,10 @@ class SagaContentManagerImpl
                         )
 
                         if (saga == null) {
-                            Log.e(javaClass.simpleName, "loadSaga: Unexpected error loading saga($sagaId)")
+                            Log.e(
+                                javaClass.simpleName,
+                                "loadSaga: Unexpected error loading saga($sagaId)",
+                            )
                             content.emit(null)
                             return@collectLatest
                         }
@@ -247,7 +249,7 @@ class SagaContentManagerImpl
                                     message =
                                         context.getString(
                                             R.string.chapter_finished,
-                                            it?.title,
+                                            it.title,
                                         ),
                                 ),
                             )
@@ -317,7 +319,11 @@ class SagaContentManagerImpl
                             }
                         }
                         SnackBarState(
-                            message = context.getString(R.string.timeline_updated, timelineContent.data.title),
+                            message =
+                                context.getString(
+                                    R.string.timeline_updated,
+                                    timelineContent.data.title,
+                                ),
                         )
                     }
             }
@@ -630,17 +636,13 @@ class SagaContentManagerImpl
                         (result.value as? Timeline)?.let {
                             chapterUseCase.updateChapter(
                                 saga.currentActInfo!!.currentChapterInfo!!.data.copy(
-                                    currentEventId = (result.value as Timeline).id,
+                                    currentEventId = (it).id,
                                 ),
                             )
                             startProcessing {
-                                val objective =
-                                    timelineUseCase.getTimelineObjective(content.value!!).getSuccess()
-                                timelineUseCase.updateTimeline(
-                                    it.copy(
-                                        currentObjective = objective ?: emptyString(),
-                                    ),
-                                )
+                                timelineUseCase
+                                    .getTimelineObjective(content.value!!, it)
+                                    .getSuccess()
                             }
                         }
                     }
@@ -688,17 +690,7 @@ class SagaContentManagerImpl
                 content.value?.currentActInfo?.currentChapterInfo?.currentEventInfo?.let { currentTimeline ->
                     if (currentTimeline.data.currentObjective.isNullOrEmpty()) {
                         timelineUseCase
-                            .getTimelineObjective(content.value!!)
-                            .getSuccess()
-                            ?.let { newObjective ->
-                                if (newObjective.isNotEmpty()) {
-                                    timelineUseCase.updateTimeline(
-                                        currentTimeline.data.copy(
-                                            currentObjective = newObjective,
-                                        ),
-                                    )
-                                }
-                            }
+                            .getTimelineObjective(content.value!!, currentTimeline.data)
                     }
                 }
             }

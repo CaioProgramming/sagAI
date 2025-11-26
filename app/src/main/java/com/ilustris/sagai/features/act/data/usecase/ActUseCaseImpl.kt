@@ -40,7 +40,7 @@ class ActUseCaseImpl
         ): RequestResult<Act> =
             executeRequest {
                 val titlePrompt = generateActPrompt(saga)
-                val newAct = gemmaClient.generate<Act>(titlePrompt)!!
+                val newAct = gemmaClient.generate<Act>(titlePrompt, useCore = true)!!
 
                 val actUpdate =
                     updateAct(
@@ -78,7 +78,7 @@ class ActUseCaseImpl
 
             val prompt = ActPrompts.actIntroductionPrompt(saga, previousAct)
 
-            val intro = gemmaClient.generate<String>(prompt, requireTranslation = true)!!
+            val intro = gemmaClient.generate<String>(prompt, useCore = true)!!
             actRepository
                 .updateAct(act.copy(introduction = intro))
         }

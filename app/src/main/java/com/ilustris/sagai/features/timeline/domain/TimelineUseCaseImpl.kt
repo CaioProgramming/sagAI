@@ -46,6 +46,7 @@ class TimelineUseCaseImpl
                             currentTimeline,
                         ),
                         filterOutputFields = listOf("id", "createdAt", "chapterId", "emotionalReview"),
+                        useCore = true,
                     )!!
 
             val timelineUpdate =
@@ -108,20 +109,34 @@ class TimelineUseCaseImpl
             timelineRepository.deleteTimeline(timeline)
         }
 
-        override suspend fun getTimelineObjective(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val objectivePrompt =
-                    ChatPrompts.sceneSummarizationPrompt(
-                        saga,
-                        saga
-                            .flatMessages()
-                            .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                            .map {
-                                it.message
-                            },
-                    )
-                gemmaClient.generate<SceneSummary>(objectivePrompt)!!.immediateObjective!!
-            }
+        override suspend fun getTimelineObjective(
+            saga: SagaContent,
+            timelineContent: Timeline,
+        ) = executeRequest {
+            val objectivePrompt =
+                ChatPrompts.sceneSummarizationPrompt(
+                    saga,
+                    saga
+                        .flatMessages()
+                        .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                        .map {
+                            it.message
+                        },
+                )
+            val summary =
+                gemmaClient
+                    .generate<SceneSummary>(
+                        objectivePrompt,
+                        useCore = true,
+                    )!!
+                    .immediateObjective!!
+
+            updateTimeline(
+                timelineContent.copy(
+                    currentObjective = summary,
+                ),
+            )
+        }
 
         override suspend fun generateTimelineContent(
             saga: SagaContent,

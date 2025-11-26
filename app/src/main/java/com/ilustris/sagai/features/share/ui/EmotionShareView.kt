@@ -37,9 +37,10 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
@@ -137,12 +138,7 @@ fun EmotionShareView(
             }
         }
 
-        AnimatedVisibility(isLoading) {
-            StarryTextPlaceholder(
-                starColor = genre.color,
-                starCount = saga.messagesSize(),
-            )
-        }
+        StarryLoader(isLoading, brushColors = saga.data.genre.colorPalette())
     }
 
     LaunchedEffect(Unit) {

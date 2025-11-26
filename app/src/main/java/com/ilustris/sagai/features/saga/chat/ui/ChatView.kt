@@ -27,7 +27,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
@@ -487,19 +486,10 @@ fun ChatView(
             requiredPermission = null
         }
 
-        AnimatedVisibility(
-            isGenerating,
-            modifier = Modifier.fillMaxSize(),
-            enter = fadeIn(tween(500)),
-            exit = scaleOut() + fadeOut(),
-        ) {
+        AnimatedVisibility(isGenerating) {
+            val shimmerColors = content?.data?.genre?.shimmerColors() ?: holographicGradient
             StarryTextPlaceholder(
-                Modifier
-                    .fillMaxSize()
-                    .reactiveShimmer(
-                        true,
-                        content?.data?.genre?.shimmerColors() ?: holographicGradient,
-                    ),
+                modifier = Modifier.reactiveShimmer(true, shimmerColors),
             )
         }
     }
@@ -620,8 +610,7 @@ fun ChatContent(
                                 shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
                                 targetValue = 1000f,
-                            )
-                            .fillMaxSize(.5f)
+                            ).fillMaxSize(.5f)
                             .alpha(.3f),
                 )
 
@@ -629,8 +618,7 @@ fun ChatContent(
                     Modifier
                         .padding(
                             top = padding.calculateTopPadding(),
-                        )
-                        .fillMaxSize(),
+                        ).fillMaxSize(),
                 ) {
                     rememberCoroutineScope()
                     val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
@@ -674,8 +662,7 @@ fun ChatContent(
                                 bottom.linkTo(parent.bottom)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }
-                            .fillMaxWidth()
+                            }.fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
                     )
@@ -775,8 +762,7 @@ fun ChatContent(
                                                 content.data.genre.color,
                                                 progress,
                                             ),
-                                        )
-                                        .reactiveShimmer(isGenerating)
+                                        ).reactiveShimmer(isGenerating)
                                         .sharedElement(
                                             rememberSharedContentState(
                                                 key = "current_objective_${content.data.id}",
@@ -809,8 +795,7 @@ fun ChatContent(
                                 Modifier
                                     .clickable {
                                         openSagaDetails(saga)
-                                    }
-                                    .fillMaxWidth()
+                                    }.fillMaxWidth()
                                     .padding(start = 8.dp),
                             titleModifier = titleModifier,
                             actionContent = {
@@ -835,8 +820,7 @@ fun ChatContent(
                         Modifier
                             .background(
                                 backgroundColor,
-                            )
-                            .constrainAs(loreProgress) {
+                            ).constrainAs(loreProgress) {
                                 top.linkTo(topBar.bottom)
                                 start.linkTo(topBar.start)
                                 end.linkTo(topBar.end)
@@ -852,8 +836,7 @@ fun ChatContent(
                                                 key = "lore_progress_${content.data.id}",
                                             ),
                                             animatedVisibilityScope = this,
-                                        )
-                                        .alpha(alpha)
+                                        ).alpha(alpha)
                                         .height(1.dp)
                                         .fillMaxWidth(),
                                 progress = { progress },
@@ -914,8 +897,7 @@ fun ChatContent(
                                         .background(
                                             MaterialTheme.colorScheme.surfaceContainer,
                                             shape,
-                                        )
-                                        .fillMaxWidth(),
+                                        ).fillMaxWidth(),
                                 trailingIcon = {
                                     IconButton(
                                         onClick = {
@@ -929,8 +911,7 @@ fun ChatContent(
                                                 .background(
                                                     content.data.genre.color,
                                                     CircleShape,
-                                                )
-                                                .size(32.dp)
+                                                ).size(32.dp)
                                                 .padding(4.dp),
                                     ) {
                                         Icon(
@@ -972,8 +953,7 @@ fun ChatContent(
                             .background(MaterialTheme.colorScheme.background, genre.shape())
                             .clickable {
                                 objectiveExpanded = false
-                            }
-                            .padding(16.dp),
+                            }.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -1018,8 +998,7 @@ fun ChatContent(
                                             key = "lore_progress_${content.data.id}",
                                         ),
                                         animatedVisibilityScope = this@AnimatedVisibility,
-                                    )
-                                    .clip(genre.shape())
+                                    ).clip(genre.shape())
                                     .height(4.dp)
                                     .fillMaxWidth()
                                     .reactiveShimmer(
@@ -1099,8 +1078,7 @@ fun SagaHeader(
                             .effectForGenre(saga.genre)
                             .selectiveColorHighlight(
                                 saga.genre.selectiveHighlight(),
-                            )
-                            .fillMaxSize(),
+                            ).fillMaxSize(),
                 )
 
                 Box(
@@ -1173,8 +1151,7 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }
-                    .animateContentSize(),
+                    }.animateContentSize(),
         )
     }
 }
@@ -1345,12 +1322,10 @@ fun ChatList(
                                                                 key = "timeline_${timeline.data.id}",
                                                             ),
                                                             this,
-                                                        )
-                                                        .padding(16.dp)
+                                                        ).padding(16.dp)
                                                         .clip(
                                                             genre.shape(),
-                                                        )
-                                                        .fillMaxWidth(),
+                                                        ).fillMaxWidth(),
                                                 requestReview = reviewEvent,
                                             )
                                         }
@@ -1544,11 +1519,9 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        )
-                        .graphicsLayer(
+                        ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

@@ -3,12 +3,19 @@ package com.ilustris.sagai.features.saga.chat.ui.components
 import MessageStatus
 import ai.atick.material.MaterialColor
 import android.content.res.Configuration
+import android.graphics.Matrix
+import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.scaleIn
@@ -52,10 +59,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.drawOutline
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -77,6 +90,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -263,6 +277,18 @@ fun ChatBubble(
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
+    val rotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(3000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
+        label = "rotation",
+    )
+
     when (sender) {
         SenderType.USER,
         SenderType.CHARACTER,
@@ -347,8 +373,7 @@ fun ChatBubble(
                                 Modifier
                                     .clickable {
                                         requestNewCharacter()
-                                    }
-                                    .size(24.dp)
+                                    }.size(24.dp)
                                     .gradientFill(genre.gradient()),
                             )
                         }
@@ -361,55 +386,92 @@ fun ChatBubble(
                                 .padding(end = 50.dp),
                     ) {
                         val bubbleModifier =
-                            when (sender) {
-                                SenderType.USER ->
-                                    Modifier
-                                        .wrapContentSize()
-                                        .background(bubbleStyle.backgroundColor, bubbleShape)
+                            if (message.status == MessageStatus.LOADING) {
+                                Modifier
+                                    .wrapContentSize()
+                                    .drawWithContent {
+                                        drawContent()
+                                        val outline =
+                                            bubbleShape.createOutline(size, layoutDirection, this)
+                                        val brush =
+                                            object : ShaderBrush() {
+                                                override fun createShader(size: Size): Shader {
+                                                    val shader =
+                                                        (
+                                                            sweepGradient(
+                                                                genre.colorPalette(),
+                                                            ) as ShaderBrush
+                                                        ).createShader(size)
+                                                    val matrix = Matrix()
+                                                    matrix.setRotate(
+                                                        rotation,
+                                                        size.width / 2,
+                                                        size.height / 2,
+                                                    )
+                                                    shader.setLocalMatrix(matrix)
+                                                    return shader
+                                                }
+                                            }
+                                        drawOutline(
+                                            outline = outline,
+                                            brush = brush,
+                                            style = Stroke(width = 2.dp.toPx()),
+                                        )
+                                    }.background(Color.Gray.copy(alpha = 0.3f), bubbleShape)
+                            } else {
+                                when (sender) {
+                                    SenderType.USER ->
+                                        Modifier
+                                            .wrapContentSize()
+                                            .background(bubbleStyle.backgroundColor, bubbleShape)
 
-                                SenderType.CHARACTER -> {
-                                    if (isUser.not()) {
+                                    SenderType.CHARACTER -> {
+                                        if (isUser.not()) {
+                                            Modifier
+                                                .wrapContentSize()
+                                                .background(
+                                                    bubbleStyle.backgroundColor,
+                                                    bubbleShape,
+                                                ).background(
+                                                    MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                        alpha = .3f,
+                                                    ),
+                                                    bubbleShape,
+                                                )
+                                        } else {
+                                            Modifier
+                                                .wrapContentSize()
+                                                .background(
+                                                    bubbleStyle.backgroundColor,
+                                                    bubbleShape,
+                                                )
+                                        }
+                                    }
+
+                                    SenderType.THOUGHT ->
                                         Modifier
                                             .wrapContentSize()
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 bubbleShape,
+                                            ).dashedBorder(
+                                                strokeWidth = 1.dp,
+                                                color =
+                                                    MaterialTheme.colorScheme.onBackground.copy(
+                                                        alpha = 0.5f,
+                                                    ),
+                                                shape = bubbleShape,
+                                                dashLength = 10.dp,
+                                                gapLength = 5.dp,
                                             )
-                                            .background(
-                                                bubbleStyle.backgroundColor.copy(alpha = .2f),
-                                                bubbleShape,
-                                            )
-                                    } else {
+
+                                    SenderType.ACTION ->
                                         Modifier
                                             .wrapContentSize()
-                                            .background(bubbleStyle.backgroundColor, bubbleShape)
-                                    }
+                                            .background(Color.Black, bubbleShape)
+
+                                    else -> Modifier
                                 }
-
-                                SenderType.THOUGHT ->
-                                    Modifier
-                                        .wrapContentSize()
-                                        .background(
-                                            MaterialTheme.colorScheme.surfaceContainer,
-                                            bubbleShape,
-                                        )
-                                        .dashedBorder(
-                                            strokeWidth = 1.dp,
-                                            color =
-                                                MaterialTheme.colorScheme.onBackground.copy(
-                                                    alpha = 0.5f,
-                                                ),
-                                            shape = bubbleShape,
-                                            dashLength = 10.dp,
-                                            gapLength = 5.dp,
-                                        )
-
-                                SenderType.ACTION ->
-                                    Modifier
-                                        .wrapContentSize()
-                                        .background(Color.Black, bubbleShape)
-
-                                else -> Modifier
                             }
 
                         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
@@ -488,7 +550,10 @@ fun ChatBubble(
                                             Modifier
                                                 .padding(16.dp)
                                                 .alpha(textAlpha)
-                                                .reactiveShimmer(isLoading, genre.shimmerColors()),
+                                                .reactiveShimmer(
+                                                    isLoading || message.status == MessageStatus.LOADING,
+                                                    genre.shimmerColors(),
+                                                ),
                                         style =
                                             MaterialTheme.typography.bodySmall.copy(
                                                 fontWeight = FontWeight.Normal,
@@ -518,8 +583,7 @@ fun ChatBubble(
                                                     .clip(bubbleShape)
                                                     .clickable {
                                                         starAlpha = 0f
-                                                    }
-                                                    .background(
+                                                    }.background(
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(
                                                             alpha = .4f,
                                                         ),
@@ -620,8 +684,7 @@ fun ChatBubble(
                             .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                 ) {
                     TypewriterText(
                         text = message.text,
