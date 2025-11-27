@@ -40,3 +40,27 @@ the APK.
    - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
     - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
     - Ask the user to review the generated release notes.
+
+6. **Create Pull Request**:
+    - **Identify Core Features**: Use the git log analysis from Step 1 to identify 1-2 core features
+      or major improvements.
+    - **Construct Title**: `✦ Release [Version] - [Core Feature 1] & [Core Feature 2]`
+    - **Construct Body**:
+        ```markdown
+        ## 🚀 Release [Version]
+        
+        ### ✨ New Features
+        - [Feature 1]
+        - [Feature 2]
+        
+        ### 🛠 Improvements
+        - [Improvement 1]
+        
+        ### 🐛 Bug Fixes
+        - [Fix 1]
+        ```
+    - **Execute**: Run `gh pr create --base main --head develop --title "[Title]" --body "[Body]"`
+    - **Open PR**: Run `gh pr view --web` to open the PR in the browser.
+    - **Notify**: Confirm the PR has been created and provide the link.
+
+

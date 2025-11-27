@@ -25,3 +25,4 @@ gha-creds-*.json
 .kotlin/sessions/
 keystore.properties
 docs/feature_planning/
+!/docs/posts/

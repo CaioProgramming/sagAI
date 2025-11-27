@@ -20,12 +20,12 @@ and engaging style of the "Dev Diary".
       if they want to highlight something specific not in the logs.
     - Ask if there are any specific screenshots or videos they plan to attach.
 
-2. **Drafting the Post**:
+3. **Drafting the Post**:
     - Create a new markdown file (e.g., `docs/posts/linkedin_update_[date].md`).
     - **Tone**: Personal, enthusiastic, humble but proud. Use first-person ("I", "My"). Avoid
       corporate jargon.
     - **Structure**:
-        - **Catchy Title**: E.g., "Sagas Dev Diary: [Topic] 🚀"
+        - **Catchy Title**: E.g., "✦ Sagas Dev Diary: [Topic] 🚀"
         - **English Version 🇺🇸**:
             - Hook: "Hey everyone! 👋"
             - Body Paragraph 1: Context/What I've been working on.
@@ -39,13 +39,12 @@ and engaging style of the "Dev Diary".
               a literal robotic translation). Use terms like "E aí, pessoal!", "Tá ficando show",
               etc.
 
-3. **Review**:
+4. **Review**:
     - Present the draft to the user using `notify_user`.
     - Ask for feedback on the tone and content.
 
-4. **Finalize**:
+5. **Finalize**:
     - Make any requested edits.
    - **Copy to Clipboard**: Run `pbcopy < docs/posts/linkedin_update_[date].md` to copy the content.
    - **Open LinkedIn**: Run `open https://www.linkedin.com/feed/` to open the browser.
    - Remind the user that the text is in their clipboard and to attach media.
-

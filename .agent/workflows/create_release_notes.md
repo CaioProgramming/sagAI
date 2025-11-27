@@ -20,12 +20,13 @@ app's friendly and engaging voice.
 
 2. **Drafting the Release Notes**:
     - Create a new markdown file (e.g., `docs/release_notes/release_[version].md`).
-    - **Tone**: Exciting, concise, user-focused. Less "dev diary", more "here's why you should
-      update".
+   - **Tone**: Exciting, concise, and slightly humorous. Use a "catchy" voice that feels like a
+     friend sharing cool news. Don't be afraid of a random joke or pun if it fits.
     - **Structure**:
-        - **Title**: "What's New in Sagas [Version] ✨"
+        - **Title**: "✦ What's New in Sagas [Version] ✨"
         - **English Version 🇺🇸**:
-            - **Intro**: A quick, punchy sentence about the update.
+            - **Intro**: A quick, punchy sentence about the update. Feel free to add a small joke or
+              witty remark here.
             - **Feature List**: Bullet points with emojis. Focus on the *benefit* to the user, not
               just the technical change.
                 - *Bad*: "Added new Auteur logic."

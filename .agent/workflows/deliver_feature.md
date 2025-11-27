@@ -14,8 +14,10 @@ technical achievements and implementation details.
 2. **Generate PR Content**:
     - **Analyze**: Look at the commits and file changes. Identify the core technical achievements (
       e.g., new patterns, refactors, AI integrations).
+   - **Suggest Label**: Based on the branch name (e.g., `feature/genre/shinobi` -> `genre:shinobi`),
+     suggest a feature label to the user.
     - **Draft Description**: Create a PR description with the following sections:
-        - **Title**: A concise, imperative title (e.g., "feat: Implement AI Narrative Engine").
+        - **Title**: A concise, imperative title (e.g., "✦ feat: Implement AI Narrative Engine").
         - **Summary**: A brief paragraph explaining *what* this feature does.
         - **Tech Achievements 🚀**: A section highlighting the cool technical details. Use emojis. Be
           enthusiastic about the engineering.
@@ -28,7 +30,10 @@ technical achievements and implementation details.
     - Construct the `gh pr create` command.
     - Use the generated Title for the `--title` flag.
     - Use the generated Description for the `--body` flag.
+   - **Labels**: Add the `gemini-assisted` label and the feature label from the previous step.
     - **Base Branch**: Target `develop`.
-    - **Command**: `gh pr create --base develop --title "[Title]" --body "[Description]"`
-    - **Review**: Show the command (or the description) to the user before running it to ensure
+   - **Command**:
+     `gh pr create --base develop --title "[Title]" --body "[Description]" --label "gemini-assisted" --label "[feature-label]"`
       the "coolness" factor is met.
+   - **Open PR**: After creation, run `gh pr view --web` to open the PR in the browser.
+
