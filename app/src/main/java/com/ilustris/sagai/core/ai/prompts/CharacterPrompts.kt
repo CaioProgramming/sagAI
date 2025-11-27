@@ -1,7 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
@@ -157,7 +157,7 @@ object CharacterPrompts {
                     "emojified",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
-            appendLine(characters.listToAINormalize(characterExclusions))
+            appendLine(characters.normalizetoAIItems(characterExclusions))
         }
 
     fun characterGeneration(
@@ -321,10 +321,10 @@ object CharacterPrompts {
         appendLine("### Timeline Context")
         appendLine(data.toAINormalize(listOf("id", "emotionalReview", "chapterId")))
         appendLine("### Characters List (Official Names):")
-        appendLine(characters.listToAINormalize(ChatPrompts.characterExclusions))
+        appendLine(characters.normalizetoAIItems(ChatPrompts.characterExclusions))
         appendLine()
         appendLine("### Recent Messages (Conversation to Analyze):")
-        appendLine(messages.listToAINormalize(ChatPrompts.messageExclusions))
+        appendLine(messages.normalizetoAIItems(ChatPrompts.messageExclusions))
         appendLine()
         appendLine("## REQUIRED OUTPUT FORMAT:")
         appendLine("Respond ONLY with a valid JSON array. Do not include any other text, explanations, or markdown.")

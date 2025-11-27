@@ -433,7 +433,7 @@ fun ChatBubble(
                                                     bubbleShape,
                                                 ).background(
                                                     MaterialTheme.colorScheme.surfaceContainer.copy(
-                                                        alpha = .3f,
+                                                        alpha = .5f,
                                                     ),
                                                     bubbleShape,
                                                 )

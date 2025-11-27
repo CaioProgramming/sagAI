@@ -1,6 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -62,7 +62,7 @@ object SharePrompts {
         }
         appendLine("Character events through history: ")
         appendLine(
-            character.events.map { it.event }.listToAINormalize(
+            character.events.map { it.event }.normalizetoAIItems(
                 listOf(
                     "id",
                     "characterId",
@@ -187,7 +187,7 @@ object SharePrompts {
         }
         appendLine("Character events through history: ")
         appendLine(
-            characterContent.events.map { it.event }.listToAINormalize(
+            characterContent.events.map { it.event }.normalizetoAIItems(
                 listOf(
                     "id",
                     "characterId",

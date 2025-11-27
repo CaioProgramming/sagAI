@@ -1,7 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
@@ -15,7 +15,7 @@ object TimelinePrompts {
                 appendLine("**CURRENT CHAPTER TIMELINE (Most Recent Events):**")
                 appendLine("// This section provides the most recent events from the chapter's timeline.")
                 appendLine("// Use this to understand the immediate plot progression and current situation.")
-                appendLine(events.listToAINormalize(timelineExclusions))
+                appendLine(events.normalizetoAIItems(timelineExclusions))
             }
         }
 

@@ -1,11 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -23,6 +21,7 @@ object ChatPrompts {
             "characterId",
             "timelineId",
             "status",
+            "playTimeMs",
         )
     val sagaExclusions =
         listOf(
@@ -37,6 +36,7 @@ object ChatPrompts {
             "isDebug",
             "endMessage",
             "review",
+            "playTimeMs",
         )
 
     val characterExclusions =
@@ -144,32 +144,24 @@ object ChatPrompts {
 
     fun generateReactionPrompt(
         summary: SceneSummary,
-        saga: Saga,
-        mainCharacter: CharacterContent,
+        saga: SagaContent,
         messageToReact: Message,
         relationships: List<RelationshipContent>,
     ) = buildString {
         appendLine("You are an AI assistant that generates character reactions for an interactive story.")
         appendLine("Your task is to generate a relatable reaction to a player's message, including an emoji and a brief internal thought.")
 
-        appendLine("## Saga Context")
-        appendLine(saga.toAINormalize(sagaExclusions))
+        appendLine(SagaPrompts.mainContext(saga))
 
         appendLine("## Scene Summary")
         appendLine("This is the current situation:")
         appendLine(summary.toAINormalize())
 
-        appendLine("\n## Player Information")
-        appendLine("Main Character: ${mainCharacter.data.name}")
-        appendLine(mainCharacter.data.toAINormalize(characterExclusions))
-
-        appendLine("\n## Character Relationships")
         appendLine("Relationships between the player and characters currently in the scene:")
+
         appendLine(
             relationships.joinToString(";\n") {
-                val lastEvent =
-                    it.relationshipEvents.lastOrNull()?.title ?: "No significant events."
-                "${it.characterOne.name} & ${it.characterTwo.name}: Current status -> $lastEvent"
+                it.summarizeRelation()
             },
         )
 
@@ -223,7 +215,7 @@ object ChatPrompts {
             if (events.isNotEmpty()) {
                 appendLine("Player last events:")
                 appendLine(
-                    events.listToAINormalize(
+                    events.normalizetoAIItems(
                         listOf(
                             "id",
                             "characterId",
@@ -238,7 +230,7 @@ object ChatPrompts {
         if (characters.isNotEmpty()) {
             appendLine("Current Saga Characters:")
             appendLine(
-                characters.listToAINormalize(characterExclusions),
+                characters.normalizetoAIItems(characterExclusions),
             )
         }
         saga.currentActInfo?.currentChapterInfo?.data?.let {
@@ -249,7 +241,7 @@ object ChatPrompts {
         appendLine(ChapterPrompts.chapterSummary(saga))
         appendLine(ActPrompts.actsOverview(saga))
         appendLine("Recent Messages (for context, do NOT repeat):")
-        appendLine(recentMessages.listToAINormalize(messageExclusions))
+        appendLine(recentMessages.normalizetoAIItems(messageExclusions))
     }.trimIndent()
 
     private fun conversationStyleAndPacing() =
@@ -262,13 +254,15 @@ object ChatPrompts {
         ---
         """.trimIndent()
 
-    private fun conversationHistory(lastMessages: List<Message>) =
+    fun conversationHistory(lastMessages: List<Message>) =
         buildString {
             appendLine("Conversation History")
             appendLine("Use this history for context, but do NOT repeat it in your response.")
             appendLine("The messages are ordered from newest to oldest")
             appendLine("Consider the newest ones to move history forward")
             appendLine("Pay attention to `speakerName` and `senderType`.")
-            appendLine(lastMessages.reversed().listToAINormalize(excludingFields = messageExclusions))
+            appendLine(
+                lastMessages.reversed().normalizetoAIItems(excludingFields = messageExclusions),
+            )
         }
 }

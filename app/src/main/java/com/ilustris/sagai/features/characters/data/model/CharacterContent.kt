@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.characters.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
-import com.ilustris.sagai.core.utils.listToAINormalize
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDetails
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
@@ -48,11 +47,7 @@ data class CharacterContent(
 
     fun summarizeRelationships() =
         relationships.sortedBy { it.relationshipEvents.size }.joinToString(";\n") {
-            "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}:\n${
-                it.relationshipEvents.takeLast(5).listToAINormalize(
-                    listOf("timestamp", "relationId", "timelineId", "id"),
-                )
-            }"
+            it.summarizeRelation()
         }
 
     fun rankRelationships() = relationships.sortedByDescending { it.relationshipEvents.size }

@@ -5,7 +5,10 @@ description: Automate the full release process (Version Bump -> Notes -> Build)
 This workflow automates the entire release cycle, from determining the version number to building
 the APK.
 
-1. **Analyze & Determine Version**:
+1. **Smart Commit Check**:
+    - Run the `.agent/workflows/smart_commit.md` workflow to ensure all changes are committed and summarized.
+
+2. **Analyze & Determine Version**:
     - **Fetch History**: Run `git log -n 20 --oneline develop` and
       `git log --merges -n 3 --oneline develop`.
     - **Analyze Impact**:
@@ -34,5 +37,6 @@ the APK.
 
 5. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.
+   - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
     - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
     - Ask the user to review the generated release notes.

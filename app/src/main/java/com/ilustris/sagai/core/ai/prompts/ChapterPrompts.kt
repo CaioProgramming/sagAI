@@ -1,8 +1,8 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts.sagaExclusions
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
@@ -14,6 +14,7 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
@@ -33,7 +34,7 @@ object ChapterPrompts {
                         appendLine("This section provides the summaries of chapters already written in the current act")
                         appendLine("// Use this to understand the immediate narrative progression and context within the act.")
                         appendLine(
-                            chapters.listToAINormalize(
+                            chapters.normalizetoAIItems(
                                 listOf(
                                     "id",
                                     "actId",
@@ -92,19 +93,20 @@ object ChapterPrompts {
             )
             appendLine()
 
-            appendLine("## CONTEXT")
-            appendLine("### Saga Overview:")
-            appendLine(sagaContent.data.toAINormalize(sagaExclusions))
-            appendLine()
-
-            appendLine("### Main Character:")
-            appendLine(sagaContent.mainCharacter?.data?.toAINormalize(excludedFields))
-
+            appendLine(SagaPrompts.mainContext(sagaContent))
             contextSummary?.let {
                 appendLine("### Latest Scene Summary (What JUST Happened):")
                 appendLine(it.toAINormalize())
                 appendLine()
             }
+
+            appendLine("### Latest messages:")
+            appendLine(
+                sagaContent
+                    .flatMessages()
+                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                    .toAINormalize(excludedFields)
+            )
 
             actContent?.data?.introduction?.let {
                 appendLine("### Current Act's Theme:")
@@ -113,7 +115,7 @@ object ChapterPrompts {
 
             if (chaptersInAct.isNotEmpty()) {
                 appendLine("### Summaries of Previous Chapters in this Act:")
-                appendLine(chaptersInAct.listToAINormalize(chapterExclusions))
+                appendLine(chaptersInAct.normalizetoAIItems(chapterExclusions))
                 appendLine()
             }
 

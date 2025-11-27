@@ -171,32 +171,25 @@ class MessageUseCaseImpl
 
             if (message.senderType == SenderType.THOUGHT) error("generateReaction: Thought message cannot be reacted")
 
-            val charactersIds =
-                sceneSummary.charactersPresent
-                    .filter {
-                        it.lowercase() !=
-                            saga.mainCharacter
-                                ?.data
-                                ?.name
-                                ?.lowercase()
-                    }.mapNotNull {
-                        saga.characters
-                            .find { character ->
-                                character.data.name.equals(it, ignoreCase = true)
-                            }?.data
-                            ?.id
-                    }
+            val charactersInScene =
+                sceneSummary.charactersPresent.mapNotNull { characterName ->
+                    saga.findCharacter(characterName)
+                }
+
+            if (charactersInScene.isEmpty()) {
+                error("generateReaction: No characters found in scene to react.")
+            }
 
             val relationships =
                 saga.mainCharacter!!.relationships.filter {
-                    it.characterOne.id in charactersIds || it.characterTwo.id in charactersIds
+                    it.characterOne.id in charactersInScene.map { character -> character.data.id } ||
+                        it.characterTwo.id in charactersInScene.map { character -> character.data.id }
                 }
 
             val prompt =
                 ChatPrompts.generateReactionPrompt(
-                    saga = saga.data,
+                    saga = saga,
                     summary = sceneSummary,
-                    mainCharacter = saga.mainCharacter,
                     relationships = relationships,
                     messageToReact = message,
                 )
@@ -204,26 +197,39 @@ class MessageUseCaseImpl
             val reaction = gemmaClient.generate<ReactionGen>(prompt)!!
             Log.d(javaClass.simpleName, "generateReaction: ${reaction.reactions.size} reactions generated.")
             reaction.reactions.forEach { reaction ->
-                saga.characters
-                    .find { it.data.name.equals(reaction.character, ignoreCase = true) }
-                    ?.let {
-                        if (it.data.id != message.characterId) {
-                            reactionRepository.saveReaction(
-                                Reaction(
-                                    messageId = message.id,
-                                    characterId = it.data.id,
-                                    emoji = reaction.reaction,
-                                    thought = reaction.thought,
-                                ),
-                            )
-                            Log.d(javaClass.simpleName, "Saving reaction from ${it.data.name} at message ${message.id}")
-                        } else {
-                            Log.w(
-                                javaClass.simpleName,
-                                "generateReaction: Character can't react to itself.",
-                            )
-                        }
+                val reactingCharacter =
+                    charactersInScene.find {
+                        it.data.name.equals(
+                            reaction.character,
+                            ignoreCase = true,
+                        )
                     }
+                if (reactingCharacter != null) {
+                    if (reactingCharacter.data.id != message.characterId) {
+                        reactionRepository.saveReaction(
+                            Reaction(
+                                messageId = message.id,
+                                characterId = reactingCharacter.data.id,
+                                emoji = reaction.reaction,
+                                thought = reaction.thought,
+                            ),
+                        )
+                        Log.d(
+                            javaClass.simpleName,
+                            "Saving reaction from ${reactingCharacter.data.name} at message ${message.id}",
+                        )
+                    } else {
+                        Log.w(
+                            javaClass.simpleName,
+                            "generateReaction: Character can't react to itself.",
+                        )
+                    }
+                } else {
+                    Log.w(
+                        javaClass.simpleName,
+                        "generateReaction: Character '${reaction.character}' not in scene, skipping reaction.",
+                    )
+                }
             }
         }
 

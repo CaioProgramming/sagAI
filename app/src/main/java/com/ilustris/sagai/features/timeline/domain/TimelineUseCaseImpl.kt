@@ -7,7 +7,7 @@ import com.ilustris.sagai.core.ai.prompts.LorePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -78,7 +78,7 @@ class TimelineUseCaseImpl
                         appendLine("Current messages:")
                         appendLine("Consider player interaction with the world and NPCs")
                         appendLine(
-                            content.messages.map { it.message }.listToAINormalize(
+                            content.messages.map { it.message }.normalizetoAIItems(
                                 listOf(
                                     "id",
                                     "timelineId",

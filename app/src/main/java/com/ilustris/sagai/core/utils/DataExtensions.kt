@@ -407,6 +407,9 @@ fun Long.formatFileSize(): String {
 
 fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
     if (this == null) return ""
+    if (this is String || this is Number || this is Boolean || this is Enum<*>) {
+        return this.toString()
+    }
     val fields = this::class.java.declaredFields
     val standardExclusions = listOf("\$stable", "companion")
     val allExclusions = fieldsToExclude + standardExclusions
@@ -415,17 +418,55 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
         .mapNotNull { field ->
             if (field.name in allExclusions) return@mapNotNull null
             field.isAccessible = true
+            val value = field.get(this) ?: return@mapNotNull null
+
             val valueString =
-                when (val value = field.get(this)) {
-                    is List<*> -> value.joinToString(", ")
-                    is Array<*> -> value.joinToString(", ")
-                    else -> value?.toString()
+                when (value) {
+                    is List<*> ->
+                        if (value.isEmpty()) {
+                            ""
+                        } else {
+                            value.normalizetoAIItems(
+                                fieldsToExclude,
+                            )
+                        }
+
+                    is Array<*> ->
+                        if (value.isEmpty()) {
+                            ""
+                        } else {
+                            value.normalizetoAIItems(
+                                fieldsToExclude,
+                            )
+                        }
+
+                    is String -> value
+                    is Enum<*> -> value.toString()
+                    else -> {
+                        if (value::class.isData) {
+                            val normalized = value.toAINormalize(fieldsToExclude)
+                            if (normalized.isNotBlank()) {
+                                "\n${normalized.prependIndent("  ")}"
+                            } else {
+                                ""
+                            }
+                        } else {
+                            value.toString()
+                        }
+                    }
                 }
 
-            if (valueString.isNullOrBlank() || valueString == "[]") {
+            if (valueString.isBlank() || valueString == "[]") {
                 null
             } else {
-                "${field.name}: $valueString"
+                val itemsSize =
+                    when (value) {
+                        is List<*> -> "[${value.size}]"
+                        is Array<*> -> "[${value.size}]"
+                        else -> emptyString()
+                    }
+                "${field.name}$itemsSize: $valueString"
             }
         }.joinToString("\n")
+
 }

@@ -1,6 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -34,7 +34,7 @@ object SagaPrompts {
             appendLine(
                 "Characters: ${
                     saga.characters.map { it.data }
-                        .listToAINormalize(ChatPrompts.characterExclusions)
+                        .normalizetoAIItems(ChatPrompts.characterExclusions)
                 }",
             )
             appendLine("Relationships: ${saga.mainCharacter?.summarizeRelationships() ?: "No significant relationships were forged."}")

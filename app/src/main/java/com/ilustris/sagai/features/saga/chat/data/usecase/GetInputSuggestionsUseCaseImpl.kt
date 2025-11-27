@@ -28,6 +28,7 @@ class GetInputSuggestionsUseCaseImpl
                 val contextSummary = sceneSummary ?: error("can't generate suggestions without context")
                 val prompt =
                     SuggestionPrompts.generateSuggestionsPrompt(
+                        saga,
                         character = currentUserCharacter!!,
                         contextSummary,
                     )

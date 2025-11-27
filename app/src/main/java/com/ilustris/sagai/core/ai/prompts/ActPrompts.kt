@@ -1,6 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.listToAINormalize
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -53,7 +53,7 @@ object ActPrompts {
             )
             appendLine("Chapters in current act:")
             appendLine(
-                chapterSummariesInCurrentAct.listToAINormalize(
+                chapterSummariesInCurrentAct.normalizetoAIItems(
                     ChapterPrompts.CHAPTER_EXCLUSIONS,
                 ),
             )
@@ -212,7 +212,7 @@ object ActPrompts {
                 appendLine("// This overview provides a summary of all acts in the saga to inform narrative consistency and progression.")
                 appendLine("// Use this information to maintain continuity and reference past events as needed.")
                 appendLine(
-                    acts.listToAINormalize(
+                    acts.normalizetoAIItems(
                         excludingFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
                     ),
                 )

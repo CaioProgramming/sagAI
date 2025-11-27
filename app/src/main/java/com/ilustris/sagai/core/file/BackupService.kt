@@ -169,7 +169,7 @@ class BackupService(
         currentManifest.add(newEntry)
 
         val updatedJson = gson.toJson(currentManifest)
-        context.contentResolver.openOutputStream(manifestFile.uri, "w")?.use { outputStream ->
+        context.contentResolver.openOutputStream(manifestFile.uri, "rwt")?.use { outputStream ->
             outputStream.write(updatedJson.toByteArray())
         }
     }
@@ -244,7 +244,7 @@ class BackupService(
         destinationUri: Uri,
     ): RequestResult<Unit> =
         executeRequest {
-            context.contentResolver.openOutputStream(destinationUri, "w")?.use { outputStream ->
+            context.contentResolver.openOutputStream(destinationUri, "rwt")?.use { outputStream ->
                 writeSagaToZip(saga, outputStream)
             } ?: error("Could not open output stream for destination URI")
         }

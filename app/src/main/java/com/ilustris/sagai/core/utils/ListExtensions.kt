@@ -31,7 +31,25 @@ fun sortCharactersContentByMessageCount(
         }
 }
 
-fun List<Any>.listToAINormalize(excludingFields: List<String> = emptyList()): String =
-    this.joinToString(separator = ";\n") { item ->
-        "• ${item.toAINormalize(excludingFields)}"
+fun List<*>.normalizetoAIItems(excludingFields: List<String> = emptyList()): String {
+    if (isEmpty()) return ""
+    val firstItem = first()
+
+    return if (firstItem is String || firstItem is Number || firstItem is Boolean || firstItem is Enum<*>) {
+        // For primitive-like types, just join them
+        joinToString(", ")
+    } else {
+        // For complex objects, normalize each item and prepend its type and index
+        filterNotNull()
+            .mapIndexed { index, item ->
+                val normalizedItem = item.toAINormalize(excludingFields)
+                if (normalizedItem.isNotBlank()) {
+                    "${item.javaClass.simpleName}[$index]: \n${normalizedItem.prependIndent("    ")}"
+                } else {
+                    "${item.javaClass.simpleName}[$index]: (empty)"
+                }
+            }.joinToString("\n")
     }
+}
+
+fun Array<*>.normalizetoAIItems(excludingFields: List<String> = emptyList()): String = this.toList().normalizetoAIItems(excludingFields)
