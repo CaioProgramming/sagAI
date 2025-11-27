@@ -36,4 +36,3 @@ technical achievements and implementation details.
      `gh pr create --base develop --title "[Title]" --body "[Description]" --label "gemini-assisted" --label "[feature-label]"`
       the "coolness" factor is met.
    - **Open PR**: After creation, run `gh pr view --web` to open the PR in the browser.
-
