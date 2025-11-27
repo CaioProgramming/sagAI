@@ -5,7 +5,11 @@ description: Create a LinkedIn update post for Sagas
 This workflow guides you through creating a LinkedIn update post for Sagas, following the personal
 and engaging style of the "Dev Diary".
 
-1. **Gather Context from Git**:
+1. **Smart Commit Check**:
+    - Run the `.agent/workflows/smart_commit.md` workflow to ensure all changes are committed and
+      summarized.
+
+2. **Gather Context from Git**:
     - **Identify Branch**: Run `git branch --show-current` to know what we are working on.
     - **Analyze Commits**: Run `git log -n 15 --oneline` to see the latest ~15 commits on the
       current branch.
@@ -41,4 +45,7 @@ and engaging style of the "Dev Diary".
 
 4. **Finalize**:
     - Make any requested edits.
-    - Remind the user to attach the media when posting.
+   - **Copy to Clipboard**: Run `pbcopy < docs/posts/linkedin_update_[date].md` to copy the content.
+   - **Open LinkedIn**: Run `open https://www.linkedin.com/feed/` to open the browser.
+   - Remind the user that the text is in their clipboard and to attach media.
+

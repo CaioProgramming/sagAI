@@ -5,7 +5,11 @@ description: Create release notes for Google Play Store
 This workflow guides you through creating release notes for the Google Play Store, maintaining the
 app's friendly and engaging voice.
 
-1. **Gather Context from Git**:
+1. **Smart Commit Check**:
+    - Run the `.agent/workflows/smart_commit.md` workflow to ensure all changes are committed and
+      summarized.
+
+2. **Gather Context from Git**:
     - **Analyze Commits**: Run `git log -n 15 --oneline develop` to see the latest ~15 commits on
       the develop branch.
     - **Analyze Merges**: Run `git log --merges -n 2 --oneline develop` to see the latest 2 merges.
