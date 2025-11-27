@@ -8,7 +8,11 @@ the APK.
 1. **Smart Commit Check**:
     - Run the `.agent/workflows/smart_commit.md` workflow to ensure all changes are committed and summarized.
 
-2. **Analyze & Determine Version**:
+2. **Sync with Develop**:
+    - Ensure we are on the develop branch: `git checkout develop`
+    - Pull the latest changes: `git pull origin develop`
+
+3. **Analyze & Determine Version**:
     - **Fetch History**: Run `git log -n 20 --oneline develop` and
       `git log --merges -n 3 --oneline develop`.
     - **Analyze Impact**:
@@ -21,27 +25,27 @@ the APK.
         - *Rule*: If MAJOR increments, reset MINOR and PATCH to 0. If MINOR increments, reset PATCH
           to 0.
 
-2. **Update Version**:
+4. **Update Version**:
     - Update `version.properties` with the new values.
     - *Note*: `app/build.gradle.kts` automatically reads from this file, so no manual Gradle edit is
       needed.
 
-3. **Draft Release Notes**:
+5. **Draft Release Notes**:
     - Follow the style guide from `.agent/workflows/create_release_notes.md`.
     - Create `docs/release_notes/release_[new_version].md`.
     - Include the "What's New" and "Bug Fixes" sections based on the git log analysis.
 
-4. **Build Release**:
+6. **Build Release**:
     - Run `./gradlew assembleRelease`.
     - *Note*: This might take a few minutes.
 
-5. **Finalize**:
+7. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.
    - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
     - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
     - Ask the user to review the generated release notes.
 
-6. **Create Pull Request**:
+8. **Create Pull Request**:
     - **Identify Core Features**: Use the git log analysis from Step 1 to identify 1-2 core features
       or major improvements.
     - **Construct Title**: `✦ Release [Version] - [Core Feature 1] & [Core Feature 2]`
