@@ -207,35 +207,7 @@ fun DrawShape(
     )
 }
 
-fun Modifier.dashedBorder(
-    strokeWidth: Dp,
-    color: Color,
-    cornerRadiusDp: Dp,
-) = composed(
-    factory = {
-        val density = LocalDensity.current
-        val strokeWidthPx = density.run { strokeWidth.toPx() }
-        val cornerRadiusPx = density.run { cornerRadiusDp.toPx() }
 
-        this.then(
-            Modifier.drawWithCache {
-                onDrawBehind {
-                    val stroke =
-                        Stroke(
-                            width = strokeWidthPx,
-                            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f),
-                        )
-
-                    drawRoundRect(
-                        color = color,
-                        style = stroke,
-                        cornerRadius = CornerRadius(cornerRadiusPx),
-                    )
-                }
-            },
-        )
-    },
-)
 
 fun Genre?.cornerSize() =
     when (this) {
@@ -245,6 +217,7 @@ fun Genre?.cornerSize() =
         Genre.HEROES -> 4.dp
         Genre.CRIME -> 25.dp
         Genre.SPACE_OPERA -> 5.dp
+        Genre.SHINOBI -> 15.dp
         else -> 0.dp
     }
 

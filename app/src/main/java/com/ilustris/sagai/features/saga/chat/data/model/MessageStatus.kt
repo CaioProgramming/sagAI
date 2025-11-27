@@ -1,4 +1,5 @@
 enum class MessageStatus {
     OK,
-    ERROR
+    ERROR,
+    LOADING,
 }

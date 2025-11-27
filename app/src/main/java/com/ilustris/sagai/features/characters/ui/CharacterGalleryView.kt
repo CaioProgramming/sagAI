@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -29,46 +28,33 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.ilustris.sagai.R
-import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.sortCharactersContentByMessageCount
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.presentation.CharacterViewModel
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -91,8 +77,6 @@ fun CharacterGalleryView(
     characterViewModel: CharacterViewModel = hiltViewModel(),
 ) {
     val saga by characterViewModel.saga.collectAsStateWithLifecycle()
-    val characters by characterViewModel.characters.collectAsStateWithLifecycle()
-    val state by characterViewModel.state.collectAsState()
 
     LaunchedEffect(saga) {
         if (saga == null) {
@@ -149,7 +133,10 @@ fun CharactersGalleryContent(
                                 MaterialTheme.typography.labelMedium.copy(
                                     fontFamily = genre.bodyFont(),
                                 ),
-                            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
                             titleModifier = titleModifier,
                         )
                     }
@@ -215,7 +202,7 @@ fun CharactersGalleryContent(
                             Modifier
                                 .background(MaterialTheme.colorScheme.background)
                                 .fillMaxWidth()
-                                .padding(top = 50.dp, start = 16.dp),
+                                .padding(top = 32.dp, start = 16.dp),
                     )
                 }
             }
@@ -229,8 +216,9 @@ fun CharacterYearbookItem(
     genre: Genre,
     modifier: Modifier = Modifier,
     imageModifier: Modifier = Modifier,
+    textStyle: TextStyle = MaterialTheme.typography.labelLarge,
 ) {
-    CharacterVerticalItem(modifier, imageModifier.size(100.dp), character, genre)
+    CharacterVerticalItem(modifier, imageModifier.size(100.dp), character, genre, textStyle)
 }
 
 @Composable
@@ -274,7 +262,6 @@ private fun CharacterVerticalItem(
         )
     }
 }
-
 
 @Composable
 fun CharacterHorizontalView(

@@ -12,10 +12,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +20,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,14 +28,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +52,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -70,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import coil3.compose.AsyncImage
@@ -87,10 +82,9 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
+import com.ilustris.sagai.features.saga.detail.ui.sharedElementItemKey
 import com.ilustris.sagai.features.saga.detail.ui.sharedTransitionActionItemModifier
 import com.ilustris.sagai.features.saga.detail.ui.titleAndSubtitle
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -127,48 +121,99 @@ fun TimeLineContent(
 ) {
     val lazyListState = rememberLazyListState()
     val genre = saga.data.genre
-    val topPadding by animateDpAsState(
-        if (lazyListState.canScrollBackward) 100.dp else 0.dp,
-    )
     with(animationScopes.first) {
-        Box {
-            val titleAndSubtitle =
-                DetailAction.TIMELINE.titleAndSubtitle(saga)
-            LazyColumn(
-                state = lazyListState,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(top = topPadding, bottom = 32.dp),
-            ) {
-                item {
-                    LargeHorizontalHeader(
-                        titleAndSubtitle.first,
-                        titleAndSubtitle.second,
-                        titleStyle =
+        val titleAndSubtitle =
+            DetailAction.TIMELINE.titleAndSubtitle(saga)
+        LazyColumn(
+            state = lazyListState,
+            modifier =
+                Modifier.fillMaxSize(),
+        ) {
+            stickyHeader(key = "timeline-content-header") {
+                SharedTransitionLayout {
+                    AnimatedContent(lazyListState.canScrollBackward, modifier = titleModifier) {
+                        if (it) {
+                            SagaTopBar(
+                                titleAndSubtitle.first,
+                                titleAndSubtitle.second,
+                                genre,
+                                onBackClick = { onBackClick() },
+                                actionContent = { Box(Modifier.size(24.dp)) },
+                                modifier =
+                                    Modifier
+                                        .sharedBounds(
+                                            rememberSharedContentState(
+                                                "timeline-content-header",
+                                            ),
+                                            this,
+                                        ).background(MaterialTheme.colorScheme.background)
+                                        .fillMaxWidth()
+                                        .statusBarsPadding()
+                                        .padding(horizontal = 16.dp),
+                            )
+                        } else {
+                            LargeHorizontalHeader(
+                                titleAndSubtitle.first,
+                                titleAndSubtitle.second,
+                                titleStyle =
+                                    MaterialTheme.typography.displaySmall.copy(
+                                        fontFamily = genre.headerFont(),
+                                    ),
+                                subtitleStyle =
+                                    MaterialTheme.typography.labelMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .sharedBounds(
+                                            rememberSharedContentState(
+                                                "timeline-content-header",
+                                            ),
+                                            this,
+                                        ).padding(16.dp)
+                                        .fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+            }
+            val acts = saga.acts
+            acts.forEach { actContent ->
+                item("timeline-act-${actContent.data.id}") {
+                    Text(
+                        actContent.data.title.ifEmpty {
+                            stringResource(
+                                id = R.string.act_title,
+                                (acts.indexOf(actContent) + 1).toRoman(),
+                            )
+                        },
+                        style =
                             MaterialTheme.typography.displaySmall.copy(
                                 fontFamily = genre.headerFont(),
-                            ),
-                        subtitleStyle =
-                            MaterialTheme.typography.labelMedium.copy(
-                                fontFamily = genre.bodyFont(),
+                                brush = genre.gradient(true),
+                                textAlign = TextAlign.Center,
                             ),
                         modifier =
                             Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                        titleModifier = titleModifier,
+                                .fillMaxWidth()
+                                .background(
+                                    MaterialTheme.colorScheme.background,
+                                ).padding(16.dp),
                     )
                 }
-                val acts = saga.acts
-                acts.forEach { actContent ->
-                    item {
+                actContent.chapters.forEach { chapter ->
+                    item(key = "timeline-chapter-${chapter.data.id}") {
                         Text(
-                            actContent.data.title.ifEmpty { "Ato ${(acts.indexOf(actContent) + 1).toRoman()}" },
+                            chapter.data.title.ifEmpty {
+                                stringResource(
+                                    id = R.string.chapter_title,
+                                    saga.chapterNumber(chapter.data).toRoman(),
+                                )
+                            },
                             style =
-                                MaterialTheme.typography.displaySmall.copy(
+                                MaterialTheme.typography.titleMedium.copy(
                                     fontFamily = genre.headerFont(),
-                                    brush = genre.gradient(true),
+                                    color = saga.data.genre.color,
                                     textAlign = TextAlign.Center,
                                 ),
                             modifier =
@@ -179,86 +224,54 @@ fun TimeLineContent(
                                     ).padding(16.dp),
                         )
                     }
-                    actContent.chapters.forEach { chapter ->
-                        stickyHeader {
-                            Text(
-                                chapter.data.title.ifEmpty {
-                                    "Capítulo ${saga.chapterNumber(chapter.data).toRoman()}"
-                                },
-                                style =
-                                    MaterialTheme.typography.titleMedium.copy(
-                                        fontFamily = genre.headerFont(),
-                                        color = saga.data.genre.color,
-                                        textAlign = TextAlign.Center,
-                                    ),
-                                modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .background(
-                                            MaterialTheme.colorScheme.background,
-                                        ).padding(16.dp),
-                            )
-                        }
 
-                        items(chapter.events.filter { it.isComplete() }) {
-                            val eventModifier =
-                                this@with.sharedTransitionActionItemModifier(
-                                    DetailAction.CHARACTERS,
-                                    animationScopes.second,
-                                    it.data.id,
-                                    saga.data.id,
-                                )
-                            val cardEnabled =
-                                remember {
-                                    it.data.emotionalReview.isNullOrEmpty() ||
-                                        it.characterEventDetails.isEmpty() ||
-                                        it.updatedRelationshipDetails.isEmpty() ||
-                                        it.updatedWikis.isEmpty()
-                                }
-                            TimeLineCard(
-                                it,
-                                saga,
-                                showSpark = true,
-                                isLast = false,
-                                openCharacters = { openCharacters.invoke() },
-                                modifier =
-                                    eventModifier
-                                        .animateContentSize()
-                                        .clip(genre.shape())
-                                        .clickable(cardEnabled) {
-                                            generateEmotionalReview(it)
-                                        },
+                    items(
+                        chapter.events.filter { it.isComplete() },
+                        key = {
+                            DetailAction.TIMELINE.sharedElementItemKey(
+                                saga.data.id,
+                                it.data.id,
                             )
-                        }
+                        },
+                    ) {
+                        val eventModifier =
+                            this@with.sharedTransitionActionItemModifier(
+                                DetailAction.TIMELINE,
+                                animationScopes.second,
+                                it.data.id,
+                                saga.data.id,
+                            )
+                        val cardEnabled =
+                            remember {
+                                it.data.emotionalReview.isNullOrEmpty() ||
+                                    it.characterEventDetails.isEmpty() ||
+                                    it.updatedRelationshipDetails.isEmpty() ||
+                                    it.updatedWikis.isEmpty()
+                            }
+                        TimeLineCard(
+                            it,
+                            saga,
+                            showSpark = true,
+                            isLast = false,
+                            openCharacters = { openCharacters.invoke() },
+                            modifier =
+                                eventModifier
+                                    .animateContentSize()
+                                    .clip(genre.shape())
+                                    .clickable(cardEnabled) {
+                                        generateEmotionalReview(it)
+                                    },
+                        )
                     }
                 }
-            }
-
-            AnimatedVisibility(
-                lazyListState.canScrollBackward,
-                enter = fadeIn(tween(400, delayMillis = 200)),
-                exit = fadeOut(tween(200)),
-            ) {
-                SagaTopBar(
-                    titleAndSubtitle.first,
-                    titleAndSubtitle.second,
-                    genre,
-                    onBackClick = { onBackClick() },
-                    actionContent = { Box(Modifier.size(24.dp)) },
-                    modifier =
-                        Modifier
-                            .background(MaterialTheme.colorScheme.background)
-                            .fillMaxWidth()
-                            .padding(top = 50.dp, start = 16.dp),
-                )
             }
         }
     }
 
     LaunchedEffect(saga) {
         delay(500)
-        val lastIndex = lazyListState.layoutInfo.totalItemsCount
-        lazyListState.animateScrollToItem(lastIndex)
+        lazyListState.layoutInfo.totalItemsCount
+        // lazyListState.animateScrollToItem(lastIndex)
     }
 }
 
@@ -456,7 +469,10 @@ fun TimeLineCard(
                                     null,
                                     colorFilter = ColorFilter.tint(genre.color),
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier.size(24.dp).padding(4.dp),
+                                    modifier =
+                                        Modifier
+                                            .size(24.dp)
+                                            .padding(4.dp),
                                 )
 
                                 Text(
@@ -689,7 +705,12 @@ fun TimeLineSimpleCard(
                         .border(1.dp, genre.color, CircleShape),
             )
 
-            Column(modifier = Modifier.padding(8.dp).weight(1f)) {
+            Column(
+                modifier =
+                    Modifier
+                        .padding(8.dp)
+                        .weight(1f),
+            ) {
                 Text(
                     event.title,
                     style =
@@ -757,11 +778,18 @@ fun TimeLineSimpleCard(
                     painterResource(R.drawable.ic_review),
                     null,
                     tint = genre.color,
-                    modifier = Modifier.padding(4.dp).size(24.dp).padding(2.dp),
+                    modifier =
+                        Modifier
+                            .padding(4.dp)
+                            .size(24.dp)
+                            .padding(2.dp),
                 )
                 Text(
-                    text = "Revisar evento",
-                    style = MaterialTheme.typography.labelLarge,
+                    text = stringResource(R.string.review_event_label),
+                    style =
+                        MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Medium,
+                        ),
                 )
             }
         }
@@ -780,9 +808,7 @@ fun AvatarTimelineIcon(
     modifier: Modifier = Modifier,
 ) {
     val border =
-        borderColor?.solidGradient() ?: Brush.verticalGradient(
-            listOf(genre.color, genre.colorPalette().last(), genre.iconColor),
-        )
+        borderColor?.solidGradient() ?: genre.color.solidGradient()
     val background =
         backgroundColor?.gradientFade() ?: genre.color.gradientFade()
     Box(
@@ -826,7 +852,10 @@ fun AvatarTimelineIcon(
                             genre.color.darkerPalette(factor = .2f),
                         ),
                 ),
-            modifier = Modifier.alpha(textVisible).align(Alignment.Center),
+            modifier =
+                Modifier
+                    .alpha(textVisible)
+                    .align(Alignment.Center),
         )
 
         if (showSpark) {
@@ -839,6 +868,7 @@ fun AvatarTimelineIcon(
                     ),
                 modifier =
                     Modifier
+                        .zIndex(1f)
                         .offset(y = 14.dp, x = 0.dp)
                         .size(24.dp)
                         .align(

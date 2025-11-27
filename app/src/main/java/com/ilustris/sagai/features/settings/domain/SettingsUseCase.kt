@@ -4,24 +4,25 @@ import android.Manifest
 import android.content.Context
 import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.datastore.DataStorePreferences
-import com.ilustris.sagai.core.file.BACKUP_PREFRENCE_KEY
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.FileManager
+import com.ilustris.sagai.core.file.backup.RestorableSaga
+import com.ilustris.sagai.core.file.backup.SagaManifest
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionStatus
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.settings.ui.SagaStorageInfo
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
-import java.io.File
 import javax.inject.Inject
 
 interface SettingsUseCase {
@@ -50,6 +51,8 @@ interface SettingsUseCase {
     suspend fun disableBackup()
 
     suspend fun enableBackup(uri: Uri?): RequestResult<Unit>
+
+    suspend fun restoreSaga(uri: Uri): RequestResult<SagaContent>
 }
 
 class SettingsUseCaseImpl
@@ -64,6 +67,7 @@ class SettingsUseCaseImpl
         private val permissionService: PermissionService,
         private val backupService: BackupService,
         private val fileManager: FileManager,
+        private val sagaBackupService: SagaBackupService,
     ) : SettingsUseCase {
         companion object {
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
@@ -110,4 +114,28 @@ class SettingsUseCaseImpl
         override suspend fun disableBackup() = backupService.deleteBackup()
 
         override suspend fun enableBackup(uri: Uri?) = backupService.enableBackup(uri)
+
+        override suspend fun restoreSaga(uri: Uri): RequestResult<SagaContent> =
+            executeRequest {
+                // 1. Parse Saga from Zip
+                val tempSaga =
+                    backupService.unzipAndParseSaga(uri) ?: error("Could not parse saga from zip")
+
+                // 2. Restore content using SagaBackupService
+                sagaBackupService
+                    .restoreContent(
+                        RestorableSaga(
+                            SagaManifest(
+                                sagaId = tempSaga.data.id,
+                                title = tempSaga.data.title,
+                                description = tempSaga.data.description,
+                                genre = tempSaga.data.genre,
+                                iconName = tempSaga.data.icon,
+                                lastBackup = System.currentTimeMillis(),
+                                zipFileName = uri.toString(),
+                            ),
+                            null,
+                        ),
+                    ).getSuccess()!!
+            }
     }

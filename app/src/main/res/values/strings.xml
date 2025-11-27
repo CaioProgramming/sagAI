@@ -226,6 +226,7 @@
     <string name="genre_heroes">Heroes</string>
     <string name="genre_crime">Crime City</string>
     <string name="genre_space_opera">Space Opera</string>
+    <string name="genre_shinobi">Shinobi</string>
     <string name="settings_title">Settings</string>
     <string name="memory_usage">Storage Usage</string>
     <string name="premium_first_title">Dive into unique universes and turn your ideas into unforgettable stories. With Sagas Pro, your creativity comes alive and every chapter becomes a visually immersive experience.</string>
@@ -283,5 +284,57 @@
     <string name="review_chapter">Review Chapter</string>
     <string name="ending">Chapter %s updated.</string>
     <string name="review_items">Review Items</string>
+    <string name="review_event_label">Review event</string>
+    <string name="share_character_cd">Share character</string>
+    <string name="messages_label">Messages</string>
+    <string name="act_title">Act %s</string>
+    <string name="chapter_title">Chapter %s</string>
+    <string name="pro_label">Pro</string>
+    <string name="themes_title">Themes</string>
+    <string name="send_message_cd">Send message</string>
+    <string name="character_cd">Character</string>
+    <string name="chapter_in_progress">Chapter in progress...</string>
+    <string name="events_count">%d of %d events</string>
+    <string name="messages_count">%d of %d messages</string>
+    <string name="see_full_story">See your full story</string>
+    <string name="inner_journey">Inner Journey</string>
+    <string name="inner_journey_description">Your story is not just in what you did, but in how you felt.</string>
+    <string name="keep_moving_forward">Keep moving forward in your story...</string>
+    <string name="image_adjustment">Image adjustment</string>
+    <string name="hue_tolerance">Hue tolerance</string>
+    <string name="saturation_threshold">Saturation threshold</string>
+    <string name="lightness_threshold">Lightness threshold</string>
+    <string name="highlight_boost">Highlight boost</string>
+    <string name="highlight_lightness_boost">Highlight lightness boost</string>
+    <string name="desaturation_factor">Desaturation Factor</string>
+    <string name="saga_not_found">Saga not found.</string>
+    <string name="messages_count_label">%s messages</string>
+    <string name="debug_controls">Debug controls</string>
+    <string name="fake_messages_placeholder">Number of Fake Messages</string>
+    <string name="current_objective">Current Objective</string>
+    <string name="start_writing_saga">Start writing your saga!</string>
+    <string name="no_messages_cd">No messages</string>
+    <string name="saga_ended_on">Your saga ended on %s</string>
+    <string name="chapter_title_template">Chapter %s</string>
+    <string name="act_title_template">Act %s</string>
+    <string name="restore_sagas">Restore sagas</string>
+    <string name="import_saga">Import Saga</string>
+    <string name="not_available" translatable="false">---</string>
+    <string name="updates_count">%d Updates</string>
+    <string name="last_update">Last update</string>
+    <string name="chat_view_subtitle">Act %1$s - Chapter %2$s</string>
+    <string name="continue_to_play">Continue exploring your sagas to discover more about your play style!</string>
+
+    <string name="backup_enabled_label">Backup Enabled</string>
+    <string name="backup_disabled_label">Backup Disabled</string>
+    <string name="backup_enabled_message">Your saga is being backed up automatically</string>
+    <string name="backup_disabled_message">Enable backup in settings for automatic protection</string>
+    <string name="export_button_label">Export</string>
+    <string name="recap_messages_sent">%d messages sent</string>
+    <string name="recap_characters_found">%d characters found</string>
+    <string name="recap_chapters_lived">%d chapters lived</string>
+    <string name="recap_revisit_now">Revisit your saga now</string>
+    <string name="recap_your_journey">Your Journey</string>
+    <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
 
 </resources>

@@ -1,20 +1,18 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 
 object SuggestionPrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun generateSuggestionsPrompt(
+        saga: SagaContent,
         character: Character,
         sceneSummary: SceneSummary,
     ): String =
@@ -23,12 +21,19 @@ object SuggestionPrompts {
             appendLine(
                 "Your goal is to provide three concise, creative, contextually relevant, and actionable input suggestions for the player, who is currently embodying '${character.name}'.",
             )
-            appendLine("Character context:")
-            appendLine(
-                character.toJsonFormatExcludingFields(listOf("hexColor", "image", "id", "sagaId", "joinedAt", "details", "emojified")),
-            )
+            appendLine(SagaPrompts.mainContext(saga))
             appendLine("Story actual context:")
             appendLine(sceneSummary.toJsonFormat())
+            appendLine("Latest messages")
+            appendLine(
+                ChatPrompts.conversationHistory(
+                    saga
+                        .flatMessages()
+                        .takeLast(5)
+                        .reversed()
+                        .map { it.message },
+                ),
+            )
             appendLine("Task:")
             appendLine(
                 "Based on all the information above, generate exactly 3 distinct input suggestions for the player controlling '${character.name}'.",
@@ -39,7 +44,7 @@ object SuggestionPrompts {
             )
             appendLine("")
             appendLine("Allowed `type` values (from your game's SenderType system):")
-            appendLine("- \"USER\": For dialogue spoken by '${character.name}'.")
+            appendLine("- \"CHARACTER\": For dialogue spoken by '${character.name}'.")
             appendLine("  The text must be the exact words spoken by the character, in the first person, as direct speech.")
             appendLine(
                 "  Dialogue must reflect the character’s personality, current mood, and be coherent with the scene context and recent events.",

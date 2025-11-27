@@ -19,3 +19,10 @@ local.properties
 /.idea/
 .gemini/
 gha-creds-*.json
+/app/build/
+.kotlin/
+.junie/
+.kotlin/sessions/
+keystore.properties
+docs/feature_planning/
+!/docs/posts/

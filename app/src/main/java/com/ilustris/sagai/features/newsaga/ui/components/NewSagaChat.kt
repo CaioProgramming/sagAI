@@ -3,15 +3,36 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
 import android.content.res.Configuration
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.RepeatMode.Reverse
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable // Added for SuggestionChip
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -21,12 +42,29 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberTooltipState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -35,10 +73,8 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.shadow.Shadow
-import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -55,31 +91,28 @@ import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
-import com.ilustris.sagai.features.newsaga.data.model.ChatMessage // Correct import
+import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
-import com.ilustris.sagai.features.newsaga.data.model.SagaForm // Added import for SagaForm
-import com.ilustris.sagai.features.newsaga.data.model.Sender // Correct import
+import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import com.ilustris.sagai.features.newsaga.data.model.Sender
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.ui.components.BubbleStyle
-import com.ilustris.sagai.features.saga.chat.ui.components.description
-import com.ilustris.sagai.features.saga.chat.ui.components.icon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.animations.TypingIndicator
 import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
-import com.ilustris.sagai.ui.theme.GradientType
+import com.ilustris.sagai.ui.theme.CyberpunkChatBubbleShape
+import com.ilustris.sagai.ui.theme.FantasyChatBubbleShape
+import com.ilustris.sagai.ui.theme.HeroesChatBubbleShape
+import com.ilustris.sagai.ui.theme.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.MorphPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
+import com.ilustris.sagai.ui.theme.ShinobiChatBubbleShape
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
+import com.ilustris.sagai.ui.theme.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -88,7 +121,6 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.launch
-import kotlin.collections.plus
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
@@ -120,7 +152,6 @@ fun NewSagaChat(
         }
     }
     var inputField by remember { mutableStateOf(TextFieldValue("")) }
-    var showCharacterCard by remember { mutableStateOf(false) }
     var showThemes by remember { mutableStateOf(false) }
     val sheetState =
         rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -136,7 +167,11 @@ fun NewSagaChat(
         val defaultGenre = remember { Genre.entries.random() }
         val genre = it ?: defaultGenre
 
-        ConstraintLayout(Modifier.navigationBarsPadding().fillMaxSize()) {
+        ConstraintLayout(
+            Modifier
+                .navigationBarsPadding()
+                .fillMaxSize(),
+        ) {
             val (chatList, inputView) = createRefs()
 
             LazyColumn(
@@ -169,7 +204,9 @@ fun NewSagaChat(
                         }
 
                         SagaTitle(
-                            Modifier.statusBarsPadding().weight(1f),
+                            Modifier
+                                .statusBarsPadding()
+                                .weight(1f),
                         )
 
                         Box(Modifier.size(24.dp))
@@ -263,20 +300,19 @@ fun NewSagaChat(
             }
 
             val isBusy = isLoading || isGenerating
-            val glowBrush =
-                remember {
-                    if (isBusy) {
-                        Brush.verticalGradient(genre.colorPalette())
-                    } else {
-                        Color.Transparent.solidGradient()
-                    }
+            remember {
+                if (isBusy) {
+                    Brush.verticalGradient(genre.colorPalette())
+                } else {
+                    Color.Transparent.solidGradient()
                 }
+            }
             val glowRadius by animateDpAsState(
                 targetValue = if (isBusy) 20.dp else 5.dp,
                 label = "glowRadius",
                 animationSpec = tween(500),
             )
-            val inputAreaShape = remember { it.shape() }
+            remember { it.shape() }
 
             Column(
                 Modifier.constrainAs(inputView) {
@@ -726,7 +762,7 @@ fun ChatMessageBubble(
 ) {
     val textColor = remember { genre.iconColor }
     val isUSer = remember { message.sender == Sender.USER }
-    val loadingIndicatorColor = remember { if (isUSer) genre.iconColor else genre.color }
+    remember { if (isUSer) genre.iconColor else genre.color }
 
     val bubbleStyle =
         remember(message.sender == Sender.USER, genre) {
@@ -739,13 +775,52 @@ fun ChatMessageBubble(
     val cornerSize = genre.cornerSize()
 
     val bubbleShape =
-        remember(bubbleStyle.tailAlignment, cornerSize) {
-            CurvedChatBubbleShape(
-                cornerRadius = cornerSize,
-                tailWidth = 2.dp,
-                tailHeight = 4.dp,
-                tailAlignment = bubbleStyle.tailAlignment,
-            )
+        remember(genre, cornerSize, bubbleStyle.tailAlignment) {
+            when (genre) {
+                Genre.CYBERPUNK ->
+                    CyberpunkChatBubbleShape(
+                        cornerRadius = cornerSize,
+                        tailWidth = 12.dp,
+                        tailHeight = 12.dp,
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+
+                Genre.HEROES ->
+                    HeroesChatBubbleShape(
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+
+                Genre.SHINOBI ->
+                    ShinobiChatBubbleShape(
+                        cornerRadius = cornerSize,
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+
+                Genre.HORROR ->
+                    HorrorChatBubbleShape(
+                        pixelSize = cornerSize,
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+
+                Genre.FANTASY ->
+                    FantasyChatBubbleShape(
+                        cornerRadius = cornerSize,
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+
+                Genre.SPACE_OPERA ->
+                    SpaceChatBubbleShape(
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+
+                else ->
+                    CurvedChatBubbleShape(
+                        cornerRadius = cornerSize,
+                        tailWidth = 4.dp,
+                        tailHeight = 4.dp,
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+            }
         }
 
     Column(modifier.padding(16.dp)) {

@@ -54,10 +54,11 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -98,8 +99,6 @@ fun PlayStyleShareView(
         contentAlignment = Alignment.Center,
     ) {
         AnimatedVisibility(isLoading.not(), enter = fadeIn(), exit = fadeOut()) {
-            val padding by animateDpAsState(if (isLoading.not()) 16.dp else 32.dp)
-
             Column(
                 Modifier
                     .fillMaxWidth()
@@ -153,7 +152,10 @@ fun PlayStyleShareView(
                     }
 
                     Column(
-                        Modifier.align(Alignment.BottomCenter).padding(16.dp).fillMaxWidth(),
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -236,22 +238,15 @@ fun PlayStyleShareView(
 
                 SagaTitle(
                     textStyle = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(8.dp).align(Alignment.CenterHorizontally),
+                    modifier =
+                        Modifier
+                            .padding(8.dp)
+                            .align(Alignment.CenterHorizontally),
                 )
             }
         }
 
-        AnimatedVisibility(
-            isLoading,
-            modifier = Modifier.fillMaxSize(),
-            enter = fadeIn(),
-            exit = fadeOut(),
-        ) {
-            StarryTextPlaceholder(
-                modifier = Modifier.fillMaxSize(),
-                starColor = genre.color,
-            )
-        }
+        StarryLoader(isLoading, brushColors = saga.genre.colorPalette())
     }
 
     LaunchedEffect(Unit) {

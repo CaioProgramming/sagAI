@@ -15,21 +15,18 @@ Genre(
     val iconColor: Color,
     @DrawableRes
     val background: Int,
-    val ambientMusicConfigKey: String,
 ) {
     FANTASY(
         title = R.string.genre_fantasy,
-        color = MaterialColor.Red800,
+        color = MaterialColor.RedA400,
         iconColor = Color.White,
         background = R.drawable.fantasy,
-        ambientMusicConfigKey = "fantasy_ambient_music_url",
     ),
     CYBERPUNK(
         title = R.string.genre_scifi,
         color = MaterialColor.DeepPurpleA200,
         iconColor = Color.White,
         background = R.drawable.scifi,
-        ambientMusicConfigKey = "scifi_ambient_music_url",
     ),
 
     HORROR(
@@ -37,7 +34,6 @@ Genre(
         color = MaterialColor.BlueGray200,
         iconColor = Color.Black,
         background = R.drawable.horror,
-        ambientMusicConfigKey = "horror_ambient_music_url",
     ),
 
     HEROES(
@@ -45,14 +41,19 @@ Genre(
         color = MaterialColor.Blue900,
         iconColor = Color.White,
         background = R.drawable.hero,
-        ambientMusicConfigKey = "heroes_ambient_music_url",
     ),
     CRIME(
         title = R.string.genre_crime,
         color = MaterialColor.PinkA100,
         iconColor = Color.White,
         background = R.drawable.crime,
-        ambientMusicConfigKey = "crime_ambient_music_url",
+    ),
+
+    SHINOBI(
+        title = R.string.genre_shinobi,
+        color = Color(0xff880101),
+        iconColor = Color.White,
+        background = R.drawable.shinobi_background,
     ),
 
     SPACE_OPERA(
@@ -60,8 +61,10 @@ Genre(
         color = MaterialColor.CyanA700,
         iconColor = Color.Black,
         background = R.drawable.space_opera,
-        ambientMusicConfigKey = "space_opera_ambient_music_url",
     ),
+    ;
+
+    val ambientMusicConfigKey: String = "${this.name}_ambient_music_url".lowercase()
 }
 
 fun Genre.selectiveHighlight(): SelectiveColorParams =
@@ -114,6 +117,16 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.4f,
                 desaturationFactorNonTarget = .4f,
             )
+        Genre.SHINOBI ->
+            SelectiveColorParams(
+                targetColor = color,
+                // tight hue tolerance to preserve that specific wine red accent
+                hueTolerance = .02f,
+                saturationThreshold = .18f,
+                lightnessThreshold = .12f,
+                highlightSaturationBoost = 1.8f,
+                desaturationFactorNonTarget = .45f,
+            )
         Genre.SPACE_OPERA ->
             SelectiveColorParams(
                 targetColor = color,
@@ -132,6 +145,7 @@ fun Genre.defaultHeaderImage() =
         Genre.HORROR -> R.drawable.horror_card
         Genre.HEROES -> R.drawable.hero_card
         Genre.CRIME -> R.drawable.crime_card
+        Genre.SHINOBI -> R.drawable.shinobi_card
         Genre.SPACE_OPERA -> R.drawable.space_opera_card
     }
 
@@ -147,7 +161,7 @@ fun Genre.colorPalette() =
     when (this) {
         Genre.FANTASY ->
             listOf(
-                MaterialColor.Red900,
+                color,
                 MaterialColor.OrangeA200,
                 MaterialColor.DeepOrange600,
                 MaterialColor.RedA200,
@@ -155,7 +169,7 @@ fun Genre.colorPalette() =
 
         Genre.CYBERPUNK ->
             listOf(
-                MaterialColor.Purple500,
+                color,
                 MaterialColor.Teal800,
                 MaterialColor.DeepPurple800,
                 MaterialColor.PinkA100,
@@ -163,7 +177,7 @@ fun Genre.colorPalette() =
 
         Genre.HORROR ->
             listOf(
-                MaterialColor.BlueGray100,
+                color,
                 MaterialColor.BlueGray700,
                 MaterialColor.LightBlue50,
                 MaterialColor.BlueGray300,
@@ -171,7 +185,7 @@ fun Genre.colorPalette() =
 
         Genre.HEROES ->
             listOf(
-                MaterialColor.Blue500,
+                color,
                 MaterialColor.Blue900,
                 MaterialColor.LightBlue300,
                 MaterialColor.RedA200,
@@ -179,14 +193,21 @@ fun Genre.colorPalette() =
 
         Genre.CRIME ->
             listOf(
-                MaterialColor.PinkA200,
+                color,
                 MaterialColor.PinkA100,
                 MaterialColor.Amber300,
                 MaterialColor.YellowA200,
             )
+        Genre.SHINOBI ->
+            listOf(
+                color,
+                MaterialColor.Brown100,
+                MaterialColor.Pink100,
+                MaterialColor.Indigo600,
+            )
         Genre.SPACE_OPERA ->
             listOf(
-                MaterialColor.CyanA700,
+                color,
                 MaterialColor.LightBlueA400,
                 MaterialColor.TealA400,
                 MaterialColor.LimeA200,

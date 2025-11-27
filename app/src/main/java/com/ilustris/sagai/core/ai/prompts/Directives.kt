@@ -6,14 +6,12 @@ import java.util.Locale
 object CharacterDirective {
     const val CHARACTER_INTRODUCTION =
         """
-         ${CharacterRules.CRITICAL_RULE}   
-            
         // 🚨🚨🚨 CRITICAL SYSTEM DIRECTIVE: NEW CHARACTER INTRODUCTION PROTOCOL 🚨🚨🚨
         // This protocol dictates the ONLY circumstances under which new characters are introduced.
         // Adherence to this directive is PARAMOUNT for maintaining narrative coherence and preventing character hallucination.
         
 
-        1.  **Strict Necessity:** A new character (requiring 'shouldCreateCharacter: true' and 'newCharacterInfo') MUST ONLY be introduced when their appearance is **ABSOLUTELY ESSENTIAL, LOGICALLY JUSTIFIED, AND UNAVOIDABLE** for the immediate and coherent progression of the plot.
+        1.  **Strict Necessity:** A new character (requiring 'shouldCreateCharacter: true' and 'newCharacterInfo') MUST ONLY be introduced when their appearance is **ABSOLUTELY ESSENTIAL, LOGICALLY JUSTIFIED, AND UNAVOIDABLE** for the immediate and coherent progression of the plot, **including when a new character is introduced directly by name or action by the Player.**
             * **DO NOT INTRODUCE CHARACTERS FOR RANDOM PLOT TWISTS.** Every new character must serve a clear, immediate, and impactful narrative purpose.
             * **NEVER INTRODUCE A NEW CHARACTER TO AVOID ANSWERING A DIRECT QUESTION.** If the player asks "Who are you?" or similar, the response MUST come from the character in question, or the NARRATOR must provide more details about THAT specific character, not introduce another.
         
@@ -62,9 +60,10 @@ object ContentGenerationDirective {
              
         """.trimIndent()
 
-  const val PROGRESSION_DIRECTIVE = """
+    const val PROGRESSION_DIRECTIVE = """
         ---
         ## NARRATION & PLAYER ACTION/THOUGHT HANDLING
+        Prioritization: Analyze the **INTENT** of the Player's last message. Your response must be a direct, significant, and logical consequence of that stated intent.
         1.  **Progression:** Always advance the plot, introduce new information, or react to the player. Don't repeat descriptions or recently established facts.
         2.  **Player Actions (`ACTION`):** Narrate the outcome and impact of the action, not the action itself. Ensure actions lead to progress.
         3.  **Player Thoughts (`THOUGHT`):** Describe the internal or external consequences of the thought. Use it as a catalyst for narration or NPC reaction, but don't just echo the thought. Thoughts must not halt the story.

@@ -1,16 +1,13 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import kotlin.jvm.java
 
 object HomePrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun dynamicSagaCreationPrompt(): String {
         val genreEnumNames = Genre.entries.joinToString(", ") { it.name }
-
 
         return buildString {
             appendLine(
@@ -20,28 +17,24 @@ object HomePrompts {
                 "Your output MUST be a single JSON object with exactly two fields: 'title' and 'subtitle'. Output ONLY the JSON object, no extra text.",
             )
 
-            appendLine("Core Task for THIS Generation:")
-            appendLine("- Lean into EXACTLY ONE vibe inspired by these genres: $genreEnumNames.")
-            appendLine(
-                "- Adapt language and imagery to that single vibe without naming the genre directly or using enum names ($genreEnumNames).",
-            )
-
             appendLine("Never mention or imply AI, assistant, model, generation, or automation. The text must feel organic and human.")
 
             appendLine("Instructions for 'title':")
-            appendLine("- Very short (2–4 words).")
-            appendLine(
-                "- Assertive, clear call to create a saga (e.g., 'Create Your Saga', 'Start a New Saga', 'Forge Your Saga'). No ambiguity.",
-            )
-            appendLine("- Must emphasize the action of creating a new saga or universe.")
+            appendLine("- Very short (2–5 words).")
+            appendLine("- Focus on ACTION verbs that imply creating a universe, history, or adventure.")
+            appendLine("- Keep it simple, inviting, and direct.")
+            appendLine("- Examples: 'Create a New Universe', 'Start an Adventure', 'Forge Your History', 'Write a New Saga'.")
 
             appendLine("Instructions for 'subtitle':")
-            appendLine("- Concise (max 12 words), engaging, creative, imperative tone.")
-            appendLine("- Subtly evoke ONLY ONE vibe (do not list multiple genres; avoid slashes or comma-separated lists).")
+            appendLine("- Concise (max 15 words), engaging, and creative.")
             appendLine(
-                "- Use punchy hooks like: 'Begin your epic journey', 'Shape a new world', 'Unleash your imagination', 'Start the adventure of a lifetime'.",
+                "- Provide a subtle whisper of inspiration that hints at the possibilities available in these genres: $genreEnumNames.",
             )
-            appendLine("- Encourage the user to begin now.")
+            appendLine("- Do NOT list the genres. Instead, invite the user's creativity to fill in the blanks.")
+            appendLine("- The tone should be: 'Anything is possible here.'")
+            appendLine(
+                "- Examples: 'From deep space mysteries to ancient magical realms.', 'Whether it's high fantasy or a neon future, it starts here.', 'Your imagination is the only limit to the worlds you can build.'",
+            )
 
             appendLine("Strict output rules:")
             appendLine("- Output ONLY the JSON object with fields 'title' and 'subtitle'.")

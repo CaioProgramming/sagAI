@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
+import android.net.Uri
 import android.util.Log
 import androidx.core.net.toUri
 import com.ilustris.sagai.core.data.RequestResult
@@ -41,6 +42,13 @@ interface SagaBackupService {
     suspend fun restoreContent(sagaContent: RestorableSaga): RequestResult<SagaContent>
 
     suspend fun filterValidSagas(manifests: List<RestorableSaga>): RequestResult<List<RestorableSaga>>
+
+    suspend fun backupSaga(sagaId: Int): RequestResult<Uri>
+
+    suspend fun exportSaga(
+        sagaId: Int,
+        destinationUri: Uri,
+    ): RequestResult<Unit>
 }
 
 class SagaBackupServiceImpl
@@ -213,6 +221,7 @@ class SagaBackupServiceImpl
                             sagaId = sagaId,
                             characterOneId = characterOne.second.id,
                             characterTwoId = characterTwo.second.id,
+                            id = 0,
                         ),
                     )
             }.filterNotNull()
@@ -231,6 +240,7 @@ class SagaBackupServiceImpl
                 it.copy(
                     timelineId = timeline.second.id,
                     relationId = relationship.second.id,
+                    id = 0,
                 ),
             )
         }
@@ -242,7 +252,30 @@ class SagaBackupServiceImpl
                 manifests.filterBackups(sagas.map { it.data })
             }
 
-        private suspend fun recoverSaga(saga: Saga): Pair<Saga, Saga> = saga to sagaRepository.saveChat(saga)
+        override suspend fun backupSaga(sagaId: Int): RequestResult<Uri> =
+            executeRequest {
+                val saga = sagaRepository.getSagaById(sagaId).first() ?: error("Saga not found")
+                backupService.backupSaga(saga).getSuccess() ?: error("Backup failed")
+            }
+
+        override suspend fun exportSaga(
+            sagaId: Int,
+            destinationUri: Uri,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val saga = sagaRepository.getSagaById(sagaId).first() ?: error("Saga not found")
+                backupService.writeExportToUri(saga, destinationUri).getSuccess()
+                    ?: error("Export failed")
+            }
+
+        private suspend fun recoverSaga(saga: Saga): Pair<Saga, Saga> =
+            saga to
+                sagaRepository.saveChat(
+                    saga.copy(
+                        id = 0, // Force creation of new saga with fresh ID
+                        createdAt = System.currentTimeMillis(), // Set current timestamp
+                    ),
+                )
 
         private suspend fun recoverReactions(
             reactions: List<Reaction>,
@@ -260,6 +293,7 @@ class SagaBackupServiceImpl
                     it.copy(
                         messageId = message.second.id,
                         characterId = character.second.id,
+                        id = 0,
                     ),
                 )
         }
@@ -281,12 +315,13 @@ class SagaBackupServiceImpl
                                 it.data.image
                             } else {
                                 imageResources
-                                    .find { (relativePath, newPath) ->
+                                    .find { (relativePath, _) ->
                                         relativePath ==
                                             it.data.image
                                     }?.second
                                     ?: emptyString()
                             },
+                        id = 0,
                     ),
                 )
         }
@@ -308,6 +343,7 @@ class SagaBackupServiceImpl
                         it.copy(
                             gameTimelineId = timeLine.second.id,
                             characterId = character.second.id,
+                            id = 0,
                         ),
                     )
             }.filterNotNull()
@@ -323,6 +359,7 @@ class SagaBackupServiceImpl
                     it.copy(
                         sagaId = sagaId,
                         timelineId = timeLine?.second?.id,
+                        id = 0,
                     ),
                 )
         }
@@ -330,7 +367,7 @@ class SagaBackupServiceImpl
         private suspend fun saveActs(
             sagaId: Int,
             acts: List<Act>,
-        ) = acts.map { it to actRepository.saveAct(it.copy(sagaId = sagaId)) }
+        ) = acts.map { it to actRepository.saveAct(it.copy(sagaId = sagaId, id = 0)) }
 
         private suspend fun saveChapters(
             chapters: List<Chapter>,
@@ -338,7 +375,7 @@ class SagaBackupServiceImpl
         ) = chapters
             .map {
                 val act = actsPairs.find { pair -> pair.first.id == it.actId } ?: return@map null
-                it to chapterRepository.saveChapter(it.copy(actId = act.second.id))
+                it to chapterRepository.saveChapter(it.copy(actId = act.second.id, id = 0))
             }.filterNotNull()
 
         private suspend fun saveEvents(
@@ -352,6 +389,7 @@ class SagaBackupServiceImpl
                     timelineRepository.saveTimeline(
                         it.copy(
                             chapterId = chapter.second.id,
+                            id = 0,
                         ),
                     )
             }.filterNotNull()
@@ -370,6 +408,7 @@ class SagaBackupServiceImpl
                         it.copy(
                             timelineId = event.second.id,
                             characterId = character?.second?.id,
+                            id = 0,
                         ),
                     )
             }.filterNotNull()

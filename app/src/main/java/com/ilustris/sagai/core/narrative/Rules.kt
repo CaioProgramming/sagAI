@@ -1,7 +1,5 @@
 package com.ilustris.sagai.core.narrative
 
-import com.ilustris.sagai.features.characters.data.model.Character
-
 object UpdateRules {
     const val MAX_ACTS_LIMIT = 3
 
@@ -13,30 +11,36 @@ object UpdateRules {
 
 object ActPurpose {
     const val FIRST_ACT_PURPOSE = """
-    Focus on establishing the world building,
-    introducing key characters,
-    major factions,
-    and the central conflict that will drive the story.
-    The description should be engaging,
-    hinting at the challenges ahead and building anticipation for the next act.
-    This is the beginning of a grand journey.
+    **Act 1: The Hook**
+    Your primary goal is to hook the player and set the stage for the entire saga.
+
+    *   **World Building:** Introduce the world, its atmosphere, and its basic rules. Don't info-dump; reveal details naturally through exploration and interaction.
+    *   **Character Introductions:** Introduce the key characters, including the protagonist's allies and the first glimpse of the antagonist or their influence.
+    *   **The Central Conflict:** Present the central problem or conflict that will drive the story. This should be a clear and compelling goal for the player.
+    *   **Create a Call to Action:** End the act with a clear call to action, a moment that pushes the player into the main story and makes them want to see what happens next.
+    *   **Foreshadowing:** Hint at the larger mysteries and challenges to come, building anticipation for the next act.
     """
 
     const val SECOND_ACT_PURPOSE =
         """
-    Focus on escalating the conflicts,
-    introducing major twists,
-    character transformations,
-    and raising the stakes for the player and the characters.
-    Create situations that test the limits of the characters and reveal new layers of the conspiracy.
-    The narrative should become more intense and challenging, leading towards a thrilling climax.
+    **Act 2: The Rising Action**
+    Your goal is to escalate the conflict and deepen the player's engagement with the story.
+
+    *   **Raise the Stakes:** The challenges should become more difficult, and the consequences of failure more severe.
+    *   **Introduce Twists:** Reveal unexpected plot twists that change the player's understanding of the story and its characters.
+    *   **Character Development:** Force the characters to face their flaws and make difficult choices. Show how they are changed by the events of the story.
+    *   **Explore the Conspiracy:** Reveal new layers of the central conflict or conspiracy, making it more complex and intriguing.
+    *   **Midpoint Climax:** The act should build towards a major turning point or climax that sets the stage for the final act.
     """
     const val THIRD_ACT_PURPOSE =
         """
-    Focus on the climax, the resolution of the main conflict, and the ultimate fate of the characters and the world.
-    The description MUST provide a definitive conclusion to the saga, summarizing its ending.
-    All character arcs and major plotlines should converge to a satisfying and conclusive closure.
-    This is the final act of the saga."
+    **Act 3: The Resolution**
+    Your goal is to guide the saga to a satisfying and definitive conclusion through the ongoing conversation.
+
+    *   **The Climax:** Build up to the final confrontation with the antagonist and the resolution of the central conflict. This should be the most intense and emotional part of the story.
+    *   **Resolve All Plotlines:** All major plotlines and character arcs should be resolved. The player should not be left with any major unanswered questions.
+    *   **Show the Aftermath:** Describe the ultimate fate of the characters and the world. Show how the events of the saga have changed them.
+    *   **Definitive Ending:** The ending MUST be conclusive. Avoid cliffhangers or ambiguous endings. This is the final act, and your responses should guide the player towards this conclusion.
     """
 }
 
@@ -71,52 +75,4 @@ object ActDirectives {
         
         
         """
-
-    const val CONCLUSION_DIRECTIVE =
-        """
-        ## SAGA CONCLUSION DIRECTIVE
-        // This directive guides the Saga Master on how to bring the saga to a definitive end, adapting to the narrative's evolution.
-        
-        1.  **Dynamic Definition of Saga's Ultimate Goal:** As the Saga Master, you are responsible for defining and continuously refining the **Saga's Ultimate Goal** as the narrative unfolds. This ultimate goal should emerge organically from the core conflicts, mysteries, and stakes you introduce, evolving with the player's discoveries, choices, and the deepening plot. It represents the overarching objective that, once resolved, brings definitive closure to the entire saga.
-        
-        2.  **Trigger for Conclusion:** The saga MUST conclude definitively when the player's actions lead directly to the successful fulfillment of **this dynamically defined ultimate goal**. This means:
-            * The primary conflict of the saga has been resolved.
-            * The central mystery has been unveiled and acted upon in a conclusive manner.
-            * The player has achieved the final, overarching objective that the story has been building towards.
-        
-        3.  **Narrative of Conclusion:** Once the trigger is met, the NARRATOR MUST provide a clear, conclusive, and satisfying narrative message that explicitly states the saga has ended. This message should:
-            * Summarize the outcome of the player's actions in relation to the ultimate goal.
-            * Provide a sense of definitive closure to the main plotline.
-            * Be written in a tone appropriate for the saga's genre (e.g., epic, bittersweet, triumphant, somber).
-        
-        4.  **Finality of Response:** This concluding narrative message MUST be the *final message* of the saga. After this message, the player should understand that no further actions or messages are expected from them within this particular saga. The response should **NOT** prompt further action or dialogue. It should be a definitive "THE END."
-        
-        5.  **Programmatic Signal for End:** When the saga's conclusion is triggered and the final narrative message is generated, you MUST set the `shouldEndSaga` flag in the JSON response to `true`. This provides a clear signal for the application to cease further player input for this saga.    
-        """
-}
-
-object CharacterFormRules {
-    const val MAX_NAME_LENGTH = 30
-    const val MAX_BACKSTORY_LENGTH = 500
-    const val MAX_OCCUPATION_LENGTH = 50
-    const val MAX_STYLE_LENGTH = 100
-    const val MAX_APPEARANCE_LENGTH = 300
-    const val MAX_WEAPONS_LENGTH = 100
-
-    // New constants for FacialFeatures
-    const val MAX_HAIR_LENGTH = 150
-    const val MAX_EYES_LENGTH = 100
-    const val MAX_MOUTH_LENGTH = 100
-    const val MAX_SCARS_LENGTH = 150
-
-    // New constants for Clothing
-    const val MAX_CLOTHING_BODY_LENGTH = 200
-    const val MAX_CLOTHING_ACCESSORIES_LENGTH = 150
-    const val MAX_CLOTHING_FOOTWEAR_LENGTH = 100
-
-    // New constants for Personality, Ethnicity, and Race
-    const val MAX_PERSONALITY_LENGTH = 300
-    const val MAX_ETHNICITY_LENGTH = 100
-    const val MAX_RACE_LENGTH = 100
-
 }

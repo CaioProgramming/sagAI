@@ -52,6 +52,8 @@ import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
+import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
+import com.ilustris.sagai.features.playthrough.PlaythroughUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
@@ -162,7 +164,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun providesTextGenClient(firebaseRemoteConfig: FirebaseRemoteConfig): TextGenClient = TextGenClient(firebaseRemoteConfig)
+    fun providesTextGenClient(remoteConfigService: RemoteConfigService): TextGenClient = TextGenClient(remoteConfigService)
 
     @Provides
     @Singleton
@@ -199,10 +201,10 @@ object AppModule {
     @Provides
     @Singleton
     fun provideImagenClient(
-        firebaseRemoteConfig: FirebaseRemoteConfig,
+        remoteConfigService: RemoteConfigService,
         billingService: BillingService,
         gemmaClient: GemmaClient,
-    ): ImagenClient = ImagenClientImpl(billingService, firebaseRemoteConfig, gemmaClient)
+    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient)
 
     @Provides
     @Singleton
@@ -275,6 +277,9 @@ abstract class UseCaseModule {
 
     @Binds
     abstract fun provideSettingsUseCase(getSettingsUseCaseImpl: SettingsUseCaseImpl): SettingsUseCase
+
+    @Binds
+    abstract fun providesPlaythroughUseCase(playthroughUseCaseImpl: PlaythroughUseCaseImpl): PlaythroughUseCase
 
     @Binds
     abstract fun providesSagaBackupService(sagaBackupServiceImpl: SagaBackupServiceImpl): SagaBackupService

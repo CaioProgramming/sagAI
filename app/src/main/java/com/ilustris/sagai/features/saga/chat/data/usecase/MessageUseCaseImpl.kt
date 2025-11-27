@@ -5,15 +5,13 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -25,15 +23,10 @@ import com.ilustris.sagai.features.saga.chat.data.model.ReactionGen
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class MessageUseCaseImpl
     @Inject
@@ -64,12 +57,27 @@ class MessageUseCaseImpl
                 )!!
             }
 
+        override suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?> =
+            executeRequest {
+                gemmaClient.generate<SceneSummary>(
+                    ChatPrompts.sceneSummarizationPrompt(
+                        saga = saga,
+                        recentMessages =
+                            saga
+                                .flatMessages()
+                                .map { it.message }
+                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT),
+                    ),
+                )
+            }
+
         override suspend fun getMessages(sagaId: Int) = messageRepository.getMessages(sagaId)
 
         override suspend fun saveMessage(
             saga: SagaContent,
             message: Message,
             isFromUser: Boolean,
+            sceneSummary: SceneSummary?,
         ) = executeRequest {
             val tone =
                 if (isFromUser) {
@@ -91,12 +99,6 @@ class MessageUseCaseImpl
                     ),
                 )
 
-            withContext(Dispatchers.IO) {
-                generateReaction(
-                    saga,
-                    MessageContent(newMessage, saga.getCharacters().find { it.id == newMessage.characterId }, emptyList()),
-                )
-            }
             newMessage
         }
 
@@ -109,7 +111,8 @@ class MessageUseCaseImpl
         override suspend fun generateMessage(
             saga: SagaContent,
             message: MessageContent,
-        ): RequestResult<MessageGen> =
+            sceneSummary: SceneSummary?,
+        ): RequestResult<Message> =
             executeRequest {
                 if (isDebugModeEnabled) {
                     Log.d(
@@ -123,37 +126,16 @@ class MessageUseCaseImpl
                             sagaId = saga.data.id,
                             timelineId = saga.getCurrentTimeLine()!!.data.id,
                         )
-                    val fakeMessageGen =
-                        MessageGen(
-                            message = fakeReply,
-                            shouldCreateCharacter = false,
-                            newCharacter = null,
-                            shouldEndSaga = false,
-                        )
-                    fakeMessageGen.asSuccess()
+                    return@executeRequest fakeReply
                 }
-
-                val sceneSummary =
-                    gemmaClient.generate<SceneSummary>(
-                        ChatPrompts.sceneSummarizationPrompt(
-                            saga = saga,
-                            recentMessages =
-                                saga
-                                    .flatMessages()
-                                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                    .map { it.joinMessage(true).formatToString() },
-                        ),
-                    )
 
                 val charactersInScene =
                     sceneSummary?.charactersPresent?.mapNotNull { characterName ->
-                        saga.getCharacters().find {
-                            it.name.equals(characterName, ignoreCase = true)
-                        }
+                        saga.findCharacter(characterName)
                     } ?: emptyList()
 
                 val genText =
-                    textGenClient.generate<MessageGen>(
+                    textGenClient.generate<Message>(
                         ChatPrompts.replyMessagePrompt(
                             saga = saga,
                             message =
@@ -166,90 +148,88 @@ class MessageUseCaseImpl
                             directive = saga.getDirective(),
                             sceneSummary =
                                 sceneSummary?.copy(
-                                    charactersPresent = charactersInScene.map { it.name },
+                                    charactersPresent =
+                                        charactersInScene.map {
+                                            it.toAINormalize(
+                                                ChatPrompts.characterExclusions,
+                                            )
+                                        },
                                 ),
                         ),
-                        true,
                     )
 
                 genText!!
             }
 
-        suspend fun generateReaction(
+        override suspend fun generateReaction(
             saga: SagaContent,
-            message: MessageContent,
+            message: Message,
+            sceneSummary: SceneSummary?,
         ) = executeRequest {
-            delay(2.seconds)
-            val sceneSummary =
-                gemmaClient.generate<SceneSummary>(
-                    ChatPrompts.sceneSummarizationPrompt(
-                        saga = saga,
-                        recentMessages =
-                            saga
-                                .flatMessages()
-                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                .map { it.joinMessage(true).formatToString() },
-                    ),
-                )!!
-            if (sceneSummary.charactersPresent.isEmpty()) {
-                Log.w(javaClass.simpleName, "generateReaction: No characters related to react")
-                return@executeRequest
-            }
+            if (sceneSummary == null) error("Can't define reactions without context.")
+            if (sceneSummary.charactersPresent.isEmpty()) error("generateReaction: No characters related to react")
 
-            if (message.message.senderType == SenderType.THOUGHT) {
-                Log.w(javaClass.simpleName, "generateReaction: Thought message cannot react")
-                return@executeRequest
-            }
+            if (message.senderType == SenderType.THOUGHT) error("generateReaction: Thought message cannot be reacted")
 
-            val charactersIds =
-                sceneSummary.charactersPresent
-                    .filter {
-                        it.lowercase() !=
-                            saga.mainCharacter
-                                ?.data
-                                ?.name
-                                ?.lowercase()
-                    }.mapNotNull {
-                        saga.characters
-                            .find { character ->
-                                character.data.name.equals(it, ignoreCase = true)
-                            }?.data
-                            ?.id
-                    }
+            val charactersInScene =
+                sceneSummary.charactersPresent.mapNotNull { characterName ->
+                    saga.findCharacter(characterName)
+                }
+
+            if (charactersInScene.isEmpty()) {
+                error("generateReaction: No characters found in scene to react.")
+            }
 
             val relationships =
                 saga.mainCharacter!!.relationships.filter {
-                    it.characterOne.id in charactersIds || it.characterTwo.id in charactersIds
+                    it.characterOne.id in charactersInScene.map { character -> character.data.id } ||
+                        it.characterTwo.id in charactersInScene.map { character -> character.data.id }
                 }
 
             val prompt =
                 ChatPrompts.generateReactionPrompt(
-                    saga = saga.data,
+                    saga = saga,
                     summary = sceneSummary,
-                    mainCharacter = saga.mainCharacter,
                     relationships = relationships,
-                    messageToReact = message.joinMessage().formatToString(),
+                    messageToReact = message,
                 )
 
-            delay(1.seconds)
-            val reaction = gemmaClient.generate<ReactionGen>(prompt)
-
-            reaction?.reactions?.forEach { reaction ->
-                saga.characters
-                    .find { it.data.name.equals(reaction.character, ignoreCase = true) }
-                    ?.let {
-                        if (it.data.id != message.character?.id) {
-                            reactionRepository.saveReaction(
-                                Reaction(
-                                    messageId = message.message.id,
-                                    characterId = it.data.id,
-                                    emoji = reaction.reaction,
-                                ),
-                            )
-                        } else {
-                            Log.w(javaClass.simpleName, "generateReaction: Character can't react to itself.")
-                        }
+            val reaction = gemmaClient.generate<ReactionGen>(prompt)!!
+            Log.d(javaClass.simpleName, "generateReaction: ${reaction.reactions.size} reactions generated.")
+            reaction.reactions.forEach { reaction ->
+                val reactingCharacter =
+                    charactersInScene.find {
+                        it.data.name.equals(
+                            reaction.character,
+                            ignoreCase = true,
+                        )
                     }
+                if (reactingCharacter != null) {
+                    if (reactingCharacter.data.id != message.characterId) {
+                        reactionRepository.saveReaction(
+                            Reaction(
+                                messageId = message.id,
+                                characterId = reactingCharacter.data.id,
+                                emoji = reaction.reaction,
+                                thought = reaction.thought,
+                            ),
+                        )
+                        Log.d(
+                            javaClass.simpleName,
+                            "Saving reaction from ${reactingCharacter.data.name} at message ${message.id}",
+                        )
+                    } else {
+                        Log.w(
+                            javaClass.simpleName,
+                            "generateReaction: Character can't react to itself.",
+                        )
+                    }
+                } else {
+                    Log.w(
+                        javaClass.simpleName,
+                        "generateReaction: Character '${reaction.character}' not in scene, skipping reaction.",
+                    )
+                }
             }
         }
 

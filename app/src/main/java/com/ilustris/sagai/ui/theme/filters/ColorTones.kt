@@ -83,7 +83,7 @@ object SciFiColorTones { // Or add to your existing tones object
         ColorTonePalette(
             name = "Cyberpunk Magenta Glow",
             highlightTint = Triple(1.0f, 0.75f, 0.9f), // Magenta/Pinkish for key lights
-            shadowTint = Triple(0.2f, 0.2f, 0.35f), // Very dark, desaturated blue
+            shadowTint = Triple(0.1f, 0.1f, 0.2f), // Very dark, almost black desaturated blue
             defaultTintStrength = 0.35f,
         )
 
@@ -95,7 +95,7 @@ object HorrorColorTones {
         ColorTonePalette(
             name = "Moonlight Mystique",
             highlightTint = Triple(0.85f, 0.92f, 1.0f), // Pale, cool, slightly cyan/blueish white
-            shadowTint = Triple(0.1f, 0.15f, 0.25f), // Very dark, desaturated indigo/deep blue
+            shadowTint = Triple(0.05f, 0.08f, 0.15f), // Near-black, desaturated indigo/deep blue
             defaultTintStrength = 0.4f,
         )
 
@@ -110,7 +110,7 @@ object HeroColorTones {
         ColorTonePalette(
             name = "Urban Comic Vibrancy",
             highlightTint = Triple(0.5f, 0.6f, .7f), // Bright, very subtly cool white (hint of cyan)
-            shadowTint = Triple(0.15f, 0.2f, 0.3f), // Deep, desaturated cool blue/indigo
+            shadowTint = Triple(0.05f, 0.1f, 0.15f), // Very deep, almost black cool blue/indigo
             defaultTintStrength = 0.4f, // Moderate strength for punchy colors
         )
 
@@ -126,7 +126,7 @@ object CrimeColorTones {
         ColorTonePalette(
             name = "Miami Neon Sunset",
             highlightTint = Triple(1.0f, 0.55f, 0.85f), // neon pink/magenta
-            shadowTint = Triple(1.0f, 0.78f, 0.3f), // warm amber/yellow
+            shadowTint = Triple(0.1f, 0.05f, 0.15f), // Deep, dark purple to contrast the pink
             defaultTintStrength = 0.35f,
         )
 
@@ -138,9 +138,24 @@ object SpaceOperaTones {
         ColorTonePalette(
             name = "Cosmic Twilight",
             highlightTint = Triple(0.9f, 0.85f, 1.0f),
-            shadowTint = Triple(0.2f, 0.25f, 0.4f),
+            shadowTint = Triple(0.1f, 0.12f, 0.2f), // Deeper, near-black blue
             defaultTintStrength = 0.3f,
         )
 
     val allTones = listOf(COSMIC_TWILIGHT)
+}
+
+object ShinobiColorTones {
+    val BLOOD_MOON_ASSASSIN =
+        ColorTonePalette(
+            name = "Blood Moon Assassin",
+            highlightTint = Triple(0.95f, 0.92f, 0.9f),
+            shadowTint = Triple(0.1f, 0.0f, 0.05f), // Very dark, near-black with a hint of red
+            defaultTintStrength = 0.35f,
+        )
+
+    val allTones =
+        listOf(
+            BLOOD_MOON_ASSASSIN,
+        )
 }

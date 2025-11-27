@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.home.data.usecase
 
+import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -14,5 +15,5 @@ interface SagaHistoryUseCase {
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<String>
 
-    suspend fun backupSaga(saga: SagaContent): RequestResult<Unit>
+    suspend fun backupSaga(saga: SagaContent): RequestResult<RequestResult<Uri>>
 }

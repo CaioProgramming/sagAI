@@ -24,6 +24,7 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
+import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
@@ -35,6 +36,7 @@ import com.ilustris.sagai.features.home.data.model.findTimeline
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
+import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.toHex
 import com.slowmac.autobackgroundremover.removeBackground
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -161,12 +163,16 @@ class CharacterUseCaseImpl
             description: String,
         ): RequestResult<Character> =
             executeRequest {
+                val prompt =
+                    CharacterPrompts.characterGeneration(
+                        sagaContent,
+                        description,
+                    )
+                Log.d(javaClass.simpleName, "generateCharacter: Starting character generation...")
                 val newCharacter =
                     gemmaClient.generate<Character>(
-                        CharacterPrompts.characterGeneration(
-                            sagaContent,
-                            description,
-                        ),
+                        prompt,
+                        useCore = true,
                         filterOutputFields =
                             listOf(
                                 "id",
@@ -238,4 +244,56 @@ class CharacterUseCaseImpl
             timeline: Timeline,
             saga: SagaContent,
         ): RequestResult<Unit> = characterRelationUseCase.generateCharacterRelation(timeline, saga)
+
+        override suspend fun findAndSuggestNicknames(
+            saga: SagaContent,
+            timelineContent: TimelineContent,
+        ): RequestResult<Unit> =
+            executeRequest {
+                try {
+                    val charactersList = saga.getCharacters()
+                    val prompt =
+                        CharacterPrompts.findNickNames(
+                            charactersList,
+                            timelineContent.messages.map { it.message },
+                            timelineContent.data,
+                            saga.data,
+                        )
+
+                    val suggestions =
+                        gemmaClient.generate<List<NicknameSuggestion>>(
+                            prompt,
+                        )!!
+
+                    if (suggestions.isEmpty()) {
+                        Log.i(javaClass.simpleName, "No new nicknames found.")
+                        return@executeRequest
+                    }
+
+                    Log.i(javaClass.simpleName, "Found ${suggestions.size} nickname suggestions.")
+
+                    suggestions.forEach { suggestion ->
+                        saga.findCharacter(suggestion.characterName)?.let { characterContent ->
+                            val currentNicknames =
+                                (characterContent.data.nicknames ?: emptyList()).toMutableList()
+                            val newNicknames =
+                                suggestion.newNicknames.filter { !currentNicknames.contains(it) && it.length > 2 }
+                            if (newNicknames.isNotEmpty()) {
+                                val updatedCharacter =
+                                    characterContent.data.copy(
+                                        nicknames = (newNicknames).distinct(),
+                                    )
+                                updateCharacter(updatedCharacter)
+                                Log.i(
+                                    javaClass.simpleName,
+                                    "Updated character ${updatedCharacter.name} with new nicknames: $newNicknames",
+                                )
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e(javaClass.simpleName, "Error suggesting nicknames: ${e.message}")
+                    e.printStackTrace()
+                }
+            }
     }

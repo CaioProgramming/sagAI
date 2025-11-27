@@ -7,8 +7,6 @@ import com.ilustris.sagai.features.characters.events.data.model.CharacterEventDe
 import com.ilustris.sagai.features.characters.relations.data.model.CharacterRelation
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.find
 
 data class CharacterContent(
     @Embedded
@@ -45,6 +43,11 @@ data class CharacterContent(
         relationships.find {
             it.characterOne.id == characterId ||
                 it.characterTwo.id == characterId
+        }
+
+    fun summarizeRelationships() =
+        relationships.sortedBy { it.relationshipEvents.size }.joinToString(";\n") {
+            it.summarizeRelation()
         }
 
     fun rankRelationships() = relationships.sortedByDescending { it.relationshipEvents.size }

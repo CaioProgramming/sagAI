@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.saga.detail.presentation
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
@@ -14,8 +15,10 @@ import com.ilustris.sagai.features.wiki.data.model.Wiki
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -37,6 +40,11 @@ class SagaDetailViewModel
         val emotionalCardReference = MutableStateFlow<String>(emptyString())
         val showIntro = MutableStateFlow(false)
         val showReview = MutableStateFlow(false)
+        private val _exportLauncher = MutableSharedFlow<String>()
+        val exportLauncher = _exportLauncher.asSharedFlow()
+        private val _loadingMessage = MutableStateFlow<String?>(null)
+        val loadingMessage: StateFlow<String?> = _loadingMessage.asStateFlow()
+        val backupEnabled = sagaDetailUseCase.getBackupEnabled()
 
         val showPremiumSheet = MutableStateFlow(false)
 
@@ -99,11 +107,15 @@ class SagaDetailViewModel
                 return
             }
             isGenerating.value = true
+            _loadingMessage.value = "Generating your saga review..."
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase
                     .createReview(currentSaga)
+                    .onSuccessAsync {
+                        showReview.emit(true)
+                    }
                 isGenerating.value = false
-                showReview.emit(true)
+                _loadingMessage.value = null
             }
         }
 
@@ -114,11 +126,13 @@ class SagaDetailViewModel
                 showPremiumSheet.value = true
             }
             isGenerating.value = true
+            _loadingMessage.value = "Regenerating saga icon..."
             viewModelScope.launch(Dispatchers.IO) {
                 sagaDetailUseCase.regenerateSagaIcon(
                     currentSaga,
                 )
                 isGenerating.value = false
+                _loadingMessage.value = null
             }
         }
 
@@ -136,8 +150,10 @@ class SagaDetailViewModel
             val currentSaga = saga.value ?: return
             viewModelScope.launch {
                 isGenerating.value = true
+                _loadingMessage.value = "Generating timeline content..."
                 sagaDetailUseCase.generateTimelineContent(currentSaga, timelineContent)
                 isGenerating.value = false
+                _loadingMessage.value = null
             }
         }
 
@@ -145,8 +161,10 @@ class SagaDetailViewModel
             val currentSaga = saga.value ?: return
             viewModelScope.launch(Dispatchers.IO) {
                 isGenerating.value = true
-                sagaDetailUseCase.createSagaEmotionalReview(currentSaga)
+                _loadingMessage.value = "Creating emotional review..."
+                sagaDetailUseCase.createEmotionalConclusion(currentSaga)
                 isGenerating.value = false
+                _loadingMessage.value = null
             }
         }
 
@@ -161,8 +179,37 @@ class SagaDetailViewModel
             val currentsaga = saga.value ?: return
             viewModelScope.launch {
                 isGenerating.emit(true)
+                _loadingMessage.value = "Reviewing wiki entries..."
                 sagaDetailUseCase.reviewWiki(currentsaga, wikis)
                 isGenerating.emit(false)
+                _loadingMessage.value = null
+            }
+        }
+
+        fun exportSaga() {
+            val currentSaga = saga.value ?: return
+            viewModelScope.launch {
+                val suggestedFileName = "${currentSaga.data.title.replace(" ", "_")}_backup.zip"
+                _exportLauncher.emit(suggestedFileName)
+            }
+        }
+
+        fun handleExportDestination(destinationUri: Uri) {
+            val currentSaga = saga.value ?: return
+            viewModelScope.launch {
+                isGenerating.emit(true)
+                _loadingMessage.value = "Packing up your saga..."
+                sagaDetailUseCase
+                    .exportSaga(currentSaga.data.id, destinationUri)
+                    .onSuccessAsync {
+                        isGenerating.emit(false)
+                        _loadingMessage.value = null
+                    }.onFailureAsync {
+                        _loadingMessage.value = "Sorry, an unexpected error happened :("
+                        delay(3.seconds)
+                        isGenerating.emit(false)
+                        _loadingMessage.value = null
+                    }
             }
         }
     }

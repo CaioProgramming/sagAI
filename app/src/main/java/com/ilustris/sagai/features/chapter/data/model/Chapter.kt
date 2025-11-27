@@ -3,8 +3,6 @@ package com.ilustris.sagai.features.chapter.data.model
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.google.firebase.ai.type.Schema
-import com.ilustris.sagai.core.utils.toFirebaseSchema
 
 @Entity
 data class Chapter(

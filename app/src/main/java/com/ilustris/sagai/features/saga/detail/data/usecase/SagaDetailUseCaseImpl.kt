@@ -1,19 +1,18 @@
 package com.ilustris.sagai.features.saga.detail.data.usecase
 
-import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
+import android.net.Uri
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.features.act.data.usecase.ActUseCase
+import com.ilustris.sagai.features.chapter.data.usecase.ChapterUseCase
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.emotionalSummary
-import com.ilustris.sagai.features.home.data.model.flatMessages
-import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
-import com.ilustris.sagai.features.saga.chat.domain.model.rankMessageTypes
-import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
+import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.flatEvents
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -21,17 +20,23 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import kotlinx.coroutines.delay
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 class SagaDetailUseCaseImpl
     @Inject
     constructor(
         private val sagaRepository: SagaRepository,
         private val fileHelper: FileHelper,
-        private val textGenClient: TextGenClient,
+        private val textGenClient: GemmaClient,
         private val timelineUseCase: TimelineUseCase,
         private val emotionalUseCase: EmotionalUseCase,
+        private val chapterUseCase: ChapterUseCase,
+        private val actUseCase: ActUseCase,
         private val wikiUseCase: WikiUseCase,
+        private val sagaBackupService: SagaBackupService,
+        private val backupService: com.ilustris.sagai.core.file.BackupService,
     ) : SagaDetailUseCase {
         override suspend fun regenerateSagaIcon(saga: SagaContent): RequestResult<Saga> =
             sagaRepository
@@ -46,23 +51,9 @@ class SagaDetailUseCaseImpl
 
         override suspend fun createReview(content: SagaContent): RequestResult<Saga> =
             executeRequest {
-                val messages = content.flatMessages()
-                val characters = content.getCharacters(true)
                 val prompt =
                     SagaPrompts.reviewGeneration(
                         saga = content,
-                        playerMessageCount =
-                            messages
-                                .filterCharacterMessages(
-                                    content.mainCharacter?.data,
-                                ).size,
-                        messageTypesRanking = messages.rankMessageTypes(),
-                        topInteractiveCharacters =
-                            messages
-                                .rankTopCharacters(
-                                    characters,
-                                ).take(3),
-                        overallPlayerEmotionalSummary = content.emotionalSummary().toString(),
                     )
 
                 val review =
@@ -86,33 +77,34 @@ class SagaDetailUseCaseImpl
             )
         }
 
-        override suspend fun createEmotionalReview(content: SagaContent): RequestResult<Saga> =
+        override suspend fun createEmotionalConclusion(currentSaga: SagaContent) =
             executeRequest {
-                val emotionalSummary = content.emotionalSummary()
-                val prompt =
-                    EmotionalPrompt.emotionalGeneration(content, emotionalSummary.joinToString())
+                val unReviewedTimelines =
+                    currentSaga.flatEvents().filter { it.data.emotionalReview.isNullOrEmpty() }
+                val unReviewedChapters =
+                    currentSaga.flatChapters().filter { it.data.emotionalReview.isNullOrEmpty() }
+                val unReviewedActs =
+                    currentSaga.acts.filter { it.data.emotionalReview.isNullOrEmpty() }
 
-                val review =
-                    textGenClient
-                        .generate<String>(
-                            prompt = prompt,
-                            requireTranslation = true,
-                        )!!
+                unReviewedTimelines.forEach {
+                    delay(3.seconds)
+                    timelineUseCase.generateEmotionalReview(currentSaga, it)
+                }
 
-                sagaRepository
-                    .updateChat(
-                        content.data.copy(
-                            emotionalReview = review,
-                        ),
-                    )
-            }
+                unReviewedChapters.forEach {
+                    delay(3.seconds)
+                    chapterUseCase.generateEmotionalReview(currentSaga, it)
+                }
 
-        override suspend fun createSagaEmotionalReview(currentSaga: SagaContent) =
-            executeRequest {
+                unReviewedActs.forEach {
+                    delay(3.seconds)
+                    actUseCase.generateEmotionalProfile(currentSaga, it)
+                }
+
+                delay(3.seconds)
+
                 val request =
-                    emotionalUseCase
-                        .generateEmotionalProfile(currentSaga)
-                        .getSuccess()!!
+                    emotionalUseCase.generateEmotionalConclusion(currentSaga).getSuccess()!!
 
                 sagaRepository
                     .updateChat(
@@ -133,4 +125,11 @@ class SagaDetailUseCaseImpl
         ) {
             wikiUseCase.mergeWikis(currentsaga, wikis)
         }
+
+        override suspend fun exportSaga(
+            sagaId: Int,
+            destinationUri: Uri,
+        ) = sagaBackupService.exportSaga(sagaId, destinationUri)
+
+        override fun getBackupEnabled() = backupService.backupEnabled()
     }

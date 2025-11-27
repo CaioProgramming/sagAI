@@ -9,7 +9,6 @@ import java.lang.reflect.ParameterizedType
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlin.toString
 
 fun toFirebaseSchema(
     clazz: Class<*>,
@@ -242,7 +241,7 @@ fun String?.sanitizeAndExtractJsonString(): String {
         throw IllegalArgumentException("Input string is null or blank.")
     }
 
-    var cleanedJsonString = this
+    var cleanedJsonString = this!!
     Log.i(logTag, "Sanitizing raw string: $cleanedJsonString")
 
     // 1. Remove common markdown code block delimiters
@@ -252,37 +251,123 @@ fun String?.sanitizeAndExtractJsonString(): String {
     cleanedJsonString = cleanedJsonString.trim()
 
     // 3. If not starting with a JSON char, find the start (basic heuristic)
-    val firstJsonChar = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
-    if (firstJsonChar > 0) {
-        cleanedJsonString = cleanedJsonString.substring(firstJsonChar)
-    } else if (firstJsonChar == -1 && cleanedJsonString.isNotEmpty()) {
+    val firstJsonCharIndex = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
+    if (firstJsonCharIndex > 0) {
+        cleanedJsonString = cleanedJsonString.substring(firstJsonCharIndex)
+    } else if (firstJsonCharIndex == -1 && cleanedJsonString.isNotEmpty()) {
         Log.e(logTag, "No JSON start character '{' or '[' found in response: $cleanedJsonString")
         throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
     }
 
-    // 4. Ensure we only take content up to the corresponding last bracket (basic heuristic)
-    if (cleanedJsonString.startsWith("[")) {
-        val lastBracket = cleanedJsonString.lastIndexOf(']')
-        if (lastBracket != -1) {
-            cleanedJsonString = cleanedJsonString.substring(0, lastBracket + 1)
-        } else if (cleanedJsonString.isNotEmpty()) {
-            Log.e(logTag, "JSON array starts with '[' but no closing ']' found: $cleanedJsonString")
-            throw IllegalArgumentException("Malformed JSON array: No closing bracket.")
+    // Helper: find the matching closing bracket index for the JSON starting char
+    fun findMatchingClosingIndex(
+        s: String,
+        start: Int,
+    ): Int {
+        if (start >= s.length) return -1
+        val open = s[start]
+        val close =
+            when (open) {
+                '{' -> '}'
+                '[' -> ']'
+                else -> return -1
+            }
+
+        var depth = 1
+        var inString = false
+        var escaped = false
+
+        var i = start + 1
+        while (i < s.length) {
+            val c = s[i]
+            if (escaped) {
+                // previous char was a backslash, this char is escaped; skip special handling
+                escaped = false
+            } else {
+                when (c) {
+                    '\\' -> escaped = true
+                    '"' -> inString = !inString
+                    else -> {
+                        if (!inString) {
+                            if (c == open) {
+                                depth++
+                            } else if (c == close) {
+                                depth--
+                                if (depth == 0) return i
+                            }
+                        }
+                    }
+                }
+            }
+            i++
         }
-    } else if (cleanedJsonString.startsWith("{")) {
-        val lastBracket = cleanedJsonString.lastIndexOf('}')
-        if (lastBracket != -1) {
-            cleanedJsonString = cleanedJsonString.substring(0, lastBracket + 1)
-        } else if (cleanedJsonString.isNotEmpty()) {
-            Log.e(
-                logTag,
-                "JSON object starts with '{' but no closing '}' found: $cleanedJsonString",
-            )
-            throw IllegalArgumentException("Malformed JSON object: No closing bracket.")
+        return -1
+    }
+
+    // 4. Compute precise end index using bracket matching (handles nested structures & strings)
+    if (cleanedJsonString.isNotEmpty()) {
+        val startChar = cleanedJsonString.first()
+        if (startChar == '{' || startChar == '[') {
+            val endIndex = findMatchingClosingIndex(cleanedJsonString, 0)
+            if (endIndex != -1) {
+                cleanedJsonString = cleanedJsonString.substring(0, endIndex + 1)
+            } else {
+                Log.e(
+                    logTag,
+                    "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
+                )
+                throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
+            }
         }
     }
 
-    // 5. Remove any remaining problematic backticks (final cleanup)
+    // 5. Remove trailing commas before closing braces/brackets (common issue)
+    //    Example: { "a": 1, "b": 2, }  -> { "a": 1, "b": 2 }
+    // Use a scanner to ensure commas inside strings are not removed.
+    run {
+        val sb = StringBuilder()
+        var i = 0
+        var inString = false
+        var escaped = false
+        while (i < cleanedJsonString.length) {
+            val c = cleanedJsonString[i]
+            if (escaped) {
+                sb.append(c)
+                escaped = false
+                i++
+                continue
+            }
+            if (c == '\\') {
+                sb.append(c)
+                escaped = true
+                i++
+                continue
+            }
+            if (c == '"') {
+                sb.append(c)
+                inString = !inString
+                i++
+                continue
+            }
+
+            if (c == ',' && !inString) {
+                // look ahead for whitespace and closing bracket
+                var j = i + 1
+                while (j < cleanedJsonString.length && cleanedJsonString[j].isWhitespace()) j++
+                if (j < cleanedJsonString.length && (cleanedJsonString[j] == '}' || cleanedJsonString[j] == ']')) {
+                    // skip this comma
+                    i++
+                    continue
+                }
+            }
+
+            sb.append(c)
+            i++
+        }
+        cleanedJsonString = sb.toString()
+    }
+
+    // 6. Remove any remaining problematic backticks (final cleanup)
     cleanedJsonString = cleanedJsonString.replace("`", "")
 
     Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
@@ -318,4 +403,70 @@ fun Long.formatFileSize(): String {
         kb >= 1 -> String.format(Locale.getDefault(), "%.2f KB", kb)
         else -> String.format(Locale.getDefault(), "%d B", this)
     }
+}
+
+fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
+    if (this == null) return ""
+    if (this is String || this is Number || this is Boolean || this is Enum<*>) {
+        return this.toString()
+    }
+    val fields = this::class.java.declaredFields
+    val standardExclusions = listOf("\$stable", "companion")
+    val allExclusions = fieldsToExclude + standardExclusions
+
+    return fields
+        .mapNotNull { field ->
+            if (field.name in allExclusions) return@mapNotNull null
+            field.isAccessible = true
+            val value = field.get(this) ?: return@mapNotNull null
+
+            val valueString =
+                when (value) {
+                    is List<*> ->
+                        if (value.isEmpty()) {
+                            ""
+                        } else {
+                            value.normalizetoAIItems(
+                                fieldsToExclude,
+                            )
+                        }
+
+                    is Array<*> ->
+                        if (value.isEmpty()) {
+                            ""
+                        } else {
+                            value.normalizetoAIItems(
+                                fieldsToExclude,
+                            )
+                        }
+
+                    is String -> value
+                    is Enum<*> -> value.toString()
+                    else -> {
+                        if (value::class.isData) {
+                            val normalized = value.toAINormalize(fieldsToExclude)
+                            if (normalized.isNotBlank()) {
+                                "\n${normalized.prependIndent("  ")}"
+                            } else {
+                                ""
+                            }
+                        } else {
+                            value.toString()
+                        }
+                    }
+                }
+
+            if (valueString.isBlank() || valueString == "[]") {
+                null
+            } else {
+                val itemsSize =
+                    when (value) {
+                        is List<*> -> "[${value.size}]"
+                        is Array<*> -> "[${value.size}]"
+                        else -> emptyString()
+                    }
+                "${field.name}$itemsSize: $valueString"
+            }
+        }.joinToString("\n")
+
 }

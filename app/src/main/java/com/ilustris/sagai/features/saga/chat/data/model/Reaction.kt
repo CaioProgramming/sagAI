@@ -1,13 +1,10 @@
 package com.ilustris.sagai.features.saga.chat.data.model
 
 import androidx.room.ColumnInfo
-import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
-import androidx.room.Relation
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import java.util.Calendar
 
 @Entity(
@@ -35,5 +32,6 @@ data class Reaction(
     @ColumnInfo(index = true)
     val characterId: Int,
     val emoji: String,
+    val thought: String? = null,
     val timestamp: Long = Calendar.getInstance().timeInMillis,
 )

@@ -4,20 +4,14 @@ import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.LorePrompts
-import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToString
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
+import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.usecase.CharacterUseCase
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
@@ -52,23 +46,54 @@ class TimelineUseCaseImpl
                             currentTimeline,
                         ),
                         filterOutputFields = listOf("id", "createdAt", "chapterId", "emotionalReview"),
+                        useCore = true,
                     )!!
 
-            val content = saga.flatEvents().find { it.data.id == currentTimeline.data.id }!!
-            val userMessages =
-                content.messages.map { it.joinMessage(showType = true).formatToString(true) }
+            val timelineUpdate =
+                updateTimeline(
+                    currentTimeline.data.copy(
+                        title = newLore.title,
+                        content = newLore.content,
+                    ),
+                )
 
-            val emotionalReview =
+            generateEmotionalReview(
+                saga,
+                currentTimeline.copy(
+                    data = timelineUpdate,
+                ),
+            ).getSuccess()!!
+        }
+
+        override suspend fun generateEmotionalReview(
+            saga: SagaContent,
+            content: TimelineContent,
+        ) = executeRequest {
+            val review =
                 emotionalUseCase.generateEmotionalReview(
-                    userMessages,
-                    content.emotionalRanking(saga.mainCharacter?.data),
+                    saga,
+                    buildString {
+                        appendLine("Emotional tone ranking:")
+                        appendLine(content.emotionalRanking(saga.mainCharacter?.data))
+                        appendLine("Current messages:")
+                        appendLine("Consider player interaction with the world and NPCs")
+                        appendLine(
+                            content.messages.map { it.message }.normalizetoAIItems(
+                                listOf(
+                                    "id",
+                                    "timelineId",
+                                    "characterId",
+                                    "timestamp",
+                                    "status",
+                                ),
+                            ),
+                        )
+                    },
                 )
 
             updateTimeline(
-                currentTimeline.data.copy(
-                    title = newLore.title,
-                    content = newLore.content,
-                    emotionalReview = emotionalReview.getSuccess() ?: emptyString(),
+                content.data.copy(
+                    emotionalReview = review.getSuccess(),
                 ),
             )
         }
@@ -84,47 +109,34 @@ class TimelineUseCaseImpl
             timelineRepository.deleteTimeline(timeline)
         }
 
-        override suspend fun createTimelineReview(
-            content: SagaContent,
-            timelineContent: TimelineContent,
-        ): RequestResult<Timeline> =
-            executeRequest {
-                val userMessages =
-                    timelineContent.messages.map { it.joinMessage(showType = true).formatToString() }
-
-                val emotionalToneRanking: Map<String, Int> =
-                    timelineContent.messages
-                        .filter {
-                            it.message.senderType == SenderType.USER ||
-                                it.message.characterId == content.mainCharacter?.data?.id
-                        }.groupBy { it.message.emotionalTone.toString() }
-                        .mapValues { entry -> entry.value.size }
-
-                val emotionalReview =
-                    emotionalUseCase
-                        .generateEmotionalReview(
-                            userMessages,
-                            emotionalToneRanking,
-                        ).getSuccess()!!
-
-                updateTimeline(
-                    timelineContent.data.copy(
-                        emotionalReview = emotionalReview,
-                    ),
-                )
-            }
-
-        override suspend fun getTimelineObjective(saga: SagaContent): RequestResult<String> =
-            executeRequest {
-                val objectivePrompt =
-                    ChatPrompts.sceneSummarizationPrompt(
-                        saga,
-                        saga.flatMessages().takeLast(UpdateRules.LORE_UPDATE_LIMIT).map {
-                            it.joinMessage(true).formatToString(true)
+        override suspend fun getTimelineObjective(
+            saga: SagaContent,
+            timelineContent: Timeline,
+        ) = executeRequest {
+            val objectivePrompt =
+                ChatPrompts.sceneSummarizationPrompt(
+                    saga,
+                    saga
+                        .flatMessages()
+                        .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                        .map {
+                            it.message
                         },
-                    )
-                gemmaClient.generate<SceneSummary>(objectivePrompt)!!.immediateObjective!!
-            }
+                )
+            val summary =
+                gemmaClient
+                    .generate<SceneSummary>(
+                        objectivePrompt,
+                        useCore = true,
+                    )!!
+                    .immediateObjective!!
+
+            updateTimeline(
+                timelineContent.copy(
+                    currentObjective = summary,
+                ),
+            )
+        }
 
         override suspend fun generateTimelineContent(
             saga: SagaContent,
@@ -132,7 +144,7 @@ class TimelineUseCaseImpl
         ): RequestResult<Unit> =
             executeRequest {
                 if (timelineContent.data.emotionalReview.isNullOrEmpty()) {
-                    createTimelineReview(
+                    generateEmotionalReview(
                         saga,
                         timelineContent,
                     )
@@ -223,8 +235,6 @@ class TimelineUseCaseImpl
             saga: SagaContent,
         ) = executeRequest {
             characterUseCase.generateCharactersUpdate(timeline, saga)
-
-            delay(3.seconds)
 
             characterUseCase.generateCharacterRelations(timeline, saga)
         }

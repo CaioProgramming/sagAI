@@ -17,12 +17,8 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.narrative.UpdateRules
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
@@ -31,19 +27,20 @@ import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
+import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
-import kotlinx.coroutines.delay
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 class ChapterUseCaseImpl
     @Inject
     constructor(
         private val chapterRepository: ChapterRepository,
         private val timelineRepository: TimelineRepository,
+        private val emotionalUseCase: EmotionalUseCase,
         private val wikiUseCase: WikiUseCase,
         private val gemmaClient: GemmaClient,
         private val imagenClient: ImagenClient,
@@ -64,27 +61,109 @@ class ChapterUseCaseImpl
             saga: SagaContent,
             chapterContent: ChapterContent,
         ) = executeRequest {
-            gemmaClient
-                .generate<ChapterGeneration>(
-                    prompt =
-                        generateChapterPrompt(
-                            saga = saga,
-                            currentChapter = chapterContent,
-                        ),
-                    requireTranslation = true,
-                )!!
+            val genChapter =
+                gemmaClient
+                    .generate<ChapterGeneration>(
+                        prompt =
+                            generateChapterPrompt(
+                                saga = saga,
+                                currentChapter = chapterContent,
+                            ),
+                        requireTranslation = true,
+                        useCore = true,
+                    )!!
+
+            val genChapterCharacters =
+                genChapter.featuredCharacters.mapNotNull { charactersNames ->
+                    saga.characters
+                        .find {
+                            it.data.name.equals(
+                                charactersNames,
+                                ignoreCase = true,
+                            )
+                        }?.data
+                        ?.id
+                }
+
+            val featuredCharacters =
+                chapterContent
+                    .fetchChapterMessages()
+                    .rankTopCharacters(saga.getCharacters())
+                    .take(3)
+                    .map { it.first.id }
+
+            val chapterUpdate =
+                updateChapter(
+                    chapterContent.data.copy(
+                        title = genChapter.title,
+                        overview = genChapter.overview,
+                        featuredCharacters = genChapterCharacters.ifEmpty { featuredCharacters },
+                    ),
+                )
+            generateEmotionalReview(
+                saga,
+                chapterContent.copy(
+                    data = chapterUpdate,
+                ),
+            ).getSuccess()!!
+        }
+
+        override suspend fun generateEmotionalReview(
+            saga: SagaContent,
+            chapterContent: ChapterContent,
+        ) = executeRequest {
+            val emotionalReview =
+                emotionalUseCase
+                    .generateEmotionalReview(
+                        saga,
+                        buildString {
+                            appendLine("Chapter Title: ${chapterContent.data.title}")
+                            appendLine("Chapter Introduction: ${chapterContent.data.introduction}")
+                            chapterContent.events.filter { it.isComplete() }.forEach { event ->
+                                appendLine("Event Title: ${event.data.title}")
+                                appendLine("Event description: ${event.data.content}")
+                                appendLine("Event emotional review: ${event.data.emotionalReview}")
+                                appendLine("Event emotional ranking: ${event.emotionalRanking(saga.mainCharacter?.data)}")
+                            }
+                        },
+                    ).getSuccess()!!
+
+            val newData = chapterContent.data.copy(emotionalReview = emotionalReview)
+            updateChapter(newData)
         }
 
         override suspend fun reviewChapter(
             saga: SagaContent,
             chapterContent: ChapterContent,
-        ) {
-            delay(3.seconds)
-            if (chapterContent.data.introduction.isEmpty()) {
-                generateChapterIntroduction(saga, chapterContent.data, saga.findChapterAct(chapterContent.data)!!)
-            }
+        ) = executeRequest {
             cleanUpEmptyTimeLines(chapterContent)
-            wikiUseCase.mergeWikis(saga, chapterContent.events.map { it.updatedWikis }.flatten())
+            val chapterWikis = chapterContent.events.map { it.updatedWikis }.flatten()
+            if (chapterWikis.size > 15) {
+                wikiUseCase.mergeWikis(saga, chapterWikis)
+            }
+            var chapterUpdates = chapterContent.data
+            if (chapterContent.data.emotionalReview.isNullOrEmpty()) {
+                generateEmotionalReview(saga, chapterContent).onSuccess {
+                    chapterUpdates =
+                        chapterUpdates.copy(
+                            emotionalReview = it.emotionalReview,
+                        )
+                }
+            }
+            if (chapterContent.data.introduction.isEmpty()) {
+                generateChapterIntroduction(
+                    saga,
+                    chapterContent.data,
+                    saga.findChapterAct(chapterContent.data)!!,
+                ).onSuccess {
+                    chapterUpdates =
+                        it.copy(
+                            introduction = it.introduction,
+                        )
+                }
+            }
+
+            chapterUpdates
         }
 
         private suspend fun cleanUpEmptyTimeLines(chapter: ChapterContent) {
@@ -206,17 +285,18 @@ class ChapterUseCaseImpl
                             saga,
                             saga
                                 .flatMessages()
-                                .sortedByDescending { it.message.timestamp }
-                                .take(UpdateRules.LORE_UPDATE_LIMIT)
-                                .map { it.joinMessage(true).formatToString(true) },
+                                .map { it.message }
+                                .sortedByDescending { it.timestamp }
+                                .take(UpdateRules.LORE_UPDATE_LIMIT),
                         ),
                     )
-                val prompt = ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act, contextSummary)
-                delay(2.seconds)
+                val prompt =
+                    ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act, contextSummary)
                 val intro =
                     gemmaClient.generate<String>(
                         prompt,
                         requireTranslation = true,
+                        useCore = true,
                     )!!
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)

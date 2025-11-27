@@ -1,19 +1,18 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts // Added import
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts // Added import
-import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object CharacterPrompts {
@@ -63,7 +62,6 @@ object CharacterPrompts {
             appendLine(GenrePrompts.artStyle(genre))
             appendLine("2.  **Specific Color Application Instructions:**")
             appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.name}\") are applied:")
-            appendLine(GenrePrompts.getColorEmphasisDescription(genre))
             appendLine("**Important Clarification on Color:**")
             appendLine("*These color rules are primarily for:")
             appendLine(
@@ -159,139 +157,258 @@ object CharacterPrompts {
                     "emojified",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
-            appendLine(characters.formatToJsonArray(characterExclusions))
+            appendLine(characters.normalizetoAIItems(characterExclusions))
         }
 
     fun characterGeneration(
         saga: SagaContent,
         description: String,
     ) = buildString {
-        appendLine("Write a character description for a new character in the story.")
-        appendLine("Saga Context:")
+        appendLine("You are an expert character designer for a story.")
+        appendLine(
+            "Your task is to create a complete and detailed character profile in JSON format based on the provided saga context and a source description.",
+        )
+        appendLine("The generated character MUST be deeply contextualized within the saga's theme, genre, and narrative.")
+
+        appendLine("## Saga Context:")
         appendLine(saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions))
-        appendLine("/ 🚨🚨🚨 NEW CHARACTER CREATION SOURCE MATERIAL (CRITICAL) 🚨🚨🚨")
-        appendLine("// The following JSON object is the **ABSOLUTE AND UNALTERABLE SOURCE** for the new character's core identity.")
-        appendLine("// You MUST extract all character details exclusively from this object.")
-        appendLine("// IGNORE ALL OTHER character descriptions in the prompt, including the saga's main description.")
-        appendLine("// This is the ONLY source for the character to be created .")
+
+        appendLine("## 🚨 NEW CHARACTER CREATION SOURCE MATERIAL (CRITICAL) 🚨")
+        appendLine("// The following description is the **ABSOLUTE AND UNALTERABLE SOURCE** for the new character's core identity.")
+        appendLine("// You MUST extract all character details exclusively from this description.")
+        appendLine("// This is the ONLY source for the character to be created.")
         appendLine(description)
+
+        appendLine("## Guidelines for generating the character JSON:")
         appendLine(CharacterGuidelines.creationGuideline)
-        appendLine("// **IMPORTANT**: It must be HIGHLY CONTEXTUALIZED TO THE History THEME ${saga.data.genre.name}.")
+        appendLine("// **IMPORTANT**: The character must be HIGHLY CONTEXTUALIZED TO THE SAGA'S THEME: ${saga.data.genre.name}.")
     }.trimIndent()
 
     fun characterLoreGeneration(
         timeline: Timeline,
         characters: List<Character>,
-    ) = """
-                                                                                                                                             You are a narrative AI assistant tasked with tracking individual character progression based on specific timeline events.
-                                                                                                                                             The 'Current Timeline Event' below describes a recent occurrence in the saga.
-                                                                                                                                             The 'List of Characters in Saga' provides context on all characters currently part of the story.
-
-                                                                                                                                             // CORE OBJECTIVE: Extract and summarize individual character events from a narrative.
-
-                                                                                                                                             // --- CONTEXT ---
-                                                                                                                                             // TimelineContext: ${
-        timeline.toJsonFormatExcludingFields(
-            listOf("id", "emotionalReview", "chapterId"),
+    ) = buildString {
+        appendLine(
+            "You are a narrative AI assistant tasked with tracking individual character progression based on specific timeline events.",
         )
-    }
-
-                                                                                                                                             // Characters Context: ${
-        characters.toJsonFormatExcludingFields(
-            fieldsToExclude = listOf("details", "id", "image", "hexColor", "sagaId", "joinedAt"),
+        appendLine("The 'Current Timeline Event' below describes a recent occurrence in the saga.")
+        appendLine("The 'List of Characters in Saga' provides context on all characters currently part of the story.")
+        appendLine("")
+        appendLine("// CORE OBJECTIVE: Extract and summarize individual character events from a narrative.")
+        appendLine("")
+        appendLine("// --- CONTEXT ---")
+        appendLine(
+            "// TimelineContext: ${
+                timeline.toJsonFormatExcludingFields(
+                    listOf("id", "emotionalReview", "chapterId"),
+                )
+            }",
         )
-    }
-
-                                                                                                                                             // --- MANDATORY OUTPUT STRUCTURE ---
-                                                                                                                                             // The output MUST be a JSON array. The response must NOT include any additional text, explanations, or parentheses.
-                                                                                                                                             // The structure of each object in the array MUST follow this exact format:
-                                                                                                                                             /*
-                                                                                                                                             [
-                                                                                                                                               {
-                                                                                                                                                 "characterName": "Character Name",
-                                                                                                                                                 "description": "A concise update (1-2 sentences) about the character's actions or impact in this event.",
-                                                                                                                                                 "title": "Short, descriptive title for the character's event."
-                                                                                                                                               },
-                                                                                                                                               {
-                                                                                                                                                 "characterName": "Another Character",
-                                                                                                                                                 "description": "Update about the second character.",
-                                                                                                                                                 "title": "Event title for this character."
-                                                                                                                                               }
-                                                                                                                                             ]
-                                                                                                                                             */
-
-                                                                                                                                             // --- STEP-BY-STEP INSTRUCTIONS ---
-                                                                                                                                             // Follow these steps rigorously to generate the JSON array:
-
-                                                                                                                                             // 1. ANALYSIS: Carefully read the 'TimelineContext' and identify which characters from the 'Characters Context' were **directly involved** or **significantly impacted** by the event.
-                                                                                                                                             // 
-                                                                                                                                            2. FILTERING: Exclude characters that had no discernible role.
-                                                                                                                                             // 3. GENERATION: For EACH identified character, write a brief 'description' and a relevant 'title', focusing ONLY on the events described in the 'TimelineContext'.
-                                                                                                                                             // 4. ASSEMBLY: Construct the JSON array with the character objects.
-
-                                                                                                                                             // --- CURRENT EVENT ---
-                                                                                                                                             // TimelineContext:
-                                                                                                                                             ${
-        timeline.toJsonFormatExcludingFields(
-            listOf(
-                "id",
-                "emotionalReview",
-                "chapterId",
+        appendLine("")
+        appendLine(
+            "// Characters Context: ${
+                characters.toJsonFormatExcludingFields(
+                    fieldsToExclude =
+                        listOf(
+                            "details",
+                            "id",
+                            "image",
+                            "hexColor",
+                            "sagaId",
+                            "joinedAt",
+                        ),
+                )
+            }",
+        )
+        appendLine("")
+        appendLine("// --- MANDATORY OUTPUT STRUCTURE ---")
+        appendLine("// The output MUST be a JSON array. The response must NOT include any additional text, explanations, or parentheses.")
+        appendLine("// The structure of each object in the array MUST follow this exact format:")
+        appendLine("/*")
+        appendLine("[")
+        appendLine("  {")
+        appendLine("    \"characterName\": \"Character Name\",")
+        appendLine("    \"description\": \"A concise update (1-2 sentences) about the character's actions or impact in this event.\",")
+        appendLine("    \"title\": \"Short, descriptive title for the character's event.\"")
+        appendLine("  },")
+        appendLine("  {")
+        appendLine("    \"characterName\": \"Another Character\",")
+        appendLine("    \"description\": \"Update about the second character.\",")
+        appendLine("    \"title\": \"Event title for this character.\"")
+        appendLine("  }")
+        appendLine("]")
+        appendLine("*/")
+        appendLine("")
+        appendLine("// --- STEP-BY-STEP INSTRUCTIONS ---")
+        appendLine("// Follow these steps rigorously to generate the JSON array:")
+        appendLine("")
+        appendLine(
+            "// 1. ANALYSIS: Carefully read the 'TimelineContext' and identify which characters from the 'Characters Context' were **directly involved** or **significantly impacted** by the event.",
+        )
+        appendLine("// 2. FILTERING: Exclude characters that had no discernible role.")
+        appendLine(
+            "// 3. GENERATION: For EACH identified character, write a brief 'description' and a relevant 'title', focusing ONLY on the events described in the 'TimelineContext'.",
+        )
+        appendLine("// 4. ASSEMBLY: Construct the JSON array with the character objects.")
+        appendLine("")
+        appendLine("// --- CURRENT EVENT ---")
+        appendLine("// TimelineContext:")
+        appendLine(
+            timeline.toJsonFormatExcludingFields(
+                listOf(
+                    "id",
+                    "emotionalReview",
+                    "chapterId",
+                ),
             ),
         )
-    }
-
-
-                                                                                                                                             // Characters Context:
-                                                                                                                                             ${
-        characters.toJsonFormatExcludingFields(
-            fieldsToExclude = listOf("details", "id", "image", "hexColor", "sagaId", "joinedAt"),
+        appendLine("")
+        appendLine("// Characters Context:")
+        appendLine(
+            characters.toJsonFormatExcludingFields(
+                fieldsToExclude =
+                    listOf(
+                        "details",
+                        "id",
+                        "image",
+                        "hexColor",
+                        "sagaId",
+                        "joinedAt",
+                    ),
+            ),
         )
-    }
-                                                                                                                                          
-        """.trimIndent()
+    }.trimIndent()
+
+    @Suppress("ktlint:standard:max-line-length")
+    fun findNickNames(
+        characters: List<Character>,
+        messages: List<Message>,
+        data: Timeline,
+        data1: Saga,
+    ) = buildString {
+        appendLine(
+            "You are a linguistic analyst AI. Your task is to analyze a conversation and identify unique, context-specific nicknames for characters.",
+        )
+        appendLine(
+            "Your goal is to find informal names that have emerged from the characters' interactions and story events. You can identify current nicknames or suggest new ones that could replace older, less relevant ones.",
+        )
+        appendLine()
+        appendLine("## CORE INSTRUCTIONS:")
+        appendLine("1.  **Analyze the provided messages** to find informal names or nicknames used to refer to the characters.")
+        appendLine(
+            "2.  **Suggest New Nicknames:** If the conversation reveals significant character development or a new role, you can suggest new, fitting nicknames even if they haven't been explicitly used yet. These suggestions should be grounded in the context of the timeline event.",
+        )
+        appendLine(
+            "3.  **Maximum of 4 Nicknames:** For each character, identify or suggest a maximum of four nicknames. Prioritize the most relevant and impactful ones.",
+        )
+
+        appendLine(
+            "2.  **Focus on Uniqueness:** The nicknames must be distinctive and not generic. They should feel like a unique identifier for that character within the story's context.",
+        )
+        appendLine(
+            "3.  **Avoid Generic Terms:** Do NOT extract common nouns or roles as nicknames (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). The name must be a proper noun or a very specific epithet.",
+        )
+        appendLine(
+            "4.  **Context is Key:** The nickname should arise from the character's actions, relationships, or specific events in the narrative provided in the messages. It should not be a direct attribute from their profile (like their job or a visible characteristic).",
+        )
+        appendLine(
+            "5.  **Do not use names already in the character's profile** (e.g., their actual name or known aliases). You are looking for *new* or *emergent* nicknames.",
+        )
+        appendLine()
+        appendLine("## CONTEXT:")
+        appendLine("### Saga Context")
+        appendLine(data1.toAINormalize(ChatPrompts.sagaExclusions))
+        appendLine("### Timeline Context")
+        appendLine(data.toAINormalize(listOf("id", "emotionalReview", "chapterId")))
+        appendLine("### Characters List (Official Names):")
+        appendLine(characters.normalizetoAIItems(ChatPrompts.characterExclusions))
+        appendLine()
+        appendLine("### Recent Messages (Conversation to Analyze):")
+        appendLine(messages.normalizetoAIItems(ChatPrompts.messageExclusions))
+        appendLine()
+        appendLine("## REQUIRED OUTPUT FORMAT:")
+        appendLine("Respond ONLY with a valid JSON array. Do not include any other text, explanations, or markdown.")
+        appendLine(
+            "The JSON array must follow this exact format: `[{\"characterName\": \"Character Full Name\", \"newNicknames\": [\"nickname1\", \"nickname2\"]}]`",
+        )
+        appendLine(
+            "- Only include characters for whom you found or can suggest one or more valid, unique nicknames that meet the criteria above.",
+        )
+        appendLine("- Each character's `newNicknames` array should contain a maximum of 4 strings.")
+        appendLine("- If no new, valid nicknames are found for any character, return an empty array `[]`.")
+    }.trimIndent()
 
     fun generateCharacterRelation(
         timeline: Timeline,
         saga: SagaContent,
-    ) = """
-        You are an expert narrative analyst and relationship extractor AI.
-
-        GOAL: Analyze the provided Timeline Event and the list of Characters and determine if there is any relationship established between any two characters based on this specific event (or solidifying an ongoing bond). If there are one or more relationships, output them strictly as a JSON array following the required schema below. If no relationship can be inferred, output an empty JSON array [].
-
-        IMPORTANT CONSTRAINTS:
-        - Output MUST be ONLY valid JSON. No prose, no markdown, no explanations.
-        - Use EXACT character names as they appear in the Characters list (case-sensitive match required for best results).
-        - Title: short and assertive (3–6 words max).
-        - Description: concise, 1–2 sentences.
-        - Emoji (relationEmoji): choose an emoji that reflects the relationship feeling (e.g., 🤝 allies, ❤️ love, 💔 heartbreak, ⚔️ rivalry, 🛡️ protector, 🧪 tension, 💫 admiration, 😠 conflict, 🧠 mentorship, 🕊️ truce, 🌀 complicated, 🌩️ betrayal). One emoji only.
-        - Do not fabricate characters not present in the Characters list.
-        - Prefer relationships that are explicitly or strongly implied by the Timeline Event.
-
-        REQUIRED OUTPUT SCHEMA (JSON array of objects):
-        [
-           ${toJsonMap(RelationGeneration::class.java)}
-        ]
-
-        FIELD DEFINITIONS (for precision):
-        - firstCharacter: First character's name (string). Must match EXACTLY a name from Characters list.
-        - secondCharacter: Second character's name (string). Must match EXACTLY a name from Characters list. Must not be the same as firstCharacter.
-        - relationEmoji: Single emoji symbol that best represents the relationship feeling.
-        - title: Very short, assertive label (3–6 words max) capturing the essence of the relationship.
-        - description: A brief, clear explanation (1–2 sentences) describing how this event establishes or changes their relationship.
-
-        STEP-BY-STEP INSTRUCTIONS:
-        1) Read the Timeline Event carefully and identify interactions, emotional beats, support/opposition, trust/distrust, alliances, mentorship, romance, betrayal, rivalry, etc.
-        2) Cross-check mentions with the Characters list and ensure all names used are exactly as listed.
-        3) For each strong relationship signal, create one object following the schema.
-        4) Keep the title short and assertive; keep the description 1–2 sentences; pick a fitting emoji.
-        5) If multiple distinct relationships are present, include multiple objects in the array. If none, return [].
-
-        CONTEXT:
-        Timeline Event:
-        ${timeline.toJsonFormatExcludingFields(listOf("id", "emotionalReview", "chapterId"))}
-
-        Characters (names must be used EXACTLY as listed):
-        ${saga.getCharacters().toJsonFormatExcludingFields(listOf("id", "image", "hexColor", "details", "sagaId", "joinedAt", "profile"))}
-        """
+    ) = buildString {
+        appendLine("You are an expert narrative analyst and relationship extractor AI.")
+        appendLine("")
+        appendLine(
+            "GOAL: Analyze the provided Timeline Event and the list of Characters and determine if there is any relationship established between any two characters based on this specific event (or solidifying an ongoing bond). If there are one or more relationships, output them strictly as a JSON array following the required schema below. If no relationship can be inferred, output an empty JSON array [].",
+        )
+        appendLine("")
+        appendLine("IMPORTANT CONSTRAINTS:")
+        appendLine("- Output MUST be ONLY valid JSON. No prose, no markdown, no explanations.")
+        appendLine("- Use EXACT character names as they appear in the Characters list (case-sensitive match required for best results).")
+        appendLine("- Title: short and assertive (3–6 words max).")
+        appendLine("- Description: concise, 1–2 sentences.")
+        appendLine(
+            "- Emoji (relationEmoji): choose an emoji that reflects the relationship feeling (e.g., 🤝 allies, ❤️ love, 💔 heartbreak, ⚔️ rivalry, 🛡️ protector, 🧪 tension, 💫 admiration, 😠 conflict, 🧠 mentorship, 🕊️ truce, 🌀 complicated, 🌩️ betrayal). One emoji only.",
+        )
+        appendLine("- Do not fabricate characters not present in the Characters list.")
+        appendLine("- Prefer relationships that are explicitly or strongly implied by the Timeline Event.")
+        appendLine("")
+        appendLine("REQUIRED OUTPUT SCHEMA (JSON array of objects):")
+        appendLine("[")
+        appendLine("   ${toJsonMap(RelationGeneration::class.java)}")
+        appendLine("]")
+        appendLine("")
+        appendLine("FIELD DEFINITIONS (for precision):")
+        appendLine("- firstCharacter: First character's name (string). Must match EXACTLY a name from Characters list.")
+        appendLine(
+            "- secondCharacter: Second character's name (string). Must match EXACTLY a name from Characters list. Must not be the same as firstCharacter.",
+        )
+        appendLine("- relationEmoji: Single emoji symbol that best represents the relationship feeling.")
+        appendLine("- title: Very short, assertive label (3–6 words max) capturing the essence of the relationship.")
+        appendLine(
+            "- description: A brief, clear explanation (1–2 sentences) describing how this event establishes or changes their relationship.",
+        )
+        appendLine("")
+        appendLine("STEP-BY-STEP INSTRUCTIONS:")
+        appendLine(
+            "1) Read the Timeline Event carefully and identify interactions, emotional beats, support/opposition, trust/distrust, alliances, mentorship, romance, betrayal, rivalry, etc.",
+        )
+        appendLine("2) Cross-check mentions with the Characters list and ensure all names used are exactly as listed.")
+        appendLine("3) For each strong relationship signal, create one object following the schema.")
+        appendLine("4) Keep the title short and assertive; keep the description 1–2 sentences; pick a fitting emoji.")
+        appendLine("5) If multiple distinct relationships are present, include multiple objects in the array. If none, return [].")
+        appendLine("")
+        appendLine("CONTEXT:")
+        appendLine("Timeline Event:")
+        appendLine(
+            timeline.toJsonFormatExcludingFields(
+                listOf(
+                    "id",
+                    "emotionalReview",
+                    "chapterId",
+                ),
+            ),
+        )
+        appendLine("")
+        appendLine("Characters (names must be used EXACTLY as listed):")
+        appendLine(
+            saga.getCharacters().toJsonFormatExcludingFields(
+                listOf(
+                    "id",
+                    "image",
+                    "hexColor",
+                    "details",
+                    "sagaId",
+                    "joinedAt",
+                    "profile",
+                ),
+            ),
+        )
+    }.trimIndent()
 }

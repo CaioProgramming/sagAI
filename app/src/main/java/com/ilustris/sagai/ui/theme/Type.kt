@@ -31,6 +31,7 @@ fun Genre.headerFont(): FontFamily {
             Genre.HEROES -> R.font.super_energy
             Genre.CRIME -> R.font.broadway
             Genre.SPACE_OPERA -> R.font.space_runner
+            Genre.SHINOBI -> R.font.genjiro
             else -> null
         }
     return if (fontResource != null) {
@@ -49,6 +50,7 @@ fun Genre.bodyFont(): FontFamily {
             Genre.HEROES -> R.font.comic_book
             Genre.CRIME -> R.font.retro_neon
             Genre.SPACE_OPERA -> R.font.eightgon
+            Genre.SHINOBI -> R.font.hina
             else -> null
         }
     return if (fontResource != null) {

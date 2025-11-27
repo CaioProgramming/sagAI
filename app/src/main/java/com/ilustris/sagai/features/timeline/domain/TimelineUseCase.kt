@@ -1,8 +1,6 @@
 package com.ilustris.sagai.features.timeline.domain
 
 import com.ilustris.sagai.core.data.RequestResult
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -24,12 +22,15 @@ interface TimelineUseCase {
 
     suspend fun deleteTimeline(timeline: Timeline)
 
-    suspend fun createTimelineReview(
-        content: SagaContent,
-        timelineContent: TimelineContent,
+    suspend fun generateEmotionalReview(
+        saga: SagaContent,
+        timeline: TimelineContent,
     ): RequestResult<Timeline>
 
-    suspend fun getTimelineObjective(saga: SagaContent): RequestResult<String>
+    suspend fun getTimelineObjective(
+        saga: SagaContent,
+        timelineContent: Timeline,
+    ): RequestResult<Unit>
 
     suspend fun generateTimelineContent(
         saga: SagaContent,

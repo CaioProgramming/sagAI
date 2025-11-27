@@ -1,15 +1,13 @@
 package com.ilustris.sagai.features.wiki.data.usecase
 
 import android.util.Log
-import com.ilustris.sagai.core.ai.GemmaClient // Changed
+import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.WikiPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.MergeWiki
-import com.ilustris.sagai.features.wiki.data.model.MergeWikiGen
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.repository.WikiRepository
 import javax.inject.Inject
@@ -65,7 +63,12 @@ class WikiUseCaseImpl
                         val firstWiki =
                             saga.wikis.find { it.title.contentEquals(mergedItem.firstItem, true) }
                         val secondWiki =
-                            saga.wikis.find { it.title.contentEquals(mergedItem.secondItem, true) }
+                            saga.wikis.findLast {
+                                it.title.contentEquals(
+                                    mergedItem.secondItem,
+                                    true,
+                                )
+                            }
                         firstWiki != null && secondWiki != null
                     }
 

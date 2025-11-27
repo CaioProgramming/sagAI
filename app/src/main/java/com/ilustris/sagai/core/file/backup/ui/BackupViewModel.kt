@@ -12,7 +12,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -43,7 +42,15 @@ class BackupViewModel
             viewModelScope.launch {
                 _uiState.value = BackupUiState.Loading("Recuperando conteudo...")
 
-                val backups = (backupService.getBackedUpSagas().getSuccess() ?: emptyList())
+                val backups =
+                    (backupService.getBackedUpSagas().getSuccess()) ?: run {
+                        _uiState.emit(
+                            BackupUiState.Empty("Ocorreu um erro inesperado, não foi possível recuperar os conteudos de backup :("),
+                        )
+                        delay(5.seconds)
+                        _uiState.emit(BackupUiState.Dimissed)
+                        return@launch
+                    }
 
                 val validSagas = sagaBackupService.filterValidSagas(backups).getSuccess() ?: emptyList()
 

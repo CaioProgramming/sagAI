@@ -1,9 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts.sagaExclusions
-import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -14,32 +14,39 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
-import kotlin.text.appendLine
 
 object ChapterPrompts {
+    val CHAPTER_EXCLUSIONS =
+        listOf("id", "currentEventId", "coverImage", "createdAt", "actId", "featuredCharacters")
+
     fun chapterSummary(sagaContent: SagaContent) =
-        if (sagaContent.currentActInfo?.chapters?.isEmpty() == true) {
-            "No chapters written yet on this act,"
-        } else {
-            """
-        **CURRENT ACT CHAPTERS (Most Recent First):**
-        // This section provides the summaries of chapters already written in the current act.
-        // Use this to understand the immediate narrative progression and context within the act.
-        ${sagaContent.currentActInfo?.chapters?.filter { it.isComplete() }?.map { it.data }?.reversed()?.formatToJsonArray(
-                listOf(
-                    "id",
-                    "emotionalReview",
-                    "actId",
-                    "currentEventId",
-                    "coverImage",
-                    "createdAt",
-                    "featuredCharacters",
-                ),
-            )}
-            
-        """
+        buildString {
+            sagaContent.currentActInfo
+                ?.chapters
+                ?.filter { it.isComplete() }
+                ?.map { it.data }
+                ?.let { chapters ->
+                    if (chapters.isNotEmpty()) {
+                        appendLine("**CURRENT ACT CHAPTERS Overview:**")
+                        appendLine("This section provides the summaries of chapters already written in the current act")
+                        appendLine("// Use this to understand the immediate narrative progression and context within the act.")
+                        appendLine(
+                            chapters.normalizetoAIItems(
+                                listOf(
+                                    "id",
+                                    "actId",
+                                    "currentEventId",
+                                    "coverImage",
+                                    "createdAt",
+                                    "featuredCharacters",
+                                ),
+                            ),
+                        )
+                    }
+                }
         }
 
     fun chapterIntroductionPrompt(
@@ -86,19 +93,20 @@ object ChapterPrompts {
             )
             appendLine()
 
-            appendLine("## CONTEXT")
-            appendLine("### Saga Overview:")
-            appendLine(sagaContent.data.toJsonFormatExcludingFields(sagaExclusions))
-            appendLine()
-
-            appendLine("### Main Character:")
-            appendLine(sagaContent.mainCharacter?.data?.toJsonFormatExcludingFields(excludedFields))
-
+            appendLine(SagaPrompts.mainContext(sagaContent))
             contextSummary?.let {
                 appendLine("### Latest Scene Summary (What JUST Happened):")
-                appendLine(it.toJsonFormat())
+                appendLine(it.toAINormalize())
                 appendLine()
             }
+
+            appendLine("### Latest messages:")
+            appendLine(
+                sagaContent
+                    .flatMessages()
+                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                    .toAINormalize(excludedFields)
+            )
 
             actContent?.data?.introduction?.let {
                 appendLine("### Current Act's Theme:")
@@ -107,7 +115,7 @@ object ChapterPrompts {
 
             if (chaptersInAct.isNotEmpty()) {
                 appendLine("### Summaries of Previous Chapters in this Act:")
-                appendLine(chaptersInAct.formatToJsonArray(chapterExclusions))
+                appendLine(chaptersInAct.normalizetoAIItems(chapterExclusions))
                 appendLine()
             }
 
@@ -263,8 +271,6 @@ object ChapterPrompts {
             } ?: run {
                 appendLine("Ensure to render this art style description matching with the reference image")
                 appendLine(GenrePrompts.artStyle(genre))
-                appendLine("*The accents are design elements, not the primary light source for the character.")
-                appendLine(GenrePrompts.getColorEmphasisDescription(genre))
             }
 
             appendLine("This description must:")

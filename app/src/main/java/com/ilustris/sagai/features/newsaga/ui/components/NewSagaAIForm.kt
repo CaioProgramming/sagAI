@@ -431,7 +431,7 @@ fun NewSagaAIForm(
 
             Row {
                 Text(
-                    "Temas",
+                    stringResource(id = R.string.themes_title),
                     style =
                         MaterialTheme.typography.titleMedium.copy(
                             fontFamily = textFont,
@@ -582,7 +582,7 @@ fun NewSagaAIForm(
                     ) {
                         Image(
                             painterResource(R.drawable.ic_arrow_up),
-                            "Send message",
+                            stringResource(id = R.string.send_message_cd),
                             modifier =
                                 Modifier
                                     .fillMaxSize()
@@ -659,7 +659,7 @@ fun NewSagaAIForm(
                         ) {
                             Box(Modifier.fillMaxSize().gradientFill(brush), contentAlignment = Alignment.Center) {
                                 if (it.name.isEmpty()) {
-                                    Icon(painterResource(R.drawable.ic_eye_mask), "Character")
+                                    Icon(painterResource(R.drawable.ic_eye_mask), stringResource(id = R.string.character_cd))
                                 } else {
                                     Text(
                                         it.name.first().toString(),

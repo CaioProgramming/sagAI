@@ -20,7 +20,6 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Singleton
@@ -34,11 +33,16 @@ class GemmaClient
 
         @PublishedApi
         @Volatile
-        internal var retryDelay: Duration? = null
+        internal var retryDelay: Int? = null
+
+        @Volatile
+        var lastTokenCount: Int = 0
 
         companion object {
             const val SUMMARIZATION_MODEL_FLAG = "summarizationModel"
-            const val KEY_FLAG = "FIREBASE_KEY"
+            const val CORE_FLAG = "SAGA_CORE"
+            const val INPUT_TOKEN_LIMIT = 15000
+            const val REACTIVE_DELAY_THRESHOLD = 0.7f
         }
 
         suspend fun modelName() =
@@ -48,32 +52,57 @@ class GemmaClient
                 }
             } ?: error("Couldn't get Flag value")
 
-        suspend fun apiConfig(): String =
-            remoteConfigService.getString(KEY_FLAG)?.ifEmpty {
-                error("Couldn't fetch firebase key")
-            } ?: error("Flag Value unavailable.")
+        suspend fun coreKey() =
+            remoteConfigService.getString(CORE_FLAG)?.let {
+                it.ifEmpty {
+                    error("Couldn't fetch gemma Model")
+                }
+            } ?: error("Couldn't get Flag value")
+
+        suspend fun apiConfig(useCore: Boolean): String =
+            if (useCore) {
+                coreKey()
+            } else {
+                remoteConfigService.getString(KEY_FLAG)?.ifEmpty {
+                    error("Couldn't fetch firebase key")
+                } ?: error("Flag Value unavailable.")
+            }
 
         suspend inline fun <reified T> generate(
             prompt: String,
             references: List<ImageReference?> = emptyList(),
-            temperatureRandomness: Float = 0f,
+            temperatureRandomness: Float = .5f,
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
             filterOutputFields: List<String> = emptyList(),
+            useCore: Boolean = false,
         ): T? =
             withContext(Dispatchers.IO) {
-                val model = modelName()
-                retryDelay?.let {
-                    Log.e(javaClass.simpleName, "generate: Trying delay to avoid rate limit.")
-                    delay(it)
+                if (lastTokenCount > (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD) && retryDelay == null) {
+                    Log.w(javaClass.simpleName, "Applying reactive delay due to high token count in last request.")
+                    retryDelay = 5
+                    delay((retryDelay ?: 5).seconds)
                 }
+                val model = modelName()
+                if (useCore.not()) {
+                    retryDelay?.let {
+                        Log.e(
+                            javaClass.simpleName,
+                            "generate: Trying delay $retryDelay seconds to avoid rate limit.",
+                        )
+                        delay(it.seconds)
+                    }
+                } else {
+                    Log.i(javaClass.simpleName, "generate: Core calls don't require delay.")
+                }
+
 
                 requestMutex.withLock {
                     try {
                         val client =
                             com.google.ai.client.generativeai.GenerativeModel(
                                 modelName = model,
-                                apiKey = apiConfig(),
+                                apiKey = apiConfig(useCore),
                                 generationConfig {
                                     temperature = temperatureRandomness
                                 },
@@ -88,7 +117,12 @@ class GemmaClient
                                 appendLine("Your OUTPUT is a ${T::class.java.simpleName}")
                                 if (T::class != String::class && describeOutput) {
                                     appendLine("Follow this structure:")
-                                    appendLine(toJsonMap(T::class.java, filteredFields = filterOutputFields))
+                                    appendLine(
+                                        toJsonMap(
+                                            T::class.java,
+                                            filteredFields = filterOutputFields,
+                                        ),
+                                    )
                                 }
                             }
 
@@ -120,17 +154,27 @@ class GemmaClient
                             )
 
                         val content = client.generateContent(inputContent)
-
-                        // Request succeeded — reset any retry delay because the service is operating again.
+                        lastTokenCount = content.usageMetadata?.promptTokenCount ?: 0
                         retryDelay = null
+                        if (lastTokenCount < (INPUT_TOKEN_LIMIT * REACTIVE_DELAY_THRESHOLD)) {
+                            lastTokenCount = 0
+                        }
 
                         val response = content.text
-                        Log.d(javaClass.simpleName, "Input content: ${inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)}")
+
+                        Log.d(
+                            javaClass.simpleName,
+                            "Input content: ${
+                                inputContent.toJsonFormatExcludingFields(AI_EXCLUDED_FIELDS)
+                            }",
+                        )
                         Log.i(
                             javaClass.simpleName,
-                            "Generated content: ${content.toJsonFormatExcludingFields(
-                                AI_EXCLUDED_FIELDS,
-                            )}",
+                            "Generated content: ${
+                                content.toJsonFormatExcludingFields(
+                                    AI_EXCLUDED_FIELDS,
+                                )
+                            }",
                         )
 
                         val promptDescription =
@@ -156,18 +200,34 @@ class GemmaClient
 
                         val cleanedJsonString = response.sanitizeAndExtractJsonString()
                         val typeToken = object : TypeToken<T>() {}
-                        delay(2.seconds)
                         Gson().fromJson(cleanedJsonString, typeToken.type)
                     } catch (e: Exception) {
-                        retryDelay = 3.seconds
+                        retryDelay = retryDelay?.let {
+                            if (it > 30) {
+                                it / 2
+                            } else {
+                                it + it
+                            }
+                        } ?: run {
+                            2
+                        }
                         Log.e(
                             this@GemmaClient::class.java.simpleName,
                             "Error in Generation($model): ${e.message}",
                             e,
                         )
-                        Log.e(javaClass.simpleName, "failed to generate content for prompt: $prompt")
+                        Log.e(
+                            javaClass.simpleName,
+                            "failed to generate content for prompt:\n$prompt\n",
+                        )
+                        Log.w(
+                            javaClass.simpleName,
+                            "$retryDelay seconds delay will be applied on the next request.",
+                        )
                         null
                     }
                 }
             }
     }
+
+const val KEY_FLAG = "FIREBASE_KEY"

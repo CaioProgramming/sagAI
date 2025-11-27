@@ -3,15 +3,16 @@ package com.ilustris.sagai.features.settings.ui
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -92,11 +93,24 @@ class SettingsViewModel
             }
         }
 
+        fun importSaga(uri: Uri) {
+            viewModelScope.launch {
+                settingsUseCase.restoreSaga(uri)
+            }
+        }
+
         fun disableBackup() {
             viewModelScope.launch {
                 settingsUseCase.disableBackup()
             }
         }
+
+        val totalPlaytime =
+            settingsUseCase
+                .getSagas()
+                .map { sagas ->
+                    sagas.sumOf { it.data.playTimeMs }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0L)
     }
 
 data class SagaStorageInfo(

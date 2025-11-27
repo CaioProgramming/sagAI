@@ -4,19 +4,16 @@ import com.ilustris.sagai.core.utils.emptyString
 
 enum class SenderType {
     USER,
+    CHARACTER,
     THOUGHT,
     ACTION,
     NARRATOR,
-    CHARACTER,
     ;
 
     companion object {
         fun filterUserInputTypes() =
             SenderType.entries.filter {
-                it == USER ||
-                    it == THOUGHT ||
-                    it == ACTION ||
-                    it == NARRATOR
+                it != USER
             }
     }
 }

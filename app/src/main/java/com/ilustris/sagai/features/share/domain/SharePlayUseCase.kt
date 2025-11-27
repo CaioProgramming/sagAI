@@ -76,7 +76,11 @@ class SharePlayUseCaseImpl
             executeRequest {
                 val prompt =
                     when (shareType) {
-                        ShareType.PLAYSTYLE -> SharePrompts.playStylePrompt(saga.mainCharacter!!.data, saga)
+                        ShareType.PLAYSTYLE ->
+                            SharePrompts.playStylePrompt(
+                                saga.mainCharacter!!,
+                                saga,
+                            )
                         ShareType.EMOTIONS -> SharePrompts.emotionalPrompt(saga)
                         ShareType.HISTORY -> SharePrompts.historyPrompt(saga)
                         ShareType.RELATIONS -> SharePrompts.relationsPrompt(saga)

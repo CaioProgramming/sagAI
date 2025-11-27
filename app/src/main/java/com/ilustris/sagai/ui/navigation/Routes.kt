@@ -12,19 +12,11 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -33,7 +25,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -49,13 +40,11 @@ import androidx.navigation.navArgument
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
-import com.ilustris.sagai.features.characters.ui.CharacterGalleryView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
 import com.ilustris.sagai.features.saga.detail.ui.SagaDetailView
 import com.ilustris.sagai.features.settings.ui.SettingsView
-import com.ilustris.sagai.ui.theme.SagaTitle
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 enum class Routes(
@@ -107,7 +96,6 @@ enum class Routes(
         deepLink = "saga://new_saga",
         showBottomNav = false,
         topBarContent = {
-
         },
         view = { nav, padding, _, _ ->
 
@@ -261,7 +249,7 @@ fun NavHostController.navigateToRoute(
     Log.d(javaClass.simpleName, "navigateToRoute: Navigating to $newLink")
     if (popUpToRoute != null) {
         navigate(newLink) {
-            popUpTo(popUpToRoute.name) {
+            popUpTo(popUpToRoute.deepLink ?: popUpToRoute.name) {
                 inclusive = true
             }
         }

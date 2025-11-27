@@ -1,11 +1,10 @@
 package com.ilustris.sagai.features.home.data.usecase
 
-import android.net.Uri
 import android.util.Log
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.GemmaClient
-import com.ilustris.sagai.core.ai.prompts.HomePrompts // Added import
+import com.ilustris.sagai.core.ai.prompts.HomePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
@@ -19,7 +18,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -48,7 +46,7 @@ class HomeUseCaseImpl
                 val result =
                     gemmaClient.generate<DynamicSagaPrompt>(
                         prompt,
-                        temperatureRandomness = 0.7f,
+                        temperatureRandomness = .5f,
                         requireTranslation = true,
                     )
                 result!!

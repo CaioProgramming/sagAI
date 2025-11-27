@@ -1,11 +1,8 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.models.ActConclusionContext
-import com.ilustris.sagai.core.utils.formatToJsonArray
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
-import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.actNumber
@@ -15,12 +12,14 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object ActPrompts {
+    val ACT_EXCLUSIONS = listOf("id, sagaId, currentChapterId")
+
     @Suppress("ktlint:standard:max-line-length")
     fun generateActConclusion(
         sagaContent: SagaContent,
         currentActContent: ActContent,
         purpose: String,
-    ): String {
+    ) = buildString {
         val isFirstAct =
             sagaContent.acts
                 .first()
@@ -39,47 +38,33 @@ object ActPrompts {
 
         val chapterSummariesInCurrentAct = currentActContent.chapters.map { it.data }
 
-        val promptDataContext =
-            ActConclusionContext(
-                sagaData = sagaContent.data,
-                mainCharacter = sagaContent.mainCharacter?.data,
-                previousActData = previousAct?.data,
-                chaptersInCurrentAct = chapterSummariesInCurrentAct,
-                actPurpose = purpose,
-            )
-
-        val includedFields =
-            listOf(
-                "genre",
-                "name",
-                "backstory",
-                "title",
-                "description",
-                "content",
-                "overview",
-                "sagaData",
-                "mainCharacter",
-                "previousActData",
-                "chaptersInCurrentAct",
-                "actPurpose",
-            )
-
-        val combinedContextJson = promptDataContext.toJsonFormatIncludingFields(includedFields)
-        val actOutput =
-            toJsonMap(
-                Act::class.java,
-                filteredFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview", "introduction"),
-            )
-
         return buildString {
-            appendLine("CONTEXT:")
-            appendLine(combinedContextJson)
             appendLine("TASK:")
             appendLine("You are an AI assistant tasked with writing a compelling summary for a completed Act in a saga.")
             appendLine("This summary consists of a 'title' for the Act and a 'content' (description) of the Act.")
+            appendLine(SagaPrompts.mainContext(sagaContent))
+            appendLine("Current act purpose:")
+            appendLine(purpose)
+            appendLine("Current act data:")
             appendLine(
-                "The `ACT_PURPOSE` provided in the CONTEXT is your primary guide for the tone, direction, and narrative goals of this Act's summary.",
+                currentActContent.data.toAINormalize(
+                    ACT_EXCLUSIONS,
+                ),
             )
+            appendLine("Chapters in current act:")
+            appendLine(
+                chapterSummariesInCurrentAct.normalizetoAIItems(
+                    ChapterPrompts.CHAPTER_EXCLUSIONS,
+                ),
+            )
+            previousAct?.let {
+                appendLine("Previous act context:")
+                appendLine(
+                    it.data.toAINormalize(
+                        ACT_EXCLUSIONS,
+                    ),
+                )
+            }
             appendLine(
                 "Based primarily on the summaries of its constituent chapters (provided in `CHAPTERS_IN_CURRENT_ACT`), and considering the `PREVIOUS_ACT_DATA` for continuity, generate these two pieces of information.",
             )
@@ -92,18 +77,16 @@ object ActPrompts {
             appendLine(
                 "a.  Summarize the main plot developments, character arcs, and key resolutions that occurred across all chapters in `CHAPTERS_IN_CURRENT_ACT`.",
             )
-            appendLine("b.  Reflect the overall tone and significance of this Act within the larger saga (`SAGA_DATA`).")
-            appendLine(
-                "c.  If `PREVIOUS_ACT_DATA` is provided, ensure your description provides a sense of narrative flow from that previous Act.",
-            )
-            appendLine(
-                "d.  Conclude with a sentence or two that creates a natural hook or sets the stage for the subsequent Act, hinting at unresolved threads or future directions.",
-            )
-            appendLine("")
-            appendLine("Consider the `MAIN_CHARACTER`'s journey if their data is provided and relevant to the Act's core.")
-            appendLine("")
-            appendLine("OUTPUT_FORMAT_EXPECTED:")
-            appendLine(actOutput)
+            appendLine("b.  Reflect the overall tone and significance of this Act within the saga context.")
+            if (sagaContent.actNumber(currentActContent.data) < 3) {
+                appendLine(
+                    "c. Conclude with a sentence or two that creates a natural hook or sets the stage for the subsequent Act, hinting at unresolved threads or future directions.",
+                )
+            } else {
+                appendLine(
+                    "c. Since this is the final Act, conclude with a sentence or two that provides a sense of closure, reflecting on the overall saga and the main character's transformative journey.",
+                )
+            }
         }.trimIndent()
     }
 
@@ -223,14 +206,13 @@ object ActPrompts {
 
     fun actsOverview(saga: SagaContent) =
         buildString {
-            appendLine("## SAGA ACTS OVERVIEW")
-            appendLine("// This overview provides a summary of all acts in the saga to inform narrative consistency and progression.")
-            appendLine("// Use this information to maintain continuity and reference past events as needed.")
-            if (saga.acts.isEmpty()) {
-                appendLine("No acts created yet.")
-            } else {
+            val acts = saga.acts.filter { it.isComplete() }.map { it.data }
+            if (saga.acts.isNotEmpty()) {
+                appendLine("## SAGA ACTS OVERVIEW")
+                appendLine("// This overview provides a summary of all acts in the saga to inform narrative consistency and progression.")
+                appendLine("// Use this information to maintain continuity and reference past events as needed.")
                 appendLine(
-                    saga.acts.filter { it.isComplete() }.map { it.data }.formatToJsonArray(
+                    acts.normalizetoAIItems(
                         excludingFields = listOf("id", "sagaId", "currentChapterId", "emotionalReview"),
                     ),
                 )

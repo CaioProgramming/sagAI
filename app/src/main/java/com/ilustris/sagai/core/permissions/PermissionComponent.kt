@@ -111,6 +111,8 @@ fun PermissionComponent(
                     ) {
                         Text(text = stringResource(R.string.confirm_permission_button))
                     }
+
+                    Spacer(modifier = Modifier.height(32.dp))
                 }
             }
         }

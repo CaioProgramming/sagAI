@@ -1,9 +1,6 @@
 package com.ilustris.sagai.features.share.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,12 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -44,7 +38,6 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,9 +48,10 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.sortCharactersContentByMessageCount
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
@@ -108,6 +102,7 @@ fun RelationsShareView(
         ) {
             Box(
                 Modifier
+                    .padding(16.dp)
                     .fillMaxSize()
                     .clip(genre.shape())
                     .background(MaterialTheme.colorScheme.background)
@@ -251,13 +246,7 @@ fun RelationsShareView(
             }
         }
 
-        AnimatedVisibility(isLoading, enter = fadeIn(), exit = fadeOut()) {
-            StarryTextPlaceholder(
-                Modifier.fillMaxSize(),
-                genre.color,
-                sagaContent.messagesSize(),
-            )
-        }
+        StarryLoader(isLoading, brushColors = genre.colorPalette())
     }
 
     LaunchedEffect(Unit) {

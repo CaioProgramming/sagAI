@@ -1,11 +1,8 @@
 package com.ilustris.sagai.core.utils
 
-import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 fun List<Any>.formatToJsonArray(excludingFields: List<String> = emptyList()) =
     joinToString(prefix = "[", postfix = "]", separator = ",\n") { it.toJsonFormatExcludingFields(excludingFields) }
@@ -33,3 +30,26 @@ fun sortCharactersContentByMessageCount(
                 message.message.speakerName.equals(character.data.name, true)
         }
 }
+
+fun List<*>.normalizetoAIItems(excludingFields: List<String> = emptyList()): String {
+    if (isEmpty()) return ""
+    val firstItem = first()
+
+    return if (firstItem is String || firstItem is Number || firstItem is Boolean || firstItem is Enum<*>) {
+        // For primitive-like types, just join them
+        joinToString(", ")
+    } else {
+        // For complex objects, normalize each item and prepend its type and index
+        filterNotNull()
+            .mapIndexed { index, item ->
+                val normalizedItem = item.toAINormalize(excludingFields)
+                if (normalizedItem.isNotBlank()) {
+                    "${item.javaClass.simpleName}[$index]: \n${normalizedItem.prependIndent("    ")}"
+                } else {
+                    "${item.javaClass.simpleName}[$index]: (empty)"
+                }
+            }.joinToString("\n")
+    }
+}
+
+fun Array<*>.normalizetoAIItems(excludingFields: List<String> = emptyList()): String = this.toList().normalizetoAIItems(excludingFields)

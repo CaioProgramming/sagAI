@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -42,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.DateFormatOption
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -235,7 +237,7 @@ fun SingleRelationShipCard(
 
             if (showUpdates) {
                 Text(
-                    "${content.relationshipEvents.size} Atualizações",
+                    stringResource(id = R.string.updates_count, content.relationshipEvents.size),
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontFamily = genre.bodyFont(),
@@ -350,7 +352,7 @@ fun RelationShipSheet(
                     modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
-                        "Última atualização",
+                        stringResource(id = R.string.last_update),
                         style = MaterialTheme.typography.labelSmall.copy(fontFamily = genre.bodyFont()),
                         modifier = Modifier.alpha(.4f),
                     )
@@ -594,7 +596,7 @@ fun RelationshipEventCard(
             secondCharacter.hexColor.hexToColor() ?: genre.colorPalette().last(),
         )
     ConstraintLayout {
-        val (avatarsRow, relationshipCard, relationshipEmoji, divider) = createRefs()
+        val (avatarsRow, relationshipCard, _, divider) = createRefs()
 
         val brush =
             Brush.linearGradient(

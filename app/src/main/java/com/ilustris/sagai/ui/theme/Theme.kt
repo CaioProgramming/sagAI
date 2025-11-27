@@ -44,7 +44,6 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -62,8 +61,8 @@ private val LightColorScheme =
         secondary = MaterialColor.Blue800,
         tertiary = MaterialColor.Teal300,
         onPrimary = MaterialColor.White,
-        background = MaterialColor.Gray300.lighter(.7f),
-        surfaceContainer = MaterialColor.Gray200.lighter(.5f),
+        background = MaterialColor.Gray100,
+        surfaceContainer = Color.White,
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
     surface = Color(0xFFFFFBFE),

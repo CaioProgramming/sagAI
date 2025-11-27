@@ -1,13 +1,9 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
+import com.ilustris.sagai.core.utils.normalizetoAIItems
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
-import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -20,11 +16,12 @@ object ChatPrompts {
     val messageExclusions =
         listOf(
             "id",
-            "timeStamp",
+            "timestamp",
             "sagaId",
             "characterId",
             "timelineId",
             "status",
+            "playTimeMs",
         )
     val sagaExclusions =
         listOf(
@@ -39,6 +36,7 @@ object ChatPrompts {
             "isDebug",
             "endMessage",
             "review",
+            "playTimeMs",
         )
 
     val characterExclusions =
@@ -51,7 +49,6 @@ object ChatPrompts {
             "emojified",
             "hexColor",
             "firstSceneId",
-            "personality",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -68,19 +65,18 @@ object ChatPrompts {
 
         sceneSummary?.let {
             appendLine("## Progression Context")
-            appendLine("Guide your response to align with the story's progression based on this summary:")
-            appendLine(sceneSummary.toJsonFormat())
+            appendLine(
+                "This summary provides context on the story's progression. Use it as a background reminder of the main objectives, but do not let it rigidly dictate your response.",
+            )
+            appendLine(
+                "Your primary focus should be on reacting to the player's immediate actions and emotional state, allowing for organic character development.",
+            )
+            appendLine(sceneSummary.toAINormalize())
         }
 
+        appendLine(SagaPrompts.mainContext(saga))
+
         appendLine("## Saga & Player Context")
-        appendLine("SAGA: ${saga.data.toJsonFormatExcludingFields(sagaExclusions)}")
-        appendLine(
-            "PLAYER: ${
-                saga.mainCharacter?.data.toJsonFormatExcludingFields(
-                    characterExclusions,
-                )
-            }",
-        )
         appendLine(
             CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }),
         )
@@ -88,17 +84,23 @@ object ChatPrompts {
 
         appendLine(ActPrompts.actDirective(directive))
 
+        appendLine(conversationHistory(lastMessages))
+
         appendLine("## NPC Actions & Thoughts")
-        appendLine("- NPCs can perform actions (`ACTION`) or have thoughts (`THOUGHT`).")
-        appendLine("- **CRITICAL**: For NPC `ACTION` or `THOUGHT`, set `speakerName` to the NPC's name.")
         appendLine(
-            "- `ACTION` (NPC): Concise description of a physical action (e.g., 'Elara unsheathes her dagger.'). The `NARRATOR` describes the wider scene.",
+            "**NPC AGENCY & PERSONALITY:** NPCs should feel like living beings with their own motivations, personalities, and opinions.",
         )
         appendLine(
-            "- `THOUGHT` (NPC): Use **SPARINGLY** for critical insights or internal conflict (e.g., 'He doesn't suspect a thing...'). Show, don't just tell.",
+            "a) **Authentic Behavior:** Characters react based on who they are. This can be through physical actions (`ACTION`), dialogue (`CHARACTER`), or internal thoughts (`THOUGHT`). A character might choose to remain silent, observe, or get lost in thought if it fits their personality and the situation. Not every moment requires an external action.",
         )
         appendLine(
-            "- You primarily generate `NARRATOR` (storytelling) and `CHARACTER` (dialogue) messages. Do not generate `ACTION` or `THOUGHT` for the player.",
+            "b) **Evaluate the Need for Interaction:** Before generating a response, consider if an interaction is truly necessary. If the player is setting a scene, describing an internal monologue, or if a character is alone, it might be better to continue the narration (`NARRATOR`) or provide a `THOUGHT` rather than forcing a dialogue or action that feels unnatural.",
+        )
+        appendLine(
+            "c) **Conflict/Combat:** In action-oriented scenes, prioritize `ACTION` to describe attacks, defenses, or significant movements.",
+        )
+        appendLine(
+            "d) **Prioritize Character Development:** Your primary role is to facilitate a rich, character-driven story. If the player is exploring their character's inner thoughts, emotions (like trauma or joy), or developing relationships, allow space for that. Acknowledge their emotional state and react appropriately, even if it temporarily pauses the main plot. Your goal is to be a responsive storyteller, not just a plot-pusher. Remember the main objectives, but don't force them if the character needs a moment to process.",
         )
 
         appendLine(SagaDirective.namingDirective(saga.data.genre))
@@ -110,7 +112,7 @@ object ChatPrompts {
         appendLine(conversationHistory(lastMessages))
 
         appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:**")
-        appendLine(message.toJsonFormatExcludingFields(messageExclusions))
+        appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
 
     @Suppress("ktlint:standard:max-line-length")
@@ -142,39 +144,51 @@ object ChatPrompts {
 
     fun generateReactionPrompt(
         summary: SceneSummary,
-        saga: Saga,
-        mainCharacter: CharacterContent,
-        messageToReact: String,
+        saga: SagaContent,
+        messageToReact: Message,
         relationships: List<RelationshipContent>,
     ) = buildString {
-        appendLine("Your task is to generate relatable reactions to the player message in the saga")
-        appendLine("Saga context:")
-        appendLine(saga.toJsonFormatExcludingFields(sagaExclusions))
-        appendLine("History current context:")
-        appendLine(summary.toJsonFormat())
-        appendLine("Player context:")
-        appendLine(mainCharacter.data.toJsonFormatExcludingFields(characterExclusions))
-        appendLine("Player relationships with present characters:")
+        appendLine("You are an AI assistant that generates character reactions for an interactive story.")
+        appendLine("Your task is to generate a relatable reaction to a player's message, including an emoji and a brief internal thought.")
+
+        appendLine(SagaPrompts.mainContext(saga))
+
+        appendLine("## Scene Summary")
+        appendLine("This is the current situation:")
+        appendLine(summary.toAINormalize())
+
+        appendLine("Relationships between the player and characters currently in the scene:")
+
         appendLine(
             relationships.joinToString(";\n") {
-                val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "Nothing related"
-                "${it.characterOne.name} & ${it.characterTwo.name}: $lastEvent"
+                it.summarizeRelation()
             },
         )
 
-        appendLine("Generate reactions only to characters present in the scene summary.")
-        appendLine("React properly to the message and the scene summary.")
-        appendLine("Your reaction must be only a single emoji, no text nor descriptions.")
-        appendLine("The last message in the conversation was:")
-        appendLine("'$messageToReact'")
-        appendLine("Base your reactions on characters personality and relationship with the player.")
-        appendLine("Your output needs to be: ")
-        appendLine("{ reactions: [ ${toJsonMap(AIReaction::class.java)} ]  }")
+        appendLine("\n## Instructions")
+        appendLine("1.  **Analyze the Message:** Read the player's last message below and understand its emotional and narrative impact.")
+        appendLine("    - Player's Message: '$messageToReact'")
+        appendLine(
+            "2.  **Generate Reactions:** For each character present in the scene summary (`summary.charactersPresent`), create a reaction.",
+        )
+        appendLine("    - **CRITICAL RULE:** Only generate reactions for characters listed in `summary.charactersPresent`.")
+        appendLine("3.  **Reaction Content:** Each reaction must include:")
+        appendLine("    - `reaction`: A single emoji that represents the character's immediate feeling.")
+        appendLine("    - `thought`: A short, internal thought (max 12 words). This is a private feeling, NOT spoken dialogue.")
+        appendLine(
+            "4.  **Context is Key:** Base reactions on each character's personality, their relationship with the player, and the current scene context.",
+        )
+
+        appendLine("\n## Output Format")
+        appendLine("Your response MUST be a JSON object in the following format:")
+        appendLine(
+            """{ "reactions": [ ${AIReaction::class.java.simpleName}(character="CharacterName", reaction="emoji", thought="A short internal thought.") ] }""",
+        )
     }.trimIndent()
 
     fun sceneSummarizationPrompt(
         saga: SagaContent,
-        recentMessages: List<String> = emptyList(),
+        recentMessages: List<Message> = emptyList(),
     ) = buildString {
         appendLine("You task is generate a concise, AI-optimized summary of the current scene in an interactive story.")
         appendLine("This summary will be used exclusively as context for subsequent AI requests and will NOT be shown to the user.")
@@ -185,17 +199,9 @@ object ChatPrompts {
         appendLine("- Avoid redundant or already established information.")
         appendLine("- Focus on immediate context: location, characters present, current objective, active conflict, and mood.")
         appendLine("- If any field is not relevant or unknown, omit it.")
-        appendLine()
-        appendLine("Saga Context:")
-        appendLine("Title: ${saga.data.title}")
-        appendLine("Description: ${saga.data.description}")
-        appendLine("Genre: ${saga.data.genre}")
-        appendLine("PLAYER CONTEXT DATA:")
-        appendLine(saga.mainCharacter?.data.toJsonFormatExcludingFields(characterExclusions))
-        appendLine("Player relationships:")
-        if (saga.mainCharacter?.relationships.isNullOrEmpty()) {
-            appendLine("No relationships yet.")
-        } else {
+        appendLine(SagaPrompts.mainContext(saga))
+        if (!saga.mainCharacter?.relationships.isNullOrEmpty()) {
+            appendLine("Player relationships:")
             appendLine(
                 saga.mainCharacter.relationships.joinToString(";\n") {
                     val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "Nothing related"
@@ -204,47 +210,38 @@ object ChatPrompts {
             )
         }
 
-        appendLine("Player last events:")
-        if (saga.mainCharacter?.events.isNullOrEmpty()) {
-            appendLine("No events yet.")
-        } else {
-            appendLine(
-                saga.mainCharacter.events.map { it.event }.takeLast(5).formatToJsonArray(
-                    listOf("gameTimelineId", "characterId", "id", "createdAt"),
-                ),
-            )
+        saga.mainCharacter?.let {
+            val events = it.events.map { it.event }
+            if (events.isNotEmpty()) {
+                appendLine("Player last events:")
+                appendLine(
+                    events.normalizetoAIItems(
+                        listOf(
+                            "id",
+                            "characterId",
+                            "createdAt",
+                            "gameTimelineId",
+                        ),
+                    ),
+                )
+            }
         }
-        appendLine("Current Saga Characters:")
         val characters = saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }
-        if (characters.isEmpty()) {
-            appendLine("No other characters yet.")
-        } else {
+        if (characters.isNotEmpty()) {
+            appendLine("Current Saga Characters:")
             appendLine(
-                characters.joinToString(";\n") {
-                    it.toJsonFormatExcludingFields(characterExclusions)
-                },
+                characters.normalizetoAIItems(characterExclusions),
             )
         }
-        appendLine("Current Chapter Context:")
-        appendLine("Introduction: ")
-        appendLine(
-            saga.currentActInfo
-                ?.currentChapterInfo
-                ?.data
-                ?.introduction ?: "No introduction available.",
-        )
+        saga.currentActInfo?.currentChapterInfo?.data?.let {
+            appendLine("Current Chapter Data:")
+            appendLine(it.toAINormalize(ChapterPrompts.CHAPTER_EXCLUSIONS))
+        }
         appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
-        appendLine("Recent Chapter Summaries:")
         appendLine(ChapterPrompts.chapterSummary(saga))
-        appendLine()
-        appendLine("Recent Acts Overview:")
         appendLine(ActPrompts.actsOverview(saga))
-        appendLine()
         appendLine("Recent Messages (for context, do NOT repeat):")
-        appendLine("[")
-        appendLine(recentMessages.joinToString(separator = ";\n"))
-        appendLine("]")
-        appendLine()
+        appendLine(recentMessages.normalizetoAIItems(messageExclusions))
     }.trimIndent()
 
     private fun conversationStyleAndPacing() =
@@ -257,11 +254,15 @@ object ChatPrompts {
         ---
         """.trimIndent()
 
-    private fun conversationHistory(lastMessages: List<Message>) =
+    fun conversationHistory(lastMessages: List<Message>) =
         buildString {
             appendLine("Conversation History")
             appendLine("Use this history for context, but do NOT repeat it in your response.")
+            appendLine("The messages are ordered from newest to oldest")
+            appendLine("Consider the newest ones to move history forward")
             appendLine("Pay attention to `speakerName` and `senderType`.")
-            appendLine(lastMessages.formatToJsonArray(excludingFields = messageExclusions))
+            appendLine(
+                lastMessages.reversed().normalizetoAIItems(excludingFields = messageExclusions),
+            )
         }
 }

@@ -5,8 +5,22 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey.Companion.CASCADE
 import androidx.room.PrimaryKey
-import com.google.firebase.ai.type.Schema
+import androidx.room.TypeConverter
+import androidx.room.TypeConverters
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.features.home.data.model.Saga
+
+class NicknameTypeConverter {
+    @TypeConverter
+    fun fromNicknameList(nicknames: List<String>): String = Gson().toJson(nicknames)
+
+    @TypeConverter
+    fun toNicknameList(nicknamesJson: String): List<String> {
+        val typeToken = object : TypeToken<List<String>>() {}.type
+        return Gson().fromJson(nicknamesJson, typeToken)
+    }
+}
 
 @Entity(
     tableName = "Characters",
@@ -19,10 +33,13 @@ import com.ilustris.sagai.features.home.data.model.Saga
         ),
     ],
 )
+@TypeConverters(NicknameTypeConverter::class)
 data class Character(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val name: String = "",
+    val lastName: String? = "",
+    val nicknames: List<String>? = emptyList(),
     val backstory: String = "",
     val image: String = "",
     val hexColor: String = "#3d98f7",

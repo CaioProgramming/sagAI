@@ -16,7 +16,6 @@ import com.ilustris.sagai.features.characters.relations.data.model.RelationshipC
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import kotlin.jvm.javaClass
 
 data class SagaContent(
     @Embedded
@@ -92,7 +91,17 @@ fun SagaContent.findTimeline(timelineId: Int) = flatEvents().find { it.data.id =
 
 fun SagaContent.findCharacter(characterId: Int) = characters.find { it.data.id == characterId }
 
-fun SagaContent.findCharacter(name: String) = characters.find { it.data.name.equals(name, true) }
+fun SagaContent.findCharacter(name: String?): CharacterContent? {
+    if (name == null) return null
+    val normalizedInputNameTokens = name.lowercase().split(" ")
+    return characters.find { characterContent ->
+        val characterNameTokens =
+            characterContent.data.name
+                .lowercase()
+                .split(" ")
+        normalizedInputNameTokens.any { inputToken -> characterNameTokens.contains(inputToken) }
+    }
+}
 
 fun SagaContent.findTimelineChapter(timeline: Timeline) = flatChapters().find { it.data.id == timeline.chapterId }
 
@@ -121,7 +130,7 @@ fun SagaContent.relationshipsSortedByEvents() =
             it.copy(relationshipEvents = it.sortedByEvents(flatEvents().map { it.data }))
         }.filter { it.relationshipEvents.isNotEmpty() }
 
-fun SagaContent.chapterNumber(chapter: Chapter) = flatChapters().indexOfFirst { it.data.id == chapter.id } + 1
+fun SagaContent.chapterNumber(chapter: Chapter?) = if (chapter == null) 0 else flatChapters().indexOfFirst { it.data.id == chapter?.id } + 1
 
 fun SagaContent.actNumber(act: Act?): Int =
     acts.find { it.data.id == act?.id }?.let { requestedAct ->
@@ -155,15 +164,12 @@ fun SagaContent.rankByHour() =
         }.toSortedMap()
 
 fun SagaContent.emotionalSummary() =
-    acts
-        .map {
-            """
-            Act ${it.data.title}: ${it.data.emotionalReview}
-            ${it.chapters.joinToString(
-                ";",
-            ) { chapter -> "${chapterNumber(chapter.data)} Chapter ${chapter.data.title}: ${chapter.data.emotionalReview}" } }
-            """.trimIndent()
+    buildString {
+        acts.forEach {
+            it.emotionalSummary(this@emotionalSummary)
+            appendLine("Emotional profile on ${it.data.title}: ${it.data.emotionalReview}")
         }
+    }
 
 @Suppress("ktlint:standard:max-line-length")
 fun SagaContent.generateCharacterRelationsSummary(): String {

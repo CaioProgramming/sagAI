@@ -16,12 +16,7 @@ fun MessageContent.joinMessage(showType: Boolean = false): Pair<String, String> 
     return key to message.text
 }
 
-fun MessageContent.isUser(mainCharacter: Character?): Boolean {
-    if (message.senderType == SenderType.CHARACTER) return false
-    return message.senderType == SenderType.USER ||
-        message.characterId == mainCharacter?.id ||
-        message.speakerName.equals(mainCharacter?.name, true)
-}
+fun MessageContent.isUser(mainCharacter: Character?): Boolean = (message.characterId == mainCharacter?.id)
 
 fun List<MessageContent>.filterCharacterMessages(character: Character?) =
     if (character == null) {
