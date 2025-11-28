@@ -39,9 +39,6 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    val apikeyPropertiesFile = rootProject.file("app/config.properties")
-    val apikeyProperties = Properties()
-    apikeyProperties.load(FileInputStream(apikeyPropertiesFile))
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     val keystoreProperties = Properties()
@@ -71,15 +68,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("GEMINI_KEY"))
             if (keystorePropertiesFile.exists()) {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
 
-        debug {
-            buildConfigField("String", "APIKEY", apikeyProperties.getProperty("GEMINI_KEY"))
-        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
