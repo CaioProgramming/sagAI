@@ -1,4 +1,4 @@
-package com.ilustris.sagai.ui.theme
+package com.ilustris.sagai.ui.theme.components.chat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -6,9 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline

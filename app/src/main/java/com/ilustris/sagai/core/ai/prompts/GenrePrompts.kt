@@ -9,9 +9,9 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre.HEROES
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SHINOBI
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
+import com.ilustris.sagai.features.newsaga.data.model.Genre.COWBOYS
 
 object GenrePrompts {
-    fun detail(genre: Genre) = "theme: ${genre.name}"
 
     fun artStyle(genre: Genre) =
         when (genre) {
@@ -23,9 +23,9 @@ object GenrePrompts {
                 Aesthetic Era / Influence: Romanticism; Pre-Raphaelite.
                 
                 **COLOR PALETTE & ACCENT:**
-                - Base: A palette of earthy tones, mud, steel, and stone. Desaturated and dark.
-                - Mandatory Accent: EMBER GOLD / FIERY ORANGE.
-                - Application: Use the accent color for magical runes, torchlight reflections on armor, glowing eyes, or spell effects. It must pop against the earthy background. Forbid other vibrant colors.
+                 - Base: A palette of earthy tones, mud, steel, and stone. Desaturated and dark.
+                 - Mandatory Accent: EMBER GOLD / FIERY ORANGE.
+                 - Application: Use the accent color for magical runes, torchlight reflections on armor, glowing eyes, or spell effects. It must pop against the earthy background. Forbid other vibrant colors.
 
                 Mood: Epic, wistful, and mysterious — a sense of ancient fate and quiet reverence. Emphasize wonder over action.
                 Ambience: Soft, volumetric natural light (dawn/dusk), drifting mist or smoke, distant weather elements (storm clouds or light rain).
@@ -37,10 +37,10 @@ object GenrePrompts {
                 Line Work: Delicate, sketchy ink lines with varying weight. Organic cloth folds and realistic mechanical detailing.
                 
                 **COLOR PALETTE & ACCENT:**
-                - Base: Muted Blue Tones. Dominant tones of Slate Blue, Cold Steel, and Deep Cool Greys. 
+                 - Base: Muted Blue Tones. Dominant tones of Slate Blue, Cold Steel, and Deep Cool Greys. 
                     The image should feel desaturated, moody and atmospheric.
-                - Mandatory Accent: DEEP PURPLE. 
-                - Application: Use this accent subtly for deep shadow casting, low-light environmental glow, or muted interface lights. STRICTLY FORBID bright, fluorescent neon pinks or bright purples. The purple must feel "bruised" or metallic.
+                 - Mandatory Accent: DEEP PURPLE. 
+                 - Application: Use this accent subtly for deep shadow casting, low-light environmental glow, or muted interface lights. STRICTLY FORBID bright, fluorescent neon pinks or bright purples. The purple must feel "bruised" or metallic.
                 
                 Detail: Hair rendered as "clumps" or shapes with simple highlights, not individual strands. Skin must be matte; reduce micro-detail.
                 Lighting: High-contrast "Rembrandt" lighting with hard-edged, cast shadows. Strong Hard Rim Light is essential to separate characters. No Global Illumination.
@@ -62,15 +62,15 @@ object GenrePrompts {
         Vibe / Mood Aesthetic: HAUNTED, MYSTIQUE DARK AESTHETIC
 
         **COLOR PALETTE & ACCENT:**
-        - Base: LIMITED DARK AND PALE BLUE PALETTE.
-        - Mandatory Accent: Ash gray/Faded cerulean blue.
-        - Application: Use this for subtle highlights, reflections, or to create a chilling atmosphere. Forbid other vibrant colors.
+         - Base: LIMITED DARK AND PALE BLUE PALETTE.
+         - Mandatory Accent: Ash gray/Faded cerulean blue.
+         - Application: Use this for subtle highlights, reflections, or to create a chilling atmosphere. Forbid other vibrant colors.
 
         Mood: Oppressive, uncanny, and creeping dread — prioritize psychological unease over explicit gore.
         Ambience: Low-key, desaturated environment with heavy shadows and subtle volumetric fog; minimal and muted highlights only where needed to draw attention to small, eerie details.
         """
 
-            HEROES -> {
+            HEROES -> 
                 """
         Art Technique: COMIC BOOK ART STYLE (Clean and Detailed Line Work)
         Line Detail: ANATOMICALLY ACCURATE FIGURES, SUBTLE CROSS-HATCHING FOR DEPTH
@@ -79,14 +79,14 @@ object GenrePrompts {
         Aesthetic Era / Influence: SUPERHERO COMICS OF THE 1990s
         
         **COLOR PALETTE & ACCENT:**
-        - Base: PRIMARILY TEAL AND WHITE, ACCENTED WITH DARKER TONES.
-        - Mandatory Accent: Midnight blue/Electric blue.
-        - Application: Use this for energy effects, glowing eyes, or as a rim light. Forbid other vibrant colors.
+         - Base: PRIMARILY TEAL AND WHITE, ACCENTED WITH DARKER TONES.
+         - Mandatory Accent: Midnight blue/Electric blue.
+         - Application: Use this for energy effects, glowing eyes, or as a rim light. Forbid other vibrant colors.
 
         Mood: Heroic, gritty optimism — confident and grounded, with emotional stakes.
         Ambience: Urban nightscapes with high-contrast rim lighting, audible but unseen city life (sirens, distant traffic), and clean, focused lighting on the subject to convey importance.
         """
-            }
+
 
             CRIME ->
                 """
@@ -96,9 +96,9 @@ object GenrePrompts {
                 Aesthetic Influence: Contemporary indie/noir comics and hand-printed zines — tactile, rushed, and immediate.
         
                 **COLOR PALETTE & ACCENT:**
-                - Base: High-contrast Neo-Noir. Deep blacks, desaturated greys, and murky browns.
-                - Mandatory Accent: NEON PINK & SUNSET ORANGE.
-                - Application: Use these colors exclusively for neon signage, rain reflections on pavement, cigarette embers, or distinct rim lighting. The rest of the scene must remain dark and gritty. Forbid other vibrant colors.
+                 - Base: High-contrast Neo-Noir. Deep blacks, desaturated greys, and murky browns.
+                 - Mandatory Accent: NEON PINK & SUNSET ORANGE.
+                 - Application: Use these colors exclusively for neon signage, rain reflections on pavement, cigarette embers, or distinct rim lighting. The rest of the scene must remain dark and gritty. Forbid other vibrant colors.
 
                 Figure & Facial Treatment: UN-IDEALIZED, EXPRESSIVE FACES — asymmetry, small scars/freckles, rough stubble, simplified noses and lips; avoid polished features or smooth retouching. Prioritize expression and shape over micro-detail.
                 Rendering: FLAT COLOR BLOCKS with minimal modulation; use large planar shadow patches (no soft gradients), sparse cross-hatching for form, and intentional negative space.
@@ -123,9 +123,9 @@ object GenrePrompts {
                 Form is built using layered, transparent diluted ink washes (Bokashi) and strong areas of solid black.
                 
                 **COLOR PALETTE & ACCENT:**
-                - Base: Monochrome (Pure Black to White Paper).
-                - Mandatory Accent: VIBRANT CRIMSON RED.
-                - Application: Use the accent color as a single, vital element. Forbid other vibrant colors.
+                 - Base: Monochrome (Pure Black to White Paper).
+                 - Mandatory Accent: VIBRANT CRIMSON RED.
+                 - Application: Use the accent color as a single, vital element. Forbid other vibrant colors.
 
                 Lighting & Shading: DRAMATIC SHADOWS AND CONTRAST created by DENSITY OF INK WASH versus Pristine Negative Space. Use atmospheric depth (mist/fog) to diffuse light and suggest volume, rather than complex digital rim lights.
                 
@@ -148,9 +148,9 @@ object GenrePrompts {
                 Aesthetic Era / Influence: 1940s/1950s GOLDEN AGE COMICS.
                 
                 **COLOR PALETTE & ACCENT:**
-                - Base: Vintage Golden Age Comic (CMYK). Flat primary colors, ink heavy shadows.
-                - Mandatory Accent: ELECTRIC CYAN / COSMIC BLUE.
-                - Application: Use this for retro ray-gun blasts, ship thrusters, holographic visors, or "moonlight" rim lighting on the hero's suit. Forbid other vibrant colors.
+                 - Base: Vintage Golden Age Comic (CMYK). Flat primary colors, ink heavy shadows.
+                 - Mandatory Accent: ELECTRIC CYAN / COSMIC BLUE.
+                 - Application: Use this for retro ray-gun blasts, ship thrusters, holographic visors, or "moonlight" rim lighting on the hero's suit. Forbid other vibrant colors.
 
                 Figure Style: POWERFUL, HEROIC, AND STYLIZED ANATOMY.
                 Vibe / Mood Aesthetic: ADVENTUROUS AND OPTIMISTIC.
@@ -158,8 +158,7 @@ object GenrePrompts {
                 Mood: Vast, aspirational, and wonder-filled — evoke exploration and cosmic scale.
                 Ambience: Minimalist starfields, soft cosmic fog or nebula backdrops, gentle backlighting to create silhouettes and emphasize scale without cluttering the frame.
                 """
-                """
-        }
+
 
             COWBOYS ->
                 """
@@ -169,9 +168,25 @@ object GenrePrompts {
                 Aesthetic Era / Influence: American Frontier, late 19th Century.
 
                 **COLOR PALETTE & ACCENT:**
-                - Base: Earthy tones (Sienna, Ochre, Sand), Desert Sky Blue.
-                - Mandatory Accent: BURNT ORANGE / SUNSET GOLD.
-                - Application: Use the accent for sunsets, campfires, or the glint of a badge/gun.
+                 - Base: Earthy tones (Sienna, Ochre, Sand), Desert Sky Blue.
+                 - Mandatory Accent: BURNT ORANGE / SUNSET GOLD.
+                 - Application: Use the accent for sunsets, campfires, or the glint of a badge/gun.
+                
+                Mood: Rugged, isolated, and stoic. A sense of vastness and freedom.
+                Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light.
+                """
+
+            else ->
+                """
+                Art Technique: Classic Western Oil Painting (Remington/Russell style).
+                Key Lighting Style: WARM GOLDEN HOUR / DESERT SUNSET.
+                Texture / Materiality: VISIBLE BRUSHSTROKES, CANVAS TEXTURE, DUSTY ATMOSPHERE.
+                Aesthetic Era / Influence: American Frontier, late 19th Century.
+
+                **COLOR PALETTE & ACCENT:**
+                 - Base: Earthy tones (Sienna, Ochre, Sand), Desert Sky Blue.
+                 - Mandatory Accent: BURNT ORANGE / SUNSET GOLD.
+                 - Application: Use the accent for sunsets, campfires, or the glint of a badge/gun.
                 
                 Mood: Rugged, isolated, and stoic. A sense of vastness and freedom.
                 Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light.
@@ -225,83 +240,94 @@ object GenrePrompts {
         }
 
     fun nameDirectives(genre: Genre) =
+        (
+                when (genre) {
+                    FANTASY ->
+                        """
+                    Aim for names that evoke a sense of magic, ancient lore, epic adventure, or mystical origins.
+                    Consider influences from high fantasy (e.g., Tolkien-esque, D&D),
+                    classical mythology (Greek, Norse, Celtic), medieval European, or unique, melodious sounds.
+                    Names can be majestic, archaic, rustic, tribal, or subtly magical.
+                    AVOID overly modern, generic, or overtly tech-sounding names (e.g., John, Mary, Smith, unit numbers, cyber-names).
+                    """
 
-        when (genre) {
-            FANTASY ->
-                """
-                // Aim for names that evoke a sense of magic, ancient lore, epic adventure, or mystical origins.
-                // Consider influences from high fantasy (e.g., Tolkien-esque, D&D),
-                classical mythology (Greek, Norse, Celtic), medieval European, or unique, melodious sounds.
-                // Names can be majestic, archaic, rustic, tribal, or subtly magical.
-                // AVOID overly modern, generic, or overtly tech-sounding names (e.g., John, Mary, Smith, unit numbers, cyber-names).
-                """
-
-            CYBERPUNK ->
-                """
-                // - Aim for names that blend futuristic, cyberpunk, or slightly exotic sounds.
-                // - Consider influences from Japanese, tech-inspired, or gritty Western phonetics.
-                Avoid names that are overtly heroic or melodramatic.
-                Try to create names that is common in the language ${currentLanguage()} .
-            """
-
-            HORROR ->
-                """
-                // - Aim for names that evoke a sense of unease and dread, fitting a grim, dark, or mysterious setting.
-                // - For human characters, use common, simple, and contemporary names from ${currentLanguage()} language.
-                The horror comes from the mundane.
-                // - For creatures, entities, or local myths, use names that are descriptive (e.g., "O Vulto," "A Dama de Preto," "O Sussurro"), guttural, or have a more complex, unsettling feel.
-                // - Avoid names that are overtly heroic, futuristic, or melodramatic.
-               """
-
-            HEROES ->
-                """
-                // - Aim for names that feel grounded, contemporary, and reflect a diverse urban environment.
-                // - Consider influences from street culture, hip-hop, graffiti art, and modern city life.
-                // - Names should be cool, edgy, and slightly mysterious, hinting at a hidden identity.
-                // - Blend common names with unique nicknames or shortened versions.
-                // - Avoid overly fantastical, archaic, or overtly heroic names.
-                // - Try to create names that are common in the language ${currentLanguage()},
-                but with a modern twist or a unique nickname.
-                // - Consider names that evoke a sense of agility, speed, or resourcefulness.
-                // - Think about names that could easily become a street tag or a whispered legend.
+                    CYBERPUNK ->
+                        """
+                     - Aim for names that blend futuristic, cyberpunk, or slightly exotic sounds.
+                     - Consider influences from Japanese, tech-inspired, or gritty Western phonetics.
+                    Avoid names that are overtly heroic or melodramatic.
+                    Try to create names that is common in the language ${currentLanguage()} .
                 """
 
-            CRIME ->
-                """
-                // - Aim for names fitting a crime drama set in a stylized neon city.
-                // - Blend gritty street nicknames with classic, timeless first names.
-                // - Consider influences from 80s Miami/LA crime fiction, Latin and Anglo names common in ${currentLanguage()} locales.
-                // - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
-                // - Avoid overtly sci-fi or fantasy elements.
-                """
-            SHINOBI ->
-                """
-                // - Aim for names rooted in feudal Japan or stylized adaptations that fit the setting.
-                // - Consider short, evocative names or clan-like monikers (e.g., "Aka-ryu", "Kage", "Hanae", "Shirogane").
-                // - Blend historical Japanese-sounding names with terse nicknames suitable for operatives and covert figures.
-                // - Avoid overtly modern slang or sci-fi terminology.
-                """
-            SPACE_OPERA ->
-                """
-                Concept: Evoke exploration, cosmic significance, advanced scientific concepts, or ancient, wise origins.
-                Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
-                Avoid: Overtly aggressive or militaristic names, overly "hard" sci-fi jargon (unless for specific tech), modern slang.
-                Try: Names with soft vowels and unique consonant combinations (e.g., Lyra, Orion, Xylos, Aetheria).    
-                """
-            COWBOYS ->
-                """
-                // Aim for names that sound rugged, biblical, or have a nickname quality.
-                // Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
-                // Avoid modern or overly fancy names.
-                """
-        }.plus("Try common names in ${currentLanguage()}").trimIndent()
+                    HORROR ->
+                        """
+                     - Aim for names that evoke a sense of unease and dread, fitting a grim, dark, or mysterious setting.
+                     - For human characters, use common, simple, and contemporary names from ${currentLanguage()} language.
+                    The horror comes from the mundane.
+                     - For creatures, entities, or local myths, use names that are descriptive (e.g., "O Vulto," "A Dama de Preto," "O Sussurro"), guttural, or have a more complex, unsettling feel.
+                     - Avoid names that are overtly heroic, futuristic, or melodramatic.
+                   """
+
+                    HEROES ->
+                        """
+                     - Aim for names that feel grounded, contemporary, and reflect a diverse urban environment.
+                     - Consider influences from street culture, hip-hop, graffiti art, and modern city life.
+                     - Names should be cool, edgy, and slightly mysterious, hinting at a hidden identity.
+                     - Blend common names with unique nicknames or shortened versions.
+                     - Avoid overly fantastical, archaic, or overtly heroic names.
+                     - Try to create names that are common in the language ${currentLanguage()},
+                    but with a modern twist or a unique nickname.
+                     - Consider names that evoke a sense of agility, speed, or resourcefulness.
+                     - Think about names that could easily become a street tag or a whispered legend.
+                    """
+
+                    CRIME ->
+                        """
+                     - Aim for names fitting a crime drama set in a stylized neon city.
+                     - Blend gritty street nicknames with classic, timeless first names.
+                     - Consider influences from 80s Miami/LA crime fiction, Latin and Anglo names common in ${currentLanguage()} locales.
+                     - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
+                     - Avoid overtly sci-fi or fantasy elements.
+                    """
+
+                    SHINOBI ->
+                        """
+                     - Aim for names rooted in feudal Japan or stylized adaptations that fit the setting.
+                     - Consider short, evocative names or clan-like monikers (e.g., "Aka-ryu", "Kage", "Hanae", "Shirogane").
+                     - Blend historical Japanese-sounding names with terse nicknames suitable for operatives and covert figures.
+                     - Avoid overtly modern slang or sci-fi terminology.
+                    """
+
+                    SPACE_OPERA ->
+                        """
+                    Concept: Evoke exploration, cosmic significance, advanced scientific concepts, or ancient, wise origins.
+                    Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
+                    Avoid: Overtly aggressive or militaristic names, overly "hard" sci-fi jargon (unless for specific tech), modern slang.
+                    Try: Names with soft vowels and unique consonant combinations (e.g., Lyra, Orion, Xylos, Aetheria).    
+                    """
+
+                    COWBOYS ->
+                        """
+                    Aim for names that sound rugged, biblical, or have a nickname quality.
+                    Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
+                    Avoid modern or overly fancy names.
+                    """
+
+                    else ->
+                        """
+                    Aim for names that sound rugged, biblical, or have a nickname quality.
+                    Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
+                    Avoid modern or overly fancy names.
+                    """
+                }
+                ).plus("Try common names in ${currentLanguage()}").trimIndent()
 
     fun conversationDirective(genre: Genre) =
         when (genre) {
             FANTASY ->
                 """
-            // This directive defines the specific linguistic style for the Fantasy genre.
-            // NPCs and narrative voice should evoke a sense of ancient lore, heroism, magic, and medieval or mythical settings.
+            This directive defines the specific linguistic style for the Fantasy genre.
+            NPCs and narrative voice should evoke a sense of ancient lore, heroism, magic, and medieval or mythical settings.
             
             1.  Language & Vocabulary:
                 * Terminology: Incorporate terms related to magic, mythical creatures, ancient kingdoms, weaponry, and fantastical concepts (e.g., "enchantment," "arcane," "grimoire," "blade," "realm," "wyrm," "fey," "druid," "lord/lady").
@@ -322,8 +348,8 @@ object GenrePrompts {
 
             CYBERPUNK ->
                 """
-             // This directive defines the specific linguistic style for the Cyberpunk/Dystopian Sci-Fi genre.
-            // NPCs and narrative voice should reflect a gritty, tech-infused, and often cynical tone.
+             This directive defines the specific linguistic style for the Cyberpunk/Dystopian Sci-Fi genre.
+            NPCs and narrative voice should reflect a gritty, tech-infused, and often cynical tone.
             
             1.  Language & Vocabulary:
                 * Terminology: Freely use tech jargon, hacking terms, corporate slang, and futuristic street argot (e.g., "net-runner," "chrome," "synth-skin," "data-jack," "augment," "glitch," "gig").
@@ -344,8 +370,8 @@ object GenrePrompts {
 
             HORROR ->
                 """
-               // This directive defines the specific linguistic style for the Horror genre, blending cosmic dread with grounded, psychological terror.
-                // The tone should evoke a sense of unease, psychological tension, and the creeping dread of the unknown.
+               This directive defines the specific linguistic style for the Horror genre, blending cosmic dread with grounded, psychological terror.
+                The tone should evoke a sense of unease, psychological tension, and the creeping dread of the unknown.
                 
                 1.  Language & Vocabulary:
                     * Terminology: Use language that ranges from the mundane to terms that suggest the occult, the inexplicable, or a descent into madness (e.g., "whisper," "ritual," "cyclopean," "non-Euclidean," "anomaly," "sanity erodes").
@@ -367,8 +393,8 @@ object GenrePrompts {
                """
             HEROES ->
                 """
-                // This directive defines the specific linguistic style for the Urban Hero genre.
-                // NPCs and narrative voice should reflect a contemporary, street-smart, and often gritty tone, blending realism with a sense of hidden potential.
+                This directive defines the specific linguistic style for the Urban Hero genre.
+                NPCs and narrative voice should reflect a contemporary, street-smart, and often gritty tone, blending realism with a sense of hidden potential.
                 
                 1.  Language & Vocabulary:
                     * Terminology: Incorporate contemporary slang, street jargon, and terms related to urban life, parkour, technology (but not overly futuristic), and local landmarks (e.g., "spot," "crew," "grind," "flow," "tag," "wire," "glitch," "the block").
@@ -391,8 +417,8 @@ object GenrePrompts {
 
             CRIME ->
                 """
-                // This directive defines the specific linguistic style for the Crime City genre.
-                // NPCs and narration should evoke 80s crime drama with a neon-soaked, Miami Vice mood.
+                This directive defines the specific linguistic style for the Crime City genre.
+                NPCs and narration should evoke 80s crime drama with a neon-soaked, Miami Vice mood.
                 
                 1. Language & Vocabulary:
                     * Terminology: Use crime and street terms (e.g., "stakeout", "heat", "hustle", "dirty money", "dealer", "detective", "vice squad").
@@ -415,8 +441,8 @@ object GenrePrompts {
                 """
             SHINOBI ->
                 """
-                // This directive defines the specific linguistic style for the Shinobi (Mythical Feudal Japan) genre.
-                // NPCs and narrative voice should evoke a sense of discipline, tradition, and underlying tension.
+                This directive defines the specific linguistic style for the Shinobi (Mythical Feudal Japan) genre.
+                NPCs and narrative voice should evoke a sense of discipline, tradition, and underlying tension.
                 
                 1.  Language & Vocabulary:
                     * Terminology: Use terms related to feudal Japan, martial arts, espionage, and honor (e.g., "shogun," "daimyo," "samurai," "ronin," "kunoichi," "jutsu," "katana," "oni," "yokai").
@@ -436,8 +462,8 @@ object GenrePrompts {
                 """
             COWBOYS ->
                 """
-                // This directive defines the linguistic style for the Cowboys genre.
-                // NPCs and narrative voice should be laconic, stoic, and flavored with Western slang.
+                This directive defines the linguistic style for the Cowboys genre.
+                NPCs and narrative voice should be laconic, stoic, and flavored with Western slang.
 
                 1. Language & Vocabulary:
                     * Terminology: Use Western slang (e.g., "reckon", "howdy", "yonder", "fixin' to", "varmint").

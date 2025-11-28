@@ -100,17 +100,17 @@ import com.ilustris.sagai.features.newsaga.data.model.Sender
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.ui.components.BubbleStyle
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
-import com.ilustris.sagai.ui.theme.CyberpunkChatBubbleShape
-import com.ilustris.sagai.ui.theme.FantasyChatBubbleShape
-import com.ilustris.sagai.ui.theme.HeroesChatBubbleShape
-import com.ilustris.sagai.ui.theme.HorrorChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.CurvedChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.MorphPolygonShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.SagaTitle
-import com.ilustris.sagai.ui.theme.ShinobiChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
-import com.ilustris.sagai.ui.theme.SpaceChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.gradient
@@ -373,7 +373,8 @@ fun NewSagaChat(
                                     color = genre.color,
                                     offset = DpOffset.Zero,
                                 ),
-                        ).clip(genre.shape())
+                        )
+                        .clip(genre.shape())
                         .border(1.dp, genre.color.gradientFade(), shape)
                         .background(MaterialTheme.colorScheme.surfaceContainer, shape),
                 ) {
@@ -473,10 +474,12 @@ fun NewSagaChat(
                                                     1.dp,
                                                     genre.color.gradientFade(),
                                                     shape,
-                                                ).background(
+                                                )
+                                                .background(
                                                     MaterialTheme.colorScheme.surface,
                                                     shape,
-                                                ).padding(16.dp),
+                                                )
+                                                .padding(16.dp),
                                         verticalArrangement = Arrangement.spacedBy(8.dp),
                                     ) {
                                         val character = currentForm?.character
@@ -523,7 +526,8 @@ fun NewSagaChat(
                                                 onClick = {
                                                     coroutineScope.launch { tooltipState.show() }
                                                 },
-                                            ).size(iconSize)
+                                            )
+                                            .size(iconSize)
                                             .padding(8.dp)
                                             .gradientFill(genre.color.gradientFade()),
                                 )
@@ -635,7 +639,8 @@ fun NewSagaChat(
                                             onClick = {
                                                 resetSaga()
                                             },
-                                        ).size(iconSize)
+                                        )
+                                        .size(iconSize)
                                         .padding(8.dp)
                                         .gradientFill(genre.color.gradientFade()),
                             )

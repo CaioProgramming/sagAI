@@ -96,16 +96,16 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.isUser
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.theme.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
-import com.ilustris.sagai.ui.theme.CowboysChatBubbleShape
-import com.ilustris.sagai.ui.theme.CyberpunkChatBubbleShape
-import com.ilustris.sagai.ui.theme.FantasyChatBubbleShape
-import com.ilustris.sagai.ui.theme.HeroesChatBubbleShape
-import com.ilustris.sagai.ui.theme.HorrorChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.components.chat.CurvedChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.CowboysChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.ShinobiChatBubbleShape
-import com.ilustris.sagai.ui.theme.SpaceChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -387,7 +387,8 @@ fun ChatBubble(
                                 Modifier
                                     .clickable {
                                         requestNewCharacter()
-                                    }.size(24.dp)
+                                    }
+                                    .size(24.dp)
                                     .gradientFill(genre.gradient()),
                             )
                         }
@@ -412,10 +413,10 @@ fun ChatBubble(
                                                 override fun createShader(size: Size): Shader {
                                                     val shader =
                                                         (
-                                                            sweepGradient(
-                                                                genre.colorPalette(),
-                                                            ) as ShaderBrush
-                                                        ).createShader(size)
+                                                                sweepGradient(
+                                                                    genre.colorPalette(),
+                                                                ) as ShaderBrush
+                                                                ).createShader(size)
                                                     val matrix = Matrix()
                                                     matrix.setRotate(
                                                         rotation,
@@ -431,7 +432,8 @@ fun ChatBubble(
                                             brush = brush,
                                             style = Stroke(width = 2.dp.toPx()),
                                         )
-                                    }.background(Color.Gray.copy(alpha = 0.3f), bubbleShape)
+                                    }
+                                    .background(Color.Gray.copy(alpha = 0.3f), bubbleShape)
                             } else {
                                 when (sender) {
                                     SenderType.USER ->
@@ -446,7 +448,8 @@ fun ChatBubble(
                                                 .background(
                                                     bubbleStyle.backgroundColor,
                                                     bubbleShape,
-                                                ).background(
+                                                )
+                                                .background(
                                                     MaterialTheme.colorScheme.surfaceContainer.copy(
                                                         alpha = .5f,
                                                     ),
@@ -468,7 +471,8 @@ fun ChatBubble(
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 bubbleShape,
-                                            ).dashedBorder(
+                                            )
+                                            .dashedBorder(
                                                 strokeWidth = 1.dp,
                                                 color =
                                                     MaterialTheme.colorScheme.onBackground.copy(
@@ -597,7 +601,8 @@ fun ChatBubble(
                                                     .clip(bubbleShape)
                                                     .clickable {
                                                         starAlpha = 0f
-                                                    }.background(
+                                                    }
+                                                    .background(
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(
                                                             alpha = .4f,
                                                         ),
@@ -698,11 +703,13 @@ fun ChatBubble(
                                 elevation = 8.dp,
                                 shape = narratorShape,
                                 spotColor = genre.color,
-                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
+                            )
+                            .border(1.dp, genre.color.gradientFade(), narratorShape)
                             .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                 ) {
                     TypewriterText(
                         text = message.text,

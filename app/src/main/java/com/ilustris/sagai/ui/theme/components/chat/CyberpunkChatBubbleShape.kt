@@ -1,4 +1,4 @@
-package com.ilustris.sagai.ui.theme
+package com.ilustris.sagai.ui.theme.components.chat
 
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
