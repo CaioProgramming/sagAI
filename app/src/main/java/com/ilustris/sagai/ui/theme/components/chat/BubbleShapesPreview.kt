@@ -17,14 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.cornerSize
 
 /**
  * Preview composable to visualize all genre-specific bubble shapes.
@@ -103,12 +100,12 @@ fun BubbleShapePreviewItem(
                     .wrapContentSize()
                     .clip(shape)
                     .background(genre.color.copy(alpha = 0.3f))
-                    .padding(12.dp),
+                    .padding(16.dp),
             ) {
                 Text(
                     text = "NPC",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
+                    color = genre.iconColor,
                 )
             }
 
@@ -118,12 +115,12 @@ fun BubbleShapePreviewItem(
                     .wrapContentSize()
                     .clip(shape)
                     .background(genre.color)
-                    .padding(12.dp),
+                    .padding(16.dp),
             ) {
                 Text(
                     text = "User",
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White,
+                    color = genre.iconColor,
                 )
             }
         }
