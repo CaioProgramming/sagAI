@@ -99,6 +99,7 @@ class ChatViewModel
 
         val notificationsEnabled = MutableStateFlow(true)
         val smartSuggestionsEnabled = MutableStateFlow(true)
+    val messageEffectsEnabled = MutableStateFlow(true)
 
         private fun updateSnackBar(snackBarState: SnackBarState) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -143,6 +144,10 @@ class ChatViewModel
 
                 settingsUseCase.getNotificationsEnabled().collect {
                     notificationsEnabled.emit(it)
+                }
+
+                settingsUseCase.getMessageEffectsEnabled().collect {
+                    messageEffectsEnabled.emit(it)
                 }
 
                 settingsUseCase.backupEnabled().collect {

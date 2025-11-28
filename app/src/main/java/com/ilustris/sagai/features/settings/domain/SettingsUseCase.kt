@@ -30,9 +30,13 @@ interface SettingsUseCase {
 
     fun getSmartSuggestionsEnabled(): Flow<Boolean>
 
+    fun getMessageEffectsEnabled(): Flow<Boolean>
+
     fun backupEnabled(): Flow<Boolean>
 
     suspend fun setSmartSuggestionsEnabled(enabled: Boolean)
+
+    suspend fun setMessageEffectsEnabled(enabled: Boolean)
 
     suspend fun getAppStorageUsage(): Long
 
@@ -71,6 +75,7 @@ class SettingsUseCaseImpl
     ) : SettingsUseCase {
         companion object {
             const val SMART_SUGGESTIONS_ENABLED_KEY = "smart_suggestions_enabled"
+            const val MESSAGE_EFFECTS_ENABLED_KEY = "message_effects_enabled"
         }
 
         override fun getNotificationsEnabled(): Flow<Boolean> =
@@ -80,10 +85,16 @@ class SettingsUseCaseImpl
 
         override fun getSmartSuggestionsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(SMART_SUGGESTIONS_ENABLED_KEY, true)
 
+    override fun getMessageEffectsEnabled(): Flow<Boolean> =
+        dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
+
         override fun backupEnabled() = backupService.backupEnabled()
 
         override suspend fun setSmartSuggestionsEnabled(enabled: Boolean) =
             dataStorePreferences.setBoolean(SMART_SUGGESTIONS_ENABLED_KEY, enabled)
+
+    override suspend fun setMessageEffectsEnabled(enabled: Boolean) =
+        dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
 
         override suspend fun getAppStorageUsage(): Long =
             fileHelper.getDirectorySize(context.cacheDir) +

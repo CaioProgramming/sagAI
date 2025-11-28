@@ -95,19 +95,12 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.isUser
+import com.ilustris.sagai.features.saga.chat.ui.animations.emotionalEntrance
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.components.chat.CurvedChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.CowboysChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
-import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
@@ -123,7 +116,6 @@ import kotlin.time.Duration.Companion.seconds
 fun ChatBubble(
     messageContent: MessageContent,
     content: SagaContent,
-    alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
@@ -132,6 +124,7 @@ fun ChatBubble(
     onRetry: (MessageContent) -> Unit = {},
     onReactionsClick: (MessageContent) -> Unit = {},
     requestNewCharacter: () -> Unit = {},
+    messageEffectsEnabled: Boolean = true,
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -156,121 +149,11 @@ fun ChatBubble(
     val duration = bubbleStyle.animationDuration
     val bubbleShape =
         remember(genre, cornerSize, bubbleStyle.tailAlignment) {
-            when (genre) {
-                Genre.CYBERPUNK ->
-                    CyberpunkChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 12.dp,
-                        tailHeight = 12.dp,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.HEROES ->
-                    HeroesChatBubbleShape(
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.SHINOBI ->
-                    ShinobiChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.HORROR ->
-                    HorrorChatBubbleShape(
-                        pixelSize = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.FANTASY ->
-                    FantasyChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.SPACE_OPERA ->
-                    SpaceChatBubbleShape(
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.COWBOYS ->
-                    CowboysChatBubbleShape(
-                        cornerNotch = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                else ->
-                    CurvedChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 4.dp,
-                        tailHeight = 4.dp,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-            }
+            genre.bubble(bubbleStyle.tailAlignment)
         }
     val narratorShape =
         remember(genre, cornerSize) {
-            when (genre) {
-                Genre.CYBERPUNK ->
-                    CyberpunkChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                    )
-
-                Genre.HEROES ->
-                    HeroesChatBubbleShape(
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        skew = 0.dp,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                    )
-
-                Genre.SHINOBI ->
-                    ShinobiChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                    )
-
-                Genre.HORROR ->
-                    HorrorChatBubbleShape(
-                        pixelSize = cornerSize,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        drawTail = false,
-                    )
-
-                Genre.FANTASY ->
-                    FantasyChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                    )
-
-                Genre.SPACE_OPERA ->
-                    SpaceChatBubbleShape(
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                    )
-
-                Genre.COWBOYS ->
-                    CowboysChatBubbleShape(
-                        cornerNotch = cornerSize,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                    )
-
-                else ->
-                    CurvedChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                    )
-            }
+            genre.bubble(BubbleTailAlignment.BottomRight)
         }
     var tooltipData by remember { mutableStateOf<Any?>(null) }
 
@@ -403,6 +286,10 @@ fun ChatBubble(
                         val bubbleModifier =
                             if (message.status == MessageStatus.LOADING) {
                                 Modifier
+                                    .emotionalEntrance(
+                                        message.emotionalTone,
+                                        isAnimated && messageEffectsEnabled,
+                                    )
                                     .wrapContentSize()
                                     .drawWithContent {
                                         drawContent()
@@ -438,12 +325,20 @@ fun ChatBubble(
                                 when (sender) {
                                     SenderType.USER ->
                                         Modifier
+                                            .emotionalEntrance(
+                                                message.emotionalTone,
+                                                isAnimated && messageEffectsEnabled,
+                                            )
                                             .wrapContentSize()
                                             .background(bubbleStyle.backgroundColor, bubbleShape)
 
                                     SenderType.CHARACTER -> {
                                         if (isUser.not()) {
                                             Modifier
+                                                .emotionalEntrance(
+                                                    message.emotionalTone,
+                                                    isAnimated && messageEffectsEnabled,
+                                                )
                                                 .wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
@@ -457,6 +352,10 @@ fun ChatBubble(
                                                 )
                                         } else {
                                             Modifier
+                                                .emotionalEntrance(
+                                                    message.emotionalTone,
+                                                    isAnimated && messageEffectsEnabled,
+                                                )
                                                 .wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
@@ -467,6 +366,10 @@ fun ChatBubble(
 
                                     SenderType.THOUGHT ->
                                         Modifier
+                                            .emotionalEntrance(
+                                                message.emotionalTone,
+                                                isAnimated && messageEffectsEnabled,
+                                            )
                                             .wrapContentSize()
                                             .background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
@@ -485,6 +388,10 @@ fun ChatBubble(
 
                                     SenderType.ACTION ->
                                         Modifier
+                                            .emotionalEntrance(
+                                                message.emotionalTone,
+                                                isAnimated && messageEffectsEnabled,
+                                            )
                                             .wrapContentSize()
                                             .background(Color.Black, bubbleShape)
 
@@ -580,16 +487,6 @@ fun ChatBubble(
                                                 color = textColor,
                                                 textAlign = textAlign,
                                             ),
-                                        onTextUpdate = {
-                                        },
-                                        onAnimationFinished = {
-                                            if (alreadyAnimatedMessages
-                                                    .contains(message.id)
-                                                    .not()
-                                            ) {
-                                                alreadyAnimatedMessages.add(message.id)
-                                            }
-                                        },
                                     )
 
                                     if (sender == SenderType.THOUGHT) {
@@ -697,6 +594,10 @@ fun ChatBubble(
                 Box(
                     modifier =
                         modifier
+                            .emotionalEntrance(
+                                message.emotionalTone,
+                                isAnimated && messageEffectsEnabled,
+                            )
                             .padding(16.dp)
                             .fillMaxWidth()
                             .shadow(

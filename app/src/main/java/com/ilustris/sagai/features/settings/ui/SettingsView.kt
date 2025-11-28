@@ -90,6 +90,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
         viewModel.backupEnabled
             .collectAsStateWithLifecycle(false)
 
+    val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle(true)
+
     val memoryUsage by viewModel.memoryUsage.collectAsStateWithLifecycle()
     val isUserPro by viewModel.isUserPro.collectAsState(false)
     val storageInfo by viewModel.sagaStorageInfo.collectAsStateWithLifecycle(emptyList())
@@ -495,7 +497,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             .background(iconTint.copy(alpha = .2f), shape)
                             .clickable {
                                 launcher.launch(arrayOf("application/zip"))
-                            }.padding(8.dp),
+                            }
+                            .padding(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
@@ -534,6 +537,21 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     isActivated = smartSuggestionsEnabled,
                     onClickSwitch = {
                         viewModel.setSmartSuggestionsEnabled(!it)
+                    },
+                )
+
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.1f),
+                    thickness = 1.dp,
+                )
+
+                PreferencesContainer(
+                    stringResource(R.string.message_effects),
+                    stringResource(R.string.message_effects_description),
+                    isActivated = messageEffectsEnabled,
+                    onClickSwitch = {
+                        viewModel.setMessageEffectsEnabled(!it)
                     },
                 )
             }
