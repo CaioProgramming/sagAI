@@ -24,6 +24,7 @@ import com.ilustris.sagai.ui.theme.filters.HeroColorTones
 import com.ilustris.sagai.ui.theme.filters.HorrorColorTones
 import com.ilustris.sagai.ui.theme.filters.SciFiColorTones
 import com.ilustris.sagai.ui.theme.filters.ShinobiColorTones
+import com.ilustris.sagai.ui.theme.filters.CowboyColorTones
 import com.ilustris.sagai.ui.theme.grayScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -62,6 +63,7 @@ fun Genre.colorTones() =
         Genre.CRIME -> CrimeColorTones.MIAMI_NEON_SUNSET
         Genre.SPACE_OPERA -> FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
         Genre.SHINOBI -> ShinobiColorTones.BLOOD_MOON_ASSASSIN
+        Genre.COWBOYS -> CowboyColorTones.DESERT_SUNSET
     }
 
 fun Genre.shaderParams(
@@ -190,6 +192,21 @@ fun Genre.shaderParams(
             vignetteSoftness = 1f,
             pixelationBlockSize = pixelSize ?: 0.0f,
             colorTemperature = .1f.unaryMinus(),
+        )
+
+    Genre.COWBOYS ->
+        ShaderParams(
+            grainIntensity = customGrain ?: 0.3f,
+            contrast = 1.4f,
+            colorTemperature = 0.2f,
+            vignetteStrength = 0.4f,
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            saturation = 0.8f,
+            brightness = -0.05f,
+            softFocusRadius = focusRadius ?: 0.1f,
+            vignetteSoftness = 0.8f,
         )
 
     else ->

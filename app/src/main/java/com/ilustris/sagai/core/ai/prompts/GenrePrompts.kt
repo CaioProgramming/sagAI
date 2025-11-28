@@ -158,6 +158,24 @@ object GenrePrompts {
                 Mood: Vast, aspirational, and wonder-filled — evoke exploration and cosmic scale.
                 Ambience: Minimalist starfields, soft cosmic fog or nebula backdrops, gentle backlighting to create silhouettes and emphasize scale without cluttering the frame.
                 """
+                """
+        }
+
+            COWBOYS ->
+                """
+                Art Technique: Classic Western Oil Painting (Remington/Russell style).
+                Key Lighting Style: WARM GOLDEN HOUR / DESERT SUNSET.
+                Texture / Materiality: VISIBLE BRUSHSTROKES, CANVAS TEXTURE, DUSTY ATMOSPHERE.
+                Aesthetic Era / Influence: American Frontier, late 19th Century.
+
+                **COLOR PALETTE & ACCENT:**
+                - Base: Earthy tones (Sienna, Ochre, Sand), Desert Sky Blue.
+                - Mandatory Accent: BURNT ORANGE / SUNSET GOLD.
+                - Application: Use the accent for sunsets, campfires, or the glint of a badge/gun.
+                
+                Mood: Rugged, isolated, and stoic. A sense of vastness and freedom.
+                Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light.
+                """
         }
 
     @Suppress("unused")
@@ -191,6 +209,12 @@ object GenrePrompts {
                     appendLine(
                         "Use layered planes (foreground silhouettes, mid-ground action, washed background) to create depth while keeping the sumi-e economy of detail.",
                     )
+                }
+
+                COWBOYS -> {
+                    appendLine("Emphasize vastness and isolation using wide shots and low angles.")
+                    appendLine("Focus on texture (grit, leather, wood) and the interplay of light and shadow.")
+                    appendLine("Use 'American Shot' (knees up) for character interactions to show holsters.")
                 }
 
                 else -> {
@@ -263,6 +287,12 @@ object GenrePrompts {
                 Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
                 Avoid: Overtly aggressive or militaristic names, overly "hard" sci-fi jargon (unless for specific tech), modern slang.
                 Try: Names with soft vowels and unique consonant combinations (e.g., Lyra, Orion, Xylos, Aetheria).    
+                """
+            COWBOYS ->
+                """
+                // Aim for names that sound rugged, biblical, or have a nickname quality.
+                // Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
+                // Avoid modern or overly fancy names.
                 """
         }.plus("Try common names in ${currentLanguage()}").trimIndent()
 
@@ -403,6 +433,25 @@ object GenrePrompts {
                 3.  Narrative Voice:
                     * Descriptions should focus on atmosphere—the rustle of bamboo, the glint of a blade in moonlight, the quiet tension of a room.
                     * Maintain a sense of quiet grace and lethal potential.
+                """
+            COWBOYS ->
+                """
+                // This directive defines the linguistic style for the Cowboys genre.
+                // NPCs and narrative voice should be laconic, stoic, and flavored with Western slang.
+
+                1. Language & Vocabulary:
+                    * Terminology: Use Western slang (e.g., "reckon", "howdy", "yonder", "fixin' to", "varmint").
+                    * Formality: Casual but respectful (e.g., "Ma'am", "Sir").
+                    * Phrasing: Simple, direct, and often colorful idioms.
+
+                2. Tone & Delivery:
+                    * Laconic & Stoic: Characters speak only when necessary. "Strong silent type".
+                    * Drawl: Implied slow, deliberate speech pattern.
+                    * Grit: A sense of toughness and resilience.
+
+                3. Narrative Voice:
+                    * Descriptions should emphasize the harshness and beauty of the frontier.
+                    * Focus on sensory details: heat, dust, the smell of leather and horses.
                 """
         }.trimIndent()
 }

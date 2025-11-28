@@ -62,6 +62,13 @@ Genre(
         iconColor = Color.Black,
         background = R.drawable.space_opera,
     ),
+
+    COWBOYS(
+        title = R.string.genre_cowboys,
+        color = Color(0xFF8D6E63),
+        iconColor = Color.White,
+        background = R.drawable.cowboys,
+    ),
     ;
 
     val ambientMusicConfigKey: String = "${this.name}_ambient_music_url".lowercase()
@@ -136,6 +143,16 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 2f,
                 desaturationFactorNonTarget = .4f,
             )
+
+        Genre.COWBOYS ->
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = .1f,
+                saturationThreshold = .2f,
+                lightnessThreshold = .2f,
+                highlightSaturationBoost = 1.5f,
+                desaturationFactorNonTarget = .5f,
+            )
     }
 
 fun Genre.defaultHeaderImage() =
@@ -147,6 +164,7 @@ fun Genre.defaultHeaderImage() =
         Genre.CRIME -> R.drawable.crime_card
         Genre.SHINOBI -> R.drawable.shinobi_card
         Genre.SPACE_OPERA -> R.drawable.space_opera_card
+        Genre.COWBOYS -> R.drawable.cowboys_card
     }
 
 fun Genre.shimmerColors() =
@@ -211,5 +229,13 @@ fun Genre.colorPalette() =
                 MaterialColor.LightBlueA400,
                 MaterialColor.TealA400,
                 MaterialColor.LimeA200,
+            )
+
+        Genre.COWBOYS ->
+            listOf(
+                color,
+                MaterialColor.Orange300,
+                MaterialColor.Brown300,
+                MaterialColor.DeepOrange200,
             )
     }

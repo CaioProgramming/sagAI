@@ -159,3 +159,15 @@ object ShinobiColorTones {
             BLOOD_MOON_ASSASSIN,
         )
 }
+
+object CowboyColorTones {
+    val DESERT_SUNSET =
+        ColorTonePalette(
+            name = "Desert Sunset",
+            highlightTint = Triple(1.0f, 0.8f, 0.6f), // Warm orange/gold
+            shadowTint = Triple(0.2f, 0.1f, 0.05f), // Deep warm brown
+            defaultTintStrength = 0.4f,
+        )
+
+    val allTones = listOf(DESERT_SUNSET)
+}

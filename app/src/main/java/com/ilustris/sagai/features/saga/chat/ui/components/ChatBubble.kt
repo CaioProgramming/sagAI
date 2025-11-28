@@ -98,6 +98,7 @@ import com.ilustris.sagai.features.saga.chat.domain.model.isUser
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
+import com.ilustris.sagai.ui.theme.CowboysChatBubbleShape
 import com.ilustris.sagai.ui.theme.CyberpunkChatBubbleShape
 import com.ilustris.sagai.ui.theme.FantasyChatBubbleShape
 import com.ilustris.sagai.ui.theme.HeroesChatBubbleShape
@@ -192,6 +193,12 @@ fun ChatBubble(
                         tailAlignment = bubbleStyle.tailAlignment,
                     )
 
+                Genre.COWBOYS ->
+                    CowboysChatBubbleShape(
+                        cornerNotch = cornerSize,
+                        tailAlignment = bubbleStyle.tailAlignment,
+                    )
+
                 else ->
                     CurvedChatBubbleShape(
                         cornerRadius = cornerSize,
@@ -245,6 +252,14 @@ fun ChatBubble(
 
                 Genre.SPACE_OPERA ->
                     SpaceChatBubbleShape(
+                        tailAlignment = BubbleTailAlignment.BottomRight,
+                    )
+
+                Genre.COWBOYS ->
+                    CowboysChatBubbleShape(
+                        cornerNotch = cornerSize,
+                        tailWidth = 0.dp,
+                        tailHeight = 0.dp,
                         tailAlignment = BubbleTailAlignment.BottomRight,
                     )
 
