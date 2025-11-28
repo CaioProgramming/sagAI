@@ -1,16 +1,26 @@
 package com.ilustris.sagai.core.utils
 
+import android.util.Log
 import com.google.firebase.ai.type.Schema
-import com.google.gson.Gson
+import com.google.gson.ExclusionStrategy
+import com.google.gson.FieldAttributes
+import com.google.gson.GsonBuilder
 import java.lang.reflect.ParameterizedType
-import kotlin.toString
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
-fun toJsonSchema(clazz: Class<*>) =
-    Schema.obj(
-        properties = clazz.toSchemaMap(),
-    )
+fun toFirebaseSchema(
+    clazz: Class<*>,
+    excludeFields: List<String> = emptyList(),
+) = Schema.obj(
+    properties = clazz.toSchemaMap(excludeFields),
+)
 
-fun Class<*>.toSchema(nullable: Boolean): Schema {
+fun Class<*>.toSchema(
+    nullable: Boolean,
+    excludeFields: List<String>,
+): Schema {
     if (this.isEnum) {
         val enumConstants = this.enumConstants?.map { it.toString() } ?: emptyList()
 
@@ -26,6 +36,12 @@ fun Class<*>.toSchema(nullable: Boolean): Schema {
 
         Int::class.java, Integer::class.java -> {
             Schema.integer(
+                nullable = nullable,
+            )
+        }
+
+        Long::class.java -> {
+            Schema.long(
                 nullable = nullable,
             )
         }
@@ -48,12 +64,6 @@ fun Class<*>.toSchema(nullable: Boolean): Schema {
             )
         }
 
-        Long::class.java -> {
-            Schema.long(
-                nullable = nullable,
-            )
-        }
-
         List::class.java, Array::class.java -> {
             val itemType =
                 this.genericInterfaces
@@ -63,43 +73,33 @@ fun Class<*>.toSchema(nullable: Boolean): Schema {
                     ?.firstOrNull() as? Class<*>
 
             Schema.array(
-                itemType?.toSchema(nullable = nullable) ?: Schema.string(nullable = nullable),
-            ) // Default to string array for lists/arrays
+                itemType?.toSchema(nullable = nullable, excludeFields = excludeFields)
+                    ?: Schema.string(nullable = nullable),
+            )
         }
 
         else -> {
-            Schema.obj(properties = this.toSchemaMap(), nullable = nullable) // Default fallback
+            Schema.obj(
+                properties = this.toSchemaMap(excludeFields),
+                nullable = nullable,
+            )
         }
     }
 }
 
-fun Class<*>.toSchemaMap(): Map<String, Schema> =
+fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String, Schema> =
     declaredFields
-        .filter { it.name != "\$stable" }
-        .associate {
+        .filter {
+            excludeFields.plus("\$stable").contains(it.name).not()
+        }.associate {
             val memberIsNullable =
                 this
                     .kotlin.members
                     .find { member -> member.name == it.name }
                     ?.returnType
                     ?.isMarkedNullable
-            it.name to it.type.toSchema(memberIsNullable == true)
-        }
-
-fun joinDeclaredFields(
-    clazz: Class<*>,
-    replaceSpecifFieldType: Pair<String, String>? = null,
-): String =
-    clazz
-        .declaredFields
-        .filter {
-            it.name != "\$stable"
-        }.joinToString(separator = ",\n") {
-            if (replaceSpecifFieldType != null && it.name == replaceSpecifFieldType.first) {
-                "\"${replaceSpecifFieldType.first}\": \"${replaceSpecifFieldType.second}\""
-            } else {
-                "\"${it.name}\": \"${it.type.toString().removePackagePrefix()}\""
-            }
+            Log.d("SchemaMapper", "Mapping field ${it.name} nullable: $memberIsNullable type: ${it.type.name}")
+            it.name to it.type.toSchema(memberIsNullable == true, excludeFields)
         }
 
 fun String.removePackagePrefix(): String =
@@ -107,37 +107,24 @@ fun String.removePackagePrefix(): String =
         .substringAfterLast(".")
         .replace(".", "")
 
-fun Pair<String, String>.formatToString() = """ ${this.first} : "${this.second}" """
-
-fun Class<*>.toJsonString(): String {
-    val fields =
-        declaredFields
-            .filter { it.name != "\$stable" }
-            .joinToString(separator = ",\n") { field ->
-                val fieldName = field.name
-                val fieldType = field.type
-                val fieldValue =
-                    when {
-                        fieldType.isEnum -> "[ ${fieldType.enumConstants?.joinToString { it.toString() }} ]"
-                        fieldType == String::class.java -> "\"\""
-                        fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
-                        fieldType == Boolean::class.java -> "false"
-                        fieldType == Double::class.java -> "0.0"
-                        fieldType == Float::class.java -> "0.0f"
-                        fieldType == Long::class.java -> "0L"
-                        List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
-                        else -> "{}" // For nested objects, represent as empty JSON object
-                    }
-                "  \"$fieldName\": $fieldValue"
-            }
-    return "{\n$fields\n}"
-}
+fun Pair<String, String>.formatToString(showSender: Boolean = true) =
+    buildString {
+        if (showSender) {
+            append(first)
+            append(": ")
+        }
+        append(second)
+    }
 
 fun toJsonMap(
     clazz: Class<*>,
     filteredFields: List<String> = emptyList(),
+    fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
-    val deniedFields = filteredFields.plus("\$stable")
+    val deniedFields =
+        filteredFields
+            .plus("\$stable")
+            .plus("companion")
     val fields =
         clazz
             .declaredFields
@@ -148,21 +135,338 @@ fun toJsonMap(
                 val fieldType = field.type
                 val fieldValue =
                     when {
-                        fieldType.isEnum -> "[ ${fieldType.enumConstants?.joinToString { it.toString() }} ]"
+                        fieldType.isEnum -> "${fieldType.enumConstants?.joinToString(" | ") { it.toString() }}"
                         fieldType == String::class.java -> "\"\""
                         fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
                         fieldType == Boolean::class.java -> "false"
                         fieldType == Double::class.java -> "0.0"
-                        fieldType == Float::class.java -> "0.0f"
-                        fieldType == Long::class.java -> "0L"
-                        List::class.java.isAssignableFrom(fieldType) || Array::class.java.isAssignableFrom(fieldType) -> "[]"
-                        else -> "{}" // For nested objects, represent as empty JSON object
+                        fieldType == Float::class.java -> "0.0"
+                        fieldType == Long::class.java -> "0"
+                        List::class.java.isAssignableFrom(fieldType) ||
+                            Array::class.java.isAssignableFrom(
+                                fieldType,
+                            )
+                        -> "[]"
+
+                        else -> toJsonMap(fieldType)
                     }
-                "  \"$fieldName\": $fieldValue"
+                val customDescription =
+                    fieldCustomDescriptions.find { it.first == field.name }
+                if (customDescription != null) {
+                    "\"${customDescription.first}\": \"${customDescription.second}\""
+                } else {
+                    "\"$fieldName\": $fieldValue"
+                }
             }
     return "{\n$fields\n}"
 }
 
-fun Any.toJsonFormat() = Gson().toJson(this)
+fun Any?.toJsonFormat(): String {
+    if (this == null) return emptyString()
+    return GsonBuilder()
+        .setPrettyPrinting()
+        .create()
+        .toJson(this)
+}
+
+fun Any?.toJsonFormatIncludingFields(fieldsToInclude: List<String>): String {
+    if (this == null) return emptyString()
+
+    val inclusionStrategy =
+        object : ExclusionStrategy {
+            override fun shouldSkipField(f: FieldAttributes): Boolean = !fieldsToInclude.contains(f.name)
+
+            override fun shouldSkipClass(clazz: Class<*>): Boolean = false
+        }
+
+    val gson =
+        GsonBuilder()
+            .addSerializationExclusionStrategy(inclusionStrategy)
+            .setPrettyPrinting()
+            .create()
+    return gson.toJson(this)
+}
+
+fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
+    if (this == null) return emptyString()
+
+    val exclusionStrategy =
+        object : ExclusionStrategy {
+            override fun shouldSkipField(f: FieldAttributes): Boolean = fieldsToExclude.contains(f.name)
+
+            override fun shouldSkipClass(clazz: Class<*>): Boolean = false
+        }
+
+    val gson =
+        GsonBuilder()
+            .addSerializationExclusionStrategy(exclusionStrategy)
+            .setPrettyPrinting()
+            .create()
+
+    return gson.toJson(this)
+}
 
 fun doNothing() = {}
+
+enum class DateFormatOption(
+    val pattern: String,
+) {
+    SIMPLE_DD_MM_YYYY("dd/MM/yyyy"),
+    DAY_OF_WEEK_DD_MM_YYYY("EEE, dd/MM/yyyy"),
+    FULL_DAY_MONTH_YEAR("dd 'of' MMMM yyyy"),
+    HOUR_MINUTE_DAY_OF_MONTH_YEAR("HH:mm 'of' dd 'of' MMMM"),
+    ISO_DATE("yyyy-MM-dd"),
+    MONTH_DAY_YEAR("MM/dd/yyyy"),
+}
+
+fun Long.formatDate(
+    option: DateFormatOption = DateFormatOption.SIMPLE_DD_MM_YYYY,
+    locale: Locale = Locale.getDefault(),
+): String {
+    val date = Date(this)
+    val format = SimpleDateFormat(option.pattern, locale)
+    return format.format(date)
+}
+
+fun Long.formatHours(): String {
+    val date = Date(this)
+    val format = SimpleDateFormat("HH:mm", Locale.getDefault())
+    return format.format(date)
+}
+
+fun String?.sanitizeAndExtractJsonString(): String {
+    val logTag = "StringSanitization"
+    if (this.isNullOrBlank()) {
+        Log.w(logTag, "Input string is null or blank, cannot sanitize.")
+        throw IllegalArgumentException("Input string is null or blank.")
+    }
+
+    var cleanedJsonString = this!!
+    Log.i(logTag, "Sanitizing raw string: $cleanedJsonString")
+
+    // 1. Remove common markdown code block delimiters
+    cleanedJsonString = cleanedJsonString.replace("```json", "").replace("```", "")
+
+    // 2. Trim leading/trailing whitespace
+    cleanedJsonString = cleanedJsonString.trim()
+
+    // 3. If not starting with a JSON char, find the start (basic heuristic)
+    val firstJsonCharIndex = cleanedJsonString.indexOfFirst { it == '{' || it == '[' }
+    if (firstJsonCharIndex > 0) {
+        cleanedJsonString = cleanedJsonString.substring(firstJsonCharIndex)
+    } else if (firstJsonCharIndex == -1 && cleanedJsonString.isNotEmpty()) {
+        Log.e(logTag, "No JSON start character '{' or '[' found in response: $cleanedJsonString")
+        throw IllegalArgumentException("Response does not appear to contain JSON after initial cleaning.")
+    }
+
+    // Helper: find the matching closing bracket index for the JSON starting char
+    fun findMatchingClosingIndex(
+        s: String,
+        start: Int,
+    ): Int {
+        if (start >= s.length) return -1
+        val open = s[start]
+        val close =
+            when (open) {
+                '{' -> '}'
+                '[' -> ']'
+                else -> return -1
+            }
+
+        var depth = 1
+        var inString = false
+        var escaped = false
+
+        var i = start + 1
+        while (i < s.length) {
+            val c = s[i]
+            if (escaped) {
+                // previous char was a backslash, this char is escaped; skip special handling
+                escaped = false
+            } else {
+                when (c) {
+                    '\\' -> escaped = true
+                    '"' -> inString = !inString
+                    else -> {
+                        if (!inString) {
+                            if (c == open) {
+                                depth++
+                            } else if (c == close) {
+                                depth--
+                                if (depth == 0) return i
+                            }
+                        }
+                    }
+                }
+            }
+            i++
+        }
+        return -1
+    }
+
+    // 4. Compute precise end index using bracket matching (handles nested structures & strings)
+    if (cleanedJsonString.isNotEmpty()) {
+        val startChar = cleanedJsonString.first()
+        if (startChar == '{' || startChar == '[') {
+            val endIndex = findMatchingClosingIndex(cleanedJsonString, 0)
+            if (endIndex != -1) {
+                cleanedJsonString = cleanedJsonString.substring(0, endIndex + 1)
+            } else {
+                Log.e(
+                    logTag,
+                    "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
+                )
+                throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
+            }
+        }
+    }
+
+    // 5. Remove trailing commas before closing braces/brackets (common issue)
+    //    Example: { "a": 1, "b": 2, }  -> { "a": 1, "b": 2 }
+    // Use a scanner to ensure commas inside strings are not removed.
+    run {
+        val sb = StringBuilder()
+        var i = 0
+        var inString = false
+        var escaped = false
+        while (i < cleanedJsonString.length) {
+            val c = cleanedJsonString[i]
+            if (escaped) {
+                sb.append(c)
+                escaped = false
+                i++
+                continue
+            }
+            if (c == '\\') {
+                sb.append(c)
+                escaped = true
+                i++
+                continue
+            }
+            if (c == '"') {
+                sb.append(c)
+                inString = !inString
+                i++
+                continue
+            }
+
+            if (c == ',' && !inString) {
+                // look ahead for whitespace and closing bracket
+                var j = i + 1
+                while (j < cleanedJsonString.length && cleanedJsonString[j].isWhitespace()) j++
+                if (j < cleanedJsonString.length && (cleanedJsonString[j] == '}' || cleanedJsonString[j] == ']')) {
+                    // skip this comma
+                    i++
+                    continue
+                }
+            }
+
+            sb.append(c)
+            i++
+        }
+        cleanedJsonString = sb.toString()
+    }
+
+    // 6. Remove any remaining problematic backticks (final cleanup)
+    cleanedJsonString = cleanedJsonString.replace("`", "")
+
+    Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
+    if (cleanedJsonString.isBlank()) {
+        Log.e(logTag, "Cleaned JSON string is blank after sanitization.")
+        throw IllegalArgumentException("Resulting JSON string is blank after sanitization.")
+    }
+    return cleanedJsonString
+}
+
+fun Int.toRoman(): String {
+    val values = listOf(1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)
+    val symbols = listOf("M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I")
+    var num = this
+    val result = StringBuilder()
+
+    for (i in values.indices) {
+        while (num >= values[i]) {
+            num -= values[i]
+            result.append(symbols[i])
+        }
+    }
+    return result.toString()
+}
+
+fun Long.formatFileSize(): String {
+    val kb = this / 1024.0
+    val mb = kb / 1024.0
+    val gb = mb / 1024.0
+    return when {
+        gb >= 1 -> String.format(Locale.getDefault(), "%.2f GB", gb)
+        mb >= 1 -> String.format(Locale.getDefault(), "%.2f MB", mb)
+        kb >= 1 -> String.format(Locale.getDefault(), "%.2f KB", kb)
+        else -> String.format(Locale.getDefault(), "%d B", this)
+    }
+}
+
+fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
+    if (this == null) return ""
+    if (this is String || this is Number || this is Boolean || this is Enum<*>) {
+        return this.toString()
+    }
+    val fields = this::class.java.declaredFields
+    val standardExclusions = listOf("\$stable", "companion")
+    val allExclusions = fieldsToExclude + standardExclusions
+
+    return fields
+        .mapNotNull { field ->
+            if (field.name in allExclusions) return@mapNotNull null
+            field.isAccessible = true
+            val value = field.get(this) ?: return@mapNotNull null
+
+            val valueString =
+                when (value) {
+                    is List<*> ->
+                        if (value.isEmpty()) {
+                            ""
+                        } else {
+                            value.normalizetoAIItems(
+                                fieldsToExclude,
+                            )
+                        }
+
+                    is Array<*> ->
+                        if (value.isEmpty()) {
+                            ""
+                        } else {
+                            value.normalizetoAIItems(
+                                fieldsToExclude,
+                            )
+                        }
+
+                    is String -> value
+                    is Enum<*> -> value.toString()
+                    else -> {
+                        if (value::class.isData) {
+                            val normalized = value.toAINormalize(fieldsToExclude)
+                            if (normalized.isNotBlank()) {
+                                "\n${normalized.prependIndent("  ")}"
+                            } else {
+                                ""
+                            }
+                        } else {
+                            value.toString()
+                        }
+                    }
+                }
+
+            if (valueString.isBlank() || valueString == "[]") {
+                null
+            } else {
+                val itemsSize =
+                    when (value) {
+                        is List<*> -> "[${value.size}]"
+                        is Array<*> -> "[${value.size}]"
+                        else -> emptyString()
+                    }
+                "${field.name}$itemsSize: $valueString"
+            }
+        }.joinToString("\n")
+
+}

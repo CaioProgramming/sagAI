@@ -1,24 +1,110 @@
 package com.ilustris.sagai.core.ai
 
+import android.graphics.Bitmap
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
-import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.ResponseModality
+import com.google.firebase.ai.type.asImageOrNull
+import com.google.firebase.ai.type.content
+import com.google.firebase.ai.type.generationConfig
+import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.toJsonFormat
+import javax.inject.Inject
 
 @OptIn(PublicPreviewAPI::class)
-class ImagenClient {
-    val model by lazy {
-        Firebase.ai.imagenModel("imagen-3.0-generate-002")
-    }
+interface ImagenClient {
+    suspend fun generateImage(
+        prompt: String,
+        references: List<ImageReference> = emptyList(),
+        canByPass: Boolean = false,
+    ): Bitmap?
 
-    suspend fun generateImage(prompt: String): ImagenInlineImage? =
-        try {
-            Log.i(javaClass.simpleName, "generateImage: Generating image with prompt:\n$prompt")
-            val response = model.generateImages(prompt.trimIndent())
-            response.images.first()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
+    suspend fun extractComposition(references: List<ImageReference>): RequestResult<String>
 }
+
+@OptIn(PublicPreviewAPI::class)
+class ImagenClientImpl
+    @Inject
+    constructor(
+        val billingService: BillingService,
+        private val remoteConfigService: RemoteConfigService,
+        private val gemmaClient: GemmaClient,
+    ) : ImagenClient {
+        companion object {
+            const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
+            private const val TAG = "🖼️ Image Generation"
+        }
+
+        suspend fun modelName() =
+            remoteConfigService.getString(IMAGE_PREMIUM_MODEL_FLAG)
+                ?: error("Couldn't find model for Image generation")
+
+        override suspend fun generateImage(
+            prompt: String,
+            references: List<ImageReference>,
+            canByPass: Boolean,
+        ): Bitmap? {
+            val modelName = modelName()
+            return try {
+                val isPremiumUser = billingService.isPremium()
+                val imageModel =
+                    Firebase.ai().generativeModel(
+                        modelName = modelName,
+                        generationConfig =
+                            generationConfig {
+                                responseModalities =
+                                    listOf(ResponseModality.TEXT, ResponseModality.IMAGE)
+                            },
+                    )
+                val promptBuilder =
+                    content {
+                        text(prompt.trimIndent())
+                        references.forEach {
+                            image(it.bitmap)
+                            text(it.description)
+                        }
+                    }
+                if (isPremiumUser.not() && canByPass.not()) {
+                    error("Only premium users can generate images")
+                }
+                val content = imageModel.generateContent(promptBuilder)
+                Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
+                Log.d(
+                    TAG,
+                    "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}",
+                )
+                Log.i(
+                    javaClass.simpleName,
+                    "Generating image($modelName) with prompt:\n${promptBuilder.toJsonFormat()}",
+                )
+
+                content
+                    .candidates
+                    .first()
+                    .content.parts
+                    .firstNotNullOf { it.asImageOrNull() }
+            } catch (e: Exception) {
+                Log.e(TAG, "generateImage: Image generation failed ${e.message}")
+                Log.e(TAG, "generateImage: Requested prompt\n$prompt\n")
+                Log.e(TAG, "generateImage: ${references.size} references submitted")
+                e.printStackTrace()
+                null
+            }
+        }
+
+        override suspend fun extractComposition(references: List<ImageReference>) =
+            executeRequest {
+                gemmaClient.generate<String>(
+                    ImagePrompts.extractComposition(),
+                    references = references,
+                    requireTranslation = false,
+                )!!
+            }
+    }

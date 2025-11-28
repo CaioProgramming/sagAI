@@ -11,5 +11,5 @@ import dagger.hilt.android.components.ViewModelComponent
 @InstallIn(ViewModelComponent::class)
 abstract class NewSagaModule {
     @Binds
-    abstract fun bindsNewSagaUseCase(newSagaUseCaseImpl: NewSagaUseCaseImpl): NewSagaUseCase
+    abstract fun xbindsNewSagaUseCase(newSagaUseCaseImpl: NewSagaUseCaseImpl): NewSagaUseCase
 }

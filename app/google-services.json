@@ -7,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:504234581198:android:0e9d05e54d8d2de07bc49f",
+        "mobilesdk_app_id": "1:504234581198:android:bfe3d233c1ca9bf87bc49f",
         "android_client_info": {
           "package_name": "com.ilustris.sagai"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBby8pOxNI_uSaMYHCLsfJPK10ivcXc4uE"
+          "current_key": "AIzaSyB6JcEtZE0fnDea-vsBcwWoSN0UvT7awQg"
         }
       ],
       "services": {

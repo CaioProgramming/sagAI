@@ -5,11 +5,19 @@ import com.google.firebase.ai.type.GenerationConfig
 import java.util.Locale
 
 abstract class AIClient {
-    abstract fun buildModel(generationConfig: GenerationConfig): GenerativeModel
+    open suspend fun buildModel(generationConfig: GenerationConfig): GenerativeModel? = null
 
     fun modelLanguage(): String {
         val locale = Locale.getDefault()
-        locale.language
         return "All responses must be in ${locale.displayLanguage} (${locale.language})."
     }
 }
+
+val AI_EXCLUDED_FIELDS =
+    listOf(
+        "text\$delegate",
+        "functionResponse\$delegate",
+        "functionCall\$delegate",
+        "functionCalls\$delegate",
+        "\"inlineDataParts\$delegate",
+    )

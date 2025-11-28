@@ -1,19 +1,57 @@
 [versions]
 agp = "8.10.1"
-kotlin = "2.0.21"
+autoBackgroundRemover = "1.0.7"
+billingKtx = "8.0.0"
+composeCharts = "0.1.10"
+datastorePreferences = "1.1.7"
+faceDetection = "16.1.7"
+generativeai = "0.9.0"
+googleGenai = "1.10.0"
+hiltWork = "1.2.0"
+hypnoticcanvas = "0.4.1"
+hypnoticcanvasShaders = "0.4.1"
+kotlin = "2.2.20"
+kotlinxCoroutinesPlayServices = "1.10.2"
+media = "1.7.1"
+mediapipeTasksText = "0.10.12"
 reflection = "2.1.21"
-coreKtx = "1.16.0"
+coreKtx = "1.17.0"
 junit = "4.13.2"
 junitVersion = "1.2.1"
 espressoCore = "3.6.1"
-lifecycleRuntimeKtx = "2.9.1"
-activityCompose = "1.10.1"
-composeBom = "2025.06.00"
-googleServices = "4.4.2"
+lifecycleRuntimeKtx = "2.9.4"
+activityCompose = "1.11.0"
+composeBom = "2025.09.01"
+googleServices = "4.4.3"
 hilt = "2.56"
 cloudy = "0.2.7"
+retrofit = "2.9.0"
+okhttp = "4.12.0"
+palette = "1.0.0"
+coreSplashScreen = "1.0.1"
+firebaseCrashlyticsPlugin = "3.0.6"
+ksp="2.2.20-2.0.3"
+smartReply = "17.0.4"
+tasksGenai = "0.10.25"
+translate = "17.0.3"
+workRuntimeKtx = "2.10.5"
+lifecycleProcess = "2.9.4"
+uiUnit = "1.9.4"
+uiGraphics = "1.9.4"
 
 [libraries]
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+androidx-media = { module = "androidx.media:media", version.ref = "media" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltWork" }
+auto-background-remover = { module = "com.github.GhayasAhmad:auto-background-remover", version.ref = "autoBackgroundRemover" }
+billing-ktx = { module = "com.android.billingclient:billing-ktx", version.ref = "billingKtx" }
+compose-charts = { module = "io.github.ehsannarmani:compose-charts", version.ref = "composeCharts" }
+face-detection = { module = "com.google.mlkit:face-detection", version.ref = "faceDetection" }
+firebase-installations-ktx = { module = "com.google.firebase:firebase-installations-ktx" }
+google-generativeai = { module = "com.google.ai.client.generativeai:generativeai", version.ref = "generativeai" }
+hypnoticcanvas = { module = "com.mikepenz.hypnoticcanvas:hypnoticcanvas", version.ref = "hypnoticcanvas" }
+hypnoticcanvas-shaders = { module = "com.mikepenz.hypnoticcanvas:hypnoticcanvas-shaders", version.ref = "hypnoticcanvasShaders" }
 kotlin-reflection = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "reflection" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -22,6 +60,7 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name="foundation"}
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
@@ -33,6 +72,7 @@ androidx-constraintlayout-compose = { group = "androidx.constraintlayout", name 
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version = "2.9.0" }
 androidx-animations = { group = "androidx.compose.animation", name = "animation", version = "1.8.2" }
 androidx-shapes = { group = "androidx.graphics", name = "graphics-shapes", version = "1.0.1" }
+androidx-palette-ktx = { group = "androidx.palette", name = "palette-ktx", version.ref = "palette" }
 androidx-room-ktx =  { group = "androidx.room", name = "room-ktx", version = "2.7.1" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version = "2.7.1" }
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version = "2.7.1" }
@@ -43,18 +83,29 @@ androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navig
 androidx-hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 accompanist-ui-controller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version = "0.30.1" }
 accompanist-navigation-animation = { group = "com.google.accompanist", name = "accompanist-navigation-animation", version = "0.30.1" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashScreen" }
 
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "33.14.0" }
-firebase-ai = { group = "com.google.firebase", name = "firebase-ai", version="" }
+firebase-ai = { group = "com.google.firebase", name = "firebase-ai" }
+firebase-config-ktx = { group = "com.google.firebase", name = "firebase-config-ktx" }
+firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
+firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
 
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 material-colors = { group = "com.github.atick-faisal", name = "compose-material-color", version = "5.1.1" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version = "3.2.0" }
+coil-network = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version = "3.2.0" }
+
 gson = { group = "com.google.code.gson", name = "gson", version = "2.11.0" }
 lottie-compose = { group = "com.airbnb.android", name = "lottie-compose", version = "6.4.0" }
-compose-cloudy = { module = "com.github.skydoves:cloudy", version.ref = "cloudy" }
-skydoves-balloon = { group = "com.github.skydoves", name = "balloon-compose", version = "1.6.12" }
-chrisbanes-haze = { group = "dev.chrisbanes.haze", name = "haze", version = "1.6.4" }
-chrisbanes-haze-materials = { group = "dev.chrisbanes.haze", name = "haze-materials", version = "1.6.4" }
+
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
+androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -63,3 +114,6 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 hilt-android = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+androidx-room = { id = "androidx.room", version= "2.7.1"}
+firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "firebaseCrashlyticsPlugin" }
+google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }

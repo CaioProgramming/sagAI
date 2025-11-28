@@ -1,0 +1,9 @@
+<resources>
+    <string name="playtime_title">Tempo de Jogo</string>
+    <string name="playtime_format_hours">%dh %dm</string>
+    <string name="playtime_format_minutes">%dm</string>
+    <string name="your_playthrough_title">Sua Jornada</string>
+    <string name="your_playthrough_subtitle">Descubra seu estilo narrativo</string>
+    <string name="total_playtime_label">Tempo Total de Jogo</string>
+    <string name="playthrough_message_title">Análise de Estilo</string>
+</resources>
