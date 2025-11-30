@@ -340,4 +340,25 @@
     <string name="recap_your_journey">Your Journey</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
 
+    <!-- Backup Strings -->
+    <string name="backup_loading_recovering">Recovering content...</string>
+    <string name="backup_error_recovery_failed">An unexpected error occurred, couldn\'t recover backup content :(</string>
+    <string name="backup_empty_all_good">Everything looks good!</string>
+    <string name="backup_loading_found_items">Found some items...</string>
+    <string name="backup_loading_enabling">Enabling backup...</string>
+    <string name="backup_success_enabled">All set! Enjoy your stories 💜</string>
+    <string name="backup_error_enable_failed">Couldn\'t enable backup. Sorry about that, try again?</string>
+    <string name="backup_loading_restoring">Restoring %s...</string>
+    <string name="backup_loading_inspecting">Inspecting file...</string>
+    <string name="backup_error_invalid_file">Invalid or corrupted file.</string>
+    <string name="backup_loading_importing">Importing sagas...</string>
+    <string name="backup_success_imported">Sagas imported successfully!</string>
+    <string name="backup_error_import_failed">Error importing sagas :(</string>
+    <string name="backup_sheet_title">Backups</string>
+    <string name="backup_sheet_message">We found some lost stories, shall we recover them?</string>
+    <string name="backup_restore_all_button">Restore all stories</string>
+    <string name="import_sheet_title">Import Stories</string>
+    <string name="import_sheet_message">Found %d story(ies) in this file. Import them?</string>
+    <string name="import_button">Import</string>
+
 </resources>

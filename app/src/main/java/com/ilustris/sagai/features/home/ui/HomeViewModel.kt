@@ -9,6 +9,7 @@ import com.ilustris.sagai.core.file.backup.filterBackups
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
+import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -27,6 +28,7 @@ class HomeViewModel
     constructor(
         private val homeUseCase: HomeUseCase,
         private val backupService: BackupService,
+        private val sagaBackupService: SagaBackupService,
     ) : ViewModel() {
         val sagas = homeUseCase.getSagas()
 
@@ -39,8 +41,7 @@ class HomeViewModel
         private val _dynamicNewSagaTexts = MutableStateFlow<DynamicSagaPrompt?>(null)
         val dynamicNewSagaTexts = _dynamicNewSagaTexts.asStateFlow()
 
-        private val _backupAvailable = MutableStateFlow(false)
-        val backupAvailable = _backupAvailable.asStateFlow()
+
 
         private val _isLoading = MutableStateFlow<Boolean>(false)
         val isLoading = _isLoading.asStateFlow()
@@ -49,6 +50,9 @@ class HomeViewModel
 
         private val _showRecoverSheet = MutableStateFlow(false)
         val showRecoverSheet = _showRecoverSheet.asStateFlow()
+
+        private val _importUri = MutableStateFlow<Uri?>(null)
+        val importUri = _importUri.asStateFlow()
 
         val billingState = homeUseCase.billingState
 
@@ -59,18 +63,40 @@ class HomeViewModel
             getDynamicPrompts()
         }
 
-        fun checkForBackups() {
+
+
+        fun handleImportUri(uri: Uri) {
             viewModelScope.launch {
-                backupService.getBackedUpSagas().onSuccessAsync {
-                    val availableSagas = sagas.first()
-                    _backupAvailable.emit(
-                        it.filterBackups(availableSagas.map { it.data }).isNotEmpty()
-                    )
-                }
+                _importUri.emit(uri)
             }
         }
 
+        fun clearImportUri() {
+            viewModelScope.launch {
+                _importUri.emit(null)
+            }
+        }
 
+        fun importFromUri(uri: Uri) {
+            viewModelScope.launch(Dispatchers.IO) {
+                _isLoading.emit(true)
+                loadingMessage.emit("Importing backup...")
+                val extension = uri.lastPathSegment?.substringAfterLast(".")
+                val result = when (extension) {
+                    "saga" -> sagaBackupService.restoreSagaFromUri(uri)
+                    "sgs" -> backupService.restoreFullBackup(uri)
+                    else -> error("Unsupported file type")
+                }
+                result.onSuccessAsync {
+                    loadingMessage.emit("Backup imported successfully!")
+                }.onFailureAsync {
+                    loadingMessage.emit("Error importing backup: ${it.message}")
+                }
+                delay(2.seconds)
+                _isLoading.emit(false)
+                loadingMessage.emit(null)
+            }
+        }
 
         private fun getDynamicPrompts() {
             viewModelScope.launch {

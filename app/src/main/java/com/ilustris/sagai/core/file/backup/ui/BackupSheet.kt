@@ -1,9 +1,14 @@
 package com.ilustris.sagai.core.file.backup.ui
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -26,6 +31,8 @@ import com.ilustris.sagai.ui.components.StarryLoader
 fun BackupSheet(
     displayBackups: Boolean = false,
     onDismiss: () -> Unit = {},
+    importUri: Uri? = null,
+    onConfirmImport: (Uri) -> Unit = {},
     viewModel: BackupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -34,6 +41,12 @@ fun BackupSheet(
         PermissionService.rememberBackupLauncher {
             viewModel.saveBackupFolder(it, displayBackups)
         }
+
+    LaunchedEffect(importUri) {
+        importUri?.let {
+            viewModel.setImportConfirmation(it)
+        }
+    }
 
     AnimatedContent(state) {
         when (it) {
@@ -65,23 +78,39 @@ fun BackupSheet(
                         onDismiss()
                     },
                 )
-            is BackupUiState.ShowBackups ->
-                RecoverBackupSheet(it.backups.isNotEmpty() && displayBackups, it.backups, onRequestRecover = {
-                    viewModel.restoreSaga(it)
-                }, onRecoverAll = { viewModel.restoreAllBackups(it) }, onDismiss = {
+
+            is BackupUiState.ImportConfirmation -> {
+                ModalBottomSheet(onDismissRequest = {
                     viewModel.dismiss()
                     onDismiss()
-                })
+                }) {
+                    Text(
+                        "Confirm import of ${it.uri.lastPathSegment}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(32.dp).fillMaxWidth(),
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround) {
+                        Button(onClick = {
+                            onConfirmImport(it.uri)
+                            viewModel.dismiss()
+                            onDismiss()
+                        }) {
+                            Text("Import")
+                        }
+                        Button(onClick = {
+                            viewModel.dismiss()
+                            onDismiss()
+                        }) {
+                            Text("Cancel")
+                        }
+                    }
+                }
+            }
         }
     }
 
-    LaunchedEffect(backupEnabled) {
-        if (backupEnabled == true && displayBackups) {
-            viewModel.recoverBackups()
-        }
-    }
 
-    LaunchedEffect(Unit) {
-        viewModel.observeBackupStatus()
-    }
+
+
 }

@@ -28,43 +28,10 @@ class BackupViewModel
         val uiState = _uiState.asStateFlow()
 
         val backupEnabled = backupService.backupEnabled()
-        val sagas = sagaRepository.getChats()
 
-        fun observeBackupStatus() {
-            viewModelScope.launch {
-                backupService.backupEnabled().collect {
-                    checkBackup(it)
-                }
-            }
-        }
 
-        fun recoverBackups() {
-            viewModelScope.launch {
-                _uiState.value = BackupUiState.Loading("Recuperando conteudo...")
 
-                val backups =
-                    (backupService.getBackedUpSagas().getSuccess()) ?: run {
-                        _uiState.emit(
-                            BackupUiState.Empty("Ocorreu um erro inesperado, não foi possível recuperar os conteudos de backup :("),
-                        )
-                        delay(5.seconds)
-                        _uiState.emit(BackupUiState.Dimissed)
-                        return@launch
-                    }
 
-                val validSagas = sagaBackupService.filterValidSagas(backups).getSuccess() ?: emptyList()
-
-                if (validSagas.isEmpty()) {
-                    _uiState.emit(BackupUiState.Empty("Parece que esta tudo em ordem!"))
-                    delay(3.seconds)
-                    _uiState.emit(BackupUiState.Dimissed)
-                } else {
-                    _uiState.emit(BackupUiState.Loading("Encontramos algumas coisinhas.."))
-                    delay(3.seconds)
-                    _uiState.emit(BackupUiState.ShowBackups(validSagas))
-                }
-            }
-        }
 
         private fun checkBackup(isEnabled: Boolean) =
             viewModelScope.launch {
@@ -89,9 +56,6 @@ class BackupViewModel
                         _uiState.emit(BackupUiState.Loading("Tudo pronto! Aproveite suas histórias \uD83D\uDC9C"))
                         delay(3.seconds)
                         _uiState.emit(BackupUiState.Dimissed)
-                        if (displayBackups) {
-                            recoverBackups()
-                        }
                     }.onFailureAsync {
                         _uiState.emit(
                             BackupUiState.Empty("Não foi possivel habilitar o backup. Sentimos muito por isso vamos tentar de novo?"),
@@ -102,27 +66,14 @@ class BackupViewModel
             }
         }
 
-        fun restoreSaga(restorableSaga: RestorableSaga) {
-            viewModelScope.launch {
-                _uiState.value =
-                    BackupUiState.Loading("Restaurando ${restorableSaga.manifest.title}...")
-                sagaBackupService.restoreContent(restorableSaga)
-                delay(2.seconds)
-            }
-        }
 
-        fun restoreAllBackups(backups: List<RestorableSaga>) {
-            viewModelScope.launch {
-                backups.forEach {
-                    _uiState.emit(BackupUiState.Loading("Restaurando ${it.manifest.title}..."))
-                    sagaBackupService.restoreContent(it)
-                    delay(2.seconds)
-                }
-            }
-        }
 
         fun dismiss() {
             _uiState.value = BackupUiState.Dimissed
+        }
+
+        fun setImportConfirmation(uri: Uri) {
+            _uiState.value = BackupUiState.ImportConfirmation(uri)
         }
     }
 
@@ -141,11 +92,13 @@ sealed class BackupUiState {
 
     object BackupEnabled : BackupUiState()
 
-    data class ShowBackups(
-        val backups: List<RestorableSaga>,
-    ) : BackupUiState()
+
 
     data class Empty(
         val message: String,
+    ) : BackupUiState()
+
+    data class ImportConfirmation(
+        val uri: Uri,
     ) : BackupUiState()
 }

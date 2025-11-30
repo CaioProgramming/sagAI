@@ -15,5 +15,5 @@ interface SagaHistoryUseCase {
 
     suspend fun generateEndMessage(saga: SagaContent): RequestResult<String>
 
-    suspend fun backupSaga(saga: SagaContent): RequestResult<RequestResult<Uri>>
+
 }

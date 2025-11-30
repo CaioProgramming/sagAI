@@ -39,10 +39,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.flow.first
 
 interface SagaBackupService {
-    suspend fun restoreContent(sagaContent: RestorableSaga): RequestResult<SagaContent>
-
-    suspend fun filterValidSagas(manifests: List<RestorableSaga>): RequestResult<List<RestorableSaga>>
-
+    suspend fun restoreSagaFromUri(uri: Uri): RequestResult<SagaContent>
     suspend fun backupSaga(sagaId: Int): RequestResult<Uri>
 
     suspend fun exportSaga(
@@ -67,22 +64,29 @@ class SagaBackupServiceImpl
         private val backupService: BackupService,
         private val fileHelper: FileHelper,
     ) : SagaBackupService {
-        override suspend fun restoreContent(sagaContent: RestorableSaga) =
+
+
+        override suspend fun restoreSagaFromUri(uri: Uri) = executeRequest {
+            val sagaContent = backupService.unzipAndParseSaga(uri) ?: error("Could not parse saga content")
+            val imageBytes = backupService.unzipImageBytes(uri)
+            recoverOperation(sagaContent, imageBytes)
+            sagaContent
+        }
+
+        override suspend fun backupSaga(sagaId: Int): RequestResult<Uri> =
             executeRequest {
-                val zipFile = sagaContent.manifest.zipFileName.toUri()
+                val saga = sagaRepository.getSagaById(sagaId).first() ?: error("Saga not found")
+                backupService.exportSagaToCache(saga).getSuccess() ?: error("Backup failed")
+            }
 
-                val imageResources = backupService.unzipImageBytes(zipFile)
-
-                val sagaContent =
-                    backupService
-                        .unzipAndParseSaga(zipFile)!!
-
-                recoverOperation(
-                    sagaContent,
-                    imageResources,
-                )
-
-                sagaContent
+        override suspend fun exportSaga(
+            sagaId: Int,
+            destinationUri: Uri,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val saga = sagaRepository.getSagaById(sagaId).first() ?: error("Saga not found")
+                backupService.writeExportToUri(saga, destinationUri).getSuccess()
+                    ?: error("Export failed")
             }
 
         private suspend fun recoverOperation(
@@ -96,8 +100,8 @@ class SagaBackupServiceImpl
             sagaRepository.updateChat(
                 newSaga.data.copy(
                     icon =
-                        savedImages.find { it.first == sagaContent.data.icon }?.second
-                            ?: emptyString(),
+                    savedImages.find { it.first == sagaContent.data.icon }?.second
+                        ?: emptyString(),
                 ),
             )
 
@@ -216,14 +220,14 @@ class SagaBackupServiceImpl
                         ?: return@map null
 
                 it.data to
-                    relationRepository.insertRelation(
-                        it.data.copy(
-                            sagaId = sagaId,
-                            characterOneId = characterOne.second.id,
-                            characterTwoId = characterTwo.second.id,
-                            id = 0,
-                        ),
-                    )
+                        relationRepository.insertRelation(
+                            it.data.copy(
+                                sagaId = sagaId,
+                                characterOneId = characterOne.second.id,
+                                characterTwoId = characterTwo.second.id,
+                                id = 0,
+                            ),
+                        )
             }.filterNotNull()
 
         private suspend fun recoverCharactersRelationEvents(
@@ -244,29 +248,6 @@ class SagaBackupServiceImpl
                 ),
             )
         }
-
-        override suspend fun filterValidSagas(manifests: List<RestorableSaga>) =
-            executeRequest {
-                val sagas = sagaRepository.getChats().first()
-
-                manifests.filterBackups(sagas.map { it.data })
-            }
-
-        override suspend fun backupSaga(sagaId: Int): RequestResult<Uri> =
-            executeRequest {
-                val saga = sagaRepository.getSagaById(sagaId).first() ?: error("Saga not found")
-                backupService.backupSaga(saga).getSuccess() ?: error("Backup failed")
-            }
-
-        override suspend fun exportSaga(
-            sagaId: Int,
-            destinationUri: Uri,
-        ): RequestResult<Unit> =
-            executeRequest {
-                val saga = sagaRepository.getSagaById(sagaId).first() ?: error("Saga not found")
-                backupService.writeExportToUri(saga, destinationUri).getSuccess()
-                    ?: error("Export failed")
-            }
 
         private suspend fun recoverSaga(saga: Saga): Pair<Saga, Saga> =
             saga to

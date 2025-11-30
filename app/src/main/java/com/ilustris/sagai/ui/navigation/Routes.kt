@@ -2,6 +2,7 @@
 
 package com.ilustris.sagai.ui.navigation
 
+import android.net.Uri
 import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
@@ -53,7 +54,8 @@ enum class Routes(
         PaddingValues,
         SharedTransitionScope,
         SnackbarHostState,
-    ) -> Unit = { nav, padding, transitionScope, snackState ->
+        Uri?,
+    ) -> Unit = { nav, padding, transitionScope, snackState, importUri ->
         Text("Sample View for Route ", modifier = Modifier.padding(16.dp))
     },
     val topBarContent: (@Composable (NavHostController) -> Unit)? = null,
@@ -63,11 +65,11 @@ enum class Routes(
     val arguments: List<String> = emptyList(),
     val deepLink: String? = null,
 ) {
-    HOME(icon = R.drawable.ic_spark, view = { nav, padding, _, _ ->
-        HomeView(nav, padding)
+    HOME(icon = R.drawable.ic_spark, view = { nav, padding, _, _, importUri ->
+        HomeView(nav, padding, importUri = importUri)
     }, topBarContent = {}, title = R.string.home_title),
     CHAT(
-        view = { nav, padding, transitionScope, snack ->
+        view = { nav, padding, transitionScope, snack, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
             ChatView(
                 navHostController = nav,
@@ -86,7 +88,7 @@ enum class Routes(
     SETTINGS(
         title = R.string.settings_title,
         showBottomNav = false,
-        view = { nav, padding, _, _ ->
+        view = { nav, padding, _, _, _ ->
             SettingsView()
         },
         topBarContent = { Box {} },
@@ -97,13 +99,13 @@ enum class Routes(
         showBottomNav = false,
         topBarContent = {
         },
-        view = { nav, padding, _, _ ->
+        view = { nav, padding, _, _, _ ->
 
             NewSagaView(nav)
         },
     ),
     SAGA_DETAIL(
-        view = { nav, padding, _, _ ->
+        view = { nav, padding, _, _, _ ->
             val arguments = nav.currentBackStackEntry?.arguments
             SagaDetailView(
                 navHostController = nav,
@@ -126,7 +128,7 @@ enum class Routes(
         deepLink = "saga://character_detail/{sagaId}/{characterId}",
         showBottomNav = false,
         topBarContent = { Box {} },
-        view = { nav, padding, _, _ ->
+        view = { nav, padding, _, _, _ ->
             CharacterDetailsView(
                 navHostController = nav,
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(CHARACTER_DETAIL.arguments.first()),
@@ -142,7 +144,7 @@ enum class Routes(
         deepLink = "saga://saga_chapters/{sagaId}",
         showBottomNav = false,
         topBarContent = { Box {} },
-        view = { nav, padding, _, _ ->
+        view = { nav, padding, _, _, _ ->
             ChapterView(
                 nav,
                 sagaId = nav.currentBackStackEntry?.arguments?.getString(SAGA_CHAPTERS.arguments.first()),
@@ -208,6 +210,7 @@ fun SagaNavGraph(
     padding: PaddingValues,
     transitionScope: SharedTransitionScope,
     hazeState: SnackbarHostState,
+    importUri: Uri?
 ) {
     val graph =
         navController.createGraph(startDestination = Routes.HOME.name) {
@@ -221,7 +224,7 @@ fun SagaNavGraph(
                             }
                         },
                 ) {
-                    route.view(navController, padding, transitionScope, hazeState)
+                    route.view(navController, padding, transitionScope, hazeState, importUri)
                 }
             }
         }

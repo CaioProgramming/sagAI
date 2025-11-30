@@ -32,7 +32,6 @@ class BackupService(
     private val fileHelper: FileHelper,
 ) {
     companion object {
-        private const val BACKUP_FOLDER_NAME = "sagai_backups"
         private const val MANIFEST_FILE_NAME = "sagai_manifest.json"
         private const val SAGA_JSON_FILE = "saga.json"
         private const val IMAGES_FOLDER = "images"
@@ -41,12 +40,10 @@ class BackupService(
     @OptIn(ExperimentalCoroutinesApi::class)
     fun backupEnabled() =
         preferences.getString(BACKUP_PREFRENCE_KEY).flatMapLatest {
-            flowOf(getBackupRoot() != null)
+            flowOf(it.isNotEmpty())
         }
 
-    suspend fun deleteBackup() {
-        preferences.setString(BACKUP_PREFRENCE_KEY, emptyString())
-    }
+
 
     private suspend fun getBackupRoot(): DocumentFile? =
         try {
@@ -63,136 +60,17 @@ class BackupService(
 
             if (parentFolder.exists().not()) error("Backup directory does not exist.")
             if (parentFolder.canWrite().not()) error("Backup directory is not writable.")
-
-            val sagaiBackupFolder =
-                parentFolder.findFile(BACKUP_FOLDER_NAME) ?: return parentFolder.createDirectory(
-                    BACKUP_FOLDER_NAME,
-                )
-
-            if (sagaiBackupFolder.isDirectory.not()) error("Backup folder is not a directory.")
-
-            sagaiBackupFolder
+            parentFolder
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
 
-    private suspend fun getBackupManifests(backupRoot: DocumentFile): List<SagaManifest>? {
-        val manifestFile = backupRoot.findFile(MANIFEST_FILE_NAME) ?: return null
-        val json = readTextFromUri(manifestFile.uri) ?: return null
-        return Gson()
-            .fromJson(json, Array<SagaManifest>::class.java)
-            ?.toList()
-    }
 
-    private fun getIconFromZip(
-        backupRoot: DocumentFile,
-        zipFileName: String,
-        iconFileName: String,
-    ): Bitmap? {
-        if (iconFileName.isBlank()) return null
-        val zipFile = backupRoot.findFile(zipFileName) ?: return null
 
-        try {
-            context.contentResolver.openInputStream(zipFile.uri)?.use { inputStream ->
-                ZipInputStream(inputStream).use { zipStream ->
-                    var entry = zipStream.nextEntry
-                    while (entry != null) {
-                        if (entry.name == "$IMAGES_FOLDER/$iconFileName") {
-                            return BitmapFactory.decodeStream(zipStream)
-                        }
-                        entry = zipStream.nextEntry
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        return null
-    }
 
-    suspend fun getBackedUpSagas() =
-        executeRequest {
-            val backupRoot = getBackupRoot() ?: error("No backup folder")
-            val manifests = getBackupManifests(backupRoot) ?: error("No manifest founded")
 
-            manifests.map {
-                val icon = getIconFromZip(backupRoot, it.zipFileName, it.iconName)
-                RestorableSaga(
-                    it,
-                    icon,
-                )
-            }
-        }
 
-    private fun readTextFromUri(uri: Uri): String? =
-        try {
-            context.contentResolver
-                .openInputStream(uri)
-                ?.bufferedReader()
-                ?.use { it.readText() }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-
-    private suspend fun updateManifest(
-        backupRoot: DocumentFile,
-        saga: SagaContent,
-        zipFileName: String,
-    ) {
-        val gson = Gson()
-        var manifestFile = backupRoot.findFile(MANIFEST_FILE_NAME)
-
-        val currentManifest: MutableList<SagaManifest> =
-            if (manifestFile != null) {
-                val json = readTextFromUri(manifestFile.uri)
-                gson.fromJson<Array<SagaManifest>>(json, Array<SagaManifest>::class.java)?.toMutableList() ?: mutableListOf()
-            } else {
-                manifestFile = backupRoot.createFile("application/json", MANIFEST_FILE_NAME)
-                    ?: error("Could not create manifest file.")
-                mutableListOf()
-            }
-
-        currentManifest.removeAll { it.sagaId == saga.data.id }
-
-        val newEntry =
-            SagaManifest(
-                sagaId = saga.data.id,
-                title = saga.data.title,
-                description = saga.data.description,
-                genre = saga.data.genre,
-                iconName = File(saga.data.icon).name,
-                lastBackup = System.currentTimeMillis(),
-                zipFileName = zipFileName,
-            )
-        currentManifest.add(newEntry)
-
-        val updatedJson = gson.toJson(currentManifest)
-        context.contentResolver.openOutputStream(manifestFile.uri, "rwt")?.use { outputStream ->
-            outputStream.write(updatedJson.toByteArray())
-        }
-    }
-
-    suspend fun backupSaga(saga: SagaContent): RequestResult<Uri> =
-        executeRequest {
-            val backupRoot = getBackupRoot() ?: error("Could not access backup directory")
-            val zipFileName = "saga_${saga.data.id}.zip"
-            var sagaZipFile = backupRoot.findFile(zipFileName)
-
-            sagaZipFile?.delete()
-
-            sagaZipFile =
-                backupRoot.createFile("application/zip", zipFileName)
-                    ?: error("Could not create zip file in backup directory.")
-
-            context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
-                writeSagaToZip(saga, outputStream)
-            }
-
-            updateManifest(backupRoot, saga, zipFileName)
-            sagaZipFile.uri
-        }
 
     suspend fun exportSagaToCache(saga: SagaContent): RequestResult<Uri> =
         executeRequest {
@@ -202,7 +80,7 @@ class BackupService(
             // Clean up old exports to avoid clutter
             cacheDir.listFiles()?.forEach { it.delete() }
 
-            val zipFileName = "saga_${saga.data.id}_export.zip"
+            val zipFileName = "${saga.data.title.replace(" ", "_")}.saga"
             val zipFile = File(cacheDir, zipFileName)
 
             zipFile.outputStream().use { outputStream ->
@@ -215,6 +93,79 @@ class BackupService(
                 "com.ilustris.sagai.fileprovider",
                 zipFile,
             )
+        }
+
+    suspend fun createFullBackup(backupName: String, sagas: List<SagaContent>): RequestResult<Uri> =
+        executeRequest {
+            val backupRoot = getBackupRoot() ?: error("Could not access backup directory")
+            val zipFileName = "$backupName.sgs"
+            var sagaZipFile = backupRoot.findFile(zipFileName)
+
+            sagaZipFile?.delete()
+
+            sagaZipFile =
+                backupRoot.createFile("application/zip", zipFileName)
+                    ?: error("Could not create zip file in backup directory.")
+
+            context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
+                ZipOutputStream(outputStream).use { zipStream ->
+                    val manifest = sagas.map {
+                        SagaManifest(
+                            sagaId = it.data.id,
+                            title = it.data.title,
+                            description = it.data.description,
+                            genre = it.data.genre,
+                            iconName = File(it.data.icon).name,
+                            lastBackup = System.currentTimeMillis(),
+                            zipFileName = "saga_${it.data.id}"
+                        )
+                    }
+                    val manifestJson = Gson().toJson(manifest)
+                    zipStream.putNextEntry(ZipEntry(MANIFEST_FILE_NAME))
+                    zipStream.write(manifestJson.toByteArray())
+                    zipStream.closeEntry()
+
+                    sagas.forEach { saga ->
+                        val sagaFolder = "saga_${saga.data.id}/"
+                        zipStream.putNextEntry(ZipEntry(sagaFolder))
+                        zipStream.closeEntry()
+                        val backedSaga = normalizeSagaContentPaths(saga)
+                        val sagaJson = Gson().toJson(backedSaga)
+                        zipStream.putNextEntry(ZipEntry("${sagaFolder}${SAGA_JSON_FILE}"))
+                        zipStream.write(sagaJson.toByteArray())
+                        zipStream.closeEntry()
+
+                        val imagePaths = getAllImageFiles(saga)
+                        imagePaths.forEach { (path, file) ->
+                            if (file.exists()) {
+                                zipStream.putNextEntry(ZipEntry("$sagaFolder$path"))
+                                FileInputStream(file).use { it.copyTo(zipStream) }
+                                zipStream.closeEntry()
+                            }
+                        }
+                    }
+                }
+            }
+            sagaZipFile.uri
+        }
+
+    suspend fun restoreFullBackup(uri: Uri): RequestResult<List<SagaContent>> =
+        executeRequest {
+            val sagas = mutableListOf<SagaContent>()
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        if (entry.name.endsWith(SAGA_JSON_FILE)) {
+                            val jsonString = zipStream.bufferedReader().use { it.readText() }
+                            val saga = Gson().fromJson(jsonString, SagaContent::class.java)
+                            sagas.add(saga)
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+            sagas
         }
 
     private fun writeSagaToZip(
@@ -313,7 +264,7 @@ class BackupService(
         executeRequest {
             releaseOldPermission()
             if (uri == null) {
-                deleteBackup()
+                preferences.setString(BACKUP_PREFRENCE_KEY, emptyString())
                 error("Backup URI cannot be null.")
             }
             val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION

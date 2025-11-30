@@ -2,6 +2,7 @@
 
 package com.ilustris.sagai.features.home.ui
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -115,6 +116,7 @@ import kotlin.time.Duration.Companion.seconds
 fun HomeView(
     navController: NavHostController,
     padding: PaddingValues,
+    importUri: Uri? = null,
 ) {
     val viewModel: HomeViewModel = hiltViewModel()
     val sagas by viewModel.sagas.collectAsStateWithLifecycle(emptyList())
@@ -129,9 +131,18 @@ fun HomeView(
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    val importUriViewModel by viewModel.importUri.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        viewModel.checkForBackups()
+    LaunchedEffect(importUri) {
+        importUri?.let {
+            viewModel.handleImportUri(it)
+        }
+    }
+
+    LaunchedEffect(importUriViewModel) {
+        importUriViewModel?.let {
+            showBackupSheet = true
+        }
     }
 
     BackHandler(enabled = drawerState.isOpen) {
@@ -186,9 +197,7 @@ fun HomeView(
                         openPremiumSheet = {
                             showPremiumSheet = true
                         },
-                        recoverSagas = {
-                            showBackupSheet = true
-                        },
+
                         openSettings = {
                             coroutineScope.launch {
                                 drawerState.open()
@@ -221,6 +230,9 @@ fun HomeView(
     if (showBackupSheet) {
         BackupSheet(true, {
             showBackupSheet = false
+            viewModel.clearImportUri()
+        }, importUri = importUriViewModel, onConfirmImport = {
+            importUriViewModel?.let { viewModel.importFromUri(it) }
         })
     }
 
@@ -239,8 +251,6 @@ private fun ChatList(
     dynamicNewSagaTexts: DynamicSagaPrompt?,
     isLoadingDynamicPrompts: Boolean,
     isPremium: Boolean = false,
-    backupAvailable: Boolean = false,
-    recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
     createFakeSaga: () -> Unit = {},
@@ -472,36 +482,7 @@ private fun ChatList(
                 }
             }
 
-            if (backupAvailable) {
-                item {
-                    Box(
-                        Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Button(onClick = {
-                            recoverSagas.invoke()
-                        }, colors = ButtonDefaults.textButtonColors()) {
-                            Icon(
-                                painterResource(R.drawable.ic_restore),
-                                null,
-                                modifier =
-                                    Modifier
-                                        .padding(horizontal = 8.dp)
-                                        .size(24.dp),
-                            )
-                            Text(
-                                stringResource(id = R.string.restore_sagas),
-                                style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
-                            )
-                        }
-                    }
-                }
-            }
+
         }
     }
 }

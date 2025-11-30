@@ -443,7 +443,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     isActivated = backupEnabled,
                     onClickSwitch = {
                         if (backupEnabled) {
-                            viewModel.disableBackup()
+                            // Backup cannot be disabled from here anymore
                         } else {
                             showBackupSheet = true
                         }

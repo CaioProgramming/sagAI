@@ -329,13 +329,7 @@ class SagaContentManagerImpl
             }
         }
 
-        override suspend fun backupSaga() {
-            val currentSaga = content.value ?: return
-            Log.d(javaClass.simpleName, "Backing up saga ${currentSaga.data.id}")
 
-            val backup = sagaHistoryUseCase.backupSaga(currentSaga)
-            Log.d(javaClass.simpleName, "backupSaga: backup successfull? ${backup.isSuccess}")
-        }
 
         override suspend fun enableBackup(uri: Uri?) {
             uri?.let {
@@ -610,7 +604,7 @@ class SagaContentManagerImpl
                                 actUseCase.generateActIntroduction(saga, data)
                             }
 
-                            backupSaga()
+
                         }
                     }
 

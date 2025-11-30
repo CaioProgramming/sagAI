@@ -67,7 +67,7 @@ class HomeUseCaseImpl
 
         override suspend fun checkDebugBuild(): Boolean = BuildConfig.DEBUG && remoteConfig.getValue("isDebugger").asBoolean()
 
-        override suspend fun recoverSaga(sagaContent: RestorableSaga) = sagaBackupService.restoreContent(sagaContent)
+
 
         private fun processSagaContent(content: List<SagaContent>): List<SagaContent> =
             content.sortedByDescending { saga ->

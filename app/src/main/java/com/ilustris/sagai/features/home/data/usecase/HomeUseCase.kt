@@ -21,5 +21,5 @@ interface HomeUseCase {
 
     suspend fun checkDebugBuild(): Boolean
 
-    suspend fun recoverSaga(sagaContent: RestorableSaga): RequestResult<SagaContent>
+
 }

@@ -27,5 +27,5 @@ interface SagaRepository {
         character: Character,
     ): RequestResult<Saga>
 
-    suspend fun backupSaga(sagaContent: SagaContent): RequestResult<Uri>
+
 }

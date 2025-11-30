@@ -132,5 +132,5 @@ class SagaRepositoryImpl
             updateChat(saga.copy(icon = file!!.absolutePath))
         }
 
-        override suspend fun backupSaga(sagaContent: SagaContent) = backupService.backupSaga(sagaContent)
+
     }

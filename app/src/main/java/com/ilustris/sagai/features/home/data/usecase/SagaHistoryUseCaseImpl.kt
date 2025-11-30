@@ -44,5 +44,5 @@ class SagaHistoryUseCaseImpl
                     )!!
             }
 
-        override suspend fun backupSaga(saga: SagaContent) = executeRequest { sagaRepository.backupSaga(saga) }
+
     }

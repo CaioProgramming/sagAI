@@ -107,11 +107,7 @@ class SettingsViewModel
             }
         }
 
-        fun disableBackup() {
-            viewModelScope.launch {
-                settingsUseCase.disableBackup()
-            }
-        }
+
 
         val totalPlaytime =
             settingsUseCase

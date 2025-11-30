@@ -454,7 +454,6 @@ class ChatViewModel
                     }
                     startTime = 0L
                 }
-                sagaContentManager.backupSaga()
             }
         }
 

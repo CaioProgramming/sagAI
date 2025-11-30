@@ -50,7 +50,7 @@ interface SagaContentManager {
 
     suspend fun reviewEvent(timelineContent: TimelineContent)
 
-    suspend fun backupSaga()
+
 
     suspend fun enableBackup(uri: Uri?)
 

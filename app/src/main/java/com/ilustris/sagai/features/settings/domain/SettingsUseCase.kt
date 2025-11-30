@@ -52,7 +52,7 @@ interface SettingsUseCase {
 
     suspend fun clearCache()
 
-    suspend fun disableBackup()
+
 
     suspend fun enableBackup(uri: Uri?): RequestResult<Unit>
 
@@ -122,31 +122,8 @@ class SettingsUseCaseImpl
             context.cacheDir.deleteRecursively()
         }
 
-        override suspend fun disableBackup() = backupService.deleteBackup()
-
         override suspend fun enableBackup(uri: Uri?) = backupService.enableBackup(uri)
 
         override suspend fun restoreSaga(uri: Uri): RequestResult<SagaContent> =
-            executeRequest {
-                // 1. Parse Saga from Zip
-                val tempSaga =
-                    backupService.unzipAndParseSaga(uri) ?: error("Could not parse saga from zip")
-
-                // 2. Restore content using SagaBackupService
-                sagaBackupService
-                    .restoreContent(
-                        RestorableSaga(
-                            SagaManifest(
-                                sagaId = tempSaga.data.id,
-                                title = tempSaga.data.title,
-                                description = tempSaga.data.description,
-                                genre = tempSaga.data.genre,
-                                iconName = tempSaga.data.icon,
-                                lastBackup = System.currentTimeMillis(),
-                                zipFileName = uri.toString(),
-                            ),
-                            null,
-                        ),
-                    ).getSuccess()!!
-            }
+            sagaBackupService.restoreSagaFromUri(uri)
     }

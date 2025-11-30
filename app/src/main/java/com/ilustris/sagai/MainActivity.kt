@@ -2,7 +2,8 @@
 
 package com.ilustris.sagai
 
-import android.content.Intent // Added
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -58,19 +59,23 @@ import com.ilustris.sagai.ui.navigation.findRoute
 import com.ilustris.sagai.ui.theme.SagAITheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalAnimationApi::class)
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val deepLinkChannel = Channel<String>(Channel.CONFLATED)
+    private val _importUri = MutableStateFlow<Uri?>(null)
+    val importUri = _importUri.asStateFlow()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         printFirebaseInstallationAuthToken()
         enableEdgeToEdge()
-
+        handleIntent(intent)
         val initialDeepLinkString = intent?.getStringExtra("deepLink")
         intent?.removeExtra("deepLink")
         Log.i(javaClass.simpleName, "onCreate: deeplinkExtra: $initialDeepLinkString")
@@ -177,6 +182,7 @@ class MainActivity : ComponentActivity() {
                                             padding,
                                             this@SharedTransitionLayout,
                                             snackbarHostState,
+                                            importUri = importUri.collectAsState().value,
                                         )
                                     }
                                 }
@@ -192,6 +198,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        handleIntent(intent)
         Log.d("MainActivity", "onNewIntent called")
         intent?.getStringExtra("deepLink")?.let { deepLink ->
             if (deepLink.isNotBlank()) {
@@ -200,6 +207,16 @@ class MainActivity : ComponentActivity() {
                     deepLinkChannel.send(deepLink)
                 }
                 intent.removeExtra("deepLink")
+            }
+        }
+    }
+
+    private fun handleIntent(intent: Intent) {
+        if (intent.action == Intent.ACTION_VIEW && intent.data != null) {
+            val uri = intent.data
+            Log.i("MainActivity", "handleIntent: Received uri $uri")
+            lifecycleScope.launch {
+                _importUri.emit(uri)
             }
         }
     }
