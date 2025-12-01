@@ -107,45 +107,58 @@ class BackupService(
                 backupRoot.createFile("application/octet-stream", zipFileName)
                     ?: error("Could not create zip file in backup directory.")
 
+            Log.d(javaClass.simpleName, "createFullBackup: Attempting to write to URI: ${sagaZipFile.uri}")
             context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
-                ZipOutputStream(outputStream).use { zipStream ->
-                    val manifest = sagas.map {
-                        SagaManifest(
-                            sagaId = it.data.id,
-                            title = it.data.title,
-                            description = it.data.description,
-                            genre = it.data.genre,
-                            iconName = File(it.data.icon).name,
-                            lastBackup = System.currentTimeMillis(),
-                            zipFileName = "saga_${it.data.id}"
-                        )
-                    }
-                    val manifestJson = Gson().toJson(manifest)
-                    zipStream.putNextEntry(ZipEntry(MANIFEST_FILE_NAME))
-                    zipStream.write(manifestJson.toByteArray())
-                    zipStream.closeEntry()
+                try {
+                    ZipOutputStream(outputStream).use { zipStream ->
+                        if (sagas.isEmpty()) {
+                            Log.w(javaClass.simpleName, "createFullBackup: No sagas to backup. Creating empty zip.")
+                        }
 
-                    sagas.forEach { saga ->
-                        val sagaFolder = "saga_${saga.data.id}/"
-                        zipStream.putNextEntry(ZipEntry(sagaFolder))
-                        zipStream.closeEntry()
-                        val backedSaga = normalizeSagaContentPaths(saga)
-                        val sagaJson = Gson().toJson(backedSaga)
-                        zipStream.putNextEntry(ZipEntry("${sagaFolder}${SAGA_JSON_FILE}"))
-                        zipStream.write(sagaJson.toByteArray())
+                        val manifest = sagas.map {
+                            SagaManifest(
+                                sagaId = it.data.id,
+                                title = it.data.title,
+                                description = it.data.description,
+                                genre = it.data.genre,
+                                iconName = File(it.data.icon).name,
+                                lastBackup = System.currentTimeMillis(),
+                                zipFileName = "saga_${it.data.id}"
+                            )
+                        }
+                        val manifestJson = Gson().toJson(manifest)
+                        zipStream.putNextEntry(ZipEntry(MANIFEST_FILE_NAME))
+                        zipStream.write(manifestJson.toByteArray())
                         zipStream.closeEntry()
 
-                        val imagePaths = getAllImageFiles(saga)
-                        imagePaths.forEach { (path, file) ->
-                            if (file.exists()) {
-                                zipStream.putNextEntry(ZipEntry("$sagaFolder$path"))
-                                FileInputStream(file).use { it.copyTo(zipStream) }
-                                zipStream.closeEntry()
+                        sagas.forEach { saga ->
+                            val sagaFolder = "saga_${saga.data.id}/"
+                            zipStream.putNextEntry(ZipEntry(sagaFolder))
+                            zipStream.closeEntry() // Close the directory entry after creating it
+
+                            val backedSaga = normalizeSagaContentPaths(saga)
+                            val sagaJson = Gson().toJson(backedSaga)
+                            zipStream.putNextEntry(ZipEntry("${sagaFolder}${SAGA_JSON_FILE}"))
+                            zipStream.write(sagaJson.toByteArray())
+                            zipStream.closeEntry()
+
+                            val imagePaths = getAllImageFiles(saga)
+                            imagePaths.forEach { (path, file) ->
+                                if (file.exists()) {
+                                    zipStream.putNextEntry(ZipEntry("$sagaFolder$path"))
+                                    FileInputStream(file).use { it.copyTo(zipStream) }
+                                    zipStream.closeEntry()
+                                }
                             }
                         }
+                        zipStream.flush() // Explicitly flush before closing
                     }
+                    outputStream.flush() // Explicitly flush the underlying output stream
+                } catch (e: Exception) {
+                    Log.e(javaClass.simpleName, "createFullBackup: Error writing zip content", e)
+                    throw e // Re-throw to propagate the error
                 }
-            }
+            } ?: error("Could not open output stream for destination URI")
             sagaZipFile.uri
         }
 
@@ -206,10 +219,10 @@ class BackupService(
 
             var newDocumentFile = parentFolder.findFile(newDisplayName)
             if (newDocumentFile == null) {
-                newDocumentFile = parentFolder.createFile("application/zip", newDisplayName)
+                newDocumentFile = parentFolder.createFile("application/octet-stream", newDisplayName)
             } else {
                 newDocumentFile.delete()
-                newDocumentFile = parentFolder.createFile("application/zip", newDisplayName)
+                newDocumentFile = parentFolder.createFile("application/octet-stream", newDisplayName)
             }
 
 
