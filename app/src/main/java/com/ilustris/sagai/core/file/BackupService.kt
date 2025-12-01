@@ -77,7 +77,6 @@ class BackupService(
             val cacheDir = File(context.cacheDir, "exports")
             if (!cacheDir.exists()) cacheDir.mkdirs()
 
-            // Clean up old exports to avoid clutter
             cacheDir.listFiles()?.forEach { it.delete() }
 
             val zipFileName = "${saga.data.title.replace(" ", "_")}.saga"
@@ -95,20 +94,10 @@ class BackupService(
             )
         }
 
-    suspend fun createFullBackup(backupName: String, sagas: List<SagaContent>): RequestResult<Uri> =
+    suspend fun createFullBackup(destinationUri: Uri, backupName: String, sagas: List<SagaContent>): RequestResult<Uri> =
         executeRequest {
-            val backupRoot = getBackupRoot() ?: error("Could not access backup directory")
-            val zipFileName = "$backupName.sgs"
-            var sagaZipFile = backupRoot.findFile(zipFileName)
-
-            sagaZipFile?.delete()
-
-            sagaZipFile =
-                backupRoot.createFile("application/octet-stream", zipFileName)
-                    ?: error("Could not create zip file in backup directory.")
-
-            Log.d(javaClass.simpleName, "createFullBackup: Attempting to write to URI: ${sagaZipFile.uri}")
-            context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
+            Log.d(javaClass.simpleName, "createFullBackup: Attempting to write to URI: $destinationUri")
+            context.contentResolver.openOutputStream(destinationUri, "w")?.use { outputStream ->
                 try {
                     ZipOutputStream(outputStream).use { zipStream ->
                         if (sagas.isEmpty()) {
@@ -159,7 +148,7 @@ class BackupService(
                     throw e // Re-throw to propagate the error
                 }
             } ?: error("Could not open output stream for destination URI")
-            sagaZipFile.uri
+            destinationUri
         }
 
     suspend fun restoreFullBackup(uri: Uri): RequestResult<List<SagaContent>> =

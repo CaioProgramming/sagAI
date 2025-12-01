@@ -144,8 +144,8 @@ class SettingsViewModel
                 isLoading.value = true
                 loadingMessage.emit("Exporting all sagas...")
                 val sagas = sagaRepository.getChats().first()
-                val backupName = "SagaAI_Backup_${System.currentTimeMillis()}"
-                backupService.createFullBackup(backupName, sagas).onSuccessAsync {
+                val backupName = "SagaAI_Full_Backup_${System.currentTimeMillis()}" // Consider using this as internal name
+                backupService.createFullBackup(destinationUri, backupName, sagas).onSuccessAsync {
                     loadingMessage.emit("All sagas exported successfully!")
                 }.onFailureAsync {
                     loadingMessage.emit("Error exporting sagas: ${it.message}")
