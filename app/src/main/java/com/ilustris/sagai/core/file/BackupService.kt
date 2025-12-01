@@ -96,14 +96,46 @@ class BackupService(
 
     suspend fun createFullBackup(destinationUri: Uri, backupName: String, sagas: List<SagaContent>): RequestResult<Uri> =
         executeRequest {
-            Log.d(javaClass.simpleName, "createFullBackup: Attempting to write to URI: $destinationUri")
-            context.contentResolver.openOutputStream(destinationUri, "w")?.use { outputStream ->
+            if (sagas.isEmpty()) {
+                Log.w(javaClass.simpleName, "createFullBackup: No sagas to backup. Returning error.")
+                error("No sagas found to create a backup. Please create some sagas first.")
+            }
+
+            // Get the DocumentFile for the destination URI
+            val documentFile = DocumentFile.fromSingleUri(context, destinationUri)
+                ?: error("Could not get DocumentFile from destination URI.")
+
+            val desiredFileName = "SagaAI_Full_Backup_${System.currentTimeMillis()}.sgs"
+            var finalDocumentUri = destinationUri
+
+            // If the provided file name is not ending with .sgs, try to rename it
+            if (!documentFile.name.orEmpty().endsWith(".sgs")) {
+                val renamedFile = documentFile.renameTo(desiredFileName)
+                if (renamedFile) {
+                    finalDocumentUri = documentFile.uri // Use the URI of the renamed file
+                    Log.i(javaClass.simpleName, "createFullBackup: Renamed file to $desiredFileName")
+                } else {
+                    Log.w(javaClass.simpleName, "createFullBackup: Could not rename file to $desiredFileName. Proceeding with original name.")
+                }
+            } else {
+                // If it already ends with .sgs, but isn't the desired timestamped name, still rename it.
+                // This ensures consistency even if user chose a custom .sgs name.
+                val currentDisplayName = documentFile.name.orEmpty()
+                if (!currentDisplayName.startsWith("SagaAI_Full_Backup_") || !currentDisplayName.endsWith(".sgs")) {
+                     val renamedFile = documentFile.renameTo(desiredFileName)
+                    if (renamedFile) {
+                        finalDocumentUri = documentFile.uri
+                        Log.i(javaClass.simpleName, "createFullBackup: Renamed file to $desiredFileName for consistency.")
+                    } else {
+                        Log.w(javaClass.simpleName, "createFullBackup: Could not rename file to $desiredFileName for consistency. Proceeding with original name.")
+                    }
+                }
+            }
+
+            Log.d(javaClass.simpleName, "createFullBackup: Attempting to write to URI: $finalDocumentUri")
+            context.contentResolver.openOutputStream(finalDocumentUri, "w")?.use { outputStream ->
                 try {
                     ZipOutputStream(outputStream).use { zipStream ->
-                        if (sagas.isEmpty()) {
-                            Log.w(javaClass.simpleName, "createFullBackup: No sagas to backup. Creating empty zip.")
-                        }
-
                         val manifest = sagas.map {
                             SagaManifest(
                                 sagaId = it.data.id,
@@ -148,7 +180,7 @@ class BackupService(
                     throw e // Re-throw to propagate the error
                 }
             } ?: error("Could not open output stream for destination URI")
-            destinationUri
+            finalDocumentUri
         }
 
     suspend fun restoreFullBackup(uri: Uri): RequestResult<List<SagaContent>> =
