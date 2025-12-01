@@ -1,6 +1,11 @@
 package com.ilustris.sagai.features.playthrough
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,19 +20,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import kotlinx.coroutines.delay
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +60,9 @@ fun PlaythroughSheet(
         viewModel.loadPlaythroughData()
     }
 
-    AnimatedContent(state) { currentState ->
+    AnimatedContent(state, transitionSpec = {
+        fadeIn(animationSpec = tween(500)) togetherWith fadeOut(animationSpec = tween(500))
+    }) { currentState ->
         when (currentState) {
             is PlaythroughUiState.Loading -> {
                 StarryLoader(
@@ -72,6 +93,19 @@ fun PlaythroughSheet(
             }
 
             is PlaythroughUiState.Success -> {
+                val sagasGenres = currentState.data.genres
+                var currentAnimatedGenre by remember { mutableStateOf(sagasGenres.randomOrNull() ?: Genre.FANTASY) }
+
+                LaunchedEffect(sagasGenres) {
+                    if (sagasGenres.isNotEmpty()) {
+                        val weightedGenres = sagasGenres.flatMap { genre -> List(sagasGenres.count { it == genre }) { genre } }
+                        while (true) {
+                            delay(2.seconds)
+                            currentAnimatedGenre = weightedGenres.random()
+                        }
+                    }
+                }
+
                 ModalBottomSheet(
                     onDismissRequest = onDismiss,
                     containerColor = MaterialTheme.colorScheme.surface,
@@ -85,6 +119,20 @@ fun PlaythroughSheet(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
+
+                        Text(
+                            text = currentState.data.playtimeReview.title,
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontStyle = FontStyle.Italic,
+                                brush = Brush.linearGradient(holographicGradient),
+                                shadow = Shadow(Color.White, blurRadius = 5f),
+                                fontWeight = FontWeight.Light
+                            ),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(16.dp)
+                                .reactiveShimmer(true),
+                        )
+
                         Icon(
                             painterResource(R.drawable.ic_spark),
                             contentDescription = null,
@@ -99,14 +147,24 @@ fun PlaythroughSheet(
                             playtimeMs = currentState.data.totalPlaytimeMs,
                             label = stringResource(R.string.total_playtime_label),
                             textStyle = MaterialTheme.typography.headlineLarge,
+                            animationDuration = 3.seconds
                         )
 
-                        Text(
-                            text = currentState.data.playtimeReview,
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Start,
-                            modifier = Modifier.padding(16.dp),
-                        )
+                        AnimatedContent(targetState = currentAnimatedGenre, transitionSpec = {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(animationSpec = tween(500))
+                        }) { animatedGenre ->
+                            Text(
+                                text = currentState.data.playtimeReview.message,
+                                style = TextStyle(
+                                    brush = Brush.linearGradient(animatedGenre.gradient()),
+                                    fontFamily = animatedGenre.bodyFont(),
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = MaterialTheme.typography.bodyLarge.fontSize
+                                ),
+                                textAlign = TextAlign.Start,
+                                modifier = Modifier.padding(16.dp),
+                            )
+                        }
                     }
                 }
             }

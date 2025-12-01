@@ -25,6 +25,9 @@ class PlaythroughUseCaseImpl
 
                 assert(sagas.isNotEmpty())
 
+                // Extract genres from all sagas
+                val genres = sagas.map { it.data.genre }
+
                 // Calculate total playtime
                 val totalPlaytimeMs = sagas.sumOf { it.data.playTimeMs }
                 val formattedTime = totalPlaytimeMs.toPlaytimeFormat()
@@ -62,6 +65,7 @@ class PlaythroughUseCaseImpl
                         totalPlayTime = formattedTime,
                         totalPlaytimeMs = totalPlaytimeMs,
                         playtimeReview = playtimeReview,
+                        genres = genres
                     ),
                 )
             } catch (e: Exception) {
