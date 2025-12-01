@@ -12,7 +12,6 @@ import com.google.gson.Gson
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.datastore.DataStorePreferences
-import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.file.backup.SagaManifest
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -41,6 +40,126 @@ class BackupService(
     fun backupEnabled() =
         preferences.getString(BACKUP_PREFRENCE_KEY).flatMapLatest {
             flowOf(it.isNotEmpty())
+        }
+
+    data class FileMetadata(
+        val name: String,
+        val size: Long,
+        val date: Long
+    )
+
+    fun getFileMetadata(uri: Uri): FileMetadata {
+        val documentFile = DocumentFile.fromSingleUri(context, uri)
+        return FileMetadata(
+            name = documentFile?.name ?: uri.lastPathSegment ?: "Unknown",
+            size = documentFile?.length() ?: 0L,
+            date = documentFile?.lastModified() ?: 0L
+        )
+    }
+
+    data class SagaPreviewInfo(
+        val title: String,
+        val genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+        val description: String,
+        val icon: Bitmap?
+    )
+
+    suspend fun previewFullBackup(uri: Uri): RequestResult<List<SagaPreviewInfo>> =
+        executeRequest {
+            val sagas = mutableListOf<SagaManifest>()
+            val icons = mutableMapOf<Int, Bitmap>()
+
+            // First pass: Read Manifest
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        if (entry.name == MANIFEST_FILE_NAME) {
+                            val jsonString = zipStream.bufferedReader().readText()
+                            sagas.addAll(
+                                Gson().fromJson(
+                                    jsonString,
+                                    Array<SagaManifest>::class.java
+                                )
+                            )
+                            break
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+
+            if (sagas.isEmpty()) error("Invalid backup file: Manifest not found")
+
+            // Second pass: Read Images
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        val matchingSaga =
+                            sagas.find { "saga_${it.sagaId}/images/${it.iconName}" == entry.name }
+                        if (matchingSaga != null) {
+                            val bitmap = BitmapFactory.decodeStream(zipStream)
+                            icons[matchingSaga.sagaId] = bitmap
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+
+            sagas.map {
+                SagaPreviewInfo(
+                    it.title,
+                    it.genre,
+                    it.description,
+                    icons[it.sagaId]
+                )
+            }
+        }
+
+    suspend fun previewSagaBackup(uri: Uri): RequestResult<SagaPreviewInfo> =
+        executeRequest {
+            var sagaContent: SagaContent? = null
+            var iconBitmap: Bitmap? = null
+
+            // First pass: Read Saga Data
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        if (entry.name == SAGA_JSON_FILE) {
+                            val jsonString = zipStream.bufferedReader().readText()
+                            sagaContent = Gson().fromJson(jsonString, SagaContent::class.java)
+                            break
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+
+            val content = sagaContent ?: error("Invalid backup file: Saga data not found")
+            val iconName = File(content.data.icon).name
+
+            // Second pass: Read Icon
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        if (entry.name == "images/$iconName") {
+                            iconBitmap = BitmapFactory.decodeStream(zipStream)
+                            break
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            }
+
+            SagaPreviewInfo(
+                content.data.title,
+                content.data.genre,
+                content.data.description,
+                iconBitmap
+            )
         }
 
 
@@ -101,39 +220,11 @@ class BackupService(
                 error("No sagas found to create a backup. Please create some sagas first.")
             }
 
-            // Get the DocumentFile for the destination URI
-            val documentFile = DocumentFile.fromSingleUri(context, destinationUri)
-                ?: error("Could not get DocumentFile from destination URI.")
-
-            val desiredFileName = "SagaAI_Full_Backup_${System.currentTimeMillis()}.sgs"
-            var finalDocumentUri = destinationUri
-
-            // If the provided file name is not ending with .sgs, try to rename it
-            if (!documentFile.name.orEmpty().endsWith(".sgs")) {
-                val renamedFile = documentFile.renameTo(desiredFileName)
-                if (renamedFile) {
-                    finalDocumentUri = documentFile.uri // Use the URI of the renamed file
-                    Log.i(javaClass.simpleName, "createFullBackup: Renamed file to $desiredFileName")
-                } else {
-                    Log.w(javaClass.simpleName, "createFullBackup: Could not rename file to $desiredFileName. Proceeding with original name.")
-                }
-            } else {
-                // If it already ends with .sgs, but isn't the desired timestamped name, still rename it.
-                // This ensures consistency even if user chose a custom .sgs name.
-                val currentDisplayName = documentFile.name.orEmpty()
-                if (!currentDisplayName.startsWith("SagaAI_Full_Backup_") || !currentDisplayName.endsWith(".sgs")) {
-                     val renamedFile = documentFile.renameTo(desiredFileName)
-                    if (renamedFile) {
-                        finalDocumentUri = documentFile.uri
-                        Log.i(javaClass.simpleName, "createFullBackup: Renamed file to $desiredFileName for consistency.")
-                    } else {
-                        Log.w(javaClass.simpleName, "createFullBackup: Could not rename file to $desiredFileName for consistency. Proceeding with original name.")
-                    }
-                }
-            }
-
-            Log.d(javaClass.simpleName, "createFullBackup: Attempting to write to URI: $finalDocumentUri")
-            context.contentResolver.openOutputStream(finalDocumentUri, "w")?.use { outputStream ->
+            Log.d(
+                javaClass.simpleName,
+                "createFullBackup: Attempting to write to URI: $destinationUri"
+            )
+            context.contentResolver.openOutputStream(destinationUri, "w")?.use { outputStream ->
                 try {
                     ZipOutputStream(outputStream).use { zipStream ->
                         val manifest = sagas.map {
@@ -180,7 +271,7 @@ class BackupService(
                     throw e // Re-throw to propagate the error
                 }
             } ?: error("Could not open output stream for destination URI")
-            finalDocumentUri
+            destinationUri
         }
 
     suspend fun restoreFullBackup(uri: Uri): RequestResult<List<SagaContent>> =
@@ -229,25 +320,7 @@ class BackupService(
         destinationUri: Uri,
     ): RequestResult<Unit> =
         executeRequest {
-            val documentFile = DocumentFile.fromSingleUri(context, destinationUri)
-                ?: error("Could not get document file from URI")
-
-            val displayName = documentFile.name ?: "${saga.data.title.replace(" ", "_")}.saga"
-            val newDisplayName = if (displayName.endsWith(".saga")) displayName else "$displayName.saga"
-
-            val parentFolder = documentFile.parentFile
-                ?: error("Could not get parent folder from document file")
-
-            var newDocumentFile = parentFolder.findFile(newDisplayName)
-            if (newDocumentFile == null) {
-                newDocumentFile = parentFolder.createFile("application/octet-stream", newDisplayName)
-            } else {
-                newDocumentFile.delete()
-                newDocumentFile = parentFolder.createFile("application/octet-stream", newDisplayName)
-            }
-
-
-            context.contentResolver.openOutputStream(newDocumentFile?.uri ?: destinationUri, "rwt")?.use { outputStream ->
+            context.contentResolver.openOutputStream(destinationUri, "w")?.use { outputStream ->
                 writeSagaToZip(saga, outputStream)
             } ?: error("Could not open output stream for destination URI")
         }

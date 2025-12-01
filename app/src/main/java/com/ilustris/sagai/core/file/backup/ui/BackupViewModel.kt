@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -73,7 +72,29 @@ class BackupViewModel
         }
 
         fun setImportConfirmation(uri: Uri) {
-            _uiState.value = BackupUiState.ImportConfirmation(uri)
+            viewModelScope.launch {
+                val metadata = backupService.getFileMetadata(uri)
+                val extension = metadata.name.substringAfterLast(".")
+
+                val preview = when (extension) {
+                    "saga" -> {
+                        backupService.previewSagaBackup(uri).getSuccess()?.let {
+                            BackupPreview.Single(it)
+                        }
+                    }
+
+                    "sagas", "zip" -> {
+                        backupService.previewFullBackup(uri).getSuccess()?.let {
+                            BackupPreview.Full(it)
+                        }
+                    }
+
+                    else -> null
+                }
+
+                _uiState.value =
+                    BackupUiState.ImportConfirmation(uri, metadata.size, metadata.date, preview)
+            }
         }
     }
 
@@ -100,5 +121,16 @@ sealed class BackupUiState {
 
     data class ImportConfirmation(
         val uri: Uri,
+        val size: Long,
+        val date: Long,
+        val preview: BackupPreview? = null
     ) : BackupUiState()
+}
+
+sealed class BackupPreview {
+    data class Single(val info: BackupService.SagaPreviewInfo) :
+        BackupPreview()
+
+    data class Full(val sagas: List<BackupService.SagaPreviewInfo>) :
+        BackupPreview()
 }

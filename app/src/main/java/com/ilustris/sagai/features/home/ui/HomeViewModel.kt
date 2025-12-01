@@ -4,8 +4,6 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.file.backup.RestorableSaga
-import com.ilustris.sagai.core.file.backup.filterBackups
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
@@ -15,9 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
@@ -81,11 +76,11 @@ class HomeViewModel
             viewModelScope.launch(Dispatchers.IO) {
                 _isLoading.emit(true)
                 loadingMessage.emit("Importing backup...")
-                val extension = uri.lastPathSegment?.substringAfterLast(".")
-                val result = when (extension) {
+                val metadata = backupService.getFileMetadata(uri)
+                val result = when (val extension = metadata.name.substringAfterLast(".")) {
                     "saga" -> sagaBackupService.restoreSagaFromUri(uri)
-                    "sgs" -> backupService.restoreFullBackup(uri)
-                    else -> error("Unsupported file type")
+                    "sagas", "zip" -> backupService.restoreFullBackup(uri)
+                    else -> error("Unsupported file type: $extension")
                 }
                 result.onSuccessAsync {
                     loadingMessage.emit("Backup imported successfully!")

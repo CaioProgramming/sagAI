@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -80,7 +79,6 @@ import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.settings.ui.components.PreferencesContainer
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.components.StarryLoader
-import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
@@ -133,8 +131,11 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
     ) {
         stickyHeader {
             SharedTransitionLayout {
-                AnimatedContent(listState.canScrollBackward, modifier = Modifier.background(
-                    MaterialTheme.colorScheme.background).fillMaxWidth()) {
+                AnimatedContent(listState.canScrollBackward, modifier = Modifier
+                    .background(
+                        MaterialTheme.colorScheme.background
+                    )
+                    .fillMaxWidth()) {
                     if (it.not()) {
                         Text(
                             text = stringResource(R.string.settings_title),
@@ -142,10 +143,12 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                 MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Black,
                                 ),
-                            modifier = Modifier.sharedElement(
-                                rememberSharedContentState("header-key"),
-                                this
-                            ).padding(vertical = 16.dp),
+                            modifier = Modifier
+                                .sharedElement(
+                                    rememberSharedContentState("header-key"),
+                                    this
+                                )
+                                .padding(vertical = 16.dp),
                         )
                     } else {
                         Text(
@@ -155,10 +158,12 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center
                                 ),
-                            modifier = Modifier.sharedElement(
-                                rememberSharedContentState("header-key"),
-                                this
-                            )
+                            modifier = Modifier
+                                .sharedElement(
+                                    rememberSharedContentState("header-key"),
+                                    this
+                                )
+                                .padding(vertical = 16.dp),
                         )
                     }
                 }
@@ -481,7 +486,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
 
                 if (backupEnabled) {
 
-                    Row(modifier = Modifier.fillMaxWidth()
+                    Row(modifier = Modifier
+                        .fillMaxWidth()
                         .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             showBackups = true
@@ -568,7 +574,11 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
 
         item {
             val exportLauncher =
-                rememberLauncherForActivityResult(contract = ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+                rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.CreateDocument(
+                        "application/octet-stream"
+                    )
+                ) { uri ->
                     uri?.let {
                         viewModel.exportAllSagas(it)
                     }
@@ -583,7 +593,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     .clip(shape)
                     .background(MaterialTheme.colorScheme.surfaceContainer, shape)
                     .clickable {
-                        exportLauncher.launch("SagaAI_Full_Backup.sgs")
+                        exportLauncher.launch("SagaAI_Full_Backup.sagas")
                     }
                     .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,

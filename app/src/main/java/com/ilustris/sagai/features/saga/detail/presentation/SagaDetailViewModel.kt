@@ -189,7 +189,7 @@ class SagaDetailViewModel
         fun exportSaga() {
             val currentSaga = saga.value ?: return
             viewModelScope.launch {
-                val suggestedFileName = "${currentSaga.data.title.replace(" ", "_")}_backup.zip"
+                val suggestedFileName = "${currentSaga.data.title.replace(" ", "_")}.saga"
                 _exportLauncher.emit(suggestedFileName)
             }
         }
