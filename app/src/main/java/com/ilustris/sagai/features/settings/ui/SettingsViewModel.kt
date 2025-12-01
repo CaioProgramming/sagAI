@@ -4,8 +4,8 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.playthrough.PlaythroughCardPrompt
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
@@ -53,7 +53,7 @@ class SettingsViewModel
         val isLoading = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
 
-        private val _playthroughCardPrompt = MutableStateFlow<PlaythroughCardPrompt?>(null)
+        private val _playthroughCardPrompt = MutableStateFlow<DynamicSagaPrompt?>(null)
         val playthroughCardPrompt = _playthroughCardPrompt.asStateFlow()
 
         init {
@@ -70,7 +70,7 @@ class SettingsViewModel
                         _playthroughCardPrompt.value = result.value
                     }
                     is RequestResult.Error -> {
-                        _playthroughCardPrompt.value = PlaythroughCardPrompt(
+                        _playthroughCardPrompt.value = DynamicSagaPrompt(
                             "Sua Jornada Te Espera",
                             "Explore o caminho que você trilhou. Descubra a essência das suas escolhas e o impacto nas suas sagas."
                         )

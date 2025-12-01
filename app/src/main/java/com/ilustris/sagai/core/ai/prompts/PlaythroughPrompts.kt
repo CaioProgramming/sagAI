@@ -1,7 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.PlaythroughGen
-import com.ilustris.sagai.features.playthrough.PlaythroughCardPrompt
+import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 
 object PlaythroughPrompts {
     fun extractPlaythroughReview(emotionalSummary: List<String>, overallPlaytime: Long) =
