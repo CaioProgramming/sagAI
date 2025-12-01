@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.playthrough
 import android.content.Context
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.model.PlaythroughGen
 import com.ilustris.sagai.core.ai.prompts.PlaythroughPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -14,7 +15,7 @@ class PlaythroughUseCaseImpl
     @Inject
     constructor(
         private val sagaRepository: SagaRepository,
-        private val textGenClient: GemmaClient,
+        private val gemmaClient: GemmaClient,
         @ApplicationContext
         private val context: Context,
     ) : PlaythroughUseCase {
@@ -49,11 +50,11 @@ class PlaythroughUseCaseImpl
 
                 val playtimeReview =
                     if (emotionalSummaries.isNotEmpty()) {
-                        val prompt = PlaythroughPrompts.extractPlaythroughReview(emotionalSummaries)
-                        textGenClient.generate<String>(prompt)
-                            ?: context.getString(R.string.continue_to_play)
+                        gemmaClient.generate<PlaythroughGen>(
+                            PlaythroughPrompts.extractPlaythroughReview(emotionalSummaries, totalPlaytimeMs / 60000) // Convert ms to minutes
+                        ) ?: PlaythroughGen("A Saga Unfolds", context.getString(R.string.continue_to_play))
                     } else {
-                        context.getString(R.string.continue_to_play)
+                        PlaythroughGen("A Saga Unfolds", context.getString(R.string.continue_to_play))
                     }
 
                 RequestResult.Success(

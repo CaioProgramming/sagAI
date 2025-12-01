@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.playthrough
 
+import com.ilustris.sagai.core.ai.model.PlaythroughGen
 import com.ilustris.sagai.core.data.RequestResult
 
 interface PlaythroughUseCase {
@@ -9,5 +10,5 @@ interface PlaythroughUseCase {
 data class PlayThroughData(
     val totalPlayTime: String,
     val totalPlaytimeMs: Long,
-    val playtimeReview: String,
+    val playtimeReview: PlaythroughGen,
 )
