@@ -45,7 +45,7 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 fun StarryLoader(
     isLoading: Boolean,
     loadingMessage: String? = null,
-    textStyle: TextStyle = MaterialTheme.typography.headlineMedium,
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
     brushColors: List<Color> = holographicGradient,
 ) {
     val setBlur = LocalBlurState.current

@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.playthrough
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -30,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,7 +43,6 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlinx.coroutines.delay
-import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -115,23 +112,11 @@ fun PlaythroughSheet(
                             Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp)
-                                .padding(bottom = 32.dp),
+                                .padding(bottom = 32.dp)
+                                .reactiveShimmer(true),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
-
-                        Text(
-                            text = currentState.data.playtimeReview.title,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontStyle = FontStyle.Italic,
-                                brush = Brush.linearGradient(holographicGradient),
-                                shadow = Shadow(Color.White, blurRadius = 5f),
-                                fontWeight = FontWeight.Light
-                            ),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(16.dp)
-                                .reactiveShimmer(true),
-                        )
 
                         Icon(
                             painterResource(R.drawable.ic_spark),
@@ -139,9 +124,32 @@ fun PlaythroughSheet(
                             modifier =
                                 Modifier
                                     .size(64.dp)
-                                    .reactiveShimmer(true)
                                     .gradientFill(Brush.linearGradient(holographicGradient)),
                         )
+
+                        AnimatedContent(currentAnimatedGenre, transitionSpec = {
+                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                                animationSpec = tween(
+                                    500
+                                )
+                            )
+                        }) {
+                            Text(
+                                text = currentState.data.playtimeReview.title,
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontStyle = FontStyle.Italic,
+                                    brush = it.gradient(),
+                                    shadow = Shadow(Color.White, blurRadius = 5f),
+                                    fontWeight = FontWeight.Light,
+                                    fontFamily = it.bodyFont()
+                                ),
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier
+                                    .padding(16.dp)
+                            )
+                        }
+
+
 
                         AnimatedPlaytimeCounter(
                             playtimeMs = currentState.data.totalPlaytimeMs,
@@ -150,21 +158,12 @@ fun PlaythroughSheet(
                             animationDuration = 3.seconds
                         )
 
-                        AnimatedContent(targetState = currentAnimatedGenre, transitionSpec = {
-                            fadeIn(animationSpec = tween(500)) togetherWith fadeOut(animationSpec = tween(500))
-                        }) { animatedGenre ->
-                            Text(
-                                text = currentState.data.playtimeReview.message,
-                                style = TextStyle(
-                                    brush = Brush.linearGradient(animatedGenre.gradient()),
-                                    fontFamily = animatedGenre.bodyFont(),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = MaterialTheme.typography.bodyLarge.fontSize
-                                ),
-                                textAlign = TextAlign.Start,
-                                modifier = Modifier.padding(16.dp),
-                            )
-                        }
+                        Text(
+                            text = currentState.data.playtimeReview.message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Start,
+                            modifier = Modifier.padding(16.dp),
+                        )
                     }
                 }
             }

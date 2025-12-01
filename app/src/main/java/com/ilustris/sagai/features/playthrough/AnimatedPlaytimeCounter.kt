@@ -23,6 +23,9 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 @Composable
 fun AnimatedPlaytimeCounter(
@@ -31,6 +34,7 @@ fun AnimatedPlaytimeCounter(
     genre: Genre? = null,
     textStyle: TextStyle = MaterialTheme.typography.labelMedium,
     modifier: Modifier = Modifier,
+    animationDuration: Duration = 1.seconds
 ) {
     val hours = (playtimeMs / 3600000).toInt()
     val minutes = ((playtimeMs % 3600000) / 60000).toInt()
@@ -40,7 +44,7 @@ fun AnimatedPlaytimeCounter(
 
     val animatedHours by animateIntAsState(
         targetValue = targetHours,
-        animationSpec = tween(durationMillis = 1000),
+        animationSpec = tween(durationMillis = animationDuration.toInt(DurationUnit.MILLISECONDS)),
         label = "hours_animation",
     )
 

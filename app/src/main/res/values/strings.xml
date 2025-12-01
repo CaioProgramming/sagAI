@@ -332,7 +332,7 @@
     <string name="settings_your_playthrough_title">Your Journey Awaits</string>
     <string name="settings_your_playthrough_subtitle">Explore the path you\'ve walked. Discover the essence of your choices and their impact on your sagas.</string>
     <string name="settings_backup_restore_sagas_description">Recover your stories; let\'s check if anything is available in the backup.</string>
-    <string name="settings_export_sagas_description">Export all your sagas as a single .sgs file for safekeeping.</string>
+    <string name="settings_export_sagas_description">Export all your sagas as a single file for safekeeping.</string>
     <string name="settings_import_sagas_description">You can import exported sagas and recover your history.</string>
 
     <string name="backup_enabled_label">Backup Enabled</string>
