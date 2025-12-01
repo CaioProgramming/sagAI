@@ -322,11 +322,18 @@
     <string name="act_title_template">Act %s</string>
     <string name="restore_sagas">Restore sagas</string>
     <string name="import_saga">Import Saga</string>
+    <string name="export_all_sagas">Export All Sagas</string>
     <string name="not_available" translatable="false">---</string>
     <string name="updates_count">%d Updates</string>
     <string name="last_update">Last update</string>
     <string name="chat_view_subtitle">Act %1$s - Chapter %2$s</string>
     <string name="continue_to_play">Continue exploring your sagas to discover more about your play style!</string>
+
+    <string name="settings_your_playthrough_title">Your Journey Awaits</string>
+    <string name="settings_your_playthrough_subtitle">Explore the path you\'ve walked. Discover the essence of your choices and their impact on your sagas.</string>
+    <string name="settings_backup_restore_sagas_description">Recover your stories; let\'s check if anything is available in the backup.</string>
+    <string name="settings_export_sagas_description">Export all your sagas as a single .sgs file for safekeeping.</string>
+    <string name="settings_import_sagas_description">You can import exported sagas and recover your history.</string>
 
     <string name="backup_enabled_label">Backup Enabled</string>
     <string name="backup_disabled_label">Backup Disabled</string>

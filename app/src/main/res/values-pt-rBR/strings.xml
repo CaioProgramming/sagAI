@@ -298,6 +298,14 @@
     <string name="updates_count">%d Atualizações</string>
     <string name="last_update">Última atualização</string>
     <string name="chat_view_subtitle">Ato %1$s - Capítulo %2$s</string>
+    <string name="continue_to_play">Continue explorando suas sagas para descobrir mais sobre seu estilo de jogo!</string>
+
+    <string name="settings_your_playthrough_title">Sua Jornada Te Espera</string>
+    <string name="settings_your_playthrough_subtitle">Explore o caminho que você trilhou. Descubra a essência das suas escolhas e o impacto nas suas sagas.</string>
+    <string name="settings_backup_restore_sagas_description">Recupere suas histórias; vamos verificar se há algo disponível no backup.</string>
+    <string name="settings_export_sagas_description">Exporte todas as suas sagas como um único arquivo .sgs para guardar com segurança.</string>
+    <string name="settings_import_sagas_description">Você pode importar sagas exportadas e recuperar sua história.</string>
+
     <string name="backup_enabled_label">Backup Ativado</string>
     <string name="backup_disabled_label">Backup Desativado</string>
     <string name="backup_enabled_message">Sua saga está sendo salva automaticamente</string>

@@ -1,8 +1,10 @@
 package com.ilustris.sagai.features.settings.ui
 
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -12,6 +14,7 @@ import com.ilustris.sagai.features.settings.domain.StorageBreakdown
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +34,7 @@ class SettingsViewModel
         private val backupService: BackupService,
         private val sagaRepository: SagaRepository,
         private val playthroughUseCase: PlaythroughUseCase,
+        @ApplicationContext private val context: Context,
     ) : ViewModel() {
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
 
@@ -71,8 +75,8 @@ class SettingsViewModel
                     }
                     is RequestResult.Error -> {
                         _playthroughCardPrompt.value = DynamicSagaPrompt(
-                            "Sua Jornada Te Espera",
-                            "Explore o caminho que você trilhou. Descubra a essência das suas escolhas e o impacto nas suas sagas."
+                            context.getString(R.string.settings_your_playthrough_title),
+                            context.getString(R.string.settings_your_playthrough_subtitle)
                         )
                     }
                 }

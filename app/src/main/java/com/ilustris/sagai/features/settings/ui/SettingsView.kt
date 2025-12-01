@@ -502,25 +502,27 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                                         MaterialTheme.colorScheme.secondary,
                                         RoundedCornerShape(5.dp),
                                     )
-                                    .size(24.dp)
-                                    .padding(4.dp)
+                                    .size(32.dp)
+                                    .padding(8.dp)
                                     ,
                         )
 
-                        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.restore_sagas),
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.Light,
+                                        fontWeight = FontWeight.SemiBold
                                     ),
 
                             )
 
                             Text(
-                                "Recupere suas histórias, vamos verificar se há algo disponível no backup.",
+                                stringResource(R.string.settings_backup_restore_sagas_description),
                                 modifier = Modifier.alpha(.7f),
-                                style = MaterialTheme.typography.labelMedium
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontWeight = FontWeight.Normal
+                                )
                             )
 
                         }
@@ -593,7 +595,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     tint = Color.White,
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(5.dp))
-                        .size(24.dp)
+                        .size(32.dp)
+                        .padding(8.dp)
                 )
                 Column(
                     modifier = Modifier.weight(1f),
@@ -604,7 +607,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
                     Text(
-                        text = "Export all your sagas as a single .sgs file for safekeeping.",
+                        text = stringResource(R.string.settings_export_sagas_description),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
@@ -643,7 +646,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     tint = Color.White,
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(5.dp))
-                        .size(24.dp)
+                        .size(32.dp)
                         .padding(8.dp)
                 )
                 Column(
@@ -655,7 +658,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     )
                     Text(
-                        text = "You can import exported sagas and recover your history.",
+                        text = stringResource(R.string.settings_import_sagas_description),
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
