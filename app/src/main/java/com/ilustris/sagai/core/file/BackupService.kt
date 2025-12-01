@@ -104,7 +104,7 @@ class BackupService(
             sagaZipFile?.delete()
 
             sagaZipFile =
-                backupRoot.createFile("application/zip", zipFileName)
+                backupRoot.createFile("application/octet-stream", zipFileName)
                     ?: error("Could not create zip file in backup directory.")
 
             context.contentResolver.openOutputStream(sagaZipFile.uri, "w")?.use { outputStream ->
@@ -195,7 +195,25 @@ class BackupService(
         destinationUri: Uri,
     ): RequestResult<Unit> =
         executeRequest {
-            context.contentResolver.openOutputStream(destinationUri, "rwt")?.use { outputStream ->
+            val documentFile = DocumentFile.fromSingleUri(context, destinationUri)
+                ?: error("Could not get document file from URI")
+
+            val displayName = documentFile.name ?: "${saga.data.title.replace(" ", "_")}.saga"
+            val newDisplayName = if (displayName.endsWith(".saga")) displayName else "$displayName.saga"
+
+            val parentFolder = documentFile.parentFile
+                ?: error("Could not get parent folder from document file")
+
+            var newDocumentFile = parentFolder.findFile(newDisplayName)
+            if (newDocumentFile == null) {
+                newDocumentFile = parentFolder.createFile("application/zip", newDisplayName)
+            } else {
+                newDocumentFile.delete()
+                newDocumentFile = parentFolder.createFile("application/zip", newDisplayName)
+            }
+
+
+            context.contentResolver.openOutputStream(newDocumentFile?.uri ?: destinationUri, "rwt")?.use { outputStream ->
                 writeSagaToZip(saga, outputStream)
             } ?: error("Could not open output stream for destination URI")
         }
