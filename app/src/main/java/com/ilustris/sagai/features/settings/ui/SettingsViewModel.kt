@@ -3,14 +3,20 @@ package com.ilustris.sagai.features.settings.ui
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
+import com.ilustris.sagai.features.playthrough.PlaythroughCardPrompt
+import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.settings.domain.StorageBreakdown
+import com.ilustris.sagai.core.file.BackupService
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -22,6 +28,9 @@ class SettingsViewModel
     @Inject
     constructor(
         private val settingsUseCase: SettingsUseCase,
+        private val backupService: BackupService,
+        private val sagaRepository: SagaRepository,
+        private val playthroughUseCase: PlaythroughUseCase,
     ) : ViewModel() {
         val notificationsEnabled = settingsUseCase.getNotificationsEnabled()
 
@@ -44,10 +53,30 @@ class SettingsViewModel
         val isLoading = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
 
+        private val _playthroughCardPrompt = MutableStateFlow<PlaythroughCardPrompt?>(null)
+        val playthroughCardPrompt = _playthroughCardPrompt.asStateFlow()
+
         init {
             loadMemoryUsage()
             checkUserPro()
             loadStorageBreakdown()
+            loadPlaythroughCardPrompt()
+        }
+
+        private fun loadPlaythroughCardPrompt() {
+            viewModelScope.launch {
+                when (val result = playthroughUseCase.getPlaythroughCardPrompt()) {
+                    is RequestResult.Success -> {
+                        _playthroughCardPrompt.value = result.value
+                    }
+                    is RequestResult.Error -> {
+                        _playthroughCardPrompt.value = PlaythroughCardPrompt(
+                            "Sua Jornada Te Espera",
+                            "Explore o caminho que você trilhou. Descubra a essência das suas escolhas e o impacto nas suas sagas."
+                        )
+                    }
+                }
+            }
         }
 
         fun clearCache() {
@@ -88,7 +117,6 @@ class SettingsViewModel
                 loadingMessage.emit("Limpando seus universos...")
                 settingsUseCase.wipeAppData()
                 loadingMessage.emit("Suas histórias foram removidas, hora de recomeçar!")
-                loadMemoryUsage()
                 delay(2.seconds)
                 isLoading.value = false
                 loadingMessage.emit(null)
@@ -104,6 +132,23 @@ class SettingsViewModel
         fun importSaga(uri: Uri) {
             viewModelScope.launch {
                 settingsUseCase.restoreSaga(uri)
+            }
+        }
+
+        fun exportAllSagas(destinationUri: Uri) {
+            viewModelScope.launch {
+                isLoading.value = true
+                loadingMessage.emit("Exporting all sagas...")
+                val sagas = sagaRepository.getChats().first()
+                val backupName = "SagaAI_Backup_${System.currentTimeMillis()}"
+                backupService.createFullBackup(backupName, sagas).onSuccessAsync {
+                    loadingMessage.emit("All sagas exported successfully!")
+                }.onFailureAsync {
+                    loadingMessage.emit("Error exporting sagas: ${it.message}")
+                }
+                delay(2.seconds)
+                isLoading.value = false
+                loadingMessage.emit(null)
             }
         }
 

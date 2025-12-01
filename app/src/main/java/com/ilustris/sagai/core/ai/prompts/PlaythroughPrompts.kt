@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.model.PlaythroughGen
+import com.ilustris.sagai.features.playthrough.PlaythroughCardPrompt
 
 object PlaythroughPrompts {
     fun extractPlaythroughReview(emotionalSummary: List<String>, overallPlaytime: Long) =
@@ -56,4 +57,27 @@ object PlaythroughPrompts {
             appendLine("}")
             appendLine("```")
         }
+
+    fun playthroughCallToActionPrompt() =
+        buildString {
+            appendLine("You are an expert storyteller and marketing copywriter for a narrative game.")
+            appendLine("Your task is to create a compelling, short call-to-action for a 'Playthrough Review' feature.")
+            appendLine("This feature will summarize the player's journey and playstyle.")
+            appendLine()
+            appendLine("## Instructions")
+            appendLine("1. **Title**: Craft a concise, intriguing title (max 5 words) that piques curiosity about their personal journey.")
+            appendLine("2. **Subtitle**: Write a short, engaging subtitle (1-2 sentences) that highlights the benefit of the review (e.g., 'Discover your unique path,' 'Uncover the story of your choices').")
+            appendLine("3. **Tone**: Mysterious, inviting, personalized, and slightly epic.")
+            appendLine("4. **Avoid**: Generic calls to action, direct commands, or sounding like an advertisement.")
+            appendLine()
+            appendLine("## Output Format")
+            appendLine("Return a JSON object with two fields: 'title' (String) and 'subtitle' (String).")
+            appendLine("Example:")
+            appendLine("```json")
+            appendLine("{")
+            appendLine("  \"title\": \"Your Saga, Unveiled\",")
+            appendLine("  \"subtitle\": \"Every choice leaves a mark. See the tapestry you've woven.\"")
+            appendLine("}")
+            appendLine("```")
+        }.trimIndent()
 }

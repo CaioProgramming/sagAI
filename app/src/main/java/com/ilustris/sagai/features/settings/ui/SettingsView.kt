@@ -7,6 +7,9 @@ import android.Manifest
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,6 +27,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -55,6 +60,7 @@ import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -80,6 +86,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
     val notificationsEnabled by viewModel.notificationsEnabled.collectAsStateWithLifecycle(false)
@@ -110,7 +117,12 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
     val blurRadius = if (isWiping || showClearDialog) 16.dp else 0.dp
     var showBackupSheet by remember { mutableStateOf(false) }
     var showBackups by remember { mutableStateOf(true) }
+    val listState = rememberLazyListState()
+
+
+
     LazyColumn(
+        state = listState,
         modifier =
             Modifier
                 .statusBarsPadding()
@@ -119,15 +131,39 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                 .blur(blurRadius),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        item {
-            Text(
-                text = stringResource(R.string.settings_title),
-                style =
-                    MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Black,
-                    ),
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
+        stickyHeader {
+            SharedTransitionLayout {
+                AnimatedContent(listState.canScrollBackward, modifier = Modifier.background(
+                    MaterialTheme.colorScheme.background).fillMaxWidth()) {
+                    if (it.not()) {
+                        Text(
+                            text = stringResource(R.string.settings_title),
+                            style =
+                                MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Black,
+                                ),
+                            modifier = Modifier.sharedElement(
+                                rememberSharedContentState("header-key"),
+                                this
+                            ).padding(vertical = 16.dp),
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.settings_title),
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                ),
+                            modifier = Modifier.sharedElement(
+                                rememberSharedContentState("header-key"),
+                                this
+                            )
+                        )
+                    }
+                }
+            }
+
         }
 
         if (isUserPro) {
@@ -147,16 +183,8 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
         }
 
         item {
-            val totalPlaytime by viewModel.totalPlaytime.collectAsStateWithLifecycle()
             var showPlaythroughSheet by remember { mutableStateOf(false) }
-
-            val hours = totalPlaytime / 3600000
-            val minutes = (totalPlaytime % 3600000) / 60000
-            if (hours > 0) {
-                stringResource(R.string.playtime_format_hours, hours, minutes)
-            } else {
-                stringResource(R.string.playtime_format_minutes, minutes)
-            }
+            val playthroughCardPrompt by viewModel.playthroughCardPrompt.collectAsStateWithLifecycle()
 
             Column(
                 modifier =
@@ -182,6 +210,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         .clickable {
                             showPlaythroughSheet = true
                         }
+                        .reactiveShimmer(playthroughCardPrompt == null)
                         .padding(16.dp),
             ) {
                 Row(
@@ -198,11 +227,11 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                     )
                     Column {
                         Text(
-                            text = stringResource(R.string.your_playthrough_title),
+                            text = playthroughCardPrompt?.title ?: stringResource(R.string.your_playthrough_title),
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                         )
                         Text(
-                            text = stringResource(R.string.your_playthrough_subtitle),
+                            text = playthroughCardPrompt?.subtitle ?: stringResource(R.string.your_playthrough_subtitle),
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.alpha(0.7f),
                         )
@@ -451,79 +480,57 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                 )
 
                 if (backupEnabled) {
-                    Button(onClick = {
-                        showBackups = true
-                        showBackupSheet = true
-                    },
-                        modifier = Modifier.align(Alignment.CenterHorizontally),
-                        colors = ButtonDefaults.textButtonColors(),
+
+                    Row(modifier = Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(15.dp))
+                        .clickable {
+                            showBackups = true
+                            showBackupSheet = true
+                        }
+                        .padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+
                     ) {
                         Icon(
                             painterResource(R.drawable.ic_restore),
                             null,
+                            tint = Color.White,
                             modifier =
                                 Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .size(24.dp),
+                                    .background(
+                                        MaterialTheme.colorScheme.secondary,
+                                        RoundedCornerShape(5.dp),
+                                    )
+                                    .size(24.dp)
+                                    .padding(4.dp)
+                                    ,
                         )
-                        Text(
-                            stringResource(R.string.restore_sagas),
-                            style =
-                                MaterialTheme.typography.labelLarge.copy(
-                                    fontWeight = FontWeight.Light,
-                                ),
-                        )
-                    }
-                }
 
-                val launcher =
-                    rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri ->
-                        uri?.let {
-                            viewModel.importSaga(it)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
+                            Text(
+                                stringResource(R.string.restore_sagas),
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Light,
+                                    ),
+
+                            )
+
+                            Text(
+                                "Recupere suas histórias, vamos verificar se há algo disponível no backup.",
+                                modifier = Modifier.alpha(.7f),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+
                         }
+
+
                     }
 
-                val iconRes = R.drawable.ic_zip
-                val iconTint = MaterialTheme.colorScheme.primary
-
-                val shape = RoundedCornerShape(15.dp)
-
-                Row(
-                    modifier =
-                        Modifier
-                            .padding(vertical = 8.dp)
-                            .fillMaxWidth()
-                            .clip(shape)
-                            .background(iconTint.copy(alpha = .2f), shape)
-                            .clickable {
-                                launcher.launch(arrayOf("application/zip"))
-                            }
-                            .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(id = iconRes),
-                        contentDescription = null,
-                        tint = iconTint,
-                        modifier = Modifier.size(24.dp),
-                    )
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.import_saga),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                            color = iconTint.darker(),
-                        )
-                        Text(
-                            text = "You can import exported sagas and recover your history.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = iconTint.darker(),
-                        )
-                    }
                 }
+
+
 
                 HorizontalDivider(
                     modifier = Modifier.fillMaxWidth(),
@@ -554,6 +561,104 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                         viewModel.setMessageEffectsEnabled(!it)
                     },
                 )
+            }
+        }
+
+        item {
+            val exportLauncher =
+                rememberLauncherForActivityResult(contract = ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+                    uri?.let {
+                        viewModel.exportAllSagas(it)
+                    }
+                }
+            val shape = RoundedCornerShape(15.dp)
+
+            Row(
+                modifier =
+                Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MaterialTheme.colorScheme.surfaceContainer, shape)
+                    .clickable {
+                        exportLauncher.launch("SagaAI_Full_Backup.sgs")
+                    }
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_folder),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.tertiary, RoundedCornerShape(5.dp))
+                        .size(24.dp)
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.export_all_sagas),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    )
+                    Text(
+                        text = "Export all your sagas as a single .sgs file for safekeeping.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            }
+        }
+
+        item {
+            val launcher =
+                rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri ->
+                    uri?.let {
+                        viewModel.importSaga(it)
+                    }
+                }
+
+            val iconTint = MaterialTheme.colorScheme.surfaceContainer
+
+            val shape = RoundedCornerShape(15.dp)
+
+            Row(
+                modifier =
+                    Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth()
+                        .clip(shape)
+                        .background(iconTint, shape)
+                        .clickable {
+                            launcher.launch(arrayOf("application/zip"))
+                        }
+                        .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_import),
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(5.dp))
+                        .size(24.dp)
+                        .padding(8.dp)
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.import_saga),
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    )
+                    Text(
+                        text = "You can import exported sagas and recover your history.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
         }
 

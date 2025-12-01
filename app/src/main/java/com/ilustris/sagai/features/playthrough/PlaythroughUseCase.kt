@@ -6,6 +6,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 interface PlaythroughUseCase {
     suspend fun invoke(): RequestResult<PlayThroughData>
+    suspend fun getPlaythroughCardPrompt(): RequestResult<PlaythroughCardPrompt>
 }
 
 data class PlayThroughData(

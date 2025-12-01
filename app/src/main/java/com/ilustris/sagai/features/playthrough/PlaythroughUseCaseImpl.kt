@@ -6,6 +6,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.model.PlaythroughGen
 import com.ilustris.sagai.core.ai.prompts.PlaythroughPrompts
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
@@ -71,4 +72,13 @@ class PlaythroughUseCaseImpl
             } catch (e: Exception) {
                 RequestResult.Error(e)
             }
+
+        override suspend fun getPlaythroughCardPrompt(): RequestResult<PlaythroughCardPrompt> = executeRequest {
+            val prompt = PlaythroughPrompts.playthroughCallToActionPrompt()
+            gemmaClient.generate<PlaythroughCardPrompt>(
+                prompt,
+                temperatureRandomness = .5f,
+                requireTranslation = true,
+            )!!
+        }
     }
