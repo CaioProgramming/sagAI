@@ -47,9 +47,10 @@ fun StarryLoader(
     loadingMessage: String? = null,
     textStyle: TextStyle = MaterialTheme.typography.headlineMedium,
     brushColors: List<Color> = holographicGradient,
+    useAsDialog: Boolean = true
 ) {
     val setBlur = LocalBlurState.current
-    DisposableEffect(isLoading) {
+    DisposableEffect(isLoading && useAsDialog) {
         setBlur(isLoading)
         onDispose {
             setBlur(false)
@@ -57,20 +58,87 @@ fun StarryLoader(
     }
 
     if (isLoading) {
-        Dialog(
-            onDismissRequest = { },
-            properties =
-                DialogProperties(
-                    dismissOnBackPress = false,
-                    dismissOnClickOutside = false,
-                    decorFitsSystemWindows = false,
-                    usePlatformDefaultWidth = false,
-                ),
-        ) {
-            val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
-            SideEffect {
-                dialogWindowProvider?.window?.setDimAmount(0f) // 0f is transparent, default is around 0.6f
+        if (useAsDialog) {
+            Dialog(
+                onDismissRequest = { },
+                properties =
+                    DialogProperties(
+                        dismissOnBackPress = false,
+                        dismissOnClickOutside = false,
+                        decorFitsSystemWindows = false,
+                        usePlatformDefaultWidth = false,
+                    ),
+            ) {
+                val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
+                SideEffect {
+                    dialogWindowProvider?.window?.setDimAmount(0f) // 0f is transparent, default is around 0.6f
+                }
+                Box(Modifier.fillMaxSize()) {
+                    val starsAlpha by animateFloatAsState(
+                        targetValue = if (loadingMessage == null) 1f else .7f,
+                        animationSpec = tween(500),
+                    )
+                    StarryTextPlaceholder(
+                        modifier =
+                            Modifier
+                                .alpha(starsAlpha)
+                                .fillMaxSize()
+                                .gradientFill(Brush.verticalGradient(brushColors)),
+                    )
+
+                    val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
+                    val rotation by infiniteTransition.animateFloat(
+                        initialValue = 0f,
+                        targetValue = 360f,
+                        animationSpec =
+                            infiniteRepeatable(
+                                animation = tween(3000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Restart,
+                            ),
+                        label = "rotation",
+                    )
+
+                    Canvas(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .blur(15.dp),
+                    ) {
+                        drawRect(
+                            brush =
+                                object : ShaderBrush() {
+                                    override fun createShader(size: Size): Shader {
+                                        val shader =
+                                            (sweepGradient(brushColors) as ShaderBrush).createShader(
+                                                size,
+                                            )
+                                        val matrix = Matrix()
+                                        matrix.setRotate(rotation, size.width / 2, size.height / 2)
+                                        shader.setLocalMatrix(matrix)
+                                        return shader
+                                    }
+                                },
+                            style = Stroke(width = 10.dp.toPx()),
+                        )
+                    }
+
+                    AnimatedContent(
+                        loadingMessage,
+                        modifier = Modifier.align(Alignment.Center),
+                        transitionSpec = {
+                            fadeIn(tween(500)) togetherWith slideOutVertically { it }
+                        },
+                    ) {
+                        it?.let { message ->
+                            Text(
+                                message,
+                                style = textStyle,
+                            )
+                        }
+                    }
+                }
             }
+        } else {
             Box(Modifier.fillMaxSize()) {
                 val starsAlpha by animateFloatAsState(
                     targetValue = if (loadingMessage == null) 1f else .7f,

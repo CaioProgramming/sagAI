@@ -107,7 +107,7 @@ object SagaPrompts {
         appendLine("* You will have access to subject(s) visual reference to provide a more precise description.")
         appendLine("Visual Direction:")
         visualDirection?.let {
-            appendLine("This rules dictate how you should describe the icon composition")
+            appendLine("These rules dictate the composition and **Dramatic Direction**. You MUST incorporate the 'Mood & Dramatic Direction' into the character's pose and expression.")
             appendLine(GenrePrompts.artStyle(genre))
             appendLine(it)
         } ?: run {
@@ -116,6 +116,8 @@ object SagaPrompts {
         }
         appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
         appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
+        appendLine("The image should have some breathing room at the top, allowing text to be overlaid with a depth effect (like the iOS lockscreen). This means the main subject shouldn't occupy the entire top portion of the frame.")
+        appendLine("The image aspect ratio should be 9:16 (vertical orientation) to fit mobile screens.")
         appendLine(ImagePrompts.descriptionRules(genre))
     }
 

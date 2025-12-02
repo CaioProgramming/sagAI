@@ -24,5 +24,4 @@ gha-creds-*.json
 .junie/
 .kotlin/sessions/
 keystore.properties
-!/docs/posts
-!/docs/feature_planning
+/docs/

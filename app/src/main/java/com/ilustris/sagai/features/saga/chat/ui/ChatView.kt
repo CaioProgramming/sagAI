@@ -7,6 +7,7 @@
 package com.ilustris.sagai.features.saga.chat.ui
 
 import android.Manifest
+import android.graphics.Bitmap
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -156,6 +157,7 @@ import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.components.SnackAction
 import com.ilustris.sagai.ui.components.SnackBarState
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -213,8 +215,18 @@ fun ChatView(
     val activity = LocalActivity.current
     var requiredPermission by remember { mutableStateOf<String?>(null) }
     val requestPermissionLauncher = PermissionService.rememberPermissionLauncher()
+    val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
+    val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
     var showCharacter by remember {
         mutableStateOf<CharacterContent?>(null)
+    }
+
+    LaunchedEffect(content) {
+        content?.let {
+            if (it.data.icon.isNotEmpty()) {
+                viewModel.segmentSagaCover(it.data.icon)
+            }
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -363,6 +375,8 @@ fun ChatView(
                                             },
                                             updateCharacter = viewModel::updateCharacter,
                                             messageEffectsEnabled = messageEffectsEnabled,
+                                            originalBitmap = originalBitmap,
+                                            segmentedBitmap = segmentedBitmap,
                                         )
                                     }
                                 }
@@ -533,6 +547,8 @@ fun ChatContent(
     reviewChapter: (ChapterContent) -> Unit = {},
     updateCharacter: (CharacterContent) -> Unit = {},
     messageEffectsEnabled: Boolean = true,
+    originalBitmap: Bitmap? = null,
+    segmentedBitmap: Bitmap? = null,
 ) {
     val saga = remember { content.data }
     val timeline = remember { content.getCurrentTimeLine() }
@@ -660,6 +676,8 @@ fun ChatContent(
                         requestNewCharacter = requestNewCharacter,
                         reviewEvent = reviewEvent,
                         messageEffectsEnabled = messageEffectsEnabled,
+                        originalBitmap = originalBitmap,
+                        segmentedBitmap = segmentedBitmap,
                     )
 
                     Box(
@@ -1071,11 +1089,14 @@ private fun EmptyMessagesView(
     }
 }
 
+
 @Composable
 fun SagaHeader(
     saga: Saga,
     modifier: Modifier,
     openSaga: () -> Unit,
+    originalBitmap: Bitmap? = null,
+    segmentedBitmap: Bitmap? = null,
 ) {
     Column(modifier) {
         AnimatedVisibility(saga.icon.isNotEmpty()) {
@@ -1084,13 +1105,41 @@ fun SagaHeader(
                     Modifier
                         .background(MaterialTheme.colorScheme.background)
                         .fillMaxWidth()
-                        .height(350.dp),
+                        .fillMaxHeight(.4f),
             ) {
-                AsyncImage(
-                    saga.icon,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier =
+                if (originalBitmap != null && segmentedBitmap != null) {
+                    DepthLayout(
+                        originalImage = originalBitmap,
+                        segmentedImage = segmentedBitmap,
+                        modifier = Modifier.fillMaxSize(),
+                        imageModifier = Modifier
+                            .effectForGenre(saga.genre)
+                            .selectiveColorHighlight(saga.genre.selectiveHighlight())
+                    ) {
+                        Text(
+                            saga.title,
+                            style =
+                                MaterialTheme.typography.displayMedium.copy(
+                                    fontFamily = saga.genre.headerFont(),
+                                ),
+                            fontWeight = FontWeight.Normal,
+                            textAlign = TextAlign.Center,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                                    .gradientFill(saga.genre.gradient(true))
+                                    .clickable {
+                                        openSaga()
+                                    },
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        saga.icon,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier =
                         Modifier
                             .align(Alignment.Center)
                             .effectForGenre(saga.genre)
@@ -1098,7 +1147,8 @@ fun SagaHeader(
                                 saga.genre.selectiveHighlight(),
                             )
                             .fillMaxSize(),
-                )
+                    )
+                }
 
                 Box(
                     Modifier
@@ -1121,25 +1171,6 @@ fun SagaHeader(
                 )
             }
         }
-
-        Text(
-            saga.title,
-            style =
-                MaterialTheme.typography.displayMedium.copy(
-                    fontFamily = saga.genre.headerFont(),
-                ),
-            fontWeight = FontWeight.Normal,
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .background(fadeGradientTop())
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .gradientFill(saga.genre.gradient(true))
-                    .clickable {
-                        openSaga()
-                    },
-        )
 
         var isDescriptionExpanded by remember { mutableStateOf(false) }
         val textColor by animateColorAsState(
@@ -1194,6 +1225,8 @@ fun ChatList(
     reviewEvent: (TimelineContent) -> Unit = {},
     reviewChapter: (ChapterContent) -> Unit = {},
     messageEffectsEnabled: Boolean = true,
+    originalBitmap: Bitmap? = null,
+    segmentedBitmap: Bitmap? = null,
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -1223,6 +1256,8 @@ fun ChatList(
                         .padding(16.dp)
                         .fillMaxWidth(),
                     onClick = { openSaga() },
+                    originalBitmap = originalBitmap,
+                    segmentedBitmap = segmentedBitmap,
                 )
             }
 
@@ -1495,6 +1530,8 @@ fun ChatList(
                     Modifier
                         .fillMaxWidth(),
                 openSaga = openSaga,
+                originalBitmap = originalBitmap,
+                segmentedBitmap = segmentedBitmap,
             )
         }
     }

@@ -11,6 +11,7 @@ hiltWork = "1.2.0"
 hypnoticcanvas = "0.4.1"
 hypnoticcanvasShaders = "0.4.1"
 kotlin = "2.2.20"
+kotlinToon = "1.0.0"
 kotlinxCoroutinesPlayServices = "1.10.2"
 media = "1.7.1"
 mediapipeTasksText = "0.10.12"
@@ -38,6 +39,7 @@ workRuntimeKtx = "2.10.5"
 lifecycleProcess = "2.9.4"
 uiUnit = "1.9.4"
 uiGraphics = "1.9.4"
+playServicesMlkitSubjectSegmentation = "16.0.0-beta1"
 
 [libraries]
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
@@ -91,6 +93,7 @@ firebase-config-ktx = { group = "com.google.firebase", name = "firebase-config-k
 firebase-analytics-ktx = { group = "com.google.firebase", name = "firebase-analytics-ktx" }
 firebase-crashlytics-ktx = { group = "com.google.firebase", name = "firebase-crashlytics-ktx" }
 
+kotlin-toon = { module = "br.com.vexpera:kotlin-toon", version.ref = "kotlinToon" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 material-colors = { group = "com.github.atick-faisal", name = "compose-material-color", version = "5.1.1" }
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version = "3.2.0" }
@@ -106,6 +109,7 @@ okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-i
 androidx-lifecycle-process = { group = "androidx.lifecycle", name = "lifecycle-process", version.ref = "lifecycleProcess" }
 androidx-compose-ui-unit = { group = "androidx.compose.ui", name = "ui-unit", version.ref = "uiUnit" }
 androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
+play-services-mlkit-subject-segmentation = { group = "com.google.android.gms", name = "play-services-mlkit-subject-segmentation", version.ref = "playServicesMlkitSubjectSegmentation" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -28,6 +28,7 @@ import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.permissions.PermissionService
+import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.act.data.repository.ActRepository
@@ -121,6 +122,14 @@ object AppModule {
         preferences: DataStorePreferences,
         fileHelper: FileHelper,
     ) = BackupService(context, preferences, fileHelper)
+
+    @Provides
+    @Singleton
+    fun providesImageSegmentationHelper(
+        @ApplicationContext context: Context,
+    ) = ImageSegmentationHelper(
+        context,
+    )
 
     @Provides
     @Singleton

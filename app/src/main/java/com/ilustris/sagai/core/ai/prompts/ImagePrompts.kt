@@ -25,7 +25,7 @@ object ImagePrompts {
             appendLine()
             appendLine("COMPOSITION ENFORCEMENTS:")
             appendLine(
-                "- The artwork must fill the entire output canvas. If necessary, allow natural subject cropping at edges to maintain a full-bleed composition.",
+                "- The artwork must fill the entire output canvas. Prefer zooming out (Medium Shot) to preserve subject integrity and background context for depth effects.",
             )
             appendLine(
                 "- The output must be a flattened raster (e.g., PNG/JPEG with no alpha) representing final artwork; do not present layered, masked, or panelled compositions.",
@@ -155,9 +155,7 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             appendLine("4. Depth of Field & Focus: [Value]")
             appendLine("5. Key Lighting Style & Contrast: [Value]")
             appendLine("")
-
             appendLine("**Guidelines for filling each label (be precise, concise, and model-friendly):**")
-
             appendLine(
                 "1. Framing & Crop Intention: Use the exact photographic framing term (e.g., CLOSE-UP, BUST-UP, FULL-BODY) and explicitly describe the body crop and subject fill (e.g., 'CLOSE-UP, subject fills ~85%, cropped at shoulders, tight focus on eyes').",
             )
@@ -173,7 +171,6 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             appendLine(
                 "5. Key Lighting Style & Contrast: Describe main light direction/quality (soft/hard key) and contrast: e.g., 'Soft key from camera-right, subtle fill, low-medium contrast portrait' or 'Hard side light, high contrast, dramatic rim lighting'.",
             )
-
             appendLine("")
             appendLine("**OUTPUT RULES (STRICT):**")
             appendLine(
@@ -248,15 +245,22 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             appendLine("**Character Focus and Framing (CRITICAL - INJECTION OF VISUAL DIRECTION):**")
             appendLine("**Final Prompt Structure (Mandatory Order - BLOCK INJECTION):**")
             appendLine("1. **Technical Foundation (Composed of injected composition data points):**")
+            appendLine("* Ensure the final image has a 9:16 aspect ratio (vertical portrait).")
+
             appendLine(
-                "* Start the prompt by injecting the **Framing**, **Zoom Level / Proximity**, and **Cropping Intention**. (From extractComposition)",
+                "* Start the prompt by injecting the **Aspect Ration**, **Framing**, **Zoom Level / Proximity** (Target: Medium Shot / Waist-Up to allow text layering behind subject).",
             )
             appendLine(
-                "* Inject **Key Lighting Style**, **Camera Angle**, **Lens / Focal Length**, and **Depth of Field / Motion Treatment** as supporting composition cues.",
+                "* **Depth Effect Optimization:** Ensure the subject is framed (Medium Shot/Waist-Up) to allow for depth segmentation, with clear separation from the background. Avoid Extreme Close-Ups that obscure the entire background.",
+            )
+            appendLine(
+                "* Inject **Key Lighting Style**, **Camera Angle**, **Lens / Focal Length**, and **Mood & Dramatic Direction**.",
             )
             appendLine("* Inject the **Key Lighting Style** prominently where it affects mood and shading.")
+            appendLine("* **Mood & Dramatic Direction:** Use the extracted mood to drive the character's expression and body language.")
+
             appendLine(
-                "* Inject the **Art Style** from the provided genre data (use GenrePrompts.artStyle(genre) — do NOT infer or extract art style from the reference images). This hardcoded art style must be applied to the character rendering and overall final look.",
+                "* Inject the **Art Style** from the icon composition. Do not inject any other style or try to adapt the style, the artwork needs to fit exactly the description we provided.",
             )
             appendLine("")
             appendLine("2. **NARRATIVE & COMPOSITION CORE (Dynamic Scene Assembly - Final Mandate):**")
@@ -313,7 +317,7 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
                 "* **CRITICAL:** Replace passive descriptions (e.g., \"Her jaw is clenched\") with active, dynamic phrasing (e.g., \"**Lunges forward** from the darkness, her neck strained, the motion captured as **strands of hair whip across her jawline**.\"). The description must convey **energy and tension**.",
             )
             appendLine(
-                "* **Goal:** Use these terms to enhance the \"vibe\" and intensity. For example: \"ULTRA CLOSE-UP on  characters eye, Very tight shot, Subject fills entire frame, subtly cropped for intense focus.\"",
+                "* **Goal:** Use these terms to enhance the \"vibe\" and intensity. For example: \"Medium Shot, Waist-Up, Subject centered with negative space for depth effect.\"",
             )
             appendLine(
                 "**CRITICAL:** The Agent MUST rewrite the character description to be consistent with the first element of the prompt, ensuring the focus is unambiguous.",

@@ -3,8 +3,10 @@ package com.ilustris.sagai.features.saga.chat.presentation
 import MessageStatus
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
+import android.util.LruCache
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -17,6 +19,7 @@ import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
@@ -71,8 +74,10 @@ class ChatViewModel
         private val notificationManager: ChatNotificationManager,
         mediaPlayerManager: MediaPlayerManager,
         private val settingsUseCase: SettingsUseCase,
+        private val imageSegmentationHelper: ImageSegmentationHelper
     ) : ViewModel(),
         DefaultLifecycleObserver {
+    val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         val state = MutableStateFlow<ChatState>(ChatState.Loading)
 
         val content = sagaContentManager.content
@@ -87,6 +92,8 @@ class ChatViewModel
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
         val inputValue = MutableStateFlow(TextFieldValue())
         val sendType = MutableStateFlow(SenderType.CHARACTER)
+    val originalBitmap = MutableStateFlow<Bitmap?>(null)
+    val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
 
@@ -870,4 +877,20 @@ class ChatViewModel
                 sagaContentManager.enableBackup(uri)
             }
         }
+
+
+    fun segmentSagaCover(url: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val cachedBitmap = segmentedImageCache.get(url)
+            if (cachedBitmap != null) {
+                segmentedBitmap.emit(cachedBitmap)
+                return@launch
+            }
+
+            imageSegmentationHelper.processImage(url).onSuccessAsync {
+                originalBitmap.emit(it.first)
+                segmentedBitmap.emit(it.second)
+            }
+        }
+    }
     }

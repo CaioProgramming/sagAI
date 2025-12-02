@@ -2,8 +2,12 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -34,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
@@ -65,6 +70,7 @@ import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.ui.TimelineCharacterAttachment
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -76,7 +82,6 @@ import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
-import com.ilustris.sagai.ui.theme.zoomAnimation
 import effectForGenre
 import kotlin.time.Duration.Companion.seconds
 
@@ -94,6 +99,14 @@ fun CharacterDetailsView(
     LaunchedEffect(saga) {
         if (saga == null) {
             viewModel.loadSagaAndCharacter(sagaId, characterId)
+        }
+    }
+
+    LaunchedEffect(character) {
+        character?.data?.image?.let {
+            if (it.isNotEmpty()) {
+                viewModel.segmentCharacterImage(it)
+            }
         }
     }
 
@@ -123,385 +136,499 @@ fun CharacterDetailsContent(
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
-    val character = characterContent.data
-    val characterColor = character.hexColor.hexToColor() ?: genre.color
+
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
     val listState = rememberLazyListState()
     val timelineEvents = remember { sagaContent.flatEvents().map { it.data } }
     var shareCharacter by remember { mutableStateOf(false) }
     val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
     val characterRelations = remember { characterContent.sortRelationsByTimeline(timelineEvents) }
 
-    Box {
-        LazyColumn(
-            modifier =
-                Modifier.fillMaxSize(),
-            listState,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (character.image.isNotEmpty()) {
-                item {
-                    val size = if (character.image.isNotEmpty()) 350.dp else 100.dp
+    val originalBitmap = viewModel.originalBitmap.collectAsStateWithLifecycle().value
+    val segmentedBitmap = viewModel.segmentedBitmap.collectAsStateWithLifecycle().value
 
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(size)
-                            .clipToBounds(),
-                    ) {
-                        AsyncImage(
-                            character.image,
-                            contentDescription = character.name,
-                            contentScale = ContentScale.Crop,
-                            modifier =
-                                Modifier
-                                    .clickable(enabled = character.emojified || character.image.isEmpty()) {
-                                        viewModel.regenerate(
-                                            sagaContent,
-                                            character,
-                                        )
-                                    }.fillMaxSize()
-                                    .zoomAnimation()
-                                    .clipToBounds()
-                                    .effectForGenre(genre, useFallBack = character.emojified),
-                        )
-                        Box(
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .fillMaxHeight(.7f)
-                                .background(fadeGradientBottom()),
-                        )
-                        Column(
-                            modifier =
-                                Modifier
-                                    .align(Alignment.BottomCenter)
-                                    .padding(16.dp)
-                                    .reactiveShimmer(true)
-                                    .fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                stringResource(id = R.string.share_character_cd),
-                                modifier =
-                                    Modifier
-                                        .size(24.dp)
-                                        .clip(CircleShape)
-                                        .clickable {
-                                            shareCharacter = true
-                                        },
-                                colorFilter = ColorFilter.tint(characterColor),
-                            )
+    LaunchedEffect(characterContent) {
+        characterContent.data.image.let {
+            if (it.isNotEmpty()) {
+                viewModel.segmentCharacterImage(it)
+            }
+        }
+    }
 
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
-                                    textAlign = TextAlign.Center,
-                                    style =
-                                        MaterialTheme.typography.displayMedium.copy(
-                                            fontFamily = genre.headerFont(),
-                                            textAlign = TextAlign.Center,
-                                            brush =
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        genre.color,
-                                                        characterColor,
-                                                        genre.iconColor,
-                                                    ),
-                                                ),
-                                            shadow = Shadow(genre.color, blurRadius = 15f),
-                                        ),
-                                )
-                                character.nicknames?.let {
-                                    if (it.isNotEmpty()) {
+    val sheetBlur by animateDpAsState(
+        if (isGenerating) 25.dp else 0.dp
+    )
+
+    AnimatedContent(
+        characterContent.data,
+        transitionSpec = {
+            fadeIn(tween(700)) togetherWith fadeOut(tween(200))
+        },
+    ) { character ->
+        val characterColor = character.hexColor.hexToColor() ?: genre.color
+        val messageCount = sagaContent.flatMessages().filterCharacterMessages(character).size
+
+        Box(modifier = Modifier.blur(sheetBlur)) {
+            LazyColumn(
+                modifier =
+                    Modifier.fillMaxSize(),
+                listState,
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                if (character.image.isNotEmpty()) {
+                    item {
+                        val deepEffectAvailable = originalBitmap != null && segmentedBitmap != null
+                        AnimatedContent(
+                            deepEffectAvailable,
+                            transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(200)) }) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(500.dp)
+                            ) {
+
+                                if (deepEffectAvailable) {
+                                    DepthLayout(
+                                        originalImage = originalBitmap,
+                                        segmentedImage = segmentedBitmap,
+                                        modifier = Modifier.fillMaxSize(),
+                                        imageModifier = Modifier.effectForGenre(genre)
+                                    ) {
                                         Text(
-                                            text = "aka: ${character.nicknames.joinToString(", ")}",
+                                            text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                            textAlign = TextAlign.Center,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .reactiveShimmer(true)
+                                                .padding(12.dp)
+                                                .align(Alignment.TopCenter),
                                             style =
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    color = characterColor.copy(alpha = 0.8f),
+                                                MaterialTheme.typography.displayMedium.copy(
+                                                    fontFamily = genre.headerFont(),
                                                     textAlign = TextAlign.Center,
+                                                    brush =
+                                                        Brush.verticalGradient(
+                                                            listOf(
+                                                                genre.color,
+                                                                characterColor,
+                                                                genre.iconColor,
+                                                            ),
+                                                        ),
+                                                    shadow = Shadow(genre.color, blurRadius = 15f),
                                                 ),
                                         )
                                     }
-                                }
-                            }
 
+                                    Column(
+                                        modifier =
+                                            Modifier
+                                                .background(fadeGradientBottom())
+                                                .align(Alignment.BottomCenter)
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        Image(
+                                            painterResource(R.drawable.ic_spark),
+                                            stringResource(id = R.string.share_character_cd),
+                                            modifier =
+                                                Modifier
+                                                    .size(24.dp)
+                                                    .clip(CircleShape)
+                                                    .clickable {
+                                                        shareCharacter = true
+                                                    },
+                                            colorFilter = ColorFilter.tint(characterColor),
+                                        )
+
+                                        Text(
+                                            character.profile.occupation,
+                                            style =
+                                                MaterialTheme.typography.titleSmall.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    color = characterColor,
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                        )
+
+                                        character.nicknames?.let {
+                                            if (it.isNotEmpty()) {
+                                                Text(
+                                                    text = "aka: ${
+                                                        character.nicknames.joinToString(
+                                                            ", "
+                                                        )
+                                                    }",
+                                                    style =
+                                                        MaterialTheme.typography.titleMedium.copy(
+                                                            fontFamily = genre.bodyFont(),
+                                                            color = characterColor.copy(alpha = 0.8f),
+                                                            textAlign = TextAlign.Center,
+                                                        ),
+                                                )
+                                            }
+                                        }
+
+                                    }
+                                } else {
+                                    AsyncImage(
+                                        character.image,
+                                        contentDescription = character.name,
+                                        contentScale = ContentScale.Crop,
+                                        modifier =
+                                            Modifier
+                                                .clickable(enabled = character.emojified || character.image.isEmpty()) {
+                                                    viewModel.regenerate(
+                                                        sagaContent,
+                                                        character,
+                                                    )
+                                                }
+                                                .fillMaxSize()
+                                                .clipToBounds()
+                                                .effectForGenre(
+                                                    genre,
+                                                    useFallBack = character.emojified
+                                                ),
+                                    )
+
+                                    Box(
+                                        Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .fillMaxWidth()
+                                            .fillMaxHeight()
+                                            .background(fadeGradientBottom()),
+                                    )
+
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .align(Alignment.BottomCenter)
+                                    ) {
+
+                                        Text(
+                                            character.profile.occupation,
+
+                                            style =
+                                                MaterialTheme.typography.titleSmall.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    color = characterColor,
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                        )
+
+                                        Text(
+                                            text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                            textAlign = TextAlign.Center,
+                                            style =
+                                                MaterialTheme.typography.displayMedium.copy(
+                                                    fontFamily = genre.headerFont(),
+                                                    textAlign = TextAlign.Center,
+                                                    brush =
+                                                        Brush.verticalGradient(
+                                                            listOf(
+                                                                genre.color,
+                                                                characterColor,
+                                                                genre.iconColor,
+                                                            ),
+                                                        ),
+                                                    shadow = Shadow(genre.color, blurRadius = 15f),
+                                                ),
+                                        )
+                                        character.nicknames?.let {
+                                            if (it.isNotEmpty()) {
+                                                Text(
+                                                    text = "aka: ${
+                                                        character.nicknames.joinToString(
+                                                            ", "
+                                                        )
+                                                    }",
+                                                    style =
+                                                        MaterialTheme.typography.titleMedium.copy(
+                                                            fontFamily = genre.bodyFont(),
+                                                            color = characterColor.copy(alpha = 0.8f),
+                                                            textAlign = TextAlign.Center,
+                                                        ),
+                                                )
+                                            }
+                                        }
+
+                                    }
+                                }
+
+
+                            }
+                        }
+
+                    }
+                } else {
+                    item {
+                        Image(
+                            painterResource(R.drawable.ic_spark),
+                            null,
+                            Modifier
+                                .clickable {
+                                    viewModel.regenerate(
+                                        sagaContent,
+                                        character,
+                                    )
+                                }
+                                .padding(16.dp)
+                                .size(100.dp)
+                                .gradientFill(characterColor.gradientFade()),
+                        )
+                    }
+                    item {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                character.profile.occupation,
+                                text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                textAlign = TextAlign.Center,
                                 style =
-                                    MaterialTheme.typography.titleSmall.copy(
-                                        fontFamily = genre.bodyFont(),
-                                        color = characterColor,
-                                        textAlign = TextAlign.Center,
+                                    MaterialTheme.typography.displayMedium.copy(
+                                        fontFamily = genre.headerFont(),
+                                        brush =
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    characterColor,
+                                                    genre.iconColor,
+                                                    genre.color,
+                                                ),
+                                            ),
                                     ),
                             )
-                        }
-                    }
-                }
-            } else {
-                item {
-                    Image(
-                        painterResource(R.drawable.ic_spark),
-                        null,
-                        Modifier
-                            .clickable {
-                                viewModel.regenerate(
-                                    sagaContent,
-                                    character,
-                                )
-                            }.padding(16.dp)
-                            .size(100.dp)
-                            .gradientFill(characterColor.gradientFade()),
-                    )
-                }
-                item {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
-                            textAlign = TextAlign.Center,
-                            style =
-                                MaterialTheme.typography.displayMedium.copy(
-                                    fontFamily = genre.headerFont(),
-                                    brush =
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                characterColor,
-                                                genre.iconColor,
-                                                genre.color,
+                            character.nicknames?.let {
+                                if (it.isNotEmpty()) {
+                                    Text(
+                                        text = "aka: ${character.nicknames.joinToString(", ")}",
+                                        style =
+                                            MaterialTheme.typography.titleMedium.copy(
+                                                fontFamily = genre.bodyFont(),
+                                                color = characterColor.copy(alpha = 0.8f),
+                                                textAlign = TextAlign.Center,
                                             ),
-                                        ),
-                                ),
-                        )
-                        character.nicknames?.let {
-                            if (it.isNotEmpty()) {
-                                Text(
-                                    text = "aka: ${character.nicknames.joinToString(", ")}",
-                                    style =
-                                        MaterialTheme.typography.titleMedium.copy(
-                                            fontFamily = genre.bodyFont(),
-                                            color = characterColor.copy(alpha = 0.8f),
-                                            textAlign = TextAlign.Center,
-                                        ),
-                                )
+                                    )
+                                }
                             }
                         }
                     }
+
+                    item {
+                        Text(
+                            character.profile.occupation,
+                            style =
+                                MaterialTheme.typography.titleSmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    color = characterColor,
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                        )
+                    }
+                }
+
+                item { CharacterStats(character = character, genre = genre) }
+
+                item {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(16.dp),
+                    ) {
+                        Text(
+                            messageCount.toString(),
+                            style =
+                                MaterialTheme.typography.displaySmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    fontWeight = FontWeight.Normal,
+                                    textAlign = TextAlign.Center,
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .fillMaxWidth(),
+                        )
+
+                        Text(
+                            stringResource(id = R.string.messages_label),
+                            style =
+                                MaterialTheme.typography.bodySmall.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    fontWeight = FontWeight.Light,
+                                    textAlign = TextAlign.Center,
+                                ),
+                        )
+                    }
                 }
 
                 item {
-                    Text(
-                        character.profile.occupation,
-                        style =
-                            MaterialTheme.typography.titleSmall.copy(
-                                fontFamily = genre.bodyFont(),
-                                color = characterColor,
-                                textAlign = TextAlign.Center,
-                            ),
+                    Column(
                         modifier =
                             Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                    )
-                }
-            }
-
-            item { CharacterStats(character = character, genre = genre) }
-
-            item {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(16.dp),
-                ) {
-                    Text(
-                        messageCount.toString(),
-                        style =
-                            MaterialTheme.typography.displaySmall.copy(
-                                fontFamily = genre.bodyFont(),
-                                fontWeight = FontWeight.Normal,
-                                textAlign = TextAlign.Center,
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
+                                .padding(16.dp)
                                 .fillMaxWidth(),
-                    )
+                    ) {
+                        Text(
+                            stringResource(R.string.character_form_title_backstory),
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                        )
 
-                    Text(
-                        stringResource(id = R.string.messages_label),
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                fontFamily = genre.bodyFont(),
-                                fontWeight = FontWeight.Light,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
+                        Text(
+                            character.backstory,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                        )
+                    }
                 }
-            }
 
-            item {
-                Column(
-                    modifier =
+                item {
+                    Column(
                         Modifier
                             .padding(16.dp)
                             .fillMaxWidth(),
-                ) {
-                    Text(
-                        stringResource(R.string.character_form_title_backstory),
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.bodyFont(),
-                            ),
-                    )
+                    ) {
+                        Text(
+                            stringResource(R.string.personality_title),
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                        )
 
-                    Text(
-                        character.backstory,
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                            ),
-                    )
-                }
-            }
-
-            item {
-                Column(
-                    Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth(),
-                ) {
-                    Text(
-                        stringResource(R.string.personality_title),
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.bodyFont(),
-                            ),
-                    )
-
-                    Text(
-                        character.profile.personality,
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = genre.bodyFont(),
-                            ),
-                    )
-                }
-            }
-
-            if (characterRelations.isNotEmpty()) {
-                item {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.onSurface.copy(.1f),
-                        modifier = Modifier.fillMaxWidth(),
-                        thickness = 1.dp,
-                    )
+                        Text(
+                            character.profile.personality,
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                        )
+                    }
                 }
 
-                item {
-                    Text(
-                        stringResource(R.string.saga_detail_relationships_section_title),
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.bodyFont(),
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                    )
-                }
+                if (characterRelations.isNotEmpty()) {
+                    item {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(.1f),
+                            modifier = Modifier.fillMaxWidth(),
+                            thickness = 1.dp,
+                        )
+                    }
 
-                item {
-                    LazyRow {
-                        items(
-                            characterRelations,
-                        ) { relationContent ->
-                            sagaContent.findCharacter(relationContent.getCharacterExcluding(character).id) ?.let { relatedCharacter ->
-                                SingleRelationShipCard(
-                                    saga = sagaContent,
-                                    character = relatedCharacter,
-                                    content = relationContent,
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .requiredWidthIn(max = 300.dp),
-                                )
+                    item {
+                        Text(
+                            stringResource(R.string.saga_detail_relationships_section_title),
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                        )
+                    }
+
+                    item {
+                        LazyRow {
+                            items(
+                                characterRelations,
+                            ) { relationContent ->
+                                sagaContent.findCharacter(
+                                    relationContent.getCharacterExcluding(
+                                        character
+                                    ).id
+                                )?.let { relatedCharacter ->
+                                    SingleRelationShipCard(
+                                        saga = sagaContent,
+                                        character = relatedCharacter,
+                                        content = relationContent,
+                                        modifier =
+                                            Modifier
+                                                .padding(16.dp)
+                                                .requiredWidthIn(max = 300.dp),
+                                    )
+                                }
                             }
                         }
                     }
                 }
+
+                if (characterContent.events.isNotEmpty()) {
+                    item {
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.onSurface.copy(.1f),
+                            modifier = Modifier.fillMaxWidth(),
+                            thickness = 1.dp,
+                        )
+                    }
+                    item {
+                        Text(
+                            stringResource(R.string.saga_detail_timeline_section_title),
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = genre.bodyFont(),
+                                ),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                        )
+                    }
+
+                    items(characterEvents) {
+                        TimelineCharacterAttachment(
+                            it,
+                            sagaContent,
+                            showIndicator = true,
+                            showSpark = character == sagaContent.mainCharacter,
+                            isLast = it == characterContent.events.last(),
+                            onSelectReference = {
+                                openEvent(it)
+                            },
+                            modifier =
+                                Modifier
+                                    .padding(horizontal = 16.dp)
+                                    .clip(genre.shape()),
+                        )
+                    }
+                }
             }
 
-            if (characterContent.events.isNotEmpty()) {
-                item {
-                    HorizontalDivider(
-                        color = MaterialTheme.colorScheme.onSurface.copy(.1f),
-                        modifier = Modifier.fillMaxWidth(),
-                        thickness = 1.dp,
-                    )
-                }
-                item {
-                    Text(
-                        stringResource(R.string.saga_detail_timeline_section_title),
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = genre.bodyFont(),
-                            ),
-                        modifier =
-                            Modifier
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                    )
-                }
-
-                items(characterEvents) {
-                    TimelineCharacterAttachment(
-                        it,
-                        sagaContent,
-                        showIndicator = true,
-                        showSpark = character == sagaContent.mainCharacter,
-                        isLast = it == characterContent.events.last(),
-                        onSelectReference = {
-                            openEvent(it)
-                        },
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 16.dp)
-                                .clip(genre.shape()),
-                    )
-                }
-            }
+            val alpha by animateFloatAsState(
+                if (listState.canScrollBackward.not()) 0f else 1f,
+                animationSpec = tween(1500),
+            )
+            Text(
+                character.name,
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = genre.headerFont(),
+                        textAlign = TextAlign.Center,
+                        color = characterColor,
+                    ),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .alpha(alpha)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(16.dp)
+                        .reactiveShimmer(true)
+                        .fillMaxWidth(),
+            )
         }
-
-        val alpha by animateFloatAsState(
-            if (listState.canScrollBackward.not()) 0f else 1f,
-            animationSpec = tween(1500),
-        )
-        Text(
-            character.name,
-            style =
-                MaterialTheme.typography.titleLarge.copy(
-                    fontFamily = genre.headerFont(),
-                    textAlign = TextAlign.Center,
-                    color = characterColor,
-                ),
-            modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .alpha(alpha)
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(16.dp)
-                    .reactiveShimmer(true)
-                    .fillMaxWidth(),
-        )
     }
 
     StarryLoader(
         isGenerating,
         null,
+        useAsDialog = false,
         textStyle =
             MaterialTheme.typography.headlineMedium.copy(
                 genre.color,
