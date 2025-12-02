@@ -145,6 +145,7 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.chat.ui.components.CharacterRevealOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
@@ -220,6 +221,7 @@ fun ChatView(
     var showCharacter by remember {
         mutableStateOf<CharacterContent?>(null)
     }
+    val newCharacterReveal by viewModel.newCharacterReveal.collectAsStateWithLifecycle()
 
     LaunchedEffect(content) {
         content?.let {
@@ -507,6 +509,16 @@ fun ChatView(
             StarryTextPlaceholder(
                 modifier = Modifier.reactiveShimmer(true, shimmerColors),
             )
+        }
+
+        newCharacterReveal?.let { character ->
+            content?.let { sagaContent ->
+                CharacterRevealOverlay(
+                    character = character,
+                    sagaContent = sagaContent,
+                    onDismiss = viewModel::dismissCharacterReveal
+                )
+            }
         }
     }
 }

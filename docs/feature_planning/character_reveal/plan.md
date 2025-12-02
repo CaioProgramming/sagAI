@@ -46,15 +46,15 @@ Enhance the character creation experience in the chat by introducing a dramatic 
     *   Auto-dismiss after 7 seconds or on user tap.
 
 ## Tasks
-- [ ] Refactor `CharacterShareView.kt`: Extract `CharacterCard` composable.
-- [ ] Update `CharacterShareView` to use the new `CharacterCard`.
-- [ ] Create `CharacterRevealOverlay` composable:
-  - [ ] Implement blur background (following `StarryLoader` pattern).
-  - [ ] Add rotating gradient border using genre colors (sweep gradient animation).
-  - [ ] Apply genre-based shape clipping to the card.
-  - [ ] Implement floating animation (smooth vertical oscillation).
-  - [ ] Add 7-second auto-dismiss timer.
-  - [ ] Implement tap-to-dismiss functionality.
-- [ ] Integrate `CharacterRevealOverlay` into `ChatView`.
-- [ ] Connect `ChatViewModel` state to trigger the reveal on new character creation.
-- [ ] Polish animations and visual effects ("New Challenger" vibe).
+- [x] Refactor `CharacterShareView.kt`: Extract `CharacterCard` composable.
+- [x] Update `CharacterShareView` to use the new `CharacterCard`.
+- [x] Create `CharacterRevealOverlay` composable:
+  - [x] Implement blur background (following `StarryLoader` pattern).
+  - [x] Add rotating gradient border using genre colors (sweep gradient animation).
+  - [x] Apply genre-based shape clipping to the card.
+  - [x] Implement floating animation (smooth vertical oscillation).
+  - [x] Add 7-second auto-dismiss timer.
+  - [x] Implement tap-to-dismiss functionality.
+- [x] Integrate `CharacterRevealOverlay` into `ChatView`.
+- [x] Connect `ChatViewModel` state to trigger the reveal on new character creation.
+- [x] Polish animations and visual effects ("New Challenger" vibe).

@@ -100,6 +100,7 @@ class ChatViewModel
         private var aiTurns = 0
 
         val selectedCharacter: MutableStateFlow<CharacterContent?> = MutableStateFlow(null)
+        val newCharacterReveal = MutableStateFlow<CharacterContent?>(null)
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
         private var currentActCountForService: Int = 0
@@ -824,6 +825,7 @@ class ChatViewModel
                                 }
                             },
                         )
+                        newCharacterReveal.value = CharacterContent(it)
                         updateLoading(false)
                     }.onFailureAsync {
                         updateSnackBar(
@@ -892,5 +894,8 @@ class ChatViewModel
                 segmentedBitmap.emit(it.second)
             }
         }
+    }
+    fun dismissCharacterReveal() {
+        newCharacterReveal.value = null
     }
     }

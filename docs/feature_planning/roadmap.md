@@ -38,13 +38,13 @@ own dedicated folder containing detailed tasks and implementation plans.
   headers, icons, and character details. Includes vertical UI refactoring.
 
 ### 5. Character Reveal "New Challenger" 🥊
-
-* **Status**: Planning
-* **Folder**: `character_reveal/`
-* **Plan**: `character_reveal/plan.md`
-* **Description**: A dramatic "New Challenger Arrives" style overlay when a new character is created
-  in chat. Refactors `CharacterShareView` to create a reusable `CharacterCard` component with glow
-  effects and genre-based shaping.
+ 
+ * **Status**: Completed ✅
+ * **Folder**: `character_reveal/`
+ * **Plan**: `character_reveal/plan.md`
+ * **Description**: A dramatic "New Challenger Arrives" style overlay when a new character is created
+   in chat. Refactors `CharacterShareView` to create a reusable `CharacterCard` component with glow
+   effects and genre-based shaping.
 
 ### 6. Google Play Store Automation 🚀
 
