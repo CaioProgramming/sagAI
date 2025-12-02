@@ -77,10 +77,11 @@ class HomeViewModel
                 _isLoading.emit(true)
                 loadingMessage.emit("Importing backup...")
                 val metadata = backupService.getFileMetadata(uri)
-                val result = when (val extension = metadata.name.substringAfterLast(".")) {
-                    "saga" -> sagaBackupService.restoreSagaFromUri(uri)
-                    "sagas", "zip" -> backupService.restoreFullBackup(uri)
-                    else -> error("Unsupported file type: $extension")
+                val type = backupService.determineBackupType(uri)
+                val result = when (type) {
+                    BackupService.BackupType.SINGLE_SAGA -> sagaBackupService.restoreSagaFromUri(uri)
+                    BackupService.BackupType.FULL_BACKUP -> backupService.restoreFullBackup(uri)
+                    BackupService.BackupType.UNKNOWN -> error("Unsupported file type: ${metadata.name}")
                 }
                 result.onSuccessAsync {
                     loadingMessage.emit("Backup imported successfully!")

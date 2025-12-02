@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.file.backup.ui
 
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
@@ -30,21 +31,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
+import effectForGenre
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +58,6 @@ fun BackupSheet(
     displayBackups: Boolean = false,
     onDismiss: () -> Unit = {},
     importUri: Uri? = null,
-    onConfirmImport: (Uri) -> Unit = {},
     viewModel: BackupViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -108,9 +113,13 @@ fun BackupSheet(
                     onDismiss()
                 }) {
                     val title = when (it.preview) {
-                        is BackupPreview.Full -> "Import ${it.preview.sagas.size} sagas?"
-                        is BackupPreview.Single -> "Import Saga?"
-                        null -> "Import Backup"
+                        is BackupPreview.Full -> stringResource(
+                            R.string.backup_sheet_import_multiple_sagas_title,
+                            it.preview.sagas.size
+                        )
+
+                        is BackupPreview.Single -> stringResource(R.string.backup_sheet_import_single_saga_title)
+                        null -> stringResource(R.string.backup_sheet_import_backup_title)
                     }
 
                     LazyVerticalGrid(
@@ -140,7 +149,7 @@ fun BackupSheet(
                                         genre = info.genre,
                                         description = info.description,
                                         icon = info.icon,
-                                        modifier = Modifier.aspectRatio(.7f)
+                                        modifier = Modifier.aspectRatio(.6f)
                                     )
                                 }
                             }
@@ -152,7 +161,9 @@ fun BackupSheet(
                                         genre = preview.info.genre,
                                         description = preview.info.description,
                                         icon = preview.info.icon,
-                                        modifier = Modifier.aspectRatio(.7f)
+                                        modifier = Modifier
+                                            .aspectRatio(.7f)
+                                            .reactiveShimmer(true)
                                     )
                                 }
                             }
@@ -161,18 +172,19 @@ fun BackupSheet(
                                 item(span = { GridItemSpan(maxLineSpan) }) {
                                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                         Text(
-                                            it.uri.lastPathSegment ?: "Unknown file",
+                                            it.uri.lastPathSegment
+                                                ?: stringResource(R.string.backup_sheet_unknown_file),
                                             style = MaterialTheme.typography.bodyLarge,
                                             textAlign = TextAlign.Center
                                         )
                                         Text(
-                                            "Size: ${
+                                            stringResource(
+                                                R.string.backup_sheet_file_size,
                                                 android.text.format.Formatter.formatFileSize(
                                                     context,
                                                     it.size
                                                 )
-                                            }",
-                                            style = MaterialTheme.typography.bodyMedium,
+                                            ), style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -195,18 +207,17 @@ fun BackupSheet(
                                     ),
                                     modifier = Modifier.fillMaxWidth(1f)
                                 ) {
-                                    Text("Cancel")
+                                    Text(stringResource(R.string.backup_sheet_cancel_button))
                                 }
 
                                 Button(
                                     onClick = {
-                                        onConfirmImport(it.uri)
-                                        viewModel.dismiss()
+                                        viewModel.importBackup(it.uri)
                                         onDismiss()
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    Text("Import")
+                                    Text(stringResource(R.string.backup_sheet_import_button))
                                 }
                             }
                         }
@@ -220,9 +231,9 @@ fun BackupSheet(
 @Composable
 fun BackupSagaCard(
     title: String,
-    genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
+    genre: Genre,
     description: String,
-    icon: android.graphics.Bitmap?,
+    icon: Bitmap?,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -238,7 +249,8 @@ fun BackupSagaCard(
                 model = icon,
                 contentDescription = null,
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .effectForGenre(genre),
                 contentScale = ContentScale.Crop
             )
         }
@@ -246,9 +258,11 @@ fun BackupSagaCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(fadeGradientBottom(genre.color))
                 .padding(16.dp)
-                .align(Alignment.Center)
-                .verticalScroll(rememberScrollState()),
+                .align(Alignment.BottomCenter)
+                .verticalScroll(rememberScrollState())
+                .padding(vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -258,8 +272,8 @@ fun BackupSagaCard(
                     fontFamily = genre.headerFont(),
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
-                    brush = genre.gradient(true),
-                    shadow = androidx.compose.ui.graphics.Shadow(Color.White, blurRadius = 5f)
+                    brush = genre.gradient(true, targetValue = 300f),
+                    shadow = androidx.compose.ui.graphics.Shadow(Color.White, blurRadius = 10f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -274,7 +288,6 @@ fun BackupSagaCard(
                     textAlign = TextAlign.Start,
                     color = genre.iconColor
                 ),
-                maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .fillMaxWidth()

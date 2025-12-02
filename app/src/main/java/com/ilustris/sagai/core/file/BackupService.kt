@@ -57,11 +57,89 @@ class BackupService(
         )
     }
 
+    enum class BackupType {
+        SINGLE_SAGA,
+        FULL_BACKUP,
+        UNKNOWN
+    }
+
+    suspend fun determineBackupType(uri: Uri): BackupType {
+        val metadata = getFileMetadata(uri)
+        val extension = metadata.name.substringAfterLast(".").lowercase()
+
+        Log.d(
+            "BackupService",
+            "determineBackupType: filename=${metadata.name}, extension=$extension"
+        )
+
+        // 1. Try extension first (fastest)
+        when (extension) {
+            "saga" -> {
+                Log.d(
+                    "BackupService",
+                    "determineBackupType: Detected as SINGLE_SAGA from extension"
+                )
+                return BackupType.SINGLE_SAGA
+            }
+
+            "sagas", "zip" -> {
+                Log.d(
+                    "BackupService",
+                    "determineBackupType: Detected as FULL_BACKUP from extension"
+                )
+                return BackupType.FULL_BACKUP
+            }
+        }
+
+        // 2. If extension fails, inspect content (robust)
+        try {
+            Log.d(
+                "BackupService",
+                "determineBackupType: Extension detection failed, inspecting content..."
+            )
+            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                ZipInputStream(inputStream).use { zipStream ->
+                    var entry = zipStream.nextEntry
+                    while (entry != null) {
+                        Log.d(
+                            "BackupService",
+                            "determineBackupType: Found zip entry: ${entry.name}"
+                        )
+                        if (entry.name == MANIFEST_FILE_NAME) {
+                            Log.d(
+                                "BackupService",
+                                "determineBackupType: Found manifest, detected as FULL_BACKUP"
+                            )
+                            return BackupType.FULL_BACKUP
+                        }
+                        if (entry.name == SAGA_JSON_FILE) {
+                            Log.d(
+                                "BackupService",
+                                "determineBackupType: Found saga.json, detected as SINGLE_SAGA"
+                            )
+                            return BackupType.SINGLE_SAGA
+                        }
+                        entry = zipStream.nextEntry
+                    }
+                }
+            } ?: run {
+                Log.e("BackupService", "determineBackupType: Could not open input stream")
+            }
+        } catch (e: Exception) {
+            Log.e("BackupService", "determineBackupType: Error inspecting content", e)
+        }
+
+        Log.w("BackupService", "determineBackupType: Could not determine type, returning UNKNOWN")
+        return BackupType.UNKNOWN
+    }
+
     data class SagaPreviewInfo(
+        val id: Int,
         val title: String,
         val genre: com.ilustris.sagai.features.newsaga.data.model.Genre,
         val description: String,
-        val icon: Bitmap?
+        val icon: Bitmap?,
+        val createdAt: Long
     )
 
     suspend fun previewFullBackup(uri: Uri): RequestResult<List<SagaPreviewInfo>> =
@@ -91,15 +169,20 @@ class BackupService(
 
             if (sagas.isEmpty()) error("Invalid backup file: Manifest not found")
 
+
             // Second pass: Read Images
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 ZipInputStream(inputStream).use { zipStream ->
                     var entry = zipStream.nextEntry
                     while (entry != null) {
-                        val matchingSaga =
-                            sagas.find { "saga_${it.sagaId}/images/${it.iconName}" == entry.name }
+                        // More robust check: does the entry belong to a saga and match its icon name?
+                        val matchingSaga = sagas.find {
+                            entry.name.contains("saga_${it.sagaId}") && entry.name.endsWith(it.iconName)
+                        }
+
                         if (matchingSaga != null) {
-                            val bitmap = BitmapFactory.decodeStream(zipStream)
+                            val bytes = zipStream.readBytes()
+                            val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                             icons[matchingSaga.sagaId] = bitmap
                         }
                         entry = zipStream.nextEntry
@@ -109,10 +192,12 @@ class BackupService(
 
             sagas.map {
                 SagaPreviewInfo(
+                    id = it.sagaId,
                     it.title,
                     it.genre,
                     it.description,
-                    icons[it.sagaId]
+                    icons[it.sagaId],
+                    it.createdAt,
                 )
             }
         }
@@ -122,14 +207,25 @@ class BackupService(
             var sagaContent: SagaContent? = null
             var iconBitmap: Bitmap? = null
 
+            Log.d("BackupService", "previewSagaBackup: Starting preview extraction for single saga")
+
             // First pass: Read Saga Data
             context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 ZipInputStream(inputStream).use { zipStream ->
                     var entry = zipStream.nextEntry
                     while (entry != null) {
+                        Log.d("BackupService", "previewSagaBackup: Checking entry: ${entry.name}")
                         if (entry.name == SAGA_JSON_FILE) {
+                            Log.d(
+                                "BackupService",
+                                "previewSagaBackup: Found saga.json, reading content"
+                            )
                             val jsonString = zipStream.bufferedReader().readText()
                             sagaContent = Gson().fromJson(jsonString, SagaContent::class.java)
+                            Log.d(
+                                "BackupService",
+                                "previewSagaBackup: Parsed saga: title=${sagaContent?.data?.title}"
+                            )
                             break
                         }
                         entry = zipStream.nextEntry
@@ -138,27 +234,59 @@ class BackupService(
             }
 
             val content = sagaContent ?: error("Invalid backup file: Saga data not found")
-            val iconName = File(content.data.icon).name
+            val iconPath = content.data.icon
+
+            Log.d("BackupService", "previewSagaBackup: Icon path from JSON: '$iconPath'")
 
             // Second pass: Read Icon
-            context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                ZipInputStream(inputStream).use { zipStream ->
-                    var entry = zipStream.nextEntry
-                    while (entry != null) {
-                        if (entry.name == "images/$iconName") {
-                            iconBitmap = BitmapFactory.decodeStream(zipStream)
-                            break
+            if (iconPath.isNotEmpty()) {
+                context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    ZipInputStream(inputStream).use { zipStream ->
+                        var entry = zipStream.nextEntry
+                        while (entry != null) {
+                            Log.d(
+                                "BackupService",
+                                "previewSagaBackup: Checking icon entry: ${entry.name}"
+                            )
+                            // Try exact match or filename match
+                            if (entry.name == iconPath || entry.name.endsWith(File(iconPath).name)) {
+                                Log.d(
+                                    "BackupService",
+                                    "previewSagaBackup: Found icon! Decoding bitmap..."
+                                )
+                                val bytes = zipStream.readBytes()
+                                iconBitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                                Log.d(
+                                    "BackupService",
+                                    "previewSagaBackup: Bitmap decoded: ${iconBitmap != null}, size=${iconBitmap?.width}x${iconBitmap?.height}"
+                                )
+                                break
+                            }
+                            entry = zipStream.nextEntry
                         }
-                        entry = zipStream.nextEntry
                     }
                 }
+                if (iconBitmap == null) {
+                    Log.w(
+                        "BackupService",
+                        "previewSagaBackup: Could not find icon with path: $iconPath"
+                    )
+                }
+            } else {
+                Log.w(
+                    "BackupService",
+                    "previewSagaBackup: Icon path is empty, skipping icon extraction"
+                )
             }
 
+            Log.d("BackupService", "previewSagaBackup: Preview extraction complete")
             SagaPreviewInfo(
+                content.data.id,
                 content.data.title,
                 content.data.genre,
                 content.data.description,
-                iconBitmap
+                iconBitmap,
+                content.data.createdAt
             )
         }
 
@@ -235,7 +363,8 @@ class BackupService(
                                 genre = it.data.genre,
                                 iconName = File(it.data.icon).name,
                                 lastBackup = System.currentTimeMillis(),
-                                zipFileName = "saga_${it.data.id}"
+                                zipFileName = "saga_${it.data.id}",
+                                createdAt = it.data.createdAt
                             )
                         }
                         val manifestJson = Gson().toJson(manifest)
@@ -282,7 +411,7 @@ class BackupService(
                     var entry = zipStream.nextEntry
                     while (entry != null) {
                         if (entry.name.endsWith(SAGA_JSON_FILE)) {
-                            val jsonString = zipStream.bufferedReader().use { it.readText() }
+                            val jsonString = zipStream.bufferedReader().readText()
                             val saga = Gson().fromJson(jsonString, SagaContent::class.java)
                             sagas.add(saga)
                         }
@@ -352,12 +481,35 @@ class BackupService(
         path: String,
         sagaId: Int,
     ): String {
+        if (path.isBlank()) return ""
+        
         val sagaBasePath = File(context.filesDir, "sagas/$sagaId").absolutePath + File.separator
-        val relativePath = { absolutePath: String ->
-            absolutePath.removePrefix(sagaBasePath)
+        val relativePath = path.removePrefix(sagaBasePath)
+
+        Log.d("BackupService", "getFileRelativePath: sagaBasePath='$sagaBasePath'")
+        Log.d("BackupService", "getFileRelativePath: input path='$path'")
+        Log.d("BackupService", "getFileRelativePath: relative path='$relativePath'")
+
+        // If removePrefix didn't work, the path is invalid
+        if (relativePath == path) {
+            Log.w(
+                "BackupService",
+                "getFileRelativePath: WARNING - Path doesn't start with saga base path!"
+            )
+            // Try to at least get the filename
+            return "images/${File(path).name}"
         }
 
-        return relativePath(path)
+        // Organize into proper zip structure
+        val organizedPath = when {
+            // If already in a subfolder (characters/, chapters/), keep it
+            relativePath.contains("/") -> relativePath
+            // If in root of saga folder, put in images/
+            else -> "images/$relativePath"
+        }
+
+        Log.d("BackupService", "getFileRelativePath: organized path='$organizedPath'")
+        return organizedPath
     }
 
     private fun getAllImageFiles(saga: SagaContent): List<Pair<String, File>> =
@@ -467,7 +619,7 @@ class BackupService(
                         if (entry.name == SAGA_JSON_FILE) {
                             // We found the saga.json file!
                             // Read its content as text.
-                            val jsonString = zipStream.bufferedReader().use { it.readText() }
+                            val jsonString = zipStream.bufferedReader().readText()
                             // Parse the JSON into our SagaContent object.
                             return Gson().fromJson(jsonString, SagaContent::class.java)
                         }

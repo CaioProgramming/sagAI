@@ -368,4 +368,11 @@
     <string name="import_sheet_message">Found %d story(ies) in this file. Import them?</string>
     <string name="import_button">Import</string>
 
+    <string name="backup_sheet_import_multiple_sagas_title">Import %d sagas?</string>
+    <string name="backup_sheet_import_single_saga_title">Import Saga?</string>
+    <string name="backup_sheet_import_backup_title">Import Backup</string>
+    <string name="backup_sheet_unknown_file">Unknown file</string>
+    <string name="backup_sheet_file_size">Size: %s</string>
+    <string name="backup_sheet_cancel_button">Cancel</string>
+    <string name="backup_sheet_import_button">Import</string>
 </resources>

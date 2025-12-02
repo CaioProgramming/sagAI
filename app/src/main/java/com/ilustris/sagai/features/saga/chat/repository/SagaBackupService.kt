@@ -2,13 +2,10 @@ package com.ilustris.sagai.features.saga.chat.repository
 
 import android.net.Uri
 import android.util.Log
-import androidx.core.net.toUri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
-import com.ilustris.sagai.core.file.backup.RestorableSaga
-import com.ilustris.sagai.core.file.backup.filterBackups
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.Act
@@ -68,6 +65,19 @@ class SagaBackupServiceImpl
 
         override suspend fun restoreSagaFromUri(uri: Uri) = executeRequest {
             val sagaContent = backupService.unzipAndParseSaga(uri) ?: error("Could not parse saga content")
+
+            // Check if saga already exists (same ID, title, and creation date)
+            val existingSagas = sagaRepository.getChats().first()
+            val duplicate = existingSagas.find { existing ->
+                existing.data.id == sagaContent.data.id &&
+                        existing.data.title == sagaContent.data.title &&
+                        existing.data.createdAt == sagaContent.data.createdAt
+            }
+
+            if (duplicate != null) {
+                error("This saga already exists in your library. Saga: \"${sagaContent.data.title}\"")
+            }
+            
             val imageBytes = backupService.unzipImageBytes(uri)
             recoverOperation(sagaContent, imageBytes)
             sagaContent

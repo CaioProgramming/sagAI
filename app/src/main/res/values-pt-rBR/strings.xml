@@ -341,4 +341,11 @@
     <string name="import_sheet_message">Encontramos %d história(s) neste arquivo. Deseja importá-las?</string>
     <string name="import_button">Importar</string>
 
+    <string name="backup_sheet_import_multiple_sagas_title">Importar %d sagas?</string>
+    <string name="backup_sheet_import_single_saga_title">Importar Saga?</string>
+    <string name="backup_sheet_import_backup_title">Importar Backup</string>
+    <string name="backup_sheet_unknown_file">Arquivo desconhecido</string>
+    <string name="backup_sheet_file_size">Tamanho: %s</string>
+    <string name="backup_sheet_cancel_button">Cancelar</string>
+    <string name="backup_sheet_import_button">Importar</string>
 </resources>

@@ -1,9 +1,7 @@
 package com.ilustris.sagai.core.file.backup
 
 import android.graphics.Bitmap
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 data class SagaManifest(
@@ -14,6 +12,7 @@ data class SagaManifest(
     val iconName: String,
     val lastBackup: Long,
     val zipFileName: String,
+    val createdAt: Long
 )
 
 data class RestorableSaga(

@@ -9,7 +9,12 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -130,42 +135,33 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         stickyHeader {
-            SharedTransitionLayout {
-                AnimatedContent(listState.canScrollBackward, modifier = Modifier
-                    .background(
-                        MaterialTheme.colorScheme.background
+            AnimatedContent(listState.canScrollBackward, transitionSpec = {
+                slideInVertically { -it } + fadeIn(tween(600)) togetherWith fadeOut(tween(200))
+            }, modifier = Modifier
+                .background(
+                    MaterialTheme.colorScheme.background
+                )
+                .fillMaxWidth()
+                .animateContentSize()
+                .padding(16.dp)
+            ) {
+                if (it.not()) {
+                    Text(
+                        text = stringResource(R.string.settings_title),
+                        style =
+                            MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Black,
+                            ),
                     )
-                    .fillMaxWidth()) {
-                    if (it.not()) {
-                        Text(
-                            text = stringResource(R.string.settings_title),
-                            style =
-                                MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Black,
-                                ),
-                            modifier = Modifier
-                                .sharedElement(
-                                    rememberSharedContentState("header-key"),
-                                    this
-                                )
-                                .padding(vertical = 16.dp),
-                        )
-                    } else {
-                        Text(
-                            text = stringResource(R.string.settings_title),
-                            style =
-                                MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    textAlign = TextAlign.Center
-                                ),
-                            modifier = Modifier
-                                .sharedElement(
-                                    rememberSharedContentState("header-key"),
-                                    this
-                                )
-                                .padding(vertical = 16.dp),
-                        )
-                    }
+                } else {
+                    Text(
+                        text = stringResource(R.string.settings_title),
+                        style =
+                            MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            ),
+                    )
                 }
             }
 

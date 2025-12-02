@@ -36,8 +36,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -228,12 +226,14 @@ fun HomeView(
     )
 
     if (showBackupSheet) {
-        BackupSheet(true, {
-            showBackupSheet = false
-            viewModel.clearImportUri()
-        }, importUri = importUriViewModel, onConfirmImport = {
-            importUriViewModel?.let { viewModel.importFromUri(it) }
-        })
+        BackupSheet(
+            displayBackups = true,
+            onDismiss = {
+                showBackupSheet = false
+                viewModel.clearImportUri()
+            },
+            importUri = importUriViewModel
+        )
     }
 
     StarryLoader(
@@ -288,7 +288,8 @@ private fun ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }.wrapContentWidth()
+                                    }
+                                    .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             titleStyle =
                                 MaterialTheme.typography.titleLarge,
@@ -320,7 +321,8 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -372,10 +374,12 @@ private fun ChatList(
                             true,
                             shimmerColors = shimmerColors,
                             duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
-                        }.fillMaxWidth(),
+                        }
+                        .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
