@@ -311,4 +311,15 @@
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
     <string name="message_effects">Efeitos de Mensagem</string>
     <string name="message_effects_description">Dê vida à sua história com animações dinâmicas que refletem o clima de cada momento</string>
+
+    <!-- BackupViewModel: Mensagens de Status e Erro -->
+    <string name="backup_loading_recovering_content">Recuperando conteúdo...</string>
+    <string name="backup_error_recovery_failed">Ocorreu um erro inesperado, não foi possível recuperar os conteúdos de backup :(</string>
+    <string name="backup_message_all_good">Parece que está tudo em ordem!</string>
+    <string name="backup_loading_found_items">Encontramos algumas coisinhas..</string>
+    <string name="backup_loading_enabling">Habilitando backup...</string>
+    <string name="backup_success_enabled">Tudo pronto! Aproveite suas histórias 💜</string>
+    <string name="backup_error_enable_failed">Não foi possível habilitar o backup. Sentimos muito por isso, vamos tentar de novo?</string>
+    <string name="backup_loading_restoring_saga">Restaurando %s...</string>
+
 </resources>

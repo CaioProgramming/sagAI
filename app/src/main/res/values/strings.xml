@@ -340,4 +340,14 @@
     <string name="recap_your_journey">Your Journey</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
 
+    <!-- BackupViewModel: Status and Error Messages -->
+    <string name="backup_loading_recovering_content">Recovering content...</string>
+    <string name="backup_error_recovery_failed">An unexpected error occurred, could not recover backup contents :(</string>
+    <string name="backup_message_all_good">Looks like everything is in order!</string>
+    <string name="backup_loading_found_items">We found some things..</string>
+    <string name="backup_loading_enabling">Enabling backup...</string>
+    <string name="backup_success_enabled">All set! Enjoy your stories 💜</string>
+    <string name="backup_error_enable_failed">Could not enable backup. We\'re sorry about that, shall we try again?</string>
+    <string name="backup_loading_restoring_saga">Restoring %s...</string>
+
 </resources>

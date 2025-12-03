@@ -48,12 +48,22 @@ own dedicated folder containing detailed tasks and implementation plans.
 
 ### 6. Google Play Store Automation 🚀
 
-* **Status**: Refining
+* **Status**: Blocked (Deprioritized - Focus on Features First)
 * **Folder**: `play_store_automation/`
 * **Plan**: `play_store_automation/task.md`
 * **Description**: Automate Google Play Console publishing via CLI using Gradle Play Publisher
   plugin. Enables automated releases to internal/alpha/beta/production tracks with release notes and
   metadata management.
+
+### 7. Automated String Resources Agent 🌐
+
+* **Status**: Completed ✅
+* **Folder**: `string_resources_agent/`
+* **Plan**: `string_resources_agent/task.md`
+* **Description**: Automated agent that identifies hardcoded strings in Kotlin and XML files,
+  extracts them to string resources (English and Portuguese), and refactors code to use resource
+  references. Improves i18n efforts and ensures consistency in localization. Integrated into
+  `/deliver_feature` workflow with `StringResourceHelper` singleton for ViewModels.
 
 ---
 
@@ -63,55 +73,6 @@ To start working on a feature:
 
 1. Open the corresponding `task.md` in the feature's folder.
 2. Follow the agent-specific instructions within.
-
-### Automated Hardcoded String Extraction and Localization Agent
-
-**Objective:** Develop an automated agent that identifies hardcoded strings in the application's
-source code, extracts them, creates corresponding string resources (English and Portuguese), and
-replaces the original hardcoded strings with resource references.
-
-**Motivation:**
-
-* Improve internationalization (i18n) efforts by centralizing all user-facing strings.
-* Reduce manual effort in identifying and extracting hardcoded strings.
-* Ensure consistency in string resource naming and usage.
-* Facilitate easier translation management.
-
-**Scope:**
-
-1. **String Identification:** The agent should be able to scan Kotlin (`.kt`) and XML layout (
-   `.xml`) files within the `app/src/main/` directory.
-    * Identify literal strings used directly in `Text`, `Button`, `TextField` (and similar UI
-      components in Compose/XML) or other user-facing contexts.
-    * Intelligently filter out non-user-facing strings (e.g., debug messages, internal identifiers,
-      code comments, variable names, file paths, URLs, `translatable="false"` attributes).
-2. **Resource Generation:**
-    * For each identified hardcoded string, propose a unique string resource name (e.g., based on
-      file path and content).
-    * Add the new string resource to `app/src/main/res/values/strings.xml` (English) and
-      `app/src/main/res/values-pt-rBR/strings.xml` (Portuguese). The Portuguese translation can
-      initially be a copy of the English string or a simple machine translation placeholder, with a
-      clear indication that manual review is needed.
-3. **Code Refactoring:**
-    * Replace the original hardcoded string in the source file with a reference to the newly created
-      string resource (e.g., `stringResource(R.string.new_string_id)` in Kotlin Compose, or
-      `@string/new_string_id` in XML).
-4. **Integration (Future Consideration):**
-    * Potentially integrate this agent as a pre-commit hook or a step in the `deliver_feature` agent
-      workflow to ensure new features adhere to localization best practices.
-
-**Acceptance Criteria:**
-
-* The agent can successfully identify a majority of user-facing hardcoded strings.
-* The agent can generate valid `strings.xml` entries for both English and Portuguese.
-* The agent can correctly replace hardcoded strings with resource references in the source code.
-* The refactored code compiles and runs without errors.
-
-**Next Steps:**
-
-* Detailed design of the string identification heuristics.
-* Implementation of a parsing and modification mechanism for Kotlin and XML files.
-* Consideration of edge cases and false positives/negatives in string identification.
 
 ---
 
