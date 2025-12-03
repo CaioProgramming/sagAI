@@ -100,7 +100,7 @@ class ChatViewModel
         private var aiTurns = 0
 
         val selectedCharacter: MutableStateFlow<CharacterContent?> = MutableStateFlow(null)
-        val newCharacterReveal = MutableStateFlow<CharacterContent?>(null)
+    val newCharacterReveal = MutableStateFlow<Int?>(null)
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
         private var currentActCountForService: Int = 0
@@ -278,6 +278,10 @@ class ChatViewModel
 
                         if (showTitle.value) {
                             titleAnimation()
+                            sagaContent.characters.lastOrNull()?.let {
+                                newCharacterReveal.emit(it.data.id)
+                            }
+
                         }
                     }
             }
@@ -825,8 +829,9 @@ class ChatViewModel
                                 }
                             },
                         )
-                        newCharacterReveal.value = CharacterContent(it)
+                        newCharacterReveal.value = it.id
                         updateLoading(false)
+                        delay(5.seconds)
                     }.onFailureAsync {
                         updateSnackBar(
                             snackBar(

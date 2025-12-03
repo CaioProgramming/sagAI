@@ -248,10 +248,13 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
             appendLine("* Ensure the final image has a 9:16 aspect ratio (vertical portrait).")
 
             appendLine(
-                "* Start the prompt by injecting the **Aspect Ration**, **Framing**, **Zoom Level / Proximity** (Target: Medium Shot / Waist-Up to allow text layering behind subject).",
+                "* Start the prompt by injecting the **Aspect Ratio**, **Framing**, **Zoom Level / Proximity** (Target: Medium Shot / Waist-Up with SIGNIFICANT HEADROOM).",
             )
             appendLine(
-                "* **Depth Effect Optimization:** Ensure the subject is framed (Medium Shot/Waist-Up) to allow for depth segmentation, with clear separation from the background. Avoid Extreme Close-Ups that obscure the entire background.",
+                "* **Vertical Expansion & Depth Effect:** The composition MUST be vertically expanded. Zoom out slightly to ensure there is ample empty space above the character's head (approx. 20-30% of the top frame). This is CRITICAL for applying a lock screen depth effect where text will be placed BEHIND the subject but visible above their head.",
+            )
+            appendLine(
+                "* **Space Management:** The subject should be centered but positioned slightly lower in the frame to allow for this top-heavy negative space. Avoid cropping the top of the head or having the subject fill the top edge.",
             )
             appendLine(
                 "* Inject **Key Lighting Style**, **Camera Angle**, **Lens / Focal Length**, and **Mood & Dramatic Direction**.",

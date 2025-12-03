@@ -116,8 +116,9 @@ object SagaPrompts {
         }
         appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
         appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
-        appendLine("The image should have some breathing room at the top, allowing text to be overlaid with a depth effect (like the iOS lockscreen). This means the main subject shouldn't occupy the entire top portion of the frame.")
-        appendLine("The image aspect ratio should be 9:16 (vertical orientation) to fit mobile screens.")
+        appendLine("CRITICAL COMPOSITION RULE: The image MUST have significant breathing room at the top (approx. 25% empty space) to allow for a 'Lock Screen Depth Effect'.")
+        appendLine("The main subject (character) MUST be positioned lower in the frame, with their head fully visible and NOT touching the top edge. Think of a magazine cover where the title goes behind the head but needs space above it.")
+        appendLine("The image aspect ratio should be 9:16 (vertical orientation).")
         appendLine(ImagePrompts.descriptionRules(genre))
     }
 

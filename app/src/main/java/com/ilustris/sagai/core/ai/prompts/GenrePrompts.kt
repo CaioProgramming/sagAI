@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.currentLanguage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.Genre.COWBOYS
 import com.ilustris.sagai.features.newsaga.data.model.Genre.CRIME
 import com.ilustris.sagai.features.newsaga.data.model.Genre.CYBERPUNK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
@@ -9,7 +10,6 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre.HEROES
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SHINOBI
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
-import com.ilustris.sagai.features.newsaga.data.model.Genre.COWBOYS
 
 object GenrePrompts {
 
@@ -70,21 +70,21 @@ object GenrePrompts {
         Ambience: Low-key, desaturated environment with heavy shadows and subtle volumetric fog; minimal and muted highlights only where needed to draw attention to small, eerie details.
         """
 
-            HEROES -> 
+            HEROES ->
                 """
-        Art Technique: COMIC BOOK ART STYLE (Clean and Detailed Line Work)
-        Line Detail: ANATOMICALLY ACCURATE FIGURES, SUBTLE CROSS-HATCHING FOR DEPTH
-        Key Lighting Style: DRAMATIC LIGHTING with STRONG HIGHLIGHTS and SHADOWS
-        Texture / Materiality: SLIGHTLY PAINTERLY QUALITY with TEXTURE
-        Aesthetic Era / Influence: SUPERHERO COMICS OF THE 1990s
-        
-        **COLOR PALETTE & ACCENT:**
-         - Base: PRIMARILY TEAL AND WHITE, ACCENTED WITH DARKER TONES.
-         - Mandatory Accent: Midnight blue/Electric blue.
-         - Application: Use this for energy effects, glowing eyes, or as a rim light. Forbid other vibrant colors.
+        Art Technique: MODERN COMIC BOOK ART STYLE (Dynamic, Clean, and Detailed).
+        Line Detail: BOLD INK LINES, ANATOMICALLY ACCURATE FIGURES, DYNAMIC FORESHORTENING.
+        Key Lighting Style: CINEMATIC NATURAL LIGHTING (Golden Hour or Overcast) with DRAMATIC SHADOWS.
+        Texture / Materiality: HIGH-QUALITY DIGITAL COLORING, SMOOTH GRADIENTS, DETAILED URBAN TEXTURES.
+        Aesthetic Era / Influence: MODERN SUPERHERO COMICS (2010s-Present) - Think "Into the Spider-Verse" meets "Arkham City" concept art.
 
-        Mood: Heroic, gritty optimism — confident and grounded, with emotional stakes.
-        Ambience: Urban nightscapes with high-contrast rim lighting, audible but unseen city life (sirens, distant traffic), and clean, focused lighting on the subject to convey importance.
+        **COLOR PALETTE & ACCENT:**
+         - Base: DYNAMIC URBAN PALETTE. Concrete greys, brick reds, glass reflections, and atmospheric sky tones.
+         - Mandatory Accent: SUBTLE ELECTRIC BLUE.
+         - Application: Use this accent for SKY DETAILS, REFLECTIONS on glass/water, subtle RIM LIGHTING, or small details on accessories/tech. It should NOT be a dominant wash, but a unifying atmospheric element.
+
+        Mood: HEROIC, VERTICAL, and EXPANSIVE. A sense of scale and freedom mixed with urban melancholy.
+        Ambience: VAST OPEN CITYSCAPES. Towering skyscrapers, dizzying perspectives (looking down or up), busy streets far below. The city feels alive but slightly dystopian. Avoid forced night scenes; prefer dynamic daytime, sunset, or moody overcast skies that allow for depth and scale.
         """
 
 

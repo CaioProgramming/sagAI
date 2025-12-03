@@ -687,7 +687,35 @@ class SagaContentManagerImpl
 
         private suspend fun checkObjective() =
             executeRequest {
-                content.value?.currentActInfo?.currentChapterInfo?.currentEventInfo?.let { currentTimeline ->
+                val saga = content.value ?: return@executeRequest null
+                val act = saga.currentActInfo ?: return@executeRequest null
+
+                act.let { currentAct ->
+                    val invalidChapters = currentAct.chapters.filter {
+                        it.isComplete().not() && it.events.isEmpty()
+                    }
+
+                    invalidChapters.forEach {
+                        chapterUseCase.deleteChapter(it.data)
+                    }
+
+                    if (currentAct.data.introduction.isEmpty()) {
+                        actUseCase.generateActIntroduction(saga, currentAct.data)
+                    }
+
+                }
+
+                val chapter = act.currentChapterInfo ?: return@executeRequest null
+
+                chapter.let {
+                    if (it.data.introduction.isEmpty()) {
+                        chapterUseCase.generateChapterIntroduction(content.value!!, it.data, act)
+                    }
+                }
+
+                val timeline = chapter.currentEventInfo ?: return@executeRequest null
+
+                timeline.let { currentTimeline ->
                     if (currentTimeline.data.currentObjective.isNullOrEmpty()) {
                         timelineUseCase
                             .getTimelineObjective(content.value!!, currentTimeline.data)

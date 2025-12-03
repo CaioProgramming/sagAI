@@ -294,26 +294,28 @@ object CharacterPrompts {
         )
         appendLine()
         appendLine("## CORE INSTRUCTIONS:")
-        appendLine("1.  **Analyze the provided messages** to find informal names or nicknames used to refer to the characters.")
-        appendLine(
-            "2.  **Suggest New Nicknames:** If the conversation reveals significant character development or a new role, you can suggest new, fitting nicknames even if they haven't been explicitly used yet. These suggestions should be grounded in the context of the timeline event.",
-        )
-        appendLine(
-            "3.  **Maximum of 4 Nicknames:** For each character, identify or suggest a maximum of four nicknames. Prioritize the most relevant and impactful ones.",
-        )
-
-        appendLine(
-            "2.  **Focus on Uniqueness:** The nicknames must be distinctive and not generic. They should feel like a unique identifier for that character within the story's context.",
-        )
-        appendLine(
-            "3.  **Avoid Generic Terms:** Do NOT extract common nouns or roles as nicknames (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). The name must be a proper noun or a very specific epithet.",
-        )
-        appendLine(
-            "4.  **Context is Key:** The nickname should arise from the character's actions, relationships, or specific events in the narrative provided in the messages. It should not be a direct attribute from their profile (like their job or a visible characteristic).",
-        )
-        appendLine(
-            "5.  **Do not use names already in the character's profile** (e.g., their actual name or known aliases). You are looking for *new* or *emergent* nicknames.",
-        )
+        appendLine("1. **Primary Goal: Identify 'earned' or 'spoken' nicknames.** Your main objective is to find nicknames that characters have either been directly called by others or have earned through their actions and role in the story.")
+        appendLine()
+        appendLine("2. **Analyze for Direct Mentions:**")
+        appendLine("   - Scrutinize the 'Recent Messages' for instances where a character is referred to by a name other than their official one.")
+        appendLine("   - **Example 1 (Shortened Name):** If a character named 'Daniela' is frequently called 'Dani' by her friends in the conversation, 'Dani' is a valid nickname.")
+        appendLine("   - **Example 2 (Title/Hero Name):** If a character is a hero and another character says, 'We need Superwave for this mission!', then 'Superwave' is a valid nickname, provided it's not already in their official profile.")
+        appendLine()
+        appendLine("3. **Analyze for Earned Nicknames & Contextual Relevance:**")
+        appendLine("   - A nickname must be deeply rooted in the events of the story. It is not a random guess, but a name that logically emerges from a character's actions, personality, or a pivotal moment.")
+        appendLine("   - Ask yourself: Why was this name used? Does it reflect a new status, a term of endearment, an insult, or a legendary title earned in the narrative? The connection to the story must be strong and clear.")
+        appendLine()
+        appendLine("4. **Suggesting Creative & Relevant New Nicknames:**")
+        appendLine("   - If the story shows significant character development (e.g., a character becomes a legendary warrior) but no one has explicitly used a nickname yet, you can **suggest a creative and fitting nickname** that reflects this new status.")
+        appendLine("   - The suggestion must be a logical and creative leap based on the provided context, not a generic label.")
+        appendLine()
+        appendLine("5. **CRITICAL EXCLUSIONS (What to Avoid):**")
+        appendLine("   - **No Generic Roles:** Do NOT extract common nouns or jobs (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). A nickname is a specific name, not a description.")
+        appendLine("   - **No Profile Attributes:** Do NOT use information already present in the character's official profile (like their `occupation`, existing `nicknames`, or base `name`). You are looking for *new*, *emergent*, or *informally used* names from the conversation.")
+        appendLine("   - **No Guessing:** The nickname must be directly present in the messages or a very strong, logical inference from the character's recent actions and development in the story.")
+        appendLine()
+        appendLine("6. **Output Constraints:**")
+        appendLine("   - For each character, identify or suggest a **maximum of four** nicknames. Prioritize the most relevant and impactful ones.")
         appendLine()
         appendLine("## CONTEXT:")
         appendLine("### Saga Context")

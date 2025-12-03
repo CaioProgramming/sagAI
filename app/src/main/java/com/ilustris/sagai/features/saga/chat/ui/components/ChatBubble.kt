@@ -134,7 +134,7 @@ fun ChatBubble(
     val genre = content.data.genre
     val isUser = messageContent.isUser(mainCharacter?.data)
     val cornerSize = genre.cornerSize()
-    val isAnimated = canAnimate
+    val isAnimated = canAnimate && messageEffectsEnabled.not()
     val bubbleStyle =
         remember {
             if (isUser) {

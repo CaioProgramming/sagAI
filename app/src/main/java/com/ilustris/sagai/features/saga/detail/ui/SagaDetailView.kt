@@ -1171,7 +1171,7 @@ private fun SagaDetailInitialView(
                                             modifier =
                                                 Modifier
                                                     .fillMaxSize()
-                                                    .effectForGenre(genre, useFallBack = true),
+                                                    .effectForGenre(genre),
                                             contentScale = ContentScale.Crop,
                                         )
 

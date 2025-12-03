@@ -28,6 +28,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
@@ -143,9 +144,9 @@ import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
+import com.ilustris.sagai.features.saga.chat.ui.components.CharacterRevealOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
-import com.ilustris.sagai.features.saga.chat.ui.components.CharacterRevealOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
@@ -504,15 +505,21 @@ fun ChatView(
             requiredPermission = null
         }
 
-        AnimatedVisibility(isGenerating) {
+        AnimatedVisibility(
+            isGenerating,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut(animationSpec = tween(700)) + shrinkOut()
+        ) {
             val shimmerColors = content?.data?.genre?.shimmerColors() ?: holographicGradient
             StarryTextPlaceholder(
                 modifier = Modifier.reactiveShimmer(true, shimmerColors),
             )
         }
 
-        newCharacterReveal?.let { character ->
+        newCharacterReveal?.let { id ->
             content?.let { sagaContent ->
+                val character = sagaContent.characters.find { it.data.id == id }
+
                 CharacterRevealOverlay(
                     character = character,
                     sagaContent = sagaContent,
@@ -1152,13 +1159,13 @@ fun SagaHeader(
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier =
-                        Modifier
-                            .align(Alignment.Center)
-                            .effectForGenre(saga.genre)
-                            .selectiveColorHighlight(
-                                saga.genre.selectiveHighlight(),
-                            )
-                            .fillMaxSize(),
+                            Modifier
+                                .align(Alignment.Center)
+                                .effectForGenre(saga.genre)
+                                .selectiveColorHighlight(
+                                    saga.genre.selectiveHighlight(),
+                                )
+                                .fillMaxSize(),
                     )
                 }
 

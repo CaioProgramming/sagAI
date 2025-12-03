@@ -18,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
@@ -26,6 +25,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,6 +38,7 @@ import com.ilustris.sagai.features.share.domain.model.ShareText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
@@ -57,7 +58,11 @@ fun CharacterCard(
     val characterColor = remember { character.data.hexColor.hexToColor() ?: genre.color }
 
     Box(
-        modifier = modifier
+        modifier = modifier.background(
+            Brush.verticalGradient(
+                characterColor.darkerPalette(factor = .3f)
+            )
+        )
     ) {
         if (originalImage != null && segmentedImage != null) {
             DepthLayout(
@@ -112,6 +117,19 @@ fun CharacterCard(
             )
 
         } else {
+            Text(
+                character.data.name.first().uppercase(),
+                style =
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontFamily = genre.headerFont(),
+                        brush =
+                            Brush.verticalGradient(
+                                characterColor.darkerPalette(factor = .2f),
+                            ),
+                    ),
+                fontWeight = FontWeight.Black,
+                modifier = Modifier.align(Alignment.Center),
+            )
             AsyncImage(
                 character.data.image,
                 null,
