@@ -97,7 +97,6 @@ class ChatViewModel
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
 
-    // Message selection state for conversation snippet sharing
     data class MessageSelectionState(
         val isSelectionMode: Boolean = false,
         val selectedMessageIds: Set<Int> = emptySet(),
@@ -288,9 +287,7 @@ class ChatViewModel
 
                         if (showTitle.value) {
                             titleAnimation()
-                            sagaContent.characters.lastOrNull()?.let {
-                                newCharacterReveal.emit(it.data.id)
-                            }
+
 
                         }
                     }

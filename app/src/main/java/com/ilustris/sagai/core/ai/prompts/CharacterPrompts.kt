@@ -173,10 +173,11 @@ object CharacterPrompts {
         appendLine("## Saga Context:")
         appendLine(saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions))
 
-        appendLine("## 🚨 NEW CHARACTER CREATION SOURCE MATERIAL (CRITICAL) 🚨")
-        appendLine("// The following description is the **ABSOLUTE AND UNALTERABLE SOURCE** for the new character's core identity.")
-        appendLine("// You MUST extract all character details exclusively from this description.")
-        appendLine("// This is the ONLY source for the character to be created.")
+        appendLine("## 💡 NEW CHARACTER CREATION INSPIRATION 💡")
+        appendLine("// The following description is the foundational concept for the new character.")
+        appendLine("// Your task is to bring this character to life by expanding on the provided details, filling in the blanks, and adding creative depth to make them a truly unique and complete persona.")
+        appendLine("// You should be creative and add details that are not explicitly mentioned, for example, suggesting a last name if one is not provided, or elaborating on their motivations and backstory.")
+        appendLine("// The goal is to create a rich, well-rounded character that feels authentic to the saga's world.")
         appendLine(description)
 
         appendLine("## Guidelines for generating the character JSON:")

@@ -33,6 +33,8 @@ import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class ChapterUseCaseImpl
@@ -98,14 +100,20 @@ class ChapterUseCaseImpl
                         title = genChapter.title,
                         overview = genChapter.overview,
                         featuredCharacters = genChapterCharacters.ifEmpty { featuredCharacters },
+                        currentEventId = null
                     ),
                 )
-            generateEmotionalReview(
-                saga,
-                chapterContent.copy(
-                    data = chapterUpdate,
-                ),
-            ).getSuccess()!!
+            withContext(Dispatchers.IO) {
+                generateEmotionalReview(
+                    saga,
+                    chapterContent.copy(
+                        data = chapterUpdate,
+                    ),
+                )
+            }
+
+            chapterUpdate
+
         }
 
         override suspend fun generateEmotionalReview(

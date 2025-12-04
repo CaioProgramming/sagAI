@@ -243,7 +243,6 @@ class SagaContentManagerImpl
                             saga,
                             chapter,
                         ).onSuccessAsync {
-                            chapterUseCase.updateChapter(chapter.data.copy(currentEventId = null))
                             updateSnackBar(
                                 snackBar(
                                     message =
@@ -710,6 +709,14 @@ class SagaContentManagerImpl
                 chapter.let {
                     if (it.data.introduction.isEmpty()) {
                         chapterUseCase.generateChapterIntroduction(content.value!!, it.data, act)
+                    }
+
+                    val emptyEvents = it.events.filter { it.isComplete().not() }
+                    if (emptyEvents.size > 1) {
+                        val currentEvent = it.currentEventInfo?.data
+                        emptyEvents.filter { it != currentEvent }.forEach {
+                            timelineUseCase.deleteTimeline(it.data)
+                        }
                     }
                 }
 

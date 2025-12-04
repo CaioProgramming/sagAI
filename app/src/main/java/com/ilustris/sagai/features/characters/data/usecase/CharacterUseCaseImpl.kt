@@ -38,6 +38,7 @@ import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.toHex
+import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
 import com.slowmac.autobackgroundremover.removeBackground
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -196,6 +197,7 @@ class CharacterUseCaseImpl
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
+                            hexColor = sagaContent.data.genre.getRandomColorHex()
                         ),
                     )
                 withContext(Dispatchers.IO) {
