@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -150,6 +151,8 @@ import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
+import com.ilustris.sagai.features.share.domain.model.ShareType
+import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
@@ -223,6 +226,8 @@ fun ChatView(
         mutableStateOf<CharacterContent?>(null)
     }
     val newCharacterReveal by viewModel.newCharacterReveal.collectAsStateWithLifecycle()
+    val selectionState by viewModel.selectionState.collectAsStateWithLifecycle()
+    var showShareSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(content) {
         content?.let {
@@ -380,6 +385,14 @@ fun ChatView(
                                             messageEffectsEnabled = messageEffectsEnabled,
                                             originalBitmap = originalBitmap,
                                             segmentedBitmap = segmentedBitmap,
+                                            isSelectionMode = selectionState.isSelectionMode,
+                                            selectedMessageIds = selectionState.selectedMessageIds,
+                                            onToggleSelectionMode = viewModel::toggleSelectionMode,
+                                            onToggleMessageSelection = viewModel::toggleMessageSelection,
+                                            onClearSelection = viewModel::clearSelection,
+                                            onShareConversation = {
+                                                showShareSheet = true
+                                            },
                                         )
                                     }
                                 }
@@ -527,6 +540,15 @@ fun ChatView(
                 )
             }
         }
+
+        content?.let {
+            ShareSheet(
+                content = it,
+                isVisible = showShareSheet,
+                shareType = ShareType.CONVERSATION,
+                onDismiss = { showShareSheet = false }
+            )
+        }
     }
 }
 
@@ -568,6 +590,12 @@ fun ChatContent(
     messageEffectsEnabled: Boolean = true,
     originalBitmap: Bitmap? = null,
     segmentedBitmap: Bitmap? = null,
+    isSelectionMode: Boolean = false,
+    selectedMessageIds: Set<Int> = emptySet(),
+    onToggleSelectionMode: () -> Unit = {},
+    onToggleMessageSelection: (Int) -> Unit = {},
+    onClearSelection: () -> Unit = {},
+    onShareConversation: () -> Unit = {},
 ) {
     val saga = remember { content.data }
     val timeline = remember { content.getCurrentTimeLine() }
@@ -697,6 +725,10 @@ fun ChatContent(
                         messageEffectsEnabled = messageEffectsEnabled,
                         originalBitmap = originalBitmap,
                         segmentedBitmap = segmentedBitmap,
+                        isSelectionMode = isSelectionMode,
+                        selectedMessageIds = selectedMessageIds,
+                        onToggleSelectionMode = onToggleSelectionMode,
+                        onToggleMessageSelection = onToggleMessageSelection,
                     )
 
                     Box(
@@ -712,7 +744,7 @@ fun ChatContent(
                     )
 
                     AnimatedVisibility(
-                        state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not(),
+                        state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not() && !isSelectionMode,
                         modifier =
                             Modifier
                                 .constrainAs(chatInput) {
@@ -724,7 +756,7 @@ fun ChatContent(
                                 .padding(vertical = padding.calculateBottomPadding())
                                 .animateContentSize(),
                         enter = slideInVertically(),
-                        exit = fadeOut(),
+                        exit = slideOutVertically { it },
                     ) {
                         ChatInputView(
                             content = content,
@@ -744,6 +776,83 @@ fun ChatContent(
                             suggestions = suggestions,
                             onSelectCharacter = updateCharacter,
                         )
+                    }
+
+                    // Floating action button for sharing conversation snippets
+                    AnimatedVisibility(
+                        visible = isSelectionMode,
+                        modifier = Modifier
+                            .constrainAs(createRef()) {
+                                bottom.linkTo(parent.bottom)
+                                start.linkTo(parent.start)
+                                end.linkTo(parent.end)
+                                width = Dimension.fillToConstraints
+                            }
+                            .padding(
+                                bottom = padding.calculateBottomPadding() + 16.dp,
+                                start = 16.dp,
+                                end = 16.dp
+                            ),
+                        enter = slideInVertically { it } + fadeIn(),
+                        exit = slideOutVertically { it } + fadeOut()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .padding(32.dp)
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(28.dp))
+                                .background(saga.genre.color)
+                                .padding(horizontal = 24.dp, vertical = 16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            IconButton(
+                                onClick = onClearSelection,
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.round_close_24),
+                                    contentDescription = stringResource(R.string.cancel),
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .padding(8.dp)
+                                        .fillMaxSize(),
+                                )
+                            }
+
+                            Text(
+                                stringResource(
+                                    R.string.messages_selected,
+                                    selectedMessageIds.size,
+                                    10
+                                ),
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Medium,
+                                    fontFamily = saga.genre.bodyFont(),
+                                    textAlign = TextAlign.Center
+                                ),
+                                maxLines = 1,
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            IconButton(
+                                onClick = onShareConversation,
+                                enabled = selectedMessageIds.isNotEmpty(),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    painterResource(R.drawable.ic_share),
+                                    contentDescription = stringResource(R.string.share),
+                                    modifier = Modifier
+                                        .padding(8.dp)
+                                        .fillMaxSize(),
+                                    tint = if (selectedMessageIds.isNotEmpty()) Color.White else Color.White.copy(
+                                        alpha = 0.5f
+                                    )
+                                )
+                            }
+                        }
                     }
 
                     val alpha by animateFloatAsState(
@@ -1246,6 +1355,10 @@ fun ChatList(
     messageEffectsEnabled: Boolean = true,
     originalBitmap: Bitmap? = null,
     segmentedBitmap: Bitmap? = null,
+    isSelectionMode: Boolean = false,
+    selectedMessageIds: Set<Int> = emptySet(),
+    onToggleSelectionMode: () -> Unit = {},
+    onToggleMessageSelection: (Int) -> Unit = {},
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -1433,6 +1546,15 @@ fun ChatList(
                                 it.message.speakerName?.let {
                                     requestNewCharacter(it)
                                 }
+                            },
+                            isSelectionMode = isSelectionMode,
+                            isSelected = selectedMessageIds.contains(it.message.id),
+                            onToggleSelection = {
+                                onToggleMessageSelection(it.message.id)
+                            },
+                            onLongPress = {
+                                onToggleSelectionMode()
+                                onToggleMessageSelection(it.message.id)
                             },
                         )
                     }

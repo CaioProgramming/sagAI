@@ -78,25 +78,21 @@ class CharacterDetailsViewModel
 
 
     fun segmentCharacterImage(url: String) {
-        isGenerating.value = true
         viewModelScope.launch(Dispatchers.IO) {
             val cachedBitmap = segmentedImageCache.get(url)
             if (cachedBitmap != null) {
                 segmentedBitmap.emit(cachedBitmap)
-                isGenerating.emit(false)
                 return@launch
             }
             imageSegmentationHelper.processImage(url).onSuccessAsync {
                 segmentedBitmap.emit(it.second)
                 originalBitmap.emit(it.first)
-                isGenerating.emit(false)
             }.onFailure {
                 Log.e(
                     javaClass.simpleName,
                     "segmentCharacterImage: Failed to segmentate image ",
                     it
                 )
-                isGenerating.value = false
             }
         }
     }

@@ -350,4 +350,9 @@
     <string name="backup_error_enable_failed">Could not enable backup. We\'re sorry about that, shall we try again?</string>
     <string name="backup_loading_restoring_saga">Restoring %s...</string>
 
+    <!-- Conversation Snippet Sharing -->
+    <string name="messages_selected">%d of %d messages selected</string>
+    <string name="share">Share</string>
+    <string name="cancel">Cancel</string>
+
 </resources>

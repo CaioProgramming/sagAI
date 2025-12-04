@@ -322,4 +322,9 @@
     <string name="backup_error_enable_failed">Não foi possível habilitar o backup. Sentimos muito por isso, vamos tentar de novo?</string>
     <string name="backup_loading_restoring_saga">Restaurando %s...</string>
 
+    <!-- Conversation Snippet Sharing -->
+    <string name="messages_selected">%d de %d mensagens selecionadas</string>
+    <string name="share">Compartilhar</string>
+    <string name="cancel">Cancelar</string>
+
 </resources>

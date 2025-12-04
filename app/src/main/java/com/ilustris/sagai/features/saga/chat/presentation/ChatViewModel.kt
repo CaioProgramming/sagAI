@@ -97,6 +97,16 @@ class ChatViewModel
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
 
+    // Message selection state for conversation snippet sharing
+    data class MessageSelectionState(
+        val isSelectionMode: Boolean = false,
+        val selectedMessageIds: Set<Int> = emptySet(),
+        val maxSelection: Int = 10
+    )
+
+    private val _selectionState = MutableStateFlow(MessageSelectionState())
+    val selectionState: StateFlow<MessageSelectionState> = _selectionState
+
         private var aiTurns = 0
 
         val selectedCharacter: MutableStateFlow<CharacterContent?> = MutableStateFlow(null)
@@ -902,5 +912,47 @@ class ChatViewModel
     }
     fun dismissCharacterReveal() {
         newCharacterReveal.value = null
+    }
+
+    // Message selection methods for conversation snippet sharing
+    fun toggleSelectionMode() {
+        viewModelScope.launch {
+            val currentState = _selectionState.value
+            _selectionState.emit(
+                if (currentState.isSelectionMode) {
+                    MessageSelectionState()
+                } else {
+                    currentState.copy(isSelectionMode = true)
+                }
+            )
+        }
+    }
+
+    fun toggleMessageSelection(messageId: Int) {
+        viewModelScope.launch {
+            val currentState = _selectionState.value
+            val newSelectedIds = if (currentState.selectedMessageIds.contains(messageId)) {
+                currentState.selectedMessageIds - messageId
+            } else {
+                if (currentState.selectedMessageIds.size < currentState.maxSelection) {
+                    currentState.selectedMessageIds + messageId
+                } else {
+                    currentState.selectedMessageIds
+                }
+            }
+            _selectionState.emit(currentState.copy(selectedMessageIds = newSelectedIds))
+        }
+    }
+
+    fun clearSelection() {
+        viewModelScope.launch {
+            _selectionState.emit(MessageSelectionState())
+        }
+    }
+
+    fun getSelectedMessages(): List<MessageContent> {
+        val saga = content.value ?: return emptyList()
+        val selectedIds = _selectionState.value.selectedMessageIds
+        return saga.flatMessages().filter { it.message.id in selectedIds }
     }
     }

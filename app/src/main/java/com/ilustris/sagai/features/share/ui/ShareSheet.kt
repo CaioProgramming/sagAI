@@ -6,21 +6,13 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 
@@ -32,6 +24,7 @@ fun ShareSheet(
     character: CharacterContent? = null,
     onDismiss: () -> Unit = {},
     viewModel: SharePlayViewModel = hiltViewModel(),
+    chatViewModel: ChatViewModel = hiltViewModel(),
 ) {
     if (isVisible) {
         Dialog(
@@ -62,6 +55,12 @@ fun ShareSheet(
                     ShareType.HISTORY -> HistoryShareView(content, viewModel)
                     ShareType.EMOTIONS -> EmotionShareView(content, viewModel)
                     ShareType.RELATIONS -> RelationsShareView(content, viewModel)
+                    ShareType.CONVERSATION -> {
+                        ConversationShareView(
+                            sagaContent = content,
+                            messages = chatViewModel.getSelectedMessages(),
+                        )
+                    }
                 }
             }
         }
