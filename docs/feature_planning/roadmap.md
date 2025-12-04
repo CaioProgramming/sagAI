@@ -67,7 +67,7 @@ own dedicated folder containing detailed tasks and implementation plans.
 
 ### 8. Conversation Snippet Sharing 💬
 
-* **Status**: In Progress 🚧
+* **Status**: Completed ✅
 * **Folder**: `conversation_share/`
 * **Plan**: `conversation_share/plan.md`
 * **Description**: Enable users to select and share beautiful, branded screenshots of conversation
@@ -75,6 +75,14 @@ own dedicated folder containing detailed tasks and implementation plans.
   ChatBubble components, and integration with the existing ShareSheet system. Provides organic
   user-generated marketing content optimized for social media.
 
+### 9. Live Notification Media Player Revamp 🎵
+
+* **Status**: In Progress 🚧
+* **Folder**: `live_notification/`
+* **Plan**: `live_notification/plan.md`
+* **Description**: Replace the current media player with a live notification system inspired by
+  Samsung SmartThings TV controls. Displays saga progress, timeline objectives, and provides
+  Play/Pause controls.
 ---
 
 ## Usage
