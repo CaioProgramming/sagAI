@@ -33,8 +33,8 @@ object SagaPrompts {
             appendLine("Saga: ${saga.data.toAINormalize(ChatPrompts.sagaExclusions)}")
             appendLine("Player Character: ${saga.mainCharacter?.data?.toAINormalize(ChatPrompts.characterExclusions)}")
             appendLine(
-                "Characters: ${ 
-                    saga.characters.map { it.data } 
+                "Characters: ${
+                    saga.characters.map { it.data }
                         .normalizetoAIItems(ChatPrompts.characterExclusions)
                 }",
             )
@@ -212,12 +212,14 @@ object SagaPrompts {
             appendLine("Protagonist: ${saga.mainCharacter?.data?.name ?: "Unnamed Hero"}")
             appendLine()
             appendLine("HISTORY OVERVIEW:")
-            appendLine("Acts: ${saga.acts.joinToString("; ") { it.data.title }}")
-            appendLine("Recent Key Events (Last 5 messages):")
+            appendLine("Acts: ${saga.acts.joinToString("; ") { it.actSummary(saga) }}")
+            appendLine("Conversation History")
+            appendLine("Use this history for context, but do NOT repeat it in your response.")
+            appendLine("The messages are ordered from newest to oldest")
+            appendLine("Consider the newest ones to move history forward")
+            appendLine("Pay attention to `speakerName` and `senderType`.")
             appendLine(
-                saga.flatMessages().takeLast(5).joinToString("\n") {
-                    "- ${it.message.character?.name ?: "Narrator"}: \"${it.message.content}\""
-                }
+                saga.flatMessages().takeLast(5).reversed().map { it.message }.normalizetoAIItems(excludingFields = messageExclusions),
             )
             appendLine("---")
             appendLine()

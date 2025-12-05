@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -80,11 +79,6 @@ fun StoryItem(
                 Modifier
                     .fillMaxSize()
                     .clip(CircleShape)
-                    .border(
-                        width = 2.dp,
-                        brush = saga.data.genre.gradient(),
-                        shape = CircleShape,
-                    ),
             ) {
                 saga.mainCharacter?.let {
                     CharacterAvatar(
@@ -96,13 +90,9 @@ fun StoryItem(
                             .padding(4.dp),
                     )
                 }
-            }
-            AnimatedVisibility(visible = isLoading, modifier = Modifier.fillMaxSize()) {
-                CircularProgressIndicator(
-                    modifier = Modifier.fillMaxSize(),
-                    color = saga.data.genre.color,
-                    strokeWidth = 2.dp,
-                )
+                AnimatedVisibility(visible = isLoading, modifier = Modifier.fillMaxSize()) {
+                    StoryLoadingIndicator(brush = saga.data.genre.gradient())
+                }
             }
         }
         Text(

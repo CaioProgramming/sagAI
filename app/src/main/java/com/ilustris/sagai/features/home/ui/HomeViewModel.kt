@@ -80,13 +80,13 @@ constructor(
                 _selectedSaga.emit(saga)
                 _loadingStoryId.emit(null)
             } else {
-                val result = homeUseCase.generateStoryBriefing(saga)
-                if (result is RequestResult.Success) {
-                    _briefingCache[saga.data.id] = result.data
-                    _storyBriefing.emit(result.data)
-                    _selectedSaga.emit(saga)
-                }
+                 homeUseCase.generateStoryBriefing(saga).onSuccessAsync {
+                     _briefingCache[saga.data.id] = it
+                     _storyBriefing.emit(it)
+                     _selectedSaga.emit(saga)
+                 }
                 _loadingStoryId.emit(null)
+
             }
         }
     }
@@ -100,7 +100,7 @@ constructor(
 
     fun checkForBackups() {
         viewModelScope.launch {
-            backupService.getBackedUpSagas().onSuccess { // Changed from onSuccessAsync
+            backupService.getBackedUpSagas().onSuccessAsync {
                 val availableSagas = sagas.first()
                 _backupAvailable.emit(
                     it.filterBackups(availableSagas.map { it.data }).isNotEmpty()
@@ -127,7 +127,7 @@ constructor(
         viewModelScope.launch(Dispatchers.IO) {
             val result = homeUseCase.createFakeSaga()
             if (result is RequestResult.Success) {
-                _startDebugSaga.emit(result.data)
+                _startDebugSaga.emit(result.value)
                 delay(3.seconds)
                 _startDebugSaga.emit(null)
             }
