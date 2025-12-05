@@ -1,6 +1,8 @@
 package com.ilustris.sagai.features.stories.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -11,17 +13,21 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.constraintlayout.compose.ConstraintLayout
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.hasMoreThanOneChapter
+import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
+import com.ilustris.sagai.ui.theme.gradientFill
 
 @Composable
 fun StoriesRow(
@@ -47,9 +53,9 @@ fun StoriesRow(
 
             HorizontalDivider(
                 modifier =
-                Modifier
-                    .padding(vertical = 8.dp)
-                    .fillMaxWidth(),
+                    Modifier
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth(),
                 thickness = 1.dp,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
             )
@@ -66,33 +72,40 @@ fun StoryItem(
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.width(64.dp),
     ) {
-        Box(
-            modifier =
-            Modifier
-                .size(64.dp)
-                .clickable(enabled = !isLoading) { onStoryClicked(saga) },
-        ) {
-            Box(
-                modifier =
-                Modifier
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+
+
+            val borderSize by animateDpAsState(
+                if (isLoading) 0.dp else 2.dp
+            )
+
+            AvatarTimelineIcon(
+                saga.data.icon,
+                false,
+                saga.data.genre,
+                saga.data.title
+                    .first()
+                    .uppercase(),
+                borderWidth = borderSize,
+                modifier = Modifier
                     .fillMaxSize()
+                    .padding(12.dp)
                     .clip(CircleShape)
+                    .clickable(enabled = !isLoading) { onStoryClicked(saga) },
+            )
+
+            this@Column.AnimatedVisibility(
+                visible = isLoading, modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp)
             ) {
-                saga.mainCharacter?.let {
-                    CharacterAvatar(
-                        character = it.data,
-                        genre = saga.data.genre,
-                        modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .padding(4.dp),
-                    )
-                }
-                AnimatedVisibility(visible = isLoading, modifier = Modifier.fillMaxSize()) {
-                    StoryLoadingIndicator(brush = saga.data.genre.gradient())
-                }
+                StoryLoadingIndicator(
+                    brush = saga.data.genre.gradient(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .gradientFill(saga.data.genre.gradient(true, targetValue = 100f))
+                )
             }
         }
         Text(

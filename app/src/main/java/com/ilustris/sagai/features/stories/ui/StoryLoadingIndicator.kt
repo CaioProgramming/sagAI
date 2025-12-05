@@ -14,8 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import kotlin.math.cos
 import kotlin.math.sin
@@ -54,7 +56,7 @@ fun StoryLoadingIndicator(
         val y = center.y + radius * sin(angle).toFloat()
 
         with(sparkPainter) {
-            val sparkSize = 24.dp.toPx()
+            val sparkSize = 12.dp.toPx()
             val newSize = sparkPainter.intrinsicSize * (sparkSize / sparkPainter.intrinsicSize.width)
             translate(left = x - newSize.width / 2, top = y - newSize.height / 2) {
                 draw(size = newSize)

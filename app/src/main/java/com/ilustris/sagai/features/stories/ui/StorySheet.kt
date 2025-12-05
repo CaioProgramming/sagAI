@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.stories.ui
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
@@ -9,6 +10,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -17,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -24,7 +27,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -40,28 +42,49 @@ fun StorySheet(
     onContinue: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var scale by remember { mutableFloatStateOf(1f) }
+
     ModalBottomSheet(
         onDismissRequest = { onDismiss() },
         sheetState = sheetState,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = Color.Transparent,
         dragHandle = null
     ) {
-        Box(modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectVerticalDragGestures { _, dragAmount ->
-                    if (dragAmount < -50) {
-                        onContinue()
-                    }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectVerticalDragGestures(
+                        onVerticalDrag = { _, dragAmount ->
+                            dragOffsetY += dragAmount
+                            scale = (1f - (dragOffsetY / 1000f)).coerceIn(0.8f, 1f)
+                        },
+                        onDragEnd = {
+                            if (dragOffsetY < -200) {
+                                onContinue()
+                            } else {
+                                dragOffsetY = 0f
+                                scale = 1f
+                            }
+                        }
+                    )
                 }
-            }) {
+        ) {
+            val imageAlpha by animateFloatAsState(targetValue = 1f - (dragOffsetY / -500f).coerceIn(0f, 1f))
+
             AsyncImage(
                 model = sagaContent.data.icon,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
                     .fillMaxSize()
-                    .alpha(0.5f)
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationY = dragOffsetY / 2
+                    )
+                    .alpha(imageAlpha)
             )
             Box(
                 modifier = Modifier
@@ -80,11 +103,11 @@ fun StorySheet(
             )
 
             if (isLoading || storyDailyBriefing == null) {
-                StarryLoader(isLoading)
+                StarryLoader(modifier = Modifier.align(Alignment.Center))
             } else {
                 val pagerState = rememberPagerState { 2 }
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().offset(y = dragOffsetY.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     StoryIndicator(
@@ -103,13 +126,11 @@ fun StorySheet(
                         when (page) {
                             0 -> StoryPage(
                                 title = "Previously on ${sagaContent.data.title}",
-                                content = storyDailyBriefing.summary,
-                                sagaContent.data.genre
+                                content = storyDailyBriefing.summary
                             )
                             1 -> StoryPage(
                                 title = "The history continues",
-                                content = storyDailyBriefing.hook,
-                                sagaContent.data.genre
+                                content = storyDailyBriefing.hook
                             )
                         }
                     }
@@ -132,7 +153,7 @@ fun StorySheet(
 }
 
 @Composable
-fun StoryPage(title: String, content: String, genre: Genre) {
+fun StoryPage(title: String, content: String) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -143,7 +164,7 @@ fun StoryPage(title: String, content: String, genre: Genre) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            fontFamily = genre.headerFont(),
+            fontFamily = headerFont(),
             fontWeight = FontWeight.Bold,
             color = Color.White,
             textAlign = TextAlign.Center,
@@ -152,7 +173,7 @@ fun StoryPage(title: String, content: String, genre: Genre) {
         Text(
             text = content,
             style = MaterialTheme.typography.bodyLarge,
-            fontFamily = genre.bodyFont(),
+            fontFamily = bodyFont(),
             color = Color.White,
             textAlign = TextAlign.Center
         )
