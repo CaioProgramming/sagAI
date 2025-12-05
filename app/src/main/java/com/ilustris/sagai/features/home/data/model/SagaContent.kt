@@ -223,3 +223,5 @@ fun SagaContent.generateActLevelEmotionalFlowText(): String {
         }
     }
 }
+
+fun SagaContent.hasMoreThanOneChapter() = flatChapters().size > 1

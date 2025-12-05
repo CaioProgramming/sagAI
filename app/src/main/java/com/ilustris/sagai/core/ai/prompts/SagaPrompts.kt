@@ -197,4 +197,57 @@ object SagaPrompts {
                 "\"From the hopeful first steps of your adventure to the determined final stand, your journey was a testament to the power of resilience. You faced down despair and chose to fight, you saw betrayal and chose to trust again. The saga of '${saga.data.title}' is over, but the echo of your choices—the choices of a hero—will resonate forever.\"",
             )
         }.trim()
+
+    fun generateStoryBriefing(saga: SagaContent) =
+        buildString {
+            appendLine(
+                "You are a master storyteller, a bard of a digital age, tasked with creating a captivating 'story briefing' to re-engage a player with their ongoing saga. Your goal is to generate a short, dramatic, and enticing summary that reminds them of their journey and makes them eager to continue. The output must be a JSON object.",
+            )
+            appendLine()
+            appendLine("---")
+            appendLine("SAGA CONTEXT:")
+            appendLine("Saga Title: ${saga.data.title}")
+            appendLine("Genre: ${saga.data.genre.name}")
+            appendLine("Protagonist: ${saga.mainCharacter?.data?.name ?: "Unnamed Hero"}")
+            appendLine()
+            appendLine("HISTORY OVERVIEW:")
+            appendLine("Acts: ${saga.acts.joinToString("; ") { it.actSummary(saga) }}")
+            appendLine("Recent Key Events (Last 5 messages):")
+            saga.flatMessages().takeLast(5).forEach { message ->
+                appendLine("- ${message.characterName}: \"${message.message.content}\"")
+            }
+            appendLine("---")
+            appendLine()
+            appendLine("YOUR TASK:")
+            appendLine("Generate a JSON object with two fields: `summary` and `hook`.")
+            appendLine()
+            appendLine("1.  `summary` (String):")
+            appendLine(
+                "    - A compelling 2-3 sentence recap of the saga so far, written in the style of a 'Previously on...' TV show segment.",
+            )
+            appendLine("    - Capture the emotional core of the recent events.")
+            appendLine("    - Remind the player of the central conflict or mystery.")
+            appendLine(
+                "    - **Example:** \"Having just escaped the clutches of the Shadow Syndicate, you've found a moment of respite in the neon-drenched streets of Neo-Kyoto. Yet, the ghost of your past, the enigmatic 'Zero,' continues to haunt your every move, leaving a trail of cryptic messages that hint at a deeper conspiracy.\"",
+            )
+            appendLine()
+            appendLine("2.  `hook` (String):")
+            appendLine(
+                "    - An intriguing 1-2 sentence teaser about what might happen next, designed to build anticipation.",
+            )
+            appendLine("    - Pose a question, hint at a new danger, or tease a revelation.")
+            appendLine("    - This is the cliffhanger that makes the player want to know more.")
+            appendLine(
+                "    - **Example:** \"But as a fragile peace settles, a new transmission arrives, bearing a sigil you thought long buried. Is it a message from a forgotten ally, or a trap sprung by a new, unseen foe?\"",
+            )
+            appendLine()
+            appendLine("LANGUAGE AND TONE:")
+            appendLine(
+                "- Dramatic, engaging, and mysterious, consistent with the saga's genre (${saga.data.genre.name}).",
+            )
+            appendLine("- Speak directly to the player, using 'you' and 'your'.")
+            appendLine("- Do NOT reveal major spoilers. Tease, don't tell.")
+            appendLine()
+            appendLine("OUTPUT FORMAT: A single, clean JSON object. No extra text or explanations.")
+        }.trimIndent()
 }

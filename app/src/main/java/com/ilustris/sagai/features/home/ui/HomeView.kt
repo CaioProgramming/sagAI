@@ -91,6 +91,8 @@ import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.ui.SettingsView
+import com.ilustris.sagai.features.stories.ui.StoriesRow
+import com.ilustris.sagai.features.stories.ui.StorySheet
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -129,6 +131,10 @@ fun HomeView(
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    val selectedSaga by viewModel.selectedSaga.collectAsStateWithLifecycle()
+    val storyBriefing by viewModel.storyBriefing.collectAsStateWithLifecycle()
+    val isGeneratingBriefing by viewModel.isGeneratingBriefing.collectAsStateWithLifecycle()
+
 
     LaunchedEffect(Unit) {
         viewModel.checkForBackups()
@@ -194,6 +200,9 @@ fun HomeView(
                                 drawerState.open()
                             }
                         },
+                        onStoryClicked = {
+                            viewModel.getBriefing(it)
+                        }
                     )
                 }
             }
@@ -224,6 +233,25 @@ fun HomeView(
         })
     }
 
+    if (selectedSaga != null) {
+        StorySheet(
+            sagaContent = selectedSaga!!,
+            storyDailyBriefing = storyBriefing,
+            isLoading = isGeneratingBriefing,
+            onDismiss = { viewModel.clearSelectedSaga() },
+            onContinue = {
+                navController.navigateToRoute(
+                    Routes.CHAT,
+                    mapOf(
+                        "sagaId" to selectedSaga!!.data.id.toString(),
+                        "isDebug" to selectedSaga!!.data.isDebug.toString(),
+                    ),
+                )
+                viewModel.clearSelectedSaga()
+            }
+        )
+    }
+
     StarryLoader(
         isLoading,
         loadingMessage,
@@ -243,45 +271,47 @@ private fun ChatList(
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
+    onStoryClicked: (SagaContent) -> Unit = {},
     createFakeSaga: () -> Unit = {},
     openPremiumSheet: () -> Unit = {},
     openSettings: () -> Unit = {},
 ) {
     LazyColumn(
         modifier =
-            Modifier
-                .animateContentSize()
-                .padding(padding),
+        Modifier
+            .animateContentSize()
+            .padding(padding),
     ) {
         stickyHeader {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier =
-                    Modifier.statusBarsPadding(),
+                Modifier.statusBarsPadding(),
             ) {
                 Box(Modifier.size(24.dp))
                 AnimatedContent(
                     isPremium,
                     modifier =
-                        Modifier
-                            .align(Alignment.CenterVertically)
-                            .weight(1f)
-                            .background(MaterialTheme.colorScheme.background),
+                    Modifier
+                        .align(Alignment.CenterVertically)
+                        .weight(1f)
+                        .background(MaterialTheme.colorScheme.background),
                 ) {
                     if (it) {
                         PremiumTitle(
                             modifier =
-                                Modifier
-                                    .clickable(
-                                        indication = null,
-                                        interactionSource = remember { MutableInteractionSource() },
-                                    ) {
-                                        openPremiumSheet()
-                                    }.wrapContentWidth()
-                                    .align(Alignment.CenterVertically),
+                            Modifier
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                ) {
+                                    openPremiumSheet()
+                                }
+                                .wrapContentWidth()
+                                .align(Alignment.CenterVertically),
                             titleStyle =
-                                MaterialTheme.typography.titleLarge,
+                            MaterialTheme.typography.titleLarge,
                             brush = Brush.linearGradient(holographicGradient),
                         )
                     } else {
@@ -307,13 +337,14 @@ private fun ChatList(
                 val debugBrush = Brush.verticalGradient(listOf(Color.DarkGray, Color.Gray))
                 Row(
                     modifier =
-                        Modifier
-                            .clickable {
-                                createFakeSaga()
-                            }.padding(16.dp)
-                            .gradientFill(debugBrush)
-                            .clip(RoundedCornerShape(15.dp))
-                            .fillMaxWidth(),
+                    Modifier
+                        .clickable {
+                            createFakeSaga()
+                        }
+                        .padding(16.dp)
+                        .gradientFill(debugBrush)
+                        .clip(RoundedCornerShape(15.dp))
+                        .fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
@@ -321,28 +352,28 @@ private fun ChatList(
                         contentDescription = stringResource(R.string.home_debug_session_icon_desc),
                         tint = MaterialTheme.colorScheme.onBackground,
                         modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .size(32.dp),
+                        Modifier
+                            .padding(8.dp)
+                            .size(32.dp),
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
                             stringResource(R.string.home_start_debug_session_title),
                             style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = Color.White,
-                                ),
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                            ),
                         )
 
                         Text(
                             stringResource(R.string.home_test_with_fake_messages_subtitle),
                             style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Light,
-                                    color = Color.White.copy(alpha = 0.8f),
-                                ),
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Light,
+                                color = Color.White.copy(alpha = 0.8f),
+                            ),
                         )
                     }
                 }
@@ -355,27 +386,29 @@ private fun ChatList(
                 }
             Row(
                 modifier =
-                    Modifier
-                        .animateItem()
-                        .padding(16.dp)
-                        .reactiveShimmer(
-                            true,
-                            shimmerColors = shimmerColors,
-                            duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
-                        .clickable {
-                            onCreateNewChat()
-                        }.fillMaxWidth(),
+                Modifier
+                    .animateItem()
+                    .padding(16.dp)
+                    .reactiveShimmer(
+                        true,
+                        shimmerColors = shimmerColors,
+                        duration = 10.seconds,
+                    )
+                    .clip(RoundedCornerShape(15.dp))
+                    .clickable {
+                        onCreateNewChat()
+                    }
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
                     brush = MaterialTheme.colorScheme.onBackground.solidGradient(),
                     strokeSize = 2.dp,
                     modifier =
-                        Modifier
-                            .clip(CircleShape)
-                            .padding(4.dp)
-                            .size(32.dp),
+                    Modifier
+                        .clip(CircleShape)
+                        .padding(4.dp)
+                        .size(32.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 AnimatedContent(
@@ -384,57 +417,61 @@ private fun ChatList(
                         (slideInVertically { height -> height } + fadeIn()).togetherWith(
                             slideOutVertically { height -> -height } + fadeOut(),
                         ) using
-                            SizeTransform(
-                                clip = false,
-                            )
+                                SizeTransform(
+                                    clip = false,
+                                )
                     },
                     label = "AnimatedDynamicTexts",
                     modifier = Modifier.weight(1f),
                 ) { isLoading ->
                     Column(
                         modifier =
-                            Modifier
-                                .weight(1f),
+                        Modifier
+                            .weight(1f),
                     ) {
                         if (isLoading) {
                             StarryTextPlaceholder(
                                 starCount = 100,
                                 modifier =
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(MaterialTheme.typography.bodyMedium.lineHeight.value.dp),
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(MaterialTheme.typography.bodyMedium.lineHeight.value.dp),
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             StarryTextPlaceholder(
                                 modifier =
-                                    Modifier
-                                        .fillMaxWidth(0.7f)
-                                        .height(MaterialTheme.typography.labelSmall.lineHeight.value.dp),
+                                Modifier
+                                    .fillMaxWidth(0.7f)
+                                    .height(MaterialTheme.typography.labelSmall.lineHeight.value.dp),
                             )
                         } else {
                             Text(
                                 text =
-                                    dynamicNewSagaTexts?.title
-                                        ?: stringResource(R.string.home_create_new_saga_title),
+                                dynamicNewSagaTexts?.title
+                                    ?: stringResource(R.string.home_create_new_saga_title),
                                 style =
-                                    MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                    ),
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold,
+                                ),
                             )
 
                             Text(
                                 text =
-                                    dynamicNewSagaTexts?.subtitle
-                                        ?: stringResource(R.string.home_create_new_saga_subtitle),
+                                dynamicNewSagaTexts?.subtitle
+                                    ?: stringResource(R.string.home_create_new_saga_subtitle),
                                 style =
-                                    MaterialTheme.typography.labelSmall.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontWeight = FontWeight.Light,
+                                ),
                             )
                         }
                     }
                 }
             }
+        }
+
+        item {
+            StoriesRow(sagas = sagas, onStoryClicked = onStoryClicked)
         }
 
         items(
@@ -465,9 +502,9 @@ private fun ChatList(
                         isPremium,
                         onClick = openPremiumSheet,
                         modifier =
-                            Modifier
-                                .animateItem()
-                                .padding(16.dp),
+                        Modifier
+                            .animateItem()
+                            .padding(16.dp),
                     )
                 }
             }
@@ -487,16 +524,16 @@ private fun ChatList(
                                 painterResource(R.drawable.ic_restore),
                                 null,
                                 modifier =
-                                    Modifier
-                                        .padding(horizontal = 8.dp)
-                                        .size(24.dp),
+                                Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .size(24.dp),
                             )
                             Text(
                                 stringResource(id = R.string.restore_sagas),
                                 style =
-                                    MaterialTheme.typography.labelLarge.copy(
-                                        fontWeight = FontWeight.Light,
-                                    ),
+                                MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Light,
+                                ),
                             )
                         }
                     }
@@ -515,10 +552,10 @@ fun ChatCard(
     Column {
         Row(
             modifier =
-                modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(15.dp))
-                    .padding(16.dp),
+            modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(15.dp))
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AvatarTimelineIcon(
@@ -540,8 +577,8 @@ fun ChatCard(
             )
             Column(
                 modifier =
-                    Modifier
-                        .weight(1f),
+                Modifier
+                    .weight(1f),
             ) {
                 Row {
                     Text(
@@ -565,9 +602,9 @@ fun ChatCard(
                         Text(
                             text = timeText,
                             style =
-                                MaterialTheme.typography.labelSmall.copy(
-                                    fontFamily = saga.data.genre.bodyFont(),
-                                ),
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = saga.data.genre.bodyFont(),
+                            ),
                             color = color.copy(alpha = .6f),
                         )
                     }
@@ -588,19 +625,19 @@ fun ChatCard(
                 Text(
                     text = message ?: emptyString(),
                     style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Normal,
-                            fontFamily = saga.data.genre.bodyFont(),
-                            textAlign = TextAlign.Start,
-                            color = color.copy(alpha = .6f),
-                        ),
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = saga.data.genre.bodyFont(),
+                        textAlign = TextAlign.Start,
+                        color = color.copy(alpha = .6f),
+                    ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     modifier =
-                        Modifier
-                            .padding(vertical = 4.dp)
-                            .fillMaxWidth()
-                            .alpha(.8f),
+                    Modifier
+                        .padding(vertical = 4.dp)
+                        .fillMaxWidth()
+                        .alpha(.8f),
                 )
             }
         }
@@ -628,9 +665,9 @@ fun HomeViewPreview() {
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.headlineMedium,
                             modifier =
-                                Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
+                            Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                         )
                     } ?: run {
                         Box(Modifier.fillMaxWidth()) {
@@ -638,9 +675,9 @@ fun HomeViewPreview() {
                                 painterResource(R.drawable.ic_spark),
                                 contentDescription = stringResource(R.string.app_name),
                                 modifier =
-                                    Modifier
-                                        .align(Alignment.Center)
-                                        .size(50.dp),
+                                Modifier
+                                    .align(Alignment.Center)
+                                    .size(50.dp),
                             )
                         }
                     }
@@ -673,10 +710,10 @@ fun HomeViewPreview() {
                     showDebugButton = true,
                     isPremium = true,
                     dynamicNewSagaTexts =
-                        DynamicSagaPrompt(
-                            "Dynamic Title Preview",
-                            "Dynamic Subtitle Preview",
-                        ),
+                    DynamicSagaPrompt(
+                        "Dynamic Title Preview",
+                        "Dynamic Subtitle Preview",
+                    ),
                     isLoadingDynamicPrompts = false,
                 )
             }

@@ -15,6 +15,7 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import com.ilustris.sagai.features.saga.detail.data.model.Review
+import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -132,4 +133,10 @@ class SagaDetailUseCaseImpl
         ) = sagaBackupService.exportSaga(sagaId, destinationUri)
 
         override fun getBackupEnabled() = backupService.backupEnabled()
+
+        override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
+            executeRequest {
+                val prompt = SagaPrompts.generateStoryBriefing(saga)
+                textGenClient.generate<StoryDailyBriefing>(prompt, false)!!
+            }
     }
