@@ -77,12 +77,25 @@ own dedicated folder containing detailed tasks and implementation plans.
 
 ### 9. Live Notification Media Player Revamp 🎵
 
-* **Status**: In Progress 🚧
+* **Status**: Completed ✅
 * **Folder**: `live_notification/`
 * **Plan**: `live_notification/plan.md`
-* **Description**: Replace the current media player with a live notification system inspired by
-  Samsung SmartThings TV controls. Displays saga progress, timeline objectives, and provides
-  Play/Pause controls.
+* **Description**: Enhanced the media notification to display saga progress with Act/Chapter
+  information and timeline objectives. Uses MediaStyle for persistent status bar chip. Includes
+  progress bar showing saga completion percentage and localized text formatting.
+
+### 10. Stories Feature 📖
+
+* **Status**: Planning
+* **Folder**: `stories/`
+* **Plan**: `stories/plan.md`
+* **Description**: Add an engaging "Stories" row to HomeView displaying active sagas (not ended, > 1
+  chapter). Tapping a story opens a full-screen bottom sheet with two pages: "Previously
+  on [Saga Title]" (AI-generated summary) and "The history continues" (AI-generated hook). Uses
+  GemmaClient for cost-effective single-shot generation of both summary and hook via
+  `StoryDailyBriefing` model. Generation triggered on-demand when user opens the story to avoid rate
+  limits and unnecessary API calls.
+
 ---
 
 ## Usage
@@ -98,63 +111,69 @@ To start working on a feature:
 
 ### Live Notification Media Player Revamp (Feature #9)
 
-**Objective:** Replace the current media player with a live notification system inspired by Samsung
-SmartThings TV controls. The notification will display the current saga progress with detailed
-information about the timeline objective.
+**Status:** ✅ Completed
 
-**Motivation:**
+**What Was Implemented:**
 
-* Provide a more immersive and contextual playback experience.
-* Allow users to track saga progress without opening the app.
-* Leverage Android's live notification capabilities for a modern, system-integrated experience.
-* Display rich context about the current narrative position (saga title, act, chapter).
+The media notification was enhanced to provide rich saga progress information while maintaining the
+persistent status bar chip behavior that users expect from media playback.
 
-**Scope:**
+**Key Improvements:**
 
-1. **Live Notification Implementation:**
-    * Create a live notification that replaces the traditional media player interface.
-    * Display the saga title as the main notification title.
-    * Display the current timeline objective as the subtitle (similar to the in-app notification
-      system).
-    * Include playback controls (play/pause, skip, etc.) in the notification.
+1. **Enhanced Title Formatting:**
+    * Title now shows: `"[Saga Name] - Act [Roman] - Chapter [Roman]"`
+    * Example: `"electrify - Act II - Chapter V"`
+    * Uses localized string resource (`R.string.chat_view_subtitle`)
+    * Reuses existing `toRoman()` extension from `DataExtensions.kt`
 
-2. **ChatViewModel Integration:**
-    * Detect saga flow updates in `ChatViewModel`.
-    * Extract the current timeline objective from the saga state.
-    * Update the live notification with the current objective information.
+2. **Progress Tracking:**
+    * Visual progress bar showing saga completion percentage
+    * SubText displays: `"[Percentage]% • Act [Current] of [Total]"`
+    * Example: `"100% • Act II of II"`
 
-3. **Enhanced Title Formatting:**
-    * Format the notification title to include detailed position information.
-    * Example format: `"Cinnamon - Act I - Chapter II"` or
-      `"[Saga Name] - Act [Roman Numeral] - Chapter [Roman Numeral]"`.
-    * Ensure the title is concise enough to fit notification constraints while being informative.
+3. **Data Model Enhancement:**
+    * Added `currentChapter` field to `PlaybackMetadata`
+    * Added `totalActs` field for accurate progress calculation
+    * `ChatViewModel` now passes chapter numbers using `chapterNumber()` extension
 
-4. **Notification Actions:**
-    * Implement standard media controls (play, pause, next objective, previous objective).
-    * Add a "Return to Saga" action that opens the app to the current saga.
-    * Consider adding a "Dismiss" action for user control.
+4. **Notification Features:**
+    * Persistent status bar chip (non-dismissable when playing)
+    * Saga color theming via `.setColorized()` and `.setColor()`
+    * Timeline objective as notification content
+    * Single Play/Pause action button
+    * Opens app to current saga on tap
 
-**Technical Considerations:**
+**Technical Decisions:**
 
-* Use `NotificationCompat.Builder` with `MediaStyle` for media playback notifications.
-* Implement a foreground service to maintain the notification during playback.
-* Ensure proper lifecycle management to update the notification as the saga progresses.
-* Handle notification permissions for Android 13+ (Tiramisu).
-* Consider battery optimization and background execution limits.
+* **MediaStyle over Live Updates:** After exploring Android 16's Live Updates API (
+  `Notification.ProgressStyle`), we determined that MediaStyle is the appropriate choice for this
+  use case:
+    * Live Updates don't provide persistent status bar chips
+    * Live Updates are designed for deliveries/rideshares where the system controls promotion
+    * MediaStyle is specifically designed for ongoing media/audio experiences
+    * Custom RemoteViews lose persistent chip behavior
 
-**Acceptance Criteria:**
+**Files Modified:**
 
-* Live notification displays current saga title and timeline objective.
-* Notification updates automatically when the saga flow progresses.
-* Title format includes saga name, act, and chapter information.
-* Playback controls function correctly from the notification.
-* Notification persists during active playback and dismisses appropriately.
-* Tapping the notification navigates to the current saga in the app.
+* `MediaNotificationManagerImpl.kt` - Enhanced notification building with progress and formatting
+* `PlaybackMetadata.kt` - Added `currentChapter` and `totalActs` fields
+* `ChatViewModel.kt` - Updated to pass chapter numbers and total acts
+* `MediaNotificationManager.kt` - Interface remains unchanged
 
-**Next Steps:**
+**Acceptance Criteria Met:**
 
-* Design the notification layout and action buttons.
-* Implement the foreground service for notification management.
-* Create the integration points in `ChatViewModel` for saga flow detection.
-* Develop the title formatting logic for act/chapter display.
-* Test notification behavior across different Android versions and device manufacturers.
+✅ Notification displays saga title with Act/Chapter information  
+✅ Shows current timeline objective  
+✅ Visual progress bar indicates saga completion  
+✅ Updates automatically as saga progresses  
+✅ Persistent status bar chip when playing  
+✅ Non-dismissable during playback  
+✅ Uses localized string resources  
+✅ Tapping opens app to current saga
+
+**Learnings:**
+
+* Android 16's Live Updates API is not suitable for persistent media notifications
+* MediaStyle remains the best approach for ongoing playback experiences
+* Custom notification layouts sacrifice critical UX features (persistent chip, non-dismissable)
+* Working within MediaStyle constraints still allows meaningful customization

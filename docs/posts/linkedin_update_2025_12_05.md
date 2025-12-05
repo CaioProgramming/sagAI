@@ -35,7 +35,8 @@ Qual história está esperando dentro de você?
 
 Sexta-feira é dia de começar. O link está na nossa bio. 🚀
 
-#HistóriasReais #CriatividadeLibertada #SagasPessoais #StorytellingParaTodos #ComunidadeSagas
+#SagasApp #RPG #Roleplay #TTRPG #SoloRPG #InteractiveStory #ChoicesMatter #IndieDev #IndieGame
+#StorytellingGame #AIStorytelling #MobileGaming #DevBR #IndieBR #RPGBrasil
 
 ---
 

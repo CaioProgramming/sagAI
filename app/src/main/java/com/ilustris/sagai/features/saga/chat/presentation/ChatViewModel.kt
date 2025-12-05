@@ -28,7 +28,9 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
@@ -334,6 +336,12 @@ class ChatViewModel
                                     sagaContent.data.genre.color
                                         .toArgb(),
                                 currentActNumber = newActCount.coerceAtLeast(1),
+                                currentChapter = sagaContent.getCurrentTimeLine()?.let { timeline ->
+                                    sagaContent.chapterNumber(
+                                        sagaContent.flatChapters()
+                                            .find { it.data.id == timeline.data.chapterId }?.data
+                                    )
+                                } ?: 0,
                                 totalActs = sagaContent.acts.size,
                                 timelineObjective = sagaContent.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
                                 mediaFilePath = musicFile.absolutePath,
@@ -425,6 +433,13 @@ class ChatViewModel
                                             ?.acts
                                             ?.size
                                             ?.coerceAtLeast(1) ?: 1,
+                                    currentChapter = content.value?.getCurrentTimeLine()
+                                        ?.let { timeline ->
+                                            content.value?.chapterNumber(
+                                                content.value?.flatChapters()
+                                                    ?.find { it.data.id == timeline.data.chapterId }?.data
+                                            )
+                                        } ?: 0,
                                     totalActs = content.value?.acts?.size ?: 1,
                                     timelineObjective = content.value?.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
                                     mediaFilePath = musicFile.absolutePath,

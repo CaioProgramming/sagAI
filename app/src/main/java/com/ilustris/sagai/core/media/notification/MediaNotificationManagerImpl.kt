@@ -10,12 +10,12 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.media.app.NotificationCompat.MediaStyle
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.media.SagaMediaService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
-import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.permissions.NotificationUtils
-import com.ilustris.sagai.core.file.scaleBitmapForNotification // Import the new utility function
 import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toRoman
 import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -39,7 +39,7 @@ class MediaNotificationManagerImpl
             playbackMetadata: PlaybackMetadata,
             isPlaying: Boolean,
             sessionToken: MediaSessionCompat.Token?,
-        ): Notification? {
+        ): Notification {
             val openAppIntent =
                 Intent(context, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -59,117 +59,36 @@ class MediaNotificationManagerImpl
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
                 )
 
-            val scaledLargeIconBitmap =
-                scaleBitmapForNotification(
-                    fileHelper.readFile(playbackMetadata.sagaIcon),
-                    TARGET_LARGE_ICON_SIZE_PX,
-                )
+            // Calculate saga progress
+            val completedActs = playbackMetadata.currentActNumber
+            val totalActs = playbackMetadata.totalActs.coerceAtLeast(1)
+            val progressPercentage = ((completedActs.toFloat() / totalActs) * 100).toInt()
 
-            // Build notification based on Android version
-            return if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-                // Android 16+ Live Updates with ProgressStyle
-                buildLiveUpdatesNotification(
-                    playbackMetadata,
-                    isPlaying,
-                    openAppPendingIntent,
-                    scaledLargeIconBitmap
-                )
-            } else {
-                // Fallback for older versions
-                buildFallbackNotification(
-                    playbackMetadata,
-                    isPlaying,
-                    openAppPendingIntent,
-                    scaledLargeIconBitmap
-                )
-            }
-        }
+            // Format title with Act/Chapter
+            val actChapterSubtitle = context.getString(
+                R.string.chat_view_subtitle,
+                completedActs.toRoman(),
+                playbackMetadata.currentChapter.toRoman()
+            )
+            val fullTitle = "${playbackMetadata.sagaTitle} - $actChapterSubtitle"
 
-        @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.VANILLA_ICE_CREAM)
-        private fun buildLiveUpdatesNotification(
-            playbackMetadata: PlaybackMetadata,
-            isPlaying: Boolean,
-            contentIntent: PendingIntent,
-            largeIcon: android.graphics.Bitmap?
-        ): Notification {
-            val pauseIntent =
-                Intent(context, SagaMediaService::class.java).apply {
-                    action = SagaMediaService.ACTION_PAUSE
-                }
-            val pausePendingIntent: PendingIntent =
-                PendingIntent.getService(
-                    context,
-                    REQUEST_CODE_PAUSE,
-                    pauseIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                )
-
-            val playIntent =
-                Intent(context, SagaMediaService::class.java).apply {
-                    action = SagaMediaService.ACTION_PLAY
-                    putExtra(
-                        SagaMediaService.EXTRA_SAGA_CONTENT_JSON,
-                        playbackMetadata.toJsonFormat(),
-                    )
-                }
-            val playPendingIntent: PendingIntent =
-                PendingIntent.getService(
-                    context,
-                    REQUEST_CODE_PLAY,
-                    playIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                )
-
-            // Calculate progress (example: based on act number)
-            val currentProgress = playbackMetadata.currentActNumber
-            val maxProgress = playbackMetadata.totalActs.coerceAtLeast(1)
-
-            val progressStyle = Notification.ProgressStyle()
-                .setProgress(maxProgress, currentProgress, false)
-
-            return Notification.Builder(context, NotificationUtils.MEDIA_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_spark)
-                .setContentTitle(playbackMetadata.sagaTitle)
-                .setContentText(playbackMetadata.timelineObjective)
-                .setContentIntent(contentIntent)
-                .setOngoing(isPlaying)
-                .setColorized(true)
-                .setColor(playbackMetadata.color)
-                .setLargeIcon(largeIcon)
-                .setStyle(progressStyle)
-                .addAction(
-                    if (isPlaying) R.drawable.round_pause_24 else R.drawable.round_play_arrow_24,
-                    if (isPlaying) context.getString(R.string.notification_action_pause) 
-                    else context.getString(R.string.notification_action_play),
-                    if (isPlaying) pausePendingIntent else playPendingIntent
-                )
-                .build()
-        }
-
-        private fun buildFallbackNotification(
-            playbackMetadata: PlaybackMetadata,
-            isPlaying: Boolean,
-            contentIntent: PendingIntent,
-            largeIcon: android.graphics.Bitmap?
-        ): Notification {
             val notificationBuilder =
                 NotificationCompat
                     .Builder(context, NotificationUtils.MEDIA_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_spark)
-                    .setContentTitle(playbackMetadata.sagaTitle)
+                    .setContentTitle(fullTitle)
                     .setContentText(playbackMetadata.timelineObjective)
-                    .setContentIntent(contentIntent)
-                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setSubText("$progressPercentage% • Act ${completedActs.toRoman()} of ${totalActs.toRoman()}")
+                    .setContentIntent(openAppPendingIntent)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                     .setOngoing(isPlaying)
+                    .setShowWhen(false)
                     .setColorized(true)
                     .setColor(playbackMetadata.color)
-                    .setLargeIcon(largeIcon)
-                    .setStyle(
-                        NotificationCompat.BigTextStyle()
-                            .bigText(playbackMetadata.timelineObjective)
-                    )
+                    .setProgress(100, progressPercentage, false)
 
+            // Add play/pause action
             if (isPlaying) {
                 val pauseIntent =
                     Intent(context, SagaMediaService::class.java).apply {
@@ -210,8 +129,28 @@ class MediaNotificationManagerImpl
                 )
             }
 
+            // Use MediaStyle for persistent chip
+            val mediaStyle =
+                MediaStyle()
+                    .setMediaSession(sessionToken)
+                    .setShowActionsInCompactView(0)
+
+            notificationBuilder.setStyle(mediaStyle)
+
             return notificationBuilder.build()
         }
+
+    private fun formatTitle(metadata: PlaybackMetadata): String {
+        return context.getString(
+            R.string.chat_view_subtitle,
+            metadata.currentActNumber.toRoman(),
+            metadata.currentChapter.toRoman()
+        )
+    }
+
+    private fun formatContent(metadata: PlaybackMetadata): String {
+        return metadata.timelineObjective
+    }
 
         override fun cancelPlaybackNotification() {
             NotificationManagerCompat.from(context).cancel(MEDIA_NOTIFICATION_ID)
