@@ -1,18 +1,14 @@
 package com.ilustris.sagai.features.stories.ui
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,23 +25,35 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradient
 
 @Composable
-fun StoriesRow(sagas: List<SagaContent>, onStoryClicked: (SagaContent) -> Unit) {
+fun StoriesRow(
+    sagas: List<SagaContent>,
+    loadingStoryId: Int?,
+    onStoryClicked: (SagaContent) -> Unit,
+) {
     val eligibleSagas = sagas.filter { it.data.isEnded.not() && it.hasMoreThanOneChapter() }
     if (eligibleSagas.isNotEmpty()) {
         Column(modifier = Modifier.padding(vertical = 8.dp)) {
-            Text(
-                text = "Stories",
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.padding(horizontal = 16.dp),
-            )
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 items(eligibleSagas) { saga ->
-                    StoryItem(saga = saga, onStoryClicked = onStoryClicked)
+                    StoryItem(
+                        saga = saga,
+                        isLoading = loadingStoryId == saga.data.id,
+                        onStoryClicked = onStoryClicked,
+                    )
                 }
             }
+
+            HorizontalDivider(
+                modifier =
+                Modifier
+                    .padding(vertical = 8.dp)
+                    .fillMaxWidth(),
+                thickness = 1.dp,
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
+            )
         }
     }
 }
@@ -53,6 +61,7 @@ fun StoriesRow(sagas: List<SagaContent>, onStoryClicked: (SagaContent) -> Unit) 
 @Composable
 fun StoryItem(
     saga: SagaContent,
+    isLoading: Boolean,
     onStoryClicked: (SagaContent) -> Unit,
 ) {
     Column(
@@ -64,22 +73,35 @@ fun StoryItem(
             modifier =
             Modifier
                 .size(64.dp)
-                .clip(CircleShape)
-                .border(
-                    width = 2.dp,
-                    brush = saga.data.genre.gradient(),
-                    shape = CircleShape,
-                )
-                .clickable { onStoryClicked(saga) },
+                .clickable(enabled = !isLoading) { onStoryClicked(saga) },
         ) {
-            saga.mainCharacter?.let {
-                CharacterAvatar(
-                    character = it.data,
-                    genre = saga.data.genre,
-                    modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .padding(4.dp),
+            Box(
+                modifier =
+                Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+                    .border(
+                        width = 2.dp,
+                        brush = saga.data.genre.gradient(),
+                        shape = CircleShape,
+                    ),
+            ) {
+                saga.mainCharacter?.let {
+                    CharacterAvatar(
+                        character = it.data,
+                        genre = saga.data.genre,
+                        modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .padding(4.dp),
+                    )
+                }
+            }
+            AnimatedVisibility(visible = isLoading, modifier = Modifier.fillMaxSize()) {
+                CircularProgressIndicator(
+                    modifier = Modifier.fillMaxSize(),
+                    color = saga.data.genre.color,
+                    strokeWidth = 2.dp,
                 )
             }
         }

@@ -133,7 +133,7 @@ fun HomeView(
     val coroutineScope = rememberCoroutineScope()
     val selectedSaga by viewModel.selectedSaga.collectAsStateWithLifecycle()
     val storyBriefing by viewModel.storyBriefing.collectAsStateWithLifecycle()
-    val isGeneratingBriefing by viewModel.isGeneratingBriefing.collectAsStateWithLifecycle()
+    val loadingStoryId by viewModel.loadingStoryId.collectAsStateWithLifecycle()
 
 
     LaunchedEffect(Unit) {
@@ -168,6 +168,7 @@ fun HomeView(
                         dynamicNewSagaTexts = dynamicNewSagaTexts,
                         isLoadingDynamicPrompts = isLoadingDynamicPrompts,
                         isPremium = billingState is BillingState.SignatureEnabled,
+                        loadingStoryId = loadingStoryId,
                         onCreateNewChat = {
                             val isPremium = billingState == BillingState.SignatureEnabled
                             val freeSagasCount = sagas.count { it.data.isEnded.not() }
@@ -233,11 +234,11 @@ fun HomeView(
         })
     }
 
-    if (selectedSaga != null) {
+    if (selectedSaga != null && storyBriefing != null && loadingStoryId == null) {
         StorySheet(
             sagaContent = selectedSaga!!,
             storyDailyBriefing = storyBriefing,
-            isLoading = isGeneratingBriefing,
+            isLoading = false,
             onDismiss = { viewModel.clearSelectedSaga() },
             onContinue = {
                 navController.navigateToRoute(
@@ -268,6 +269,7 @@ private fun ChatList(
     isLoadingDynamicPrompts: Boolean,
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
+    loadingStoryId: Int? = null,
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
@@ -286,8 +288,8 @@ private fun ChatList(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
-                modifier =
-                Modifier.statusBarsPadding(),
+                modifier = Modifier.fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background).statusBarsPadding(),
             ) {
                 Box(Modifier.size(24.dp))
                 AnimatedContent(
@@ -296,7 +298,6 @@ private fun ChatList(
                     Modifier
                         .align(Alignment.CenterVertically)
                         .weight(1f)
-                        .background(MaterialTheme.colorScheme.background),
                 ) {
                     if (it) {
                         PremiumTitle(
@@ -471,7 +472,7 @@ private fun ChatList(
         }
 
         item {
-            StoriesRow(sagas = sagas, onStoryClicked = onStoryClicked)
+            StoriesRow(sagas = sagas, loadingStoryId = loadingStoryId, onStoryClicked = onStoryClicked)
         }
 
         items(

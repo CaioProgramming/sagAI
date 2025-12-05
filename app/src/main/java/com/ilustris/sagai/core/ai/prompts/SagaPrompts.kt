@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -32,8 +33,8 @@ object SagaPrompts {
             appendLine("Saga: ${saga.data.toAINormalize(ChatPrompts.sagaExclusions)}")
             appendLine("Player Character: ${saga.mainCharacter?.data?.toAINormalize(ChatPrompts.characterExclusions)}")
             appendLine(
-                "Characters: ${
-                    saga.characters.map { it.data }
+                "Characters: ${ 
+                    saga.characters.map { it.data } 
                         .normalizetoAIItems(ChatPrompts.characterExclusions)
                 }",
             )
@@ -211,11 +212,13 @@ object SagaPrompts {
             appendLine("Protagonist: ${saga.mainCharacter?.data?.name ?: "Unnamed Hero"}")
             appendLine()
             appendLine("HISTORY OVERVIEW:")
-            appendLine("Acts: ${saga.acts.joinToString("; ") { it.actSummary(saga) }}")
+            appendLine("Acts: ${saga.acts.joinToString("; ") { it.data.title }}")
             appendLine("Recent Key Events (Last 5 messages):")
-            saga.flatMessages().takeLast(5).forEach { message ->
-                appendLine("- ${message.characterName}: \"${message.message.content}\"")
-            }
+            appendLine(
+                saga.flatMessages().takeLast(5).joinToString("\n") {
+                    "- ${it.message.character?.name ?: "Narrator"}: \"${it.message.content}\""
+                }
+            )
             appendLine("---")
             appendLine()
             appendLine("YOUR TASK:")

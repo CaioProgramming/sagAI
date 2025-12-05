@@ -63,8 +63,9 @@ constructor(
     private val _storyBriefing = MutableStateFlow<StoryDailyBriefing?>(null)
     val storyBriefing = _storyBriefing.asStateFlow()
 
-    private val _isGeneratingBriefing = MutableStateFlow(false)
-    val isGeneratingBriefing = _isGeneratingBriefing.asStateFlow()
+    private val _loadingStoryId = MutableStateFlow<Int?>(null)
+    val loadingStoryId = _loadingStoryId.asStateFlow()
+
 
     init {
         checkDebug()
@@ -73,17 +74,19 @@ constructor(
 
     fun getBriefing(saga: SagaContent) {
         viewModelScope.launch {
-            _selectedSaga.emit(saga)
+            _loadingStoryId.emit(saga.data.id)
             if (_briefingCache.containsKey(saga.data.id)) {
                 _storyBriefing.emit(_briefingCache[saga.data.id])
+                _selectedSaga.emit(saga)
+                _loadingStoryId.emit(null)
             } else {
-                _isGeneratingBriefing.emit(true)
                 val result = homeUseCase.generateStoryBriefing(saga)
                 if (result is RequestResult.Success) {
                     _briefingCache[saga.data.id] = result.data
                     _storyBriefing.emit(result.data)
+                    _selectedSaga.emit(saga)
                 }
-                _isGeneratingBriefing.emit(false)
+                _loadingStoryId.emit(null)
             }
         }
     }
@@ -97,7 +100,7 @@ constructor(
 
     fun checkForBackups() {
         viewModelScope.launch {
-            backupService.getBackedUpSagas().onSuccessAsync {
+            backupService.getBackedUpSagas().onSuccess { // Changed from onSuccessAsync
                 val availableSagas = sagas.first()
                 _backupAvailable.emit(
                     it.filterBackups(availableSagas.map { it.data }).isNotEmpty()
@@ -122,8 +125,9 @@ constructor(
 
     fun createFakeSaga() {
         viewModelScope.launch(Dispatchers.IO) {
-            homeUseCase.createFakeSaga().onSuccessAsync {
-                _startDebugSaga.emit(it)
+            val result = homeUseCase.createFakeSaga()
+            if (result is RequestResult.Success) {
+                _startDebugSaga.emit(result.data)
                 delay(3.seconds)
                 _startDebugSaga.emit(null)
             }

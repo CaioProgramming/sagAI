@@ -24,8 +24,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
-import com.ilustris.sagai.ui.animations.StarryLoader
+import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
 
@@ -42,7 +43,7 @@ fun StorySheet(
     ModalBottomSheet(
         onDismissRequest = { onDismiss() },
         sheetState = sheetState,
-        containerColor = Color.Transparent,
+        containerColor = MaterialTheme.colorScheme.background,
         dragHandle = null
     ) {
         Box(modifier = Modifier
@@ -79,7 +80,7 @@ fun StorySheet(
             )
 
             if (isLoading || storyDailyBriefing == null) {
-                StarryLoader(modifier = Modifier.align(Alignment.Center))
+                StarryLoader(isLoading)
             } else {
                 val pagerState = rememberPagerState { 2 }
                 Column(
@@ -102,11 +103,13 @@ fun StorySheet(
                         when (page) {
                             0 -> StoryPage(
                                 title = "Previously on ${sagaContent.data.title}",
-                                content = storyDailyBriefing.summary
+                                content = storyDailyBriefing.summary,
+                                sagaContent.data.genre
                             )
                             1 -> StoryPage(
                                 title = "The history continues",
-                                content = storyDailyBriefing.hook
+                                content = storyDailyBriefing.hook,
+                                sagaContent.data.genre
                             )
                         }
                     }
@@ -129,7 +132,7 @@ fun StorySheet(
 }
 
 @Composable
-fun StoryPage(title: String, content: String) {
+fun StoryPage(title: String, content: String, genre: Genre) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -140,7 +143,7 @@ fun StoryPage(title: String, content: String) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            fontFamily = headerFont(),
+            fontFamily = genre.headerFont(),
             fontWeight = FontWeight.Bold,
             color = Color.White,
             textAlign = TextAlign.Center,
@@ -149,7 +152,7 @@ fun StoryPage(title: String, content: String) {
         Text(
             text = content,
             style = MaterialTheme.typography.bodyLarge,
-            fontFamily = bodyFont(),
+            fontFamily = genre.bodyFont(),
             color = Color.White,
             textAlign = TextAlign.Center
         )

@@ -643,6 +643,12 @@ class ChatViewModel
                     } else {
                         message.characterId ?: characterReference?.id
                     }
+
+                val speaker =  if (message.senderType == SenderType.NARRATOR) {
+                    null
+                } else {
+                    characterReference?.name
+                }
                 val sceneSummary =
                     if (isFromUser.not()) {
                         sceneSummary
@@ -657,6 +663,7 @@ class ChatViewModel
                         saga,
                         message.copy(
                             characterId = characterId,
+                            speakerName = speaker,
                             sagaId = saga.data.id,
                         ),
                         isFromUser,

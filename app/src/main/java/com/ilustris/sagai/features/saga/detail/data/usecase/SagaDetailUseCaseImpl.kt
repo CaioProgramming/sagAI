@@ -137,6 +137,6 @@ class SagaDetailUseCaseImpl
         override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
             executeRequest {
                 val prompt = SagaPrompts.generateStoryBriefing(saga)
-                textGenClient.generate<StoryDailyBriefing>(prompt, false)!!
+                textGenClient.generate<StoryDailyBriefing>(prompt)!!
             }
     }
