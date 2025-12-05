@@ -16,7 +16,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.media.MediaPlayerManager
-import com.ilustris.sagai.core.media.MediaPlayerService
+import com.ilustris.sagai.core.media.SagaMediaService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
@@ -227,6 +227,7 @@ class ChatViewModel
                     appendLine("Character name: $name")
                     appendLine("Character context on story:")
                     appendLine(mentions.takeLast(5).joinToString(";\n") { it.message.text })
+
                 },
             )
         }
@@ -333,10 +334,12 @@ class ChatViewModel
                                     sagaContent.data.genre.color
                                         .toArgb(),
                                 currentActNumber = newActCount.coerceAtLeast(1),
+                                totalActs = sagaContent.acts.size,
+                                timelineObjective = sagaContent.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
                                 mediaFilePath = musicFile.absolutePath,
                             )
-                        controlMediaPlayerService(MediaPlayerService.ACTION_PLAY, playbackMetadata)
-                        Log.d("ChatViewModel", "New act ($newActCount). Updated MediaPlayerService.")
+                        controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
+                        Log.d("ChatViewModel", "New act ($newActCount). Updated SagaMediaService.")
                     }
                 }
             }
@@ -369,20 +372,20 @@ class ChatViewModel
             metadata: PlaybackMetadata? = null,
         ) {
             val serviceIntent =
-                Intent(context, MediaPlayerService::class.java).apply {
+                Intent(context, SagaMediaService::class.java).apply {
                     this.action = action
                     metadata?.let {
-                        putExtra(MediaPlayerService.EXTRA_SAGA_CONTENT_JSON, it.toJsonFormat())
+                        putExtra(SagaMediaService.EXTRA_SAGA_CONTENT_JSON, it.toJsonFormat())
                     }
                 }
             try {
                 context.startService(serviceIntent)
                 Log.d(
                     "ChatViewModel",
-                    "Sent $action to MediaPlayerService. Metadata: ${metadata?.toJsonFormat()}",
+                    "Sent $action to SagaMediaService. Metadata: ${metadata?.toJsonFormat()}",
                 )
             } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error controlling MediaPlayerService with action $action", e)
+                Log.e("ChatViewModel", "Error controlling SagaMediaService with action $action", e)
                 updateSnackBar(
                     snackBar(
                         "Não foi possível iniciar o serviço áudio. Verifique as permissões",
@@ -422,14 +425,16 @@ class ChatViewModel
                                             ?.acts
                                             ?.size
                                             ?.coerceAtLeast(1) ?: 1,
+                                    totalActs = content.value?.acts?.size ?: 1,
+                                    timelineObjective = content.value?.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
                                     mediaFilePath = musicFile.absolutePath,
                                     color = currentSagaData.genre.color.toArgb(),
                                 )
                             currentActCountForService = playbackMetadata.currentActNumber
-                            controlMediaPlayerService(MediaPlayerService.ACTION_PLAY, playbackMetadata)
+                            controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
                             Log.d(
                                 "ChatViewModel",
-                                "Ambient music file available. Instructing MediaPlayerService to play.",
+                                "Ambient music file available. Instructing SagaMediaService to play.",
                             )
                         }
                     } else {
@@ -438,7 +443,7 @@ class ChatViewModel
                                 "ChatViewModel",
                                 "Ambient music file null/invalid for current saga. Instructing service to stop.",
                             )
-                            controlMediaPlayerService(MediaPlayerService.ACTION_STOP)
+                            controlMediaPlayerService(SagaMediaService.ACTION_STOP)
                         }
                     }
                 }
@@ -452,7 +457,7 @@ class ChatViewModel
             startTime = System.currentTimeMillis()
             Log.d(
                 "ChatViewModel",
-                "Lifecycle: onResume. MediaPlayerService manages its own state. Start time: $startTime",
+                "Lifecycle: onResume. SagaMediaService manages its own state. Start time: $startTime",
             )
         }
 
@@ -479,8 +484,8 @@ class ChatViewModel
 
         override fun onCleared() {
             super.onCleared()
-            Log.d("ChatViewModel", "onCleared called. Instructing MediaPlayerService to stop.")
-            controlMediaPlayerService(MediaPlayerService.ACTION_STOP)
+            Log.d("ChatViewModel", "onCleared called. Instructing SagaMediaService to stop.")
+            controlMediaPlayerService(SagaMediaService.ACTION_STOP)
         }
 
         private suspend fun validateCharacterMessageUpdates(content: SagaContent) {

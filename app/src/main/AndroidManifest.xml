@@ -46,7 +46,7 @@
         </activity>
 
         <service
-            android:name=".core.media.MediaPlayerService"
+            android:name=".core.media.SagaMediaService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
 

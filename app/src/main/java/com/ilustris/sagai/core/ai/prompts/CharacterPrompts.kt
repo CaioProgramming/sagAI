@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -10,6 +11,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -170,8 +172,7 @@ object CharacterPrompts {
         )
         appendLine("The generated character MUST be deeply contextualized within the saga's theme, genre, and narrative.")
 
-        appendLine("## Saga Context:")
-        appendLine(saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions))
+        appendLine(SagaPrompts.mainContext(saga))
 
         appendLine("## 💡 NEW CHARACTER CREATION INSPIRATION 💡")
         appendLine("// The following description is the foundational concept for the new character.")
@@ -180,6 +181,13 @@ object CharacterPrompts {
         appendLine("// The goal is to create a rich, well-rounded character that feels authentic to the saga's world.")
         appendLine(description)
 
+        appendLine("// Latest messages for better context")
+        appendLine("Conversation History")
+        appendLine("Use this for contextualization")
+        appendLine("The messages are ordered from newest to oldest")
+        appendLine(
+            saga.flatMessages().reversed().take(5).normalizetoAIItems(excludingFields = messageExclusions),
+        )
         appendLine("## Guidelines for generating the character JSON:")
         appendLine(CharacterGuidelines.creationGuideline)
         appendLine("// **IMPORTANT**: The character must be HIGHLY CONTEXTUALIZED TO THE SAGA'S THEME: ${saga.data.genre.name}.")

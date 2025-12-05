@@ -21,7 +21,7 @@ import java.io.File
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MediaPlayerService : Service() {
+class SagaMediaService : Service() {
     @Inject
     lateinit var mediaPlayerManager: MediaPlayerManager
 
@@ -37,7 +37,7 @@ class MediaPlayerService : Service() {
     private lateinit var mediaSession: MediaSessionCompat
     private var currentPlaybackMetadata: PlaybackMetadata? = null
 
-    private val TAG = MediaPlayerService::class.java.simpleName
+    private val TAG = SagaMediaService::class.java.simpleName
 
     override fun onCreate() {
         super.onCreate()
@@ -68,7 +68,7 @@ class MediaPlayerService : Service() {
                             )
                         if (updatedNotification != null) {
                             NotificationManagerCompat
-                                .from(this@MediaPlayerService)
+                                .from(this@SagaMediaService)
                                 .notify(MediaNotificationManagerImpl.MEDIA_NOTIFICATION_ID, updatedNotification)
                             Log.d(TAG, "Notification updated for PAUSE from MediaSession callback.")
                         }
@@ -78,8 +78,7 @@ class MediaPlayerService : Service() {
                             .Builder()
                             .setActions(
                                 PlaybackStateCompat.ACTION_PLAY or
-                                    PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                                    PlaybackStateCompat.ACTION_STOP,
+                                    PlaybackStateCompat.ACTION_PLAY_PAUSE,
                             ).setState(PlaybackStateCompat.STATE_PAUSED, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
                             .build()
                     mediaSession.setPlaybackState(pausedState)
@@ -156,8 +155,7 @@ class MediaPlayerService : Service() {
                         .Builder()
                         .setActions(
                             PlaybackStateCompat.ACTION_PAUSE or
-                                PlaybackStateCompat.ACTION_PLAY_PAUSE or
-                                PlaybackStateCompat.ACTION_STOP,
+                                PlaybackStateCompat.ACTION_PLAY_PAUSE,
                         ).setState(PlaybackStateCompat.STATE_PLAYING, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 1.0f)
                         .build()
                 mediaSession.setPlaybackState(playingState)
@@ -167,15 +165,11 @@ class MediaPlayerService : Service() {
                     MediaMetadataCompat
                         .Builder()
                         .putBitmap(MediaMetadataCompat.METADATA_KEY_ART, fileHelper.readFile(playbackMetadata.sagaIcon))
-                        .putString(
-                            MediaMetadataCompat.METADATA_KEY_TITLE,
-                            baseContext.getString(
-                                R.string.notification_playing_act,
-                                playbackMetadata.currentActNumber.toString(),
-                            ),
-                        ).putString(MediaMetadataCompat.METADATA_KEY_ARTIST, playbackMetadata.sagaTitle)
-                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, "Act ${playbackMetadata.currentActNumber}")
-                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, "Act ${playbackMetadata.currentActNumber}")
+                        .putString(MediaMetadataCompat.METADATA_KEY_TITLE, playbackMetadata.sagaTitle)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, playbackMetadata.timelineObjective)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM, playbackMetadata.timelineObjective)
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, playbackMetadata.sagaTitle)
+                        .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_SUBTITLE, playbackMetadata.timelineObjective)
                 mediaSession.setMetadata(metadataBuilder.build())
                 Log.d(TAG, "MediaSession metadata updated for: ${playbackMetadata.sagaTitle}")
             },
