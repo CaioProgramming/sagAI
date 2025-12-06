@@ -16,7 +16,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -73,7 +75,7 @@ fun StoryItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Box(contentAlignment = Alignment.Center, modifier = Modifier.size(80.dp)) {
+        Box(contentAlignment = Alignment.Center, modifier = Modifier.clip(CircleShape).size(90.dp).padding(4.dp)) {
 
 
             val borderSize by animateDpAsState(
@@ -89,8 +91,8 @@ fun StoryItem(
                     .uppercase(),
                 borderWidth = borderSize,
                 modifier = Modifier
+                    .padding(8.dp)
                     .fillMaxSize()
-                    .padding(12.dp)
                     .clip(CircleShape)
                     .clickable(enabled = !isLoading) { onStoryClicked(saga) },
             )
@@ -98,11 +100,12 @@ fun StoryItem(
             this@Column.AnimatedVisibility(
                 visible = isLoading, modifier = Modifier
                     .fillMaxSize()
-                    .padding(8.dp)
             ) {
                 StoryLoadingIndicator(
                     brush = saga.data.genre.gradient(),
                     modifier = Modifier
+                        .clipToBounds()
+                        .padding(8.dp)
                         .fillMaxSize()
                         .gradientFill(saga.data.genre.gradient(true, targetValue = 100f))
                 )

@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -40,7 +41,7 @@ fun StoryLoadingIndicator(
 
     val sparkPainter = painterResource(id = R.drawable.ic_spark)
 
-    Canvas(modifier = modifier.fillMaxSize()) {
+    Canvas(modifier = modifier.fillMaxSize().padding(4.dp)) {
         val strokeWidth = 3.dp.toPx()
         drawArc(
             brush = brush,
@@ -56,7 +57,7 @@ fun StoryLoadingIndicator(
         val y = center.y + radius * sin(angle).toFloat()
 
         with(sparkPainter) {
-            val sparkSize = 12.dp.toPx()
+            val sparkSize = 8.dp.toPx()
             val newSize = sparkPainter.intrinsicSize * (sparkSize / sparkPainter.intrinsicSize.width)
             translate(left = x - newSize.width / 2, top = y - newSize.height / 2) {
                 draw(size = newSize)

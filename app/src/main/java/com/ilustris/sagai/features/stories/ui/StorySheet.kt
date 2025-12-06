@@ -9,10 +9,12 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +33,7 @@ import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.headerFont
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -39,17 +42,18 @@ fun StorySheet(
     storyDailyBriefing: StoryDailyBriefing?,
     isLoading: Boolean,
     onDismiss: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var dragOffsetY by remember { mutableFloatStateOf(0f) }
     var scale by remember { mutableFloatStateOf(1f) }
+    val coroutineScope = rememberCoroutineScope()
 
     ModalBottomSheet(
         onDismissRequest = { onDismiss() },
         sheetState = sheetState,
         containerColor = Color.Transparent,
-        dragHandle = null
+        dragHandle = null // Remove default drag handle
     ) {
         Box(
             modifier = Modifier
@@ -57,14 +61,24 @@ fun StorySheet(
                 .pointerInput(Unit) {
                     detectVerticalDragGestures(
                         onVerticalDrag = { _, dragAmount ->
-                            dragOffsetY += dragAmount
-                            scale = (1f - (dragOffsetY / 1000f)).coerceIn(0.8f, 1f)
+                            // Only handle upward drag for parallax effect
+                            if (dragAmount < 0) {
+                                dragOffsetY += dragAmount
+                                scale = (1f - (dragOffsetY / 1000f)).coerceIn(0.8f, 1f)
+                            } else {
+                                // Allow downward drag to be handled by ModalBottomSheet
+                                dragOffsetY = 0f
+                                scale = 1f
+                            }
                         },
                         onDragEnd = {
-                            if (dragOffsetY < -200) {
-                                onContinue()
+                            if (dragOffsetY < -200) { // Threshold for continuing
+                                coroutineScope.launch {
+                                    sheetState.hide() // Hide the sheet with animation
+                                    onContinue() // Then call onContinue
+                                }
                             } else {
-                                dragOffsetY = 0f
+                                dragOffsetY = 0f // Reset if not enough drag
                                 scale = 1f
                             }
                         }
@@ -81,8 +95,7 @@ fun StorySheet(
                     .fillMaxSize()
                     .graphicsLayer(
                         scaleX = scale,
-                        scaleY = scale,
-                        translationY = dragOffsetY / 2
+                        scaleY = scale
                     )
                     .alpha(imageAlpha)
             )
@@ -107,7 +120,7 @@ fun StorySheet(
             } else {
                 val pagerState = rememberPagerState { 2 }
                 Column(
-                    modifier = Modifier.fillMaxSize().offset(y = dragOffsetY.dp),
+                    modifier = Modifier.fillMaxSize(), // Removed offset from here
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     StoryIndicator(
@@ -135,7 +148,12 @@ fun StorySheet(
                         }
                     }
                     Button(
-                        onClick = { onContinue() },
+                        onClick = {
+                            coroutineScope.launch {
+                                sheetState.hide() // Hide the sheet with animation
+                                onContinue() // Then call onContinue
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),
@@ -148,6 +166,14 @@ fun StorySheet(
                     }
                 }
             }
+        }
+    }
+
+    LaunchedEffect(sheetState.isVisible) {
+        // This LaunchedEffect will observe when the sheet hides due to user interaction (drag down)
+        // or programmatically (sheetState.hide() called from button click/drag up)
+        if (!sheetState.isVisible) {
+            onDismiss()
         }
     }
 }
