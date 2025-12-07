@@ -99,6 +99,7 @@ object SagaPrompts {
         genre: Genre,
         context: String,
         visualDirection: String?,
+        characterHexColor: String? = null,
     ) = buildString {
         appendLine(
             "Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.",
@@ -106,6 +107,20 @@ object SagaPrompts {
         appendLine("Overall context: ")
         appendLine(context)
         appendLine("* You will have access to subject(s) visual reference to provide a more precise description.")
+
+        // Add character color highlight instruction
+        characterHexColor?.let { hexColor ->
+            appendLine("**CHARACTER COLOR HIGHLIGHT (CRITICAL):**")
+            appendLine("The character has a signature color: $hexColor")
+            appendLine("This color MUST be prominently featured as a highlight detail in the character's appearance.")
+            appendLine("Examples: If the color is purple, the character could have purple hair, a purple shirt, purple sneakers, purple accessories, or purple details on their outfit.")
+            appendLine("If the color is blue, they could have blue eyes, blue clothing, blue accessories, etc.")
+            appendLine("If the color is red, they could have red hair, red clothing, red accessories, etc.")
+            appendLine("The goal is to make viewers think 'This character clearly likes/represents this color' when they see the artwork.")
+            appendLine("The color should feel natural and integrated into their design, not forced or artificial.")
+            appendLine("")
+        }
+
         appendLine("Visual Direction:")
         visualDirection?.let {
             appendLine("These rules dictate the composition and **Dramatic Direction**. You MUST incorporate the 'Mood & Dramatic Direction' into the character's pose and expression.")

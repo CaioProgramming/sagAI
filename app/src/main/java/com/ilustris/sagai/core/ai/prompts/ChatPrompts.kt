@@ -190,58 +190,93 @@ object ChatPrompts {
         saga: SagaContent,
         recentMessages: List<Message> = emptyList(),
     ) = buildString {
-        appendLine("You task is generate a concise, AI-optimized summary of the current scene in an interactive story.")
-        appendLine("This summary will be used exclusively as context for subsequent AI requests and will NOT be shown to the user.")
-        appendLine("Your goal:")
-        appendLine(
-            "- Provide only the most relevant details needed to maintain accurate story progression and avoid misleading information.",
-        )
-        appendLine("- Avoid redundant or already established information.")
-        appendLine("- Focus on immediate context: location, characters present, current objective, active conflict, and mood.")
-        appendLine("- If any field is not relevant or unknown, omit it.")
-        appendLine(SagaPrompts.mainContext(saga))
-        if (!saga.mainCharacter?.relationships.isNullOrEmpty()) {
-            appendLine("Player relationships:")
-            appendLine(
-                saga.mainCharacter.relationships.joinToString(";\n") {
-                    val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "Nothing related"
-                    "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}: $lastEvent"
-                },
-            )
-        }
+        appendLine("You are tasked with generating a factual, concise summary of the current scene based ONLY on established story context.")
+        appendLine("This summary will be used as context for subsequent AI requests and will NOT be shown to the user.")
 
-        saga.mainCharacter?.let {
-            val events = it.events.map { it.event }
-            if (events.isNotEmpty()) {
-                appendLine("Player last events:")
-                appendLine(
-                    events.normalizetoAIItems(
-                        listOf(
-                            "id",
-                            "characterId",
-                            "createdAt",
-                            "gameTimelineId",
-                        ),
-                    ),
-                )
-            }
-        }
-        val characters = saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }
-        if (characters.isNotEmpty()) {
-            appendLine("Current Saga Characters:")
-            appendLine(
-                characters.normalizetoAIItems(characterExclusions),
-            )
-        }
+        appendLine("## CRITICAL RULES - NEVER FABRICATE:")
+        appendLine("- ONLY reference characters that have been explicitly mentioned in the provided context")
+        appendLine("- ONLY describe events that actually happened according to recent messages, character events, and chapter/act summaries")
+        appendLine("- ONLY mention locations, objects, or situations that are explicitly stated in the context")
+        appendLine("- If information is not available in the context, omit that field completely")
+        appendLine("- Do NOT invent dialogue, actions, or characters that aren't in the provided data")
+        appendLine("- Do NOT assume or extrapolate beyond what's directly stated")
+
+        appendLine("## YOUR GOAL:")
+        appendLine("Create a factual summary focusing on:")
+        appendLine("- Current location (if explicitly mentioned)")
+        appendLine("- Characters actually present (based on recent messages)")
+        appendLine("- Immediate situation (based on recent events and messages)")
+        appendLine("- Current mood/atmosphere (derived from established context)")
+        appendLine("- What just happened (from recent messages and character events)")
+
+        appendLine("## ESTABLISHED STORY CONTEXT:")
+        appendLine(SagaPrompts.mainContext(saga))
+
+        // Current Chapter and Act Context
         saga.currentActInfo?.currentChapterInfo?.data?.let {
-            appendLine("Current Chapter Data:")
+            appendLine("### Current Chapter Context:")
             appendLine(it.toAINormalize(ChapterPrompts.CHAPTER_EXCLUSIONS))
         }
+
+        saga.currentActInfo?.data?.let {
+            appendLine("### Current Act Context:")
+            appendLine("Title: ${it.title}")
+            appendLine("Description: ${it.content}")
+            appendLine("Introduction: ${it.introduction}")
+        }
+
+        // Recent Timeline Events (what actually happened)
+
         appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
         appendLine(ChapterPrompts.chapterSummary(saga))
         appendLine(ActPrompts.actsOverview(saga))
-        appendLine("Recent Messages (for context, do NOT repeat):")
+
+
+        // Character Events (established character developments)
+        saga.mainCharacter?.let { mainChar ->
+            val recentEvents = mainChar.events.takeLast(3).map { it.event }
+            if (recentEvents.isNotEmpty()) {
+                appendLine("### Main Character Recent Events:")
+                appendLine(
+                    recentEvents.normalizetoAIItems(
+                        listOf("id", "characterId", "createdAt", "gameTimelineId")
+                    )
+                )
+            }
+        }
+
+        // Established Characters (only those that exist)
+        val establishedCharacters =
+            saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }
+        if (establishedCharacters.isNotEmpty()) {
+            appendLine("### Established Characters in Saga:")
+            appendLine(establishedCharacters.normalizetoAIItems(characterExclusions))
+        }
+
+        // Character Relationships (established connections)
+        if (!saga.mainCharacter?.relationships.isNullOrEmpty()) {
+            appendLine("### Established Character Relationships:")
+            appendLine(
+                saga.mainCharacter.relationships.joinToString(";\n") {
+                    val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "No events yet"
+                    "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}: $lastEvent"
+                }
+            )
+        }
+
+
+        // Recent Messages (what actually happened in conversation)
+        appendLine("### Recent Conversation (What Actually Happened):")
+        appendLine("These messages show the immediate context and current situation:")
         appendLine(recentMessages.normalizetoAIItems(messageExclusions))
+
+        appendLine("## SUMMARY REQUIREMENTS:")
+        appendLine("- Base your summary ONLY on the provided context above")
+        appendLine("- Focus on factual information from recent messages and established events")
+        appendLine("- Identify who is present based on recent message speakers")
+        appendLine("- Describe the current situation based on what was actually said/done")
+        appendLine("- If any information is unclear or missing, omit that aspect entirely")
+        appendLine("- Create a concise but comprehensive picture of the current scene state")
     }.trimIndent()
 
     private fun conversationStyleAndPacing() =

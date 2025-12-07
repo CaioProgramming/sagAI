@@ -18,13 +18,13 @@ import androidx.compose.ui.unit.IntSize
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
+import com.ilustris.sagai.ui.theme.filters.CowboyColorTones
 import com.ilustris.sagai.ui.theme.filters.CrimeColorTones
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
 import com.ilustris.sagai.ui.theme.filters.HeroColorTones
 import com.ilustris.sagai.ui.theme.filters.HorrorColorTones
 import com.ilustris.sagai.ui.theme.filters.SciFiColorTones
 import com.ilustris.sagai.ui.theme.filters.ShinobiColorTones
-import com.ilustris.sagai.ui.theme.filters.CowboyColorTones
 import com.ilustris.sagai.ui.theme.grayScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -158,21 +158,21 @@ fun Genre.shaderParams(
         )
     Genre.SPACE_OPERA ->
         ShaderParams(
-            grainIntensity = customGrain ?: .2f,
+            grainIntensity = customGrain ?: .3f,
             bloomThreshold = .3f,
-            bloomIntensity = .15f,
+            bloomIntensity = .2f,
             bloomRadius = 1.0f,
             softFocusRadius = focusRadius ?: .3f,
-            saturation = .6f,
-            contrast = 1.4f,
+            saturation = .85f,
+            contrast = 1.5f,
             brightness = 0f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
-            tintStrength = 0.25f,
-            vignetteStrength = .25f,
+            tintStrength = 0.3f,
+            vignetteStrength = .2f,
             vignetteSoftness = 0.9f,
             pixelationBlockSize = 0.0f,
-            colorTemperature = 0f,
+            colorTemperature = .1f.unaryMinus(),
         )
 
     Genre.SHINOBI ->
@@ -272,7 +272,8 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

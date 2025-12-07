@@ -1,12 +1,13 @@
 package com.ilustris.sagai.features.home.ui
 
-import android.net.Uri
+import android.graphics.Bitmap
+import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
-import com.ilustris.sagai.core.file.backup.RestorableSaga
 import com.ilustris.sagai.core.file.backup.filterBackups
+import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -17,19 +18,23 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
+data class SagaBriefing(
+    val saga: SagaContent,
+    val briefing: StoryDailyBriefing,
+    val segmentationPair: Pair<Bitmap, Bitmap>? = null,
+)
 @HiltViewModel
 class HomeViewModel
 @Inject
 constructor(
     private val homeUseCase: HomeUseCase,
     private val backupService: BackupService,
+    private val segmentationHelper: ImageSegmentationHelper
 ) : ViewModel() {
     val sagas = homeUseCase.getSagas()
 
@@ -55,16 +60,17 @@ constructor(
 
     val billingState = homeUseCase.billingState
 
-    private val _briefingCache = mutableMapOf<Int, StoryDailyBriefing>()
+    private val _briefingCache = mutableMapOf<Int, SagaBriefing>()
 
     private val _selectedSaga = MutableStateFlow<SagaContent?>(null)
     val selectedSaga = _selectedSaga.asStateFlow()
 
-    private val _storyBriefing = MutableStateFlow<StoryDailyBriefing?>(null)
+    private val _storyBriefing = MutableStateFlow<SagaBriefing?>(null)
     val storyBriefing = _storyBriefing.asStateFlow()
 
     private val _loadingStoryId = MutableStateFlow<Int?>(null)
     val loadingStoryId = _loadingStoryId.asStateFlow()
+    val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
 
 
     init {
@@ -73,7 +79,7 @@ constructor(
     }
 
     fun getBriefing(saga: SagaContent) {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             _loadingStoryId.emit(saga.data.id)
             if (_briefingCache.containsKey(saga.data.id)) {
                 _storyBriefing.emit(_briefingCache[saga.data.id])
@@ -81,8 +87,10 @@ constructor(
                 _loadingStoryId.emit(null)
             } else {
                  homeUseCase.generateStoryBriefing(saga).onSuccessAsync {
-                     _briefingCache[saga.data.id] = it
-                     _storyBriefing.emit(it)
+                     val iconSegmentation = segmentationHelper.processImage(saga.data.icon)
+                     val briefingState = SagaBriefing(saga, it, iconSegmentation.getSuccess())
+                     _briefingCache[saga.data.id] = briefingState
+                     _storyBriefing.emit(briefingState)
                      _selectedSaga.emit(saga)
                  }
                 _loadingStoryId.emit(null)

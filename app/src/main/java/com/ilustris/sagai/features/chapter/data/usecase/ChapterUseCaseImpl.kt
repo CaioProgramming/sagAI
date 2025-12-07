@@ -8,7 +8,6 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
-import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
@@ -16,7 +15,6 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
-import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -26,9 +24,7 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.chapter.data.repository.ChapterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.domain.model.rankTopCharacters
 import com.ilustris.sagai.features.timeline.data.repository.TimelineRepository
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
@@ -249,6 +245,7 @@ class ChapterUseCaseImpl
                         saga.data.genre,
                         coverContextJson,
                         visualComposition,
+                        characterHexColor = null,
                     )
                 val promptGeneration =
                     gemmaClient.generate<String>(
@@ -287,19 +284,9 @@ class ChapterUseCaseImpl
             act: ActContent,
         ): RequestResult<Chapter> =
             executeRequest {
-                val contextSummary =
-                    gemmaClient.generate<SceneSummary>(
-                        ChatPrompts.sceneSummarizationPrompt(
-                            saga,
-                            saga
-                                .flatMessages()
-                                .map { it.message }
-                                .sortedByDescending { it.timestamp }
-                                .take(UpdateRules.LORE_UPDATE_LIMIT),
-                        ),
-                    )
+
                 val prompt =
-                    ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act, contextSummary)
+                    ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
                 val intro =
                     gemmaClient.generate<String>(
                         prompt,

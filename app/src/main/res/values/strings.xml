@@ -355,4 +355,8 @@
     <string name="share">Share</string>
     <string name="cancel">Cancel</string>
 
+
+    <string name="story_sheet_button_continue_saga">Continue Saga</string>
+    <string name="story_sheet_title_previously_on">Previously on %s</string>
+    <string name="story_sheet_title_history_continues">The history continues</string>
 </resources>

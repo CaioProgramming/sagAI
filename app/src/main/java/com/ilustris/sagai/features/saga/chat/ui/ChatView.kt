@@ -172,7 +172,7 @@ import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
-import com.ilustris.sagai.ui.theme.fadeGradientTop
+import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.genresGradient
 import com.ilustris.sagai.ui.theme.gradient
@@ -1227,13 +1227,20 @@ fun SagaHeader(
     segmentedBitmap: Bitmap? = null,
 ) {
     Column(modifier) {
+        if (saga.icon.isEmpty()) {
+            saga.genre.stylisedText(saga.title,
+                modifier = Modifier
+                    .reactiveShimmer(true)
+                    .align(Alignment.CenterHorizontally)
+                    .padding(8.dp)
+            )
+        }
         AnimatedVisibility(saga.icon.isNotEmpty()) {
             Box(
                 modifier =
                     Modifier
-                        .background(MaterialTheme.colorScheme.background)
                         .fillMaxWidth()
-                        .fillMaxHeight(.4f),
+                        .height(400.dp),
             ) {
                 if (originalBitmap != null && segmentedBitmap != null) {
                     DepthLayout(
@@ -1280,21 +1287,9 @@ fun SagaHeader(
 
                 Box(
                     Modifier
-                        .align(Alignment.TopCenter)
-                        .fillMaxWidth()
-                        .fillMaxHeight(.25f)
+                        .fillMaxSize()
                         .background(
-                            fadeGradientTop(),
-                        ),
-                )
-
-                Box(
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .fillMaxWidth()
-                        .fillMaxHeight(.25f)
-                        .background(
-                            fadeGradientBottom(),
+                            fadedGradientTopAndBottom(),
                         ),
                 )
             }
@@ -1322,7 +1317,7 @@ fun SagaHeader(
                     color = textColor,
                     fontFamily = saga.genre.bodyFont(),
                 ),
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
             modifier =
                 Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp)

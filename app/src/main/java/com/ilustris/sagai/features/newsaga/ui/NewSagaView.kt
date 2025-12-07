@@ -18,6 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.ui.components.NewSagaChat
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
 import com.ilustris.sagai.features.newsaga.ui.presentation.Effect
@@ -25,8 +26,7 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
+import com.ilustris.sagai.ui.theme.holographicGradient
 
 @Composable
 fun NewSagaView(
@@ -109,13 +109,12 @@ fun NewSagaView(
     StarryLoader(
         isLoading = isSaving,
         loadingMessage = loadingMessage,
+        brushColors = form.saga.genre?.shimmerColors() ?: holographicGradient,
         textStyle =
             MaterialTheme.typography.labelMedium.copy(
                 textAlign = TextAlign.Center,
                 fontFamily = form.saga.genre?.bodyFont(),
-                brush =
-                    form.saga.genre?.gradient(true)
-                        ?: MaterialTheme.colorScheme.onBackground.gradientFade(),
+                color = MaterialTheme.colorScheme.onBackground
             ),
     )
 }

@@ -1,9 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.ai.models.ChapterConclusionContext
-import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
-import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
@@ -14,9 +12,8 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterGeneration
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapterAct
-import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.getDirective
-import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 
 object ChapterPrompts {
     val CHAPTER_EXCLUSIONS =
@@ -53,26 +50,27 @@ object ChapterPrompts {
         sagaContent: SagaContent,
         currentChapter: Chapter,
         currentAct: ActContent,
-        contextSummary: SceneSummary?,
     ): String =
         buildString {
-            val actContent = sagaContent.findChapterAct(currentChapter)
-            val chaptersInAct =
+            sagaContent.findChapterAct(currentChapter)
+            val previousChaptersInAct =
                 currentAct.chapters
                     .filter { it.isComplete() }
                     .map { it.data }
                     .filter { it.id != currentChapter.id }
-            val excludedFields =
-                listOf(
-                    "details",
-                    "image",
-                    "hexColor",
-                    "sagaId",
-                    "joinedAt",
-                    "id",
-                    "firstSceneId",
-                    "createdAt",
-                )
+
+            // Check if this is the very first chapter of the saga
+            val isFirstChapter = sagaContent.flatChapters().first().data.id == currentChapter.id
+
+            // Get previous act context if this is not the first act
+            val previousAct =
+                if (sagaContent.acts.size > 1 && currentAct == sagaContent.acts.firstOrNull()) {
+                    null
+                } else {
+                    val currentActIndex =
+                        sagaContent.acts.indexOfFirst { it.data.id == currentAct.data.id }
+                    if (currentActIndex > 0) sagaContent.acts[currentActIndex - 1] else null
+                }
 
             val chapterExclusions =
                 listOf(
@@ -86,57 +84,76 @@ object ChapterPrompts {
                 )
 
             appendLine(
-                "You are an AI storyteller continuing a saga. Your task is to write a short, engaging introduction for the next chapter.",
+                "You are an AI storyteller writing an introduction for the next chapter of an ongoing saga.",
             )
             appendLine(
-                "This intro must act as a seamless bridge from the previous events, pulling the reader right back into the action or mood.",
+                "Your task is to create a natural transition based ONLY on established story context, not invented events.",
             )
             appendLine()
 
             appendLine(SagaPrompts.mainContext(sagaContent))
-            contextSummary?.let {
-                appendLine("### Latest Scene Summary (What JUST Happened):")
-                appendLine(it.toAINormalize())
-                appendLine()
-            }
 
-            appendLine("### Latest messages:")
-            appendLine(
-                sagaContent
-                    .flatMessages()
-                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                    .toAINormalize(excludedFields)
-            )
+            // Provide context based on what's actually established
+            when {
+                isFirstChapter -> {
+                    appendLine("### CONTEXT: This is the FIRST CHAPTER of the saga.")
+                    appendLine("- Base your introduction on the saga's premise and the main character's starting situation.")
+                    appendLine("- DO NOT reference events that haven't happened yet.")
+                    appendLine("- Focus on setting the tone and establishing the beginning of the journey.")
+                }
 
-            actContent?.data?.introduction?.let {
-                appendLine("### Current Act's Theme:")
-                appendLine(it)
-            }
+                previousChaptersInAct.isEmpty() && previousAct != null -> {
+                    appendLine("### CONTEXT: This is the FIRST CHAPTER of a new act.")
+                    appendLine("### Previous Act Context:")
+                    appendLine("Title: ${previousAct.data.title}")
+                    appendLine("Description: ${previousAct.data.content}")
+                    appendLine("### Current Act Theme:")
+                    appendLine(currentAct.data.introduction)
+                    appendLine("- Create a bridge from the previous act to this new phase of the story.")
+                }
 
-            if (chaptersInAct.isNotEmpty()) {
-                appendLine("### Summaries of Previous Chapters in this Act:")
-                appendLine(chaptersInAct.normalizetoAIItems(chapterExclusions))
-                appendLine()
+                previousChaptersInAct.isNotEmpty() -> {
+                    appendLine("### Previous Chapters in Current Act:")
+                    appendLine(previousChaptersInAct.normalizetoAIItems(chapterExclusions))
+                    appendLine("### Current Act Theme:")
+                    appendLine(currentAct.data.introduction)
+                    appendLine("- Continue naturally from where the previous chapters left off.")
+                }
+
+                else -> {
+                    appendLine("### Current Act Theme:")
+                    appendLine(currentAct.data.introduction)
+                    appendLine("- Create an introduction that fits the current act's theme and progression.")
+                }
             }
 
             appendLine("### Narrative Directive (Pacing and Style):")
             appendLine(sagaContent.getDirective())
 
             appendLine("## YOUR TASK")
-            appendLine("Based on the context, write a single paragraph to introduce the next chapter. Follow these rules:")
+            appendLine("Write a single paragraph introduction that:")
             appendLine(
-                "1.  **Immediately Follow Up:** Start by directly referencing the mood, outcome, or lingering question from the 'Latest Scene Summary'.",
+                "1. **Reflects Current State:** Based ONLY on established context (previous chapters, act themes, saga premise).",
             )
             appendLine(
-                "2.  **Create Momentum:** Build on that starting point to create a sense of forward momentum. What is happening now? What is the immediate feeling?",
+                "2. **Creates Natural Continuation:** Show where the story stands now without inventing new events.",
             )
             appendLine(
-                "3.  **Be Evocative, Not Explicit:** Hint at the stakes or the atmosphere. Use descriptive language but AVOID naming specific characters or places. Let the feeling lead.",
+                "3. **Engages Without Fabrication:** Create anticipation for what's to come based on the natural story flow.",
             )
+            appendLine(
+                "4. **Maintains Consistency:** Never contradict or advance beyond what's actually been established.",
+            )
+
+            appendLine("## CRITICAL RULES")
+            appendLine("- NEVER invent events that haven't been established in the provided context")
+            appendLine("- For first chapters: Focus on the premise and starting situation, not imaginary prior events")
+            appendLine("- For continuation chapters: Build only on what previous chapters actually established")
+            appendLine("- Create hooks through atmosphere and anticipation, not fabricated plot points")
 
             appendLine("## OUTPUT REQUIREMENTS")
             appendLine("- **Length:** 1 concise paragraph (40-60 words).")
-            appendLine("- **Content:** Absolutely NO dialogue, character names, or titles.")
+            appendLine("- **Content:** NO dialogue, character names, or specific plot details not in context.")
             appendLine("- **Format:** Output ONLY the introduction text itself. No quotes, no labels, no extra commentary.")
         }
 

@@ -1,126 +1,139 @@
 package com.ilustris.sagai.features.stories.ui
 
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
-import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.R
+import com.ilustris.sagai.features.home.ui.SagaBriefing
+import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
 import com.ilustris.sagai.ui.theme.headerFont
+import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
+import effectForGenre
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+
+@OptIn(
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class,
+    ExperimentalSharedTransitionApi::class
+)
 @Composable
 fun StorySheet(
-    sagaContent: SagaContent,
-    storyDailyBriefing: StoryDailyBriefing?,
-    isLoading: Boolean,
+    sagaBriefing: SagaBriefing?,
     onDismiss: () -> Unit,
     onContinue: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
     var scale by remember { mutableFloatStateOf(1f) }
     val coroutineScope = rememberCoroutineScope()
 
-    ModalBottomSheet(
-        onDismissRequest = { onDismiss() },
-        sheetState = sheetState,
-        containerColor = Color.Transparent,
-        dragHandle = null // Remove default drag handle
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .pointerInput(Unit) {
-                    detectVerticalDragGestures(
-                        onVerticalDrag = { _, dragAmount ->
-                            // Only handle upward drag for parallax effect
-                            if (dragAmount < 0) {
-                                dragOffsetY += dragAmount
-                                scale = (1f - (dragOffsetY / 1000f)).coerceIn(0.8f, 1f)
-                            } else {
-                                // Allow downward drag to be handled by ModalBottomSheet
-                                dragOffsetY = 0f
-                                scale = 1f
-                            }
-                        },
-                        onDragEnd = {
-                            if (dragOffsetY < -200) { // Threshold for continuing
-                                coroutineScope.launch {
-                                    sheetState.hide() // Hide the sheet with animation
-                                    onContinue() // Then call onContinue
-                                }
-                            } else {
-                                dragOffsetY = 0f // Reset if not enough drag
-                                scale = 1f
-                            }
-                        }
-                    )
-                }
-        ) {
-            val imageAlpha by animateFloatAsState(targetValue = 1f - (dragOffsetY / -500f).coerceIn(0f, 1f))
 
-            AsyncImage(
-                model = sagaContent.data.icon,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .graphicsLayer(
-                        scaleX = scale,
-                        scaleY = scale
-                    )
-                    .alpha(imageAlpha)
-            )
+    sagaBriefing?.let {
+        val sagaContent = sagaBriefing.saga
+        val genre = sagaContent.data.genre
+
+        ModalBottomSheet(
+            onDismissRequest = { onDismiss() },
+            sheetState = sheetState,
+            containerColor = MaterialTheme.colorScheme.background,
+            dragHandle = { Box {} },
+            shape = genre.shape()
+        ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                Color.Transparent,
-                                Color.Black.copy(alpha = 0.5f),
-                                Color.Black
-                            ),
-                            startY = 0f,
-                            endY = Float.POSITIVE_INFINITY
+            ) {
+                val segmentationPair = sagaBriefing.segmentationPair
+                val deepEffectAvailable = segmentationPair != null
+                AnimatedContent(deepEffectAvailable) {
+                    if (it) {
+                        Box(Modifier.fillMaxSize()) {
+                            segmentationPair?.let {
+                                DepthLayout(
+                                    it.first,
+                                    it.second,
+                                    modifier = Modifier.fillMaxSize(),
+                                    imageModifier = Modifier
+                                        .selectiveColorHighlight(genre.selectiveHighlight())
+                                        .effectForGenre(genre)
+                                ) {
+                                    genre.stylisedText(
+                                        sagaContent.data.title,
+                                        fontSize = MaterialTheme.typography.displaySmall.fontSize,
+                                        modifier = Modifier
+                                            .align(Alignment.TopCenter)
+                                            .offset(y = 100.dp)
+                                            .reactiveShimmer(true)
+                                            .padding(4.dp)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        AsyncImage(
+                            model = sagaBriefing.saga.data.icon,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    scaleX = scale,
+                                    scaleY = scale
+                                )
                         )
-                    )
-            )
+                    }
+                }
 
-            if (isLoading || storyDailyBriefing == null) {
-                StarryLoader(modifier = Modifier.align(Alignment.Center))
-            } else {
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            fadedGradientTopAndBottom(genre.color)
+                        )
+                )
+
                 val pagerState = rememberPagerState { 2 }
                 Column(
-                    modifier = Modifier.fillMaxSize(), // Removed offset from here
+                    modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     StoryIndicator(
@@ -138,48 +151,47 @@ fun StorySheet(
                     ) { page ->
                         when (page) {
                             0 -> StoryPage(
-                                title = "Previously on ${sagaContent.data.title}",
-                                content = storyDailyBriefing.summary
+                                title = stringResource(
+                                    R.string.story_sheet_title_previously_on,
+                                    sagaContent.data.title
+                                ),
+                                content = sagaBriefing.briefing.summary,
+                                genre
                             )
+
                             1 -> StoryPage(
-                                title = "The history continues",
-                                content = storyDailyBriefing.hook
+                                title = stringResource(R.string.story_sheet_title_history_continues),
+                                content = sagaBriefing.briefing.hook,
+                                genre
+
                             )
                         }
                     }
                     Button(
                         onClick = {
                             coroutineScope.launch {
-                                sheetState.hide() // Hide the sheet with animation
-                                onContinue() // Then call onContinue
+                                onContinue()
                             }
                         },
                         modifier = Modifier
+                            .reactiveShimmer(true, genre.shimmerColors())
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
+                            .padding(32.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = genre.iconColor
                         )
                     ) {
-                        Text(text = "Continue Saga")
+                        Text(text = stringResource(R.string.story_sheet_button_continue_saga))
                     }
                 }
             }
         }
     }
 
-    LaunchedEffect(sheetState.isVisible) {
-        // This LaunchedEffect will observe when the sheet hides due to user interaction (drag down)
-        // or programmatically (sheetState.hide() called from button click/drag up)
-        if (!sheetState.isVisible) {
-            onDismiss()
-        }
-    }
 }
 
 @Composable
-fun StoryPage(title: String, content: String) {
+fun StoryPage(title: String, content: String, genre: Genre) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -190,18 +202,17 @@ fun StoryPage(title: String, content: String) {
         Text(
             text = title,
             style = MaterialTheme.typography.headlineSmall,
-            fontFamily = headerFont(),
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
+            fontFamily = genre.headerFont(),
+            color = genre.iconColor,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         Text(
             text = content,
             style = MaterialTheme.typography.bodyLarge,
-            fontFamily = bodyFont(),
-            color = Color.White,
-            textAlign = TextAlign.Center
+            fontFamily = genre.bodyFont(),
+            color = genre.iconColor,
+            textAlign = TextAlign.Start
         )
     }
 }

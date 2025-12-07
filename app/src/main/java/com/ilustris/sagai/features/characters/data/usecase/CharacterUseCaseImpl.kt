@@ -127,6 +127,7 @@ class CharacterUseCaseImpl
                                     ),
                             ).toJsonFormat(),
                             visualComposition,
+                            characterHexColor = character.hexColor,
                         )
                     } else {
                         ImagePrompts.simpleEmojiRendering(
@@ -197,7 +198,7 @@ class CharacterUseCaseImpl
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
-                            hexColor = sagaContent.data.genre.getRandomColorHex()
+                            hexColor = getRandomColorHex()
                         ),
                     )
                 withContext(Dispatchers.IO) {

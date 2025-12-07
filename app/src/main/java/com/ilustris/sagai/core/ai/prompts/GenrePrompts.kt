@@ -90,21 +90,22 @@ object GenrePrompts {
 
             CRIME ->
                 """
-                Art Technique: RAW, GRAPHIC NOIR ILLUSTRATION, DIGITAL SKETCH ART. **CONSISTENT, MATURE, AND ASSERTIVE LINEWORK.** **ROUGH, ANGULAR BRUSH/PEN MARKS.**
-                Line Detail: DELIBERATELY IMPERFECT OUTLINES — uneven line weight, quick hatch accents, occasional feathering and scratch marks.
-                Surface & Texture: INK BLEEDS AND BLOTCHES, SUBTLE HALFTONE SPECKLE; add tactile authenticity.
-                Aesthetic Influence: Contemporary indie/noir comics and hand-printed zines — tactile, rushed, and immediate.
-        
+                Art Technique: INDIE UNDERGROUND COMIC / ZINE STYLE (Raw & Sketchy).
+                Line Detail: ROUGH, "AMATEUR" INK STROKES. Lines should be loose, scratchy, and expressive, not polished or clean. Visible sketch marks and ink splatters.
+                Color Application: FLAT ILLUMINATION (No Gradients). Bold, flat blocks of color with hard-edged shadows.
+                Texture / Materiality: NEWSPRINT / CHEAP PAPER TEXTURE.
+                Aesthetic Era / Influence: 1980s ALTERNATIVE COMICS, PUNK ZINES, MIAMI VICE PROMO ART. NO MARVEL/DC POLISH.
+
                 **COLOR PALETTE & ACCENT:**
                  - Base: High-contrast Neo-Noir. Deep blacks, desaturated greys, and murky browns.
                  - Mandatory Accent: NEON PINK & SUNSET ORANGE.
-                 - Application: Use these colors exclusively for neon signage, rain reflections on pavement, cigarette embers, or distinct rim lighting. The rest of the scene must remain dark and gritty. Forbid other vibrant colors.
+                 - Application: Use these colors exclusively for neon signage, rain reflections on pavement, cigarette embers, or distinct rim lighting. The rest of the scene must remain dark and gritty.
 
-                Figure & Facial Treatment: UN-IDEALIZED, EXPRESSIVE FACES — asymmetry, small scars/freckles, rough stubble, simplified noses and lips; avoid polished features or smooth retouching. Prioritize expression and shape over micro-detail.
-                Rendering: FLAT COLOR BLOCKS with minimal modulation; use large planar shadow patches (no soft gradients), sparse cross-hatching for form, and intentional negative space.
-                Lighting & Shading: HIGH-CONTRAST, GRAPHIC SHADING — heavy blacks, bold shadow shapes, little mid-tone refinement. Keep highlights minimal and matte; avoid glossy speculars.
+                Figure & Facial Treatment: UN-IDEALIZED, SKETCHY FACES. Asymmetry, rough stubble, simplified features. Focus on expression over anatomical perfection.
+                Rendering: HARD BLACK SHADOWS (Spot Blacks). No smooth shading.
                 
-                Mood: Raw, rash, emotionally immediate — glamorous and decadent in subject matter, but tactile and hand-made in execution.
+                Mood: Gritty, raw, and vibrant.
+                Ambience: CREATIVE & CLUTTERED BACKGROUNDS. Detailed urban decay mixed with tropical luxury. Neon signs, Art Deco architecture, palm trees silhouetted against purple skies, cluttered detective desks. The world should feel lived-in and chaotic.
                 """
 
             SHINOBI ->
@@ -141,24 +142,32 @@ object GenrePrompts {
 
             SPACE_OPERA ->
                 """
-                Art Technique: CLASSIC GOLDEN AGE COMIC ART (CMYK). Ink heavy shadows.
-                Line Detail: BOLD, CLEAN, AND CONSISTENT INK OUTLINES.
-                Color Application: FLAT PRIMARY COLOR BLOCKING (ZERO GRADIENTS).
-                Texture / Materiality: SMOOTH, CLEAN INKING.
-                Aesthetic Era / Influence: 1940s/1950s GOLDEN AGE COMICS.
-                
+                Art Technique: 1950s ATOMIC AGE ORIGINAL ILLUSTRATION (Gouache/Oil).
+                Texture / Materiality: SMOOTH ILLUSTRATION BOARD, VISIBLE BRUSHSTROKES, VIBRANT PAINTERLY FINISH.
+                Aesthetic Era / Influence: RETRO-FUTURISM, RAYGUN GOTHIC, 1950s PIN-UP & PULP COVER ART (The original painting, not the printed poster).
+
                 **COLOR PALETTE & ACCENT:**
-                 - Base: Vintage Golden Age Comic (CMYK). Flat primary colors, ink heavy shadows.
-                 - Mandatory Accent: ELECTRIC CYAN / COSMIC BLUE.
-                 - Application: Use this for retro ray-gun blasts, ship thrusters, holographic visors, or "moonlight" rim lighting on the hero's suit. Forbid other vibrant colors.
+                 - Base: Deep Space Palette. Rich cosmic blues, purple nebula tones, starlight silver, and void black.
+                 - Mandatory Accent: CHERRY RED / ROCKET ORANGE.
+                 - Application: Use vivid red/orange for key elements (advanced spacecraft engines, energy beams, stellar phenomena) to contrast dramatically against the cosmic backdrop.
 
-                Figure Style: POWERFUL, HEROIC, AND STYLIZED ANATOMY.
-                Vibe / Mood Aesthetic: ADVENTUROUS AND OPTIMISTIC.
+                Figure Style: IDEALIZED 50s COMMERCIAL ILLUSTRATION. Expressive, cheerful, and confident "Pin-up" or "Action Hero" archetypes.
+                Line Work: Soft expressive painting style (like Gil Elvgren or Norman Rockwell). Smooth blending, soft edges.
 
-                Mood: Vast, aspirational, and wonder-filled — evoke exploration and cosmic scale.
-                Ambience: Minimalist starfields, soft cosmic fog or nebula backdrops, gentle backlighting to create silhouettes and emphasize scale without cluttering the frame.
+                **TECHNOLOGY & VEHICLES (When Applicable):**
+                 - IF spacecraft or technology appear in the scene, they should be: elegant, streamlined starships with flowing curves, chrome accents, and sophisticated aerodynamics. Think advanced space cruisers, not primitive rockets.
+                 - IF individual vehicles are shown: design them like futuristic motorcycles or sleek fighter jets adapted for space - cool, fast, and technologically advanced.
+                 - IF propulsion is visible: show sophisticated engine designs, energy trails, plasma drives, and gravitational field effects rather than simple rocket flames.
+                 - IF technology is included: all tech should look genuinely advanced and purposeful for deep space exploration - orbital stations, research vessels, interstellar transports with elegant, functional designs.
+                 - AVOID: Simple tube rockets, primitive spacecraft, or overly basic vehicle designs that don't match the scope of cosmic exploration.
+                 - NOTE: Technology and vehicles are NOT mandatory - the cosmic ambience and 1950s art style are the primary focus.
+
+                Mood: "The Infinite Cosmos Awaits!" — Awe-inspiring, optimistic, and filled with cosmic wonder.
+                Ambience: VAST COSMIC ENVIRONMENTS. Emphasize the true majesty of space: swirling nebulae in brilliant colors, dense star fields stretching to infinity, the event horizon of black holes, meteor showers blazing across the void, distant galaxies spiraling in the background, cosmic dust clouds illuminated by stellar radiation.
+                Focus on the overwhelming scale and beauty of the universe itself—the infinite expanse, the play of cosmic light and shadow, the sense of floating in the boundless void. Avoid terrestrial-looking planets;
+                instead show the raw cosmic phenomena that make space exploration truly magnificent.
+                NO TEXT, NO LOGOS, NO GRAPHIC SHAPES, NO BORDERS.
                 """
-
 
             COWBOYS ->
                 """
@@ -176,68 +185,21 @@ object GenrePrompts {
                 Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light.
                 """
 
-            else ->
-                """
-                Art Technique: Classic Western Oil Painting (Remington/Russell style).
-                Key Lighting Style: WARM GOLDEN HOUR / DESERT SUNSET.
-                Texture / Materiality: VISIBLE BRUSHSTROKES, CANVAS TEXTURE, DUSTY ATMOSPHERE.
-                Aesthetic Era / Influence: American Frontier, late 19th Century.
-
-                **COLOR PALETTE & ACCENT:**
-                 - Base: Earthy tones (Sienna, Ochre, Sand), Desert Sky Blue.
-                 - Mandatory Accent: BURNT ORANGE / SUNSET GOLD.
-                 - Application: Use the accent for sunsets, campfires, or the glint of a badge/gun.
-                
-                Mood: Rugged, isolated, and stoic. A sense of vastness and freedom.
-                Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light.
-                """
         }
 
-    @Suppress("unused")
-    fun cinematographyComposition(genre: Genre) =
-        buildString {
-            when (genre) {
-                CRIME -> {
-                    appendLine(
-                        "*The composition MUST emphasize **intense psychological tension and dramatic observation**. Use **cinematic staging** to create emotional distance or scrutiny, such as **observing a character from behind a pane of glass (like a luxury car window) or through heavy shadow/neon reflection**. Focus on aesthetic of **decadent tropical luxury** and urban grit.",
-                    )
-                    appendLine(
-                        "*  The framing should prioritize **emotional reaction and narrative stage setting** (e.g., dual portrait with visual barrier) over direct physical confrontation.",
-                    )
-                }
 
-                CYBERPUNK -> {
-                    appendLine(
-                        "The composition MUST emphasize tension and dramatic melancholy. With high focus on characters emotions and world building.",
-                    )
-                    appendLine("Focus on **cinematic staging** to create emotional distance or scrutiny")
-                    appendLine("Paying attention to futuristic details and intense emotions.")
-                }
-
-                SHINOBI -> {
-                    appendLine(
-                        "Emphasize poise, gesture, and negative space. Use vertical compositions (bamboo, paper screens) and asymmetrical framing to suggest tradition and discipline.",
-                    )
-                    appendLine(
-                        "Favor contemplative, slightly off-center compositions — observe the character in motion or mid-gesture rather than posed directly to camera.",
-                    )
-                    appendLine(
-                        "Use layered planes (foreground silhouettes, mid-ground action, washed background) to create depth while keeping the sumi-e economy of detail.",
-                    )
-                }
-
-                COWBOYS -> {
-                    appendLine("Emphasize vastness and isolation using wide shots and low angles.")
-                    appendLine("Focus on texture (grit, leather, wood) and the interplay of light and shadow.")
-                    appendLine("Use 'American Shot' (knees up) for character interactions to show holsters.")
-                }
-
-                else -> {
-                    appendLine("Focus on characters involved")
-                    appendLine("Creating angles that focus on their conflicts and emotions")
-                }
-            }
+    fun appearanceGuidelines(genre: Genre): String {
+        return when (genre) {
+            HEROES -> "Heroes must wear vibrant and colorful supersuits, complete with dynamic masks, iconic emblems, and functional accessories. Emphasize a powerful, heroic silhouette and clean, distinct lines. The outfit should reflect their powers or origin."
+            CYBERPUNK -> "Cyberpunk characters should feature futuristic, asymmetrical clothing, unique high-tech accessories (e.g., data readers, holographic communicators), and distinctive cybernetic modifications on their face or limbs (e.g., glowing implants, metallic prosthetics, intricate circuitry patterns). Their appearance should convey a blend of cutting-edge technology and gritty street style."
+            COWBOYS -> "Cowboy characters should wear classic western outfits: wide-brimmed hats, bandanas, rugged boots, leather vests, and denim or canvas clothing. Accessories like spurs, holsters, and sheriff badges are common. Their look should evoke the spirit of the frontier and rural Americana."
+            SHINOBI -> "Shinobi characters should wear traditional ninja or samurai-inspired attire: dark, layered robes, hakama pants, arm guards, tabi boots, and headbands or masks. Outfits may include subtle armor pieces and sashes. Their appearance should be stealthy, agile, and rooted in feudal Japanese aesthetics."
+            CRIME -> "Crime city characters should dress in tropical, urban fashion inspired by Miami Vice and Scarface: pastel suits, open-collar shirts, gold chains, sunglasses, and loafers. Outfits may include flashy jackets, patterned shirts, and accessories that evoke a glamorous, gritty city vibe."
+            HORROR -> "Horror characters should wear worn, distressed clothing in muted or dark tones. Outfits may include tattered coats, faded uniforms, or vintage garments. Their appearance should evoke unease, mystery, and psychological tension, fitting the haunted and uncanny mood."
+            FANTASY -> "Fantasy characters should wear medieval or ancient-inspired outfits: cloaks, tunics, armor, robes, and boots. Accessories like belts, pouches, magical amulets, and weapons are common. Their look should evoke epic adventure, mysticism, and a connection to legendary worlds."
+            SPACE_OPERA -> "Space opera characters should wear retro-futuristic suits, sleek uniforms, and bold accessories. Outfits may include metallic fabrics, capes, visors, and utility belts. Their appearance should evoke classic sci-fi adventure, interstellar travel, and atomic age optimism."
         }
+    }
 
     fun nameDirectives(genre: Genre) =
         (

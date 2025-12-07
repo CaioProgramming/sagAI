@@ -1,56 +1,73 @@
 package com.ilustris.sagai.ui.theme.utils
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
-import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import kotlin.random.Random
 
-fun Genre.getRandomColorHex(): String {
-    val palette = this.colorPalette().plus(this.color).distinct()
-
-    if (palette.isEmpty()) {
-        return "#FF000000" // Fallback to opaque black
-    }
-    if (palette.size == 1) {
-        return palette.first().toHexString()
-    }
-
+/**
+ * Generates a random unique color for characters with restrictions:
+ * - Avoids pure black and white
+ * - Avoids too dark colors (close to black)
+ * - Avoids too light colors (close to white)
+ * - Ensures good contrast and visibility
+ */
+fun getRandomColorHex(): String {
     var randomColor: Color
-    var tries = 0
+    var attempts = 0
+    val maxAttempts = 50
+
     do {
-        // Pick two distinct random colors from the palette
-        val color1 = palette.random()
-        val color2 = palette.filter { it != color1 }.random()
+        // Generate random RGB values with constraints
+        // Avoid extremes: min 0.15 (avoid too dark) and max 0.85 (avoid too light)
+        val red = Random.nextFloat() * 0.7f + 0.15f   // Range: 0.15 to 0.85
+        val green = Random.nextFloat() * 0.7f + 0.15f // Range: 0.15 to 0.85
+        val blue = Random.nextFloat() * 0.7f + 0.15f  // Range: 0.15 to 0.85
 
-        // Generate a random fraction for interpolation
-        val fraction = Random.nextFloat()
+        randomColor = Color(red, green, blue, 1.0f)
+        attempts++
+    } while (randomColor.isInvalidColor() && attempts < maxAttempts)
 
-        // Interpolate between the two colors
-        randomColor = lerp(color1, color2, fraction)
-        tries++
-    } while (randomColor.isPureWhiteOrBlack() && tries < 10) // Avoid getting stuck in a loop
-
-    // If after many tries it's still pure, find the first non-pure color in the palette
-    if (randomColor.isPureWhiteOrBlack()) {
-        val fallbackColor = palette.firstOrNull { !it.isPureWhiteOrBlack() }
-        if (fallbackColor != null) {
-            return fallbackColor.toHexString()
-        }
+    // Fallback to a predefined set of good colors if we couldn't generate one
+    if (randomColor.isInvalidColor()) {
+        val fallbackColors = listOf(
+            Color(0xFF8B2635), // Deep Ruby Red
+            Color(0xFF2E294E), // Dark Purple
+            Color(0xFF1C2541), // Dark Navy
+            Color(0xFF003F88), // Classic Blue
+            Color(0xFFE91E63), // Hot Pink
+            Color(0xFF5C2751), // Deep Plum
+            Color(0xFF0081A7), // Space Teal
+            Color(0xFF8B4513), // Saddle Brown
+        )
+        randomColor = fallbackColors.random()
     }
 
     return randomColor.toHexString()
 }
 
-fun Color.isPureWhiteOrBlack(): Boolean {
-    // Colors in Compose are floats from 0.0 to 1.0
+/**
+ * Checks if a color is invalid for character use
+ */
+private fun Color.isInvalidColor(): Boolean {
     val red = red
     val green = green
     val blue = blue
 
-    val isBlack = red == 0f && green == 0f && blue == 0f
-    val isWhite = red == 1f && green == 1f && blue == 1f
-    return isBlack || isWhite
+    // Check for pure black or white
+    val isPureBlack = red == 0f && green == 0f && blue == 0f
+    val isPureWhite = red == 1f && green == 1f && blue == 1f
+
+    // Check if color is too dark (all components below threshold)
+    val tooDark = red < 0.1f && green < 0.1f && blue < 0.1f
+
+    // Check if color is too light (all components above threshold)
+    val tooLight = red > 0.9f && green > 0.9f && blue > 0.9f
+
+    // Check if color lacks contrast (all components too similar - gray-ish)
+    val maxComponent = maxOf(red, green, blue)
+    val minComponent = minOf(red, green, blue)
+    val lacksContrast = (maxComponent - minComponent) < 0.1f
+
+    return isPureBlack || isPureWhite || tooDark || tooLight || lacksContrast
 }
 
 fun Color.toHexString(): String {
