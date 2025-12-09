@@ -5,7 +5,7 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInCubic
 import androidx.compose.animation.core.EaseInElastic
 import androidx.compose.animation.core.EaseInOut
-import androidx.compose.animation.core.RepeatMode.*
+import androidx.compose.animation.core.RepeatMode.Reverse
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -73,21 +73,19 @@ fun SagaLoader(
             ),
     )
 
-    val starPolygon =
-        remember {
-            RoundedPolygon.star(
-                numVerticesPerRadius = 4,
-                innerRadius = 1f / 5f,
-                radius = 1.5f,
-                rounding = CornerRounding(.0f),
-            )
-        }
-    val circlePolygon =
-        remember {
-            RoundedPolygon.circle(
-                numVertices = 12,
-            )
-        }
+    remember {
+        RoundedPolygon.star(
+            numVerticesPerRadius = 4,
+            innerRadius = 1f / 5f,
+            radius = 1.5f,
+            rounding = CornerRounding(.0f),
+        )
+    }
+    remember {
+        RoundedPolygon.circle(
+            numVertices = 12,
+        )
+    }
 
     DistortingBubble(
         modifier,
@@ -210,16 +208,15 @@ fun SparkLoader(
             ),
     )
 
-    val rotateAnimation =
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec =
-                infiniteRepeatable(
-                    tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
-                    repeatMode = Reverse,
-                ),
-        )
+    infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec =
+            infiniteRepeatable(
+                tween(duration.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
+                repeatMode = Reverse,
+            ),
+    )
 
     val shapeA =
         remember {
@@ -240,21 +237,19 @@ fun SparkLoader(
             Morph(shapeA, shapeB)
         }
 
-    val morphProgress =
-        infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 1f,
-            animationSpec =
-                infiniteRepeatable(
-                    tween(3.seconds.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
-                    repeatMode = Reverse,
-                ),
-            label = "morph",
-        )
+    infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec =
+            infiniteRepeatable(
+                tween(3.seconds.toInt(DurationUnit.MILLISECONDS), easing = EaseIn),
+                repeatMode = Reverse,
+            ),
+        label = "morph",
+    )
 
     Box(modifier = modifier.padding(4.dp)) {
         val drawDuration = duration - 1.seconds
-
 
         DrawShape(
             modifier = Modifier.fillMaxSize(),

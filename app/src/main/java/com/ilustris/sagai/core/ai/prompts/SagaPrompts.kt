@@ -102,39 +102,92 @@ object SagaPrompts {
         characterHexColor: String? = null,
     ) = buildString {
         appendLine(
-            "Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.",
+            "You are a World-Class Art Director and Concept Artist. Your task is to craft a unique, artistic, and visually stunning image description for an AI generation model.",
         )
-        appendLine("Overall context: ")
+        appendLine()
+        appendLine(
+            "GOAL: Create a piece of digital art that feels like a hand-crafted masterpiece, not a generic AI generation. It should capture the *soul* of the character and the *atmosphere* of the genre.",
+        )
+        appendLine()
+        appendLine("---")
+        appendLine("**THE CREATIVE BRIEF (The Subject - STRICT ADHERENCE REQUIRED):**")
+        appendLine(
+            "This context defines WHO and WHAT you are drawing. It contains the essential physical attributes and identity of the subject.",
+        )
+        appendLine(
+            "  • **CRITICAL:** You MUST respect the physical descriptions provided here (e.g., skin tone, hair texture, body type, age, gender, ethnicity). These features are non-negotiable.",
+        )
+        appendLine(
+            "  • If the brief says 'Black man', the output MUST describe a Black man. If it says 'Short Latina girl', the output MUST describe a short Latina girl.",
+        )
+        appendLine("  • Do not 're-imagine' the subject's fundamental identity. Enhance it artistically, but do not change it.")
         appendLine(context)
-        appendLine("* You will have access to subject(s) visual reference to provide a more precise description.")
+
+        appendLine("**VISUAL REFERENCE USAGE (The 'Cast'):**")
+        appendLine(
+            "You have access to visual references for the key characters involved in this brief. Treat this as your 'Cast List' or 'Costume Department'.",
+        )
+        appendLine("  • IDENTIFY: Look for character names in the Creative Brief above. Match them to the provided visual references.")
+        appendLine("  • USAGE: Use the visual references to ensure the characters look correct (features, style, vibe).")
+        appendLine(
+            "  • IGNORE: The background/lighting of the references. You are placing these actors into the NEW scene defined by the Creative Brief and Visual Direction.",
+        )
+        appendLine()
 
         // Add character color highlight instruction
         characterHexColor?.let { hexColor ->
-            appendLine("**CHARACTER COLOR HIGHLIGHT (CRITICAL):**")
-            appendLine("The character has a signature color: $hexColor")
-            appendLine("This color MUST be prominently featured as a highlight detail in the character's appearance.")
-            appendLine("Examples: If the color is purple, the character could have purple hair, a purple shirt, purple sneakers, purple accessories, or purple details on their outfit.")
-            appendLine("If the color is blue, they could have blue eyes, blue clothing, blue accessories, etc.")
-            appendLine("If the color is red, they could have red hair, red clothing, red accessories, etc.")
-            appendLine("The goal is to make viewers think 'This character clearly likes/represents this color' when they see the artwork.")
-            appendLine("The color should feel natural and integrated into their design, not forced or artificial.")
-            appendLine("")
+            appendLine("**SIGNATURE COLOR PALETTE:**")
+            appendLine("  • Signature Color: $hexColor")
+            appendLine(
+                "  • Instruction: Integrate this color primarily as a visual accent or thematic element. It should feel intentional and artistic—perhaps in the lighting, a piece of clothing, or a stylistic blooming effect—without overwhelming the natural palette of the scene.",
+            )
+            appendLine()
         }
 
-        appendLine("Visual Direction:")
         visualDirection?.let {
-            appendLine("These rules dictate the composition and **Dramatic Direction**. You MUST incorporate the 'Mood & Dramatic Direction' into the character's pose and expression.")
-            appendLine(GenrePrompts.artStyle(genre))
+            appendLine("**ARTISTIC DIRECTION (The Brief):**")
+            appendLine(
+                "The following is your mood board and artistic brief. Do not treat it as a checklist, but as a source of INSPIRATION for the mood, lighting, and composition:",
+            )
+            appendLine("'''")
             appendLine(it)
-        } ?: run {
-            appendLine("Ensure to render this art style description matching with the reference image")
-            appendLine(GenrePrompts.artStyle(genre))
+            appendLine("'''")
+            appendLine()
+            appendLine("**HOW TO INTERPRET THIS:**")
+            appendLine("  • As the Artist, synthesize these elements into a cohesive vision.")
+            appendLine("  • If the direction says 'moody and dark', use shadows and contrast expressively.")
+            appendLine("  • If it mentions 'dynamic angles', compose the shot to feel alive and moving.")
+            appendLine("  • BLEND the mood of this direction with the specific Art Style of the genre.")
+            appendLine()
         }
-        appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
-        appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
-        appendLine("CRITICAL COMPOSITION RULE: The image MUST have significant breathing room at the top (approx. 25% empty space) to allow for a 'Lock Screen Depth Effect'.")
-        appendLine("The main subject (character) MUST be positioned lower in the frame, with their head fully visible and NOT touching the top edge. Think of a magazine cover where the title goes behind the head but needs space above it.")
-        appendLine("The image aspect ratio should be 9:16 (vertical orientation).")
+
+        appendLine("**COMPOSITION & SCENE DYNAMICS (Bring it to Life):**")
+        appendLine(
+            "  • **Dynamic Subjects:** Avoid stiff, static posing. Whether it's one hero or a group, capture a moment of action, thought, or interaction.",
+        )
+        appendLine(
+            "  • **Expressive Storytelling:** The expressions and body language should tell a story. What is the motivation? What is the conflict?",
+        )
+        appendLine(
+            "  • **Environmental Context:** The background (defined by the Genre/Visual Direction) is not just a backdrop; it's part of the narrative. It should whisper details about the world.",
+        )
+        appendLine()
+
+        appendLine("**ART STYLE (The Medium):**")
+        appendLine(GenrePrompts.artStyle(genre))
+        appendLine()
+
+        appendLine("**FINAL OUTPUT INSTRUCTION:**")
+        appendLine("Analyze the Creative Brief, the Visual Direction, and the Art Style.")
+        appendLine(
+            "  1. **VALIDATE IDENTITY:** Ensure your description STRICTLY matches the physical attributes (race, gender, age, features) in the Brief.",
+        )
+        appendLine("  2. **CRAFT THE ART:** Write a single, rich, and evocative text description.")
+        appendLine("  • Focus on the *visual impact* and *emotional resonance* of the image.")
+        appendLine("  • Describe the lighting, texture, and atmosphere like a painter describing their canvas.")
+        appendLine("  • Ensure the subject(s) look like a cohesive part of this artistic world.")
+        appendLine("  • **Crucial:** Maintain the technical composition rules provided below.")
+        appendLine()
         appendLine(ImagePrompts.descriptionRules(genre))
     }
 
@@ -234,7 +287,12 @@ object SagaPrompts {
             appendLine("Consider the newest ones to move history forward")
             appendLine("Pay attention to `speakerName` and `senderType`.")
             appendLine(
-                saga.flatMessages().takeLast(5).reversed().map { it.message }.normalizetoAIItems(excludingFields = messageExclusions),
+                saga
+                    .flatMessages()
+                    .takeLast(5)
+                    .reversed()
+                    .map { it.message }
+                    .normalizetoAIItems(excludingFields = messageExclusions),
             )
             appendLine("---")
             appendLine()

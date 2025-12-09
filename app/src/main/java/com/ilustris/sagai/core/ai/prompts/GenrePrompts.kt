@@ -2,7 +2,7 @@ package com.ilustris.sagai.core.ai.prompts
 
 import com.ilustris.sagai.core.utils.currentLanguage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.Genre.COWBOYS
+import com.ilustris.sagai.features.newsaga.data.model.Genre.COWBOY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.CRIME
 import com.ilustris.sagai.features.newsaga.data.model.Genre.CYBERPUNK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
@@ -12,10 +12,9 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre.SHINOBI
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
 
 object GenrePrompts {
-
     fun artStyle(genre: Genre) =
         when (genre) {
-            FANTASY ->
+            FANTASY -> {
                 """
                 Art Technique: Gritty Dark Fantasy Oil Painting. Emphasize earthy tones, mud, steel, and stone.
                 Key Lighting Style: SUBTLE CHIAROSCURO / ATMOSPHERIC RENDERING.
@@ -30,8 +29,9 @@ object GenrePrompts {
                 Mood: Epic, wistful, and mysterious — a sense of ancient fate and quiet reverence. Emphasize wonder over action.
                 Ambience: Soft, volumetric natural light (dawn/dusk), drifting mist or smoke, distant weather elements (storm clouds or light rain).
                 """
+            }
 
-            CYBERPUNK ->
+            CYBERPUNK -> {
                 """
                 Art Technique: Vintage 1980s Anime OVA Cel Animation. FLAT SHADING (Cel Shading) is mandatory. Shadows are hard-edged blocks of color; forbid soft gradients, ambient occlusion, and subsurface scattering.
                 Line Work: Delicate, sketchy ink lines with varying weight. Organic cloth folds and realistic mechanical detailing.
@@ -53,8 +53,9 @@ object GenrePrompts {
                 
                 Rendering Constraints: Strictly forbid 3D CGI, photorealism, modern digital smoothing/blending techniques, modern anime, digital painting, 3d render, unreal engine, volumetric lighting, smooth shading. The final image must look like a high-quality frame from a vintage laserdisc or a production cel.
                 """
+            }
 
-            HORROR ->
+            HORROR -> {
                 """
         Art Technique: 32-BIT PIXEL ART with BLOCKY SHADING
         Texture / Materiality: RETRO GAME ART PIXELATION
@@ -69,8 +70,9 @@ object GenrePrompts {
         Mood: Oppressive, uncanny, and creeping dread — prioritize psychological unease over explicit gore.
         Ambience: Low-key, desaturated environment with heavy shadows and subtle volumetric fog; minimal and muted highlights only where needed to draw attention to small, eerie details.
         """
+            }
 
-            HEROES ->
+            HEROES -> {
                 """
         Art Technique: MODERN COMIC BOOK ART STYLE (Dynamic, Clean, and Detailed).
         Line Detail: BOLD INK LINES, ANATOMICALLY ACCURATE FIGURES, DYNAMIC FORESHORTENING.
@@ -86,29 +88,33 @@ object GenrePrompts {
         Mood: HEROIC, VERTICAL, and EXPANSIVE. A sense of scale and freedom mixed with urban melancholy.
         Ambience: VAST OPEN CITYSCAPES. Towering skyscrapers, dizzying perspectives (looking down or up), busy streets far below. The city feels alive but slightly dystopian. Avoid forced night scenes; prefer dynamic daytime, sunset, or moody overcast skies that allow for depth and scale.
         """
+            }
 
-
-            CRIME ->
+            CRIME -> {
                 """
-                Art Technique: INDIE UNDERGROUND COMIC / ZINE STYLE (Raw & Sketchy).
-                Line Detail: ROUGH, "AMATEUR" INK STROKES. Lines should be loose, scratchy, and expressive, not polished or clean. Visible sketch marks and ink splatters.
-                Color Application: FLAT ILLUMINATION (No Gradients). Bold, flat blocks of color with hard-edged shadows.
-                Texture / Materiality: NEWSPRINT / CHEAP PAPER TEXTURE.
-                Aesthetic Era / Influence: 1980s ALTERNATIVE COMICS, PUNK ZINES, MIAMI VICE PROMO ART. NO MARVEL/DC POLISH.
+                Art Technique: HYPER-REALISTIC CLASSICAL OIL PAINTING (Academic Realism).
+                Key Lighting Style: DIVINE & ETHEREAL. Soft, diffused "Heavenly" light that wraps around the subject.
+                Texture / Materiality: SMOOTH GLAZING technique. No rough brushstrokes. The surface should look like flawless porcelain or silk.
+                Aesthetic Era / Influence: Classical Academic Art (e.g., Bouguereau, Godward) meets Modern High-Fashion Photography.
 
                 **COLOR PALETTE & ACCENT:**
-                 - Base: High-contrast Neo-Noir. Deep blacks, desaturated greys, and murky browns.
-                 - Mandatory Accent: NEON PINK & SUNSET ORANGE.
-                 - Application: Use these colors exclusively for neon signage, rain reflections on pavement, cigarette embers, or distinct rim lighting. The rest of the scene must remain dark and gritty.
+                 - Base: PURE ELEGANCE. Creamy alabaster, champagne gold, soft pearl grey, and deep, expensive blacks.
+                 - Mandatory Accent: HOT PINK (#E91E63 - Pantone 213 C).
+                 - Application: Weave this Hot Pink accent subtly throughout the composition as sophisticated environmental or character details. Examples include:
+                   * ENVIRONMENTAL: Neon light glow reflecting on ocean waves and wet sand, beachfront palm fronds swaying, pink sunset sky bleeding across endless coastline, flamingo sculptures at beachside venues, luxury convertibles on coastal highways, art deco beach hotels, boardwalk neon reflections, champagne glasses against ocean backdrop, silk fabrics flowing in sea breeze.
+                   * CHARACTER OUTFIT: Hawaiian shirts with pink tones, designer accessories with pink accents, lipstick or nail polish, fabric trim on luxury clothing, a silk scarf, beach resort attire.
+                   * AMBIENT LIGHT: Soft hot pink glow from ocean sunset, neon beachfront signs reflecting on wet sand and skin, golden hour light filtering through palm trees, ocean waves catching twilight and neon glow, beachside fire pits with warm pink undertones.
+                   The accent should feel organic and effortless, never jarring—it's a signature touch of vice, glamour, and 80s Miami vibes subtly integrated into luxury aesthetics. Maintain an atmosphere of absolute divine elegance and sophistication throughout.
 
-                Figure & Facial Treatment: UN-IDEALIZED, SKETCHY FACES. Asymmetry, rough stubble, simplified features. Focus on expression over anatomical perfection.
-                Rendering: HARD BLACK SHADOWS (Spot Blacks). No smooth shading.
-                
-                Mood: Gritty, raw, and vibrant.
-                Ambience: CREATIVE & CLUTTERED BACKGROUNDS. Detailed urban decay mixed with tropical luxury. Neon signs, Art Deco architecture, palm trees silhouetted against purple skies, cluttered detective desks. The world should feel lived-in and chaotic.
+                Figure & Facial Treatment: FLAWLESS PERFECTION. Skin must be rendered with hyper-realistic subsurface scattering—absolutely no imperfections. Faces should look like "Modern Deities": serene, symmetrical, and breathtaking.
+                Rendering: THE "PERFECT PICTURE" ILLUSION. At first glance, it appears to be a stunning high-resolution photograph. On closer inspection, it is a masterpiece painting with incredibly fine, deliberate details. Sharp focus on the subject, dreamy/soft background.
+
+                Mood: A Divine Piece of Art. A frozen moment of absolute luxury and beauty.
+                Ambience: An enchanted 80s Miami beach city paradise—endless golden beaches, palm-lined oceanfront, neon-lit beachfront promenades, and that thrilling excitement of coastal nightlife. Think Miami Vice, GTA Vice City, and Scarface: the dreamlike adoration of 80s Miami as the ultimate tropical fantasy destination, where ocean meets neon glamour.
                 """
+            }
 
-            SHINOBI ->
+            SHINOBI -> {
                 """
                 Art Technique: JAPANESE SUMI-E INK WASH PAINTING (Suiboku-ga), EMPHASIS ON ECONOMY OF BRUSHSTROKES AND NEGATIVE SPACE.
                 CRITICAL NOTE: THE STYLE IS BLACK AND WHITE. NO COLOR OR TINTS, NOT EVEN OFF-WHITE TONES FOR SKIN OR PAPER.
@@ -139,8 +145,9 @@ object GenrePrompts {
                 
                 Mood: Raw, spontaneous, intensely focused, and visually powerful through simplicity.
                 """
+            }
 
-            SPACE_OPERA ->
+            SPACE_OPERA -> {
                 """
                 Art Technique: 1950s ATOMIC AGE ORIGINAL ILLUSTRATION (Gouache/Oil).
                 Texture / Materiality: SMOOTH ILLUSTRATION BOARD, VISIBLE BRUSHSTROKES, VIBRANT PAINTERLY FINISH.
@@ -168,70 +175,79 @@ object GenrePrompts {
                 instead show the raw cosmic phenomena that make space exploration truly magnificent.
                 NO TEXT, NO LOGOS, NO GRAPHIC SHAPES, NO BORDERS.
                 """
+            }
 
-            COWBOYS ->
+            COWBOY -> {
                 """
-                Art Technique: Classic Western Oil Painting (Remington/Russell style).
-                Key Lighting Style: WARM GOLDEN HOUR / DESERT SUNSET.
-                Texture / Materiality: VISIBLE BRUSHSTROKES, CANVAS TEXTURE, DUSTY ATMOSPHERE.
-                Aesthetic Era / Influence: American Frontier, late 19th Century.
+                Art Technique: EXPRESSIVE WESTERN OIL PAINTING (Remington/Russell style). EMPHASIS ON PAINTERLY QUALITY AND VISIBLE BRUSHWORK.
+                Key Lighting Style: WARM GOLDEN HOUR / DESERT SUNSET with DRAMATIC CHIAROSCURO.
+                Texture / Materiality: BOLD, VISIBLE BRUSHSTROKES with THICK IMPASTO. Canvas texture must be apparent. Emphasize the HAND-PAINTED quality.
+                Aesthetic Era / Influence: American Frontier, late 19th Century romantic Western art.
+
+                **CRITICAL RENDERING NOTE:**
+                 - AVOID photorealism, smooth digital blending, or overly refined details.
+                 - PRIORITIZE expressive brushwork, loose gestural strokes, and painterly interpretation over precise detail.
+                 - Forms should be suggested through confident brush marks, not meticulously rendered.
+                 - Embrace the SOUL and EMOTION of oil painting—rough edges, bold color blocks, and artistic interpretation.
+                 - Think "painted with passion" not "photographed and polished."
 
                 **COLOR PALETTE & ACCENT:**
-                 - Base: Earthy tones (Sienna, Ochre, Sand), Desert Sky Blue.
+                 - Base: Rich earthy tones (Burnt Sienna, Raw Ochre, Desert Sand), weathered leather browns, Desert Sky Blue.
                  - Mandatory Accent: BURNT ORANGE / SUNSET GOLD.
-                 - Application: Use the accent for sunsets, campfires, or the glint of a badge/gun.
+                 - Application: Use the accent boldly for sunsets, campfire glow, dust catching light, or metallic glints. Apply with expressive brush marks.
                 
-                Mood: Rugged, isolated, and stoic. A sense of vastness and freedom.
-                Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light.
+                Mood: Rugged, isolated, and stoic. A sense of vastness and freedom, captured with artistic emotion.
+                Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light. All rendered with EXPRESSIVE BRUSHWORK that captures the FEELING of the frontier, not a literal photograph.
                 """
-
+            }
         }
 
-
-    fun appearanceGuidelines(genre: Genre): String {
-        return when (genre) {
+    fun appearanceGuidelines(genre: Genre): String =
+        when (genre) {
             HEROES -> "Heroes must wear vibrant and colorful supersuits, complete with dynamic masks, iconic emblems, and functional accessories. Emphasize a powerful, heroic silhouette and clean, distinct lines. The outfit should reflect their powers or origin."
             CYBERPUNK -> "Cyberpunk characters should feature futuristic, asymmetrical clothing, unique high-tech accessories (e.g., data readers, holographic communicators), and distinctive cybernetic modifications on their face or limbs (e.g., glowing implants, metallic prosthetics, intricate circuitry patterns). Their appearance should convey a blend of cutting-edge technology and gritty street style."
-            COWBOYS -> "Cowboy characters should wear classic western outfits: wide-brimmed hats, bandanas, rugged boots, leather vests, and denim or canvas clothing. Accessories like spurs, holsters, and sheriff badges are common. Their look should evoke the spirit of the frontier and rural Americana."
+            COWBOY -> "Cowboy characters should wear classic western outfits: wide-brimmed hats, bandanas, rugged boots, leather vests, and denim or canvas clothing. Accessories like spurs, holsters, and sheriff badges are common. Their look should evoke the spirit of the frontier and rural Americana."
             SHINOBI -> "Shinobi characters should wear traditional ninja or samurai-inspired attire: dark, layered robes, hakama pants, arm guards, tabi boots, and headbands or masks. Outfits may include subtle armor pieces and sashes. Their appearance should be stealthy, agile, and rooted in feudal Japanese aesthetics."
-            CRIME -> "Crime city characters should dress in tropical, urban fashion inspired by Miami Vice and Scarface: pastel suits, open-collar shirts, gold chains, sunglasses, and loafers. Outfits may include flashy jackets, patterned shirts, and accessories that evoke a glamorous, gritty city vibe."
+            CRIME -> "Crime city characters should dress in High-End Luxury Resort Wear: tailored linen suits, flowing silk dresses, designer swimwear, and expensive accessories. Think 'Old Money' aesthetic, yacht parties, and exclusive beach clubs. Outfits should feature premium fabrics, elegant cuts, and statement pieces like oversized sunglasses, gold jewelry, and designer watches. Their appearance must radiate wealth, sophistication, and effortless glamour."
             HORROR -> "Horror characters should wear worn, distressed clothing in muted or dark tones. Outfits may include tattered coats, faded uniforms, or vintage garments. Their appearance should evoke unease, mystery, and psychological tension, fitting the haunted and uncanny mood."
             FANTASY -> "Fantasy characters should wear medieval or ancient-inspired outfits: cloaks, tunics, armor, robes, and boots. Accessories like belts, pouches, magical amulets, and weapons are common. Their look should evoke epic adventure, mysticism, and a connection to legendary worlds."
             SPACE_OPERA -> "Space opera characters should wear retro-futuristic suits, sleek uniforms, and bold accessories. Outfits may include metallic fabrics, capes, visors, and utility belts. Their appearance should evoke classic sci-fi adventure, interstellar travel, and atomic age optimism."
         }
-    }
 
     fun nameDirectives(genre: Genre) =
         (
-                when (genre) {
-                    FANTASY ->
-                        """
+            when (genre) {
+                FANTASY -> {
+                    """
                     Aim for names that evoke a sense of magic, ancient lore, epic adventure, or mystical origins.
                     Consider influences from high fantasy (e.g., Tolkien-esque, D&D),
                     classical mythology (Greek, Norse, Celtic), medieval European, or unique, melodious sounds.
                     Names can be majestic, archaic, rustic, tribal, or subtly magical.
                     AVOID overly modern, generic, or overtly tech-sounding names (e.g., John, Mary, Smith, unit numbers, cyber-names).
                     """
+                    }
 
-                    CYBERPUNK ->
-                        """
+                CYBERPUNK -> {
+                    """
                      - Aim for names that blend futuristic, cyberpunk, or slightly exotic sounds.
                      - Consider influences from Japanese, tech-inspired, or gritty Western phonetics.
                     Avoid names that are overtly heroic or melodramatic.
                     Try to create names that is common in the language ${currentLanguage()} .
                 """
+                    }
 
-                    HORROR ->
-                        """
+                HORROR -> {
+                    """
                      - Aim for names that evoke a sense of unease and dread, fitting a grim, dark, or mysterious setting.
                      - For human characters, use common, simple, and contemporary names from ${currentLanguage()} language.
                     The horror comes from the mundane.
                      - For creatures, entities, or local myths, use names that are descriptive (e.g., "O Vulto," "A Dama de Preto," "O Sussurro"), guttural, or have a more complex, unsettling feel.
                      - Avoid names that are overtly heroic, futuristic, or melodramatic.
                    """
+                    }
 
-                    HEROES ->
-                        """
+                    HEROES -> {
+                    """
                      - Aim for names that feel grounded, contemporary, and reflect a diverse urban environment.
                      - Consider influences from street culture, hip-hop, graffiti art, and modern city life.
                      - Names should be cool, edgy, and slightly mysterious, hinting at a hidden identity.
@@ -242,51 +258,57 @@ object GenrePrompts {
                      - Consider names that evoke a sense of agility, speed, or resourcefulness.
                      - Think about names that could easily become a street tag or a whispered legend.
                     """
+                    }
 
-                    CRIME ->
-                        """
+                    CRIME -> {
+                    """
                      - Aim for names fitting a crime drama set in a stylized neon city.
                      - Blend gritty street nicknames with classic, timeless first names.
                      - Consider influences from 80s Miami/LA crime fiction, Latin and Anglo names common in ${currentLanguage()} locales.
                      - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
                      - Avoid overtly sci-fi or fantasy elements.
                     """
+                    }
 
-                    SHINOBI ->
-                        """
+                    SHINOBI -> {
+                    """
                      - Aim for names rooted in feudal Japan or stylized adaptations that fit the setting.
                      - Consider short, evocative names or clan-like monikers (e.g., "Aka-ryu", "Kage", "Hanae", "Shirogane").
                      - Blend historical Japanese-sounding names with terse nicknames suitable for operatives and covert figures.
                      - Avoid overtly modern slang or sci-fi terminology.
                     """
+                    }
 
-                    SPACE_OPERA ->
-                        """
+                    SPACE_OPERA -> {
+                    """
                     Concept: Evoke exploration, cosmic significance, advanced scientific concepts, or ancient, wise origins.
                     Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
                     Avoid: Overtly aggressive or militaristic names, overly "hard" sci-fi jargon (unless for specific tech), modern slang.
                     Try: Names with soft vowels and unique consonant combinations (e.g., Lyra, Orion, Xylos, Aetheria).    
                     """
+                    }
 
-                    COWBOYS ->
-                        """
+                    COWBOY -> {
+                    """
                     Aim for names that sound rugged, biblical, or have a nickname quality.
                     Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
                     Avoid modern or overly fancy names.
                     """
+                    }
 
-                    else ->
-                        """
+                    else -> {
+                    """
                     Aim for names that sound rugged, biblical, or have a nickname quality.
                     Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
                     Avoid modern or overly fancy names.
                     """
                 }
+                }
                 ).plus("Try common names in ${currentLanguage()}").trimIndent()
 
     fun conversationDirective(genre: Genre) =
         when (genre) {
-            FANTASY ->
+            FANTASY -> {
                 """
             This directive defines the specific linguistic style for the Fantasy genre.
             NPCs and narrative voice should evoke a sense of ancient lore, heroism, magic, and medieval or mythical settings.
@@ -307,8 +329,9 @@ object GenrePrompts {
                 * Descriptions should be rich, evocative, focusing on landscapes, magical effects, detailed attire, and historical/mythical elements.
                 * Maintain a sense of wonder, mystery, or impending doom as appropriate for the scene.
                 """
+            }
 
-            CYBERPUNK ->
+            CYBERPUNK -> {
                 """
              This directive defines the specific linguistic style for the Cyberpunk/Dystopian Sci-Fi genre.
             NPCs and narrative voice should reflect a gritty, tech-infused, and often cynical tone.
@@ -329,8 +352,9 @@ object GenrePrompts {
                 * Descriptions should be sharp, often highlighting the decay, neon glow, advanced tech, and disparity of the dystopian future.
                 * Maintain an edgy, sometimes detached, perspective.
                 """
+            }
 
-            HORROR ->
+            HORROR -> {
                 """
                This directive defines the specific linguistic style for the Horror genre, blending cosmic dread with grounded, psychological terror.
                 The tone should evoke a sense of unease, psychological tension, and the creeping dread of the unknown.
@@ -353,7 +377,9 @@ object GenrePrompts {
                     * Avoid explicit and graphic descriptions of the horror, opting instead to hint at what is indescribable to heighten the reader's fear.
                      
                """
-            HEROES ->
+            }
+
+            HEROES -> {
                 """
                 This directive defines the specific linguistic style for the Urban Hero genre.
                 NPCs and narrative voice should reflect a contemporary, street-smart, and often gritty tone, blending realism with a sense of hidden potential.
@@ -376,8 +402,9 @@ object GenrePrompts {
                     * Focus on the human element – the struggles, dreams, and resilience of the people who live in the city.
                     * The narrative should subtly hint at the hidden potential and extraordinary abilities that exist beneath the surface of everyday life.
                 """
+            }
 
-            CRIME ->
+            CRIME -> {
                 """
                 This directive defines the specific linguistic style for the Crime City genre.
                 NPCs and narration should evoke 80s crime drama with a neon-soaked, Miami Vice mood.
@@ -393,7 +420,9 @@ object GenrePrompts {
                     * Noir sensibility meets pop neon. Melancholic glamour and danger.
                     * Pacing: Snappy during action or interrogation; laconic and moody between beats.
                 """
-            SPACE_OPERA ->
+            }
+
+            SPACE_OPERA -> {
                 """
                 Vocabulary: Galactic exploration, profound discoveries, cosmic phenomena,
                 ancient alien civilizations, advanced technology, philosophical ponderings about existence.
@@ -401,7 +430,9 @@ object GenrePrompts {
                 Phrasing: Evocative and grand, with a sense of wonder and epic scope.
                 Tone: Aspirational, mysterious, awe-inspiring, adventurous, contemplative.
                 """
-            SHINOBI ->
+            }
+
+            SHINOBI -> {
                 """
                 This directive defines the specific linguistic style for the Shinobi (Mythical Feudal Japan) genre.
                 NPCs and narrative voice should evoke a sense of discipline, tradition, and underlying tension.
@@ -422,7 +453,9 @@ object GenrePrompts {
                     * Descriptions should focus on atmosphere—the rustle of bamboo, the glint of a blade in moonlight, the quiet tension of a room.
                     * Maintain a sense of quiet grace and lethal potential.
                 """
-            COWBOYS ->
+            }
+
+            COWBOY -> {
                 """
                 This directive defines the linguistic style for the Cowboys genre.
                 NPCs and narrative voice should be laconic, stoic, and flavored with Western slang.
@@ -441,5 +474,6 @@ object GenrePrompts {
                     * Descriptions should emphasize the harshness and beauty of the frontier.
                     * Focus on sensory details: heat, dust, the smell of leather and horses.
                 """
+            }
         }.trimIndent()
 }

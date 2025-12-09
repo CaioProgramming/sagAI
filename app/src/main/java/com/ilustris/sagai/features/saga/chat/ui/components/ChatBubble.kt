@@ -931,7 +931,7 @@ data class BubbleStyle(
             genre: Genre,
             canAnimate: Boolean,
         ) = BubbleStyle(
-            backgroundColor = genre.color,
+            backgroundColor = genre.color.copy(alpha = .4f),
             textColor = genre.iconColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
             animationDuration = 3.seconds,

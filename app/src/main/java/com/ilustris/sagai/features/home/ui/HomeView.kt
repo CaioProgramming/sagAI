@@ -136,7 +136,6 @@ fun HomeView(
     val storyBriefing by viewModel.storyBriefing.collectAsStateWithLifecycle()
     val loadingStoryId by viewModel.loadingStoryId.collectAsStateWithLifecycle()
 
-
     LaunchedEffect(Unit) {
         viewModel.checkForBackups()
     }
@@ -204,7 +203,7 @@ fun HomeView(
                         },
                         onStoryClicked = {
                             viewModel.getBriefing(it)
-                        }
+                        },
                     )
                 }
             }
@@ -288,10 +287,11 @@ private fun ChatList(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .statusBarsPadding(),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .statusBarsPadding(),
             ) {
                 Box(Modifier.size(24.dp))
                 AnimatedContent(
@@ -299,7 +299,7 @@ private fun ChatList(
                     modifier =
                         Modifier
                             .align(Alignment.CenterVertically)
-                            .weight(1f)
+                            .weight(1f),
                 ) {
                     if (it) {
                         PremiumTitle(
@@ -310,8 +310,7 @@ private fun ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }
-                                    .wrapContentWidth()
+                                    }.wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             titleStyle =
                                 MaterialTheme.typography.titleLarge,
@@ -343,8 +342,7 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -423,7 +421,7 @@ private fun ChatList(
                         ) using
                                 SizeTransform(
                                     clip = false,
-                                )
+                            )
                     },
                     label = "AnimatedDynamicTexts",
                     modifier = Modifier.weight(1f),
@@ -479,18 +477,12 @@ private fun ChatList(
                 sagas = sagas,
                 loadingStoryId = loadingStoryId,
                 onStoryClicked = onStoryClicked,
-                listState.canScrollBackward.not()
+                listState.canScrollBackward.not(),
             )
         }
 
         items(
-            sagas.sortedByDescending {
-                it
-                    .flatMessages()
-                    .lastOrNull()
-                    ?.message
-                    ?.timestamp
-            },
+            sagas,
         ) {
             ChatCard(
                 it,

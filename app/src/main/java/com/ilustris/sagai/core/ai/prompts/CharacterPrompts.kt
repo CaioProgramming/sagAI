@@ -19,7 +19,6 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 object CharacterPrompts {
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
 
-
     fun charactersOverview(characters: List<Character>): String =
         buildString {
             val characterExclusions =
@@ -56,11 +55,41 @@ object CharacterPrompts {
 
         appendLine("## 💡 NEW CHARACTER CREATION INSPIRATION 💡")
         appendLine("// The following description is the foundational concept for the new character.")
-        appendLine("// Your task is to bring this character to life by expanding on the provided details, filling in the blanks, and adding creative depth to make them a truly unique and complete persona.")
-        appendLine("// You should be creative and add details that are not explicitly mentioned, for example, suggesting a last name if one is not provided, or elaborating on their motivations and backstory.")
-        appendLine("// The goal is to create a rich, well-rounded character that feels authentic to the saga's world.")
         appendLine(
-            GenrePrompts.appearanceGuidelines(saga.data.genre)
+            "// Your task is to bring this character to life by expanding on the provided details, filling in the blanks, and adding creative depth to make them a truly unique and complete persona.",
+        )
+        appendLine(
+            "// You should be creative and add details that are not explicitly mentioned, for example, suggesting a last name if one is not provided, or elaborating on their motivations and backstory.",
+        )
+        appendLine("// The goal is to create a rich, well-rounded character that feels authentic to the saga's world.")
+        appendLine()
+        appendLine("## 🎨 CREATIVE DIRECTION: IDENTITY & VIBRANCY 🎨")
+        appendLine(
+            "The character must feel ALIVE. Do not rely on generic tropes or bland descriptions. Captivating characters are built on **specific, unique details**.",
+        )
+        appendLine()
+        appendLine("**❌ GENERIC (BAD):**")
+        appendLine("- 'A worn leather jacket'")
+        appendLine("- 'A dark cotton shirt'")
+        appendLine("- 'A cowboy hat'")
+        appendLine()
+        appendLine("**✅ VIBRANT & SPECIFIC (GOOD):**")
+        appendLine("- 'A dark denim jacket covered in red anarchy patches and fraying at the cuffs'")
+        appendLine("- 'A white cotton shirt, unbuttoned halfway, stained with engine grease and sweat'")
+        appendLine("- 'A black cowboy hat with a silver skull symbol pinned to the brim, tilted aggressively'")
+        appendLine()
+        appendLine("**GUIDING PRINCIPLES:**")
+        appendLine(
+            "1. **Visual Storytelling:** Use clothing and physical traits to hint at backstory. Why is the jacket torn? What does the trinket on their belt mean?",
+        )
+        appendLine(
+            "2. **Unique Identifiers:** Give them a signature look. Avoid 'standard' or 'typical' gear unless modified in a unique way.",
+        )
+        appendLine(
+            "3. **Sensory Details:** Mention textures, distinct colors, and conditions (dusty, polished, bloodied) to create a vivid mental image.",
+        )
+        appendLine(
+            GenrePrompts.appearanceGuidelines(saga.data.genre),
         )
         appendLine(description)
 
@@ -69,7 +98,13 @@ object CharacterPrompts {
         appendLine("Use this for contextualization")
         appendLine("The messages are ordered from newest to oldest")
         appendLine(
-            saga.flatMessages().reversed().take(5).normalizetoAIItems(excludingFields = messageExclusions),
+            saga
+                .flatMessages()
+                .sortedByDescending {
+                    it.message.timestamp
+                }.map { it.message }
+                .take(5)
+                .normalizetoAIItems(excludingFields = messageExclusions),
         )
         appendLine("## Guidelines for generating the character JSON:")
         appendLine(CharacterGuidelines.creationGuideline)
@@ -186,28 +221,50 @@ object CharacterPrompts {
         )
         appendLine()
         appendLine("## CORE INSTRUCTIONS:")
-        appendLine("1. **Primary Goal: Identify 'earned' or 'spoken' nicknames.** Your main objective is to find nicknames that characters have either been directly called by others or have earned through their actions and role in the story.")
+        appendLine(
+            "1. **Primary Goal: Identify 'earned' or 'spoken' nicknames.** Your main objective is to find nicknames that characters have either been directly called by others or have earned through their actions and role in the story.",
+        )
         appendLine()
         appendLine("2. **Analyze for Direct Mentions:**")
-        appendLine("   - Scrutinize the 'Recent Messages' for instances where a character is referred to by a name other than their official one.")
-        appendLine("   - **Example 1 (Shortened Name):** If a character named 'Daniela' is frequently called 'Dani' by her friends in the conversation, 'Dani' is a valid nickname.")
-        appendLine("   - **Example 2 (Title/Hero Name):** If a character is a hero and another character says, 'We need Superwave for this mission!', then 'Superwave' is a valid nickname, provided it's not already in their official profile.")
+        appendLine(
+            "   - Scrutinize the 'Recent Messages' for instances where a character is referred to by a name other than their official one.",
+        )
+        appendLine(
+            "   - **Example 1 (Shortened Name):** If a character named 'Daniela' is frequently called 'Dani' by her friends in the conversation, 'Dani' is a valid nickname.",
+        )
+        appendLine(
+            "   - **Example 2 (Title/Hero Name):** If a character is a hero and another character says, 'We need Superwave for this mission!', then 'Superwave' is a valid nickname, provided it's not already in their official profile.",
+        )
         appendLine()
         appendLine("3. **Analyze for Earned Nicknames & Contextual Relevance:**")
-        appendLine("   - A nickname must be deeply rooted in the events of the story. It is not a random guess, but a name that logically emerges from a character's actions, personality, or a pivotal moment.")
-        appendLine("   - Ask yourself: Why was this name used? Does it reflect a new status, a term of endearment, an insult, or a legendary title earned in the narrative? The connection to the story must be strong and clear.")
+        appendLine(
+            "   - A nickname must be deeply rooted in the events of the story. It is not a random guess, but a name that logically emerges from a character's actions, personality, or a pivotal moment.",
+        )
+        appendLine(
+            "   - Ask yourself: Why was this name used? Does it reflect a new status, a term of endearment, an insult, or a legendary title earned in the narrative? The connection to the story must be strong and clear.",
+        )
         appendLine()
         appendLine("4. **Suggesting Creative & Relevant New Nicknames:**")
-        appendLine("   - If the story shows significant character development (e.g., a character becomes a legendary warrior) but no one has explicitly used a nickname yet, you can **suggest a creative and fitting nickname** that reflects this new status.")
+        appendLine(
+            "   - If the story shows significant character development (e.g., a character becomes a legendary warrior) but no one has explicitly used a nickname yet, you can **suggest a creative and fitting nickname** that reflects this new status.",
+        )
         appendLine("   - The suggestion must be a logical and creative leap based on the provided context, not a generic label.")
         appendLine()
         appendLine("5. **CRITICAL EXCLUSIONS (What to Avoid):**")
-        appendLine("   - **No Generic Roles:** Do NOT extract common nouns or jobs (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). A nickname is a specific name, not a description.")
-        appendLine("   - **No Profile Attributes:** Do NOT use information already present in the character's official profile (like their `occupation`, existing `nicknames`, or base `name`). You are looking for *new*, *emergent*, or *informally used* names from the conversation.")
-        appendLine("   - **No Guessing:** The nickname must be directly present in the messages or a very strong, logical inference from the character's recent actions and development in the story.")
+        appendLine(
+            "   - **No Generic Roles:** Do NOT extract common nouns or jobs (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). A nickname is a specific name, not a description.",
+        )
+        appendLine(
+            "   - **No Profile Attributes:** Do NOT use information already present in the character's official profile (like their `occupation`, existing `nicknames`, or base `name`). You are looking for *new*, *emergent*, or *informally used* names from the conversation.",
+        )
+        appendLine(
+            "   - **No Guessing:** The nickname must be directly present in the messages or a very strong, logical inference from the character's recent actions and development in the story.",
+        )
         appendLine()
         appendLine("6. **Output Constraints:**")
-        appendLine("   - For each character, identify or suggest a **maximum of four** nicknames. Prioritize the most relevant and impactful ones.")
+        appendLine(
+            "   - For each character, identify or suggest a **maximum of four** nicknames. Prioritize the most relevant and impactful ones.",
+        )
         appendLine()
         appendLine("## CONTEXT:")
         appendLine("### Saga Context")

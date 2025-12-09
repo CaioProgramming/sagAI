@@ -24,64 +24,68 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class HomeUseCaseImpl
-@Inject
-constructor(
-    private val sagaRepository: SagaRepository,
-    private val gemmaClient: GemmaClient,
-    private val backupService: BackupService,
-    private val sagaBackupService: SagaBackupService,
-    private val remoteConfig: FirebaseRemoteConfig,
-    private val sagaDetailUseCase: SagaDetailUseCase,
-    billingService: BillingService,
-) : HomeUseCase {
-    override val billingState = billingService.state
+    @Inject
+    constructor(
+        private val sagaRepository: SagaRepository,
+        private val gemmaClient: GemmaClient,
+        private val backupService: BackupService,
+        private val sagaBackupService: SagaBackupService,
+        private val remoteConfig: FirebaseRemoteConfig,
+        private val sagaDetailUseCase: SagaDetailUseCase,
+        billingService: BillingService,
+    ) : HomeUseCase {
+        override val billingState = billingService.state
 
-    override fun getSagas(): Flow<List<SagaContent>> =
-        sagaRepository.getChats().map { content ->
-            processSagaContent(content)
-        }
+        override fun getSagas(): Flow<List<SagaContent>> = sagaRepository.getChats().map { processSagaContent(it) }
 
-    override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
-        executeRequest {
-            Log.d("HomeUseCaseImpl", "Fetching new dynamic saga texts...")
-            val prompt = HomePrompts.dynamicSagaCreationPrompt()
+        override suspend fun requestDynamicCall(): RequestResult<DynamicSagaPrompt> =
+            executeRequest {
+                Log.d("HomeUseCaseImpl", "Fetching new dynamic saga texts...")
+                val prompt = HomePrompts.dynamicSagaCreationPrompt()
 
-            val result =
-                gemmaClient.generate<DynamicSagaPrompt>(
-                    prompt,
-                    temperatureRandomness = .5f,
-                    requireTranslation = true,
-                )
-            result!!
-        }
+                val result =
+                    gemmaClient.generate<DynamicSagaPrompt>(
+                        prompt,
+                        temperatureRandomness = .5f,
+                        requireTranslation = true,
+                    )
+                result!!
+            }
 
-    override suspend fun createFakeSaga(): RequestResult<Saga> =
-        executeRequest {
-            sagaRepository
-                .saveChat(
-                    Saga(
-                        title = "Debug Saga",
-                        description = "This saga was created for debug purposes only.",
-                        genre = Genre.entries.random(),
-                        isDebug = true,
-                    ),
-                )
-        }
+        override suspend fun createFakeSaga(): RequestResult<Saga> =
+            executeRequest {
+                sagaRepository
+                    .saveChat(
+                        Saga(
+                            title = "Debug Saga",
+                            description = "This saga was created for debug purposes only.",
+                            genre = Genre.entries.random(),
+                            isDebug = true,
+                        ),
+                    )
+            }
 
-    override suspend fun checkDebugBuild(): Boolean = BuildConfig.DEBUG && remoteConfig.getValue("isDebugger").asBoolean()
+        override suspend fun checkDebugBuild(): Boolean = BuildConfig.DEBUG && remoteConfig.getValue("isDebugger").asBoolean()
 
-    override suspend fun recoverSaga(sagaContent: RestorableSaga) = sagaBackupService.restoreContent(sagaContent)
+        override suspend fun recoverSaga(sagaContent: RestorableSaga) = sagaBackupService.restoreContent(sagaContent)
 
-    override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> {
-        return sagaDetailUseCase.generateStoryBriefing(saga)
-    }
+        override suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing> =
+            sagaDetailUseCase.generateStoryBriefing(saga)
 
-    private fun processSagaContent(content: List<SagaContent>): List<SagaContent> =
-        content.sortedByDescending { saga ->
-            saga
-                .flatMessages()
-                .firstOrNull()
-                ?.message
-                ?.timestamp ?: 0L
-        }
+        private fun processSagaContent(content: List<SagaContent>): List<SagaContent> =
+            content.sortedWith(
+                compareBy<SagaContent> { saga ->
+                    saga.data.isEnded
+                }.thenByDescending { saga ->
+                    if (saga.data.isEnded) {
+                        saga.data.endedAt
+                    } else {
+                        saga
+                            .flatMessages()
+                            .lastOrNull()
+                        ?.message
+                        ?.timestamp ?: saga.data.createdAt
+                }
+            },
+        )
 }

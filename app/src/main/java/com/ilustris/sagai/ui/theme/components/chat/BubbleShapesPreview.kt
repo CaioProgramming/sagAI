@@ -34,49 +34,66 @@ fun BubbleShapePreviewItem(
     modifier: Modifier = Modifier,
 ) {
     val cornerSize = 8.dp
-    val shape = when (genre) {
-        Genre.CYBERPUNK -> CyberpunkChatBubbleShape(
-            cornerRadius = cornerSize,
-            tailWidth = 12.dp,
-            tailHeight = 12.dp,
-            tailAlignment = tailAlignment,
-        )
+    val shape =
+        when (genre) {
+            Genre.CYBERPUNK -> {
+                CyberpunkChatBubbleShape(
+                    cornerRadius = cornerSize,
+                    tailWidth = 12.dp,
+                    tailHeight = 12.dp,
+                    tailAlignment = tailAlignment,
+                )
+            }
 
-        Genre.HEROES -> HeroesChatBubbleShape(
-            tailAlignment = tailAlignment,
-        )
+            Genre.HEROES -> {
+                HeroesChatBubbleShape(
+                    tailAlignment = tailAlignment,
+                )
+            }
 
-        Genre.SHINOBI -> ShinobiChatBubbleShape(
-            cornerRadius = cornerSize,
-            tailAlignment = tailAlignment,
-        )
+            Genre.SHINOBI -> {
+                ShinobiChatBubbleShape(
+                    cornerRadius = cornerSize,
+                    tailAlignment = tailAlignment,
+                )
+            }
 
-        Genre.HORROR -> HorrorChatBubbleShape(
-            pixelSize = cornerSize,
-            tailAlignment = tailAlignment,
-        )
+            Genre.HORROR -> {
+                HorrorChatBubbleShape(
+                    pixelSize = cornerSize,
+                    tailAlignment = tailAlignment,
+                )
+            }
 
-        Genre.FANTASY -> FantasyChatBubbleShape(
-            cornerRadius = cornerSize,
-            tailAlignment = tailAlignment,
-        )
+            Genre.FANTASY -> {
+                FantasyChatBubbleShape(
+                    cornerRadius = cornerSize,
+                    tailAlignment = tailAlignment,
+                )
+            }
 
-        Genre.SPACE_OPERA -> SpaceChatBubbleShape(
-            tailAlignment = tailAlignment,
-        )
+            Genre.SPACE_OPERA -> {
+                SpaceChatBubbleShape(
+                    tailAlignment = tailAlignment,
+                )
+            }
 
-        Genre.COWBOYS -> CowboysChatBubbleShape(
-            cornerNotch = cornerSize,
-            tailAlignment = tailAlignment,
-        )
+            Genre.COWBOY -> {
+                CowboysChatBubbleShape(
+                    cornerNotch = cornerSize,
+                    tailAlignment = tailAlignment,
+                )
+            }
 
-        else -> CurvedChatBubbleShape(
-            cornerRadius = cornerSize,
-            tailWidth = 4.dp,
-            tailHeight = 4.dp,
-            tailAlignment = tailAlignment,
-        )
-    }
+            else -> {
+                CurvedChatBubbleShape(
+                    cornerRadius = cornerSize,
+                    tailWidth = 4.dp,
+                    tailHeight = 4.dp,
+                    tailAlignment = tailAlignment,
+                )
+            }
+        }
 
     Column(
         modifier = modifier.padding(8.dp),
@@ -84,9 +101,10 @@ fun BubbleShapePreviewItem(
     ) {
         Text(
             text = genre.name,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontWeight = FontWeight.Bold,
-            ),
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                ),
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(bottom = 4.dp),
         )
@@ -96,11 +114,12 @@ fun BubbleShapePreviewItem(
         ) {
             // Left bubble (NPC)
             Box(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .clip(shape)
-                    .background(genre.color.copy(alpha = 0.3f))
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .wrapContentSize()
+                        .clip(shape)
+                        .background(genre.color.copy(alpha = 0.3f))
+                        .padding(16.dp),
             ) {
                 Text(
                     text = "NPC",
@@ -111,11 +130,12 @@ fun BubbleShapePreviewItem(
 
             // Right bubble (User)
             Box(
-                modifier = Modifier
-                    .wrapContentSize()
-                    .clip(shape)
-                    .background(genre.color)
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .wrapContentSize()
+                        .clip(shape)
+                        .background(genre.color)
+                        .padding(16.dp),
             ) {
                 Text(
                     text = "User",
@@ -136,9 +156,10 @@ fun BubbleShapePreviewItem(
 fun AllBubbleShapesPreview() {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {

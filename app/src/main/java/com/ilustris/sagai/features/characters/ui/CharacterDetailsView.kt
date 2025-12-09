@@ -72,7 +72,7 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
-import com.ilustris.sagai.ui.theme.fadeGradientBottom
+import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -129,7 +129,7 @@ fun CharacterDetailsView(
 
 @OptIn(
     ExperimentalAnimationApi::class,
-    androidx.compose.animation.ExperimentalSharedTransitionApi::class
+    androidx.compose.animation.ExperimentalSharedTransitionApi::class,
 )
 @Composable
 fun CharacterDetailsContent(
@@ -158,8 +158,6 @@ fun CharacterDetailsContent(
         }
     }
 
-
-
     AnimatedContent(
         characterContent.data,
         transitionSpec = {
@@ -178,39 +176,38 @@ fun CharacterDetailsContent(
             ) {
                 if (character.image.isNotEmpty()) {
                     item {
-
                         val deepEffectAvailable = originalBitmap != null && segmentedBitmap != null
 
                         SharedTransitionLayout {
                             AnimatedContent(
                                 deepEffectAvailable,
-                                transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(200)) })
+                                transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(200)) },
+                            )
                             {
                                 Box(
                                     Modifier
                                         .fillMaxWidth()
-                                        .height(500.dp)
+                                        .height(500.dp),
                                 ) {
-
                                     if (it && deepEffectAvailable) {
                                         DepthLayout(
                                             originalImage = originalBitmap,
                                             segmentedImage = segmentedBitmap,
                                             modifier = Modifier.fillMaxSize(),
-                                            imageModifier = Modifier.effectForGenre(genre)
+                                            imageModifier = Modifier.effectForGenre(genre),
                                         ) {
                                             Text(
                                                 text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                                 textAlign = TextAlign.Center,
-                                                modifier = Modifier
-                                                    .sharedElement(
-                                                        rememberSharedContentState(key = "${character.name}-title"),
-                                                        animatedVisibilityScope = this@AnimatedContent
-                                                    )
-                                                    .fillMaxWidth()
-                                                    .reactiveShimmer(true)
-                                                    .padding(12.dp)
-                                                    .align(Alignment.TopCenter),
+                                                modifier =
+                                                    Modifier
+                                                        .sharedElement(
+                                                            rememberSharedContentState(key = "${character.name}-title"),
+                                                            animatedVisibilityScope = this@AnimatedContent,
+                                                        ).fillMaxWidth()
+                                                        .reactiveShimmer(true)
+                                                        .padding(8.dp)
+                                                        .align(Alignment.TopCenter),
                                                 style =
                                                     MaterialTheme.typography.displayMedium.copy(
                                                         fontFamily = genre.headerFont(),
@@ -223,18 +220,24 @@ fun CharacterDetailsContent(
                                                                     genre.iconColor,
                                                                 ),
                                                             ),
-                                                        shadow = Shadow(
-                                                            genre.color,
-                                                            blurRadius = 15f
-                                                        ),
+                                                        shadow =
+                                                            Shadow(
+                                                                genre.color,
+                                                                blurRadius = 15f,
+                                                            ),
                                                     ),
                                             )
                                         }
 
+                                        Box(
+                                            Modifier
+                                                .fillMaxSize()
+                                                .background(fadedGradientTopAndBottom()),
+                                        )
+
                                         Column(
                                             modifier =
                                                 Modifier
-                                                    .background(fadeGradientBottom())
                                                     .align(Alignment.BottomCenter)
                                                     .padding(16.dp)
                                                     .fillMaxWidth(),
@@ -269,7 +272,7 @@ fun CharacterDetailsContent(
                                                     Text(
                                                         text = "aka: ${
                                                             it.joinToString(
-                                                                ", "
+                                                                ", ",
                                                             )
                                                         }",
                                                         style =
@@ -281,7 +284,6 @@ fun CharacterDetailsContent(
                                                     )
                                                 }
                                             }
-
                                         }
                                     } else {
                                         AsyncImage(
@@ -295,12 +297,11 @@ fun CharacterDetailsContent(
                                                             sagaContent,
                                                             character,
                                                         )
-                                                    }
-                                                    .fillMaxSize()
+                                                    }.fillMaxSize()
                                                     .clipToBounds()
                                                     .effectForGenre(
                                                         genre,
-                                                        useFallBack = character.emojified
+                                                        useFallBack = character.emojified,
                                                     ),
                                         )
 
@@ -309,19 +310,18 @@ fun CharacterDetailsContent(
                                                 .align(Alignment.BottomCenter)
                                                 .fillMaxWidth()
                                                 .fillMaxHeight()
-                                                .background(fadeGradientBottom()),
+                                                .background(fadedGradientTopAndBottom()),
                                         )
 
                                         Column(
                                             horizontalAlignment = Alignment.CenterHorizontally,
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .align(Alignment.BottomCenter)
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxWidth()
+                                                    .align(Alignment.BottomCenter),
                                         ) {
-
                                             Text(
                                                 character.profile.occupation,
-
                                                 style =
                                                     MaterialTheme.typography.titleSmall.copy(
                                                         fontFamily = genre.bodyFont(),
@@ -333,10 +333,11 @@ fun CharacterDetailsContent(
                                             Text(
                                                 text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                                 textAlign = TextAlign.Center,
-                                                modifier = Modifier.sharedElement(
-                                                    rememberSharedContentState(key = "${character.name}-title"),
-                                                    animatedVisibilityScope = this@AnimatedContent
-                                                ),
+                                                modifier =
+                                                    Modifier.sharedElement(
+                                                        rememberSharedContentState(key = "${character.name}-title"),
+                                                        animatedVisibilityScope = this@AnimatedContent,
+                                                    ),
                                                 style =
                                                     MaterialTheme.typography.displayMedium.copy(
                                                         fontFamily = genre.headerFont(),
@@ -349,10 +350,11 @@ fun CharacterDetailsContent(
                                                                     genre.iconColor,
                                                                 ),
                                                             ),
-                                                        shadow = Shadow(
-                                                            genre.color,
-                                                            blurRadius = 15f
-                                                        ),
+                                                        shadow =
+                                                            Shadow(
+                                                                genre.color,
+                                                                blurRadius = 15f,
+                                                            ),
                                                     ),
                                             )
                                             character.nicknames?.let {
@@ -360,7 +362,7 @@ fun CharacterDetailsContent(
                                                     Text(
                                                         text = "aka: ${
                                                             it.joinToString(
-                                                                ", "
+                                                                ", ",
                                                             )
                                                         }",
                                                         style =
@@ -372,15 +374,11 @@ fun CharacterDetailsContent(
                                                     )
                                                 }
                                             }
-
                                         }
                                     }
-
-
                                 }
                             }
                         }
-
                     }
                 } else {
                     item {
@@ -393,8 +391,7 @@ fun CharacterDetailsContent(
                                         sagaContent,
                                         character,
                                     )
-                                }
-                                .padding(16.dp)
+                                }.padding(16.dp)
                                 .size(100.dp)
                                 .gradientFill(characterColor.gradientFade()),
                         )
@@ -560,21 +557,23 @@ fun CharacterDetailsContent(
                             items(
                                 characterRelations,
                             ) { relationContent ->
-                                sagaContent.findCharacter(
-                                    relationContent.getCharacterExcluding(
-                                        character
-                                    ).id
-                                )?.let { relatedCharacter ->
-                                    SingleRelationShipCard(
-                                        saga = sagaContent,
-                                        character = relatedCharacter,
-                                        content = relationContent,
-                                        modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .requiredWidthIn(max = 300.dp),
-                                    )
-                                }
+                                sagaContent
+                                    .findCharacter(
+                                        relationContent
+                                            .getCharacterExcluding(
+                                                character,
+                                            ).id,
+                                    )?.let { relatedCharacter ->
+                                        SingleRelationShipCard(
+                                            saga = sagaContent,
+                                            character = relatedCharacter,
+                                            content = relationContent,
+                                            modifier =
+                                                Modifier
+                                                    .padding(16.dp)
+                                                    .requiredWidthIn(max = 300.dp),
+                                        )
+                                    }
                             }
                         }
                     }

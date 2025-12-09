@@ -18,66 +18,74 @@ import com.ilustris.sagai.ui.theme.cornerSize
 fun Genre.bubble(
     tailAlignment: BubbleTailAlignment,
     tailWidth: Dp = 12.dp,
-    tailHeight: Dp = 12.dp
+    tailHeight: Dp = 12.dp,
 ): Shape {
     val cornerSize = cornerSize()
     return when (this) {
-        Genre.CYBERPUNK ->
+        Genre.CYBERPUNK -> {
             CyberpunkChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailWidth = tailWidth,
                 tailHeight = tailHeight,
                 tailAlignment = tailAlignment,
             )
+        }
 
-        Genre.HEROES ->
+        Genre.HEROES -> {
             HeroesChatBubbleShape(
                 tailAlignment = tailAlignment,
                 tailWidth = tailWidth,
                 tailHeight = tailHeight,
             )
+        }
 
-        Genre.SHINOBI ->
+        Genre.SHINOBI -> {
             ShinobiChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailAlignment = tailAlignment,
                 tailWidth = tailWidth,
                 tailHeight = tailHeight,
             )
+        }
 
-        Genre.HORROR ->
+        Genre.HORROR -> {
             HorrorChatBubbleShape(
                 pixelSize = cornerSize,
                 tailAlignment = tailAlignment,
             )
+        }
 
-        Genre.FANTASY ->
+        Genre.FANTASY -> {
             FantasyChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailAlignment = tailAlignment,
                 tailWidth = tailWidth,
                 tailHeight = tailHeight,
             )
+        }
 
-        Genre.SPACE_OPERA ->
+        Genre.SPACE_OPERA -> {
             SpaceChatBubbleShape(
                 tailAlignment = tailAlignment,
             )
+        }
 
-        Genre.COWBOYS ->
+        Genre.COWBOY -> {
             CowboysChatBubbleShape(
                 cornerNotch = cornerSize,
                 tailAlignment = tailAlignment,
                 tailWidth = tailWidth,
                 tailHeight = tailHeight,
             )
+        }
 
-        else ->
+        else -> {
             CurvedChatBubbleShape(
                 cornerRadius = cornerSize,
                 tailWidth = tailWidth,
                 tailHeight = tailHeight,
                 tailAlignment = tailAlignment,
             )
+        }
     }
 }

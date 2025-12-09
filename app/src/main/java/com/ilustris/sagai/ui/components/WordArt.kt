@@ -170,6 +170,7 @@ fun Genre.stylisedText(
                 glowRadiusFactor = 15f,
             )
         }
+
         Genre.CYBERPUNK -> {
             val palette = this.colorPalette()
             WordArtText(
@@ -187,6 +188,7 @@ fun Genre.stylisedText(
                 glowAlpha = 1f,
             )
         }
+
         Genre.HORROR -> {
             val palette = this.colorPalette()
             WordArtText(
@@ -201,11 +203,11 @@ fun Genre.stylisedText(
                 outlineWidthFactor = 0.03f,
                 glowColor = color,
                 glowAlpha = .5f,
-                glowRadiusFactor = 10f
+                glowRadiusFactor = 10f,
             )
         }
 
-        Genre.COWBOYS -> {
+        Genre.COWBOY -> {
             val palette = this.colorPalette()
 
             WordArtText(
@@ -247,8 +249,6 @@ fun Genre.stylisedText(
                     glowAlpha = 1f,
                 )
 
-
-
                 StarryTextPlaceholder(
                     modifier =
                         Modifier
@@ -258,6 +258,7 @@ fun Genre.stylisedText(
                 )
             }
         }
+
         Genre.HEROES -> {
             val palette = this.colorPalette()
             WordArtText(
@@ -275,9 +276,10 @@ fun Genre.stylisedText(
                 rotationX = 15f,
                 glowColor = color,
                 glowAlpha = .5f,
-                glowRadiusFactor = 10f
+                glowRadiusFactor = 10f,
             )
         }
+
         Genre.SPACE_OPERA -> {
             val palette = this.colorPalette()
             WordArtText(

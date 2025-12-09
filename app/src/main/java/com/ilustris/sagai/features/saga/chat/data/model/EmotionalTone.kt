@@ -23,7 +23,6 @@ import androidx.graphics.shapes.Morph
 import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.MorphPolygonShape
 import android.graphics.Paint as AndroidPaint
 
@@ -168,11 +167,13 @@ fun AnimatedEmotionalShape(
                 drawPath(path = outline.path, brush = backgroundBrush)
                 drawPath(path = outline.path, brush = outlineBrush, style = Stroke(width = 2.dp.toPx()))
             }
+
             is Outline.Rectangle -> {
                 val mainPath = Path().apply { addRect(outline.rect) }
                 drawPath(path = mainPath, brush = backgroundBrush)
                 drawPath(path = mainPath, brush = outlineBrush, style = Stroke(width = 2.dp.toPx()))
             }
+
             is Outline.Rounded -> {
                 val mainPath = Path().apply { addRoundRect(outline.roundRect) }
                 drawPath(path = mainPath, brush = backgroundBrush)

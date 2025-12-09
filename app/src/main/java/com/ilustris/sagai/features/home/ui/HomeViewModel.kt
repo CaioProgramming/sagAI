@@ -28,110 +28,107 @@ data class SagaBriefing(
     val briefing: StoryDailyBriefing,
     val segmentationPair: Pair<Bitmap, Bitmap>? = null,
 )
+
 @HiltViewModel
 class HomeViewModel
-@Inject
-constructor(
-    private val homeUseCase: HomeUseCase,
-    private val backupService: BackupService,
-    private val segmentationHelper: ImageSegmentationHelper
-) : ViewModel() {
-    val sagas = homeUseCase.getSagas()
+    @Inject
+    constructor(
+        private val homeUseCase: HomeUseCase,
+        private val backupService: BackupService,
+        private val segmentationHelper: ImageSegmentationHelper,
+    ) : ViewModel() {
+        val sagas = homeUseCase.getSagas()
 
-    private val _showDebugButton = MutableStateFlow(false)
-    val showDebugButton = _showDebugButton.asStateFlow()
+        private val _showDebugButton = MutableStateFlow(false)
+        val showDebugButton = _showDebugButton.asStateFlow()
 
-    private val _startDebugSaga = MutableStateFlow<Saga?>(null)
-    val startDebugSaga = _startDebugSaga.asStateFlow()
+        private val _startDebugSaga = MutableStateFlow<Saga?>(null)
+        val startDebugSaga = _startDebugSaga.asStateFlow()
 
-    private val _dynamicNewSagaTexts = MutableStateFlow<DynamicSagaPrompt?>(null)
-    val dynamicNewSagaTexts = _dynamicNewSagaTexts.asStateFlow()
+        private val _dynamicNewSagaTexts = MutableStateFlow<DynamicSagaPrompt?>(null)
+        val dynamicNewSagaTexts = _dynamicNewSagaTexts.asStateFlow()
 
-    private val _backupAvailable = MutableStateFlow(false)
-    val backupAvailable = _backupAvailable.asStateFlow()
+        private val _backupAvailable = MutableStateFlow(false)
+        val backupAvailable = _backupAvailable.asStateFlow()
 
-    private val _isLoading = MutableStateFlow<Boolean>(false)
-    val isLoading = _isLoading.asStateFlow()
+        private val _isLoading = MutableStateFlow<Boolean>(false)
+        val isLoading = _isLoading.asStateFlow()
 
-    val loadingMessage = MutableStateFlow<String?>(null)
+        val loadingMessage = MutableStateFlow<String?>(null)
 
-    private val _showRecoverSheet = MutableStateFlow(false)
-    val showRecoverSheet = _showRecoverSheet.asStateFlow()
+        private val _showRecoverSheet = MutableStateFlow(false)
+        val showRecoverSheet = _showRecoverSheet.asStateFlow()
 
-    val billingState = homeUseCase.billingState
+        val billingState = homeUseCase.billingState
 
-    private val _briefingCache = mutableMapOf<Int, SagaBriefing>()
+        private val _briefingCache = mutableMapOf<Int, SagaBriefing>()
 
-    private val _selectedSaga = MutableStateFlow<SagaContent?>(null)
-    val selectedSaga = _selectedSaga.asStateFlow()
+        private val _selectedSaga = MutableStateFlow<SagaContent?>(null)
+        val selectedSaga = _selectedSaga.asStateFlow()
 
-    private val _storyBriefing = MutableStateFlow<SagaBriefing?>(null)
-    val storyBriefing = _storyBriefing.asStateFlow()
+        private val _storyBriefing = MutableStateFlow<SagaBriefing?>(null)
+        val storyBriefing = _storyBriefing.asStateFlow()
 
-    private val _loadingStoryId = MutableStateFlow<Int?>(null)
-    val loadingStoryId = _loadingStoryId.asStateFlow()
-    val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
+        private val _loadingStoryId = MutableStateFlow<Int?>(null)
+        val loadingStoryId = _loadingStoryId.asStateFlow()
+        val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
 
+        init {
+            checkDebug()
+            getDynamicPrompts()
+        }
 
-    init {
-        checkDebug()
-        getDynamicPrompts()
-    }
-
-    fun getBriefing(saga: SagaContent) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _loadingStoryId.emit(saga.data.id)
-            if (_briefingCache.containsKey(saga.data.id)) {
-                _storyBriefing.emit(_briefingCache[saga.data.id])
-                _selectedSaga.emit(saga)
-                _loadingStoryId.emit(null)
-            } else {
-                 homeUseCase.generateStoryBriefing(saga).onSuccessAsync {
-                     val iconSegmentation = segmentationHelper.processImage(saga.data.icon)
-                     val briefingState = SagaBriefing(saga, it, iconSegmentation.getSuccess())
-                     _briefingCache[saga.data.id] = briefingState
-                     _storyBriefing.emit(briefingState)
-                     _selectedSaga.emit(saga)
-                 }
-                _loadingStoryId.emit(null)
-
+        fun getBriefing(saga: SagaContent) {
+            viewModelScope.launch(Dispatchers.IO) {
+                _loadingStoryId.emit(saga.data.id)
+                if (_briefingCache.containsKey(saga.data.id)) {
+                    _storyBriefing.emit(_briefingCache[saga.data.id])
+                    _selectedSaga.emit(saga)
+                    _loadingStoryId.emit(null)
+                } else {
+                    homeUseCase.generateStoryBriefing(saga).onSuccessAsync {
+                        val iconSegmentation = segmentationHelper.processImage(saga.data.icon)
+                        val briefingState = SagaBriefing(saga, it, iconSegmentation.getSuccess())
+                        _briefingCache[saga.data.id] = briefingState
+                        _storyBriefing.emit(briefingState)
+                        _selectedSaga.emit(saga)
+                    }
+                    _loadingStoryId.emit(null)
+                }
             }
         }
-    }
 
-    fun clearSelectedSaga() {
-        viewModelScope.launch {
-            _selectedSaga.emit(null)
-            _storyBriefing.emit(null)
-        }
-    }
-
-    fun checkForBackups() {
-        viewModelScope.launch {
-            backupService.getBackedUpSagas().onSuccessAsync {
-                val availableSagas = sagas.first()
-                _backupAvailable.emit(
-                    it.filterBackups(availableSagas.map { it.data }).isNotEmpty()
-                )
+        fun clearSelectedSaga() {
+            viewModelScope.launch {
+                _selectedSaga.emit(null)
+                _storyBriefing.emit(null)
             }
         }
-    }
 
-
-
-    private fun getDynamicPrompts() {
-        viewModelScope.launch {
-            _dynamicNewSagaTexts.emit(homeUseCase.requestDynamicCall().getSuccess())
+        fun checkForBackups() {
+            viewModelScope.launch {
+                backupService.getBackedUpSagas().onSuccessAsync {
+                    val availableSagas = sagas.first()
+                    _backupAvailable.emit(
+                        it.filterBackups(availableSagas.map { it.data }).isNotEmpty(),
+                    )
+                }
+            }
         }
-    }
 
-    private fun checkDebug() {
-        viewModelScope.launch {
-            _showDebugButton.value = homeUseCase.checkDebugBuild()
+        private fun getDynamicPrompts() {
+            viewModelScope.launch {
+                _dynamicNewSagaTexts.emit(homeUseCase.requestDynamicCall().getSuccess())
+            }
         }
-    }
 
-    fun createFakeSaga() {
+        private fun checkDebug() {
+            viewModelScope.launch {
+                _showDebugButton.value = homeUseCase.checkDebugBuild()
+            }
+        }
+
+        fun createFakeSaga() {
         viewModelScope.launch(Dispatchers.IO) {
             val result = homeUseCase.createFakeSaga()
             if (result is RequestResult.Success) {

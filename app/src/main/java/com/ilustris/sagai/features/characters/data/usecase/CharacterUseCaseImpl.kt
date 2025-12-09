@@ -198,7 +198,7 @@ class CharacterUseCaseImpl
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
-                            hexColor = getRandomColorHex()
+                            hexColor = getRandomColorHex(),
                         ),
                     )
                 withContext(Dispatchers.IO) {

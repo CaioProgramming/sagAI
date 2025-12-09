@@ -301,7 +301,7 @@ fun ChatView(
                             .fillMaxSize(),
                 ) {
                     when (it) {
-                        is ChatState.Error ->
+                        is ChatState.Error -> {
                             AnimatedVisibility(isGenerating.not()) {
                                 EmptyMessagesView(
                                     text = stringResource(id = R.string.saga_not_found),
@@ -312,6 +312,7 @@ fun ChatView(
                                     modifier = Modifier.align(Alignment.Center),
                                 )
                             }
+                        }
 
                         is ChatState.Success -> {
                             content?.let { cont ->
@@ -399,7 +400,7 @@ fun ChatView(
                             }
                         }
 
-                        else ->
+                        else -> {
                             Box(Modifier.fillMaxSize()) {
                                 SparkIcon(
                                     brush = gradientAnimation(genresGradient()),
@@ -412,6 +413,7 @@ fun ChatView(
                                     tint = MaterialTheme.colorScheme.background,
                                 )
                             }
+                        }
                     }
                 }
             }
@@ -521,7 +523,7 @@ fun ChatView(
         AnimatedVisibility(
             isGenerating,
             enter = fadeIn() + scaleIn(),
-            exit = fadeOut(animationSpec = tween(700)) + shrinkOut()
+            exit = fadeOut(animationSpec = tween(700)) + shrinkOut(),
         ) {
             val shimmerColors = content?.data?.genre?.shimmerColors() ?: holographicGradient
             StarryTextPlaceholder(
@@ -536,7 +538,7 @@ fun ChatView(
                 CharacterRevealOverlay(
                     character = character,
                     sagaContent = sagaContent,
-                    onDismiss = viewModel::dismissCharacterReveal
+                    onDismiss = viewModel::dismissCharacterReveal,
                 )
             }
         }
@@ -546,7 +548,7 @@ fun ChatView(
                 content = it,
                 isVisible = showShareSheet,
                 shareType = ShareType.CONVERSATION,
-                onDismiss = { showShareSheet = false }
+                onDismiss = { showShareSheet = false },
             )
         }
     }
@@ -676,8 +678,7 @@ fun ChatContent(
                                 shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
                                 targetValue = 1000f,
-                            )
-                            .fillMaxSize(.5f)
+                            ).fillMaxSize(.5f)
                             .alpha(.3f),
                 )
 
@@ -685,8 +686,7 @@ fun ChatContent(
                     Modifier
                         .padding(
                             top = padding.calculateTopPadding(),
-                        )
-                        .fillMaxSize(),
+                        ).fillMaxSize(),
                 ) {
                     rememberCoroutineScope()
                     val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
@@ -737,8 +737,7 @@ fun ChatContent(
                                 bottom.linkTo(parent.bottom)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }
-                            .fillMaxWidth()
+                            }.fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
                     )
@@ -781,42 +780,44 @@ fun ChatContent(
                     // Floating action button for sharing conversation snippets
                     AnimatedVisibility(
                         visible = isSelectionMode,
-                        modifier = Modifier
-                            .constrainAs(createRef()) {
-                                bottom.linkTo(parent.bottom)
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                                width = Dimension.fillToConstraints
-                            }
-                            .padding(
-                                bottom = padding.calculateBottomPadding() + 16.dp,
-                                start = 16.dp,
-                                end = 16.dp
-                            ),
+                        modifier =
+                            Modifier
+                                .constrainAs(createRef()) {
+                                    bottom.linkTo(parent.bottom)
+                                    start.linkTo(parent.start)
+                                    end.linkTo(parent.end)
+                                    width = Dimension.fillToConstraints
+                                }.padding(
+                                    bottom = padding.calculateBottomPadding() + 16.dp,
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                ),
                         enter = slideInVertically { it } + fadeIn(),
-                        exit = slideOutVertically { it } + fadeOut()
+                        exit = slideOutVertically { it } + fadeOut(),
                     ) {
                         Row(
-                            modifier = Modifier
-                                .padding(32.dp)
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(28.dp))
-                                .background(saga.genre.color)
-                                .padding(horizontal = 24.dp, vertical = 16.dp),
+                            modifier =
+                                Modifier
+                                    .padding(32.dp)
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(28.dp))
+                                    .background(saga.genre.color)
+                                    .padding(horizontal = 24.dp, vertical = 16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             IconButton(
                                 onClick = onClearSelection,
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(32.dp),
                             ) {
                                 Icon(
                                     painterResource(R.drawable.round_close_24),
                                     contentDescription = stringResource(R.string.cancel),
                                     tint = Color.White,
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .fillMaxSize(),
+                                    modifier =
+                                        Modifier
+                                            .padding(8.dp)
+                                            .fillMaxSize(),
                                 )
                             }
 
@@ -824,32 +825,39 @@ fun ChatContent(
                                 stringResource(
                                     R.string.messages_selected,
                                     selectedMessageIds.size,
-                                    10
+                                    10,
                                 ),
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Medium,
-                                    fontFamily = saga.genre.bodyFont(),
-                                    textAlign = TextAlign.Center
-                                ),
+                                style =
+                                    MaterialTheme.typography.labelLarge.copy(
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Medium,
+                                        fontFamily = saga.genre.bodyFont(),
+                                        textAlign = TextAlign.Center,
+                                    ),
                                 maxLines = 1,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
 
                             IconButton(
                                 onClick = onShareConversation,
                                 enabled = selectedMessageIds.isNotEmpty(),
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(32.dp),
                             ) {
                                 Icon(
                                     painterResource(R.drawable.ic_share),
                                     contentDescription = stringResource(R.string.share),
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                        .fillMaxSize(),
-                                    tint = if (selectedMessageIds.isNotEmpty()) Color.White else Color.White.copy(
-                                        alpha = 0.5f
-                                    )
+                                    modifier =
+                                        Modifier
+                                            .padding(8.dp)
+                                            .fillMaxSize(),
+                                    tint =
+                                        if (selectedMessageIds.isNotEmpty()) {
+                                            Color.White
+                                        } else {
+                                            Color.White.copy(
+                                                alpha = 0.5f,
+                                            )
+                                        },
                                 )
                             }
                         }
@@ -1217,7 +1225,6 @@ private fun EmptyMessagesView(
     }
 }
 
-
 @Composable
 fun SagaHeader(
     saga: Saga,
@@ -1228,11 +1235,13 @@ fun SagaHeader(
 ) {
     Column(modifier) {
         if (saga.icon.isEmpty()) {
-            saga.genre.stylisedText(saga.title,
-                modifier = Modifier
-                    .reactiveShimmer(true)
-                    .align(Alignment.CenterHorizontally)
-                    .padding(8.dp)
+            saga.genre.stylisedText(
+                saga.title,
+                modifier =
+                    Modifier
+                        .reactiveShimmer(true)
+                        .align(Alignment.CenterHorizontally)
+                        .padding(8.dp),
             )
         }
         AnimatedVisibility(saga.icon.isNotEmpty()) {
@@ -1247,9 +1256,10 @@ fun SagaHeader(
                         originalImage = originalBitmap,
                         segmentedImage = segmentedBitmap,
                         modifier = Modifier.fillMaxSize(),
-                        imageModifier = Modifier
-                            .effectForGenre(saga.genre)
-                            .selectiveColorHighlight(saga.genre.selectiveHighlight())
+                        imageModifier =
+                            Modifier
+                                .effectForGenre(saga.genre)
+                                .selectiveColorHighlight(saga.genre.selectiveHighlight()),
                     ) {
                         Text(
                             saga.title,
@@ -1717,8 +1727,7 @@ fun CharactersTopIcons(
                         )
                         .graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
-                        )
-                        .clip(CircleShape)
+                        ).clip(CircleShape)
                         .size(24.dp)
                         .clickable { onCharacterSelected(character) },
             )

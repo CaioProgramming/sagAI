@@ -16,6 +16,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,7 +48,7 @@ fun StarryLoader(
     loadingMessage: String? = null,
     textStyle: TextStyle = MaterialTheme.typography.headlineMedium,
     brushColors: List<Color> = holographicGradient,
-    useAsDialog: Boolean = true
+    useAsDialog: Boolean = true,
 ) {
     val setBlur = LocalBlurState.current
     DisposableEffect(isLoading && useAsDialog) {
@@ -124,8 +125,11 @@ fun StarryLoader(
 
                     AnimatedContent(
                         loadingMessage,
-                        modifier = Modifier.align(Alignment.Center),
-                        transitionSpec = {
+                        modifier =
+                            Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp),
+                            transitionSpec = {
                             fadeIn(tween(500)) togetherWith slideOutVertically { it }
                         },
                     ) {

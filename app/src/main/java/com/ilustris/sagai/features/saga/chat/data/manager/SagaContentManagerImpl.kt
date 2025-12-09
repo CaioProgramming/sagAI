@@ -504,25 +504,47 @@ class SagaContentManagerImpl
                 startProcessing {
                     action =
                         when (narrativeStep) {
-                            NarrativeStep.StartAct -> createAct(saga)
-                            is NarrativeStep.GenerateSagaEnding -> generateEnding(saga)
-                            is NarrativeStep.GenerateAct -> updateAct(narrativeStep.act)
-                            is NarrativeStep.StartChapter -> startChapter(narrativeStep.act)
-                            is NarrativeStep.GenerateChapter ->
+                            NarrativeStep.StartAct -> {
+                                createAct(saga)
+                            }
+
+                            is NarrativeStep.GenerateSagaEnding -> {
+                                generateEnding(saga)
+                            }
+
+                            is NarrativeStep.GenerateAct -> {
+                                updateAct(narrativeStep.act)
+                            }
+
+                            is NarrativeStep.StartChapter -> {
+                                startChapter(narrativeStep.act)
+                            }
+
+                            is NarrativeStep.GenerateChapter -> {
                                 updateChapter(
                                     saga,
                                     narrativeStep.chapter,
                                 )
+                            }
 
-                            is NarrativeStep.StartTimeline -> startTimeline(narrativeStep.chapter)
-                            is NarrativeStep.GenerateTimeLine ->
+                            is NarrativeStep.StartTimeline -> {
+                                startTimeline(narrativeStep.chapter)
+                            }
+
+                            is NarrativeStep.GenerateTimeLine -> {
                                 updateTimeline(
                                     saga,
                                     narrativeStep.timeline,
                                 )
+                            }
 
-                            is NarrativeStep.EndTimeLine -> endTimeline(narrativeStep.currentChapterContent)
-                            NarrativeStep.NoActionNeeded -> skipNarrative()
+                            is NarrativeStep.EndTimeLine -> {
+                                endTimeline(narrativeStep.currentChapterContent)
+                            }
+
+                            NarrativeStep.NoActionNeeded -> {
+                                skipNarrative()
+                            }
                         }
 
                     val act = saga.currentActInfo
@@ -676,7 +698,9 @@ class SagaContentManagerImpl
                         checkObjective()
                     }
 
-                    else -> setNarrativeProcessingStatus(false)
+                    else -> {
+                        setNarrativeProcessingStatus(false)
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -690,9 +714,10 @@ class SagaContentManagerImpl
                 val act = saga.currentActInfo ?: return@executeRequest null
 
                 act.let { currentAct ->
-                    val invalidChapters = currentAct.chapters.filter {
-                        it.isComplete().not() && it.events.isEmpty()
-                    }
+                    val invalidChapters =
+                        currentAct.chapters.filter {
+                            it.isComplete().not() && it.events.isEmpty()
+                        }
 
                     invalidChapters.forEach {
                         chapterUseCase.deleteChapter(it.data)
@@ -701,7 +726,6 @@ class SagaContentManagerImpl
                     if (currentAct.data.introduction.isEmpty()) {
                         actUseCase.generateActIntroduction(saga, currentAct.data)
                     }
-
                 }
 
                 val chapter = act.currentChapterInfo ?: return@executeRequest null
@@ -776,7 +800,9 @@ class SagaContentManagerImpl
             }
 
         override suspend fun generateCharacter(description: String): RequestResult<Character> =
+
             executeRequest {
+                setProcessing(true)
                 val currentSaga = content.value!!
 
                 if (isDebugModeEnabled) {
@@ -792,8 +818,10 @@ class SagaContentManagerImpl
                             details = Details(),
                             profile = CharacterProfile(),
                         )
+                    setProcessing(false)
                     characterUseCase.insertCharacter(fakeCharacter)
                 } else {
+                    setProcessing(false)
                     characterUseCase
                         .generateCharacter(
                             sagaContent = currentSaga,

@@ -76,10 +76,10 @@ class ChatViewModel
         private val notificationManager: ChatNotificationManager,
         mediaPlayerManager: MediaPlayerManager,
         private val settingsUseCase: SettingsUseCase,
-        private val imageSegmentationHelper: ImageSegmentationHelper
+        private val imageSegmentationHelper: ImageSegmentationHelper,
     ) : ViewModel(),
         DefaultLifecycleObserver {
-    val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
+        val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         val state = MutableStateFlow<ChatState>(ChatState.Loading)
 
         val content = sagaContentManager.content
@@ -94,31 +94,31 @@ class ChatViewModel
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
         val inputValue = MutableStateFlow(TextFieldValue())
         val sendType = MutableStateFlow(SenderType.CHARACTER)
-    val originalBitmap = MutableStateFlow<Bitmap?>(null)
-    val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
+        val originalBitmap = MutableStateFlow<Bitmap?>(null)
+        val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
 
-    data class MessageSelectionState(
-        val isSelectionMode: Boolean = false,
-        val selectedMessageIds: Set<Int> = emptySet(),
-        val maxSelection: Int = 10
-    )
+        data class MessageSelectionState(
+            val isSelectionMode: Boolean = false,
+            val selectedMessageIds: Set<Int> = emptySet(),
+            val maxSelection: Int = 10,
+        )
 
-    private val _selectionState = MutableStateFlow(MessageSelectionState())
-    val selectionState: StateFlow<MessageSelectionState> = _selectionState
+        private val _selectionState = MutableStateFlow(MessageSelectionState())
+        val selectionState: StateFlow<MessageSelectionState> = _selectionState
 
         private var aiTurns = 0
 
         val selectedCharacter: MutableStateFlow<CharacterContent?> = MutableStateFlow(null)
-    val newCharacterReveal = MutableStateFlow<Int?>(null)
+        val newCharacterReveal = MutableStateFlow<Int?>(null)
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
         private var currentActCountForService: Int = 0
 
         val notificationsEnabled = MutableStateFlow(true)
         val smartSuggestionsEnabled = MutableStateFlow(true)
-    val messageEffectsEnabled = MutableStateFlow(true)
+        val messageEffectsEnabled = MutableStateFlow(true)
 
         private fun updateSnackBar(snackBarState: SnackBarState) {
             viewModelScope.launch(Dispatchers.IO) {
@@ -229,7 +229,6 @@ class ChatViewModel
                     appendLine("Character name: $name")
                     appendLine("Character context on story:")
                     appendLine(mentions.takeLast(5).joinToString(";\n") { it.message.text })
-
                 },
             )
         }
@@ -290,8 +289,6 @@ class ChatViewModel
 
                         if (showTitle.value) {
                             titleAnimation()
-
-
                         }
                     }
             }
@@ -307,7 +304,10 @@ class ChatViewModel
         private fun updateProgress(sagaContent: SagaContent) {
             loreUpdateProgress.value =
                 when {
-                    sagaContent.isComplete() -> 1f
+                    sagaContent.isComplete() -> {
+                        1f
+                    }
+
                     (
                         sagaContent.getCurrentTimeLine()?.messages?.size
                             ?: 0
@@ -317,7 +317,9 @@ class ChatViewModel
                         messageCount.toFloat() / maxCount.toFloat()
                     }
 
-                    else -> 0f
+                    else -> {
+                        0f
+                    }
                 }
         }
 
@@ -336,12 +338,15 @@ class ChatViewModel
                                     sagaContent.data.genre.color
                                         .toArgb(),
                                 currentActNumber = newActCount.coerceAtLeast(1),
-                                currentChapter = sagaContent.getCurrentTimeLine()?.let { timeline ->
-                                    sagaContent.chapterNumber(
-                                        sagaContent.flatChapters()
-                                            .find { it.data.id == timeline.data.chapterId }?.data
-                                    )
-                                } ?: 0,
+                                currentChapter =
+                                    sagaContent.getCurrentTimeLine()?.let { timeline ->
+                                        sagaContent.chapterNumber(
+                                            sagaContent
+                                                .flatChapters()
+                                                .find { it.data.id == timeline.data.chapterId }
+                                                ?.data,
+                                        )
+                                    } ?: 0,
                                 totalActs = sagaContent.acts.size,
                                 timelineObjective = sagaContent.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
                                 mediaFilePath = musicFile.absolutePath,
@@ -433,15 +438,23 @@ class ChatViewModel
                                             ?.acts
                                             ?.size
                                             ?.coerceAtLeast(1) ?: 1,
-                                    currentChapter = content.value?.getCurrentTimeLine()
-                                        ?.let { timeline ->
-                                            content.value?.chapterNumber(
-                                                content.value?.flatChapters()
-                                                    ?.find { it.data.id == timeline.data.chapterId }?.data
-                                            )
-                                        } ?: 0,
+                                    currentChapter =
+                                        content.value
+                                            ?.getCurrentTimeLine()
+                                            ?.let { timeline ->
+                                                content.value?.chapterNumber(
+                                                    content.value
+                                                        ?.flatChapters()
+                                                        ?.find { it.data.id == timeline.data.chapterId }
+                                                        ?.data,
+                                                )
+                                            } ?: 0,
                                     totalActs = content.value?.acts?.size ?: 1,
-                                    timelineObjective = content.value?.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
+                                    timelineObjective =
+                                        content.value
+                                            ?.getCurrentTimeLine()
+                                            ?.data
+                                            ?.currentObjective ?: "Unknown Objective",
                                     mediaFilePath = musicFile.absolutePath,
                                     color = currentSagaData.genre.color.toArgb(),
                                 )
@@ -610,7 +623,9 @@ class ChatViewModel
                                 }
                             }
 
-                            TypoStatus.ENHANCEMENT -> doNothing()
+                            TypoStatus.ENHANCEMENT -> {
+                                doNothing()
+                            }
                         }
                     }
                 } ?: run {
@@ -644,11 +659,12 @@ class ChatViewModel
                         message.characterId ?: characterReference?.id
                     }
 
-                val speaker =  if (message.senderType == SenderType.NARRATOR) {
-                    null
-                } else {
-                    characterReference?.name
-                }
+                val speaker =
+                    if (message.senderType == SenderType.NARRATOR) {
+                        null
+                    } else {
+                        characterReference?.name
+                    }
                 val sceneSummary =
                     if (isFromUser.not()) {
                         sceneSummary
@@ -850,22 +866,8 @@ class ChatViewModel
                     .generateCharacter(
                         contextDescription,
                     ).onSuccessAsync {
-                        updateSnackBar(
-                            snackBar(
-                                context.getString(
-                                    R.string.new_character_message,
-                                    it.name,
-                                ),
-                            ) {
-                                action {
-                                    icon = it.image
-                                    openDetails(it)
-                                }
-                            },
-                        )
                         newCharacterReveal.value = it.id
                         updateLoading(false)
-                        delay(5.seconds)
                     }.onFailureAsync {
                         updateSnackBar(
                             snackBar(
@@ -919,62 +921,63 @@ class ChatViewModel
             }
         }
 
-
-    fun segmentSagaCover(url: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val cachedBitmap = segmentedImageCache.get(url)
-            if (cachedBitmap != null) {
-                segmentedBitmap.emit(cachedBitmap)
-                return@launch
-            }
-
-            imageSegmentationHelper.processImage(url).onSuccessAsync {
-                originalBitmap.emit(it.first)
-                segmentedBitmap.emit(it.second)
-            }
-        }
-    }
-    fun dismissCharacterReveal() {
-        newCharacterReveal.value = null
-    }
-
-    // Message selection methods for conversation snippet sharing
-    fun toggleSelectionMode() {
-        viewModelScope.launch {
-            val currentState = _selectionState.value
-            _selectionState.emit(
-                if (currentState.isSelectionMode) {
-                    MessageSelectionState()
-                } else {
-                    currentState.copy(isSelectionMode = true)
+        fun segmentSagaCover(url: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val cachedBitmap = segmentedImageCache.get(url)
+                if (cachedBitmap != null) {
+                    segmentedBitmap.emit(cachedBitmap)
+                    return@launch
                 }
-            )
-        }
-    }
 
-    fun toggleMessageSelection(messageId: Int) {
-        viewModelScope.launch {
-            val currentState = _selectionState.value
-            val newSelectedIds = if (currentState.selectedMessageIds.contains(messageId)) {
-                currentState.selectedMessageIds - messageId
-            } else {
-                if (currentState.selectedMessageIds.size < currentState.maxSelection) {
-                    currentState.selectedMessageIds + messageId
-                } else {
-                    currentState.selectedMessageIds
+                imageSegmentationHelper.processImage(url).onSuccessAsync {
+                    originalBitmap.emit(it.first)
+                    segmentedBitmap.emit(it.second)
                 }
             }
-            _selectionState.emit(currentState.copy(selectedMessageIds = newSelectedIds))
         }
-    }
 
-    fun clearSelection() {
-        viewModelScope.launch {
-            _selectionState.emit(MessageSelectionState())
+        fun dismissCharacterReveal() {
+            newCharacterReveal.value = null
         }
-    }
 
-    fun getSelectedMessages(): List<MessageContent> {
+        // Message selection methods for conversation snippet sharing
+        fun toggleSelectionMode() {
+            viewModelScope.launch {
+                val currentState = _selectionState.value
+                _selectionState.emit(
+                    if (currentState.isSelectionMode) {
+                        MessageSelectionState()
+                    } else {
+                        currentState.copy(isSelectionMode = true)
+                    },
+                )
+            }
+        }
+
+        fun toggleMessageSelection(messageId: Int) {
+            viewModelScope.launch {
+                val currentState = _selectionState.value
+                val newSelectedIds =
+                    if (currentState.selectedMessageIds.contains(messageId)) {
+                        currentState.selectedMessageIds - messageId
+                    } else {
+                        if (currentState.selectedMessageIds.size < currentState.maxSelection) {
+                            currentState.selectedMessageIds + messageId
+                        } else {
+                            currentState.selectedMessageIds
+                        }
+                    }
+                _selectionState.emit(currentState.copy(selectedMessageIds = newSelectedIds))
+            }
+        }
+
+        fun clearSelection() {
+            viewModelScope.launch {
+                _selectionState.emit(MessageSelectionState())
+            }
+        }
+
+        fun getSelectedMessages(): List<MessageContent> {
         val saga = content.value ?: return emptyList()
         val selectedIds = _selectionState.value.selectedMessageIds
         return saga.flatMessages().filter { it.message.id in selectedIds }

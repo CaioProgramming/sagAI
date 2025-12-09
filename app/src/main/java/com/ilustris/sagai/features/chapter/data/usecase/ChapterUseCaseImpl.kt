@@ -96,7 +96,7 @@ class ChapterUseCaseImpl
                         title = genChapter.title,
                         overview = genChapter.overview,
                         featuredCharacters = genChapterCharacters.ifEmpty { featuredCharacters },
-                        currentEventId = null
+                        currentEventId = null,
                     ),
                 )
             withContext(Dispatchers.IO) {
@@ -109,7 +109,6 @@ class ChapterUseCaseImpl
             }
 
             chapterUpdate
-
         }
 
         override suspend fun generateEmotionalReview(
@@ -284,7 +283,6 @@ class ChapterUseCaseImpl
             act: ActContent,
         ): RequestResult<Chapter> =
             executeRequest {
-
                 val prompt =
                     ChapterPrompts.chapterIntroductionPrompt(saga, chapter, act)
                 val intro =

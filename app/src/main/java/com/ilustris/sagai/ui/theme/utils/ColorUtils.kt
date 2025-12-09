@@ -18,9 +18,9 @@ fun getRandomColorHex(): String {
     do {
         // Generate random RGB values with constraints
         // Avoid extremes: min 0.15 (avoid too dark) and max 0.85 (avoid too light)
-        val red = Random.nextFloat() * 0.7f + 0.15f   // Range: 0.15 to 0.85
+        val red = Random.nextFloat() * 0.7f + 0.15f // Range: 0.15 to 0.85
         val green = Random.nextFloat() * 0.7f + 0.15f // Range: 0.15 to 0.85
-        val blue = Random.nextFloat() * 0.7f + 0.15f  // Range: 0.15 to 0.85
+        val blue = Random.nextFloat() * 0.7f + 0.15f // Range: 0.15 to 0.85
 
         randomColor = Color(red, green, blue, 1.0f)
         attempts++
@@ -28,16 +28,17 @@ fun getRandomColorHex(): String {
 
     // Fallback to a predefined set of good colors if we couldn't generate one
     if (randomColor.isInvalidColor()) {
-        val fallbackColors = listOf(
-            Color(0xFF8B2635), // Deep Ruby Red
-            Color(0xFF2E294E), // Dark Purple
-            Color(0xFF1C2541), // Dark Navy
-            Color(0xFF003F88), // Classic Blue
-            Color(0xFFE91E63), // Hot Pink
-            Color(0xFF5C2751), // Deep Plum
-            Color(0xFF0081A7), // Space Teal
-            Color(0xFF8B4513), // Saddle Brown
-        )
+        val fallbackColors =
+            listOf(
+                Color(0xFF8B2635), // Deep Ruby Red
+                Color(0xFF2E294E), // Dark Purple
+                Color(0xFF1C2541), // Dark Navy
+                Color(0xFF003F88), // Classic Blue
+                Color(0xFFE91E63), // Hot Pink
+                Color(0xFF5C2751), // Deep Plum
+                Color(0xFF0081A7), // Space Teal
+                Color(0xFF8B4513), // Saddle Brown
+            )
         randomColor = fallbackColors.random()
     }
 

@@ -190,12 +190,16 @@ object ChatPrompts {
         saga: SagaContent,
         recentMessages: List<Message> = emptyList(),
     ) = buildString {
-        appendLine("You are tasked with generating a factual, concise summary of the current scene based ONLY on established story context.")
+        appendLine(
+            "You are tasked with generating a factual, concise summary of the current scene based ONLY on established story context.",
+        )
         appendLine("This summary will be used as context for subsequent AI requests and will NOT be shown to the user.")
 
         appendLine("## CRITICAL RULES - NEVER FABRICATE:")
         appendLine("- ONLY reference characters that have been explicitly mentioned in the provided context")
-        appendLine("- ONLY describe events that actually happened according to recent messages, character events, and chapter/act summaries")
+        appendLine(
+            "- ONLY describe events that actually happened according to recent messages, character events, and chapter/act summaries",
+        )
         appendLine("- ONLY mention locations, objects, or situations that are explicitly stated in the context")
         appendLine("- If information is not available in the context, omit that field completely")
         appendLine("- Do NOT invent dialogue, actions, or characters that aren't in the provided data")
@@ -231,7 +235,6 @@ object ChatPrompts {
         appendLine(ChapterPrompts.chapterSummary(saga))
         appendLine(ActPrompts.actsOverview(saga))
 
-
         // Character Events (established character developments)
         saga.mainCharacter?.let { mainChar ->
             val recentEvents = mainChar.events.takeLast(3).map { it.event }
@@ -239,8 +242,8 @@ object ChatPrompts {
                 appendLine("### Main Character Recent Events:")
                 appendLine(
                     recentEvents.normalizetoAIItems(
-                        listOf("id", "characterId", "createdAt", "gameTimelineId")
-                    )
+                        listOf("id", "characterId", "createdAt", "gameTimelineId"),
+                    ),
                 )
             }
         }
@@ -260,10 +263,9 @@ object ChatPrompts {
                 saga.mainCharacter.relationships.joinToString(";\n") {
                     val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "No events yet"
                     "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}: $lastEvent"
-                }
+                },
             )
         }
-
 
         // Recent Messages (what actually happened in conversation)
         appendLine("### Recent Conversation (What Actually Happened):")
