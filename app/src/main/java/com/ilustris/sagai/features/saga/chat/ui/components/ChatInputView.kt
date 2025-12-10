@@ -531,6 +531,7 @@ fun ChatInputView(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Bottom,
                     ) {
                         val textStyle =
                             MaterialTheme.typography.labelMedium.copy(

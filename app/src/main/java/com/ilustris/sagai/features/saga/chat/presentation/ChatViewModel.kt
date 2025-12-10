@@ -819,6 +819,7 @@ class ChatViewModel
                         sendMessage(
                             generatedMessage.copy(
                                 characterId = null,
+                                speakerName = speakerName,
                                 timelineId = timeline.data.id,
                                 id = 0,
                                 status = MessageStatus.OK,
@@ -978,8 +979,8 @@ class ChatViewModel
         }
 
         fun getSelectedMessages(): List<MessageContent> {
-        val saga = content.value ?: return emptyList()
-        val selectedIds = _selectionState.value.selectedMessageIds
-        return saga.flatMessages().filter { it.message.id in selectedIds }
-    }
+            val saga = content.value ?: return emptyList()
+            val selectedIds = _selectionState.value.selectedMessageIds
+            return saga.flatMessages().filter { it.message.id in selectedIds }
+        }
     }

@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidthIn
 import androidx.compose.foundation.layout.size
@@ -72,6 +73,7 @@ import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
@@ -174,8 +176,8 @@ fun CharacterDetailsContent(
                 listState,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (character.image.isNotEmpty()) {
-                    item {
+                item {
+                    if (character.image.isNotBlank()) {
                         val deepEffectAvailable = originalBitmap != null && segmentedBitmap != null
 
                         SharedTransitionLayout {
@@ -187,15 +189,23 @@ fun CharacterDetailsContent(
                                 Box(
                                     Modifier
                                         .fillMaxWidth()
-                                        .height(500.dp),
+                                        .height(350.dp),
                                 ) {
                                     if (it && deepEffectAvailable) {
                                         DepthLayout(
                                             originalImage = originalBitmap,
                                             segmentedImage = segmentedBitmap,
-                                            modifier = Modifier.fillMaxSize(),
+                                            modifier =
+                                                Modifier
+                                                    .fillMaxSize()
+                                                    .clipToBounds(),
                                             imageModifier = Modifier.effectForGenre(genre),
                                         ) {
+                                            Box(
+                                                Modifier
+                                                    .fillMaxSize()
+                                                    .background(fadedGradientTopAndBottom()),
+                                            )
                                             Text(
                                                 text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                                 textAlign = TextAlign.Center,
@@ -206,7 +216,7 @@ fun CharacterDetailsContent(
                                                             animatedVisibilityScope = this@AnimatedContent,
                                                         ).fillMaxWidth()
                                                         .reactiveShimmer(true)
-                                                        .padding(8.dp)
+                                                        .offset(y = 4f.unaryMinus().dp)
                                                         .align(Alignment.TopCenter),
                                                 style =
                                                     MaterialTheme.typography.displayMedium.copy(
@@ -229,15 +239,10 @@ fun CharacterDetailsContent(
                                             )
                                         }
 
-                                        Box(
-                                            Modifier
-                                                .fillMaxSize()
-                                                .background(fadedGradientTopAndBottom()),
-                                        )
-
                                         Column(
                                             modifier =
                                                 Modifier
+                                                    .background(fadeGradientBottom())
                                                     .align(Alignment.BottomCenter)
                                                     .padding(16.dp)
                                                     .fillMaxWidth(),
@@ -379,25 +384,22 @@ fun CharacterDetailsContent(
                                 }
                             }
                         }
-                    }
-                } else {
-                    item {
-                        Image(
-                            painterResource(R.drawable.ic_spark),
-                            null,
-                            Modifier
-                                .clickable {
-                                    viewModel.regenerate(
-                                        sagaContent,
-                                        character,
-                                    )
-                                }.padding(16.dp)
-                                .size(100.dp)
-                                .gradientFill(characterColor.gradientFade()),
-                        )
-                    }
-                    item {
+                    } else {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Image(
+                                painterResource(R.drawable.ic_spark),
+                                null,
+                                Modifier
+                                    .clickable {
+                                        viewModel.regenerate(
+                                            sagaContent,
+                                            character,
+                                        )
+                                    }.padding(16.dp)
+                                    .size(100.dp)
+                                    .gradientFill(characterColor.gradientFade()),
+                            )
+
                             Text(
                                 text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
                                 textAlign = TextAlign.Center,
@@ -414,36 +416,7 @@ fun CharacterDetailsContent(
                                             ),
                                     ),
                             )
-                            character.nicknames?.let {
-                                if (it.isNotEmpty()) {
-                                    Text(
-                                        text = "aka: ${it.joinToString(", ")}",
-                                        style =
-                                            MaterialTheme.typography.titleMedium.copy(
-                                                fontFamily = genre.bodyFont(),
-                                                color = characterColor.copy(alpha = 0.8f),
-                                                textAlign = TextAlign.Center,
-                                            ),
-                                    )
-                                }
-                            }
                         }
-                    }
-
-                    item {
-                        Text(
-                            character.profile.occupation,
-                            style =
-                                MaterialTheme.typography.titleSmall.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    color = characterColor,
-                                    textAlign = TextAlign.Center,
-                                ),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp),
-                        )
                     }
                 }
 

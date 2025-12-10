@@ -24,8 +24,10 @@ object ImagePrompts {
             appendLine()
             appendLine("COMPOSITION ENFORCEMENTS:")
             appendLine(
-                "- The artwork must fill the entire output canvas. Prefer zooming out (Medium Shot) to preserve subject integrity and background context for depth effects.",
+                "- The artwork must fill the entire output canvas. Apply a **Zoom Out (Medium Long Shot)** to anchor the subject in the bottom 2/3rds.",
             )
+            appendLine("- The top 1/3rd MUST be empty of main subject details (sky/background only).")
+            appendLine("- The composition must be **VERTICALLY BIASED** for lock-screen usage.")
             appendLine(
                 "- The output must be a flattened raster (e.g., PNG/JPEG with no alpha) representing final artwork; do not present layered, masked, or panelled compositions.",
             )
@@ -200,56 +202,29 @@ object ImagePrompts {
             appendLine("**--- CANVAS & COMPOSITION SPECIFICATIONS (STRICT) ---**")
             appendLine("1. **Aspect Ratio:** 9:16 (Vertical Portrait).")
             appendLine(
-                "2. **Vertical Breath:** The composition MUST feature significant negative space at the top (approx. 25-30% of the frame).",
+                "2. **VERTICAL NEGATIVE SPACE (NON-NEGOTIABLE):** The subject MUST be positioned heavily towards the BOTTOM of the frame to enable a 'Lock Screen Depth Effect'.",
             )
             appendLine(
-                "   • **Why?** This allows for a 'Magazine Cover' or 'Lock Screen' effect where the title text sits behind/above the subject.",
+                "   • **The Empty Top Third:** The top 35% of the canvas MUST be clear of the main subject. It should contain *only* background extended elements (sky, architecture, void).",
             )
             appendLine(
-                "   • **Execution:** Position the subject's eye-line lower in the frame. Ensure the head is fully visible but does not crowd the top edge.",
-            )
-            appendLine(
-                "3. **Framing:** Medium Shot / Waist-Up is preferred to allow for this vertical breathing room and to showcase the character's style.",
-            )
+                "   • **Subject Anchor:** Anchor the subject lower. If they are 'tall', zoom out further. Do NOT fill the top of the frame.")
             appendLine()
             appendLine("**--- THE SCENE ASSEMBLY ---**")
-            appendLine("**1. The Narrative Core (The 'spark'):**")
+            appendLine("**1. The Narrative Core:** Find the 'emotional center'. Let it drive the lighting, pose, and expression.")
+            appendLine("**2. Subject & Relations:** Focus on the internal state. For groups, show connection/tension, not just proximity.")
             appendLine(
-                "   • Analyze the provided context to find the 'emotional center'. Is there a conflict? A moment of triumph? A quiet reflection?",
-            )
-            appendLine("   • Let this emotional center drive the lighting, the pose, and the expression.")
-            appendLine()
-            appendLine("**2. Subject & Relations:**")
-            appendLine(
-                "   • **Solo Portraits (Default):** Focus intensely on the single character's internal state. Make them the undisputed star of the shot.",
-            )
-            appendLine(
-                "   • **Duo/Group Scenes (Only if explicitly requested):** If multiple characters are present *and* relevant, show the *connection* or *tension* between them. Do not just stand them side-by-side.",
-            )
-            appendLine()
-            appendLine("**3. Genre-World Integration:**")
-            appendLine("   • **This is NOT a studio background.** The character exists *in their world*.")
-            appendLine(
-                "   • **Atmosphere:** Use the background to tell a story. In a Crime noir, it's shadows and neon. In High Fantasy, it's magical glades or ancient stone.",
-            )
-            appendLine(
-                "   • **Depth:** Use Depth of Field (bokeh) to keep the focus on the character while suggesting specific, rich details in the background.",
-            )
+                "**3. Genre-World Integration:** The character exists *in their world*, not a studio. Use Depth of Field to suggest the world without distraction.")
             appendLine()
             appendLine(imageHighlight(genre))
             appendLine()
             appendLine("**--- FINAL OUTPUT EXECUTION ---**")
-            appendLine("Write a single, flowing, and descriptive prompt that a high-end AI model can interpret.")
-            appendLine("   • **Do NOT** use mechanical phrases like 'Injecting X...'. Just describe the image.")
+            appendLine("Write a single, flowing, and descriptive prompt.")
             appendLine(
-                "   • **Do NOT** explicitly mention 'Visual Reference Image'. Integrating its style is your job, not the prompter's.",
+                "   • **FORBIDDEN MECHANICS:** Do NOT use phrases like 'Injecting X...' or 'Visual Reference Image'. Just describe the visual result.",
             )
             appendLine(
-                "   • **Structure:** Start with the Composition/Framing, move to the Character/Subject, and finish with the Lighting/Environment/Mood.",
+                "   • **LANGUAGE:** Use evocative, painterly adjectives to describe textures and lighting (e.g., 'crimson silk catching neon light' instead of 'red shirt').",
             )
-            appendLine(
-                "   • **Language:** Use evocative, painterly adjectives. Instead of 'red shirt', try 'a crimson silk shirt catching the ambient neon light'.",
-            )
-            appendLine("   • **Constraint Check:** Verify: Is it 9:16? Is there space at the top? Is the character the focus?")
         }
 }

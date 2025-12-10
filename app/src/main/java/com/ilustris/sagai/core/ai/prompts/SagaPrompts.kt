@@ -161,17 +161,19 @@ object SagaPrompts {
             appendLine()
         }
 
-        appendLine("**COMPOSITION & SCENE DYNAMICS (Bring it to Life):**")
+        appendLine("**COMPOSITION & EMOTIONAL NARRATIVE (The Soul of the Image):**")
         appendLine(
-            "  • **Dynamic Subjects:** Avoid stiff, static posing. Whether it's one hero or a group, capture a moment of action, thought, or interaction.",
+            "  • **NO GENERIC STARES:** Avoid the default 'character looking at viewer with quiet intensity'. This is boring. Capture them **living** their story, not posing for a photo.",
         )
         appendLine(
-            "  • **Expressive Storytelling:** The expressions and body language should tell a story. What is the motivation? What is the conflict?",
+            "  • **RAW, SPECIFIC EMOTION:** Move beyond 'cool' or 'stoic'. Show us *tangible* feelings: The teeth-gritting rage of a betrayal, the hollow thousand-yard stare of grief, the manic laughter of a victory, or the trembling fear of the unknown.",
         )
         appendLine(
-            "  • **Environmental Context:** The background (defined by the Genre/Visual Direction) is not just a backdrop; it's part of the narrative. It should whisper details about the world.",
+            "  • **NARRATIVE BODY LANGUAGE:** The pose must scream the character's intent. A slumped shoulder weighs a heavy burden; a coiled stance signals immediate violence; a loose, sprawling sit projects arrogance. Make the body talk.",
         )
-        appendLine()
+        appendLine(
+            "  • **THE UNGUARDED MOMENT:** Capture the character *in media res* (in the middle of action/thought). They shouldn't look like they know the camera is there. They should look like they are busy surviving, loving, or fighting in their world.",
+        )
 
         appendLine("**ART STYLE (The Medium):**")
         appendLine(GenrePrompts.artStyle(genre))
@@ -182,7 +184,10 @@ object SagaPrompts {
         appendLine(
             "  1. **VALIDATE IDENTITY:** Ensure your description STRICTLY matches the physical attributes (race, gender, age, features) in the Brief.",
         )
-        appendLine("  2. **CRAFT THE ART:** Write a single, rich, and evocative text description.")
+        appendLine(
+            "  2. **MANDATORY LAYOUT PHRASE:** The final output MUST explicitly describe the layout: 'Vertical Medium-Long Shot anchored at the bottom, leaving the top third open and empty.'",
+        )
+        appendLine("  3. **CRAFT THE ART:** Write a single, rich, and evocative text description.")
         appendLine("  • Focus on the *visual impact* and *emotional resonance* of the image.")
         appendLine("  • Describe the lighting, texture, and atmosphere like a painter describing their canvas.")
         appendLine("  • Ensure the subject(s) look like a cohesive part of this artistic world.")
