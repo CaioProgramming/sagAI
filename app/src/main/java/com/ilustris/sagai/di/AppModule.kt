@@ -30,6 +30,7 @@ import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.FirebaseInstallationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
@@ -225,13 +226,19 @@ object AppModule {
     @Singleton
     fun provideBillingService(
         @ApplicationContext context: Context,
-    ): BillingService = BillingService(context)
+        remoteConfigService: RemoteConfigService,
+        firebaseInstallationService: FirebaseInstallationService,
+    ): BillingService = BillingService(context, remoteConfigService, firebaseInstallationService)
 
     @Provides
     @Singleton
     fun provideDataStorePreferences(
         @ApplicationContext context: Context,
     ): DataStorePreferences = DataStorePreferencesImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideFirebaseInstallationService(): FirebaseInstallationService = FirebaseInstallationService()
 }
 
 @InstallIn(ViewModelComponent::class)

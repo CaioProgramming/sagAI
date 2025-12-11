@@ -77,7 +77,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
-import com.ilustris.sagai.core.services.BillingState
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -161,16 +161,16 @@ fun HomeView(
                 },
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    val isPremium = billingState is BillingService.BillingState.SignatureEnabled
                     ChatList(
                         sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
                         padding = padding,
                         showDebugButton = showDebugButton,
                         dynamicNewSagaTexts = dynamicNewSagaTexts,
                         isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-                        isPremium = billingState is BillingState.SignatureEnabled,
+                        isPremium = isPremium,
                         loadingStoryId = loadingStoryId,
                         onCreateNewChat = {
-                            val isPremium = billingState == BillingState.SignatureEnabled
                             val freeSagasCount = sagas.count { it.data.isEnded.not() }
                             if (freeSagasCount <= 3 || isPremium) {
                                 navController.navigateToRoute(Routes.NEW_SAGA)
@@ -310,7 +310,8 @@ private fun ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }.wrapContentWidth()
+                                    }
+                                    .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             titleStyle =
                                 MaterialTheme.typography.titleLarge,
@@ -342,7 +343,8 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),

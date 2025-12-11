@@ -223,7 +223,7 @@ fun ChatView(
     val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
     val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
     var showCharacter by remember {
-        mutableStateOf<CharacterContent?>(null)
+        mutableStateOf<Int?>(null)
     }
     val newCharacterReveal by viewModel.newCharacterReveal.collectAsStateWithLifecycle()
     val selectionState by viewModel.selectionState.collectAsStateWithLifecycle()
@@ -380,7 +380,7 @@ fun ChatView(
                                                 viewModel.sendFakeUserMessages(count)
                                             },
                                             selectCharacter = {
-                                                showCharacter = it
+                                                showCharacter = it.data.id
                                             },
                                             updateCharacter = viewModel::updateCharacter,
                                             messageEffectsEnabled = messageEffectsEnabled,
@@ -438,8 +438,7 @@ fun ChatView(
                 is SnackAction.OpenDetails -> {
                     when (val data = it.data) {
                         is Character -> {
-                            showCharacter =
-                                content?.findCharacter(data.id)
+                            showCharacter = content?.findCharacter(it.data.id)?.data?.id
                         }
 
                         is Wiki -> {
@@ -475,24 +474,25 @@ fun ChatView(
         }
 
         content?.let {
-            showCharacter?.let { character ->
+            showCharacter?.let { id ->
                 val bottomSheetState = rememberModalBottomSheetState()
-
-                ModalBottomSheet(
-                    onDismissRequest = { showCharacter = null },
-                    sheetState = bottomSheetState,
-                    containerColor = MaterialTheme.colorScheme.background,
-                    dragHandle = {
-                        Box {}
-                    },
-                ) {
-                    CharacterDetailsContent(
-                        it,
-                        character,
-                        openEvent = {
-                            navigateToSaga()
+                it.findCharacter(id)?.let { requestedCharacter ->
+                    ModalBottomSheet(
+                        onDismissRequest = { showCharacter = null },
+                        sheetState = bottomSheetState,
+                        containerColor = MaterialTheme.colorScheme.background,
+                        dragHandle = {
+                            Box {}
                         },
-                    )
+                    ) {
+                        CharacterDetailsContent(
+                            it,
+                            requestedCharacter,
+                            openEvent = {
+                                navigateToSaga()
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -678,7 +678,8 @@ fun ChatContent(
                                 shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
                                 targetValue = 1000f,
-                            ).fillMaxSize(.5f)
+                            )
+                            .fillMaxSize(.5f)
                             .alpha(.3f),
                 )
 
@@ -686,7 +687,8 @@ fun ChatContent(
                     Modifier
                         .padding(
                             top = padding.calculateTopPadding(),
-                        ).fillMaxSize(),
+                        )
+                        .fillMaxSize(),
                 ) {
                     rememberCoroutineScope()
                     val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
@@ -737,7 +739,8 @@ fun ChatContent(
                                 bottom.linkTo(parent.bottom)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }.fillMaxWidth()
+                            }
+                            .fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
                     )
@@ -751,8 +754,7 @@ fun ChatContent(
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                     width = Dimension.fillToConstraints
-                                }
-                                .padding(vertical = padding.calculateBottomPadding())
+                                }.padding(vertical = padding.calculateBottomPadding())
                                 .animateContentSize(),
                         enter = slideInVertically(),
                         exit = slideOutVertically { it },
@@ -787,7 +789,8 @@ fun ChatContent(
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                     width = Dimension.fillToConstraints
-                                }.padding(
+                                }
+                                .padding(
                                     bottom = padding.calculateBottomPadding() + 16.dp,
                                     start = 16.dp,
                                     end = 16.dp,
@@ -877,8 +880,7 @@ fun ChatContent(
                                     top.linkTo(parent.top)
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
-                                }
-                                .background(MaterialTheme.colorScheme.background),
+                                }.background(MaterialTheme.colorScheme.background),
                     ) {
                         AnimatedVisibility(
                             objectiveExpanded.not(),
@@ -919,8 +921,7 @@ fun ChatContent(
                                         .clip(CircleShape)
                                         .clickable(enabled = currentObjective?.isNotEmpty() == true) {
                                             objectiveExpanded = true
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(
                                             progressiveBrush(
                                                 content.data.genre.color,
@@ -1514,8 +1515,7 @@ fun ChatList(
                                                                 key = "timeline_${timeline.data.id}",
                                                             ),
                                                             this,
-                                                        )
-                                                        .padding(16.dp)
+                                                        ).padding(16.dp)
                                                         .clip(
                                                             genre.shape(),
                                                         )

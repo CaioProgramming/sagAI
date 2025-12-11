@@ -85,7 +85,7 @@ class CharacterUseCaseImpl
             character: Character,
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
-            executeRequest(false) {
+            executeRequest(true) {
                 // TODO REMOVE FORCED PREMIUM
                 val isPremium = true // billingService.isPremium()
 

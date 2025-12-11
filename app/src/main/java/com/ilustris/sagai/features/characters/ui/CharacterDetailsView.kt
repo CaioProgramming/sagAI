@@ -189,7 +189,7 @@ fun CharacterDetailsContent(
                                 Box(
                                     Modifier
                                         .fillMaxWidth()
-                                        .height(350.dp),
+                                        .height(400.dp),
                                 ) {
                                     if (it && deepEffectAvailable) {
                                         DepthLayout(

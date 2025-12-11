@@ -57,7 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.services.BillingState
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.ui.components.GenreCard
@@ -82,10 +82,11 @@ fun PremiumView(
     var currentIndex by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val billingState by premiumViewModel.billingState.collectAsState()
     val activity = LocalActivity.current
-    val productDetails = (billingState as? BillingState.SignatureDisabled)?.products?.firstOrNull()
+    val productDetails =
+        (billingState as? BillingService.BillingState.SignatureDisabled)?.products?.firstOrNull()
     val offerToken =
         productDetails?.subscriptionOfferDetails?.firstOrNull()?.offerToken ?: emptyString()
-    val isPremium = billingState is BillingState.SignatureEnabled
+    val isPremium = billingState is BillingService.BillingState.SignatureEnabled
 
     val gridItems =
         remember(genres) {
@@ -325,7 +326,8 @@ fun PremiumCard(
                 .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     RoundedCornerShape(10.dp),
-                ).padding(16.dp),
+                )
+                .padding(16.dp),
     ) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -340,7 +342,8 @@ fun PremiumCard(
                         .background(
                             Brush.verticalGradient(holographicGradient, endY = 150f),
                             RoundedCornerShape(5.dp),
-                        ).clip(RoundedCornerShape(10.dp))
+                        )
+                        .clip(RoundedCornerShape(10.dp))
                         .size(24.dp)
                         .padding(4.dp),
             )
