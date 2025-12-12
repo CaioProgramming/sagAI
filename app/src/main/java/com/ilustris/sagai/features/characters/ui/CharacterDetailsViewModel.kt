@@ -29,15 +29,15 @@ class CharacterDetailsViewModel
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
     ) : ViewModel() {
-    val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
+        val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         val saga = MutableStateFlow<SagaContent?>(null)
         val character = MutableStateFlow<CharacterContent?>(null)
         val messageCount = MutableStateFlow(0)
         val isGenerating = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
 
-    val originalBitmap = MutableStateFlow<Bitmap?>(null)
-    val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
+        val originalBitmap = MutableStateFlow<Bitmap?>(null)
+        val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
         fun loadSagaAndCharacter(
             sagaId: String?,
@@ -59,11 +59,6 @@ class CharacterDetailsViewModel
             sagaContent: SagaContent,
             selectedCharacter: Character,
         ) {
-            Log.i(javaClass.simpleName, "regenerate: Regenerating character icon")
-            // TODO UNCOMMENT THIS SECTION TO AVOID UNECESSARY IMAGE GENERATION
-            /*if (selectedCharacter.image.isNotEmpty() && selectedCharacter.emojified && billingService.isPremium().not()) {
-                return
-            }*/
             isGenerating.value = true
             loadingMessage.value = "Gerando ${selectedCharacter.name}..."
             viewModelScope.launch(Dispatchers.IO) {
@@ -76,24 +71,25 @@ class CharacterDetailsViewModel
             }
         }
 
-
-    fun segmentCharacterImage(url: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val cachedBitmap = segmentedImageCache.get(url)
-            if (cachedBitmap != null) {
-                segmentedBitmap.emit(cachedBitmap)
-                return@launch
-            }
-            imageSegmentationHelper.processImage(url).onSuccessAsync {
-                segmentedBitmap.emit(it.second)
-                originalBitmap.emit(it.first)
-            }.onFailure {
-                Log.e(
-                    javaClass.simpleName,
-                    "segmentCharacterImage: Failed to segmentate image ",
-                    it
-                )
-            }
+        fun segmentCharacterImage(url: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val cachedBitmap = segmentedImageCache.get(url)
+                if (cachedBitmap != null) {
+                    segmentedBitmap.emit(cachedBitmap)
+                    return@launch
+                }
+                imageSegmentationHelper
+                    .processImage(url)
+                    .onSuccessAsync {
+                        segmentedBitmap.emit(it.second)
+                        originalBitmap.emit(it.first)
+                    }.onFailure {
+                        Log.e(
+                            javaClass.simpleName,
+                            "segmentCharacterImage: Failed to segmentate image ",
+                            it,
+                    )
+                }
         }
     }
     }

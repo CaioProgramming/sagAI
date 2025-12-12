@@ -96,6 +96,17 @@ own dedicated folder containing detailed tasks and implementation plans.
   `StoryDailyBriefing` model. Generation triggered on-demand when user opens the story to avoid rate
   limits and unnecessary API calls.
 
+### 11. Global Notification System 🔔
+
+* **Status**: Planning
+* **Folder**: `global_notifications/`
+* **Plan**: `global_notifications/plan.md`
+* **Description**: Enhance the existing notification system to provide comprehensive updates for all
+  major saga events when the app is in the background. Extends beyond just new messages to include
+  new chapters, acts, characters, timeline events, and other significant story progressions.
+  Creates a more engaging user experience by keeping players informed of story developments even
+  when not actively using the app.
+
 ---
 
 ## Usage

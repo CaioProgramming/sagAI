@@ -96,7 +96,7 @@ fun Genre.shaderParams(
             bloomRadius = 1.3f,
             softFocusRadius = focusRadius ?: .2f,
             saturation = .5f,
-            contrast = 1.8f,
+            contrast = 1.5f,
             brightness = -.02f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
@@ -130,7 +130,7 @@ fun Genre.shaderParams(
 
     Genre.HEROES -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .2f,
+            grainIntensity = customGrain ?: .1f,
             bloomThreshold = 0f,
             bloomIntensity = 0f,
             bloomRadius = 0f,
@@ -150,8 +150,10 @@ fun Genre.shaderParams(
 
     Genre.CRIME -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .14f,
-            softFocusRadius = focusRadius ?: .12f,
+            grainIntensity = customGrain ?: .15f,
+            softFocusRadius = focusRadius ?: .2f,
+            bloomRadius = 3f,
+            bloomIntensity = .2f,
             saturation = .7f,
             contrast = 1.5f,
             brightness = .02f.unaryMinus(),
@@ -193,7 +195,7 @@ fun Genre.shaderParams(
             bloomRadius = .1f,
             softFocusRadius = focusRadius ?: .1f,
             saturation = .6f,
-            contrast = 1.3f,
+            contrast = 1.4f,
             brightness = .15f.unaryMinus(),
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
@@ -207,15 +209,15 @@ fun Genre.shaderParams(
 
     Genre.COWBOY -> {
         ShaderParams(
-            grainIntensity = customGrain ?: 0.3f,
+            grainIntensity = customGrain ?: .2f,
             contrast = 1.4f,
-            colorTemperature = 0.2f,
-            vignetteStrength = 0.4f,
+            colorTemperature = .2f,
+            vignetteStrength = .3f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,
-            saturation = 0.8f,
-            brightness = -0.05f,
+            saturation = 0.7f,
+            brightness = -.03f,
             softFocusRadius = focusRadius ?: 0.1f,
             vignetteSoftness = 0.8f,
         )
@@ -285,7 +287,8 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

@@ -2,7 +2,6 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -55,12 +54,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.translationMatrix
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -72,7 +69,6 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
-import com.ilustris.sagai.features.saga.detail.ui.SimpleSlider
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -153,6 +149,7 @@ fun CharacterDetailsContent(
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
     var shareCharacter by remember { mutableStateOf(false) }
     var currentCharacter by remember { mutableStateOf<CharacterContent?>(null) }
+    val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
 
     LaunchedEffect(characterContent) {
         delay(1.seconds)
@@ -190,7 +187,7 @@ fun CharacterDetailsContent(
 
     StarryLoader(
         isGenerating,
-        null,
+        loadingMessage = loadingMessage,
         textStyle =
             MaterialTheme.typography.headlineMedium.copy(
                 genre.color,
@@ -223,11 +220,10 @@ private fun CharacterDetailsLoaded(
     sagaContent: SagaContent,
     characterContent: CharacterContent,
     openEvent: (Timeline?) -> Unit = {},
-    viewModel: CharacterDetailsViewModel = hiltViewModel(),
+    viewModel: CharacterDetailsViewModel,
     onShareCharacter: () -> Unit = {},
 ) {
     val genre = sagaContent.data.genre
-
     val listState = rememberLazyListState()
     val timelineEvents = remember { sagaContent.flatEvents().map { it.data } }
     val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
@@ -237,13 +233,14 @@ private fun CharacterDetailsLoaded(
     val segmentedBitmap = viewModel.segmentedBitmap.collectAsStateWithLifecycle().value
 
     val smartZoom = characterContent.data.smartZoom
+    val needsZoom = smartZoom?.needsZoom ?: false
 
     var titleAlpha by remember {
-        mutableFloatStateOf(0f)
+        mutableFloatStateOf(if (needsZoom) 0f else 1f)
     }
 
     var scale by remember {
-        mutableFloatStateOf(smartZoom?.scale ?: 0f)
+        mutableFloatStateOf(smartZoom?.scale ?: 1f)
     }
 
     var imageTranslationX by remember {
@@ -256,15 +253,15 @@ private fun CharacterDetailsLoaded(
 
     val animatedScale by animateFloatAsState(
         targetValue = scale,
-        animationSpec = tween(durationMillis = 2500),
+        animationSpec = tween(durationMillis = 2500, easing = EaseIn),
     )
     val animatedTranslationX by animateFloatAsState(
         targetValue = imageTranslationX,
-        animationSpec = tween(durationMillis = 3000),
+        animationSpec = tween(durationMillis = 1000 * 3, easing = FastOutSlowInEasing),
     )
     val animatedTranslationY by animateFloatAsState(
         targetValue = imageTranslationY,
-        animationSpec = tween(durationMillis = 1000 * 3),
+        animationSpec = tween(durationMillis = 1000 * 3, easing = FastOutSlowInEasing),
     )
 
     val titleAnimation by animateFloatAsState(
@@ -273,6 +270,13 @@ private fun CharacterDetailsLoaded(
     )
 
     LaunchedEffect(characterContent) {
+        if (needsZoom.not()) {
+            titleAlpha = 1f
+            scale = 1f
+            imageTranslationX = 0f
+            imageTranslationY = 0f
+            return@LaunchedEffect
+        }
         titleAlpha = 0f
         delay(2.seconds)
         scale = 1f
@@ -540,8 +544,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )

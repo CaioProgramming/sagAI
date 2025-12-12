@@ -91,6 +91,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -117,6 +118,7 @@ import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -350,6 +352,12 @@ fun LazyListScope.SagaDrawerContent(
 ) {
     with(this) {
         item {
+            val brush =
+                content.data.genre.gradient(
+                    content.data.review != null,
+                    targetValue = 200f,
+                    duration = 1.seconds,
+                )
             Column(Modifier.fillMaxWidth()) {
                 Icon(
                     painterResource(R.drawable.ic_spark),
@@ -358,6 +366,7 @@ fun LazyListScope.SagaDrawerContent(
                     modifier =
                         Modifier
                             .clip(CircleShape)
+                            .gradientFill(brush)
                             .padding(4.dp)
                             .size(50.dp)
                             .align(Alignment.CenterHorizontally)
@@ -392,8 +401,7 @@ fun LazyListScope.SagaDrawerContent(
                     ).background(
                         MaterialTheme.colorScheme.background,
                         shape,
-                    )
-                    .padding(4.dp)
+                    ).padding(4.dp)
                     .animateContentSize(
                         animationSpec = tween(500, easing = EaseIn),
                     ),
@@ -407,7 +415,7 @@ fun LazyListScope.SagaDrawerContent(
                     },
                     style =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = content.data.genre.bodyFont(),
+                            fontFamily = content.data.genre.headerFont(),
                             fontWeight = FontWeight.Bold,
                             brush = brush,
                         ),
@@ -431,11 +439,15 @@ fun LazyListScope.SagaDrawerContent(
                                     .clickable {
                                         expandedEvents = !expandedEvents
                                     }.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                null,
-                                Modifier.size(24.dp),
+                            Text(
+                                content.chapterNumber(chapter.data).toRoman(),
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        fontStyle = FontStyle.Italic,
+                                    ),
                             )
                             Text(
                                 stringResource(
@@ -476,7 +488,7 @@ fun LazyListScope.SagaDrawerContent(
                                 stringResource(id = R.string.events_count, eventsInChapter.size, UpdateRules.CHAPTER_UPDATE_LIMIT),
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
-                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                        fontStyle = FontStyle.Italic,
                                         fontFamily = content.data.genre.bodyFont(),
                                         textAlign = TextAlign.Center,
                                     ),
@@ -510,7 +522,7 @@ fun LazyListScope.SagaDrawerContent(
                                     ),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
-                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                            fontStyle = FontStyle.Italic,
                                             fontFamily = content.data.genre.bodyFont(),
                                             textAlign = TextAlign.Center,
                                         ),
@@ -983,9 +995,10 @@ private fun SagaDetailInitialView(
                                                     saga.data.genre.stylisedText(
                                                         saga.data.title,
                                                         modifier =
-                                                            currentModifier.reactiveShimmer(
-                                                                true,
-                                                            ),
+                                                            currentModifier
+                                                                .reactiveShimmer(
+                                                                    true,
+                                                                ).padding(4.dp),
                                                         fontSize = MaterialTheme.typography.displaySmall.fontSize,
                                                     )
                                                 }
@@ -1060,8 +1073,7 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     ),
@@ -1289,8 +1301,7 @@ private fun SagaDetailInitialView(
                                                                 )!!,
                                                         ),
                                                         animatedVisibilityScope = animationScopes.second,
-                                                    )
-                                                    .padding(8.dp)
+                                                    ).padding(8.dp)
                                                     .weight(1f),
                                         )
 
@@ -1409,8 +1420,7 @@ private fun SagaDetailInitialView(
                                                                     )!!,
                                                             ),
                                                             animatedVisibilityScope = animationScopes.second,
-                                                        )
-                                                        .padding(8.dp)
+                                                        ).padding(8.dp)
                                                         .weight(1f),
                                             )
 
@@ -1451,8 +1461,7 @@ private fun SagaDetailInitialView(
                                                             selectSection(
                                                                 DetailAction.TIMELINE,
                                                             )
-                                                        }
-                                                        .fillMaxWidth()
+                                                        }.fillMaxWidth()
                                                         .wrapContentHeight(),
                                             )
                                         } ?: run {
@@ -1490,8 +1499,7 @@ private fun SagaDetailInitialView(
                                                                     )!!,
                                                             ),
                                                             animatedVisibilityScope = animationScopes.second,
-                                                        )
-                                                        .padding(8.dp)
+                                                        ).padding(8.dp)
                                                         .weight(1f),
                                             )
 
@@ -1559,8 +1567,7 @@ private fun SagaDetailInitialView(
                                                                 )!!,
                                                         ),
                                                         animatedVisibilityScope = animationScopes.second,
-                                                    )
-                                                    .padding(8.dp)
+                                                    ).padding(8.dp)
                                                     .weight(1f),
                                         )
 
@@ -1598,8 +1605,7 @@ private fun SagaDetailInitialView(
                                                         selectSection(
                                                             DetailAction.CHAPTERS,
                                                         )
-                                                    }
-                                                    .size(250.dp)
+                                                    }.size(250.dp)
                                                     .padding(8.dp),
                                             )
                                         }
@@ -1615,8 +1621,7 @@ private fun SagaDetailInitialView(
                                         Modifier
                                             .clickable {
                                                 selectSection(DetailAction.ACTS)
-                                            }
-                                            .height(200.dp)
+                                            }.height(200.dp)
                                             .fillMaxWidth()
                                             .reactiveShimmer(
                                                 true,
@@ -1667,17 +1672,14 @@ private fun SagaDetailInitialView(
                                             .padding(16.dp)
                                             .clip(
                                                 genre.shape(),
-                                            )
-                                            .border(
+                                            ).border(
                                                 1.dp,
                                                 MaterialTheme.colorScheme.onBackground.gradientFade(),
                                                 genre.shape(),
-                                            )
-                                            .background(
+                                            ).background(
                                                 MaterialTheme.colorScheme.surfaceContainer,
                                                 genre.shape(),
-                                            )
-                                            .fillMaxWidth()
+                                            ).fillMaxWidth()
                                             .height(200.dp)
                                             .clickable {
                                                 openEmotionalReview()
@@ -1704,8 +1706,7 @@ private fun SagaDetailInitialView(
                                                     .align(Alignment.BottomCenter)
                                                     .background(
                                                         fadeGradientBottom(),
-                                                    )
-                                                    .fillMaxWidth()
+                                                    ).fillMaxWidth()
                                                     .padding(horizontal = 16.dp, vertical = 24.dp),
                                         ) {
                                             Text(
@@ -1803,8 +1804,7 @@ private fun SagaDetailInitialView(
                                             Modifier
                                                 .clickable {
                                                     openDrawer()
-                                                }
-                                                .padding(horizontal = 8.dp)
+                                                }.padding(horizontal = 8.dp)
                                                 .size(24.dp),
                                     )
                                 },
