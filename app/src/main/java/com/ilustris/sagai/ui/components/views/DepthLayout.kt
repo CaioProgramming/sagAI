@@ -1,6 +1,14 @@
 package com.ilustris.sagai.ui.components.views
 
 import android.graphics.Bitmap
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.animation.with
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -18,21 +26,41 @@ fun DepthLayout(
     imageModifier: Modifier = Modifier,
     backgroundImageModifier: Modifier = imageModifier,
     foregroundImageModifier: Modifier = imageModifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(modifier = modifier) {
-        Image(
-            bitmap = originalImage.asImageBitmap(),
-            contentDescription = null,
-            modifier = backgroundImageModifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
+        AnimatedContent(originalImage, transitionSpec = {
+            fadeIn(tween(500, easing = EaseIn)) togetherWith
+                fadeOut(
+                    tween(
+                        250,
+                        easing = FastOutSlowInEasing,
+                    ),
+                )
+        }) {
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = null,
+                modifier = backgroundImageModifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
         content()
-        Image(
-            bitmap = segmentedImage.asImageBitmap(),
-            contentDescription = null,
-            modifier = foregroundImageModifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
+        AnimatedContent(segmentedImage, transitionSpec = {
+            fadeIn(tween(500, easing = EaseIn)) togetherWith
+                fadeOut(
+                    tween(
+                        250,
+                        easing = FastOutSlowInEasing,
+                    ),
+                )
+        }) {
+            Image(
+                bitmap = it.asImageBitmap(),
+                contentDescription = null,
+                modifier = foregroundImageModifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        }
     }
 }

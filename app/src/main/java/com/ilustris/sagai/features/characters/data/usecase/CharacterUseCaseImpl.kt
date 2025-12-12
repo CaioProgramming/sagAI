@@ -18,6 +18,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.file.ImageCropHelper
+import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -61,6 +62,7 @@ class CharacterUseCaseImpl
         private val imageCropHelper: ImageCropHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
         private val billingService: BillingService,
+        private val imageSegmentationHelper: ImageSegmentationHelper,
         @ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
@@ -307,4 +309,41 @@ class CharacterUseCaseImpl
                     e.printStackTrace()
                 }
             }
+
+        override suspend fun checkAndGenerateZoom(character: Character) {
+            if (character.smartZoom?.needsZoom == true) {
+                Log.d(
+                    javaClass.simpleName,
+                    "checkAndGenerateZoom: Character already has smart zoom data, skipping.",
+                )
+                return
+            }
+            if (character.image.isEmpty()) {
+                Log.d(
+                    javaClass.simpleName,
+                    "checkAndGenerateZoom: Character has no image, skipping zoom generation.",
+                )
+                return
+            }
+
+            Log.d(
+                javaClass.simpleName,
+                "checkAndGenerateZoom: Generating smart zoom for character ${character.name}...",
+            )
+            imageSegmentationHelper
+                .calculateSmartZoom(character.image)
+                .onSuccessAsync {
+                    val updatedCharacter = character.copy(smartZoom = it)
+                    repository.updateCharacter(updatedCharacter)
+                    Log.d(
+                        javaClass.simpleName,
+                        "checkAndGenerateZoom: Successfully updated smart zoom for character ${character.name}.",
+                    )
+                }.onFailureAsync {
+                    Log.e(
+                        javaClass.simpleName,
+                        "checkAndGenerateZoom: Error generating smart zoom for character ${character.name}: ${it.message}",
+                )
+            }
+    }
     }

@@ -3,6 +3,8 @@ package com.ilustris.sagai.features.characters.ui
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -33,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,16 +47,20 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.translationMatrix
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -65,6 +72,7 @@ import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
+import com.ilustris.sagai.features.saga.detail.ui.SimpleSlider
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.data.model.Timeline
@@ -75,6 +83,7 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
+import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -84,6 +93,7 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import effectForGenre
+import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.seconds
 
 @OptIn(ExperimentalAnimationApi::class)
@@ -113,12 +123,10 @@ fun CharacterDetailsView(
 
     AnimatedContent(saga) {
         if (it != null) {
-            character?.let { char ->
-                CharacterDetailsContent(
-                    it,
-                    char,
-                )
-            }
+            CharacterDetailsContent(
+                it,
+                character,
+            )
         } else {
             SparkIcon(
                 brush = gradientAnimation(holographicGradient),
@@ -136,21 +144,143 @@ fun CharacterDetailsView(
 @Composable
 fun CharacterDetailsContent(
     sagaContent: SagaContent,
-    characterContent: CharacterContent,
+    characterContent: CharacterContent?,
     openEvent: (Timeline?) -> Unit = {},
     viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
     val genre = sagaContent.data.genre
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
+    var shareCharacter by remember { mutableStateOf(false) }
+    var currentCharacter by remember { mutableStateOf<CharacterContent?>(null) }
+
+    LaunchedEffect(characterContent) {
+        delay(1.seconds)
+        currentCharacter = characterContent
+    }
+
+    AnimatedContent(
+        targetState = currentCharacter,
+        transitionSpec = {
+            fadeIn(tween(300)) togetherWith fadeOut(tween(200))
+        },
+    ) { character ->
+        if (character != null) {
+            CharacterDetailsLoaded(
+                sagaContent = sagaContent,
+                characterContent = character,
+                openEvent = openEvent,
+                viewModel = viewModel,
+                onShareCharacter = { shareCharacter = true },
+            )
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                SparkIcon(
+                    brush = sagaContent.data.genre.gradient(true),
+                    duration = 1.seconds,
+                    modifier = Modifier.size(50.dp),
+                    blurRadius = 0.dp,
+                )
+            }
+        }
+    }
+
+    StarryLoader(
+        isGenerating,
+        null,
+        textStyle =
+            MaterialTheme.typography.headlineMedium.copy(
+                genre.color,
+                fontFamily = genre.bodyFont(),
+            ),
+        brushColors = genre.colorPalette(),
+    )
+
+    // State for ShareSheet - moved to parent scope
+
+    // Reset share state when character changes to prevent stale state
+    LaunchedEffect(characterContent?.data?.id) {
+        shareCharacter = false
+    }
+
+    // ShareSheet - only show if we have a character
+    if (shareCharacter && characterContent != null) {
+        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, characterContent, onDismiss = {
+            shareCharacter = false
+        })
+    }
+}
+
+@OptIn(
+    ExperimentalAnimationApi::class,
+    androidx.compose.animation.ExperimentalSharedTransitionApi::class,
+)
+@Composable
+private fun CharacterDetailsLoaded(
+    sagaContent: SagaContent,
+    characterContent: CharacterContent,
+    openEvent: (Timeline?) -> Unit = {},
+    viewModel: CharacterDetailsViewModel = hiltViewModel(),
+    onShareCharacter: () -> Unit = {},
+) {
+    val genre = sagaContent.data.genre
+
     val listState = rememberLazyListState()
     val timelineEvents = remember { sagaContent.flatEvents().map { it.data } }
-    var shareCharacter by remember { mutableStateOf(false) }
     val characterEvents = remember { characterContent.sortEventsByTimeline(timelineEvents) }
     val characterRelations = remember { characterContent.sortRelationsByTimeline(timelineEvents) }
 
     val originalBitmap = viewModel.originalBitmap.collectAsStateWithLifecycle().value
     val segmentedBitmap = viewModel.segmentedBitmap.collectAsStateWithLifecycle().value
+
+    val smartZoom = characterContent.data.smartZoom
+
+    var titleAlpha by remember {
+        mutableFloatStateOf(0f)
+    }
+
+    var scale by remember {
+        mutableFloatStateOf(smartZoom?.scale ?: 0f)
+    }
+
+    var imageTranslationX by remember {
+        mutableFloatStateOf(smartZoom?.translationX ?: 0f)
+    }
+
+    var imageTranslationY by remember {
+        mutableFloatStateOf((smartZoom?.translationY ?: 0f) * 1000f + 200f)
+    }
+
+    val animatedScale by animateFloatAsState(
+        targetValue = scale,
+        animationSpec = tween(durationMillis = 2500),
+    )
+    val animatedTranslationX by animateFloatAsState(
+        targetValue = imageTranslationX,
+        animationSpec = tween(durationMillis = 3000),
+    )
+    val animatedTranslationY by animateFloatAsState(
+        targetValue = imageTranslationY,
+        animationSpec = tween(durationMillis = 1000 * 3),
+    )
+
+    val titleAnimation by animateFloatAsState(
+        targetValue = titleAlpha,
+        animationSpec = tween(durationMillis = 1500),
+    )
+
+    LaunchedEffect(characterContent) {
+        titleAlpha = 0f
+        delay(2.seconds)
+        scale = 1f
+        imageTranslationX = 0f
+        imageTranslationY = 0f
+        delay(1.seconds)
+        titleAlpha = 1f
+    }
 
     LaunchedEffect(characterContent) {
         characterContent.data.image.let {
@@ -180,204 +310,219 @@ fun CharacterDetailsContent(
                     if (character.image.isNotBlank()) {
                         val deepEffectAvailable = originalBitmap != null && segmentedBitmap != null
 
-                        SharedTransitionLayout {
-                            AnimatedContent(
-                                deepEffectAvailable,
-                                transitionSpec = { fadeIn(tween(700)) togetherWith fadeOut(tween(200)) },
-                            )
-                            {
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .height(400.dp),
-                                ) {
-                                    if (it && deepEffectAvailable) {
-                                        DepthLayout(
-                                            originalImage = originalBitmap,
-                                            segmentedImage = segmentedBitmap,
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxSize()
-                                                    .clipToBounds(),
-                                            imageModifier = Modifier.effectForGenre(genre),
-                                        ) {
-                                            Box(
-                                                Modifier
-                                                    .fillMaxSize()
-                                                    .background(fadedGradientTopAndBottom()),
-                                            )
-                                            Text(
-                                                text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
-                                                textAlign = TextAlign.Center,
-                                                modifier =
-                                                    Modifier
-                                                        .sharedElement(
-                                                            rememberSharedContentState(key = "${character.name}-title"),
-                                                            animatedVisibilityScope = this@AnimatedContent,
-                                                        ).fillMaxWidth()
-                                                        .reactiveShimmer(true)
-                                                        .offset(y = 4f.unaryMinus().dp)
-                                                        .align(Alignment.TopCenter),
-                                                style =
-                                                    MaterialTheme.typography.displayMedium.copy(
-                                                        fontFamily = genre.headerFont(),
-                                                        textAlign = TextAlign.Center,
-                                                        brush =
-                                                            Brush.verticalGradient(
-                                                                listOf(
-                                                                    genre.color,
-                                                                    characterColor,
-                                                                    genre.iconColor,
-                                                                ),
-                                                            ),
-                                                        shadow =
-                                                            Shadow(
-                                                                genre.color,
-                                                                blurRadius = 15f,
-                                                            ),
-                                                    ),
-                                            )
-                                        }
-
-                                        Column(
-                                            modifier =
-                                                Modifier
-                                                    .background(fadeGradientBottom())
-                                                    .align(Alignment.BottomCenter)
-                                                    .padding(16.dp)
-                                                    .fillMaxWidth(),
-                                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                        ) {
-                                            Image(
-                                                painterResource(R.drawable.ic_spark),
-                                                stringResource(id = R.string.share_character_cd),
-                                                modifier =
-                                                    Modifier
-                                                        .size(24.dp)
-                                                        .clip(CircleShape)
-                                                        .clickable {
-                                                            shareCharacter = true
-                                                        },
-                                                colorFilter = ColorFilter.tint(characterColor),
-                                            )
-
-                                            Text(
-                                                character.profile.occupation,
-                                                style =
-                                                    MaterialTheme.typography.titleSmall.copy(
-                                                        fontFamily = genre.bodyFont(),
-                                                        color = characterColor,
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                            )
-
-                                            character.nicknames?.let {
-                                                if (it.isNotEmpty()) {
-                                                    Text(
-                                                        text = "aka: ${
-                                                            it.joinToString(
-                                                                ", ",
-                                                            )
-                                                        }",
-                                                        style =
-                                                            MaterialTheme.typography.titleMedium.copy(
-                                                                fontFamily = genre.bodyFont(),
-                                                                color = characterColor.copy(alpha = 0.8f),
-                                                                textAlign = TextAlign.Center,
-                                                            ),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        AsyncImage(
-                                            character.image,
-                                            contentDescription = character.name,
-                                            contentScale = ContentScale.Crop,
-                                            modifier =
-                                                Modifier
-                                                    .clickable(enabled = character.emojified || character.image.isEmpty()) {
-                                                        viewModel.regenerate(
-                                                            sagaContent,
-                                                            character,
-                                                        )
-                                                    }.fillMaxSize()
-                                                    .clipToBounds()
-                                                    .effectForGenre(
-                                                        genre,
-                                                        useFallBack = character.emojified,
-                                                    ),
-                                        )
-
+                        AnimatedContent(
+                            deepEffectAvailable,
+                            transitionSpec = {
+                                fadeIn(
+                                    tween(
+                                        1200,
+                                        easing = EaseIn,
+                                    ),
+                                ) togetherWith fadeOut(tween(1500, easing = FastOutSlowInEasing))
+                            },
+                        )
+                        {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(400.dp)
+                                    .clipToBounds(),
+                            ) {
+                                if (it && deepEffectAvailable) {
+                                    DepthLayout(
+                                        originalImage = originalBitmap,
+                                        segmentedImage = segmentedBitmap,
+                                        imageModifier =
+                                            Modifier
+                                                .fillMaxSize()
+                                                .graphicsLayer(
+                                                    scaleX = animatedScale,
+                                                    scaleY = animatedScale,
+                                                    translationX = animatedTranslationX,
+                                                    translationY = animatedTranslationY,
+                                                    transformOrigin = TransformOrigin.Center,
+                                                ).effectForGenre(
+                                                    genre,
+                                                    useFallBack = character.emojified,
+                                                ),
+                                    ) {
                                         Box(
                                             Modifier
-                                                .align(Alignment.BottomCenter)
-                                                .fillMaxWidth()
-                                                .fillMaxHeight()
+                                                .fillMaxSize()
                                                 .background(fadedGradientTopAndBottom()),
                                         )
-
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                        Text(
+                                            text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                            textAlign = TextAlign.Center,
                                             modifier =
                                                 Modifier
+                                                    .alpha(titleAnimation)
                                                     .fillMaxWidth()
-                                                    .align(Alignment.BottomCenter),
-                                        ) {
-                                            Text(
-                                                character.profile.occupation,
-                                                style =
-                                                    MaterialTheme.typography.titleSmall.copy(
-                                                        fontFamily = genre.bodyFont(),
-                                                        color = characterColor,
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                            )
-
-                                            Text(
-                                                text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
-                                                textAlign = TextAlign.Center,
-                                                modifier =
-                                                    Modifier.sharedElement(
-                                                        rememberSharedContentState(key = "${character.name}-title"),
-                                                        animatedVisibilityScope = this@AnimatedContent,
-                                                    ),
-                                                style =
-                                                    MaterialTheme.typography.displayMedium.copy(
-                                                        fontFamily = genre.headerFont(),
-                                                        textAlign = TextAlign.Center,
-                                                        brush =
-                                                            Brush.verticalGradient(
-                                                                listOf(
-                                                                    genre.color,
-                                                                    characterColor,
-                                                                    genre.iconColor,
-                                                                ),
-                                                            ),
-                                                        shadow =
-                                                            Shadow(
+                                                    .reactiveShimmer(true)
+                                                    .offset(y = 4f.unaryMinus().dp)
+                                                    .align(Alignment.TopCenter),
+                                            style =
+                                                MaterialTheme.typography.displayMedium.copy(
+                                                    fontFamily = genre.headerFont(),
+                                                    textAlign = TextAlign.Center,
+                                                    brush =
+                                                        Brush.verticalGradient(
+                                                            listOf(
                                                                 genre.color,
-                                                                blurRadius = 15f,
+                                                                characterColor,
+                                                                genre.iconColor,
                                                             ),
-                                                    ),
-                                            )
-                                            character.nicknames?.let {
-                                                if (it.isNotEmpty()) {
-                                                    Text(
-                                                        text = "aka: ${
-                                                            it.joinToString(
-                                                                ", ",
-                                                            )
-                                                        }",
-                                                        style =
-                                                            MaterialTheme.typography.titleMedium.copy(
-                                                                fontFamily = genre.bodyFont(),
-                                                                color = characterColor.copy(alpha = 0.8f),
-                                                                textAlign = TextAlign.Center,
-                                                            ),
+                                                        ),
+                                                    shadow =
+                                                        Shadow(
+                                                            genre.color,
+                                                            blurRadius = 15f,
+                                                        ),
+                                                ),
+                                        )
+                                    }
+
+                                    Column(
+                                        modifier =
+                                            Modifier
+                                                .background(fadeGradientBottom())
+                                                .align(Alignment.BottomCenter)
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                    ) {
+                                        Image(
+                                            painterResource(R.drawable.ic_spark),
+                                            stringResource(id = R.string.share_character_cd),
+                                            modifier =
+                                                Modifier
+                                                    .size(24.dp)
+                                                    .clip(CircleShape)
+                                                    .clickable {
+                                                        onShareCharacter()
+                                                    },
+                                            colorFilter = ColorFilter.tint(characterColor),
+                                        )
+
+                                        Text(
+                                            character.profile.occupation,
+                                            style =
+                                                MaterialTheme.typography.titleSmall.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    color = characterColor,
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                        )
+
+                                        character.nicknames?.let {
+                                            if (it.isNotEmpty()) {
+                                                Text(
+                                                    text = "aka: ${
+                                                        it.joinToString(
+                                                            ", ",
+                                                        )
+                                                    }",
+                                                    style =
+                                                        MaterialTheme.typography.titleMedium.copy(
+                                                            fontFamily = genre.bodyFont(),
+                                                            color = characterColor.copy(alpha = 0.8f),
+                                                            textAlign = TextAlign.Center,
+                                                        ),
+                                                )
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    AsyncImage(
+                                        character.image,
+                                        contentDescription = character.name,
+                                        contentScale = ContentScale.Crop,
+                                        modifier =
+                                            Modifier
+                                                .clickable(enabled = character.emojified || character.image.isEmpty()) {
+                                                    viewModel.regenerate(
+                                                        sagaContent,
+                                                        character,
                                                     )
-                                                }
+                                                }.fillMaxSize()
+                                                .graphicsLayer(
+                                                    scaleX = animatedScale,
+                                                    scaleY = animatedScale,
+                                                    translationX = animatedTranslationX,
+                                                    translationY = animatedTranslationY,
+                                                    transformOrigin = TransformOrigin.Center,
+                                                ).effectForGenre(
+                                                    genre,
+                                                    useFallBack = character.emojified,
+                                                ),
+                                    )
+
+                                    Box(
+                                        Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .fillMaxWidth()
+                                            .fillMaxHeight()
+                                            .background(fadedGradientTopAndBottom()),
+                                    )
+
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier =
+                                            Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.BottomCenter),
+                                    ) {
+                                        Text(
+                                            character.profile.occupation,
+                                            style =
+                                                MaterialTheme.typography.titleSmall.copy(
+                                                    fontFamily = genre.bodyFont(),
+                                                    color = characterColor,
+                                                    textAlign = TextAlign.Center,
+                                                ),
+                                        )
+
+                                        Text(
+                                            text = "${character.name} ${(character.lastName ?: emptyString())}".trim(),
+                                            textAlign = TextAlign.Center,
+                                            modifier =
+                                                Modifier
+                                                    .alpha(titleAnimation),
+                                            style =
+                                                MaterialTheme.typography.displayMedium.copy(
+                                                    fontFamily = genre.headerFont(),
+                                                    textAlign = TextAlign.Center,
+                                                    brush =
+                                                        Brush.verticalGradient(
+                                                            listOf(
+                                                                genre.color,
+                                                                characterColor,
+                                                                genre.iconColor,
+                                                            ),
+                                                        ),
+                                                    shadow =
+                                                        Shadow(
+                                                            genre.color,
+                                                            blurRadius = 15f,
+                                                        ),
+                                                ),
+                                        )
+                                        character.nicknames?.let {
+                                            if (it.isNotEmpty()) {
+                                                Text(
+                                                    text = "aka: ${
+                                                        it.joinToString(
+                                                            ", ",
+                                                        )
+                                                    }",
+                                                    style =
+                                                        MaterialTheme.typography.titleMedium.copy(
+                                                            fontFamily = genre.bodyFont(),
+                                                            color = characterColor.copy(alpha = 0.8f),
+                                                            textAlign = TextAlign.Center,
+                                                        ),
+                                                )
                                             }
                                         }
                                     }
@@ -395,7 +540,8 @@ fun CharacterDetailsContent(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )
@@ -615,22 +761,5 @@ fun CharacterDetailsContent(
                         .fillMaxWidth(),
             )
         }
-    }
-
-    StarryLoader(
-        isGenerating,
-        null,
-        textStyle =
-            MaterialTheme.typography.headlineMedium.copy(
-                genre.color,
-                fontFamily = genre.bodyFont(),
-            ),
-        brushColors = genre.colorPalette(),
-    )
-
-    if (shareCharacter) {
-        ShareSheet(sagaContent, shareCharacter, ShareType.CHARACTER, characterContent, onDismiss = {
-            shareCharacter = false
-        })
     }
 }
