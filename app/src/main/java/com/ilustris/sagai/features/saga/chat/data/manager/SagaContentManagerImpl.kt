@@ -10,8 +10,10 @@ import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileCacheService
+import com.ilustris.sagai.core.file.ImageHelper
 import com.ilustris.sagai.core.narrative.ActDirectives
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.act.data.model.Act
 import com.ilustris.sagai.features.act.data.model.ActContent
@@ -38,6 +40,7 @@ import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.features.wiki.data.usecase.EmotionalUseCase
 import com.ilustris.sagai.features.wiki.data.usecase.WikiUseCase
+import com.ilustris.sagai.ui.components.NotificationStyle
 import com.ilustris.sagai.ui.components.SnackBarState
 import com.ilustris.sagai.ui.components.snackBar
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -71,6 +74,7 @@ class SagaContentManagerImpl
         private val fileCacheService: FileCacheService,
         private val remoteConfig: FirebaseRemoteConfig,
         private val backupService: BackupService,
+        private val imageHelper: ImageHelper,
         @ApplicationContext
         private val context: Context,
     ) : SagaContentManager {
@@ -165,6 +169,8 @@ class SagaContentManagerImpl
                             return@collectLatest
                         }
 
+                        checkMessageNotifications(previousSaga, saga)
+
                         val messages = saga.flatMessages()
                         if (messages.isNotEmpty() &&
                             messages
@@ -183,6 +189,34 @@ class SagaContentManagerImpl
                 Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
                 content.value = null
                 setNarrativeProcessingStatus(false)
+            }
+        }
+
+        private suspend fun checkMessageNotifications(
+            previousSaga: SagaContent?,
+            saga: SagaContent,
+        ) {
+            if (previousSaga != null &&
+                saga.flatMessages().size > previousSaga.flatMessages().size
+            ) {
+                saga.flatMessages().size - previousSaga.flatMessages().size
+                val lastMessage = saga.flatMessages().last()
+                val isFromUser = lastMessage.character == saga.mainCharacter?.data
+                val charIcon =
+                    imageHelper
+                        .getImageBitmap(lastMessage.character?.image, true)
+                        .getSuccess()
+                if (isFromUser.not()) {
+                    updateSnackBar(
+                        snackBar(
+                            "${lastMessage.message.speakerName ?: emptyString()}: ${lastMessage.message.text}",
+                        ) {
+                            showInUi = false
+                            icon = charIcon
+                            notificationStyle = NotificationStyle.CHAT
+                        },
+                    )
+                }
             }
         }
 
@@ -243,6 +277,11 @@ class SagaContentManagerImpl
                             saga,
                             chapter,
                         ).onSuccessAsync {
+                            val chapterIcon =
+                                imageHelper
+                                    .getImageBitmap(it.coverImage, false)
+                                    .getSuccess()
+
                             updateSnackBar(
                                 snackBar(
                                     message =
@@ -250,6 +289,9 @@ class SagaContentManagerImpl
                                             R.string.chapter_finished,
                                             it.title,
                                         ),
+                                    {
+                                        largeIcon = chapterIcon
+                                    },
                                 ),
                             )
                         }.onFailureAsync {
@@ -445,7 +487,7 @@ class SagaContentManagerImpl
 
                 updateSnackBar(
                     snackBar(
-                        message = context.getString(R.string.chapter_finished, newAct.title),
+                        message = context.getString(R.string.act_finished, newAct.title),
                     ),
                 )
                 newAct
@@ -822,11 +864,23 @@ class SagaContentManagerImpl
                     characterUseCase.insertCharacter(fakeCharacter)
                 } else {
                     setProcessing(false)
-                    characterUseCase
-                        .generateCharacter(
-                            sagaContent = currentSaga,
-                            description = description,
-                        ).getSuccess()!!
+                    val generatedCharacter =
+                        characterUseCase
+                            .generateCharacter(
+                                sagaContent = currentSaga,
+                                description = description,
+                            ).getSuccess()!!
+
+                    updateSnackBar(
+                        snackBar(
+                            context.getString(
+                                R.string.new_character_message,
+                                generatedCharacter.name,
+                            ),
+                        ),
+                    )
+
+                    generatedCharacter
                 }
             }
 

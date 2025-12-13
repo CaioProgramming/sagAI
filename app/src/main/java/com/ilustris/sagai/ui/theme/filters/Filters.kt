@@ -150,20 +150,18 @@ fun Genre.shaderParams(
 
     Genre.CRIME -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .15f,
-            softFocusRadius = focusRadius ?: .2f,
-            bloomRadius = 3f,
-            bloomIntensity = .2f,
+            grainIntensity = customGrain ?: .1f,
+            softFocusRadius = focusRadius ?: .1f,
             saturation = .7f,
             contrast = 1.5f,
-            brightness = .02f.unaryMinus(),
+            brightness = .01f.unaryMinus(),
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .2f,
+            vignetteStrength = .1f,
             vignetteSoftness = 1f,
             pixelationBlockSize = 0.0f,
-            colorTemperature = .15f.unaryMinus(),
+            colorTemperature = .2f.unaryMinus(),
         )
     }
 
@@ -287,8 +285,7 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }
-        .graphicsLayer {
+        }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

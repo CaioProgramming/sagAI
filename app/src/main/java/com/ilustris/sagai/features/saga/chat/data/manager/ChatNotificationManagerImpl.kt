@@ -14,15 +14,17 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
-import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.file.FileHelper
+import com.ilustris.sagai.core.file.cropBitmapToCircle
+import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.permissions.NotificationUtils.CHAT_CHANNEL_ID
 import com.ilustris.sagai.core.permissions.NotificationUtils.CHAT_NOTIFICATION_ID
-import com.ilustris.sagai.core.file.cropBitmapToCircle
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.ui.components.NotificationStyle
+import com.ilustris.sagai.ui.components.SnackBarState
 import com.ilustris.sagai.ui.navigation.Routes
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -73,9 +75,117 @@ class ChatNotificationManagerImpl
                 largeIcon = characterIcon,
                 pendingIntent = createPendingIntent(formatChatDeepLink),
                 genreColor = saga.data.genre.color,
-                smallIconResId = R.drawable.ic_spark,
+                smallIconResId = saga.data.genre.background,
             )
         }
+
+        override fun sendNotification(
+            saga: SagaContent,
+            title: String,
+            body: String,
+            smallIcon: Bitmap?,
+            largeIcon: Bitmap?,
+        ) {
+            if (appLifecycleManager.isAppInForeground.value) {
+                Log.i(
+                    javaClass.simpleName,
+                    "App is in foreground. Skipping notification for: $title",
+                )
+                return
+            }
+
+            Log.i(
+                javaClass.simpleName,
+                "App is in background. Proceeding with notification: $title",
+            )
+
+            val chatRoute = Routes.CHAT
+            val formatChatDeepLink =
+                chatRoute.deepLink
+                    ?.replace("{sagaId}", saga.data.id.toString())
+                    ?.replace("isDebug", "false")
+
+            val finalLargeIcon =
+                largeIcon
+                    ?: try {
+                        android.graphics.BitmapFactory.decodeResource(
+                            context.resources,
+                            saga.data.genre.background,
+                        )
+                } catch (e: Exception) {
+                        null
+                    }
+
+            sendToNotificationChannel(
+                title = title,
+                content = body,
+                largeIcon = finalLargeIcon,
+                pendingIntent = createPendingIntent(formatChatDeepLink),
+                genreColor = saga.data.genre.color,
+                smallIconResId = saga.data.genre.background,
+                priority = NotificationCompat.PRIORITY_HIGH,
+            )
+        }
+
+        override fun clearNotifications() {
+            NotificationManagerCompat.from(context).cancel(CHAT_NOTIFICATION_ID)
+        }
+
+        fun sendSnackBarNotification(
+            saga: SagaContent,
+            snackBarState: SnackBarState,
+        ) {
+            if (appLifecycleManager.isAppInForeground.value || snackBarState.showInUi) {
+                Log.i(
+                    javaClass.simpleName,
+                    "App is in foreground or notification is UI-only. Skipping notification.",
+                )
+                return
+            }
+
+            Log.i(
+                javaClass.simpleName,
+                "App is in background. Sending notification with style: ${snackBarState.notificationStyle}",
+            )
+
+            val chatRoute = Routes.CHAT
+            val formatChatDeepLink =
+                chatRoute.deepLink
+                    ?.replace("{sagaId}", saga.data.id.toString())
+                    ?.replace("isDebug", "false")
+
+            when (snackBarState.notificationStyle) {
+                NotificationStyle.CHAT -> {
+                    sendChatStyleNotification(
+                        saga = saga,
+                        title = saga.data.title,
+                        message = snackBarState.message,
+                        largeIcon = snackBarState.largeIcon,
+                        pendingIntent = createPendingIntent(formatChatDeepLink),
+                    )
+                }
+
+                NotificationStyle.DEFAULT -> {
+                    sendToNotificationChannel(
+                        title = saga.data.title,
+                        content = snackBarState.message,
+                        largeIcon = snackBarState.largeIcon,
+                        pendingIntent = createPendingIntent(formatChatDeepLink),
+                        genreColor = saga.data.genre.color,
+                        smallIconResId = R.drawable.ic_spark,
+                        priority = NotificationCompat.PRIORITY_DEFAULT,
+                    )
+                }
+
+                NotificationStyle.MINIMAL -> {
+                sendMinimalNotification(
+                    saga = saga,
+                    message = snackBarState.message,
+                    pendingIntent = createPendingIntent(formatChatDeepLink),
+                )
+            }
+        }
+    }
 
         private fun createPendingIntent(deepLink: String?): PendingIntent {
             val intent = Intent(context, MainActivity::class.java)
@@ -91,6 +201,105 @@ class ChatNotificationManagerImpl
             )
         }
 
+        private fun sendChatStyleNotification(
+            saga: SagaContent,
+            title: String,
+            message: String,
+            largeIcon: Bitmap?,
+            pendingIntent: PendingIntent?,
+        ) {
+            // Extract character name from message if available, or use saga title
+            val characterName = extractCharacterName(message) ?: saga.data.title
+
+            // Create Person for the sender
+            val person =
+                androidx.core.app.Person
+                    .Builder()
+                    .setName(characterName)
+                    .setIcon(
+                        largeIcon?.let {
+                            androidx.core.graphics.drawable.IconCompat
+                                .createWithBitmap(it)
+                        },
+                    ).build()
+
+            // Create MessagingStyle for chat-like appearance
+            val messagingStyle =
+                NotificationCompat
+                    .MessagingStyle(person)
+                    .setConversationTitle(saga.data.title)
+                    .addMessage(
+                        message,
+                        System.currentTimeMillis(),
+                        person,
+                    )
+
+            val builder =
+                NotificationCompat
+                    .Builder(context, CHAT_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_spark)
+                    .setContentTitle(saga.data.title)
+                    .setContentText(message)
+                    .setLargeIcon(largeIcon)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(pendingIntent)
+                    .setColor(
+                        saga.data.genre.color
+                            .toArgb(),
+                    ).setColorized(true)
+                    .setAutoCancel(true)
+                    .setStyle(messagingStyle)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                NotificationManagerCompat
+                    .from(context)
+                    .notify(CHAT_NOTIFICATION_ID, builder.build())
+            }
+        }
+
+        private fun sendMinimalNotification(
+            saga: SagaContent,
+            message: String,
+            pendingIntent: PendingIntent?,
+        ) {
+            val builder =
+                NotificationCompat
+                    .Builder(context, CHAT_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_spark)
+                    .setContentTitle(saga.data.title)
+                    .setContentText(message)
+                    .setPriority(NotificationCompat.PRIORITY_LOW)
+                    .setContentIntent(pendingIntent)
+                    .setColor(
+                        saga.data.genre.color
+                            .toArgb(),
+                    ).setAutoCancel(true)
+
+            if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            NotificationManagerCompat
+                .from(context)
+                    .notify(CHAT_NOTIFICATION_ID, builder.build())
+            }
+        }
+
+        private fun extractCharacterName(message: String): String? {
+            // Extract character name from "CharacterName: message" format
+            return if (message.contains(": ")) {
+                message.substringBefore(": ")
+            } else {
+                null
+            }
+        }
+
         private fun sendToNotificationChannel(
             title: String,
             content: String,
@@ -98,20 +307,34 @@ class ChatNotificationManagerImpl
             pendingIntent: PendingIntent?,
             genreColor: Color,
             smallIconResId: Int,
+            priority: Int = NotificationCompat.PRIORITY_HIGH,
         ) {
+            // Use app icon for small icon if the provided resource is not suitable
+            val finalSmallIconResId =
+                try {
+                    // Validate if the resource exists and is drawable
+                    context.resources.getDrawable(smallIconResId, null)
+                    smallIconResId
+                } catch (e: Exception) {
+                    // Fallback to app icon if the genre background is not suitable for small icon
+                    R.drawable.ic_spark
+                }
+
             val builder =
                 NotificationCompat
                     .Builder(context, CHAT_CHANNEL_ID)
-                    .setSmallIcon(smallIconResId)
+                    .setSmallIcon(finalSmallIconResId)
                     .setContentTitle(title)
                     .setContentText(content)
                     .setLargeIcon(largeIcon)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setPriority(priority)
                     .setContentIntent(pendingIntent)
                     .setColor(genreColor.toArgb())
                     .setColorized(true)
                     .setAutoCancel(true)
                     .setStyle(NotificationCompat.BigTextStyle().bigText(content))
+                    .setCategory(NotificationCompat.CATEGORY_SOCIAL)
+
             if (ActivityCompat.checkSelfPermission(
                     context,
                     Manifest.permission.POST_NOTIFICATIONS,

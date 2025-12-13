@@ -114,7 +114,10 @@ class ChatViewModel
         val newCharacterReveal = MutableStateFlow<Int?>(null)
         private var loadFinished = false
         private var currentSagaIdForService: String? = null
+
         private var currentActCountForService: Int = 0
+
+        // Notification Tracking
 
         val notificationsEnabled = MutableStateFlow(true)
         val smartSuggestionsEnabled = MutableStateFlow(true)
@@ -136,6 +139,7 @@ class ChatViewModel
             if (sagaId == null) {
                 return
             }
+            notificationManager.clearNotifications()
             currentSagaIdForService = sagaId
             state.value = ChatState.Loading
             enableDebugMode(isDebug)
@@ -150,8 +154,22 @@ class ChatViewModel
 
         fun observeSnackBarUpdates() =
             viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.snackBarUpdate.collect {
-                    it?.let { snackBarState -> sendSnackBarMessage(snackBarState) }
+                sagaContentManager.snackBarUpdate.collect { state ->
+                    state?.let { snackBarState ->
+                        if (snackBarState.showInUi) {
+                            updateSnackBar(snackBarState)
+                        }
+
+                        content.value?.let { currentSaga ->
+                            notificationManager.sendNotification(
+                                saga = currentSaga,
+                                title = currentSaga.data.title,
+                                content = snackBarState.message,
+                                smalIcon = snackBarState.icon,
+                                largeIcon = null,
+                            )
+                        }
+                    }
                 }
             }
 
@@ -262,7 +280,7 @@ class ChatViewModel
                             return@collectLatest
                         }
 
-                        val previousValue = content.value
+                        content.value
                         messages.value =
                             SagaContentUIMapper
                                 .mapToActDisplayData(sagaContent.acts)
@@ -280,9 +298,7 @@ class ChatViewModel
                         checkIfUpdatesService(sagaContent)
                         validateCharacterMessageUpdates(sagaContent)
                         updateProgress(sagaContent)
-                        if (previousValue?.flatMessages()?.size != sagaContent.flatMessages().size) {
-                            notifyIfNeeded()
-                        }
+
                         loadFinished = true
                         content.emit(sagaContent)
                         state.emit(ChatState.Success)
@@ -354,28 +370,6 @@ class ChatViewModel
                         controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
                         Log.d("ChatViewModel", "New act ($newActCount). Updated SagaMediaService.")
                     }
-                }
-            }
-        }
-
-        private fun notifyIfNeeded() {
-            viewModelScope.launch(Dispatchers.IO) {
-                if (notificationsEnabled.value) {
-                    val currentSaga = content.value ?: return@launch
-                    if (currentSaga.data.isEnded) {
-                        return@launch
-                    }
-                    viewModelScope.launch(Dispatchers.IO) {
-                        val messages = currentSaga.flatMessages()
-                        if (messages.isNotEmpty()) {
-                            notificationManager.sendMessageNotification(
-                                currentSaga,
-                                currentSaga.flatMessages().last(),
-                            )
-                        }
-                    }
-                } else {
-                    Log.w(javaClass.simpleName, "notifyIfNeeded: Notifications disabled by user")
                 }
             }
         }

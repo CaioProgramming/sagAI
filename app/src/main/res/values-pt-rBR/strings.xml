@@ -331,4 +331,18 @@
     <string name="story_sheet_button_continue_saga">Continuar Saga</string>
     <string name="story_sheet_title_previously_on">Anteriormente em %s</string>
     <string name="story_sheet_title_history_continues">A história continua</string>
+
+    <!-- Global Notifications -->
+    <string name="notification_new_message">Nova Mensagem</string>
+    <string name="notification_new_message_content">%s enviou uma nova mensagem</string>
+    <string name="notification_new_chapter">Novo Capítulo</string>
+    <string name="notification_new_chapter_content">Capítulo %s começou!</string>
+    <string name="notification_new_act">Novo Ato</string>
+    <string name="notification_new_act_content">Ato %s: %s</string>
+    <string name="notification_new_character">Novo Personagem</string>
+    <string name="notification_new_character_content">%s entrou para a história!</string>
+    <string name="notification_timeline_event">Atualização da Linha do Tempo</string>
+    <string name="notification_timeline_event_content">Novo evento: %s</string>
+    <string name="notification_milestone">Marco Alcançado</string>
+    <string name="notification_milestone_content">Você alcançou um novo marco!</string>
 </resources>
