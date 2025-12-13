@@ -19,6 +19,7 @@ import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.SagaMediaService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.formatToString
@@ -34,6 +35,7 @@ import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
+import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.mapper.SagaContentUIMapper
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -44,7 +46,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
-import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
@@ -77,6 +78,7 @@ class ChatViewModel
         mediaPlayerManager: MediaPlayerManager,
         private val settingsUseCase: SettingsUseCase,
         private val imageSegmentationHelper: ImageSegmentationHelper,
+        private val scheduledNotificationService: ScheduledNotificationService,
     ) : ViewModel(),
         DefaultLifecycleObserver {
         val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
@@ -162,10 +164,10 @@ class ChatViewModel
 
                         content.value?.let { currentSaga ->
                             notificationManager.sendNotification(
-                                saga = currentSaga,
+                                saga = currentSaga.data,
                                 title = currentSaga.data.title,
                                 content = snackBarState.message,
-                                smalIcon = snackBarState.icon,
+                                smallIcon = snackBarState.icon,
                                 largeIcon = null,
                             )
                         }
@@ -366,6 +368,7 @@ class ChatViewModel
                                 totalActs = sagaContent.acts.size,
                                 timelineObjective = sagaContent.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
                                 mediaFilePath = musicFile.absolutePath,
+                                genre = sagaContent.data.genre,
                             )
                         controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
                         Log.d("ChatViewModel", "New act ($newActCount). Updated SagaMediaService.")
@@ -451,6 +454,7 @@ class ChatViewModel
                                             ?.currentObjective ?: "Unknown Objective",
                                     mediaFilePath = musicFile.absolutePath,
                                     color = currentSagaData.genre.color.toArgb(),
+                                    genre = currentSagaData.genre,
                                 )
                             currentActCountForService = playbackMetadata.currentActNumber
                             controlMediaPlayerService(SagaMediaService.ACTION_PLAY, playbackMetadata)
@@ -477,6 +481,7 @@ class ChatViewModel
         override fun onResume(owner: LifecycleOwner) {
             super.onResume(owner)
             startTime = System.currentTimeMillis()
+            scheduledNotificationService.cancelScheduledNotifications()
             Log.d(
                 "ChatViewModel",
                 "Lifecycle: onResume. SagaMediaService manages its own state. Start time: $startTime",
@@ -497,6 +502,7 @@ class ChatViewModel
                             "Updating playtime for saga ${currentSaga.data.id}: +${duration}ms",
                         )
                         sagaContentManager.updatePlaytime(currentSaga.data.id, duration)
+                        scheduledNotificationService.scheduleNotification(currentSaga)
                     }
                     startTime = 0L
                 }

@@ -1,10 +1,13 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonMap
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
@@ -280,6 +283,66 @@ object ChatPrompts {
         appendLine("- If any information is unclear or missing, omit that aspect entirely")
         appendLine("- Create a concise but comprehensive picture of the current scene state")
     }.trimIndent()
+
+    fun scheduledNotificationPrompt(
+        saga: SagaContent,
+        selectedCharacter: CharacterContent,
+        sceneSummary: SceneSummary,
+    ) = buildString {
+        append(SagaPrompts.mainContext(saga))
+        appendLine("Character Context:")
+        append(selectedCharacter.toAINormalize(characterExclusions))
+        appendLine()
+
+        val relationWithCharacter = selectedCharacter.findRelationship(saga.mainCharacter!!.data.id)
+
+        relationWithCharacter?.let {
+            appendLine("### Character Relationship story with Player:")
+            appendLine(it.summarizeRelation())
+        }
+
+        appendLine("Current Story Moment:")
+        appendLine(
+            sceneSummary.toAINormalize(),
+        )
+        appendLine(
+            conversationHistory(
+                saga.flatMessages().map { it.message }.takeLast(UpdateRules.LORE_UPDATE_LIMIT),
+            ),
+        )
+        appendLine()
+        appendLine()
+        appendLine(
+            "Task: Generate a brief, authentic message (1-2 sentences) as ${selectedCharacter.data.name} reaching out to the player who just left.",
+        )
+
+        if (selectedCharacter.data.id == saga.mainCharacter?.data?.id) {
+            appendLine(
+                "IMPORTANT: This is the MAIN CHARACTER. The message must be an INNER THOUGHT or REFLECTION about the current situation.",
+            )
+            appendLine("Do NOT address another person. Talk to yourself.")
+        } else {
+            appendLine(
+                "IMPORTANT: This is an NPC. The message must be spoken DIRECTLY to the main character (${saga.mainCharacter?.data?.name}).",
+            )
+        }
+
+        appendLine("CRITICAL STYLE INSTRUCTION: The message must NOT be a simple conversation starter or generic greeting.")
+        appendLine(
+            "It must feel like an IMMEDIATE INVITATION or URGENT CALL to return to the action.",
+        )
+        appendLine(
+            "Examples of desired tone: 'Oh no Teresa caught us, what we gonna do next?', 'Damn we need to keep finding the sheriff things are getting risky here', 'I have a bad feeling about this... we should move.'",
+        )
+
+        appendLine("- Follow your established personality and voice")
+        appendLine("- Consider your relationship history and emotional connection with the player")
+        appendLine("- Reference current story elements and shared experiences naturally")
+        append(GenrePrompts.conversationDirective(saga.data.genre))
+        appendLine()
+        appendLine()
+        appendLine("Your message as ${selectedCharacter.data.name}:")
+    }
 
     private fun conversationStyleAndPacing() =
         """

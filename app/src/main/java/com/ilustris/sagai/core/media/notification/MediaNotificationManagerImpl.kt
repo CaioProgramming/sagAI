@@ -65,17 +65,18 @@ class MediaNotificationManagerImpl
             val progressPercentage = ((completedActs.toFloat() / totalActs) * 100).toInt()
 
             // Format title with Act/Chapter
-            val actChapterSubtitle = context.getString(
-                R.string.chat_view_subtitle,
-                completedActs.toRoman(),
-                playbackMetadata.currentChapter.toRoman()
-            )
+            val actChapterSubtitle =
+                context.getString(
+                    R.string.chat_view_subtitle,
+                    completedActs.toRoman(),
+                    playbackMetadata.currentChapter.toRoman(),
+                )
             val fullTitle = "${playbackMetadata.sagaTitle} - $actChapterSubtitle"
 
             val notificationBuilder =
                 NotificationCompat
                     .Builder(context, NotificationUtils.MEDIA_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_spark)
+                    .setSmallIcon(playbackMetadata.genre.background)
                     .setContentTitle(fullTitle)
                     .setContentText(playbackMetadata.timelineObjective)
                     .setSubText("$progressPercentage% • Act ${completedActs.toRoman()} of ${totalActs.toRoman()}")
@@ -140,17 +141,14 @@ class MediaNotificationManagerImpl
             return notificationBuilder.build()
         }
 
-    private fun formatTitle(metadata: PlaybackMetadata): String {
-        return context.getString(
-            R.string.chat_view_subtitle,
-            metadata.currentActNumber.toRoman(),
-            metadata.currentChapter.toRoman()
-        )
-    }
+        private fun formatTitle(metadata: PlaybackMetadata): String =
+            context.getString(
+                R.string.chat_view_subtitle,
+                metadata.currentActNumber.toRoman(),
+                metadata.currentChapter.toRoman(),
+            )
 
-    private fun formatContent(metadata: PlaybackMetadata): String {
-        return metadata.timelineObjective
-    }
+        private fun formatContent(metadata: PlaybackMetadata): String = metadata.timelineObjective
 
         override fun cancelPlaybackNotification() {
             NotificationManagerCompat.from(context).cancel(MEDIA_NOTIFICATION_ID)

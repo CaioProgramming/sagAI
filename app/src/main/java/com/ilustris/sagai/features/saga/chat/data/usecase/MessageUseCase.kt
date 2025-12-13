@@ -7,7 +7,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-import com.ilustris.sagai.features.saga.chat.domain.model.MessageGen
 import kotlinx.coroutines.flow.Flow
 
 interface MessageUseCase {

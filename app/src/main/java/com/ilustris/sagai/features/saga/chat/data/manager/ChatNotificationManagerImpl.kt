@@ -20,7 +20,10 @@ import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
 import com.ilustris.sagai.core.permissions.NotificationUtils.CHAT_CHANNEL_ID
 import com.ilustris.sagai.core.permissions.NotificationUtils.CHAT_NOTIFICATION_ID
 import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.ui.components.NotificationStyle
@@ -80,7 +83,7 @@ class ChatNotificationManagerImpl
         }
 
         override fun sendNotification(
-            saga: SagaContent,
+            saga: Saga,
             title: String,
             body: String,
             smallIcon: Bitmap?,
@@ -102,7 +105,7 @@ class ChatNotificationManagerImpl
             val chatRoute = Routes.CHAT
             val formatChatDeepLink =
                 chatRoute.deepLink
-                    ?.replace("{sagaId}", saga.data.id.toString())
+                    ?.replace("{sagaId}", saga.id.toString())
                     ?.replace("isDebug", "false")
 
             val finalLargeIcon =
@@ -110,9 +113,9 @@ class ChatNotificationManagerImpl
                     ?: try {
                         android.graphics.BitmapFactory.decodeResource(
                             context.resources,
-                            saga.data.genre.background,
+                            saga.genre.background,
                         )
-                } catch (e: Exception) {
+                    } catch (e: Exception) {
                         null
                     }
 
@@ -121,8 +124,8 @@ class ChatNotificationManagerImpl
                 content = body,
                 largeIcon = finalLargeIcon,
                 pendingIntent = createPendingIntent(formatChatDeepLink),
-                genreColor = saga.data.genre.color,
-                smallIconResId = saga.data.genre.background,
+                genreColor = saga.genre.color,
+                smallIconResId = saga.genre.background,
                 priority = NotificationCompat.PRIORITY_HIGH,
             )
         }
@@ -130,6 +133,13 @@ class ChatNotificationManagerImpl
         override fun clearNotifications() {
             NotificationManagerCompat.from(context).cancel(CHAT_NOTIFICATION_ID)
         }
+
+        private fun chatDeepLink(sagaId: String): String {
+            val chatRoute = Routes.CHAT
+            return chatRoute.deepLink
+                ?.replace("{sagaId}", sagaId)
+                ?.replace("isDebug", "false") ?: ""
+    }
 
         fun sendSnackBarNotification(
             saga: SagaContent,
@@ -156,13 +166,14 @@ class ChatNotificationManagerImpl
 
             when (snackBarState.notificationStyle) {
                 NotificationStyle.CHAT -> {
-                    sendChatStyleNotification(
+                    /*sendChatNotification(
                         saga = saga,
                         title = saga.data.title,
+
                         message = snackBarState.message,
                         largeIcon = snackBarState.largeIcon,
                         pendingIntent = createPendingIntent(formatChatDeepLink),
-                    )
+                    )*/
                 }
 
                 NotificationStyle.DEFAULT -> {
@@ -178,14 +189,14 @@ class ChatNotificationManagerImpl
                 }
 
                 NotificationStyle.MINIMAL -> {
-                sendMinimalNotification(
-                    saga = saga,
-                    message = snackBarState.message,
-                    pendingIntent = createPendingIntent(formatChatDeepLink),
-                )
+                    sendMinimalNotification(
+                        saga = saga,
+                        message = snackBarState.message,
+                        pendingIntent = createPendingIntent(formatChatDeepLink),
+                    )
+                }
             }
         }
-    }
 
         private fun createPendingIntent(deepLink: String?): PendingIntent {
             val intent = Intent(context, MainActivity::class.java)
@@ -201,23 +212,24 @@ class ChatNotificationManagerImpl
             )
         }
 
-        private fun sendChatStyleNotification(
-            saga: SagaContent,
+        override fun sendChatNotification(
+            saga: Saga,
             title: String,
+            character: Character?,
             message: String,
             largeIcon: Bitmap?,
-            pendingIntent: PendingIntent?,
         ) {
+            val pendingIntent = createPendingIntent(chatDeepLink(saga.id.toString()))
             // Extract character name from message if available, or use saga title
-            val characterName = extractCharacterName(message) ?: saga.data.title
-
+            val characterName = character?.name ?: saga.title
+            val finalIcon = cropBitmapToCircle(largeIcon)
             // Create Person for the sender
             val person =
                 androidx.core.app.Person
                     .Builder()
                     .setName(characterName)
                     .setIcon(
-                        largeIcon?.let {
+                        finalIcon?.let {
                             androidx.core.graphics.drawable.IconCompat
                                 .createWithBitmap(it)
                         },
@@ -227,7 +239,7 @@ class ChatNotificationManagerImpl
             val messagingStyle =
                 NotificationCompat
                     .MessagingStyle(person)
-                    .setConversationTitle(saga.data.title)
+                    .setConversationTitle(title)
                     .addMessage(
                         message,
                         System.currentTimeMillis(),
@@ -238,13 +250,13 @@ class ChatNotificationManagerImpl
                 NotificationCompat
                     .Builder(context, CHAT_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_spark)
-                    .setContentTitle(saga.data.title)
+                    .setContentTitle(title)
                     .setContentText(message)
                     .setLargeIcon(largeIcon)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentIntent(pendingIntent)
                     .setColor(
-                        saga.data.genre.color
+                        saga.genre.color
                             .toArgb(),
                     ).setColorized(true)
                     .setAutoCancel(true)
@@ -281,22 +293,13 @@ class ChatNotificationManagerImpl
                     ).setAutoCancel(true)
 
             if (ActivityCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS,
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            NotificationManagerCompat
-                .from(context)
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                NotificationManagerCompat
+                    .from(context)
                     .notify(CHAT_NOTIFICATION_ID, builder.build())
-            }
-        }
-
-        private fun extractCharacterName(message: String): String? {
-            // Extract character name from "CharacterName: message" format
-            return if (message.contains(": ")) {
-                message.substringBefore(": ")
-            } else {
-                null
             }
         }
 

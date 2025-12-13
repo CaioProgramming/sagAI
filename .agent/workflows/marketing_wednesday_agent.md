@@ -5,36 +5,62 @@ description: Gera posts de quarta-feira focados em storytelling e detalhes técn
 # Agente de Conteúdo - Quarta-feira
 
 ## Objetivo
-Criar posts que exploram o lado narrativo e os bastidores técnicos do Sagas, mostrando como tecnologia e criatividade se encontram.
+
+Criar posts de **Quarta-feira**, focados em **EDUCAÇÃO** e **DEEP DIVES**.
+Este agente suporta tanto **Vídeos (Shorts/Reels)** quanto **Carrosséis** (o formato mais comum para
+Quartas), dependendo do planejamento semanal.
 
 ## Estilo de Escrita
-- **Tom**: Curioso, técnico mas acessível, storyteller
-- **Linguagem**: Português brasileiro, mix de técnico e poético
-- **Emojis**: Moderado (1-2 por seção)
-- **Tamanho**: Caption de 200-300 palavras
 
-## Estrutura do Post
+- **Tom**: Curioso, técnico mas acessível, storyteller.
+- **Linguagem**: Português brasileiro, mix de técnico e poético.
+- **Formato**: Adaptável (Roteiro de Vídeo ou Carrossel).
 
-### Caption
-1. **Hook narrativo**: Começar com uma mini-história ou cenário
-2. **Conexão técnica**: Como a tecnologia possibilita isso
-3. **Deep dive**: Explicação mais detalhada de 1 aspecto técnico
-4. **Impacto criativo**: O que isso significa para o usuário
-5. **Call-to-action**: Convite para explorar
+## Como Gerar o Conteúdo
 
-### Carrossel (4-6 slides)
+1. **CONSULTE** o arquivo `docs/marketing/content_calendar.md` para ver o tema e o formato da semana
+   atual.
+2. **NÃO use** temas hardcoded. O calendário é a fonte da verdade.
+3. Se o formato for **Vídeo**, gere um Roteiro focado em explicação rápida.
+4. Se o formato for **Carrossel** (padrão de Quarta), gere a estrutura de Slides aprofundada.
+
+---
+
+## Estrutura A: Roteiro de Vídeo (Explain/Deep Dive)
+
+Use esta estrutura se o calendário pedir "Vídeo".
+
+### Roteiro (Script)
+
+1. **Tempo**: Duração estimada.
+2. **Visual**: Foco em **demonstração** ou **infográfico animado**. Menos cortes frenéticos que
+   Segunda, mais clareza.
+3. **Áudio**: Explicação calma e didática.
+
+### Caption (Legenda do Vídeo)
+
+1. **Pergunta/Problema**: Headline educativa.
+2. **Resumo**: O que você vai aprender.
+3. **CTA**: Salve para consultar depois.
+
+---
+
+## Estrutura B: Carrossel (4-6 Slides) - Padrão de Quarta
+
+Use esta estrutura se o calendário pedir "Carrossel".
 
 **Slide 1 - Capa Narrativa**
 - Título poético/técnico
 - Visual imersivo
 - Citação ou frase de impacto
 
-**Slides 2-3 - Storytelling**
-- Exemplo de uso real
+**Slides 2-3 - Storytelling/Exemplo**
+
+- Exemplo de uso real (Antes vs Depois)
 - Screenshots de narrativas
 - Destaque de diálogos/momentos
 
-**Slide 4 - Técnico**
+**Slide 4 - Técnico ("O Segredo")**
 - "Como funciona nos bastidores"
 - Diagrama ou explicação visual
 - Termos técnicos explicados
@@ -44,219 +70,22 @@ Criar posts que exploram o lado narrativo e os bastidores técnicos do Sagas, mo
 - Comparação com outras soluções
 
 **Slide 6 - CTA**
-- Convite para experimentar
+
+- Convite para experimentar ou Salvar
 - Link na bio
 
-## Temas de Quarta-feira
-
-### Semana 1: "Como a IA Entende Suas Emoções"
-**Foco**: Emotional Tone Detection
-
-**Caption Sugerida**:
-```
-💭 "Estou com medo."
-
-Três palavras simples. Mas a IA do Sagas não lê apenas as palavras — ela lê a EMOÇÃO.
-
-Quando você escreve uma mensagem, o app analisa o tom emocional:
-• Ansioso
-• Determinado
-• Melancólico
-• Joyful
-• Cynical
-... e mais 10 variações.
-
-🧠 Por que isso importa?
-
-Porque a resposta da IA muda COMPLETAMENTE baseada na sua emoção. Se você está ansioso, os personagens podem reagir com empatia. Se está determinado, a narrativa pode acelerar a ação.
-
-🎨 E tem mais: Message Effects
-
-Ativando nas configurações, cada mensagem ganha animações baseadas no tom emocional:
-• Mensagens joyful "pulam" na tela
-• Mensagens melancólicas têm entrada suave
-• Mensagens angry tremem levemente
-
-Tecnicamente? Usamos análise de sentimento + classificação de tom emocional em 14 categorias. Cada categoria tem parâmetros de animação únicos.
-
-Criativamente? Suas palavras ganham VIDA.
-
-Experimente escrever "Estou com medo" e depois "Estou pronto para lutar" no mesmo chat. Veja a diferença.
-
-#EmotionalAI #SentimentAnalysis #AnimaçõesIA #UXImersivo #TechCreativo
-```
-
-**Slides**:
-1. Título: "A IA Que Sente Suas Emoções" + ícone de coração/cérebro
-2. Screenshot: Mensagem com tom "Anxious" + animação
-3. Screenshot: Mensagem com tom "Joyful" + animação diferente
-4. Diagrama: "Texto → Análise de Tom → Resposta Contextual + Animação"
-5. Lista: "14 Tons Emocionais Detectados" (com emojis)
-6. CTA: "Ative Message Effects nas configurações"
-
 ---
 
-### Semana 2: "Histórias que Vivem e Respiram"
-**Foco**: Sistema de Wiki e memória contextual
+## Diretrizes Gerais
 
-**Caption Sugerida**:
-```
-📖 Capítulo 47. Você menciona um personagem que apareceu no Capítulo 3.
+- **Escolha entre storytelling OU técnico** (não misture demais).
+- **Use exemplos concretos** (antes/depois, cenários reais).
+- **Explique o "porquê técnico"** de forma acessível.
 
-A IA lembra. De tudo.
+### Hashtags Padrão:
 
-No Sagas, cada saga tem uma WIKI viva que cresce automaticamente:
+`#SagasApp #IANarrativa #TechStory #BastidoresIA #StorytellingTech`
 
-🗺️ O que é armazenado:
-• Personagens (nome, aparência, personalidade, relações)
-• Locais (descrições, eventos que aconteceram lá)
-• Eventos importantes (timeline completa)
-• Capítulos e Atos (resumos automáticos)
-
-🧠 Como funciona:
-
-Quando você escreve, a IA:
-1. Consulta a wiki da sua saga
-2. Identifica personagens/locais mencionados
-3. Gera respostas coerentes com a história estabelecida
-4. Atualiza a wiki com novos elementos
-
-Exemplo real:
-Você criou um personagem chamado "Elara" no Capítulo 2. No Capítulo 15, você escreve: "Onde está Elara?"
-
-A IA não inventa. Ela LEMBRA:
-• Última vez que Elara apareceu
-• Relacionamento dela com seu protagonista
-• Motivações e objetivos dela
-
-E responde de forma coerente.
-
-Isso não é um chatbot. É um universo persistente.
-
-Suas escolhas no Capítulo 1 ecoam no Capítulo 50. Sempre.
-
-#MemóriaContextual #WikiDinâmica #NarrativaCoerente #AIMemory #WorldBuilding
-```
-
-**Slides**:
-1. Título: "Memória Que Nunca Esquece" + ícone de livro/cérebro
-2. Screenshot: Wiki view (lista de personagens)
-3. Screenshot: Timeline de eventos
-4. Screenshot: Detalhes de um personagem na wiki
-5. Diagrama: "Fluxo de Memória" (Mensagem → Wiki → Contexto → Resposta)
-6. CTA: "Construa seu universo persistente"
-
----
-
-### Semana 3: "Smart Fix: Seu Editor Pessoal"
-**Foco**: Feature de correção inteligente
-
-**Caption Sugerida**:
-```
-✍️ Você escreve: "Eu vou lá"
-
-Smart Fix sugere: "Eu me dirijo até lá com cautela"
-
-Não é apenas correção gramatical. É ENRIQUECIMENTO NARRATIVO.
-
-O Smart Fix analisa:
-• Contexto da sua saga (gênero, tom)
-• Estilo narrativo estabelecido
-• Vocabulário do universo
-
-E sugere melhorias que mantêm SUA voz, mas elevam a escrita.
-
-🎭 Exemplos por gênero:
-
-**Fantasy**:
-"Eu peguei a espada" → "Empunhei a lâmina ancestral"
-
-**Cyberpunk**:
-"Eu hackeei o sistema" → "Infiltrei-me na mainframe corporativa"
-
-**Horror**:
-"Eu ouvi um barulho" → "Um som arrepiante ecoou nas sombras"
-
-🤖 Como funciona:
-
-A IA considera:
-1. Gênero da saga (cada um tem vocabulário específico)
-2. Tom emocional da mensagem
-3. Contexto da cena atual
-
-E oferece sugestões — você decide se aceita.
-
-Quer escrever como um autor profissional sem perder sua essência?
-
-Smart Fix é seu co-autor invisível.
-
-#SmartFix #AIEditor #EscritaCriativa #NarrativaRica #CoAutorIA
-```
-
-**Slides**:
-1. Título: "Seu Editor de Bolso Inteligente" + ícone de caneta/IA
-2. Screenshot: Antes/Depois - Texto simples vs Smart Fix
-3. Screenshot: Sugestão de Smart Fix em ação
-4. Exemplos: Grid com 3 gêneros e suas transformações
-5. Explicação: "Mantém sua voz + Eleva a narrativa"
-6. CTA: "Ative nas configurações"
-
----
-
-### Semana 4: "Gênero Spotlight: Shinobi"
-**Foco**: Deep dive em um gênero específico
-
-**Caption Sugerida**:
-```
-🥷 Shinobi: Onde honra e sombras se encontram.
-
-Cada gênero no Sagas não é apenas uma estética. É um UNIVERSO completo com:
-
-🎨 Identidade Visual:
-• Paleta de cores: Vermelho vinho (#880101) + tons terrosos
-• Tipografia: Inspirada em caligrafia japonesa
-• Animações: Movimentos fluidos, entrada suave
-
-📖 Narrativa Específica:
-
-A IA entende o contexto de Shinobi:
-• Clãs e hierarquias
-• Código de honra vs pragmatismo
-• Técnicas ninja e misticismo
-• Conflitos internos (dever vs desejo)
-
-🎭 Exemplo de Diálogo:
-
-**Genérico**: "Eu vou completar a missão"
-
-**Shinobi-tuned**: "O caminho do shinobi não conhece hesitação. A missão será cumprida, mesmo que as sombras da dúvida sussurrem em meu coração."
-
-🧠 Tecnicamente:
-
-Cada gênero tem:
-• Prompts customizados para a IA
-• Vocabulário específico no Smart Fix
-• Parâmetros de cor e animação únicos
-• Música ambiente temática (opcional)
-
-Shinobi é apenas um dos 8 universos.
-
-Qual você vai explorar primeiro?
-
-Fantasy épico? Cyberpunk distópico? Horror psicológico?
-
-#ShinobiTheme #GenreSpotlight #JapaneseAesthetic #NarrativaTemática #8Universos
-```
-
-**Slides**:
-1. Título: "Shinobi: Honra nas Sombras" + arte temática
-2. Screenshot: Seleção do gênero Shinobi (card visual)
-3. Screenshot: Chat com estética Shinobi (cores, bubbles)
-4. Screenshot: Personagem Shinobi (exemplo)
-5. Grid: "8 Gêneros Disponíveis" (mini preview de cada)
-6. CTA: "Escolha seu universo"
-
----
 
 ## Diretrizes de Geração
 

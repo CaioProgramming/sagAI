@@ -373,4 +373,5 @@
     <string name="notification_timeline_event_content">New event: %s</string>
     <string name="notification_milestone">Milestone Reached</string>
     <string name="notification_milestone_content">You reached a new milestone!</string>
+    <string name="smart_notification_fallback">I was thinking about our story, let\'s continue when you have time.</string>
 </resources>

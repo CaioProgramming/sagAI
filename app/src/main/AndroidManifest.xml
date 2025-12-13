@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
 
     <application
@@ -49,6 +52,14 @@
             android:name=".core.media.SagaMediaService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name=".core.notifications.ScheduledNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.ilustris.sagai.SCHEDULED_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
 
 
     </application>

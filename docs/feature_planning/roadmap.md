@@ -101,14 +101,27 @@ own dedicated folder containing detailed tasks and implementation plans.
 * **Status**: Planning
 * **Folder**: `global_notifications/`
 * **Plan**: `global_notifications/plan.md`
-* **Description**: Enhance the existing notification system to provide comprehensive updates for all
-  major saga events when the app is in the background. Extends beyond just new messages to include
-  new chapters, acts, characters, timeline events, and other significant story progressions.
-  Creates a more engaging user experience by keeping players informed of story developments even
+* **Description**: Enhance the existing notification system to provide comprehensive updates for
+  all                                                    
+  major saga events when the app is in the background. Extends beyond just new messages to
+  include                                                      
+  new chapters, acts, characters, timeline events, and other significant story
+  progressions.                                                            
+  Creates a more engaging user experience by keeping players informed of story developments
+  even                                                        
   when not actively using the app.
 
----
+### 12. Scheduled Contextual Notifications ⏰
 
+* **Status**: Completed ✅
+* **Folder**: `global_notifications/`
+* **Plan**: `global_notifications/scheduled_notifications_plan.md`
+* **Description**: Implemented a smart notification scheduling system that sends AI-generated,
+  contextual messages from story characters 2 hours after the user
+  leaves the app. This creates an immersive experience where characters reach out with personalized
+  messages based on the current story context.
+
+---
 ## Usage
 
 To start working on a feature:

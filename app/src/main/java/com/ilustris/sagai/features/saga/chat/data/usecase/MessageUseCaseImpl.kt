@@ -195,7 +195,10 @@ class MessageUseCaseImpl
                 )
 
             val reaction = gemmaClient.generate<ReactionGen>(prompt)!!
-            Log.d(javaClass.simpleName, "generateReaction: ${reaction.reactions.size} reactions generated.")
+            Log.d(
+                javaClass.simpleName,
+                "generateReaction: ${reaction.reactions.size} reactions generated.",
+            )
             reaction.reactions.forEach { reaction ->
                 val reactingCharacter =
                     charactersInScene.find {

@@ -152,16 +152,16 @@ fun Genre.shaderParams(
         ShaderParams(
             grainIntensity = customGrain ?: .1f,
             softFocusRadius = focusRadius ?: .1f,
-            saturation = .7f,
-            contrast = 1.5f,
-            brightness = .01f.unaryMinus(),
+            saturation = .8f,
+            contrast = 1.2f,
+            brightness = .0f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .1f,
+            vignetteStrength = .05f,
             vignetteSoftness = 1f,
-            pixelationBlockSize = 0.0f,
-            colorTemperature = .2f.unaryMinus(),
+            pixelationBlockSize = 0f,
+            colorTemperature = .1f.unaryMinus(),
         )
     }
 
@@ -285,7 +285,8 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",
