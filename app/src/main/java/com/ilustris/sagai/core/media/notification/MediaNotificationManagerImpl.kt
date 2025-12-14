@@ -79,7 +79,14 @@ class MediaNotificationManagerImpl
                     .setSmallIcon(playbackMetadata.genre.background)
                     .setContentTitle(fullTitle)
                     .setContentText(playbackMetadata.timelineObjective)
-                    .setSubText("$progressPercentage% • Act ${completedActs.toRoman()} of ${totalActs.toRoman()}")
+                    .setSubText(
+                        context.getString(
+                            R.string.notification_progress_subtext,
+                            progressPercentage,
+                            completedActs.toRoman(),
+                            totalActs.toRoman(),
+                        ),
+                    )
                     .setContentIntent(openAppPendingIntent)
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
