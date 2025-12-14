@@ -12,6 +12,12 @@ the APK.
     - Ensure we are on the develop branch: `git checkout develop`
     - Pull the latest changes: `git pull origin develop`
 
+3. **Check for version changes on SagaDatabase**:
+    - Run
+      `git diff origin/main...develop -- app/src/main/java/com/example/app/data/saga/SagaDatabase.kt`
+    - If there are changes:
+        - discard the develop version and increment based on the main branch version.
+
 3. **Check for Open PRs**:
     - Run `gh pr list --base develop --state open` to see any pending PRs targeting develop.
     - If there are open PRs:
