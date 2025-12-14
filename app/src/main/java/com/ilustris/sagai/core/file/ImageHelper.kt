@@ -22,7 +22,9 @@ class ImageHelper
             cropToCircle: Boolean = false,
         ): RequestResult<Bitmap> =
             executeRequest {
-                assert(uri != null)
+                if (uri.isNullOrEmpty()) {
+                    error("Image uri invalid")
+                }
                 val request =
                     imageLoader.execute(
                         ImageRequest
