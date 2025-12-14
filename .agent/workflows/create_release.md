@@ -45,17 +45,24 @@ the APK.
     - Create `docs/release_notes/release_[new_version].md`.
     - Include the "What's New" and "Bug Fixes" sections based on the git log analysis.
 
-7. **Build Release**:
-    - Run `./gradlew assembleRelease`.
+7. **Build Debug & Release**:
+    - **Debug Build**: Run `./gradlew assembleDebug` for Firebase distribution.
+    - **Release Build**: Run `./gradlew assembleRelease` for Google Play Console.
     - *Note*: This might take a few minutes.
 
-8. **Finalize**:
+8. **Distribute to Firebase**:
+    - **Prepare Release Notes**: Read the content from `docs/release_notes/release_[new_version].md`.
+    - **Distribute**: Run `firebase appdistribution:distribute app/build/outputs/apk/debug/app-debug.apk --app [FIREBASE_APP_ID] --groups "alpha-testers" --release-notes-file docs/release_notes/release_[new_version].md`
+    - *Note*: This distributes the debug build to alpha-testers. The release build will be uploaded to Google Play Console manually.
+    - **Confirm**: Notify the user that the debug build has been distributed to alpha-testers.
+
+9. **Finalize**:
     - Notify the user that Release **[new_version]** is ready.
-   - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
-       - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
+    - Run `open app/build/outputs/apk/release/` to show the APK in Finder.
+    - Provide the path to the APK: `app/build/outputs/apk/release/app-release.apk`.
     - Ask the user to review the generated release notes.
 
-9. **Create Pull Request**:
+10. **Create Pull Request**:
     - **Identify Core Features**: Use the git log analysis from Step 1 to identify 1-2 core features
       or major improvements.
     - **Construct Title**: `✦ Release [Version] - [Core Feature 1] & [Core Feature 2]`
