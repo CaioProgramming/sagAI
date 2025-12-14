@@ -189,6 +189,6 @@ class NotificationGenerationWorker
             const val WORK_TAG_PREFIX = "notification_"
 
             private const val NOTIFICATION_DELAY_PRODUCTION_HOURS = 2
-            private const val NOTIFICATION_DELAY_DEBUG_MINUTES = 1
+            private const val NOTIFICATION_DELAY_DEBUG_MINUTES = 30
         }
     }
