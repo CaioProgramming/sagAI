@@ -41,7 +41,7 @@ class NotificationGenerationWorker
     ) : CoroutineWorker(context, params) {
         override suspend fun doWork(): Result {
             return try {
-                withTimeout(10.seconds) {
+                withTimeout(20.seconds) {
                     Log.d(javaClass.simpleName, "Generating notification...")
                     val sagaId = inputData.getInt(KEY_SAGA_ID, -1)
                     if (sagaId == -1) {
@@ -101,7 +101,7 @@ class NotificationGenerationWorker
                                     sceneSummary = sceneSummary,
                                 )
 
-                            delay(2.seconds)
+                            delay(3.seconds)
 
                             val message =
                                 gemmaClient.generate<String>(prompt, useCore = true) ?: emptyString()
