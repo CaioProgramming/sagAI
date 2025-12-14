@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.Person
+import androidx.core.graphics.drawable.IconCompat
 import com.ilustris.sagai.MainActivity
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.FileHelper
@@ -119,15 +121,60 @@ class ChatNotificationManagerImpl
                         null
                     }
 
-            sendToNotificationChannel(
-                title = title,
-                content = body,
-                largeIcon = finalLargeIcon,
-                pendingIntent = createPendingIntent(formatChatDeepLink),
-                genreColor = saga.genre.color,
-                smallIconResId = saga.genre.background,
-                priority = NotificationCompat.PRIORITY_HIGH,
-            )
+            // Crop icon to circle for better appearance
+            val croppedIcon = cropBitmapToCircle(finalLargeIcon)
+
+            // Create Person for messaging style
+            val person =
+                Person
+                    .Builder()
+                    .setName(title)
+                    .setIcon(croppedIcon?.let { IconCompat.createWithBitmap(it) })
+                    .build()
+
+            // Create MessagingStyle for chat-like appearance
+            val messagingStyle =
+                NotificationCompat
+                    .MessagingStyle(person)
+                    .setConversationTitle(saga.title)
+                    .addMessage(
+                        body,
+                        System.currentTimeMillis(),
+                        person,
+                    )
+
+            val pendingIntent = createPendingIntent(formatChatDeepLink)
+
+            // Use app icon for small icon
+            val finalSmallIconResId =
+                try {
+                    context.resources.getDrawable(saga.genre.background, null)
+                    saga.genre.background
+                } catch (e: Exception) {
+                    R.drawable.ic_spark
+                }
+
+            val builder =
+                NotificationCompat
+                    .Builder(context, CHAT_CHANNEL_ID)
+                    .setSmallIcon(finalSmallIconResId)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setContentIntent(pendingIntent)
+                    .setColor(saga.genre.color.toArgb())
+                    .setColorized(true)
+                    .setAutoCancel(true)
+                    .setStyle(messagingStyle)
+                    .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+
+            if (ActivityCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS,
+                ) == PackageManager.PERMISSION_GRANTED
+            ) {
+                NotificationManagerCompat
+                    .from(context)
+                    .notify(CHAT_NOTIFICATION_ID, builder.build())
+            }
         }
 
         override fun clearNotifications() {
@@ -139,7 +186,7 @@ class ChatNotificationManagerImpl
             return chatRoute.deepLink
                 ?.replace("{sagaId}", sagaId)
                 ?.replace("isDebug", "false") ?: ""
-    }
+        }
 
         fun sendSnackBarNotification(
             saga: SagaContent,
@@ -225,15 +272,11 @@ class ChatNotificationManagerImpl
             val finalIcon = cropBitmapToCircle(largeIcon)
             // Create Person for the sender
             val person =
-                androidx.core.app.Person
+                Person
                     .Builder()
                     .setName(characterName)
-                    .setIcon(
-                        finalIcon?.let {
-                            androidx.core.graphics.drawable.IconCompat
-                                .createWithBitmap(it)
-                        },
-                    ).build()
+                    .setIcon(finalIcon?.let { IconCompat.createWithBitmap(it) })
+                    .build()
 
             // Create MessagingStyle for chat-like appearance
             val messagingStyle =
@@ -249,16 +292,11 @@ class ChatNotificationManagerImpl
             val builder =
                 NotificationCompat
                     .Builder(context, CHAT_CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_spark)
-                    .setContentTitle(title)
-                    .setContentText(message)
-                    .setLargeIcon(largeIcon)
+                    .setSmallIcon(saga.genre.background)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)
                     .setContentIntent(pendingIntent)
-                    .setColor(
-                        saga.genre.color
-                            .toArgb(),
-                    ).setColorized(true)
+                    .setColor(saga.genre.color.toArgb())
+                    .setColorized(true)
                     .setAutoCancel(true)
                     .setStyle(messagingStyle)
                     .setCategory(NotificationCompat.CATEGORY_MESSAGE)

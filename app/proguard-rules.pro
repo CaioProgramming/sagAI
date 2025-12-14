@@ -35,3 +35,6 @@
 -keepclassmembers enum * {
  @com.google.gson.annotations.SerializedName <fields>;
  }
+ -keepclassmembers class * extends androidx.work.Worker {
+     public <init>(android.content.Context,androidx.work.WorkerParameters);
+ }

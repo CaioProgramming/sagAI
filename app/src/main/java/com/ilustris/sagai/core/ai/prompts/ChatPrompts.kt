@@ -52,6 +52,7 @@ object ChatPrompts {
             "emojified",
             "hexColor",
             "firstSceneId",
+            "smartZoom",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -290,8 +291,12 @@ object ChatPrompts {
         sceneSummary: SceneSummary,
     ) = buildString {
         append(SagaPrompts.mainContext(saga))
+        appendLine("Current Story Context:")
+        appendLine(
+            sceneSummary.toAINormalize(),
+        )
         appendLine("Character Context:")
-        append(selectedCharacter.toAINormalize(characterExclusions))
+        append(selectedCharacter.data.toAINormalize(characterExclusions))
         appendLine()
 
         val relationWithCharacter = selectedCharacter.findRelationship(saga.mainCharacter!!.data.id)
@@ -301,29 +306,24 @@ object ChatPrompts {
             appendLine(it.summarizeRelation())
         }
 
-        appendLine("Current Story Moment:")
-        appendLine(
-            sceneSummary.toAINormalize(),
-        )
         appendLine(
             conversationHistory(
                 saga.flatMessages().map { it.message }.takeLast(UpdateRules.LORE_UPDATE_LIMIT),
             ),
         )
         appendLine()
-        appendLine()
         appendLine(
             "Task: Generate a brief, authentic message (1-2 sentences) as ${selectedCharacter.data.name} reaching out to the player who just left.",
         )
 
-        if (selectedCharacter.data.id == saga.mainCharacter?.data?.id) {
+        if (selectedCharacter.data.id == saga.mainCharacter.data.id) {
             appendLine(
                 "IMPORTANT: This is the MAIN CHARACTER. The message must be an INNER THOUGHT or REFLECTION about the current situation.",
             )
             appendLine("Do NOT address another person. Talk to yourself.")
         } else {
             appendLine(
-                "IMPORTANT: This is an NPC. The message must be spoken DIRECTLY to the main character (${saga.mainCharacter?.data?.name}).",
+                "IMPORTANT: This is an NPC. The message must be spoken DIRECTLY to the main character (${saga.mainCharacter.data.name}).",
             )
         }
 
@@ -339,8 +339,6 @@ object ChatPrompts {
         appendLine("- Consider your relationship history and emotional connection with the player")
         appendLine("- Reference current story elements and shared experiences naturally")
         append(GenrePrompts.conversationDirective(saga.data.genre))
-        appendLine()
-        appendLine()
         appendLine("Your message as ${selectedCharacter.data.name}:")
     }
 

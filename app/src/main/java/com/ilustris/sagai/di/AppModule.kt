@@ -31,6 +31,8 @@ import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
+import com.ilustris.sagai.core.notifications.WorkManagerScheduler
+import com.ilustris.sagai.core.notifications.WorkManagerSchedulerImpl
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
@@ -263,15 +265,21 @@ object AppModule {
     @Provides
     fun providesScheduleNotificationService(
         @ApplicationContext context: Context,
-        gemmaClient: GemmaClient,
+        workManagerScheduler: WorkManagerScheduler,
         preferences: DataStorePreferences,
     ): ScheduledNotificationService =
         ScheduledNotificationServiceImpl(
             context,
             context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager,
-            gemmaClient,
+            workManagerScheduler,
             preferences,
         )
+
+    @Provides
+    @Singleton
+    fun providesWorkManagerScheduler(
+        @ApplicationContext context: Context,
+    ): WorkManagerScheduler = WorkManagerSchedulerImpl(context)
 }
 
 @InstallIn(ViewModelComponent::class)

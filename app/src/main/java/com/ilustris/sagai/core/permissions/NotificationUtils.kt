@@ -33,14 +33,10 @@ object NotificationUtils {
 
     fun createMediaNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // Media playback notifications are often IMPORTANCE_LOW to be less intrusive
-            // but still visible, especially for ongoing foreground services.
             val importance = NotificationManager.IMPORTANCE_LOW
             val channel =
                 NotificationChannel(MEDIA_CHANNEL_ID, MEDIA_CHANNEL_NAME, importance).apply {
                     description = MEDIA_CHANNEL_DESCRIPTION
-                    // setShowBadge(false) // Media playback notifications usually don't need a badge
-                    // setSound(null, null) // To avoid sound on updates if only visual changes are made to the notification
                 }
             val notificationManager: NotificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

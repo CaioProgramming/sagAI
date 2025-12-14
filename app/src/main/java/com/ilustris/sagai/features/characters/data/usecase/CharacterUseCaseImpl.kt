@@ -38,9 +38,7 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.ui.theme.toHex
 import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
-import com.slowmac.autobackgroundremover.removeBackground
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -88,8 +86,7 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                // TODO REMOVE FORCED PREMIUM
-                val isPremium = true // billingService.isPremium()
+                val isPremium = billingService.isPremium()
 
                 val portraitReference =
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
@@ -111,32 +108,25 @@ class CharacterUseCaseImpl
                         ).getSuccess()
 
                 val descriptionPrompt =
-                    if (isPremium) {
-                        SagaPrompts.iconDescription(
-                            saga.genre,
-                            mapOf(
-                                "saga" to saga.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
-                                "character" to
-                                    character.toJsonFormatExcludingFields(
-                                        listOf(
-                                            "id",
-                                            "image",
-                                            "sagaId",
-                                            "joinedAt",
-                                            "emojified",
-                                            "abilities",
-                                        ),
+                    SagaPrompts.iconDescription(
+                        saga.genre,
+                        mapOf(
+                            "saga" to saga.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
+                            "character" to
+                                character.toJsonFormatExcludingFields(
+                                    listOf(
+                                        "id",
+                                        "image",
+                                        "sagaId",
+                                        "joinedAt",
+                                        "emojified",
+                                        "abilities",
                                     ),
-                            ).toJsonFormat(),
-                            visualComposition,
-                            characterHexColor = character.hexColor,
-                        )
-                    } else {
-                        ImagePrompts.simpleEmojiRendering(
-                            saga.genre.color.toHex(),
-                            character,
-                        )
-                    }
+                                ),
+                        ).toJsonFormat(),
+                        visualComposition,
+                        characterHexColor = character.hexColor,
+                    )
 
                 val translatedDescription =
                     gemmaClient.generate<String>(
@@ -148,13 +138,6 @@ class CharacterUseCaseImpl
                 val image =
                     imagenClient
                         .generateImage(translatedDescription.plus(ImagePrompts.criticalGenerationRule()), canByPass = false)!!
-                        .apply {
-                            if (isPremium.not()) {
-                                this.removeBackground(context, true)
-                            } else {
-                                imageCropHelper.cropToPortraitBitmap(this)
-                            }
-                        }
 
                 val file =
                     fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
@@ -343,7 +326,7 @@ class CharacterUseCaseImpl
                     Log.e(
                         javaClass.simpleName,
                         "checkAndGenerateZoom: Error generating smart zoom for character ${character.name}: ${it.message}",
-                )
-            }
-    }
+                    )
+                }
+        }
     }

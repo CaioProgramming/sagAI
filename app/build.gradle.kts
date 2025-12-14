@@ -116,6 +116,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.unit)
     implementation(libs.androidx.compose.ui.graphics)
     ksp(libs.androidx.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler.work)
     implementation(libs.androidx.core.splashscreen)
 
     implementation(libs.androidx.room.ktx)

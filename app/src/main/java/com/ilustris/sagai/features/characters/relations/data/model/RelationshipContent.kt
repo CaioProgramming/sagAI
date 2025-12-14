@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.characters.relations.data.model
 import androidx.compose.ui.graphics.Brush
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -57,7 +58,7 @@ data class RelationshipContent(
 
     fun summarizeRelation() =
         "${characterOne.name} ${data.emoji} ${characterTwo.name} - ${data.title}:\n${
-            relationshipEvents.takeLast(5).normalizetoAIItems(
+            relationshipEvents.reversed().take(UpdateRules.CHAPTER_UPDATE_LIMIT).normalizetoAIItems(
                 listOf("timestamp", "relationId", "timelineId", "id"),
             )
         }"

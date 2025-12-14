@@ -5,8 +5,10 @@ description: Create a Pull Request for the current feature branch with a cool, t
 This workflow automates the creation of a Pull Request (PR) for the current branch, focusing on
 technical achievements and implementation details.
 ! IMPORTANT REMEMBER TO ADD docs folder to .gitignore and push to the branch before procceed
-!Important validate if exist any uncommited changes before procceed if has summarize the changes and
+! Important validate if exist any uncommited changes before procceed if has summarize the changes
+and
 push to the branch
+! Important remove any comments in code even if they are explanations
 
 1. **Extract Hardcoded Strings** (Localization Check):
     - **Scan Modified Files**: Run `git diff --name-only develop..HEAD` to get list of changed

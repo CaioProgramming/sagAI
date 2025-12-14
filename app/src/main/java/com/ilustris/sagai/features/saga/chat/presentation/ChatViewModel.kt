@@ -502,7 +502,7 @@ class ChatViewModel
                             "Updating playtime for saga ${currentSaga.data.id}: +${duration}ms",
                         )
                         sagaContentManager.updatePlaytime(currentSaga.data.id, duration)
-                        scheduledNotificationService.scheduleNotification(currentSaga)
+                        scheduledNotificationService.scheduleNotification(currentSaga.data.id)
                     }
                     startTime = 0L
                 }
