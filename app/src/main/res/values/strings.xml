@@ -227,6 +227,7 @@
     <string name="genre_crime">Crime City</string>
     <string name="genre_space_opera">Space Opera</string>
     <string name="genre_shinobi">Shinobi</string>
+    <string name="genre_cowboys" translatable="false">Cowboys</string>
     <string name="settings_title">Settings</string>
     <string name="memory_usage">Storage Usage</string>
     <string name="premium_first_title">Dive into unique universes and turn your ideas into unforgettable stories. With Sagas Pro, your creativity comes alive and every chapter becomes a visually immersive experience.</string>
@@ -243,6 +244,8 @@
     <string name="smart_fix" translatable="false">Smart Fix</string>
 
     <string name="smart_fix_description">Receive automatic AI correction suggestions based on your story and theme. The suggestions help to enrich the vocabulary and add depth to the narrative.</string>
+    <string name="message_effects">Message Effects</string>
+    <string name="message_effects_description">Bring your story to life with dynamic animations that reflect the mood of each moment</string>
     <string name="clear_data_button">Clear Data</string>
     <string name="clear_data_dialog_title">Clear All Data</string>
     <string name="clear_data_dialog_message">This will erase all your stories and settings. Are you sure you want to continue? You can always start fresh!</string>
@@ -337,4 +340,39 @@
     <string name="recap_your_journey">Your Journey</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
 
+    <!-- BackupViewModel: Status and Error Messages -->
+    <string name="backup_loading_recovering_content">Recovering content...</string>
+    <string name="backup_error_recovery_failed">An unexpected error occurred, could not recover backup contents :(</string>
+    <string name="backup_message_all_good">Looks like everything is in order!</string>
+    <string name="backup_loading_found_items">We found some things..</string>
+    <string name="backup_loading_enabling">Enabling backup...</string>
+    <string name="backup_success_enabled">All set! Enjoy your stories 💜</string>
+    <string name="backup_error_enable_failed">Could not enable backup. We\'re sorry about that, shall we try again?</string>
+    <string name="backup_loading_restoring_saga">Restoring %s...</string>
+
+    <!-- Conversation Snippet Sharing -->
+    <string name="messages_selected">%d of %d messages selected</string>
+    <string name="share">Share</string>
+    <string name="cancel">Cancel</string>
+
+
+    <string name="story_sheet_button_continue_saga">Continue Saga</string>
+    <string name="story_sheet_title_previously_on">Previously on %s</string>
+    <string name="story_sheet_title_history_continues">The history continues</string>
+
+    <!-- Global Notifications -->
+    <string name="notification_new_message">New Message</string>
+    <string name="notification_new_message_content">%s sent a new message</string>
+    <string name="notification_new_chapter">New Chapter</string>
+    <string name="notification_new_chapter_content">Chapter %s has begun!</string>
+    <string name="notification_new_act">New Act</string>
+    <string name="notification_new_act_content">Act %s: %s</string>
+    <string name="notification_new_character">New Character</string>
+    <string name="notification_new_character_content">%s joined the story!</string>
+    <string name="notification_timeline_event">Timeline Update</string>
+    <string name="notification_timeline_event_content">New event: %s</string>
+    <string name="notification_milestone">Milestone Reached</string>
+    <string name="notification_milestone_content">You reached a new milestone!</string>
+    <string name="smart_notification_fallback">I was thinking about our story, let\'s continue when you have time.</string>
+    <string name="notification_progress_subtext">%1$d%% • Act %2$s of %3$s</string>
 </resources>

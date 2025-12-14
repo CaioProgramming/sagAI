@@ -52,8 +52,21 @@ class ImagenClientImpl
             canByPass: Boolean,
         ): Bitmap? {
             val modelName = modelName()
-            return try {
-                val isPremiumUser = billingService.isPremium()
+            val logData =
+                buildString {
+                    append("Generating image with ➡ $modelName\n")
+                    append("Prompt \uD83D\uDCC4:")
+                    appendLine(prompt)
+                    if (references.isNotEmpty()) {
+                        appendLine("References \uD83C\uDFDE\uFE0F:\n")
+                        references.forEach {
+                            appendLine("Bitmap with Description: ${it.description}\n")
+                        }
+                    }
+                    appendLine("\n")
+                }
+            Log.i(TAG, logData)
+            return billingService.runPremiumRequest {
                 val imageModel =
                     Firebase.ai().generativeModel(
                         modelName = modelName,
@@ -71,18 +84,12 @@ class ImagenClientImpl
                             text(it.description)
                         }
                     }
-                if (isPremiumUser.not() && canByPass.not()) {
-                    error("Only premium users can generate images")
-                }
+
                 val content = imageModel.generateContent(promptBuilder)
                 Log.d(TAG, "generateImage: Token data: ${content.usageMetadata?.toJsonFormat()}")
                 Log.d(
                     TAG,
                     "generateImage: Prompt feedback: ${content.promptFeedback?.toJsonFormat()}",
-                )
-                Log.i(
-                    javaClass.simpleName,
-                    "Generating image($modelName) with prompt:\n${promptBuilder.toJsonFormat()}",
                 )
 
                 content
@@ -90,12 +97,6 @@ class ImagenClientImpl
                     .first()
                     .content.parts
                     .firstNotNullOf { it.asImageOrNull() }
-            } catch (e: Exception) {
-                Log.e(TAG, "generateImage: Image generation failed ${e.message}")
-                Log.e(TAG, "generateImage: Requested prompt\n$prompt\n")
-                Log.e(TAG, "generateImage: ${references.size} references submitted")
-                e.printStackTrace()
-                null
             }
         }
 

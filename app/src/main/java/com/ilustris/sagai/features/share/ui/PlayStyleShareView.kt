@@ -1,10 +1,6 @@
 package com.ilustris.sagai.features.share.ui
 
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
@@ -28,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -59,6 +56,7 @@ import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.presentation.SharePlayViewModel
 import com.ilustris.sagai.ui.components.StarryLoader
+import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.theme.SagAITheme
 import com.ilustris.sagai.ui.theme.SagaTitle
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -81,6 +79,8 @@ fun PlayStyleShareView(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val shareText by viewModel.shareText.collectAsStateWithLifecycle()
     val savedPath by viewModel.savedFilePath.collectAsStateWithLifecycle()
+    val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
+    val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
     val graphicsLayer = rememberGraphicsLayer()
     val context = LocalContext.current
@@ -91,6 +91,12 @@ fun PlayStyleShareView(
         lifecycleOwner.lifecycle.addObserver(viewModel)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(viewModel)
+        }
+    }
+
+    LaunchedEffect(content) {
+        if (content.data.icon.isNotEmpty()) {
+            viewModel.segmentImage(content.data.icon)
         }
     }
 
@@ -105,98 +111,94 @@ fun PlayStyleShareView(
                     .clickable {
                         coroutineScope.launch {
                             viewModel.startSaving()
-                            graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
-                                viewModel.saveBitmap(bitmap, ShareType.PLAYSTYLE.name)
-                            }
+                            graphicsLayer
+                                .toImageBitmap()
+                                .asAndroidBitmap()
+                                .let { bitmap ->
+                                    viewModel.saveBitmap(bitmap, ShareType.PLAYSTYLE.name)
+                                }
                         }
-                    }.drawWithContent {
+                    }
+                    .drawWithContent {
                         graphicsLayer.record {
                             this@drawWithContent.drawContent()
                         }
                         drawLayer(graphicsLayer)
-                    }.padding(24.dp)
+                    }
+                    .padding(8.dp)
                     .background(genre.color),
             ) {
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(.5f),
+                            .fillMaxHeight(.6f),
                 ) {
-                    AsyncImage(
-                        saga.icon,
-                        null,
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .effectForGenre(genre)
-                                .selectiveColorHighlight(genre.selectiveHighlight()),
-                        contentScale = ContentScale.Crop,
-                    )
-
-                    Box(
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxSize()
-                            .background(fadeGradientBottom(genre.color)),
-                    )
-
-                    Column(
-                        modifier =
-                            Modifier
-                                .align(Alignment.Center)
-                                .padding(16.dp)
-                                .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                    }
-
-                    Column(
-                        Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            shareText?.title ?: emptyString(),
-                            style =
-                                MaterialTheme.typography.titleSmall.copy(
-                                    fontFamily = genre.bodyFont(),
-                                    color = genre.iconColor,
-                                    textAlign = TextAlign.Center,
-                                    shadow =
-                                        Shadow(
-                                            genre.color,
-                                            blurRadius = 10f,
-                                            offset = Offset(2f, 0f),
-                                        ),
-                                ),
-                        )
-
-                        Text(
-                            content.mainCharacter?.data?.name ?: emptyString(),
-                            modifier =
+                    if (originalBitmap != null && segmentedBitmap != null) {
+                        DepthLayout(
+                            originalImage = originalBitmap!!,
+                            segmentedImage = segmentedBitmap!!,
+                            modifier = Modifier.fillMaxSize(),
+                            backgroundImageModifier =
                                 Modifier
+                                    .blur(3.dp)
+                                    .effectForGenre(genre)
+                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                            foregroundImageModifier =
+                                Modifier
+                                    .effectForGenre(genre)
+                                    .selectiveColorHighlight(genre.selectiveHighlight()),
+                        ) {
+                            Column(
+                                Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(8.dp)
                                     .fillMaxWidth(),
-                            style =
-                                MaterialTheme.typography.displayMedium.copy(
-                                    fontFamily = genre.headerFont(),
-                                    textAlign = TextAlign.Center,
-                                    brush =
-                                        Brush.verticalGradient(
-                                            listOf(
-                                                genre.color,
-                                                genre.iconColor,
-                                            ),
+                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text(
+                                    shareText?.title ?: emptyString(),
+                                    style =
+                                        MaterialTheme.typography.labelMedium.copy(
+                                            fontFamily = genre.bodyFont(),
+                                            color = genre.iconColor,
+                                            textAlign = TextAlign.Center,
+                                            shadow =
+                                                Shadow(
+                                                    genre.color,
+                                                    blurRadius = 10f,
+                                                    offset = Offset(2f, 0f),
+                                                ),
                                         ),
-                                    shadow = Shadow(genre.color, blurRadius = 10f),
-                                ),
-                        )
+                                )
+
+                                Text(
+                                    content.data.title,
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth(),
+                                    style =
+                                        MaterialTheme.typography.displaySmall.copy(
+                                            fontFamily = genre.headerFont(),
+                                            textAlign = TextAlign.Center,
+                                            brush =
+                                                Brush.verticalGradient(
+                                                    listOf(
+                                                        genre.color,
+                                                        genre.iconColor,
+                                                    ),
+                                                ),
+                                            shadow = Shadow(genre.color, blurRadius = 10f),
+                                        ),
+                                )
+
+                            }
+                        }
 
                         Text(
                             shareText?.text ?: emptyString(),
+                            modifier = Modifier.align(Alignment.Center),
                             style =
                                 MaterialTheme.typography.bodyLarge.copy(
                                     fontFamily = genre.bodyFont(),
@@ -213,36 +215,125 @@ fun PlayStyleShareView(
                                         ),
                                 ),
                         )
+
+                    } else {
+                        AsyncImage(
+                            saga.icon,
+                            null,
+                            modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .effectForGenre(genre)
+                                .selectiveColorHighlight(genre.selectiveHighlight()),
+                            contentScale = ContentScale.Crop,
+                        )
+                        Column(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(8.dp)
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(
+                                shareText?.title ?: emptyString(),
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        color = genre.iconColor,
+                                        textAlign = TextAlign.Center,
+                                        shadow =
+                                            Shadow(
+                                                genre.color,
+                                                blurRadius = 10f,
+                                                offset = Offset(2f, 0f),
+                                            ),
+                                    ),
+                            )
+
+                            Text(
+                                content.data.title,
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth(),
+                                style =
+                                    MaterialTheme.typography.displaySmall.copy(
+                                        fontFamily = genre.headerFont(),
+                                        textAlign = TextAlign.Center,
+                                        brush =
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    genre.color,
+                                                    genre.iconColor,
+                                                ),
+                                            ),
+                                        shadow = Shadow(genre.color, blurRadius = 10f),
+                                    ),
+                            )
+
+                            Text(
+                                shareText?.text ?: emptyString(),
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        color = genre.iconColor,
+                                        textAlign = TextAlign.Center,
+                                        fontStyle = FontStyle.Italic,
+                                        fontWeight = FontWeight.W600,
+                                        letterSpacing = 5.sp,
+                                        shadow =
+                                            Shadow(
+                                                genre.color,
+                                                blurRadius = 5f,
+                                                offset = Offset(5f, 0f),
+                                            ),
+                                    ),
+                            )
+
+
+                        }
                     }
+
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxSize()
+                            .background(fadeGradientBottom(genre.color)),
+                    )
+
+                    Column(Modifier.align(Alignment.BottomCenter)) {
+                        Image(
+                            painter = painterResource(R.drawable.ic_spark),
+                            null,
+                            modifier =
+                                Modifier
+                                    .size(24.dp)
+                                    .align(Alignment.CenterHorizontally),
+                            colorFilter = ColorFilter.tint(genre.iconColor),
+                        )
+
+                        Text(
+                            shareText?.caption ?: emptyString(),
+                            style =
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontFamily = genre.bodyFont(),
+                                    color = genre.iconColor,
+                                ),
+                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                        )
+
+                        SagaTitle(
+                            textStyle = MaterialTheme.typography.labelMedium,
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .align(Alignment.CenterHorizontally),
+                        )
+                    }
+
                 }
 
-                Image(
-                    painter = painterResource(R.drawable.ic_spark),
-                    null,
-                    modifier =
-                        Modifier
-                            .size(24.dp)
-                            .align(Alignment.CenterHorizontally),
-                    colorFilter = ColorFilter.tint(genre.iconColor),
-                )
 
-                Text(
-                    shareText?.caption ?: emptyString(),
-                    style =
-                        MaterialTheme.typography.labelMedium.copy(
-                            fontFamily = genre.bodyFont(),
-                            color = genre.iconColor,
-                        ),
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
-
-                SagaTitle(
-                    textStyle = MaterialTheme.typography.labelMedium,
-                    modifier =
-                        Modifier
-                            .padding(8.dp)
-                            .align(Alignment.CenterHorizontally),
-                )
             }
         }
 
@@ -257,9 +348,12 @@ fun PlayStyleShareView(
         if (isLoading.not() && isSaving.not()) {
             coroutineScope.launch {
                 delay(2.seconds)
-                graphicsLayer.toImageBitmap().asAndroidBitmap().let { bitmap ->
-                    viewModel.saveBitmap(bitmap, "play_style_share")
-                }
+                graphicsLayer
+                    .toImageBitmap()
+                    .asAndroidBitmap()
+                    .let { bitmap ->
+                        viewModel.saveBitmap(bitmap, "play_style_share")
+                    }
             }
         }
     }
@@ -271,29 +365,6 @@ fun PlayStyleShareView(
     }
 }
 
-fun launchShareActivity(
-    uri: Uri,
-    context: Context,
-) {
-    val shareIntent =
-        Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "image/*"
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            setDataAndType(uri, context.contentResolver.getType(uri))
-            putExtra(
-                Intent.EXTRA_SUBJECT,
-                context.resources.getString(R.string.app_name),
-            )
-            putExtra(Intent.EXTRA_STREAM, uri)
-        }
-    context.startActivity(
-        Intent.createChooser(
-            shareIntent,
-            "Compartilhar história",
-        ),
-    )
-}
 
 @Preview(
     showBackground = true,

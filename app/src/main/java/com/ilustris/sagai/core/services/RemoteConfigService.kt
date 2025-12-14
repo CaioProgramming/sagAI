@@ -3,7 +3,6 @@ package com.ilustris.sagai.core.services
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.tasks.await
 
 class RemoteConfigService {
     private val firebaseRemoteConfig by lazy {
@@ -31,13 +30,7 @@ class RemoteConfigService {
 
     private suspend fun <T> fetchFlag(block: suspend () -> T): T? =
         try {
-            val fetchTask =
-                firebaseRemoteConfig.fetchAndActivate().await()
-            if (fetchTask != null) {
-                block()
-            } else {
-                error("Couldn't sync with remote config.")
-            }
+            block()
         } catch (e: Exception) {
             e.printStackTrace()
             null

@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,33 +18,30 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.toColorInt
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
-import com.ilustris.sagai.R
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
-import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.darkerPalette
-import com.ilustris.sagai.ui.theme.filters.selectiveColorHighlight
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.headerFont
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
+import kotlinx.coroutines.launch
 
 @Composable
 fun CharacterAvatar(
@@ -58,7 +56,9 @@ fun CharacterAvatar(
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
     pixelation: Float? = null,
+    requireZoom: Boolean = true,
 ) {
+    val viewModel: CharacterAvatarViewModel = hiltViewModel()
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     val borderBrush =
         borderColor?.solidGradient() ?: Brush.verticalGradient(
@@ -67,6 +67,30 @@ fun CharacterAvatar(
                 genre.iconColor,
             ),
         )
+
+    val smartZoom = if (requireZoom) character.smartZoom else null
+
+    val animatedScale by animateFloatAsState(
+        targetValue = smartZoom?.scale ?: 1f,
+        label = "SmartZoomScale",
+    )
+    val animatedTranslationX by animateFloatAsState(
+        targetValue = smartZoom?.translationX ?: 0f,
+        label = "SmartZoomTranslationX",
+    )
+    val animatedTranslationY by animateFloatAsState(
+        targetValue = smartZoom?.translationY ?: 0f,
+        label = "SmartZoomTranslationY",
+    )
+
+    LaunchedEffect(character.image, character.smartZoom) {
+        if (character.image.isNotEmpty() && character.smartZoom == null && requireZoom) {
+            launch {
+                viewModel.checkAndGenerateZoom(character)
+            }
+        }
+    }
+
     Box(
         modifier
             .reactiveShimmer(isLoading, genre.shimmerColors())
@@ -74,7 +98,8 @@ fun CharacterAvatar(
                 borderSize,
                 borderBrush,
                 CircleShape,
-            ).clip(CircleShape)
+            )
+            .clip(CircleShape)
             .padding(innerPadding)
             .background(
                 characterColor.darker(.3f),
@@ -98,14 +123,21 @@ fun CharacterAvatar(
                     .background(
                         characterColor,
                         CircleShape,
-                    ).fillMaxSize()
+                    )
+                    .fillMaxSize()
                     .effectForGenre(
                         genre,
                         useFallBack = character.emojified,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
                         pixelSize = pixelation,
-                    ),
+                    ).graphicsLayer {
+                        scaleX = animatedScale
+                        scaleY = animatedScale
+                        translationX = animatedTranslationX * size.width
+                        translationY = animatedTranslationY * size.height
+                        transformOrigin = TransformOrigin.Center
+                    }.clipToBounds(),
         )
 
         if (painterState is AsyncImagePainter.State.Error) {

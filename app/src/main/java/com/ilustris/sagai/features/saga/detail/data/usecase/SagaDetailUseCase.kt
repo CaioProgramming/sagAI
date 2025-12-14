@@ -4,6 +4,7 @@ import android.net.Uri
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.stories.data.model.StoryDailyBriefing
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import kotlinx.coroutines.flow.Flow
@@ -37,4 +38,6 @@ interface SagaDetailUseCase {
     ): RequestResult<Unit>
 
     fun getBackupEnabled(): Flow<Boolean>
+
+    suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
 }

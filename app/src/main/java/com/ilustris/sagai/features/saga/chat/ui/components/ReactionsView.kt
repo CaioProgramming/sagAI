@@ -44,12 +44,12 @@ import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Reaction
-import com.ilustris.sagai.ui.theme.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.ThoughtBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.components.chat.ThoughtBubbleShape
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
-import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.dashedBorder
+import com.ilustris.sagai.ui.theme.darkerPalette
 
 @OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -112,10 +112,12 @@ fun ReactionsView(
                                         shape = thoughtBubbleShape,
                                         dashLength = 10.dp,
                                         gapLength = 5.dp,
-                                    ).background(
+                                    )
+                                    .background(
                                         Brush.verticalGradient(MaterialTheme.colorScheme.background.darkerPalette()),
                                         thoughtBubbleShape,
-                                    ).padding(8.dp),
+                                    )
+                                    .padding(8.dp),
                         )
                     },
                 ) {
@@ -140,7 +142,8 @@ fun ReactionsView(
                                         }
                                     },
                                 )
-                            }.padding(2.dp),
+                            }
+                            .padding(2.dp),
                     ) {
                         AnimatedContent(
                             targetState = isPeeking,

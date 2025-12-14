@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts.artStyle
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -25,57 +24,16 @@ object ImagePrompts {
             appendLine()
             appendLine("COMPOSITION ENFORCEMENTS:")
             appendLine(
-                "- The artwork must fill the entire output canvas. If necessary, allow natural subject cropping at edges to maintain a full-bleed composition.",
+                "- The artwork must fill the entire output canvas. Apply a **Zoom Out (Medium Long Shot)** to anchor the subject in the bottom 2/3rds.",
             )
+            appendLine("- The top 1/3rd MUST be empty of main subject details (sky/background only).")
+            appendLine("- The composition must be **VERTICALLY BIASED** for lock-screen usage.")
             appendLine(
                 "- The output must be a flattened raster (e.g., PNG/JPEG with no alpha) representing final artwork; do not present layered, masked, or panelled compositions.",
             )
             appendLine("- Do not render frames or simulated frames as visual effects (no faux-matte or simulated print borders).")
             appendLine()
         }
-
-    fun conversionGuidelines(genre: Genre) =
-        """
-        **Guidelines for Conversion and Expansion:**
-        // Section 1: Artistic Style - Highest Priority
-        ${artStyle(genre)}
-        2.  **Translate Accurately:** Translate all values from the input fields into precise English. Remove redundant adverbs and adjectives
-        3. Filter Physical Attributes: Strictly exclude any accessories or clothing details that cannot be clearly seen in the 'Extreme Close-Up' focus area (e.g., items clipped to the belt or below the neck).
-        **Exclusion Rule (ABSOLUTE):** Strictly exclude **ALL** accessories and clothing details that are not fully visible in a head-and-face close-up. **Specifically exclude** any mention of: communicator on wrist, tablet on belt, gloves, shoes, pants, and anything below the clavicle.
-        **Literal Fidelity (MANDATORY TRANSLATION):**
-        The agent MUST perform a direct and literal English translation of the full description provided in the facialDetails context (Hair, Eyes, Jawline, Mouth, Distinguishing Marks) and include it in Segment C.
-        NO ADAPTATION RULE: The agent must not infer, shorten, adapt, simplify, or modify any characteristic, especially color, length, texture, or style. If the input says 'long', the output MUST include 'long'. If the input mentions a specific texture (e.g., straight, wavy), it must be included.
-
-        Example (Literal): "Cabelos longos e lisos, de um tom platinado" MUST become "Long, straight platinum blonde hair."
-        
-        4. Infer Visuals from Context: This is critical.
-Expression Translation (MANDATORY): From the Character Context fields (personality, backstory, and Current Mood/Situation), CRITICALLY infer the primary dramatic emotion that the character is experiencing. This emotion MUST be translated into a clear and distinct facial expression that directly reflects the character's internal state.
-
-Example Translation: "Calma, observadora, mas sobrecarregada" → Intense, reserved gaze, slight frown of profound weariness.
-
-Example Translation: "Empatia, resolvendo conflito" → Focused, empathetic expression, hint of concern.
-
-Dynamic Pose (CINEMATIC & ANGULAR - MANDATORY): The composition MUST incorporate a dramatic, non-straight-on camera angle (e.g., Low-Angle Shot, Dutch Angle, or High-Angle Shot). The pose and action must be intensely dynamic, suggesting imminent conflict or high tension, and the description MUST use cinematic terms to define this angle (e.g., Shot from below, Worm's-eye perspective, Angular composition).
-The characters' body language (torso, arms, shoulders) should convey maximum action and readiness for battle.
-
-Head Angle Variation: A strong tilt of the head, a worried look down, or a resolute gaze directed slightly off-camera.
-
-Shoulder and Body Language: A subtle tense turn of the shoulders or torso, suggesting readiness, conflict, or apprehension, matching the inferred dramatic emotion.
-
-Important Objects/Elements: Include relevant objects only if they can be shown concisely in the shoulders-up area, without obscuring the face.
-        5. **Integrate Character (Dominant Central Focus & Red Accents):
-           The final framing (Headshot, Bust-Up, or Extreme Close-up) MUST be derived from and match the overall Composition Reference Image provided to the model.
-           The character MUST fill a significant portion of the frame, with the primary emphasis always on the facial features and the dramatic expression.
-        6. Composition Fidelity (1:1 Portrait Focus):
-        Analyze the Composition Reference Image to determine the appropriate framing (e.g., Bust-Up, Waist-Up, or Headshot). Formulate the prompt to ensure a 1:1 aspect ratio (square), with the character centralized, and the framing must match the reference while adapting it to a compelling square portrait.
-        7.  **Exclusions:** NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.    
-        8.  **Art Style & Mood (CRITICAL - Reference Image Dictates Style)**:
-*   **The provided reference image is the ABSOLUTE and DEFINITIVE source for the entire art style.** This includes, but is not limited to: art medium (e.g., oil painting, digital art, pixel art, anime cel shading), rendering technique (e.g., brushstrokes, line work, shading style), color palette, lighting scheme, overall mood, and aesthetic.
-*   **Extract the ESSENCE** of the reference image's style and meticulously apply it to the character and any relevant background elements described in the prompt.
-*   **Style Precedence Rule:** If any stylistic descriptions found within the input text (e.g., from a character description that says "a character with a cartoonish look") conflict with the style depicted in the reference image, **the style of the reference image ALWAYS takes precedence.** The primary goal is to render the described *content* (character, objects, scene) in the *style* of the reference image.
-
-        9.Negative Prompts: full body, standing, sitting, legs, feet, wide shot, medium shot, landscape, scenery.
-        """.trimIndent()
 
     fun simpleEmojiRendering(
         backgroundHexCode: String,
@@ -139,53 +97,54 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
     @Suppress("ktlint:standard:max-line-length")
     fun extractComposition() =
         buildString {
-            appendLine("You are analyzing ONE composition reference image:")
             appendLine(
-                "1. **Image A (Composition Reference):** This single reference dictates layout, framing, lens feel, and photographic treatment, and most importantly, the **emotional and dramatic intent**.",
-            )
-            appendLine("")
-            appendLine(
-                "Your task is to extract FIVE concise, photography-and-mood-focused composition components based only on Image A. Your response **MUST BE A CONCISE, UNINTERRUPTED LIST** of the extracted phrases/terms, each prepended by its respective label (for example: 'Framing: '). **DO NOT INCLUDE ANY INTRODUCTORY TEXT, HEADINGS, OR EXPLANATIONS.**",
-            )
-            appendLine("")
-            appendLine("**MANDATORY OUTPUT ORDER AND LABELS (5 points):**")
-            appendLine("1. Framing & Crop Intention: [Value]")
-            appendLine("2. Mood & Dramatic Direction: [Value]")
-            appendLine("3. Lens Feel & Perspective: [Value]")
-            appendLine("4. Depth of Field & Focus: [Value]")
-            appendLine("5. Key Lighting Style & Contrast: [Value]")
-            appendLine("")
-
-            appendLine("**Guidelines for filling each label (be precise, concise, and model-friendly):**")
-
-            appendLine(
-                "1. Framing & Crop Intention: Use the exact photographic framing term (e.g., CLOSE-UP, BUST-UP, FULL-BODY) and explicitly describe the body crop and subject fill (e.g., 'CLOSE-UP, subject fills ~85%, cropped at shoulders, tight focus on eyes').",
+                "You are a **Director of Photography and Visual Storyteller** analyzing a reference image to extract its **'Visual Soul'**.",
             )
             appendLine(
-                "2. Mood & Dramatic Direction: Describe the overall *feeling* and the subject's *pose/gaze* to guide the AI's artistic direction. (e.g., 'Intense and focused, direct eye contact, powerful stance, cinematic drama' or 'Melancholic, head tilted back in pain/ecstasy, high emotional energy').",
+                "The goal is to apply this image's **Mood, Lighting, and Composition** to a completely NEW artwork with a FIXED Art Style (defined elsewhere).",
+            )
+            appendLine()
+            appendLine("**CRITICAL RULE: IGNORE THE MEDIUM.**")
+            appendLine("- Do NOT describe the art style (e.g., 'Oil Painting', '3D Render', 'Anime', 'Sketch').")
+            appendLine("- Do NOT describe the literal subject (e.g., 'Woman in pool', 'Knight in armor').")
+            appendLine("- **FOCUS ONLY** on the *Photography, Atmosphere, and Emotional Gaze*.")
+            appendLine()
+            appendLine("**YOUR MISSION: EXTRACT THE PHOTOGRAPHIC DNA**")
+            appendLine(
+                "If this image were a photograph taken by a master photographer, how would they describe their settings? How is the light hitting the lens? What is the depth of field doing?",
+            )
+            appendLine()
+            appendLine("**REQUIRED OUTPUT (8-Point Visual Manifest):**")
+            appendLine()
+            appendLine(
+                "1. **Compositional Framework:** How is the scene framed? (e.g., 'Off-center subject with negative space', 'Symmetrical and confronting', 'Dynamic diagonal tension').",
             )
             appendLine(
-                "3. Lens Feel & Perspective: Describe the perceptual effect and provide an approximate focal length range: e.g., 'Short tele compressed portrait look (85–135mm approx), natural facial proportions' or 'Mild wide-angle feel (35–50mm approx), slight foreground exaggeration'.",
+                "2. **Emotional Atmosphere:** What is the mood of the air itself? (e.g., 'Heavy, humid, and oppressive', 'Crisp, cold, and detached', 'Warm, nostalgic, and hazy').",
             )
             appendLine(
-                "4. Depth of Field & Focus: State DOF and its effect on the background. **Avoid mentioning 'bokeh' unless strong blur is clearly visible and necessary.** (e.g., 'Shallow DOF, soft background blur for subject isolation' or 'Deep focus, sharp background, full scene detail').",
+                "3. **Lighting Design:** How is the light shaped? (e.g., 'Hard sunlight with deep jagged shadows', 'Soft studio diffusion with no shadows', 'Neon rim-lighting against darkness').",
             )
             appendLine(
-                "5. Key Lighting Style & Contrast: Describe main light direction/quality (soft/hard key) and contrast: e.g., 'Soft key from camera-right, subtle fill, low-medium contrast portrait' or 'Hard side light, high contrast, dramatic rim lighting'.",
-            )
-
-            appendLine("")
-            appendLine("**OUTPUT RULES (STRICT):**")
-            appendLine(
-                "- Output MUST consist of exactly the five labeled lines above in the same order, each with a concise bracketed value. No extra lines, headings, or commentary are allowed.",
+                "4. **Color Harmony:** What is the emotional palette? (e.g., 'Desaturated melancholy blues', 'Vibrant, aggressive pop-colors', 'Earthy, sun-baked terracottas').",
             )
             appendLine(
-                "- Use measured, unambiguous terms (percent ranges, approximate focal-length ranges). Prefer short, declarative phrases focused on visual and emotional effect.",
+                "5. **Visual Texture & Fidelity:** How 'clean' or 'gritty' is the view? (e.g., 'High-ISO film grain', 'Crystal clear digital sharpness', 'Soft misty diffusion').",
             )
             appendLine(
-                "- Base every field solely on directly observable photographic and emotional cues (crop lines, perspective, shadow falloff, pose, and perceived mood).",
+                "6. **Depth & Spatial Focus:** How is the depth handled? (e.g., 'Razor-thin depth of field isolating the eye', 'Infinite focus from foreground to horizon').",
             )
-            appendLine("- Do not mention the reference image or instructions in the output. Provide only the labeled values.")
+            appendLine(
+                "7. **The 'X-Factor' Accent:** What specific detail grabs the attention? (e.g., 'The way light creates a flare', 'The subtle reflection on wet surfaces', 'The intense contrast in the eyes').",
+            )
+            appendLine(
+                "8. **The Camera's Personality:** What does the 'lens' feel like? (e.g., 'A voyeuristic telephoto lens', 'An intimate and wide documentary lens', 'A clinical and precise portrait lens').",
+            )
+            appendLine()
+            appendLine("**FINAL CHECK:**")
+            appendLine(
+                "Did you mention 'painting', 'drawing', or 'illustration'? **DELETE IT.** Use photographic terms like 'exposure', 'focus', 'contrast', and 'atmosphere' instead.",
+            )
         }
 
     @Suppress("ktlint:standard:max-line-length")
@@ -240,112 +199,32 @@ Important Objects/Elements: Include relevant objects only if they can be shown c
 
     fun descriptionRules(genre: Genre) =
         buildString {
-            appendLine("This description must:")
-            appendLine("*   Integrate the **Character Details**.")
+            appendLine("**--- CANVAS & COMPOSITION SPECIFICATIONS (STRICT) ---**")
+            appendLine("1. **Aspect Ratio:** 9:16 (Vertical Portrait).")
             appendLine(
-                "*Develop a **Dramatic and Expressive Pose** for the character. This pose should be dynamic and reflect the character's essence, drawing from their **Character Details** (e.g., occupation, personality traits, role, equipped items). The pose should be original and compelling for an icon, not a static or default stance.",
-            )
-            appendLine("**Character Focus and Framing (CRITICAL - INJECTION OF VISUAL DIRECTION):**")
-            appendLine("**Final Prompt Structure (Mandatory Order - BLOCK INJECTION):**")
-            appendLine("1. **Technical Foundation (Composed of injected composition data points):**")
-            appendLine(
-                "* Start the prompt by injecting the **Framing**, **Zoom Level / Proximity**, and **Cropping Intention**. (From extractComposition)",
+                "2. **VERTICAL NEGATIVE SPACE (NON-NEGOTIABLE):** The subject MUST be positioned heavily towards the BOTTOM of the frame to enable a 'Lock Screen Depth Effect'.",
             )
             appendLine(
-                "* Inject **Key Lighting Style**, **Camera Angle**, **Lens / Focal Length**, and **Depth of Field / Motion Treatment** as supporting composition cues.",
-            )
-            appendLine("* Inject the **Key Lighting Style** prominently where it affects mood and shading.")
-            appendLine(
-                "* Inject the **Art Style** from the provided genre data (use GenrePrompts.artStyle(genre) — do NOT infer or extract art style from the reference images). This hardcoded art style must be applied to the character rendering and overall final look.",
-            )
-            appendLine("")
-            appendLine("2. **NARRATIVE & COMPOSITION CORE (Dynamic Scene Assembly - Final Mandate):**")
-            appendLine("")
-            appendLine("**A. NARRATIVE TENSION SOURCE (CRITICAL):**")
-            appendLine(
-                "The Agent MUST analyze ALL descriptive texts in the JSON and prioritize the one that provides the richest, most emotionally charged narrative context (The Central Conflict). This text will define the scene's emotional state and primary action.",
-            )
-            appendLine("")
-
-            appendLine("**B. SUBJECT & RELATIONAL MANDATE (STRICT SUBJECT COUNT):**")
-            appendLine(
-                "The Agent MUST determine the number of characters to be rendered based *only* on the 'featuredCharacters' list provided in the Overall context JSON.",
-            )
-            appendLine("")
-            appendLine(
-                "* **IF 'featuredCharacters' list is NOT provided, is EMPTY, or contains only ONE name (Render GOAL: Icon/Portrait):**",
-            )
-            appendLine("* The prompt **MUST ONLY** describe the primary character.")
-            appendLine(
-                "* The narrative core focuses entirely on the character's **Internal Conflict** and **Expression**, and **MUST NOT** include any other human or humanoid subjects, unless that subject is explicitly named as a carried item or accessory (e.g., a doll).",
-            )
-            appendLine("* The Negative Prompts **MUST** include terms like 'multiple subjects' and 'group shot'.")
-            appendLine("")
-            appendLine("* **IF 'featuredCharacters' list contains TWO or more names (Render GOAL: Chapter Cover/Scene):**")
-            appendLine(
-                "* The Agent MUST generate a **unified, multi-subject scene** based on the relationship and tension extracted from the Central Conflict.",
+                "   • **The Empty Top Third:** The top 35% of the canvas MUST be clear of the main subject. It should contain *only* background extended elements (sky, architecture, void).",
             )
             appendLine(
-                "* The prompt description **MUST clearly introduce and detail the primary two characters** (e.g., Character 1 and Character 2) and their **INTERACTION**.",
-            )
-            appendLine("* The Negative Prompts **MUST NOT** include terms like 'multiple subjects' and 'group shot'.")
-            appendLine("")
-
-            appendLine("**C. POSE & FRAMING INTEGRATION (CRITICAL - ACTION DYNAMISM MANDATE):**")
+                "   • **Subject Anchor:** Anchor the subject lower. If they are 'tall', zoom out further. Do NOT fill the top of the frame.")
+            appendLine()
+            appendLine("**--- THE SCENE ASSEMBLY ---**")
+            appendLine("**1. The Narrative Core:** Find the 'emotional center'. Let it drive the lighting, pose, and expression.")
+            appendLine("**2. Subject & Relations:** Focus on the internal state. For groups, show connection/tension, not just proximity.")
             appendLine(
-                "* The Agent MUST replace passive descriptions with a **unique, active, and dynamically phrased action** that conveys the character's core tension and mood.",
-            )
-            appendLine(
-                "* **MANDATE OF ORIGINALITY:** The generated action phrase MUST be **structurally original** for the current image. The Agent **MUST NOT** use the terms 'lunges forward', 'neck strained', or 'strands of hair whip' or any close structural variation (e.g., 'hair flicks', 'head strained') unless the Central Conflict explicitly describes a sudden lunge or attack.",
-            )
-            appendLine(
-                "* The action phrase must be highly relevant to the Vibe/Mood Aesthetic (e.g., if 'Contemplative', use 'Her posture radiates quiet defiance, her focus absolute').",
-            )
-            appendLine(
-                "* The description MUST synthesize the character's physical details with the action required by the **Central Conflict** and the **Framing**.",
-            )
-            appendLine("")
-            appendLine(
-                "3.  **Guardrail Final:** Use a universal set of negatives, adapting to the new framing (e.g., exclude \"close-up\").",
-            )
+                "**3. Genre-World Integration:** The character exists *in their world*, not a studio. Use Depth of Field to suggest the world without distraction.")
+            appendLine()
             appendLine(imageHighlight(genre))
+            appendLine()
+            appendLine("**--- FINAL OUTPUT EXECUTION ---**")
+            appendLine("Write a single, flowing, and descriptive prompt.")
             appendLine(
-                "* **CRITICAL:** Replace passive descriptions (e.g., \"Her jaw is clenched\") with active, dynamic phrasing (e.g., \"**Lunges forward** from the darkness, her neck strained, the motion captured as **strands of hair whip across her jawline**.\"). The description must convey **energy and tension**.",
+                "   • **FORBIDDEN MECHANICS:** Do NOT use phrases like 'Injecting X...' or 'Visual Reference Image'. Just describe the visual result.",
             )
             appendLine(
-                "* **Goal:** Use these terms to enhance the \"vibe\" and intensity. For example: \"ULTRA CLOSE-UP on  characters eye, Very tight shot, Subject fills entire frame, subtly cropped for intense focus.\"",
+                "   • **LANGUAGE:** Use evocative, painterly adjectives to describe textures and lighting (e.g., 'crimson silk catching neon light' instead of 'red shirt').",
             )
-            appendLine(
-                "**CRITICAL:** The Agent MUST rewrite the character description to be consistent with the first element of the prompt, ensuring the focus is unambiguous.",
-            )
-            appendLine(
-                "*Incorporate the **Overall Compositional Framing** and compatible **Visual Details & Mood** inspired by the general Visual Reference Image, but ensure the **Character\'s Pose** itself is uniquely dramatic and primarily informed by their provided **Character Details**.",
-            )
-            appendLine(
-                "***CRUCIAL: Your output text prompt MUST NOT mention the Visual Reference Image.** It must be a self-contained description.",
-            )
-            appendLine(
-                "- **Looks:** Describe the character's facial features and physical build (e.g., 'a rugged man with a lean physique', 'a Latina woman with a sophisticated haircut').",
-            )
-            appendLine(
-                "- **Clothing:** Detail their attire, including style, color, and accessories (e.g., 'a vibrant Hawaiian-style shirt', 'a sleek two-piece swimsuit').",
-            )
-            appendLine(
-                "- **Expression:** The face should not be neutral. It must convey a strong emotion or intention. Use terms like 'a hardened, protective gaze', 'a piercing, fatal stare', 'a sardonic smile'.",
-            )
-            appendLine(
-                "- **Pose & Body Language:** Describe their posture and how they interact with the environment. Use dynamic phrases like 'relaxed yet alert posture', 'casually lounging on a car hood', 'body language exuding confidence'.",
-            )
-            appendLine(
-                "Dramatic icon of [Character Name], a [Character's key trait/role]. Rendered in a distinct [e.g., 80s cel-shaded anime style with bold inked outlines].",
-            )
-            appendLine("The background is a vibrant [e.g., neon purple as per genre instructions].")
-            appendLine(
-                "Specific character accents include [e.g., luminous purple cybernetic eye details and thin circuit patterns on their blackpopover, as per genre instructions].",
-            )
-            appendLine(
-                "The character's skin tone remains natural, and their primary hair color is [e.g., black], with lighting appropriate to the cel-shaded anime style and studio quality.",
-            )
-            appendLine("Desired Output: A single, striking image. NO TEXT SHOULD BE GENERATED ON THE IMAGE ITSELF.")
         }
 }

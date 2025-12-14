@@ -62,4 +62,6 @@ interface DataStorePreferences {
         key: String,
         value: Long,
     )
+
+    suspend fun removeKey(key: String)
 }

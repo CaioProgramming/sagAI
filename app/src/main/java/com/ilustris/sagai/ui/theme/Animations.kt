@@ -73,10 +73,12 @@ fun TypewriterText(
             onTextUpdate(text)
         }
     }
-    val currentText = if (isAnimated) text.substring(0, charIndex) else text
+    val currentText = if (isAnimated) text.take(charIndex) else text
 
     LaunchedEffect(charIndex) {
-        onTextUpdate(text.substring(0, charIndex))
+        if (isAnimated) {
+            onTextUpdate(text.take(charIndex))
+        }
     }
 
     val wikiAnnotation =
@@ -181,7 +183,8 @@ fun Modifier.zoomAnimation(): Modifier {
             scaleX = scale,
             scaleY = scale,
             transformOrigin = TransformOrigin.Center,
-        ).clipToBounds()
+        )
+        .clipToBounds()
 }
 
 @Preview(showBackground = true)

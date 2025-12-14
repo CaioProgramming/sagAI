@@ -124,11 +124,11 @@ half4 main(float2 fragCoord) {
         color = (color - 0.5) * u_contrast + 0.5;
     }
     // Adjust Brightness
-    color += u_brightness;
+    color += u_brightness * originalSample.a;
 
     // --- Color Temperature Adjustment ---
     if (u_colorTemperature != 0.0) {
-        float temp = u_colorTemperature * 0.15; // Adjust sensitivity factor
+        float temp = u_colorTemperature * 0.15 * originalSample.a; // Adjust sensitivity factor
         color.r = clamp(color.r + temp, 0.0, 1.0);
         color.b = clamp(color.b - temp, 0.0, 1.0);
     }
@@ -142,7 +142,7 @@ half4 main(float2 fragCoord) {
         }
         // Blur for bloom, using original fragCoord for smooth bloom spread
         vec3 blurredBloom = boxBlur(fragCoord, u_bloomRadius);
-        color += blurredBloom * u_bloomIntensity * step(u_bloomThreshold, currentLuminance);
+        color += blurredBloom * u_bloomIntensity * step(u_bloomThreshold, currentLuminance) * originalSample.a;
     }
 
     // --- 5. Split Toning (Tinting Highlights and Shadows) ---
@@ -156,7 +156,7 @@ half4 main(float2 fragCoord) {
     // --- 6. Film Grain ---
     if (u_grainIntensity > 0.001) {
         float noise = random(uv) - 0.5;
-        color += noise * u_grainIntensity;
+        color += noise * u_grainIntensity * originalSample.a;
     }
 
     // --- 7. Vignette ---
@@ -169,5 +169,7 @@ half4 main(float2 fragCoord) {
 
     // --- Final Output ---
     color = clamp(color, 0.0, 1.0);
+    // Ensure we don't return color for fully transparent pixels (fixes artifacts in empty areas)
+    color *= step(0.001, originalSample.a);
     return half4(color, originalSample.a);
 }

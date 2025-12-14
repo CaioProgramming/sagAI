@@ -25,8 +25,8 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.ui.theme.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.ThoughtBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.components.chat.ThoughtBubbleShape
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
@@ -86,10 +86,12 @@ fun ReactionsBottomSheet(
                                     shape = thoughtBubbleShape,
                                     dashLength = 10.dp,
                                     gapLength = 5.dp,
-                                ).background(
+                                )
+                                .background(
                                     MaterialTheme.colorScheme.background.gradientFade(),
                                     thoughtBubbleShape,
-                                ).padding(8.dp),
+                                )
+                                .padding(8.dp),
                     )
 
                     Text(
@@ -104,10 +106,12 @@ fun ReactionsBottomSheet(
                                     shape = CircleShape,
                                     dashLength = 4.dp,
                                     gapLength = 2.dp,
-                                ).background(
+                                )
+                                .background(
                                     MaterialTheme.colorScheme.background.gradientFade(),
                                     CircleShape,
-                                ).padding(4.dp),
+                                )
+                                .padding(4.dp),
                     )
 
                     CharacterAvatar(

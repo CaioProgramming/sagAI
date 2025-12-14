@@ -7,24 +7,31 @@ import android.graphics.Matrix
 import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +53,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
@@ -60,6 +68,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -95,18 +104,12 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.isUser
+import com.ilustris.sagai.features.saga.chat.ui.animations.emotionalEntrance
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
-import com.ilustris.sagai.ui.theme.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.CurvedChatBubbleShape
-import com.ilustris.sagai.ui.theme.CyberpunkChatBubbleShape
-import com.ilustris.sagai.ui.theme.FantasyChatBubbleShape
-import com.ilustris.sagai.ui.theme.HeroesChatBubbleShape
-import com.ilustris.sagai.ui.theme.HorrorChatBubbleShape
 import com.ilustris.sagai.ui.theme.SagAIScaffold
-import com.ilustris.sagai.ui.theme.ShinobiChatBubbleShape
-import com.ilustris.sagai.ui.theme.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
 import com.ilustris.sagai.ui.theme.gradient
@@ -117,12 +120,11 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(
     messageContent: MessageContent,
     content: SagaContent,
-    alreadyAnimatedMessages: MutableSet<Int> = remember { mutableSetOf() },
     canAnimate: Boolean = true,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
@@ -131,6 +133,11 @@ fun ChatBubble(
     onRetry: (MessageContent) -> Unit = {},
     onReactionsClick: (MessageContent) -> Unit = {},
     requestNewCharacter: () -> Unit = {},
+    messageEffectsEnabled: Boolean = true,
+    isSelectionMode: Boolean = false,
+    isSelected: Boolean = false,
+    onToggleSelection: () -> Unit = {},
+    onLongPress: () -> Unit = {},
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -140,7 +147,7 @@ fun ChatBubble(
     val genre = content.data.genre
     val isUser = messageContent.isUser(mainCharacter?.data)
     val cornerSize = genre.cornerSize()
-    val isAnimated = canAnimate
+    val isAnimated = canAnimate && messageEffectsEnabled.not()
     val bubbleStyle =
         remember {
             if (isUser) {
@@ -155,107 +162,11 @@ fun ChatBubble(
     val duration = bubbleStyle.animationDuration
     val bubbleShape =
         remember(genre, cornerSize, bubbleStyle.tailAlignment) {
-            when (genre) {
-                Genre.CYBERPUNK ->
-                    CyberpunkChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 12.dp,
-                        tailHeight = 12.dp,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.HEROES ->
-                    HeroesChatBubbleShape(
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.SHINOBI ->
-                    ShinobiChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.HORROR ->
-                    HorrorChatBubbleShape(
-                        pixelSize = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.FANTASY ->
-                    FantasyChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                Genre.SPACE_OPERA ->
-                    SpaceChatBubbleShape(
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-
-                else ->
-                    CurvedChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 4.dp,
-                        tailHeight = 4.dp,
-                        tailAlignment = bubbleStyle.tailAlignment,
-                    )
-            }
+            genre.bubble(bubbleStyle.tailAlignment)
         }
     val narratorShape =
         remember(genre, cornerSize) {
-            when (genre) {
-                Genre.CYBERPUNK ->
-                    CyberpunkChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                    )
-
-                Genre.HEROES ->
-                    HeroesChatBubbleShape(
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        skew = 0.dp,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                    )
-
-                Genre.SHINOBI ->
-                    ShinobiChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                    )
-
-                Genre.HORROR ->
-                    HorrorChatBubbleShape(
-                        pixelSize = cornerSize,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        drawTail = false,
-                    )
-
-                Genre.FANTASY ->
-                    FantasyChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                    )
-
-                Genre.SPACE_OPERA ->
-                    SpaceChatBubbleShape(
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                    )
-
-                else ->
-                    CurvedChatBubbleShape(
-                        cornerRadius = cornerSize,
-                        tailWidth = 0.dp,
-                        tailHeight = 0.dp,
-                        tailAlignment = BubbleTailAlignment.BottomRight,
-                    )
-            }
+            genre.bubble(BubbleTailAlignment.BottomRight)
         }
     var tooltipData by remember { mutableStateOf<Any?>(null) }
 
@@ -287,6 +198,27 @@ fun ChatBubble(
             ),
         label = "rotation",
     )
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scaleAnimation by animateFloatAsState(
+        targetValue = if (isPressed) 0.95f else 1f,
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
+        label = "scaleAnimation"
+    )
+
+    val paddingAnimation by animateDpAsState(
+        targetValue = if (isSelected) 4.dp else 0.dp,
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
+        label = "paddingAnimation"
+    )
+
+    val borderColorAnimation by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
+        label = "borderColorAnimation"
+    )
+
 
     when (sender) {
         SenderType.USER,
@@ -296,57 +228,62 @@ fun ChatBubble(
         -> {
             val layoutDirection = if (isUser) LayoutDirection.Rtl else LayoutDirection.Ltr
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                Row(
-                    modifier =
-                        modifier
-                            .padding(8.dp)
-                            .fillMaxWidth()
-                            .animateContentSize(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.Bottom,
+                Box(
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .animateContentSize()
                 ) {
-                    val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
-
-                    Box(
-                        Modifier
-                            .clip(CircleShape)
-                            .size(avatarSize),
+                    Row(
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .fillMaxWidth()
+                                .animateContentSize(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.Bottom,
                     ) {
-                        messageContent.character?.let { character ->
-                            AnimatedContent(
-                                character,
-                                transitionSpec = {
-                                    fadeIn() + scaleIn() togetherWith scaleOut()
-                                },
-                            ) {
-                                CharacterAvatar(
-                                    it,
-                                    isLoading = isLoading,
-                                    genre = genre,
-                                    borderSize = 2.dp,
-                                    pixelation = 0f,
-                                    grainRadius = 0f,
-                                    modifier =
+                        val avatarSize = if (messageContent.character == null) 24.dp else 50.dp
+
+                        Box(
+                            Modifier
+                                .clip(CircleShape)
+                                .size(avatarSize),
+                        ) {
+                            messageContent.character?.let { character ->
+                                AnimatedContent(
+                                    character,
+                                    transitionSpec = {
+                                        fadeIn() + scaleIn() togetherWith scaleOut()
+                                    },
+                                ) {
+                                    CharacterAvatar(
+                                        it,
+                                        isLoading = isLoading,
+                                        genre = genre,
+                                        borderSize = 2.dp,
+                                        pixelation = 0f,
+                                        grainRadius = 0f,
+                                        modifier =
                                         Modifier
                                             .padding(8.dp)
                                             .fillMaxSize()
                                             .clickable {
                                                 openCharacters(characters.find { c -> c.data.id == character.id })
                                             },
-                                )
-                            }
+                                    )
+                                }
 
-                            val relationWithMainCharacter =
-                                mainCharacter
-                                    ?.findRelationship(character.id)
-                                    ?.sortedByEvents(content.flatEvents().map { it.data })
-                                    ?.firstOrNull()
+                                val relationWithMainCharacter =
+                                    mainCharacter
+                                        ?.findRelationship(character.id)
+                                        ?.sortedByEvents(content.flatEvents().map { it.data })
+                                        ?.firstOrNull()
 
-                            if (isUser.not()) {
-                                relationWithMainCharacter?.let {
-                                    Text(
-                                        it.emoji,
-                                        style =
+                                if (isUser.not()) {
+                                    relationWithMainCharacter?.let {
+                                        Text(
+                                            it.emoji,
+                                            style =
                                             MaterialTheme.typography.labelSmall.copy(
                                                 shadow =
                                                     Shadow(
@@ -357,195 +294,324 @@ fun ChatBubble(
                                                         blurRadius = 0f,
                                                     ),
                                             ),
-                                        modifier =
+                                            modifier =
                                             Modifier
                                                 .animateContentSize()
                                                 .align(Alignment.BottomCenter)
                                                 .padding(2.dp),
-                                    )
+                                        )
+                                    }
                                 }
+                            } ?: run {
+                                Image(
+                                    painterResource(R.drawable.ic_spark),
+                                    null,
+                                    Modifier
+                                        .clickable {
+                                            requestNewCharacter()
+                                        }
+                                        .size(24.dp)
+                                        .gradientFill(genre.gradient()),
+                                )
                             }
-                        } ?: run {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                null,
-                                Modifier
-                                    .clickable {
-                                        requestNewCharacter()
-                                    }.size(24.dp)
-                                    .gradientFill(genre.gradient()),
-                            )
                         }
-                    }
 
-                    Column(
-                        modifier =
+                        Column(
+                            modifier =
                             Modifier
                                 .weight(1f)
                                 .padding(end = 50.dp),
-                    ) {
-                        val bubbleModifier =
-                            if (message.status == MessageStatus.LOADING) {
-                                Modifier
-                                    .wrapContentSize()
-                                    .drawWithContent {
-                                        drawContent()
-                                        val outline =
-                                            bubbleShape.createOutline(size, layoutDirection, this)
-                                        val brush =
-                                            object : ShaderBrush() {
-                                                override fun createShader(size: Size): Shader {
-                                                    val shader =
-                                                        (
-                                                            sweepGradient(
-                                                                genre.colorPalette(),
-                                                            ) as ShaderBrush
-                                                        ).createShader(size)
-                                                    val matrix = Matrix()
-                                                    matrix.setRotate(
-                                                        rotation,
-                                                        size.width / 2,
-                                                        size.height / 2,
+                        ) {
+                            val bubbleModifier =
+                                if (message.status == MessageStatus.LOADING) {
+                                    Modifier
+                                        .emotionalEntrance(
+                                            message.emotionalTone,
+                                            isAnimated && messageEffectsEnabled,
+                                        )
+                                        .wrapContentSize()
+                                        .drawWithContent {
+                                            drawContent()
+                                            val outline =
+                                                bubbleShape.createOutline(
+                                                    size,
+                                                    layoutDirection,
+                                                    this
+                                                )
+                                            val brush =
+                                                object : ShaderBrush() {
+                                                    override fun createShader(size: Size): Shader {
+                                                        val shader =
+                                                            (
+                                                                    sweepGradient(
+                                                                        genre.colorPalette(),
+                                                                    ) as ShaderBrush
+                                                                    ).createShader(size)
+                                                        val matrix = Matrix()
+                                                        matrix.setRotate(
+                                                            rotation,
+                                                            size.width / 2,
+                                                            size.height / 2,
+                                                        )
+                                                        shader.setLocalMatrix(matrix)
+                                                        return shader
+                                                    }
+                                                }
+                                            drawOutline(
+                                                outline = outline,
+                                                brush = brush,
+                                                style = Stroke(width = 2.dp.toPx()),
+                                            )
+                                        }
+                                        .background(Color.Gray.copy(alpha = 0.3f), bubbleShape)
+                                } else {
+                                    when (sender) {
+                                        SenderType.USER ->
+                                            Modifier
+                                                .combinedClickable(
+                                                    interactionSource = interactionSource,
+                                                    indication = ripple(),
+                                                    onClick = {
+                                                        if (isSelectionMode) {
+                                                            onToggleSelection()
+                                                        }
+                                                    },
+                                                    onLongClick = {
+                                                        if (!isSelectionMode) {
+                                                            onLongPress()
+                                                        }
+                                                    }
+                                                )
+                                                .emotionalEntrance(
+                                                    message.emotionalTone,
+                                                    isAnimated && messageEffectsEnabled,
+                                                )
+                                                .wrapContentSize()
+                                                .background(
+                                                    bubbleStyle.backgroundColor,
+                                                    bubbleShape
+                                                )
+
+                                        SenderType.CHARACTER -> {
+                                            if (isUser.not()) {
+                                                Modifier
+                                                    .combinedClickable(
+                                                        interactionSource = interactionSource,
+                                                        indication = ripple(),
+                                                        onClick = {
+                                                            if (isSelectionMode) {
+                                                                onToggleSelection()
+                                                            }
+                                                        },
+                                                        onLongClick = {
+                                                            if (!isSelectionMode) {
+                                                                onLongPress()
+                                                            }
+                                                        }
                                                     )
-                                                    shader.setLocalMatrix(matrix)
-                                                    return shader
+                                                    .emotionalEntrance(
+                                                        message.emotionalTone,
+                                                        isAnimated && messageEffectsEnabled,
+                                                    )
+                                                    .wrapContentSize()
+                                                    .background(
+                                                        bubbleStyle.backgroundColor,
+                                                        bubbleShape,
+                                                    )
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                            alpha = .5f,
+                                                        ),
+                                                        bubbleShape,
+                                                    )
+                                            } else {
+                                                Modifier
+                                                    .combinedClickable(
+                                                        interactionSource = interactionSource,
+                                                        indication = ripple(),
+                                                        onClick = {
+                                                            if (isSelectionMode) {
+                                                                onToggleSelection()
+                                                            }
+                                                        },
+                                                        onLongClick = {
+                                                            if (!isSelectionMode) {
+                                                                onLongPress()
+                                                            }
+                                                        }
+                                                    )
+                                                    .emotionalEntrance(
+                                                        message.emotionalTone,
+                                                        isAnimated && messageEffectsEnabled,
+                                                    )
+                                                    .wrapContentSize()
+                                                    .background(
+                                                        bubbleStyle.backgroundColor,
+                                                        bubbleShape,
+                                                    )
+                                            }
+                                        }
+
+                                        SenderType.THOUGHT ->
+                                            Modifier
+                                                .combinedClickable(
+                                                    interactionSource = interactionSource,
+                                                    indication = ripple(),
+                                                    onClick = {
+                                                        if (isSelectionMode) {
+                                                            onToggleSelection()
+                                                        }
+                                                    },
+                                                    onLongClick = {
+                                                        if (!isSelectionMode) {
+                                                            onLongPress()
+                                                        }
+                                                    }
+                                                )
+                                                .emotionalEntrance(
+                                                    message.emotionalTone,
+                                                    isAnimated && messageEffectsEnabled,
+                                                )
+                                                .wrapContentSize()
+                                                .background(
+                                                    MaterialTheme.colorScheme.surfaceContainer,
+                                                    bubbleShape,
+                                                )
+                                                .dashedBorder(
+                                                    strokeWidth = 1.dp,
+                                                    color =
+                                                        MaterialTheme.colorScheme.onBackground.copy(
+                                                            alpha = 0.5f,
+                                                        ),
+                                                    shape = bubbleShape,
+                                                    dashLength = 10.dp,
+                                                    gapLength = 5.dp,
+                                                )
+
+                                        SenderType.ACTION ->
+                                            Modifier
+                                                .combinedClickable(
+                                                    interactionSource = interactionSource,
+                                                    indication = ripple(),
+                                                    onClick = {
+                                                        if (isSelectionMode) {
+                                                            onToggleSelection()
+                                                        }
+                                                    },
+                                                    onLongClick = {
+                                                        if (!isSelectionMode) {
+                                                            onLongPress()
+                                                        }
+                                                    }
+                                                )
+                                                .emotionalEntrance(
+                                                    message.emotionalTone,
+                                                    isAnimated && messageEffectsEnabled,
+                                                )
+                                                .wrapContentSize()
+                                                .background(Color.Black, bubbleShape)
+
+                                        else -> Modifier.combinedClickable(
+                                            interactionSource = interactionSource,
+                                            indication = ripple(),
+                                            onClick = {
+                                                if (isSelectionMode) {
+                                                    onToggleSelection()
+                                                }
+                                            },
+                                            onLongClick = {
+                                                if (!isSelectionMode) {
+                                                    onLongPress()
                                                 }
                                             }
-                                        drawOutline(
-                                            outline = outline,
-                                            brush = brush,
-                                            style = Stroke(width = 2.dp.toPx()),
                                         )
-                                    }.background(Color.Gray.copy(alpha = 0.3f), bubbleShape)
-                            } else {
-                                when (sender) {
-                                    SenderType.USER ->
-                                        Modifier
-                                            .wrapContentSize()
-                                            .background(bubbleStyle.backgroundColor, bubbleShape)
 
-                                    SenderType.CHARACTER -> {
-                                        if (isUser.not()) {
-                                            Modifier
-                                                .wrapContentSize()
-                                                .background(
-                                                    bubbleStyle.backgroundColor,
-                                                    bubbleShape,
-                                                ).background(
-                                                    MaterialTheme.colorScheme.surfaceContainer.copy(
-                                                        alpha = .5f,
-                                                    ),
-                                                    bubbleShape,
-                                                )
-                                        } else {
-                                            Modifier
-                                                .wrapContentSize()
-                                                .background(
-                                                    bubbleStyle.backgroundColor,
-                                                    bubbleShape,
-                                                )
-                                        }
                                     }
-
-                                    SenderType.THOUGHT ->
-                                        Modifier
-                                            .wrapContentSize()
-                                            .background(
-                                                MaterialTheme.colorScheme.surfaceContainer,
-                                                bubbleShape,
-                                            ).dashedBorder(
-                                                strokeWidth = 1.dp,
-                                                color =
-                                                    MaterialTheme.colorScheme.onBackground.copy(
-                                                        alpha = 0.5f,
-                                                    ),
-                                                shape = bubbleShape,
-                                                dashLength = 10.dp,
-                                                gapLength = 5.dp,
-                                            )
-
-                                    SenderType.ACTION ->
-                                        Modifier
-                                            .wrapContentSize()
-                                            .background(Color.Black, bubbleShape)
-
-                                    else -> Modifier
                                 }
-                            }
 
-                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                            TooltipBox(
-                                positionProvider = tooltipPositionProvider,
-                                state = reactionToolTipState,
-                                onDismissRequest = {
-                                    tooltipData = null
-                                },
-                                tooltip = {
-                                    tooltipData?.let {
-                                        AnnotationTooltip(
-                                            data = it,
-                                            genre = genre,
-                                            shape = narratorShape,
-                                        )
-                                    }
-                                },
-                                modifier =
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                TooltipBox(
+                                    positionProvider = tooltipPositionProvider,
+                                    state = reactionToolTipState,
+                                    onDismissRequest = {
+                                        tooltipData = null
+                                    },
+                                    tooltip = {
+                                        tooltipData?.let {
+                                            AnnotationTooltip(
+                                                data = it,
+                                                genre = genre,
+                                                shape = narratorShape,
+                                            )
+                                        }
+                                    },
+                                    modifier =
                                     bubbleModifier
+                                        .scale(scaleAnimation)
+                                        .border(
+                                            2.dp,
+                                            borderColorAnimation,
+                                            bubbleShape
+                                        )
+                                        .padding(paddingAnimation)
                                         .clip(bubbleShape)
                                         .padding(vertical = 4.dp)
                                         .animateContentSize(),
-                            ) {
-                                Box {
-                                    var starAlpha by remember { mutableFloatStateOf(1f) }
-                                    val alphaAnimation by animateFloatAsState(
-                                        targetValue = starAlpha,
-                                        animationSpec = tween(1000, easing = FastOutSlowInEasing),
-                                        label = "starAlpha",
-                                    )
-                                    val blurAnimation by animateFloatAsState(
-                                        targetValue = if (starAlpha == 1f) 0f else 1f,
-                                        label = "blurAnimation",
-                                    )
-                                    val textAlpha =
-                                        if (sender == SenderType.THOUGHT) blurAnimation else 1f
-                                    val textColor =
-                                        when (sender) {
-                                            SenderType.ACTION -> MaterialColor.Amber400
-                                            SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
-                                            else -> bubbleStyle.textColor
-                                        }
-                                    val textAlign =
-                                        if (sender == SenderType.ACTION ||
-                                            sender == SenderType.THOUGHT
-                                        ) {
-                                            TextAlign.Center
-                                        } else {
-                                            TextAlign.Start
-                                        }
-                                    val fontStyle =
-                                        if (sender == SenderType.ACTION ||
-                                            sender == SenderType.THOUGHT
-                                        ) {
-                                            FontStyle.Italic
-                                        } else {
-                                            FontStyle.Normal
-                                        }
-                                    val text =
-                                        if (sender == SenderType.ACTION) "(${message.text})" else message.text
+                                ) {
+                                    Box {
+                                        var starAlpha by remember { mutableFloatStateOf(1f) }
+                                        val alphaAnimation by animateFloatAsState(
+                                            targetValue = starAlpha,
+                                            animationSpec = tween(
+                                                1000,
+                                                easing = FastOutSlowInEasing
+                                            ),
+                                            label = "starAlpha",
+                                        )
+                                        val blurAnimation by animateFloatAsState(
+                                            targetValue = if (starAlpha == 1f) 0f else 1f,
+                                            label = "blurAnimation",
+                                        )
+                                        val textAlpha =
+                                            if (sender == SenderType.THOUGHT) blurAnimation else 1f
+                                        val textColor =
+                                            when (sender) {
+                                                SenderType.ACTION -> MaterialColor.Amber400
+                                                SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
+                                                else -> bubbleStyle.textColor
+                                            }
+                                        val textAlign =
+                                            if (sender == SenderType.ACTION ||
+                                                sender == SenderType.THOUGHT
+                                            ) {
+                                                TextAlign.Center
+                                            } else {
+                                                TextAlign.Start
+                                            }
+                                        val fontStyle =
+                                            if (sender == SenderType.ACTION ||
+                                                sender == SenderType.THOUGHT
+                                            ) {
+                                                FontStyle.Italic
+                                            } else {
+                                                FontStyle.Normal
+                                            }
+                                        val text =
+                                            if (sender == SenderType.ACTION) "(${message.text})" else message.text
 
-                                    TypewriterText(
-                                        text = text,
-                                        isAnimated = isAnimated,
-                                        genre = genre,
-                                        mainCharacter = mainCharacter?.data,
-                                        characters = characters.map { it.data },
-                                        wiki = wiki,
-                                        duration = duration,
-                                        easing = EaseIn,
-                                        onAnnotationClick = { data ->
-                                            tooltipData = data
-                                        },
-                                        modifier =
+                                        TypewriterText(
+                                            text = text,
+                                            isAnimated = isAnimated,
+                                            genre = genre,
+                                            mainCharacter = mainCharacter?.data,
+                                            characters = characters.map { it.data },
+                                            wiki = wiki,
+                                            duration = duration,
+                                            easing = EaseIn,
+                                            onAnnotationClick = { data ->
+                                                tooltipData = data
+                                            },
+                                            modifier =
                                             Modifier
                                                 .padding(16.dp)
                                                 .alpha(textAlpha)
@@ -553,7 +619,7 @@ fun ChatBubble(
                                                     isLoading || message.status == MessageStatus.LOADING,
                                                     genre.shimmerColors(),
                                                 ),
-                                        style =
+                                            style =
                                             MaterialTheme.typography.bodySmall.copy(
                                                 fontWeight = FontWeight.Normal,
                                                 fontFamily = genre.bodyFont(),
@@ -561,111 +627,133 @@ fun ChatBubble(
                                                 color = textColor,
                                                 textAlign = textAlign,
                                             ),
-                                        onTextUpdate = {
-                                        },
-                                        onAnimationFinished = {
-                                            if (alreadyAnimatedMessages
-                                                    .contains(message.id)
-                                                    .not()
-                                            ) {
-                                                alreadyAnimatedMessages.add(message.id)
-                                            }
-                                        },
-                                    )
+                                        )
 
-                                    if (sender == SenderType.THOUGHT) {
-                                        StarryTextPlaceholder(
-                                            modifier =
+                                        if (sender == SenderType.THOUGHT) {
+                                            StarryTextPlaceholder(
+                                                modifier =
                                                 Modifier
                                                     .matchParentSize()
                                                     .alpha(alphaAnimation)
                                                     .clip(bubbleShape)
                                                     .clickable {
                                                         starAlpha = 0f
-                                                    }.background(
+                                                    }
+                                                    .background(
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(
                                                             alpha = .4f,
                                                         ),
                                                         bubbleShape,
                                                     ),
-                                            starColor = genre.color,
-                                        )
+                                                starColor = genre.color,
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                            AnimatedContent(message.status) {
-                                if (it == MessageStatus.ERROR) {
-                                    Button(
-                                        onClick = {
-                                            onRetry(messageContent)
-                                        },
-                                        colors =
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                AnimatedContent(message.status) {
+                                    if (it == MessageStatus.ERROR) {
+                                        Button(
+                                            onClick = {
+                                                onRetry(messageContent)
+                                            },
+                                            colors =
                                             ButtonDefaults.textButtonColors().copy(
                                                 contentColor = MaterialTheme.colorScheme.error,
                                                 containerColor = Color.Transparent,
                                             ),
-                                        modifier =
+                                            modifier =
                                             Modifier
                                                 .padding(horizontal = 16.dp)
                                                 .fillMaxWidth(),
-                                    ) {
-                                        Icon(
-                                            painterResource(R.drawable.baseline_refresh_24),
-                                            null,
-                                            Modifier.size(12.dp),
-                                        )
+                                        ) {
+                                            Icon(
+                                                painterResource(R.drawable.baseline_refresh_24),
+                                                null,
+                                                Modifier.size(12.dp),
+                                            )
 
-                                        Text(
-                                            stringResource(R.string.try_again),
-                                            style =
+                                            Text(
+                                                stringResource(R.string.try_again),
+                                                style =
                                                 MaterialTheme.typography.labelMedium.copy(
                                                     fontFamily = genre.bodyFont(),
                                                     fontWeight = FontWeight.Normal,
                                                 ),
-                                            modifier = Modifier.padding(start = 4.dp),
-                                        )
-                                    }
-                                } else {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                        modifier =
+                                                modifier = Modifier.padding(start = 4.dp),
+                                            )
+                                        }
+                                    } else {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            modifier =
                                             Modifier
                                                 .padding(horizontal = 20.dp)
                                                 .offset(y = (-10).dp),
-                                    ) {
-                                        Text(
-                                            message.timestamp.formatHours(),
-                                            style =
+                                        ) {
+                                            Text(
+                                                message.timestamp.formatHours(),
+                                                style =
                                                 MaterialTheme.typography.labelSmall.copy(
                                                     color = MaterialTheme.colorScheme.onBackground,
                                                     fontFamily = genre.bodyFont(),
                                                     fontWeight = FontWeight.Light,
                                                     textAlign = TextAlign.Start,
                                                 ),
-                                            modifier =
+                                                modifier =
                                                 Modifier
                                                     .padding(horizontal = 4.dp)
                                                     .alpha(0.5f)
                                                     .weight(1f),
-                                        )
+                                            )
 
-                                        AnimatedVisibility(
-                                            visible = messageContent.reactions.isNotEmpty(),
-                                        ) {
-                                            ReactionsView(
-                                                reactions = messageContent.reactions,
-                                                genre = genre,
+                                            AnimatedVisibility(
+                                                visible = messageContent.reactions.isNotEmpty(),
                                             ) {
-                                                onReactionsClick(messageContent)
+                                                ReactionsView(
+                                                    reactions = messageContent.reactions,
+                                                    genre = genre,
+                                                ) {
+                                                    onReactionsClick(messageContent)
+                                                }
                                             }
                                         }
                                     }
                                 }
                             }
+                        }
+                    }
+
+
+                    AnimatedVisibility(
+                        visible = isSelectionMode,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(16.dp),
+                        enter = scaleIn() + fadeIn(),
+                        exit = scaleOut() + fadeOut()
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val color by animateColorAsState(
+                                if (isSelected) genre.color else MaterialTheme.colorScheme.onBackground.copy(
+                                    alpha = .3f
+                                )
+                            )
+                            Icon(
+                                painterResource(R.drawable.ic_spark),
+                                contentDescription = "Selected",
+                                tint = color,
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxSize()
+                            )
                         }
                     }
                 }
@@ -677,17 +765,23 @@ fun ChatBubble(
                 Box(
                     modifier =
                         modifier
+                            .emotionalEntrance(
+                                message.emotionalTone,
+                                isAnimated && messageEffectsEnabled,
+                            )
                             .padding(16.dp)
                             .fillMaxWidth()
                             .shadow(
                                 elevation = 8.dp,
                                 shape = narratorShape,
                                 spotColor = genre.color,
-                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
+                            )
+                            .border(1.dp, genre.color.gradientFade(), narratorShape)
                             .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                 ) {
                     TypewriterText(
                         text = message.text,
@@ -837,7 +931,7 @@ data class BubbleStyle(
             genre: Genre,
             canAnimate: Boolean,
         ) = BubbleStyle(
-            backgroundColor = genre.color,
+            backgroundColor = genre.color.copy(alpha = .4f),
             textColor = genre.iconColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
             animationDuration = 3.seconds,

@@ -27,23 +27,32 @@ fun EmotionalTone.toEasing(): Easing =
     when (this) {
         // Brutal / not-happy emotions
         EmotionalTone.ANGRY -> EaseInElastic
+
         EmotionalTone.FRUSTRATED -> EaseInBack
+
         EmotionalTone.SAD -> EaseInOutBack
+
         EmotionalTone.CYNICAL -> EaseIn
 
         // Negative but softer emotions
         EmotionalTone.ANXIOUS -> EaseInBounce
+
         EmotionalTone.CONCERNED -> EaseOutBounce
+
         EmotionalTone.MELANCHOLIC -> EaseInOut
 
         // Neutral / focused
         EmotionalTone.NEUTRAL -> LinearEasing
+
         EmotionalTone.DETERMINED -> FastOutLinearInEasing
 
         // Positive / exploratory and warm
         EmotionalTone.CURIOUS -> EaseOutElastic
+
         EmotionalTone.HOPEFUL -> EaseOut
+
         EmotionalTone.CALM -> EaseInOut
+
         EmotionalTone.EMPATHETIC -> LinearOutSlowInEasing
 
         // Most joyful gets playful bounce-out

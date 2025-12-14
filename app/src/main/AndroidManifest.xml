@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
 
     <application
@@ -22,6 +25,18 @@
         android:theme="@style/Theme.SagAI"
         tools:replace="android:theme"
         tools:targetApi="36">
+
+        <!-- Disable default WorkManager initialization to use HiltWorkerFactory -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -46,9 +61,17 @@
         </activity>
 
         <service
-            android:name=".core.media.MediaPlayerService"
+            android:name=".core.media.SagaMediaService"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback" />
+
+        <receiver
+            android:name=".core.notifications.ScheduledNotificationReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.ilustris.sagai.SCHEDULED_NOTIFICATION" />
+            </intent-filter>
+        </receiver>
 
 
     </application>

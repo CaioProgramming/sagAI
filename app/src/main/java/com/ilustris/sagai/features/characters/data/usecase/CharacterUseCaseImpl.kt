@@ -18,6 +18,7 @@ import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.file.ImageCropHelper
+import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -37,10 +38,11 @@ import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
-import com.ilustris.sagai.ui.theme.toHex
-import com.slowmac.autobackgroundremover.removeBackground
+import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
 
@@ -58,6 +60,7 @@ class CharacterUseCaseImpl
         private val imageCropHelper: ImageCropHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
         private val billingService: BillingService,
+        private val imageSegmentationHelper: ImageSegmentationHelper,
         @ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
@@ -82,9 +85,8 @@ class CharacterUseCaseImpl
             character: Character,
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
-            executeRequest(false) {
-                // TODO REMOVE FORCED PREMIUM
-                val isPremium = true // billingService.isPremium()
+            executeRequest(true) {
+                val isPremium = billingService.isPremium()
 
                 val portraitReference =
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
@@ -106,31 +108,25 @@ class CharacterUseCaseImpl
                         ).getSuccess()
 
                 val descriptionPrompt =
-                    if (isPremium) {
-                        SagaPrompts.iconDescription(
-                            saga.genre,
-                            mapOf(
-                                "saga" to saga.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
-                                "character" to
-                                    character.toJsonFormatExcludingFields(
-                                        listOf(
-                                            "id",
-                                            "image",
-                                            "sagaId",
-                                            "joinedAt",
-                                            "emojified",
-                                            "abilities",
-                                        ),
+                    SagaPrompts.iconDescription(
+                        saga.genre,
+                        mapOf(
+                            "saga" to saga.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
+                            "character" to
+                                character.toJsonFormatExcludingFields(
+                                    listOf(
+                                        "id",
+                                        "image",
+                                        "sagaId",
+                                        "joinedAt",
+                                        "emojified",
+                                        "abilities",
                                     ),
-                            ).toJsonFormat(),
-                            visualComposition,
-                        )
-                    } else {
-                        ImagePrompts.simpleEmojiRendering(
-                            saga.genre.color.toHex(),
-                            character,
-                        )
-                    }
+                                ),
+                        ).toJsonFormat(),
+                        visualComposition,
+                        characterHexColor = character.hexColor,
+                    )
 
                 val translatedDescription =
                     gemmaClient.generate<String>(
@@ -142,13 +138,6 @@ class CharacterUseCaseImpl
                 val image =
                     imagenClient
                         .generateImage(translatedDescription.plus(ImagePrompts.criticalGenerationRule()), canByPass = false)!!
-                        .apply {
-                            if (isPremium.not()) {
-                                this.removeBackground(context, true)
-                            } else {
-                                imageCropHelper.cropToPortraitBitmap(this)
-                            }
-                        }
 
                 val file =
                     fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
@@ -194,8 +183,15 @@ class CharacterUseCaseImpl
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
+                            hexColor = getRandomColorHex(),
                         ),
                     )
+                withContext(Dispatchers.IO) {
+                    generateCharacterImage(
+                        characterTransaction,
+                        sagaContent.data,
+                    )
+                }
                 characterTransaction
             }
 
@@ -296,4 +292,41 @@ class CharacterUseCaseImpl
                     e.printStackTrace()
                 }
             }
+
+        override suspend fun checkAndGenerateZoom(character: Character) {
+            if (character.smartZoom?.needsZoom == true) {
+                Log.d(
+                    javaClass.simpleName,
+                    "checkAndGenerateZoom: Character already has smart zoom data, skipping.",
+                )
+                return
+            }
+            if (character.image.isEmpty()) {
+                Log.d(
+                    javaClass.simpleName,
+                    "checkAndGenerateZoom: Character has no image, skipping zoom generation.",
+                )
+                return
+            }
+
+            Log.d(
+                javaClass.simpleName,
+                "checkAndGenerateZoom: Generating smart zoom for character ${character.name}...",
+            )
+            imageSegmentationHelper
+                .calculateSmartZoom(character.image)
+                .onSuccessAsync {
+                    val updatedCharacter = character.copy(smartZoom = it)
+                    repository.updateCharacter(updatedCharacter)
+                    Log.d(
+                        javaClass.simpleName,
+                        "checkAndGenerateZoom: Successfully updated smart zoom for character ${character.name}.",
+                    )
+                }.onFailureAsync {
+                    Log.e(
+                        javaClass.simpleName,
+                        "checkAndGenerateZoom: Error generating smart zoom for character ${character.name}: ${it.message}",
+                    )
+                }
+        }
     }

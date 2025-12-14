@@ -96,7 +96,6 @@ class GemmaClient
                     Log.i(javaClass.simpleName, "generate: Core calls don't require delay.")
                 }
 
-
                 requestMutex.withLock {
                     try {
                         val client =
@@ -213,7 +212,7 @@ class GemmaClient
                         }
                         Log.e(
                             this@GemmaClient::class.java.simpleName,
-                            "Error in Generation($model): ${e.message}",
+                            "Error in Generation($model): ${e.javaClass.simpleName} - ${e.message}",
                             e,
                         )
                         Log.e(

@@ -106,4 +106,14 @@ class DataStorePreferencesImpl
         ) {
             context.dataStore.edit { it[longPreferencesKey(key)] = value }
         }
+
+        override suspend fun removeKey(key: String) {
+            context.dataStore.edit { preferences ->
+                // Remove all possible key types for the given key
+                preferences.remove(stringPreferencesKey(key))
+                preferences.remove(booleanPreferencesKey(key))
+                preferences.remove(intPreferencesKey(key))
+                preferences.remove(longPreferencesKey(key))
+        }
+    }
     }

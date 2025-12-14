@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.billingclient.api.ProductDetails
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.services.BillingState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,8 +18,8 @@ class PremiumViewModel
     constructor(
         private val billingService: BillingService,
     ) : ViewModel() {
-        private val _billingState = MutableStateFlow<BillingState?>(null)
-        val billingState: StateFlow<BillingState?> = _billingState.asStateFlow()
+        private val _billingState = MutableStateFlow<BillingService.BillingState?>(null)
+        val billingState: StateFlow<BillingService.BillingState?> = _billingState.asStateFlow()
 
         init {
             viewModelScope.launch {

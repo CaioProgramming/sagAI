@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
@@ -10,133 +11,13 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
 object CharacterPrompts {
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
-
-    @Suppress("ktlint:standard:max-line-length")
-    fun descriptionTranslationPrompt(
-        character: Character,
-        genre: Genre,
-    ): String =
-        buildString {
-            appendLine(
-                "Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Dramatic Character Portraits**.",
-            )
-            appendLine(
-                "The final image generation model WILL HAVE ACCESS to two direct image inputs alongside the text prompt you generate: a **Style Reference Image** and a **Composition Reference Image**.",
-            )
-            appendLine(
-                "Your goal is to convert the character's description and context below into a single, highly detailed, unambiguous, and visually rich English text description.",
-            )
-            appendLine(
-                "This text description will be used by an AI image generation model, IN CONJUNCTION with the aforementioned image references.",
-            )
-
-            appendLine(
-                "YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.",
-            )
-            appendLine("**MANDATORY OUTPUT STRUCTURE & ORDER OF INFLUENCE (CRITICAL):**")
-            appendLine(
-                "The generated text prompt string **MUST** strictly adhere to the following segment order, prioritizing **keywords** over descriptive sentences, to ensure correct influence for the image generation model:",
-            )
-            appendLine(
-                "**Segment A (Highest Priority - MUST be the first 10-15 words): Style and Technique Keywords.** (e.g., EXTREME CLOSE-UP PORTRAIT, TIGHT HEADSHOT, 1960s POP ART, LICHTENSTEIN STYLE, SOLID BLACK SHADOWS, BEN-DAY DOTS.)",
-            )
-            appendLine(
-                "**Segment B (High Priority): Character Identity and Inferred Emotion** (e.g., Ellis, Asian human female, bounty hunter, determined and pragmatic expression...)",
-            )
-            appendLine(
-                "**Segment C (Medium Priority): Physical Details and Attire** (e.g., Short black hair with red streaks, dark brown eyes, space suit...)",
-            )
-            appendLine(
-                "**Segment D (Lowest Priority): Background and Final Directives** (e.g., Stylized starry sky. NO TEXT. Negative prompts:...)",
-            )
-            appendLine("**CORE STYLISTIC AND COLOR DIRECTIVES (MANDATORY):**")
-            appendLine("1.  **Foundational Art Style:**")
-            appendLine("The primary rendering style for the portrait **MUST** be:")
-            appendLine(GenrePrompts.artStyle(genre))
-            appendLine("2.  **Specific Color Application Instructions:**")
-            appendLine("*The following rules dictate how the genre's key colors (derived from \"${genre.name}\") are applied:")
-            appendLine("**Important Clarification on Color:**")
-            appendLine("*These color rules are primarily for:")
-            appendLine(
-                "*The **background's dominant color** (if a simple background is used) or for **atmospheric tinting/elements** if a more complex background is inspired by the Composition Reference.",
-            )
-            appendLine(
-                "***Small, discrete, isolated accents on character features** (e.g., eyes, specific clothing patterns, small tech details, minimal hair streaks).",
-            )
-            appendLine(
-                "***CRUCIAL: DO NOT use these genre colors to tint the character's overall skin, hair (beyond tiny accents), or main clothing areas.** The character's base colors should be preserved and appear natural within the overall art style.",
-            )
-            appendLine(
-                "*Lighting on the character should be primarily dictated by the foundational art style (e.g., chiaroscuro for fantasy, cel-shading for anime) and should aim for realism or stylistic consistency within that art style, not an overall color cast from the genre accents.",
-            )
-            appendLine("*The genre accents are design elements, not the primary light source for the character.")
-            appendLine("**Key Instructions for your generated text prompt:**")
-            appendLine("1.  **Extract, Describe, and Adapt from Visual References**:")
-            appendLine("Your primary role is to act as an expert art director observing the provided **Style Reference Image**")
-            appendLine(
-                "* * Composition Reference Image * * (which the final image model will also receive as Bitmaps).Your generated text prompt MUST:",
-            )
-            appendLine(
-                "Analyze the Style Reference Image for its dominant rendering techniques, lighting style, and color palette. Describe these elements in detail.",
-            )
-            appendLine(
-                "Deconstruct the Composition Reference Image, noting the camera angle, framing, subject placement, and depth of field. Explain how these elements can be adapted to create a compelling portrait.",
-            )
-
-            appendLine(
-                "Ensure the character's details, style, and composition blend together to create a visually harmonious and believable image.",
-            )
-            appendLine(
-                "Your goal is to translate the *vibe, style, and compositional cues* of BOTH reference images into a rich textual description. Do not just say 'replicate the references'; instead, *describe WHAT defining characteristics to replicate and adapt* in vivid textual detail, ensuring these are rendered within the **Foundational Art Style** and adhere to the **Color Application Instructions**.",
-            )
-            appendLine(
-                "1.  **Character Fidelity**: The character's own details (name, backstory, personality, race, gender, specific appearance details, clothing, weapons from the `Character Context` below) define *WHO* or *WHAT* is being depicted. This is the primary subject.",
-            )
-            appendLine(
-                "2.  **Synthesis**: The character's details should be seamlessly integrated with the style derived from the Style Reference Image, the composition derived (and adapted, if necessary) from the Composition Reference Image, AND all rendered according to the **Foundational Art Style** and **Color Application Instructions**.",
-            )
-            appendLine(
-                "3.  **Dramatic Portrait Framing**: The final image should still be a 'Dramatic Portrait,' conveying the character's essence and mood. This is the overall goal, even when adapting a non-portrait composition reference.",
-            )
-            // --- RACE & ETHNICITY FIDELITY (MANDATORY) ---
-            appendLine(
-                "4.  **Race and Ethnicity Fidelity (MANDATORY)**: Explicitly restate the character's race and ethnicity from the Character Context early in the prompt and prioritize them over any style, color, or genre cues. Skin tone, hair texture, and facial anatomy must clearly match the specified race/ethnicity. Do NOT lighten, change, or neutralize the skin tone; do NOT default to Eurocentric features; do NOT translate or replace the provided race/ethnicity terms—use them verbatim. If both race and ethnicity are present, include both.",
-            )
-            // --- ASPECT RATIO / FRAMING ---
-            appendLine(
-                "5.  **Square Aspect Ratio Focus**: Compose for a square 1:1 portrait. Center the subject and frame as bust or waist-up unless the context demands otherwise. If any reference suggests a different framing, ADAPT it to a compelling square portrait. Avoid tall vertical outputs (e.g., 9:16 or 3:4); avoid full-body.",
-            )
-
-            appendLine("6.  **Genre Consistency**: Adhere strictly to the theme (${genre.name}).")
-            appendLine(ImagePrompts.conversionGuidelines(genre))
-            appendLine("**Image Generation Model Inputs Overview (for your awareness when crafting the text prompt):**")
-            appendLine("*   **Text Prompt:** (The string you will generate)")
-            appendLine("*   **Style Reference Image:** (Direct Bitmap input to the image model)")
-            appendLine("*   **Composition Reference Image:** (Direct Bitmap input to the image model)")
-            appendLine("**Character Context:**")
-            appendLine(
-                character.toJsonFormatExcludingFields(
-                    listOf(
-                        "id",
-                        "image",
-                        "sagaId",
-                        "joinedAt",
-                        "emojified",
-                        "abilities",
-                    ),
-                ),
-            )
-            appendLine(
-                "*CRITICAL RULE*: ENSURE THAT NO BORDER ARE RENDERED ONLY FULL ART COMPOSITION",
-            )
-        }
 
     fun charactersOverview(characters: List<Character>): String =
         buildString {
@@ -170,15 +51,61 @@ object CharacterPrompts {
         )
         appendLine("The generated character MUST be deeply contextualized within the saga's theme, genre, and narrative.")
 
-        appendLine("## Saga Context:")
-        appendLine(saga.data.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions))
+        appendLine(SagaPrompts.mainContext(saga))
 
-        appendLine("## 🚨 NEW CHARACTER CREATION SOURCE MATERIAL (CRITICAL) 🚨")
-        appendLine("// The following description is the **ABSOLUTE AND UNALTERABLE SOURCE** for the new character's core identity.")
-        appendLine("// You MUST extract all character details exclusively from this description.")
-        appendLine("// This is the ONLY source for the character to be created.")
+        appendLine("## 💡 NEW CHARACTER CREATION INSPIRATION 💡")
+        appendLine("// The following description is the foundational concept for the new character.")
+        appendLine(
+            "// Your task is to bring this character to life by expanding on the provided details, filling in the blanks, and adding creative depth to make them a truly unique and complete persona.",
+        )
+        appendLine(
+            "// You should be creative and add details that are not explicitly mentioned, for example, suggesting a last name if one is not provided, or elaborating on their motivations and backstory.",
+        )
+        appendLine("// The goal is to create a rich, well-rounded character that feels authentic to the saga's world.")
+        appendLine()
+        appendLine("## 🎨 CREATIVE DIRECTION: IDENTITY & VIBRANCY 🎨")
+        appendLine(
+            "The character must feel ALIVE. Do not rely on generic tropes or bland descriptions. Captivating characters are built on **specific, unique details**.",
+        )
+        appendLine()
+        appendLine("**❌ GENERIC (BAD):**")
+        appendLine("- 'A worn leather jacket'")
+        appendLine("- 'A dark cotton shirt'")
+        appendLine("- 'A cowboy hat'")
+        appendLine()
+        appendLine("**✅ VIBRANT & SPECIFIC (GOOD):**")
+        appendLine("- 'A dark denim jacket covered in red anarchy patches and fraying at the cuffs'")
+        appendLine("- 'A white cotton shirt, unbuttoned halfway, stained with engine grease and sweat'")
+        appendLine("- 'A black cowboy hat with a silver skull symbol pinned to the brim, tilted aggressively'")
+        appendLine()
+        appendLine("**GUIDING PRINCIPLES:**")
+        appendLine(
+            "1. **Visual Storytelling:** Use clothing and physical traits to hint at backstory. Why is the jacket torn? What does the trinket on their belt mean?",
+        )
+        appendLine(
+            "2. **Unique Identifiers:** Give them a signature look. Avoid 'standard' or 'typical' gear unless modified in a unique way.",
+        )
+        appendLine(
+            "3. **Sensory Details:** Mention textures, distinct colors, and conditions (dusty, polished, bloodied) to create a vivid mental image.",
+        )
+        appendLine(
+            GenrePrompts.appearanceGuidelines(saga.data.genre),
+        )
         appendLine(description)
 
+        appendLine("// Latest messages for better context")
+        appendLine("Conversation History")
+        appendLine("Use this for contextualization")
+        appendLine("The messages are ordered from newest to oldest")
+        appendLine(
+            saga
+                .flatMessages()
+                .sortedByDescending {
+                    it.message.timestamp
+                }.map { it.message }
+                .take(5)
+                .normalizetoAIItems(excludingFields = messageExclusions),
+        )
         appendLine("## Guidelines for generating the character JSON:")
         appendLine(CharacterGuidelines.creationGuideline)
         appendLine("// **IMPORTANT**: The character must be HIGHLY CONTEXTUALIZED TO THE SAGA'S THEME: ${saga.data.genre.name}.")
@@ -294,25 +221,49 @@ object CharacterPrompts {
         )
         appendLine()
         appendLine("## CORE INSTRUCTIONS:")
-        appendLine("1.  **Analyze the provided messages** to find informal names or nicknames used to refer to the characters.")
         appendLine(
-            "2.  **Suggest New Nicknames:** If the conversation reveals significant character development or a new role, you can suggest new, fitting nicknames even if they haven't been explicitly used yet. These suggestions should be grounded in the context of the timeline event.",
+            "1. **Primary Goal: Identify 'earned' or 'spoken' nicknames.** Your main objective is to find nicknames that characters have either been directly called by others or have earned through their actions and role in the story.",
+        )
+        appendLine()
+        appendLine("2. **Analyze for Direct Mentions:**")
+        appendLine(
+            "   - Scrutinize the 'Recent Messages' for instances where a character is referred to by a name other than their official one.",
         )
         appendLine(
-            "3.  **Maximum of 4 Nicknames:** For each character, identify or suggest a maximum of four nicknames. Prioritize the most relevant and impactful ones.",
-        )
-
-        appendLine(
-            "2.  **Focus on Uniqueness:** The nicknames must be distinctive and not generic. They should feel like a unique identifier for that character within the story's context.",
+            "   - **Example 1 (Shortened Name):** If a character named 'Daniela' is frequently called 'Dani' by her friends in the conversation, 'Dani' is a valid nickname.",
         )
         appendLine(
-            "3.  **Avoid Generic Terms:** Do NOT extract common nouns or roles as nicknames (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). The name must be a proper noun or a very specific epithet.",
+            "   - **Example 2 (Title/Hero Name):** If a character is a hero and another character says, 'We need Superwave for this mission!', then 'Superwave' is a valid nickname, provided it's not already in their official profile.",
+        )
+        appendLine()
+        appendLine("3. **Analyze for Earned Nicknames & Contextual Relevance:**")
+        appendLine(
+            "   - A nickname must be deeply rooted in the events of the story. It is not a random guess, but a name that logically emerges from a character's actions, personality, or a pivotal moment.",
         )
         appendLine(
-            "4.  **Context is Key:** The nickname should arise from the character's actions, relationships, or specific events in the narrative provided in the messages. It should not be a direct attribute from their profile (like their job or a visible characteristic).",
+            "   - Ask yourself: Why was this name used? Does it reflect a new status, a term of endearment, an insult, or a legendary title earned in the narrative? The connection to the story must be strong and clear.",
+        )
+        appendLine()
+        appendLine("4. **Suggesting Creative & Relevant New Nicknames:**")
+        appendLine(
+            "   - If the story shows significant character development (e.g., a character becomes a legendary warrior) but no one has explicitly used a nickname yet, you can **suggest a creative and fitting nickname** that reflects this new status.",
+        )
+        appendLine("   - The suggestion must be a logical and creative leap based on the provided context, not a generic label.")
+        appendLine()
+        appendLine("5. **CRITICAL EXCLUSIONS (What to Avoid):**")
+        appendLine(
+            "   - **No Generic Roles:** Do NOT extract common nouns or jobs (e.g., \"the girl\", \"ninja\", \"captain\", \"the doctor\"). A nickname is a specific name, not a description.",
         )
         appendLine(
-            "5.  **Do not use names already in the character's profile** (e.g., their actual name or known aliases). You are looking for *new* or *emergent* nicknames.",
+            "   - **No Profile Attributes:** Do NOT use information already present in the character's official profile (like their `occupation`, existing `nicknames`, or base `name`). You are looking for *new*, *emergent*, or *informally used* names from the conversation.",
+        )
+        appendLine(
+            "   - **No Guessing:** The nickname must be directly present in the messages or a very strong, logical inference from the character's recent actions and development in the story.",
+        )
+        appendLine()
+        appendLine("6. **Output Constraints:**")
+        appendLine(
+            "   - For each character, identify or suggest a **maximum of four** nicknames. Prioritize the most relevant and impactful ones.",
         )
         appendLine()
         appendLine("## CONTEXT:")
@@ -324,7 +275,7 @@ object CharacterPrompts {
         appendLine(characters.normalizetoAIItems(ChatPrompts.characterExclusions))
         appendLine()
         appendLine("### Recent Messages (Conversation to Analyze):")
-        appendLine(messages.normalizetoAIItems(ChatPrompts.messageExclusions))
+        appendLine(messages.normalizetoAIItems(messageExclusions))
         appendLine()
         appendLine("## REQUIRED OUTPUT FORMAT:")
         appendLine("Respond ONLY with a valid JSON array. Do not include any other text, explanations, or markdown.")
