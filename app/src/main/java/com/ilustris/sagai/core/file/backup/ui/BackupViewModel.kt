@@ -3,9 +3,11 @@ package com.ilustris.sagai.core.file.backup.ui
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.backup.RestorableSaga
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.saga.chat.repository.SagaBackupService
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +25,7 @@ class BackupViewModel
         private val backupService: BackupService,
         private val sagaBackupService: SagaBackupService,
         private val sagaRepository: SagaRepository,
+        private val stringHelper: StringResourceHelper,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow<BackupUiState>(BackupUiState.Dimissed)
         val uiState = _uiState.asStateFlow()
@@ -40,12 +43,13 @@ class BackupViewModel
 
         fun recoverBackups() {
             viewModelScope.launch {
-                _uiState.value = BackupUiState.Loading("Recuperando conteudo...")
+                _uiState.value =
+                    BackupUiState.Loading(stringHelper.getString(R.string.backup_loading_recovering_content))
 
                 val backups =
                     (backupService.getBackedUpSagas().getSuccess()) ?: run {
                         _uiState.emit(
-                            BackupUiState.Empty("Ocorreu um erro inesperado, não foi possível recuperar os conteudos de backup :("),
+                            BackupUiState.Empty(stringHelper.getString(R.string.backup_error_recovery_failed)),
                         )
                         delay(5.seconds)
                         _uiState.emit(BackupUiState.Dimissed)
@@ -55,11 +59,11 @@ class BackupViewModel
                 val validSagas = sagaBackupService.filterValidSagas(backups).getSuccess() ?: emptyList()
 
                 if (validSagas.isEmpty()) {
-                    _uiState.emit(BackupUiState.Empty("Parece que esta tudo em ordem!"))
+                    _uiState.emit(BackupUiState.Empty(stringHelper.getString(R.string.backup_message_all_good)))
                     delay(3.seconds)
                     _uiState.emit(BackupUiState.Dimissed)
                 } else {
-                    _uiState.emit(BackupUiState.Loading("Encontramos algumas coisinhas.."))
+                    _uiState.emit(BackupUiState.Loading(stringHelper.getString(R.string.backup_loading_found_items)))
                     delay(3.seconds)
                     _uiState.emit(BackupUiState.ShowBackups(validSagas))
                 }
@@ -82,11 +86,11 @@ class BackupViewModel
             displayBackups: Boolean,
         ) {
             viewModelScope.launch {
-                _uiState.emit(BackupUiState.Loading("Habilitando backup..."))
+                _uiState.emit(BackupUiState.Loading(stringHelper.getString(R.string.backup_loading_enabling)))
                 backupService
                     .enableBackup(uri)
                     .onSuccessAsync {
-                        _uiState.emit(BackupUiState.Loading("Tudo pronto! Aproveite suas histórias \uD83D\uDC9C"))
+                        _uiState.emit(BackupUiState.Loading(stringHelper.getString(R.string.backup_success_enabled)))
                         delay(3.seconds)
                         _uiState.emit(BackupUiState.Dimissed)
                         if (displayBackups) {
@@ -94,7 +98,7 @@ class BackupViewModel
                         }
                     }.onFailureAsync {
                         _uiState.emit(
-                            BackupUiState.Empty("Não foi possivel habilitar o backup. Sentimos muito por isso vamos tentar de novo?"),
+                            BackupUiState.Empty(stringHelper.getString(R.string.backup_error_enable_failed)),
                         )
                         delay(3.seconds)
                         _uiState.emit(BackupUiState.Dimissed)
@@ -105,7 +109,12 @@ class BackupViewModel
         fun restoreSaga(restorableSaga: RestorableSaga) {
             viewModelScope.launch {
                 _uiState.value =
-                    BackupUiState.Loading("Restaurando ${restorableSaga.manifest.title}...")
+                    BackupUiState.Loading(
+                        stringHelper.getString(
+                            R.string.backup_loading_restoring_saga,
+                            restorableSaga.manifest.title
+                        )
+                    )
                 sagaBackupService.restoreContent(restorableSaga)
                 delay(2.seconds)
             }
@@ -114,7 +123,14 @@ class BackupViewModel
         fun restoreAllBackups(backups: List<RestorableSaga>) {
             viewModelScope.launch {
                 backups.forEach {
-                    _uiState.emit(BackupUiState.Loading("Restaurando ${it.manifest.title}..."))
+                    _uiState.emit(
+                        BackupUiState.Loading(
+                            stringHelper.getString(
+                                R.string.backup_loading_restoring_saga,
+                                it.manifest.title
+                            )
+                        )
+                    )
                     sagaBackupService.restoreContent(it)
                     delay(2.seconds)
                 }

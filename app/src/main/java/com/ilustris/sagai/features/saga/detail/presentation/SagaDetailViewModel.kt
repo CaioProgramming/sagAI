@@ -1,10 +1,13 @@
 package com.ilustris.sagai.features.saga.detail.presentation
 
+import android.graphics.Bitmap
 import android.net.Uri
+import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.State
+import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -32,7 +35,9 @@ class SagaDetailViewModel
         private val sagaDetailUseCase: SagaDetailUseCase,
         private val remoteConfig: FirebaseRemoteConfig,
         private val billingService: BillingService,
+        private val imageSegmentationHelper: ImageSegmentationHelper,
     ) : ViewModel() {
+    private val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         private val _state = MutableStateFlow<State>(State.Loading)
         val state: StateFlow<State> = _state.asStateFlow()
         val saga = MutableStateFlow<SagaContent?>(null)
@@ -47,6 +52,10 @@ class SagaDetailViewModel
         val backupEnabled = sagaDetailUseCase.getBackupEnabled()
 
         val showPremiumSheet = MutableStateFlow(false)
+
+
+    val originalBitmap = MutableStateFlow<Bitmap?>(null)
+    val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -212,6 +221,21 @@ class SagaDetailViewModel
                     }
             }
         }
+
+
+    fun segmentSagaCover(url: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val cachedBitmap = segmentedImageCache.get(url)
+            if (cachedBitmap != null) {
+                segmentedBitmap.emit(cachedBitmap)
+                return@launch
+            }
+            imageSegmentationHelper.processImage(url).onSuccessAsync {
+                segmentedBitmap.emit(it.second)
+                originalBitmap.emit(it.first)
+            }
+        }
+    }
     }
 
 private const val EMOTIONAL_CARD_CONFIG = "mental_card_icon"

@@ -43,7 +43,6 @@ class CreateSagaViewModel
         private val characterUseCase: CharacterUseCase,
     ) : ViewModel() {
         val form = MutableStateFlow(SagaForm())
-        val sagaData = MutableStateFlow<Saga?>(null)
         val state = MutableStateFlow(CreateSagaState())
         val effect = MutableStateFlow<Effect?>(null)
         val chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
@@ -65,7 +64,13 @@ class CreateSagaViewModel
                     .generateIntroduction()
                     .onSuccess { gen ->
                         handleGeneratedContent(gen)
-                        chatMessages.update { it + ChatMessage(text = gen.message, sender = Sender.AI) }
+                        chatMessages.update {
+                            it + ChatMessage(
+                                text = gen.message,
+                                sender = Sender.AI,
+                                callback = gen.callback?.action
+                            )
+                        }
                     }.onFailure {
                         updateGenerating(false)
                     }
@@ -90,12 +95,8 @@ class CreateSagaViewModel
                                 ChatMessage(
                                     text = response.message,
                                     sender = Sender.AI,
-                                    sagaForm =
-                                        if (response.callback?.action == CallBackAction.AWAITING_CONFIRMATION) {
-                                            form.value
-                                        } else {
-                                            null
-                                        },
+                                    callback = response.callback?.action,
+
                                 )
                         }
                         handleGeneratedContent(response)

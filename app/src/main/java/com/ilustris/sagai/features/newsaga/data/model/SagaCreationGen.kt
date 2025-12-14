@@ -1,7 +1,5 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
-import com.ilustris.sagai.features.home.data.model.Saga
-
 data class SagaCreationGen(
     val message: String,
     val inputHint: String,
@@ -29,5 +27,5 @@ data class ChatMessage(
     val id: String = System.nanoTime().toString(),
     val text: String,
     val sender: Sender,
-    val sagaForm: SagaForm? = null,
+    val callback: CallBackAction? = null
 )

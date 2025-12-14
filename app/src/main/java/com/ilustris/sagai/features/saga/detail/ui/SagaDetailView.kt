@@ -3,6 +3,7 @@
 package com.ilustris.sagai.features.saga.detail.ui
 
 import ai.atick.material.MaterialColor
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,8 +19,6 @@ import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -83,18 +82,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -118,6 +118,7 @@ import com.ilustris.sagai.features.characters.ui.CharactersGalleryContent
 import com.ilustris.sagai.features.characters.ui.components.VerticalLabel
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -126,7 +127,6 @@ import com.ilustris.sagai.features.home.data.model.relationshipsSortedByEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.playthrough.AnimatedPlaytimeCounter
 import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.detail.presentation.SagaDetailViewModel
@@ -139,6 +139,7 @@ import com.ilustris.sagai.features.wiki.ui.WikiCard
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.StarryLoader
 import com.ilustris.sagai.ui.components.stylisedText
+import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
@@ -156,8 +157,8 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.zoomAnimation
+import com.mikepenz.hypnoticcanvas.utils.round
 import effectForGenre
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
@@ -184,6 +185,8 @@ fun SagaDetailView(
     val emotionalCardReference by viewModel.emotionalCardReference.collectAsStateWithLifecycle()
     val showReview by viewModel.showReview.collectAsStateWithLifecycle()
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
+    val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
+    val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
             showDeleteConfirmation = false
@@ -196,6 +199,13 @@ fun SagaDetailView(
                 else -> {
                     section = DetailAction.BACK
                 }
+            }
+        }
+    }
+    LaunchedEffect(saga) {
+        saga?.let { sagaContent ->
+            if (sagaContent.data.icon.isNotEmpty()) {
+                viewModel.segmentSagaCover(sagaContent.data.icon)
             }
         }
     }
@@ -249,6 +259,8 @@ fun SagaDetailView(
             viewModel.generateTimelineContent(it)
         },
         modifier = Modifier.fillMaxSize(),
+        originalBitmap = originalBitmap,
+        segmentedBitmap = segmentedBitmap,
     )
 
     if (showDeleteConfirmation) {
@@ -340,6 +352,12 @@ fun LazyListScope.SagaDrawerContent(
 ) {
     with(this) {
         item {
+            val brush =
+                content.data.genre.gradient(
+                    content.data.review != null,
+                    targetValue = 200f,
+                    duration = 1.seconds,
+                )
             Column(Modifier.fillMaxWidth()) {
                 Icon(
                     painterResource(R.drawable.ic_spark),
@@ -348,6 +366,7 @@ fun LazyListScope.SagaDrawerContent(
                     modifier =
                         Modifier
                             .clip(CircleShape)
+                            .gradientFill(brush)
                             .padding(4.dp)
                             .size(50.dp)
                             .align(Alignment.CenterHorizontally)
@@ -396,7 +415,7 @@ fun LazyListScope.SagaDrawerContent(
                     },
                     style =
                         MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = content.data.genre.bodyFont(),
+                            fontFamily = content.data.genre.headerFont(),
                             fontWeight = FontWeight.Bold,
                             brush = brush,
                         ),
@@ -420,11 +439,15 @@ fun LazyListScope.SagaDrawerContent(
                                     .clickable {
                                         expandedEvents = !expandedEvents
                                     }.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            Image(
-                                painterResource(R.drawable.ic_spark),
-                                null,
-                                Modifier.size(24.dp),
+                            Text(
+                                content.chapterNumber(chapter.data).toRoman(),
+                                style =
+                                    MaterialTheme.typography.titleSmall.copy(
+                                        fontFamily = content.data.genre.bodyFont(),
+                                        fontStyle = FontStyle.Italic,
+                                    ),
                             )
                             Text(
                                 stringResource(
@@ -465,7 +488,7 @@ fun LazyListScope.SagaDrawerContent(
                                 stringResource(id = R.string.events_count, eventsInChapter.size, UpdateRules.CHAPTER_UPDATE_LIMIT),
                                 style =
                                     MaterialTheme.typography.labelSmall.copy(
-                                        fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                        fontStyle = FontStyle.Italic,
                                         fontFamily = content.data.genre.bodyFont(),
                                         textAlign = TextAlign.Center,
                                     ),
@@ -499,7 +522,7 @@ fun LazyListScope.SagaDrawerContent(
                                     ),
                                     style =
                                         MaterialTheme.typography.labelSmall.copy(
-                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                            fontStyle = FontStyle.Italic,
                                             fontFamily = content.data.genre.bodyFont(),
                                             textAlign = TextAlign.Center,
                                         ),
@@ -539,6 +562,8 @@ fun SagaDetailContentView(
     onExportSaga: () -> Unit = {},
     showTitleOnly: Boolean = false,
     modifier: Modifier = Modifier,
+    originalBitmap: Bitmap? = null,
+    segmentedBitmap: Bitmap? = null,
 ) {
     val saga = ((state as? State.Success)?.data as? SagaContent)
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -603,7 +628,7 @@ fun SagaDetailContentView(
                                         .fillMaxSize(),
                             ) { section ->
                                 when (section) {
-                                    DetailAction.CHARACTERS ->
+                                    DetailAction.CHARACTERS -> {
                                         CharactersGalleryContent(
                                             sagaContent,
                                             animationScopes = this@SharedTransitionLayout to this,
@@ -625,8 +650,9 @@ fun SagaDetailContentView(
                                                     animatedVisibilityScope = this,
                                                 ),
                                         )
+                                    }
 
-                                    DetailAction.TIMELINE ->
+                                    DetailAction.TIMELINE -> {
                                         TimeLineContent(
                                             sagaContent,
                                             animationScopes = this@SharedTransitionLayout to this,
@@ -649,8 +675,9 @@ fun SagaDetailContentView(
                                                 onBackClick(currentSection)
                                             },
                                         )
+                                    }
 
-                                    DetailAction.CHAPTERS ->
+                                    DetailAction.CHAPTERS -> {
                                         ChapterContent(
                                             sagaContent,
                                             animationScopes = this@SharedTransitionLayout to this,
@@ -669,8 +696,9 @@ fun SagaDetailContentView(
                                                 onBackClick(currentSection)
                                             },
                                         )
+                                    }
 
-                                    DetailAction.WIKI ->
+                                    DetailAction.WIKI -> {
                                         WikiContent(
                                             sagaContent,
                                             {
@@ -691,8 +719,12 @@ fun SagaDetailContentView(
                                                     animatedVisibilityScope = this,
                                                 ),
                                         )
+                                    }
 
-                                    DetailAction.ACTS -> ActContent(sagaContent)
+                                    DetailAction.ACTS -> {
+                                        ActContent(sagaContent)
+                                    }
+
                                     else -> {
                                         SagaDetailInitialView(
                                             sagaContent,
@@ -730,6 +762,8 @@ fun SagaDetailContentView(
                                             },
                                             onExportSaga = onExportSaga,
                                             showTitleOnly = showTitleOnly,
+                                            originalBitmap = originalBitmap,
+                                            segmentedBitmap = segmentedBitmap,
                                         )
                                     }
                                 }
@@ -826,10 +860,20 @@ fun SimpleSlider(
         var sliderPosition by remember { mutableFloatStateOf(value) }
 
         Text(
-            "$title - $sliderPosition",
+            title,
+            style = MaterialTheme.typography.labelLarge,
         )
         Slider(
             value = sliderPosition,
+            thumb = {
+                Image(
+                    painterResource(R.drawable.ic_spark),
+                    null,
+                    Modifier.size(12.dp),
+                    colorFilter =
+                        ColorFilter.tint(MaterialTheme.colorScheme.primary),
+                )
+            },
             onValueChange = {
                 sliderPosition = it
                 onValueChange(it)
@@ -842,6 +886,12 @@ fun SimpleSlider(
                     inactiveTrackColor = MaterialTheme.colorScheme.surfaceContainer,
                 ),
             valueRange = 0f..maxValue,
+        )
+
+        Text(
+            sliderPosition.round(2).toString().plus("f"),
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.alpha(.5f),
         )
     }
 }
@@ -860,6 +910,8 @@ private fun SagaDetailInitialView(
     onBackClick: () -> Unit = {},
     onExportSaga: () -> Unit = {},
     showTitleOnly: Boolean = false,
+    originalBitmap: Bitmap? = null,
+    segmentedBitmap: Bitmap? = null,
 ) {
     content?.let { saga ->
         val columnCount = 2
@@ -913,54 +965,76 @@ private fun SagaDetailInitialView(
                                             modifier =
                                                 Modifier
                                                     .background(MaterialTheme.colorScheme.background)
-                                                    .fillMaxHeight(.4f)
+                                                    .height(400.dp)
                                                     .fillMaxWidth(),
                                         ) {
-                                            AsyncImage(
-                                                saga.data.icon,
-                                                contentDescription = saga.data.title,
-                                                modifier =
-                                                    Modifier
-                                                        .background(MaterialTheme.colorScheme.background)
-                                                        .fillMaxSize()
-                                                        .effectForGenre(saga.data.genre)
-                                                        .selectiveColorHighlight(highlightParams)
-                                                        .zoomAnimation(),
-                                                contentScale = ContentScale.Crop,
-                                            )
+                                            val currentModifier =
+                                                Modifier
+                                                    .align(Alignment.TopCenter)
+                                                    .padding(16.dp)
+                                                    .sharedElement(
+                                                        rememberSharedContentState(
+                                                            key = "saga-style-header",
+                                                        ),
+                                                        animatedVisibilityScope = this@AnimatedContent,
+                                                    ).reactiveShimmer(
+                                                        true,
+                                                        duration = 5.seconds,
+                                                    )
+                                            if (originalBitmap != null && segmentedBitmap != null) {
+                                                DepthLayout(
+                                                    originalImage = originalBitmap,
+                                                    segmentedImage = segmentedBitmap,
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    imageModifier =
+                                                        Modifier
+                                                            .clipToBounds()
+                                                            .effectForGenre(saga.data.genre)
+                                                            .selectiveColorHighlight(highlightParams),
+                                                ) {
+                                                    saga.data.genre.stylisedText(
+                                                        saga.data.title,
+                                                        modifier =
+                                                            currentModifier
+                                                                .reactiveShimmer(
+                                                                    true,
+                                                                ).padding(4.dp),
+                                                        fontSize = MaterialTheme.typography.displaySmall.fontSize,
+                                                    )
+                                                }
+                                            } else {
+                                                AsyncImage(
+                                                    saga.data.icon,
+                                                    contentDescription = saga.data.title,
+                                                    modifier =
+                                                        Modifier
+                                                            .background(MaterialTheme.colorScheme.background)
+                                                            .fillMaxSize()
+                                                            .effectForGenre(saga.data.genre)
+                                                            .selectiveColorHighlight(highlightParams)
+                                                            .zoomAnimation(),
+                                                    contentScale = ContentScale.Crop,
+                                                )
+
+                                                Text(
+                                                    saga.data.title,
+                                                    maxLines = 2,
+                                                    style =
+                                                        MaterialTheme.typography.displaySmall.copy(
+                                                            fontFamily = saga.data.genre.headerFont(),
+                                                            brush = saga.data.genre.gradient(true),
+                                                            textAlign = TextAlign.Center,
+                                                        ),
+                                                    modifier = currentModifier,
+                                                )
+                                            }
 
                                             Box(
                                                 Modifier
                                                     .align(Alignment.BottomCenter)
                                                     .fillMaxWidth()
-                                                    .fillMaxHeight(.3f)
+                                                    .fillMaxHeight(.6f)
                                                     .background(fadeGradientBottom()),
-                                            )
-
-                                            Text(
-                                                saga.data.title,
-                                                maxLines = 2,
-                                                style =
-                                                    MaterialTheme.typography.displaySmall.copy(
-                                                        fontFamily = saga.data.genre.headerFont(),
-                                                        brush = saga.data.genre.gradient(true),
-                                                        textAlign = TextAlign.Center,
-                                                    ),
-                                                modifier =
-                                                    Modifier
-                                                        .align(Alignment.BottomCenter)
-                                                        .background(fadeGradientBottom())
-                                                        .padding(16.dp)
-                                                        .fillMaxWidth()
-                                                        .sharedElement(
-                                                            rememberSharedContentState(
-                                                                key = "saga-style-header",
-                                                            ),
-                                                            animatedVisibilityScope = this@AnimatedContent,
-                                                        ).reactiveShimmer(
-                                                            true,
-                                                            duration = 5.seconds,
-                                                        ),
                                             )
                                         }
                                     } else {
@@ -1078,9 +1152,10 @@ private fun SagaDetailInitialView(
                                             Modifier
                                                 .padding(16.dp)
                                                 .fillMaxWidth(),
-                                    ) {
-                                        openReview()
-                                    }
+                                        originalBitmap = originalBitmap,
+                                        segmentedBitmap = segmentedBitmap,
+                                        onClick = { openReview() },
+                                    )
                                 }
                             }
 
@@ -1121,7 +1196,7 @@ private fun SagaDetailInitialView(
                                             modifier =
                                                 Modifier
                                                     .fillMaxSize()
-                                                    .effectForGenre(genre, useFallBack = true),
+                                                    .effectForGenre(genre),
                                             contentScale = ContentScale.Crop,
                                         )
 
@@ -1150,17 +1225,12 @@ private fun SagaDetailInitialView(
                                                         fontFamily = genre.headerFont(),
                                                         color = genre.iconColor,
                                                     ),
-                                                modifier =
-                                                    Modifier.reactiveShimmer(
-                                                        true,
-                                                        genre.shimmerColors(),
-                                                        duration = 10.seconds,
-                                                    ),
                                             )
 
                                             Text(
                                                 it.data.backstory,
-                                                maxLines = 4,
+                                                maxLines = 5,
+                                                overflow = TextOverflow.Ellipsis,
                                                 style =
                                                     MaterialTheme.typography.labelMedium.copy(
                                                         fontFamily = genre.bodyFont(),
@@ -1759,67 +1829,94 @@ private fun SagaDetailInitialView(
                                     tooltipPositionProvider,
                                     state = tooltipState,
                                     tooltip = {
-                                        Column(
-                                            Modifier
-                                                .background(
-                                                    MaterialTheme.colorScheme.surfaceContainer,
-                                                    genre.shape(),
-                                                ).padding(8.dp),
+                                        LazyVerticalGrid(
+                                            columns = GridCells.Fixed(2),
+                                            modifier =
+                                                Modifier
+                                                    .padding(16.dp)
+                                                    .background(
+                                                        MaterialTheme.colorScheme.surfaceContainer,
+                                                        genre.shape(),
+                                                    ).padding(8.dp),
                                         ) {
-                                            Text(stringResource(id = R.string.image_adjustment))
-
-                                            SimpleSlider(
-                                                stringResource(id = R.string.hue_tolerance),
-                                                maxValue = 1f,
-                                                value = highlightParams.hueTolerance,
-                                            ) { value ->
-                                                highlightParams =
-                                                    highlightParams.copy(hueTolerance = value)
+                                            item(span = { GridItemSpan(2) }) {
+                                                Text(
+                                                    stringResource(id = R.string.image_adjustment),
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    modifier =
+                                                        Modifier
+                                                            .padding(16.dp)
+                                                            .fillMaxWidth(),
+                                                )
                                             }
 
-                                            SimpleSlider(
-                                                stringResource(id = R.string.saturation_threshold),
-                                                maxValue = 1f,
-                                                value = highlightParams.saturationThreshold,
-                                            ) { value ->
-                                                highlightParams =
-                                                    highlightParams.copy(saturationThreshold = value)
+                                            item {
+                                                SimpleSlider(
+                                                    stringResource(id = R.string.hue_tolerance),
+                                                    maxValue = 1f,
+                                                    value = highlightParams.hueTolerance,
+                                                ) { value ->
+                                                    highlightParams =
+                                                        highlightParams.copy(hueTolerance = value)
+                                                }
                                             }
 
-                                            SimpleSlider(
-                                                stringResource(id = R.string.lightness_threshold),
-                                                maxValue = 1f,
-                                                value = highlightParams.lightnessThreshold,
-                                            ) { value ->
-                                                highlightParams =
-                                                    highlightParams.copy(lightnessThreshold = value)
+                                            item {
+                                                SimpleSlider(
+                                                    stringResource(id = R.string.saturation_threshold),
+                                                    maxValue = 1f,
+                                                    value = highlightParams.saturationThreshold,
+                                                ) { value ->
+                                                    highlightParams =
+                                                        highlightParams.copy(saturationThreshold = value)
+                                                }
                                             }
 
-                                            SimpleSlider(
-                                                stringResource(id = R.string.highlight_boost),
-                                                maxValue = 2f,
-                                                value = highlightParams.highlightSaturationBoost,
-                                            ) { value ->
-                                                highlightParams =
-                                                    highlightParams.copy(highlightSaturationBoost = value)
+                                            item {
+                                                SimpleSlider(
+                                                    stringResource(id = R.string.lightness_threshold),
+                                                    maxValue = 1f,
+                                                    value = highlightParams.lightnessThreshold,
+                                                ) { value ->
+                                                    highlightParams =
+                                                        highlightParams.copy(lightnessThreshold = value)
+                                                }
                                             }
 
-                                            SimpleSlider(
-                                                stringResource(id = R.string.highlight_lightness_boost),
-                                                maxValue = 2f,
-                                                value = highlightParams.highlightLightnessBoost,
-                                            ) { value ->
-                                                highlightParams =
-                                                    highlightParams.copy(highlightLightnessBoost = value)
+                                            item {
+                                                SimpleSlider(
+                                                    stringResource(id = R.string.highlight_boost),
+                                                    maxValue = 2f,
+                                                    value = highlightParams.highlightSaturationBoost,
+                                                ) { value ->
+                                                    highlightParams =
+                                                        highlightParams.copy(
+                                                            highlightSaturationBoost = value,
+                                                        )
+                                                }
                                             }
 
-                                            SimpleSlider(
-                                                stringResource(id = R.string.desaturation_factor),
-                                                maxValue = 1f,
-                                                value = highlightParams.desaturationFactorNonTarget,
-                                            ) { value ->
-                                                highlightParams =
-                                                    highlightParams.copy(desaturationFactorNonTarget = value)
+                                            item {
+                                                SimpleSlider(
+                                                    stringResource(id = R.string.highlight_lightness_boost),
+                                                    maxValue = 2f,
+                                                    value = highlightParams.highlightLightnessBoost,
+                                                ) { value ->
+                                                    highlightParams =
+                                                        highlightParams.copy(highlightLightnessBoost = value)
+                                                }
+                                            }
+                                            item {
+                                                SimpleSlider(
+                                                    stringResource(id = R.string.desaturation_factor),
+                                                    maxValue = 1f,
+                                                    value = highlightParams.desaturationFactorNonTarget,
+                                                ) { value ->
+                                                    highlightParams =
+                                                        highlightParams.copy(
+                                                            desaturationFactorNonTarget = value,
+                                                        )
+                                                }
                                             }
                                         }
                                     },
@@ -1930,111 +2027,6 @@ private fun BackupStatusCard(
                 stringResource(R.string.export_button_label),
                 style = MaterialTheme.typography.labelSmall,
             )
-        }
-    }
-}
-
-@Composable
-fun RecapHeroCard(
-    saga: SagaContent,
-    modifier: Modifier,
-    onClick: () -> Unit,
-) {
-    val stats =
-        listOf(
-            stringResource(R.string.recap_messages_sent, saga.flatMessages().size),
-            stringResource(R.string.recap_characters_found, saga.characters.size),
-            stringResource(R.string.recap_chapters_lived, saga.flatChapters().size),
-            stringResource(R.string.recap_revisit_now),
-        )
-    var currentIndex by remember { mutableStateOf(0) }
-
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(2500)
-            currentIndex = (currentIndex + 1) % stats.size
-        }
-    }
-
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .height(170.dp)
-                .dropShadow(
-                    RoundedCornerShape(15.dp),
-                    androidx.compose.ui.graphics.shadow.Shadow(
-                        5.dp,
-                        saga.data.genre.gradient(true),
-                    ),
-                ).clip(saga.data.genre.shape())
-                .border(
-                    1.dp,
-                    saga.data.genre.gradient(),
-                    saga.data.genre.shape(),
-                ).clickable {
-                    onClick()
-                },
-    ) {
-        saga.data.icon.let {
-            AsyncImage(
-                it,
-                contentDescription = null,
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .effectForGenre(saga.data.genre),
-                contentScale = ContentScale.Crop,
-            )
-        }
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(
-                        fadeGradientBottom(),
-                    ),
-        )
-
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .reactiveShimmer(true)
-                    .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start,
-        ) {
-            Text(
-                text = stringResource(R.string.recap_your_journey),
-                style =
-                    MaterialTheme.typography.displaySmall.copy(
-                        fontFamily = saga.data.genre.headerFont(),
-                        brush =
-                            saga.data.genre.gradient(),
-                        shadow = Shadow(saga.data.genre.color, blurRadius = 15f),
-                    ),
-            )
-
-            AnimatedContent(
-                targetState = currentIndex,
-                transitionSpec = {
-                    fadeIn(animationSpec = tween(500)) + slideInVertically { it } togetherWith
-                        fadeOut(animationSpec = tween(500)) + slideOutVertically { -it }
-                },
-            ) { index ->
-                Text(
-                    text = stats[index],
-                    style =
-                        MaterialTheme.typography.headlineSmall.copy(
-                            color = saga.data.genre.iconColor,
-                            fontFamily = saga.data.genre.bodyFont(),
-                            textAlign = TextAlign.Center,
-                        ),
-                    modifier = Modifier.padding(8.dp),
-                )
-            }
         }
     }
 }

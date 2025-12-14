@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.newsaga.data.model
 
-import ai.atick.material.MaterialColor
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
@@ -18,49 +17,56 @@ Genre(
 ) {
     FANTASY(
         title = R.string.genre_fantasy,
-        color = MaterialColor.RedA400,
+        color = Color(0xFF8B2635), // Pantone 208 C - Deep Ruby Red
         iconColor = Color.White,
         background = R.drawable.fantasy,
     ),
     CYBERPUNK(
         title = R.string.genre_scifi,
-        color = MaterialColor.DeepPurpleA200,
+        color = Color(0xFF2E294E), // Pantone 5255 C - Dark Purple
         iconColor = Color.White,
         background = R.drawable.scifi,
     ),
 
     HORROR(
         title = R.string.genre_horror,
-        color = MaterialColor.BlueGray200,
-        iconColor = Color.Black,
+        color = Color(0xFF1C2541), // Pantone 533 C - Dark Navy
+        iconColor = Color.White,
         background = R.drawable.horror,
     ),
 
     HEROES(
         title = R.string.genre_heroes,
-        color = MaterialColor.Blue900,
+        color = Color(0xFF003F88), // Pantone 286 C - Classic Hero Blue
         iconColor = Color.White,
         background = R.drawable.hero,
     ),
     CRIME(
         title = R.string.genre_crime,
-        color = MaterialColor.PinkA100,
+        color = Color(0xFFE91E63), // Pantone 213 C - Hot Pink
         iconColor = Color.White,
         background = R.drawable.crime,
     ),
 
     SHINOBI(
         title = R.string.genre_shinobi,
-        color = Color(0xff880101),
+        color = Color(0xFF5C2751), // Pantone 518 C - Deep Plum
         iconColor = Color.White,
         background = R.drawable.shinobi_background,
     ),
 
     SPACE_OPERA(
         title = R.string.genre_space_opera,
-        color = MaterialColor.CyanA700,
-        iconColor = Color.Black,
+        color = Color(0xFF0081A7), // Pantone 3145 C - Space Teal
+        iconColor = Color.White,
         background = R.drawable.space_opera,
+    ),
+
+    COWBOY(
+        title = R.string.genre_cowboys,
+        color = Color(0xFF8B4513), // Pantone 4695 C - Saddle Brown
+        iconColor = Color.White,
+        background = R.drawable.cowboys,
     ),
     ;
 
@@ -69,7 +75,7 @@ Genre(
 
 fun Genre.selectiveHighlight(): SelectiveColorParams =
     when (this) {
-        Genre.FANTASY ->
+        Genre.FANTASY -> {
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = .85f,
@@ -78,8 +84,9 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 2f,
                 desaturationFactorNonTarget = .5f,
             )
+        }
 
-        Genre.CYBERPUNK ->
+        Genre.CYBERPUNK -> {
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = .11f,
@@ -88,8 +95,9 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 2f,
                 desaturationFactorNonTarget = .5f,
             )
+        }
 
-        Genre.HORROR ->
+        Genre.HORROR -> {
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = .3f,
@@ -97,8 +105,9 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.3f,
                 desaturationFactorNonTarget = .7f,
             )
+        }
 
-        Genre.HEROES ->
+        Genre.HEROES -> {
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = .3f,
@@ -107,8 +116,9 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.4f,
                 desaturationFactorNonTarget = .5f,
             )
+        }
 
-        Genre.CRIME ->
+        Genre.CRIME -> {
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = .05f,
@@ -117,7 +127,9 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.4f,
                 desaturationFactorNonTarget = .4f,
             )
-        Genre.SHINOBI ->
+        }
+
+        Genre.SHINOBI -> {
             SelectiveColorParams(
                 targetColor = color,
                 // tight hue tolerance to preserve that specific wine red accent
@@ -127,7 +139,9 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 1.8f,
                 desaturationFactorNonTarget = .45f,
             )
-        Genre.SPACE_OPERA ->
+        }
+
+        Genre.SPACE_OPERA -> {
             SelectiveColorParams(
                 targetColor = color,
                 hueTolerance = 1f,
@@ -136,6 +150,18 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 highlightSaturationBoost = 2f,
                 desaturationFactorNonTarget = .4f,
             )
+        }
+
+        Genre.COWBOY -> {
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = .1f,
+                saturationThreshold = .2f,
+                lightnessThreshold = .2f,
+                highlightSaturationBoost = 1.5f,
+                desaturationFactorNonTarget = .5f,
+            )
+        }
     }
 
 fun Genre.defaultHeaderImage() =
@@ -147,69 +173,87 @@ fun Genre.defaultHeaderImage() =
         Genre.CRIME -> R.drawable.crime_card
         Genre.SHINOBI -> R.drawable.shinobi_card
         Genre.SPACE_OPERA -> R.drawable.space_opera_card
+        Genre.COWBOY -> R.drawable.cowboys_card
     }
 
 fun Genre.shimmerColors() =
     listOf(
         Color.Transparent,
-        color.copy(alpha = .3f),
+        color.copy(alpha = .5f),
     ).plus(colorPalette())
-        .plus(color.copy(alpha = .3f))
         .plus(Color.Transparent)
 
 fun Genre.colorPalette() =
     when (this) {
-        Genre.FANTASY ->
+        Genre.FANTASY -> {
             listOf(
                 color,
-                MaterialColor.OrangeA200,
-                MaterialColor.DeepOrange600,
-                MaterialColor.RedA200,
+                Color(0xFFD4AF37), // Pantone 871 C - Mystical Gold
+                Color(0xFF8B0000), // Pantone 18-1664 TPX - Dark Red
+                Color(0xFFFF6B35), // Pantone 17-1462 TPX - Flame Orange
             )
+        }
 
-        Genre.CYBERPUNK ->
+        Genre.CYBERPUNK -> {
             listOf(
                 color,
-                MaterialColor.Teal800,
-                MaterialColor.DeepPurple800,
-                MaterialColor.PinkA100,
+                Color(0xFF00F5FF), // Pantone Neon Blue
+                Color(0xFFFF1493), // Pantone Neon Pink
+                Color(0xFF39FF14), // Pantone Neon Green
             )
+        }
 
-        Genre.HORROR ->
+        Genre.HORROR -> {
             listOf(
                 color,
-                MaterialColor.BlueGray700,
-                MaterialColor.LightBlue50,
-                MaterialColor.BlueGray300,
+                Color(0xFF2F2F2F), // Pantone Black 7 C
+                Color(0xFF708090), // Pantone Cool Gray 9 C
+                Color(0xFF4B0082), // Pantone 268 C - Deep Violet
             )
+        }
 
-        Genre.HEROES ->
+        Genre.HEROES -> {
             listOf(
                 color,
-                MaterialColor.Blue900,
-                MaterialColor.LightBlue300,
-                MaterialColor.RedA200,
+                Color(0xFFDC143C), // Pantone 18-1664 TPX - Hero Red
+                Color(0xFFFFD700), // Pantone 116 C - Hero Gold
+                Color(0xFF00BFFF), // Pantone Process Blue C
             )
+        }
 
-        Genre.CRIME ->
+        Genre.CRIME -> {
             listOf(
                 color,
-                MaterialColor.PinkA100,
-                MaterialColor.Amber300,
-                MaterialColor.YellowA200,
+                Color(0xFF00CED1), // Pantone 319 C - Miami Turquoise
+                Color(0xFFFF69B4), // Pantone 812 C - Vice Pink
+                Color(0xFFFFA500), // Pantone 144 C - Sunset Orange
             )
-        Genre.SHINOBI ->
+        }
+
+        Genre.SHINOBI -> {
             listOf(
                 color,
-                MaterialColor.Brown100,
-                MaterialColor.Pink100,
-                MaterialColor.Indigo600,
+                Color(0xFF8B0000), // Pantone 18-1664 TPX - Blood Red
+                Color(0xFF2F4F4F), // Pantone 5467 C - Shadow Gray
+                Color(0xFFB8860B), // Pantone 7562 C - Ancient Gold
             )
-        Genre.SPACE_OPERA ->
+        }
+
+        Genre.SPACE_OPERA -> {
             listOf(
                 color,
-                MaterialColor.LightBlueA400,
-                MaterialColor.TealA400,
-                MaterialColor.LimeA200,
+                Color(0xFF4169E1), // Pantone 286 C - Royal Blue
+                Color(0xFF00FA9A), // Pantone 354 C - Cosmic Green
+                Color(0xFFFF4500), // Pantone 17-1463 TPX - Rocket Orange
             )
+        }
+
+        Genre.COWBOY -> {
+            listOf(
+                color,
+                Color(0xFFD2691E), // Pantone 4695 C - Desert Sand
+                Color(0xFFCD853F), // Pantone 4665 C - Prairie Tan
+                Color(0xFF800000), // Pantone 18-1142 TPX - Maroon
+            )
+        }
     }

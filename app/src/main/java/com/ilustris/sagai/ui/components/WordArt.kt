@@ -102,7 +102,8 @@ fun WordArtText(
             modifier
                 .graphicsLayer {
                     this.rotationX = rotationX
-                }.drawBehind {
+                }
+                .drawBehind {
                     // Optional outer glow around the text outline to emulate neon/cyberpunk
 
                     // 1. Extrusion Layers
@@ -169,6 +170,7 @@ fun Genre.stylisedText(
                 glowRadiusFactor = 15f,
             )
         }
+
         Genre.CYBERPUNK -> {
             val palette = this.colorPalette()
             WordArtText(
@@ -177,15 +179,16 @@ fun Genre.stylisedText(
                 fontSize = fontSize,
                 fontFamily = this.headerFont(),
                 topColor = color,
-                bottomColor = Color.White,
+                bottomColor = palette[2],
                 numberOfExtrusionLayers = 2,
-                outlineColor = palette.first().darker(.3f),
+                outlineColor = palette.first(),
                 extrusionColor = palette.last(),
-                glowRadiusFactor = 10f,
+                glowRadiusFactor = 15f,
                 glowColor = iconColor,
                 glowAlpha = 1f,
             )
         }
+
         Genre.HORROR -> {
             val palette = this.colorPalette()
             WordArtText(
@@ -193,12 +196,39 @@ fun Genre.stylisedText(
                 modifier = modifier,
                 fontSize = fontSize,
                 fontFamily = this.headerFont(),
-                topColor = palette.first(),
-                bottomColor = color.lighter(.2f),
+                topColor = color,
+                bottomColor = palette.last(),
                 numberOfExtrusionLayers = 2,
-                outlineColor = color.darker(.7f),
+                outlineColor = iconColor,
+                outlineWidthFactor = 0.03f,
+                glowColor = color,
+                glowAlpha = .5f,
+                glowRadiusFactor = 10f,
             )
         }
+
+        Genre.COWBOY -> {
+            val palette = this.colorPalette()
+
+            WordArtText(
+                text = text,
+                modifier = modifier,
+                fontSize = fontSize,
+                fontFamily = this.headerFont(),
+                topColor = palette.first(),
+                bottomColor = palette[1],
+                numberOfExtrusionLayers = 5,
+                outlineColor = iconColor.copy(alpha = .2f),
+                extrusionColor = palette[3],
+                outlineWidthFactor = .03f,
+                glowRadiusFactor = 2f,
+                glowAlpha = .5f,
+                glowColor = iconColor,
+                rotationX = 25f,
+                extrusionDepthFactor = .03f,
+            )
+        }
+
         Genre.CRIME -> {
             val genre = this
             Box(modifier = modifier) {
@@ -228,24 +258,28 @@ fun Genre.stylisedText(
                 )
             }
         }
+
         Genre.HEROES -> {
-            this.colorPalette()
-            // Comic hero style: strong rotation and long extrusion. Use HEROES blues instead of yellow/red.
+            val palette = this.colorPalette()
             WordArtText(
                 text = text,
                 modifier = modifier,
                 fontSize = fontSize,
-                fontFamily = this.headerFont(),
-                topColor = color,
-                bottomColor = MaterialColor.LightBlueA200,
-                extrusionColor = MaterialColor.Red400,
+                fontFamily = headerFont(),
+                topColor = color.lighter(.5f),
+                bottomColor = palette.first().darker(.5f),
+                extrusionColor = palette[1],
                 extrusionDepthFactor = 0.02f,
                 numberOfExtrusionLayers = 15,
-                outlineColor = MaterialTheme.colorScheme.background,
-                outlineWidthFactor = .1f,
-                rotationX = 10f,
+                outlineColor = iconColor,
+                outlineWidthFactor = .07f,
+                rotationX = 15f,
+                glowColor = color,
+                glowAlpha = .5f,
+                glowRadiusFactor = 10f,
             )
         }
+
         Genre.SPACE_OPERA -> {
             val palette = this.colorPalette()
             WordArtText(

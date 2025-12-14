@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.IntSize
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.brightness
 import com.ilustris.sagai.ui.theme.contrast
+import com.ilustris.sagai.ui.theme.filters.CowboyColorTones
 import com.ilustris.sagai.ui.theme.filters.CrimeColorTones
 import com.ilustris.sagai.ui.theme.filters.FantasyColorTones
 import com.ilustris.sagai.ui.theme.filters.HeroColorTones
@@ -62,6 +63,7 @@ fun Genre.colorTones() =
         Genre.CRIME -> CrimeColorTones.MIAMI_NEON_SUNSET
         Genre.SPACE_OPERA -> FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
         Genre.SHINOBI -> ShinobiColorTones.BLOOD_MOON_ASSASSIN
+        Genre.COWBOY -> CowboyColorTones.DESERT_SUNSET
     }
 
 fun Genre.shaderParams(
@@ -69,7 +71,7 @@ fun Genre.shaderParams(
     focusRadius: Float? = null,
     pixelSize: Float? = null,
 ) = when (this) {
-    Genre.FANTASY ->
+    Genre.FANTASY -> {
         ShaderParams(
             grainIntensity = customGrain ?: .2f,
             softFocusRadius = focusRadius ?: .04f,
@@ -84,7 +86,9 @@ fun Genre.shaderParams(
             pixelationBlockSize = 0f,
             colorTemperature = .1f,
         )
-    Genre.CYBERPUNK ->
+    }
+
+    Genre.CYBERPUNK -> {
         ShaderParams(
             grainIntensity = customGrain ?: .15f,
             bloomThreshold = .3f,
@@ -92,7 +96,7 @@ fun Genre.shaderParams(
             bloomRadius = 1.3f,
             softFocusRadius = focusRadius ?: .2f,
             saturation = .5f,
-            contrast = 1.8f,
+            contrast = 1.5f,
             brightness = -.02f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
@@ -102,7 +106,9 @@ fun Genre.shaderParams(
             pixelationBlockSize = 0.0f,
             colorTemperature = .05f.unaryMinus(), // Slightly cool for Sci-Fi
         )
-    Genre.HORROR ->
+    }
+
+    Genre.HORROR -> {
         ShaderParams(
             grainIntensity = .1f,
             bloomThreshold = 0.4f,
@@ -120,9 +126,11 @@ fun Genre.shaderParams(
             pixelationBlockSize = pixelSize ?: 3.5f,
             colorTemperature = .3f.unaryMinus(),
         )
+    }
+
     Genre.HEROES -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .2f,
+            grainIntensity = customGrain ?: .1f,
             bloomThreshold = 0f,
             bloomIntensity = 0f,
             bloomRadius = 0f,
@@ -139,41 +147,45 @@ fun Genre.shaderParams(
             colorTemperature = .15f,
         )
     }
-    Genre.CRIME ->
+
+    Genre.CRIME -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .14f,
-            softFocusRadius = focusRadius ?: .12f,
-            saturation = .7f,
-            contrast = 1.5f,
-            brightness = .02f.unaryMinus(),
+            grainIntensity = customGrain ?: .1f,
+            softFocusRadius = focusRadius ?: .1f,
+            saturation = .8f,
+            contrast = 1.2f,
+            brightness = .0f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .2f,
+            vignetteStrength = .05f,
             vignetteSoftness = 1f,
-            pixelationBlockSize = 0.0f,
-            colorTemperature = .15f.unaryMinus(),
+            pixelationBlockSize = 0f,
+            colorTemperature = .1f.unaryMinus(),
         )
-    Genre.SPACE_OPERA ->
+    }
+
+    Genre.SPACE_OPERA -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .2f,
+            grainIntensity = customGrain ?: .3f,
             bloomThreshold = .3f,
-            bloomIntensity = .15f,
+            bloomIntensity = .2f,
             bloomRadius = 1.0f,
             softFocusRadius = focusRadius ?: .3f,
-            saturation = .6f,
-            contrast = 1.4f,
+            saturation = .85f,
+            contrast = 1.5f,
             brightness = 0f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
-            tintStrength = 0.25f,
-            vignetteStrength = .25f,
+            tintStrength = 0.3f,
+            vignetteStrength = .2f,
             vignetteSoftness = 0.9f,
             pixelationBlockSize = 0.0f,
-            colorTemperature = 0f,
+            colorTemperature = .1f.unaryMinus(),
         )
+    }
 
-    Genre.SHINOBI ->
+    Genre.SHINOBI -> {
         ShaderParams(
             grainIntensity = customGrain ?: .25f,
             bloomThreshold = .6f,
@@ -181,7 +193,7 @@ fun Genre.shaderParams(
             bloomRadius = .1f,
             softFocusRadius = focusRadius ?: .1f,
             saturation = .6f,
-            contrast = 1.3f,
+            contrast = 1.4f,
             brightness = .15f.unaryMinus(),
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
@@ -191,9 +203,27 @@ fun Genre.shaderParams(
             pixelationBlockSize = pixelSize ?: 0.0f,
             colorTemperature = .1f.unaryMinus(),
         )
+    }
 
-    else ->
+    Genre.COWBOY -> {
+        ShaderParams(
+            grainIntensity = customGrain ?: .2f,
+            contrast = 1.4f,
+            colorTemperature = .2f,
+            vignetteStrength = .3f,
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            saturation = 0.7f,
+            brightness = -.03f,
+            softFocusRadius = focusRadius ?: 0.1f,
+            vignetteSoftness = 0.8f,
+        )
+    }
+
+    else -> {
         ShaderParams()
+    }
 }
 
 @Composable
@@ -255,7 +285,8 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

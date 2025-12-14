@@ -309,4 +309,42 @@
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
+    <string name="message_effects">Efeitos de Mensagem</string>
+    <string name="message_effects_description">Dê vida à sua história com animações dinâmicas que refletem o clima de cada momento</string>
+
+    <!-- BackupViewModel: Mensagens de Status e Erro -->
+    <string name="backup_loading_recovering_content">Recuperando conteúdo...</string>
+    <string name="backup_error_recovery_failed">Ocorreu um erro inesperado, não foi possível recuperar os conteúdos de backup :(</string>
+    <string name="backup_message_all_good">Parece que está tudo em ordem!</string>
+    <string name="backup_loading_found_items">Encontramos algumas coisinhas..</string>
+    <string name="backup_loading_enabling">Habilitando backup...</string>
+    <string name="backup_success_enabled">Tudo pronto! Aproveite suas histórias 💜</string>
+    <string name="backup_error_enable_failed">Não foi possível habilitar o backup. Sentimos muito por isso, vamos tentar de novo?</string>
+    <string name="backup_loading_restoring_saga">Restaurando %s...</string>
+
+    <!-- Conversation Snippet Sharing -->
+    <string name="messages_selected">%d de %d mensagens selecionadas</string>
+    <string name="share">Compartilhar</string>
+    <string name="cancel">Cancelar</string>
+
+
+    <string name="story_sheet_button_continue_saga">Continuar Saga</string>
+    <string name="story_sheet_title_previously_on">Anteriormente em %s</string>
+    <string name="story_sheet_title_history_continues">A história continua</string>
+
+    <!-- Global Notifications -->
+    <string name="notification_new_message">Nova Mensagem</string>
+    <string name="notification_new_message_content">%s enviou uma nova mensagem</string>
+    <string name="notification_new_chapter">Novo Capítulo</string>
+    <string name="notification_new_chapter_content">Capítulo %s começou!</string>
+    <string name="notification_new_act">Novo Ato</string>
+    <string name="notification_new_act_content">Ato %s: %s</string>
+    <string name="notification_new_character">Novo Personagem</string>
+    <string name="notification_new_character_content">%s entrou para a história!</string>
+    <string name="notification_timeline_event">Atualização da Linha do Tempo</string>
+    <string name="notification_timeline_event_content">Novo evento: %s</string>
+    <string name="notification_milestone">Marco Alcançado</string>
+    <string name="notification_milestone_content">Você alcançou um novo marco!</string>
+    <string name="playtime_title">Tempo de Jogo</string>
+    <string name="your_playthrough_title">Sua jornada</string>
 </resources>

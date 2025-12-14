@@ -87,8 +87,7 @@ class SagaRepositoryImpl
                         }
                     }
 
-            val references =
-                listOfNotNull(iconReferenceComposition, characterIcon)
+            listOfNotNull(iconReferenceComposition, characterIcon)
 
             val visualDirection =
                 imagenClient
@@ -107,7 +106,12 @@ class SagaRepositoryImpl
                 gemmaClient.generate<String>(
                     prompt =
                         SagaPrompts
-                            .iconDescription(saga.genre, context, visualDirection),
+                            .iconDescription(
+                                saga.genre,
+                                context,
+                                visualDirection,
+                                characterHexColor = null
+                            ),
                     listOf(characterIcon),
                     requireTranslation = false,
                 )!!

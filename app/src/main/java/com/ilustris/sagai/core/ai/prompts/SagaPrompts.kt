@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.prompts.ChatPrompts.messageExclusions
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
@@ -98,24 +99,100 @@ object SagaPrompts {
         genre: Genre,
         context: String,
         visualDirection: String?,
+        characterHexColor: String? = null,
     ) = buildString {
         appendLine(
-            "Your task is to act as an AI Image Prompt Engineer. You will generate a highly detailed and descriptive text prompt for an AI image generation model.",
+            "You are a World-Class Art Director and Concept Artist. Your task is to craft a unique, artistic, and visually stunning image description for an AI generation model.",
         )
-        appendLine("Overall context: ")
+        appendLine()
+        appendLine(
+            "GOAL: Create a piece of digital art that feels like a hand-crafted masterpiece, not a generic AI generation. It should capture the *soul* of the character and the *atmosphere* of the genre.",
+        )
+        appendLine()
+        appendLine("---")
+        appendLine("**THE CREATIVE BRIEF (The Subject - STRICT ADHERENCE REQUIRED):**")
+        appendLine(
+            "This context defines WHO and WHAT you are drawing. It contains the essential physical attributes and identity of the subject.",
+        )
+        appendLine(
+            "  • **CRITICAL:** You MUST respect the physical descriptions provided here (e.g., skin tone, hair texture, body type, age, gender, ethnicity). These features are non-negotiable.",
+        )
+        appendLine(
+            "  • If the brief says 'Black man', the output MUST describe a Black man. If it says 'Short Latina girl', the output MUST describe a short Latina girl.",
+        )
+        appendLine("  • Do not 're-imagine' the subject's fundamental identity. Enhance it artistically, but do not change it.")
         appendLine(context)
-        appendLine("* You will have access to subject(s) visual reference to provide a more precise description.")
-        appendLine("Visual Direction:")
-        visualDirection?.let {
-            appendLine("This rules dictate how you should describe the icon composition")
-            appendLine(GenrePrompts.artStyle(genre))
-            appendLine(it)
-        } ?: run {
-            appendLine("Ensure to render this art style description matching with the reference image")
-            appendLine(GenrePrompts.artStyle(genre))
+
+        appendLine("**VISUAL REFERENCE USAGE (The 'Cast'):**")
+        appendLine(
+            "You have access to visual references for the key characters involved in this brief. Treat this as your 'Cast List' or 'Costume Department'.",
+        )
+        appendLine("  • IDENTIFY: Look for character names in the Creative Brief above. Match them to the provided visual references.")
+        appendLine("  • USAGE: Use the visual references to ensure the characters look correct (features, style, vibe).")
+        appendLine(
+            "  • IGNORE: The background/lighting of the references. You are placing these actors into the NEW scene defined by the Creative Brief and Visual Direction.",
+        )
+        appendLine()
+
+        // Add character color highlight instruction
+        characterHexColor?.let { hexColor ->
+            appendLine("**SIGNATURE COLOR PALETTE:**")
+            appendLine("  • Signature Color: $hexColor")
+            appendLine(
+                "  • Instruction: Integrate this color primarily as a visual accent or thematic element. It should feel intentional and artistic—perhaps in the lighting, a piece of clothing, or a stylistic blooming effect—without overwhelming the natural palette of the scene.",
+            )
+            appendLine()
         }
-        appendLine("**YOUR TASK (Output a single text string for the Image Generation Model):**")
-        appendLine("Generate a single, highly detailed, unambiguous, and visually rich English text description.")
+
+        visualDirection?.let {
+            appendLine("**ARTISTIC DIRECTION (The Brief):**")
+            appendLine(
+                "The following is your mood board and artistic brief. Do not treat it as a checklist, but as a source of INSPIRATION for the mood, lighting, and composition:",
+            )
+            appendLine("'''")
+            appendLine(it)
+            appendLine("'''")
+            appendLine()
+            appendLine("**HOW TO INTERPRET THIS:**")
+            appendLine("  • As the Artist, synthesize these elements into a cohesive vision.")
+            appendLine("  • If the direction says 'moody and dark', use shadows and contrast expressively.")
+            appendLine("  • If it mentions 'dynamic angles', compose the shot to feel alive and moving.")
+            appendLine("  • BLEND the mood of this direction with the specific Art Style of the genre.")
+            appendLine()
+        }
+
+        appendLine("**COMPOSITION & EMOTIONAL NARRATIVE (The Soul of the Image):**")
+        appendLine(
+            "  • **NO GENERIC STARES:** Avoid the default 'character looking at viewer with quiet intensity'. This is boring. Capture them **living** their story, not posing for a photo.",
+        )
+        appendLine(
+            "  • **RAW, SPECIFIC EMOTION:** Move beyond 'cool' or 'stoic'. Show us *tangible* feelings: The teeth-gritting rage of a betrayal, the hollow thousand-yard stare of grief, the manic laughter of a victory, or the trembling fear of the unknown.",
+        )
+        appendLine(
+            "  • **NARRATIVE BODY LANGUAGE:** The pose must scream the character's intent. A slumped shoulder weighs a heavy burden; a coiled stance signals immediate violence; a loose, sprawling sit projects arrogance. Make the body talk.",
+        )
+        appendLine(
+            "  • **THE UNGUARDED MOMENT:** Capture the character *in media res* (in the middle of action/thought). They shouldn't look like they know the camera is there. They should look like they are busy surviving, loving, or fighting in their world.",
+        )
+
+        appendLine("**ART STYLE (The Medium):**")
+        appendLine(GenrePrompts.artStyle(genre))
+        appendLine()
+
+        appendLine("**FINAL OUTPUT INSTRUCTION:**")
+        appendLine("Analyze the Creative Brief, the Visual Direction, and the Art Style.")
+        appendLine(
+            "  1. **VALIDATE IDENTITY:** Ensure your description STRICTLY matches the physical attributes (race, gender, age, features) in the Brief.",
+        )
+        appendLine(
+            "  2. **MANDATORY LAYOUT PHRASE:** The final output MUST explicitly describe the layout: 'Vertical Medium-Long Shot anchored at the bottom, leaving the top third open and empty.'",
+        )
+        appendLine("  3. **CRAFT THE ART:** Write a single, rich, and evocative text description.")
+        appendLine("  • Focus on the *visual impact* and *emotional resonance* of the image.")
+        appendLine("  • Describe the lighting, texture, and atmosphere like a painter describing their canvas.")
+        appendLine("  • Ensure the subject(s) look like a cohesive part of this artistic world.")
+        appendLine("  • **Crucial:** Maintain the technical composition rules provided below.")
+        appendLine()
         appendLine(ImagePrompts.descriptionRules(genre))
     }
 
@@ -194,4 +271,66 @@ object SagaPrompts {
                 "\"From the hopeful first steps of your adventure to the determined final stand, your journey was a testament to the power of resilience. You faced down despair and chose to fight, you saw betrayal and chose to trust again. The saga of '${saga.data.title}' is over, but the echo of your choices—the choices of a hero—will resonate forever.\"",
             )
         }.trim()
+
+    fun generateStoryBriefing(saga: SagaContent) =
+        buildString {
+            appendLine(
+                "You are a master storyteller, a bard of a digital age, tasked with creating a captivating 'story briefing' to re-engage a player with their ongoing saga. Your goal is to generate a short, dramatic, and enticing summary that reminds them of their journey and makes them eager to continue. The output must be a JSON object.",
+            )
+            appendLine()
+            appendLine("---")
+            appendLine("SAGA CONTEXT:")
+            appendLine("Saga Title: ${saga.data.title}")
+            appendLine("Genre: ${saga.data.genre.name}")
+            appendLine("Protagonist: ${saga.mainCharacter?.data?.name ?: "Unnamed Hero"}")
+            appendLine()
+            appendLine("HISTORY OVERVIEW:")
+            appendLine("Acts: ${saga.acts.joinToString("; ") { it.actSummary(saga) }}")
+            appendLine("Conversation History")
+            appendLine("Use this history for context, but do NOT repeat it in your response.")
+            appendLine("The messages are ordered from newest to oldest")
+            appendLine("Consider the newest ones to move history forward")
+            appendLine("Pay attention to `speakerName` and `senderType`.")
+            appendLine(
+                saga
+                    .flatMessages()
+                    .takeLast(5)
+                    .reversed()
+                    .map { it.message }
+                    .normalizetoAIItems(excludingFields = messageExclusions),
+            )
+            appendLine("---")
+            appendLine()
+            appendLine("YOUR TASK:")
+            appendLine("Generate a JSON object with two fields: `summary` and `hook`.")
+            appendLine()
+            appendLine("1.  `summary` (String):")
+            appendLine(
+                "    - A compelling 2-3 sentence recap of the saga so far, written in the style of a 'Previously on...' TV show segment.",
+            )
+            appendLine("    - Capture the emotional core of the recent events.")
+            appendLine("    - Remind the player of the central conflict or mystery.")
+            appendLine(
+                "    - **Example:** \"Having just escaped the clutches of the Shadow Syndicate, you've found a moment of respite in the neon-drenched streets of Neo-Kyoto. Yet, the ghost of your past, the enigmatic 'Zero,' continues to haunt your every move, leaving a trail of cryptic messages that hint at a deeper conspiracy.\"",
+            )
+            appendLine()
+            appendLine("2.  `hook` (String):")
+            appendLine(
+                "    - An intriguing 1-2 sentence teaser about what might happen next, designed to build anticipation.",
+            )
+            appendLine("    - Pose a question, hint at a new danger, or tease a revelation.")
+            appendLine("    - This is the cliffhanger that makes the player want to know more.")
+            appendLine(
+                "    - **Example:** \"But as a fragile peace settles, a new transmission arrives, bearing a sigil you thought long buried. Is it a message from a forgotten ally, or a trap sprung by a new, unseen foe?\"",
+            )
+            appendLine()
+            appendLine("LANGUAGE AND TONE:")
+            appendLine(
+                "- Dramatic, engaging, and mysterious, consistent with the saga's genre (${saga.data.genre.name}).",
+            )
+            appendLine("- Speak directly to the player, using 'you' and 'your'.")
+            appendLine("- Do NOT reveal major spoilers. Tease, don't tell.")
+            appendLine()
+            appendLine("OUTPUT FORMAT: A single, clean JSON object. No extra text or explanations.")
+        }.trimIndent()
 }

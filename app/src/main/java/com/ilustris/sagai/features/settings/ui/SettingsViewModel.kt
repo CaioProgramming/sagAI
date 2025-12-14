@@ -27,6 +27,8 @@ class SettingsViewModel
 
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()
 
+    val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
+
         val backupEnabled = settingsUseCase.backupEnabled()
 
         private val _memoryUsage = MutableStateFlow<Long?>(null)
@@ -73,6 +75,12 @@ class SettingsViewModel
                 settingsUseCase.setSmartSuggestionsEnabled(enabled)
             }
         }
+
+    fun setMessageEffectsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsUseCase.setMessageEffectsEnabled(enabled)
+        }
+    }
 
         fun wipeAppData() {
             viewModelScope.launch {

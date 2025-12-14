@@ -43,4 +43,6 @@ interface CharacterUseCase {
         saga: SagaContent,
         timelineContent: TimelineContent,
     ): RequestResult<Unit>
+
+    suspend fun checkAndGenerateZoom(character: Character)
 }

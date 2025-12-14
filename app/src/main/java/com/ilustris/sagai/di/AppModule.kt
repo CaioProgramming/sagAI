@@ -23,12 +23,20 @@ import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.FileManager
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.file.ImageCropHelper
+import com.ilustris.sagai.core.lifecycle.AppLifecycleManager
+import com.ilustris.sagai.core.lifecycle.AppLifecycleManagerImpl
 import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
+import com.ilustris.sagai.core.notifications.ScheduledNotificationService
+import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
+import com.ilustris.sagai.core.notifications.WorkManagerScheduler
+import com.ilustris.sagai.core.notifications.WorkManagerSchedulerImpl
 import com.ilustris.sagai.core.permissions.PermissionService
+import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
+import com.ilustris.sagai.core.services.FirebaseInstallationService
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.act.data.repository.ActRepository
 import com.ilustris.sagai.features.act.data.repository.ActRepositoryImpl
@@ -54,13 +62,13 @@ import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCaseImpl
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCase
 import com.ilustris.sagai.features.playthrough.PlaythroughUseCaseImpl
+import com.ilustris.sagai.features.saga.chat.data.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManager
 import com.ilustris.sagai.features.saga.chat.data.manager.SagaContentManagerImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCaseImpl
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCaseImpl
-import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManager
 import com.ilustris.sagai.features.saga.chat.domain.manager.ChatNotificationManagerImpl
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepositoryImpl
@@ -100,6 +108,10 @@ import javax.inject.Singleton
 object AppModule {
     @Provides
     @Singleton
+    fun providesAppLifecycleManager(): AppLifecycleManager = AppLifecycleManagerImpl()
+
+    @Provides
+    @Singleton
     fun providesFileManager(
         @ApplicationContext context: Context,
         fileHelper: FileHelper,
@@ -121,6 +133,14 @@ object AppModule {
         preferences: DataStorePreferences,
         fileHelper: FileHelper,
     ) = BackupService(context, preferences, fileHelper)
+
+    @Provides
+    @Singleton
+    fun providesImageSegmentationHelper(
+        @ApplicationContext context: Context,
+    ) = ImageSegmentationHelper(
+        context,
+    )
 
     @Provides
     @Singleton
@@ -216,21 +236,55 @@ object AppModule {
     @Singleton
     fun provideBillingService(
         @ApplicationContext context: Context,
-    ): BillingService = BillingService(context)
+        remoteConfigService: RemoteConfigService,
+        firebaseInstallationService: FirebaseInstallationService,
+    ): BillingService = BillingService(context, remoteConfigService, firebaseInstallationService)
 
     @Provides
     @Singleton
     fun provideDataStorePreferences(
         @ApplicationContext context: Context,
     ): DataStorePreferences = DataStorePreferencesImpl(context)
+
+    @Provides
+    @Singleton
+    fun provideFirebaseInstallationService(): FirebaseInstallationService = FirebaseInstallationService()
+
+    @Provides
+    fun providesNotificationManager(
+        @ApplicationContext context: Context,
+        fileHelper: FileHelper,
+        lifecycleManager: AppLifecycleManager,
+    ): ChatNotificationManager =
+        ChatNotificationManagerImpl(
+            context,
+            fileHelper,
+            lifecycleManager,
+        )
+
+    @Provides
+    fun providesScheduleNotificationService(
+        @ApplicationContext context: Context,
+        workManagerScheduler: WorkManagerScheduler,
+        preferences: DataStorePreferences,
+    ): ScheduledNotificationService =
+        ScheduledNotificationServiceImpl(
+            context,
+            context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager,
+            workManagerScheduler,
+            preferences,
+        )
+
+    @Provides
+    @Singleton
+    fun providesWorkManagerScheduler(
+        @ApplicationContext context: Context,
+    ): WorkManagerScheduler = WorkManagerSchedulerImpl(context)
 }
 
 @InstallIn(ViewModelComponent::class)
 @Module
 abstract class UseCaseModule {
-    @Binds
-    abstract fun providesNotificationManager(notificationManagerImpl: ChatNotificationManagerImpl): ChatNotificationManager
-
     @Binds
     abstract fun providesSaveShare(sharePlayUseCaseImpl: SharePlayUseCaseImpl): SharePlayUseCase
 

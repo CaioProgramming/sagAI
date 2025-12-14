@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -76,7 +77,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
-import com.ilustris.sagai.core.services.BillingState
+import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
@@ -91,6 +92,8 @@ import com.ilustris.sagai.features.premium.PremiumView
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.settings.ui.SettingsView
+import com.ilustris.sagai.features.stories.ui.StoriesRow
+import com.ilustris.sagai.features.stories.ui.StorySheet
 import com.ilustris.sagai.features.timeline.ui.AvatarTimelineIcon
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -129,6 +132,9 @@ fun HomeView(
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
+    val selectedSaga by viewModel.selectedSaga.collectAsStateWithLifecycle()
+    val storyBriefing by viewModel.storyBriefing.collectAsStateWithLifecycle()
+    val loadingStoryId by viewModel.loadingStoryId.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.checkForBackups()
@@ -155,15 +161,16 @@ fun HomeView(
                 },
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    val isPremium = billingState is BillingService.BillingState.SignatureEnabled
                     ChatList(
                         sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
                         padding = padding,
                         showDebugButton = showDebugButton,
                         dynamicNewSagaTexts = dynamicNewSagaTexts,
                         isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-                        isPremium = billingState is BillingState.SignatureEnabled,
+                        isPremium = isPremium,
+                        loadingStoryId = loadingStoryId,
                         onCreateNewChat = {
-                            val isPremium = billingState == BillingState.SignatureEnabled
                             val freeSagasCount = sagas.count { it.data.isEnded.not() }
                             if (freeSagasCount <= 3 || isPremium) {
                                 navController.navigateToRoute(Routes.NEW_SAGA)
@@ -193,6 +200,9 @@ fun HomeView(
                             coroutineScope.launch {
                                 drawerState.open()
                             }
+                        },
+                        onStoryClicked = {
+                            viewModel.getBriefing(it)
                         },
                     )
                 }
@@ -224,6 +234,22 @@ fun HomeView(
         })
     }
 
+    val showBriefing = storyBriefing != null
+    if (showBriefing) {
+        StorySheet(storyBriefing, onDismiss = {
+            viewModel.clearSelectedSaga()
+        }, onContinue = {
+            navController.navigateToRoute(
+                Routes.CHAT,
+                mapOf(
+                    "sagaId" to selectedSaga!!.data.id.toString(),
+                    "isDebug" to selectedSaga!!.data.isDebug.toString(),
+                ),
+            )
+            viewModel.clearSelectedSaga()
+        })
+    }
+
     StarryLoader(
         isLoading,
         loadingMessage,
@@ -240,14 +266,18 @@ private fun ChatList(
     isLoadingDynamicPrompts: Boolean,
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
+    loadingStoryId: Int? = null,
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
+    onStoryClicked: (SagaContent) -> Unit = {},
     createFakeSaga: () -> Unit = {},
     openPremiumSheet: () -> Unit = {},
     openSettings: () -> Unit = {},
 ) {
+    val listState = rememberLazyListState()
     LazyColumn(
+        state = listState,
         modifier =
             Modifier
                 .animateContentSize()
@@ -258,7 +288,10 @@ private fun ChatList(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
                 modifier =
-                    Modifier.statusBarsPadding(),
+                    Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.background)
+                        .statusBarsPadding(),
             ) {
                 Box(Modifier.size(24.dp))
                 AnimatedContent(
@@ -266,8 +299,7 @@ private fun ChatList(
                     modifier =
                         Modifier
                             .align(Alignment.CenterVertically)
-                            .weight(1f)
-                            .background(MaterialTheme.colorScheme.background),
+                            .weight(1f),
                 ) {
                     if (it) {
                         PremiumTitle(
@@ -278,7 +310,8 @@ private fun ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }.wrapContentWidth()
+                                    }
+                                    .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             titleStyle =
                                 MaterialTheme.typography.titleLarge,
@@ -310,7 +343,8 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -358,19 +392,22 @@ private fun ChatList(
                     Modifier
                         .animateItem()
                         .padding(16.dp)
+                        .gradientFill(Brush.linearGradient(shimmerColors))
                         .reactiveShimmer(
                             true,
                             shimmerColors = shimmerColors,
                             duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
-                        }.fillMaxWidth(),
+                        }
+                        .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
                     brush = MaterialTheme.colorScheme.onBackground.solidGradient(),
-                    strokeSize = 2.dp,
+                    strokeSize = 1.dp,
                     modifier =
                         Modifier
                             .clip(CircleShape)
@@ -384,8 +421,8 @@ private fun ChatList(
                         (slideInVertically { height -> height } + fadeIn()).togetherWith(
                             slideOutVertically { height -> -height } + fadeOut(),
                         ) using
-                            SizeTransform(
-                                clip = false,
+                                SizeTransform(
+                                    clip = false,
                             )
                     },
                     label = "AnimatedDynamicTexts",
@@ -437,14 +474,17 @@ private fun ChatList(
             }
         }
 
+        item {
+            StoriesRow(
+                sagas = sagas,
+                loadingStoryId = loadingStoryId,
+                onStoryClicked = onStoryClicked,
+                listState.canScrollBackward.not(),
+            )
+        }
+
         items(
-            sagas.sortedByDescending {
-                it
-                    .flatMessages()
-                    .lastOrNull()
-                    ?.message
-                    ?.timestamp
-            },
+            sagas,
         ) {
             ChatCard(
                 it,

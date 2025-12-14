@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.components
 
+import android.graphics.Bitmap
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
@@ -21,7 +22,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,7 +42,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.gradient
-import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.holographicGradient
 import com.ilustris.sagai.ui.theme.shape
 
@@ -76,8 +75,11 @@ fun SagaSnackBar(
                                 offset = DpOffset.Zero,
                             ),
                     ).clip(shape)
-                    .border(1.dp, genre?.gradient() ?: Brush.verticalGradient(holographicGradient), shape)
-                    .background(
+                    .border(
+                        1.dp,
+                        genre?.gradient() ?: Brush.verticalGradient(holographicGradient),
+                        shape,
+                    ).background(
                         mainColor,
                         shape,
                     ).fillMaxWidth()
@@ -149,10 +151,21 @@ fun snackBar(
 class SnackBarBuilder(
     private val message: String,
 ) {
-    var icon: Any? = null
+    var icon: Bitmap? = null
+    var largeIcon: Bitmap? = null
+    var showInUi: Boolean = true
+    var notificationStyle: NotificationStyle = NotificationStyle.DEFAULT
     private var snackAction: SnackAction? = null
 
-    fun build(): SnackBarState = SnackBarState(icon = icon, message = message, action = snackAction)
+    fun build(): SnackBarState =
+        SnackBarState(
+            icon = icon,
+            largeIcon = largeIcon,
+            message = message,
+            action = snackAction,
+            showInUi = showInUi,
+            notificationStyle = notificationStyle,
+        )
 
     fun action(builder: SnackActionBuilder.() -> Unit) {
         snackAction = SnackActionBuilder().apply(builder).action
@@ -185,10 +198,19 @@ class SnackActionBuilder {
 }
 
 data class SnackBarState(
-    val icon: Any? = null,
+    val icon: Bitmap? = null,
+    val largeIcon: Bitmap? = null,
     val message: String,
     val action: SnackAction? = null,
+    val showInUi: Boolean = true,
+    val notificationStyle: NotificationStyle = NotificationStyle.DEFAULT,
 )
+
+enum class NotificationStyle {
+    DEFAULT, // Uses BigTextStyle for general notifications
+    CHAT, // Uses MessagingStyle for chat messages
+    MINIMAL, // Simple notification without special styling
+}
 
 sealed class SnackAction(
     @StringRes val actionRes: Int? = null,

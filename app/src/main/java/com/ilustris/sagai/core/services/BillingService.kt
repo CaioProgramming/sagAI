@@ -2,12 +2,9 @@ package com.ilustris.sagai.core.services
 
 import android.content.Context
 import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
-import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
 import com.android.billingclient.api.ProductDetails
-import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
@@ -20,12 +17,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-import kotlin.getValue
 
 class BillingService
     @Inject
     constructor(
         context: Context,
+        private val remoteConfigService: RemoteConfigService,
+        private val firebaseInstallationService: FirebaseInstallationService,
     ) {
         val state = MutableStateFlow<BillingState?>(null)
 
@@ -59,10 +57,10 @@ class BillingService
         }
 
         suspend fun checkPurchases() {
-//            if (BuildConfig.DEBUG) {
-//                state.emit(BillingState.SignatureEnabled)
-//                return
-//            }
+            if (remoteConfigService.getBoolean(PREMIUM_TESTER) == true) {
+                state.emit(BillingState.SignatureEnabled)
+                return
+            }
             val params =
                 QueryPurchasesParams
                     .newBuilder()
@@ -127,14 +125,37 @@ class BillingService
         }
 
         fun isPremium() = state.value is BillingState.SignatureEnabled
+
+        suspend fun <R> runPremiumRequest(block: suspend () -> R): R? =
+            if (isPremium()) {
+                block()
+            } else {
+                throw PremiumException(firebaseInstallationService.getCurrentInstallationId())
+            }
+
+        class PremiumException(
+            val deviceId: String? = null,
+        ) : Exception(
+                buildString {
+                    appendLine(" ❌ Premium feature accessed without signature.")
+                    if (BuildConfig.DEBUG) {
+                        appendLine("If you are a tester, request the developer to bypass this restriction.")
+                        appendLine("Send the device ID and try again.")
+                        if (deviceId != null) {
+                            appendLine("Device ID: $deviceId")
+                        }
+                    }
+                },
+            )
+
+        sealed interface BillingState {
+            object SignatureEnabled : BillingState
+
+            data class SignatureDisabled(
+                val products: List<ProductDetails>,
+            ) : BillingState
+        }
     }
 
-sealed interface BillingState {
-    object SignatureEnabled : BillingState
-
-    data class SignatureDisabled(
-        val products: List<ProductDetails>,
-    ) : BillingState
-}
-
 private const val SAGA_SIGNATURE_ID = "saga_signature"
+private const val PREMIUM_TESTER = "premiumTester"

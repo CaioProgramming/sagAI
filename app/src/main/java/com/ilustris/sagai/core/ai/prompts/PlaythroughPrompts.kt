@@ -1,45 +1,55 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.emotionalSummary
+
 object PlaythroughPrompts {
-    fun extractPlaythroughReview(emotionalSummary: List<String>) =
+    fun extractPlaythroughReview(sagas: List<SagaContent>) =
         buildString {
-            appendLine("You are a thoughtful narrative analyst who creates personalized reflections on a player's storytelling journey.")
+            val emotionalSummary =
+                buildString {
+                    appendLine(
+                        sagas.joinToString {
+                            buildString {
+                                append(it.emotionalSummary())
+                                appendLine("playTimeMs: ${it.data.playTimeMs}")
+                            }
+                        },
+                    )
+                }
+            appendLine("You are an insightful narrative psychologist who reads between the lines of a player's storytelling choices.")
             appendLine(
-                "Your task is to analyze the emotional summaries from the player's sagas and craft a warm, insightful message that reflects their unique playstyle.",
+                "Your task is to deeply analyze the emotional patterns, choices, and themes from the player's sagas to reveal who they are as a storyteller and decision-maker.",
             )
             appendLine()
             appendLine("## Emotional Summaries from Player's Sagas")
             appendLine("These are the emotional reviews from the player's completed or most-played sagas:")
-            emotionalSummary.forEachIndexed { index, summary ->
-                appendLine("${index + 1}. $summary")
-            }
-            appendLine()
+            appendLine(emotionalSummary)
             appendLine("## Instructions")
-            appendLine("1. **Identify Patterns**: Look for recurring themes, emotional tones, or character dynamics across the summaries.")
             appendLine(
-                "2. **Personalize**: Write as if you're a friend who's been watching their journey. Be warm, encouraging, and specific.",
+                "1. **Deep Analysis**: Look beyond surface emotions. What do their choices reveal about their values, fears, hopes, and worldview?",
             )
             appendLine(
-                "3. **Direct Address Only**: Talk directly to the player ('You'). Do NOT mention specific character names, locations, or proper nouns from the stories.",
+                "2. **Psychological Insight**: Identify what drives them - do they seek redemption, embrace chaos, value loyalty, or challenge authority?",
             )
             appendLine(
-                "4. **Highlight Strengths**: Point out what makes their playstyle unique (e.g., 'You seem drawn to morally complex choices' or 'Your stories always find hope in darkness').",
+                "3. **Recurring Motifs**: Notice what themes they return to across different stories. What does this say about their inner world?",
             )
-            appendLine("5. **Keep it Concise**: 2-3 sentences maximum. Make every word count.")
-            appendLine("6. **Tone**: Friendly, insightful, and celebratory. Avoid generic praise.")
+            appendLine(
+                "4. **Personal Mirror**: The review should feel like you're holding up a mirror to their soul through their storytelling.",
+            )
+            appendLine(
+                "5. **Direct and Intimate**: Write as if you truly understand them. Use 'you' and speak to their essence as a player.",
+            )
+            appendLine(
+                "6. **Avoid Specifics**: Never mention character names, locations, or story details. Keep it universal and personal.",
+            )
+            appendLine("7. **Review Length**: 3-4 sentences that progressively deepen the insight.")
+            appendLine(
+                "8. **Title**: Create a poetic, short quote (3-6 words) that captures their essence. Think literary, philosophical, or introspective. Examples: 'Where Shadows Learn to Dance', 'The Gentle Revolutionary', 'Chaos Clothed in Mercy'",
+            )
             appendLine()
-            appendLine("## Examples of Good Responses")
-            appendLine(
-                "- \"Your stories always find beauty in the broken—whether it's redemption arcs or unlikely alliances, you have a knack for finding hope where others see none.\"",
-            )
-            appendLine(
-                "- \"You're a master of tension! Every saga you craft keeps emotions running high, with conflicts that feel personal and stakes that matter.\"",
-            )
-            appendLine(
-                "- \"There's a quiet courage in your narratives. You allow moments of pain to breathe before finding strength, making the eventual victories feel deeply earned.\"",
-            )
-            appendLine()
-            appendLine("## Output")
-            appendLine("Return ONLY the personalized message as plain text. No JSON, no extra formatting.")
+            appendLine("## Example Output")
+            appendLine("Response must be a valid JSON object:")
         }.trimIndent()
 }

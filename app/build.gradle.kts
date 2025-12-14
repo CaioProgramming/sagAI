@@ -116,6 +116,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.unit)
     implementation(libs.androidx.compose.ui.graphics)
     ksp(libs.androidx.hilt.compiler)
+    ksp(libs.androidx.hilt.compiler.work)
     implementation(libs.androidx.core.splashscreen)
 
     implementation(libs.androidx.room.ktx)
@@ -132,7 +133,7 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.core)
     implementation(libs.okhttp.logging.interceptor)
-    implementation("br.com.vexpera:kotlin-toon:1.0.0")
+    implementation(libs.kotlin.toon)
 
     implementation(libs.material.colors)
     implementation(libs.accompanist.ui.controller)
@@ -155,6 +156,7 @@ dependencies {
     implementation(libs.billing.ktx)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.play.services.mlkit.subject.segmentation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

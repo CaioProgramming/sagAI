@@ -53,6 +53,8 @@ data class Character(
     @ColumnInfo(index = true)
     val firstSceneId: Int? = null,
     val emojified: Boolean = false,
+    @Embedded(prefix = "zoom_")
+    val smartZoom: SmartZoom? = null,
 )
 
 data class Abilities(
@@ -104,4 +106,11 @@ data class FacialFeatures(
     val mouth: String = "",
     val distinctiveMarks: String = "",
     val jawline: String = "",
+)
+
+data class SmartZoom(
+    val scale: Float = 1f,
+    val translationX: Float = 0f,
+    val translationY: Float = 0f,
+    val needsZoom: Boolean = false,
 )
