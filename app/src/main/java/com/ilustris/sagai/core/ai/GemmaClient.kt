@@ -1,6 +1,7 @@
 package com.ilustris.sagai.core.ai
 
 import android.util.Log
+import com.google.ai.client.generativeai.type.BlobPart
 import com.google.ai.client.generativeai.type.Content
 import com.google.ai.client.generativeai.type.ImagePart
 import com.google.ai.client.generativeai.type.TextPart
@@ -18,6 +19,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.seconds
@@ -71,6 +73,7 @@ class GemmaClient
         suspend inline fun <reified T> generate(
             prompt: String,
             references: List<ImageReference?> = emptyList(),
+            audioFile: File? = null,
             temperatureRandomness: Float = .5f,
             requireTranslation: Boolean = true,
             describeOutput: Boolean = true,
@@ -143,6 +146,25 @@ class GemmaClient
                                 references.filterNotNull().forEach { reference ->
                                     add(ImagePart(reference.bitmap))
                                     add(TextPart(reference.description))
+                                }
+                                // Add audio if provided
+                                audioFile?.let { file ->
+                                    if (file.exists() && file.length() > 0) {
+                                        try {
+                                            val audioBytes = file.readBytes()
+                                            add(BlobPart(mimeType = "audio/m4a", blob = audioBytes))
+                                            Log.d(
+                                                javaClass.simpleName,
+                                                "Audio file added to request: ${file.name} (${audioBytes.size} bytes)",
+                                            )
+                                        } catch (e: Exception) {
+                                            Log.e(
+                                                javaClass.simpleName,
+                                                "Failed to read audio file: ${e.message}",
+                                                e,
+                                            )
+                                        }
+                                    }
                                 }
                             }
 

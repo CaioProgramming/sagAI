@@ -2,6 +2,7 @@ package com.ilustris.sagai.core.audio
 
 import android.media.MediaRecorder
 import android.os.Build
+import com.ilustris.sagai.core.file.FileCacheService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,20 +26,35 @@ enum class RecordingState {
  * AudioService handles audio recording with solid API.
  *
  * Features:
- * - Records audio to a dedicated cache folder (audio_recordings)
- * - Exposes recording state via Flow
- * - Start/Stop/Pause recording
+ * - Records audio to app cache directory via FileCacheService
+ * - Exposes recording state via Flow for reactive updates
+ * - Start/Stop/Pause recording operations
  * - Returns audio file after recording stops
- * - Automatic cleanup on app exit
+ * - Automatic cleanup via FileCacheService
+ *
+ * Usage:
+ * ```kotlin
+ * @Inject lateinit var audioService: AudioService
+ *
+ * // Observe recording state
+ * audioService.recordingState.collect { state ->
+ *   when (state) {
+ *     RecordingState.RECORDING -> // Show recording UI
+ *     RecordingState.STOPPED -> // File ready for use
+ *     else -> {}
+ *   }
+ * }
+ *
+ * // Start recording
+ * audioService.startRecording()
+ *
+ * // Stop and get file for use in message, etc
+ * val audioFile = audioService.stopRecording()
+ * ```
  */
 class AudioService(
-    private val cacheDir: File,
+    private val fileCacheService: FileCacheService,
 ) {
-    private val audioDir =
-        File(cacheDir, "audio_recordings").apply {
-            if (!exists()) mkdirs()
-        }
-
     private var mediaRecorder: MediaRecorder? = null
     private var currentAudioFile: File? = null
 
@@ -58,8 +74,9 @@ class AudioService(
                 return false // Already recording
             }
 
-            // Create audio file with timestamp
+            // Create audio file in cache via FileCacheService
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+            val audioDir = fileCacheService.getFileCacheDir("audio_recordings")
             currentAudioFile = File(audioDir, "audio_$timestamp.m4a")
 
             // Initialize MediaRecorder
@@ -204,10 +221,11 @@ class AudioService(
     fun getCurrentAudioFile(): File? = currentAudioFile
 
     /**
-     * Clean up all recorded audio files in the cache directory
+     * Clean up all recorded audio files via FileCacheService
      */
     fun clearCache() {
         try {
+            val audioDir = fileCacheService.getFileCacheDir("audio_recordings")
             audioDir.listFiles()?.forEach { file ->
                 if (file.isFile && file.extension == "m4a") {
                     file.delete()
@@ -219,7 +237,7 @@ class AudioService(
     }
 
     /**
-     * Release resources
+     * Release resources and cleanup
      */
     fun release() {
         cancelRecording()
