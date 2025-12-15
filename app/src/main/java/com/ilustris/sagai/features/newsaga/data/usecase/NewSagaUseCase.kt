@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
+import java.io.File
 
 enum class SagaProcess {
     CREATING_SAGA,
@@ -35,6 +36,7 @@ interface NewSagaUseCase {
         currentMessages: List<ChatMessage>,
         latestMessage: String,
         currentFormData: SagaForm,
+        audioFile: File?,
     ): RequestResult<SagaCreationGen>
 
     suspend fun generateIntroduction(): RequestResult<SagaCreationGen>

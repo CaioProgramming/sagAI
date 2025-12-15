@@ -3,6 +3,7 @@ package com.ilustris.sagai.features.newsaga.ui.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.audio.AudioService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
@@ -25,6 +26,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 
@@ -41,6 +43,7 @@ class CreateSagaViewModel
     constructor(
         private val newSagaUseCase: NewSagaUseCase,
         private val characterUseCase: CharacterUseCase,
+        private val audioService: AudioService,
     ) : ViewModel() {
         val form = MutableStateFlow(SagaForm())
         val state = MutableStateFlow(CreateSagaState())
@@ -53,8 +56,31 @@ class CreateSagaViewModel
         val isSaving = MutableStateFlow(false)
         val loadingMessage = MutableStateFlow<String?>(null)
 
+        // Audio state
+        val recordingState = audioService.recordingState
+        val recordingDuration = audioService.recordingDuration
+        val audioFile = MutableStateFlow<File?>(null)
+
         private fun updateGenerating(isGenerating: Boolean) {
             this.isGenerating.value = isGenerating
+        }
+
+        // Audio control methods
+        fun startAudioRecording() {
+            audioService.startRecording()
+        }
+
+        fun stopAudioRecording(): File? {
+            val file = audioService.stopRecording()
+            audioFile.value = file
+            return file
+        }
+
+        fun getRemainingRecordingTime(): Long = audioService.getRemainingTime()
+
+        fun cancelAudioRecording() {
+            audioService.cancelRecording()
+            audioFile.value = null
         }
 
         fun startChat() {
@@ -65,11 +91,12 @@ class CreateSagaViewModel
                     .onSuccess { gen ->
                         handleGeneratedContent(gen)
                         chatMessages.update {
-                            it + ChatMessage(
-                                text = gen.message,
-                                sender = Sender.AI,
-                                callback = gen.callback?.action
-                            )
+                            it +
+                                ChatMessage(
+                                    text = gen.message,
+                                    sender = Sender.AI,
+                                    callback = gen.callback?.action,
+                                )
                         }
                     }.onFailure {
                         updateGenerating(false)
@@ -89,6 +116,7 @@ class CreateSagaViewModel
                         currentMessages = chatMessages.value,
                         latestMessage = latestMessage?.text ?: emptyString(),
                         currentFormData = form.value,
+                        audioFile = audioFile.value,
                     ).onSuccess { response ->
                         chatMessages.update {
                             it +
@@ -96,11 +124,12 @@ class CreateSagaViewModel
                                     text = response.message,
                                     sender = Sender.AI,
                                     callback = response.callback?.action,
-
                                 )
                         }
                         handleGeneratedContent(response)
                         isError.value = false
+                        // Clear audio file after sending
+                        audioFile.value = null
                     }.onFailure { e ->
                         Log.e(
                             javaClass.simpleName,

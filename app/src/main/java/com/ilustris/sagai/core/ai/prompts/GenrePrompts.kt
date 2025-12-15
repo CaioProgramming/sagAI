@@ -204,40 +204,28 @@ object GenrePrompts {
 
             PUNK_ROCK -> {
                 """
-                Art Technique: GRITTY INDIE COMIC / UNDERGROUND ART STYLE (Gorillaz meets underground punk zine aesthetics).
+                Art Technique: GRITTY INDIE COMIC / UNDERGROUND ART STYLE (HEAVILY STYLIZED AND EXPRESSIVELY DISPROPORTIONATE CHARACTER DESIGN, SIMILAR TO GORILLAZ).
                 EMPHASIS ON RAW EXPRESSIVENESS AND REBELLIOUS ENERGY OVER POLISH.
-                Line Work: BOLD, DELIBERATE, AND SOMETIMES CRUDE INK LINES with dynamic weight variation.
-                Embrace imperfection, rough edges, and sketch-like quality. Lines should feel hand-drawn and intentional, never digital-smooth.
-                Anatomical Style: STYLIZED BUT GROUNDED—not childish or overly cartoonish. Realistic proportions with exaggerated attitude and movement.
-                Shading: STRATEGIC MIX OF HARD-EDGED BLOCKS and ORGANIC GRADIENTS.
-                Create stark contrasts for impact; use bold shadow areas to convey mood and grit.
-                
-                **COLOR PALETTE & ACCENT:**
-                 - Base: Gritty Urban Palette. Weathered concrete greys, faded brick reds, asphalt blacks, industrial steel tones, street-worn colors.
-                 - Mandatory Accent: NEON ELECTRIC GREEN (Pantone 375 C).
-                 - Application: Use the accent sparingly and decisively for high-impact elements: instrument glows, stage lights reflecting off skin, graffiti details, energy in eyes, fabric accents. The green must PUNCH against the gritty base—it's a signature of rebellion and creative fire.
-
-                **CRITICAL RENDERING NOTES:**
-                 - AUTHENTICITY OVER PERFECTION: Embrace visible brushstrokes, ink bleeds, slight asymmetry, and hand-drawn artifacts. The work should feel ALIVE and URGENT.
-                 - AVOID: Overly polished digital smoothing, cutesy proportions, anime traits, pastel color treatments, childish simplification.
-                 - PRIORITIZE: Attitude, edge, raw energy, and visual impact. Characters should feel confident, slightly dangerous, and undeniably cool.
-                
+                Subject: An intensely focused young adult Black man with a high-contrast mid-fade haircut. He is wearing stylized streetwear: baggy, distressed denim overalls over a striped long-sleeve shirt and a dark beanie. He should be in a dynamic, confident pose, possibly holding a spray paint can or a skateboard.
+                Line Work: CRUDE, AMATEUR-LOOKING, AND INTENTIONALLY IMPERFECT. VERY BOLD, DELIBERATE INK LINES with dynamic weight variation. Embrace imperfection, rough edges, and sketch-like quality. Lines should feel hand-drawn and intentional, never digital-smooth.
+                Anatomical Style: RADICALLY STYLIZED, CARTOONISH, AND EXPRESSIVELY DISPROPORTIONATE. Limbs and features may be exaggerated to convey attitude and movement, BUT MUST REMAIN MATURE AND EDGY—NOT CHILDISH.
+                Shading: STRATEGIC MIX OF HARD-EDGED BLOCKS and ORGANIC GRADIENTS. Create stark contrasts for impact; use bold shadow areas to convey mood and grit.
+                COLOR PALETTE & ACCENT: Base: Gritty Urban Palette. Weathered concrete greys, faded brick reds, asphalt blacks, industrial steel tones, street-worn colors.
+                Mandatory Accent: NEON ELECTRIC GREEN (Pantone 375 C).
+                Application: Use the accent sparingly and decisively for high-impact elements: instrument glows, stage lights reflecting off skin, graffiti details, energy in eyes, fabric accents. The green must PUNCH against the gritty base—it's a signature of rebellion and creative fire.
+                CRITICAL RENDERING NOTES: AUTHENTICITY OVER PERFECTION: Embrace visible brushstrokes, ink bleeds, slight asymmetry, and hand-drawn artifacts. The work should feel ALIVE and URGENT.
+                AVOID: Overly polished digital smoothing, CUTESY/CHILDISH PROPORTIONS, anime traits, pastel color treatments, childish simplification.
+                PRIORITIZE: Attitude, edge, raw energy, and visual impact. Characters should feel confident, slightly dangerous, and undeniably cool.
                 Visual Style: INDIE COMIC / UNDERGROUND ZIN AESTHETIC. Rough sketchbook quality with intentional artistic choices visible.
-                Forms: DYNAMIC AND EXPRESSIVE—exaggerated proportions convey attitude, not cartoony appeal.
-                Facial Features: EXPRESSIVE AND INTENSE. Individualistic styling—asymmetrical hair cuts, striking eye makeup, piercings suggested through line work. Personality dominates design.
+                Forms: DYNAMIC AND EXPRESSIVE—RADICALLY EXAGGERATED PROPORTIONS convey attitude, not cartoony appeal.
+                Facial Features: EXPRESSIVE AND INTENSE. Individualistic styling—asymmetrical hair cuts, striking eye makeup, piercings suggested through CRUDE LINE WORK. Personality dominates design.
                 Detail: DELIBERATE PLACEMENT—bold details where they convey character attitude (instrument straps, jacket studs, band patches); simplified elsewhere for impact.
-                
-                Texture: VISIBLE PAPER TEXTURE, INK ARTIFACTS, SLIGHT GRAIN. Hand-drawn feel is non-negotiable.
-                Add subtle hatching, crosshatching, or stippling to create texture and depth. Occasional splatters/splatters of ink for dynamism and rawness.
-                Lighting: DRAMATIC AND MOODY. High contrast with strategic highlights that feel like stage lights or street lamp glow.
-                Use dark shadow areas to create mystery and depth. Avoid uniform bright lighting.
-                
+                Texture: VISIBLE PAPER TEXTURE, INK ARTIFACTS, HEAVY GRAIN. Hand-drawn feel is non-negociável. Add HEAVY hatching, crosshatching, or stippling to create texture and depth. Occasional splatters/splatters of ink for dynamism and rawness.
+                Lighting: DRAMATIC AND MOODY. High contrast with strategic highlights that feel like stage lights or street lamp glow. Use dark shadow areas to create mystery and depth. Avoid uniform bright lighting.
                 Mood: GRITTY, INTENSE, REBELLIOUS, and CONFIDENTLY EDGY. Youthful but mature in perspective—think rebellious teen to young adult mindset, not playful.
-                Ambience: UNDERGROUND URBAN SCENES. Dingy venues, graffiti-covered walls, abandoned warehouses with stage lights, street corners at night, cramped recording studios, punk shows in basements.
-                Raw, authentic street culture with artistic authenticity. Avoid sanitized or polished city aesthetics.
-                
-                Rendering Constraints: FORBID photorealism, 3D CGI, anime softness, overly smooth digital blending, cute or childish proportions, pastel color treatments.
-                The final image must feel like a page from an underground comic or a high-quality punk zine—gritty, deliberate, and radiating authentic rebellion. Think Gorillaz meets underground punk art—stylized but grounded, expressive but not childish.
+                Ambience: UNDERGROUND URBAN SCENES. Dingy venues, graffiti-covered walls, abandoned warehouses with stage lights, street corners at night, cramped recording studios, punk shows in basements. Raw, authentic street culture with artistic authenticity. Avoid sanitized or polished city aesthetics.
+                Rendering Constraints: FORBID photorealism, 3D CGI, anime softness, overly smooth digital blending, CUTE OR CHILDISH PROPORTIONS, pastel color treatments.
+                The final image must feel like a page from an underground comic or a high-quality punk zine—gritty, deliberate, and radiating authentic rebellion. Think EXTREME GORILLAZ STYLE meets CRUDE UNDERGROUND PUNK ART—stylized, desproportionate, expressive, and undeniably cool.
                 """
             }
         }

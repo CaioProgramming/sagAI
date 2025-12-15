@@ -39,6 +39,8 @@ fun NewSagaView(
     val aiFormState by createSagaViewModel.formState.collectAsStateWithLifecycle()
     val isGenerating by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
     val messages by createSagaViewModel.chatMessages.collectAsStateWithLifecycle()
+    val recordingState by createSagaViewModel.recordingState.collectAsStateWithLifecycle()
+    val audioFile by createSagaViewModel.audioFile.collectAsStateWithLifecycle()
     var showExitDialog by remember { mutableStateOf(false) }
     val callbackAction by createSagaViewModel.callbackAction.collectAsStateWithLifecycle()
     val isSaving by createSagaViewModel.isSaving.collectAsStateWithLifecycle()
@@ -83,7 +85,9 @@ fun NewSagaView(
                 )
             }
 
-            else -> doNothing()
+            else -> {
+                doNothing()
+            }
         }
     }
 
@@ -104,6 +108,12 @@ fun NewSagaView(
         inputSuggestions = aiFormState.suggestions,
         updateGenre = { createSagaViewModel.updateGenre(it) },
         resetSaga = { createSagaViewModel.resetSaga() },
+        recordingState = createSagaViewModel.recordingState,
+        remainingTime = createSagaViewModel.getRemainingRecordingTime(),
+        onStartRecording = { createSagaViewModel.startAudioRecording() },
+        onStopRecording = { createSagaViewModel.stopAudioRecording() },
+        audioFile = audioFile,
+        onAudioRecorded = { createSagaViewModel.audioFile.value = it },
     )
 
     StarryLoader(
@@ -114,7 +124,7 @@ fun NewSagaView(
             MaterialTheme.typography.labelMedium.copy(
                 textAlign = TextAlign.Center,
                 fontFamily = form.saga.genre?.bodyFont(),
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             ),
     )
 }

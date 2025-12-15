@@ -55,8 +55,13 @@ enum class RecordingState {
 class AudioService(
     private val fileCacheService: FileCacheService,
 ) {
+    companion object {
+        const val MAX_RECORDING_DURATION_MS = 60_000L // 60 seconds
+    }
+
     private var mediaRecorder: MediaRecorder? = null
     private var currentAudioFile: File? = null
+    private var recordingStartTime: Long = 0L
 
     private val _recordingState = MutableStateFlow<RecordingState>(RecordingState.IDLE)
     val recordingState: StateFlow<RecordingState> = _recordingState.asStateFlow()
@@ -79,7 +84,10 @@ class AudioService(
             val audioDir = fileCacheService.getFileCacheDir("audio_recordings")
             currentAudioFile = File(audioDir, "audio_$timestamp.m4a")
 
-            // Initialize MediaRecorder
+            // Track recording start time for max duration limit
+            recordingStartTime = System.currentTimeMillis()
+
+            // ...existing code...
             mediaRecorder =
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     MediaRecorder(android.app.Application())
@@ -208,6 +216,32 @@ class AudioService(
         } catch (e: Exception) {
             _recordingState.value = RecordingState.ERROR
         }
+    }
+
+    /**
+     * Check if recording duration has reached the maximum limit (60 seconds)
+     * Returns true if limit is reached and recording should stop
+     */
+    fun hasReachedMaxDuration(): Boolean {
+        if (_recordingState.value != RecordingState.RECORDING) {
+            return false
+        }
+
+        val elapsedTime = System.currentTimeMillis() - recordingStartTime
+        return elapsedTime >= MAX_RECORDING_DURATION_MS
+    }
+
+    /**
+     * Get remaining recording time in milliseconds
+     */
+    fun getRemainingTime(): Long {
+        if (_recordingState.value != RecordingState.RECORDING) {
+            return MAX_RECORDING_DURATION_MS
+        }
+
+        val elapsedTime = System.currentTimeMillis() - recordingStartTime
+        val remaining = MAX_RECORDING_DURATION_MS - elapsedTime
+        return if (remaining > 0) remaining else 0
     }
 
     /**

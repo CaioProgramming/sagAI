@@ -99,6 +99,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.audio.RecordingState
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
@@ -125,6 +126,9 @@ import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import java.io.File
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -142,6 +146,12 @@ fun NewSagaChat(
     isLoading: Boolean = false,
     isGenerating: Boolean = false,
     inputSuggestions: List<String> = emptyList(),
+    recordingState: StateFlow<RecordingState> = MutableStateFlow(RecordingState.IDLE),
+    remainingTime: Long = 0L,
+    onStartRecording: () -> Unit = {},
+    onStopRecording: () -> Unit = {},
+    audioFile: File? = null,
+    onAudioRecorded: (File?) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
