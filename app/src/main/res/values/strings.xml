@@ -228,6 +228,7 @@
     <string name="genre_space_opera">Space Opera</string>
     <string name="genre_shinobi">Shinobi</string>
     <string name="genre_cowboys" translatable="false">Cowboys</string>
+    <string name="genre_punk_rock" translatable="false">Punk Rock</string>
     <string name="settings_title">Settings</string>
     <string name="memory_usage">Storage Usage</string>
     <string name="premium_first_title">Dive into unique universes and turn your ideas into unforgettable stories. With Sagas Pro, your creativity comes alive and every chapter becomes a visually immersive experience.</string>

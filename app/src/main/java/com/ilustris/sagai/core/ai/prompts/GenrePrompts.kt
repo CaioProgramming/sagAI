@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre.CYBERPUNK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.FANTASY
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HEROES
 import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
+import com.ilustris.sagai.features.newsaga.data.model.Genre.PUNK_ROCK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SHINOBI
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
 
@@ -200,6 +201,36 @@ object GenrePrompts {
                 Ambience: Wide open spaces, heat haze, long shadows, dust motes dancing in the light. All rendered with EXPRESSIVE BRUSHWORK that captures the FEELING of the frontier, not a literal photograph.
                 """
             }
+
+            PUNK_ROCK -> {
+                """
+                Art Technique: ILLUSTRATED CARTOON DIGITAL / MODERN COMIC (Gorillaz).
+                Line Work: EXPRESSIVE, ORGANIC LINES with varying weight.
+                Not anatomically perfect—embrace stylization and personality.
+                Shading: FLAT SHADING with strategic SMOOTH GRADIENTS.
+                Hard-edged colors next to soft transitions.
+                
+                **COLOR PALETTE & ACCENT:**
+                 - Base: Urban (concrete grey, brick red, asphalt).
+                 - Mandatory Accent: VIBRANT GREEN (Pantone 375 C).
+                 - Application: Green for musical elements, guitar glows, auras.
+
+                Visual Style: Sketchbook/Zine feel. Hand-drawn look.
+                Forms: SIMPLIFIED BUT DYNAMIC. Exaggerated proportions.
+                Facial Features: EXPRESSIVE. Colorful hair. Personality through design.
+                Detail: SELECTIVE—bold where important, simplified elsewhere.
+                
+                Texture: Subtle paper texture, minimal grain, hand-drawn feel.
+                Lighting: High-energy, dynamic. Bright highlights, expressive shadows.
+                
+                Mood: ENERGETIC, youthful, REBELLIOUS, fun, CONFIDENT.
+                Ambience: URBAN CONTEMPORARY—venues, studios, graffiti walls.
+                Modern city energy with artistic flair and youth vibrancy.
+                
+                Rendering: FORBID photorealism, 3D CGI, anime, realistic shading.
+                Must look like GORILLAZ or SCOTT PILGRIM—vibrant, stylized, CARTOON.
+                """
+            }
         }
 
     fun appearanceGuidelines(genre: Genre): String =
@@ -212,6 +243,7 @@ object GenrePrompts {
             HORROR -> "Horror characters should wear worn, distressed clothing in muted or dark tones. Outfits may include tattered coats, faded uniforms, or vintage garments. Their appearance should evoke unease, mystery, and psychological tension, fitting the haunted and uncanny mood."
             FANTASY -> "Fantasy characters should wear medieval or ancient-inspired outfits: cloaks, tunics, armor, robes, and boots. Accessories like belts, pouches, magical amulets, and weapons are common. Their look should evoke epic adventure, mysticism, and a connection to legendary worlds."
             SPACE_OPERA -> "Space opera characters should wear retro-futuristic suits, sleek uniforms, and bold accessories. Outfits may include metallic fabrics, capes, visors, and utility belts. Their appearance should evoke classic sci-fi adventure, interstellar travel, and atomic age optimism."
+            PUNK_ROCK -> "Punk rock characters should wear bold, rebellious outfits: leather jackets, band t-shirts and graphic tees, ripped or distressed clothing, colorful dyed hair (especially vibrant green, yellow, orange, or red), spikes, studs, and chains as accessories. Combat boots or high-tops are common. Include musical instrument references in outfit details when possible. Their appearance should radiate confidence, artistic expression, and anti-establishment attitude."
         }
 
     fun nameDirectives(genre: Genre) =
@@ -225,7 +257,7 @@ object GenrePrompts {
                     Names can be majestic, archaic, rustic, tribal, or subtly magical.
                     AVOID overly modern, generic, or overtly tech-sounding names (e.g., John, Mary, Smith, unit numbers, cyber-names).
                     """
-                    }
+                }
 
                 CYBERPUNK -> {
                     """
@@ -234,7 +266,7 @@ object GenrePrompts {
                     Avoid names that are overtly heroic or melodramatic.
                     Try to create names that is common in the language ${currentLanguage()} .
                 """
-                    }
+                }
 
                 HORROR -> {
                     """
@@ -244,9 +276,9 @@ object GenrePrompts {
                      - For creatures, entities, or local myths, use names that are descriptive (e.g., "O Vulto," "A Dama de Preto," "O Sussurro"), guttural, or have a more complex, unsettling feel.
                      - Avoid names that are overtly heroic, futuristic, or melodramatic.
                    """
-                    }
+                }
 
-                    HEROES -> {
+                HEROES -> {
                     """
                      - Aim for names that feel grounded, contemporary, and reflect a diverse urban environment.
                      - Consider influences from street culture, hip-hop, graffiti art, and modern city life.
@@ -258,9 +290,9 @@ object GenrePrompts {
                      - Consider names that evoke a sense of agility, speed, or resourcefulness.
                      - Think about names that could easily become a street tag or a whispered legend.
                     """
-                    }
+                }
 
-                    CRIME -> {
+                CRIME -> {
                     """
                      - Aim for names fitting a crime drama set in a stylized neon city.
                      - Blend gritty street nicknames with classic, timeless first names.
@@ -268,43 +300,53 @@ object GenrePrompts {
                      - Short, punchy monikers or evocative aliases work well (e.g., "Vega", "Neon", "Santos", "Roxie").
                      - Avoid overtly sci-fi or fantasy elements.
                     """
-                    }
+                }
 
-                    SHINOBI -> {
+                SHINOBI -> {
                     """
                      - Aim for names rooted in feudal Japan or stylized adaptations that fit the setting.
                      - Consider short, evocative names or clan-like monikers (e.g., "Aka-ryu", "Kage", "Hanae", "Shirogane").
                      - Blend historical Japanese-sounding names with terse nicknames suitable for operatives and covert figures.
                      - Avoid overtly modern slang or sci-fi terminology.
                     """
-                    }
+                }
 
-                    SPACE_OPERA -> {
+                SPACE_OPERA -> {
                     """
                     Concept: Evoke exploration, cosmic significance, advanced scientific concepts, or ancient, wise origins.
                     Influences: Classical astronomy, mythological figures (adapted for space), scientific terms, melodious and ethereal sounds, names suggesting vastness.
                     Avoid: Overtly aggressive or militaristic names, overly "hard" sci-fi jargon (unless for specific tech), modern slang.
                     Try: Names with soft vowels and unique consonant combinations (e.g., Lyra, Orion, Xylos, Aetheria).    
                     """
-                    }
+                }
 
-                    COWBOY -> {
-                    """
-                    Aim for names that sound rugged, biblical, or have a nickname quality.
-                    Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
-                    Avoid modern or overly fancy names.
-                    """
-                    }
-
-                    else -> {
+                COWBOY -> {
                     """
                     Aim for names that sound rugged, biblical, or have a nickname quality.
                     Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
                     Avoid modern or overly fancy names.
                     """
                 }
+
+                PUNK_ROCK -> {
+                    """
+                    Aim for names influenced by music culture, street-smart, and edgy.
+                    Consider: Music-culture nicknames, street-smart names, modern edgy sounds, names that reference music terms or artist-like qualities.
+                    Examples: Echo, Vinyl, Riff, Chord, Neon, Sage, Blaze, Sonic, Rebel, Riot, or street nicknames reflecting personality or musical style.
+                    Avoid: Overly heroic names, fantasy-sounding names, corporate-sounding names.
+                    Embrace: Short, punchy names that feel authentic to youth and music culture.
+                    """
                 }
-                ).plus("Try common names in ${currentLanguage()}").trimIndent()
+
+                else -> {
+                    """
+                    Aim for names that sound rugged, biblical, or have a nickname quality.
+                    Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
+                    Avoid modern or overly fancy names.
+                    """
+                }
+            }
+        ).plus("Try common names in ${currentLanguage()}").trimIndent()
 
     fun conversationDirective(genre: Genre) =
         when (genre) {
@@ -473,6 +515,34 @@ object GenrePrompts {
                 3. Narrative Voice:
                     * Descriptions should emphasize the harshness and beauty of the frontier.
                     * Focus on sensory details: heat, dust, the smell of leather and horses.
+                """
+            }
+
+            PUNK_ROCK -> {
+                """
+                This directive defines the specific linguistic style for the Punk Rock genre.
+                NPCs and narrative voice should reflect confident, rebellious, and energetic youth culture with music as a central theme.
+
+                1. Language & Vocabulary:
+                    * Terminology: Music culture terminology (gig, jam, beat, riff, distortion, reverb, amplifier, stage, crowd, vibe).
+                    * Contemporary Street Slang: Use modern, casual slang authentically (avoiding overly trendy terms that will date quickly).
+                    * Band/Music References: Characters may reference bands, songs, concerts, or music genres naturally in dialogue.
+                    * Youth Culture Terms: Terms reflecting teenage/young adult experience, independence, creativity.
+                    * Formality: Minimal to none. Dialogue is informal, conversational, direct. No "sir/ma'am" unless ironic.
+                    * Profanity (Conditional): Moderate profanity is acceptable to reflect authenticity of youth culture and rebellious spirit. Use strategically, not gratuitously.
+
+                2. Tone & Delivery:
+                    * Confident & Rebellious: Characters speak with conviction and a defiant edge. They question authority and embrace individuality.
+                    * Irreverent & Playful: Humor is sarcastic, witty, self-deprecating. Characters don't take themselves too seriously.
+                    * Passionate: When discussing music, art, or causes they care about, characters become animated and intense.
+                    * Fast-Paced & Energetic: Dialogue is quick, dynamic, reflecting the energy of live music and youth culture.
+                    * Authentic & Real: Dialogue should feel genuine to how teenagers/young adults actually speak—casual, stream-of-consciousness, with interruptions and tangents.
+
+                3. Narrative Voice:
+                    * Descriptions should be vivid and energetic, focusing on sensory details: the roar of crowd, the crunch of amplifiers, the smell of a crowded venue, sweat and electricity.
+                    * Emphasize movement, dynamism, and visual energy—people dancing, musicians performing, creative expression in action.
+                    * Maintain a sense of youthful optimism mixed with edgy rebellion—idealism tempered with street-smart attitude.
+                    * The narrative should capture the exhilaration and freedom of music and creative self-expression.
                 """
             }
         }.trimIndent()

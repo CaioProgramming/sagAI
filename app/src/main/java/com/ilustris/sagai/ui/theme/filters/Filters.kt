@@ -64,6 +64,7 @@ fun Genre.colorTones() =
         Genre.SPACE_OPERA -> FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
         Genre.SHINOBI -> ShinobiColorTones.BLOOD_MOON_ASSASSIN
         Genre.COWBOY -> CowboyColorTones.DESERT_SUNSET
+        Genre.PUNK_ROCK -> FantasyColorTones.ETHEREAL_CYAN_STARLIGHT // Placeholder - will use vibrant tones
     }
 
 fun Genre.shaderParams(
@@ -221,6 +222,23 @@ fun Genre.shaderParams(
         )
     }
 
+    Genre.PUNK_ROCK -> {
+        ShaderParams(
+            grainIntensity = customGrain ?: .15f,
+            softFocusRadius = focusRadius ?: .2f,
+            saturation = 1.0f,
+            contrast = 1.6f,
+            brightness = .05f,
+            highlightTint = colorTones().highlightTint,
+            shadowTint = colorTones().shadowTint,
+            tintStrength = colorTones().defaultTintStrength,
+            vignetteStrength = .15f,
+            vignetteSoftness = 0.9f,
+            pixelationBlockSize = 0.0f,
+            colorTemperature = .05f,
+        )
+    }
+
     else -> {
         ShaderParams()
     }
@@ -285,8 +303,7 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }
-        .graphicsLayer {
+        }.graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

@@ -68,6 +68,13 @@ Genre(
         iconColor = Color.White,
         background = R.drawable.cowboys,
     ),
+
+    PUNK_ROCK(
+        title = R.string.genre_punk_rock,
+        color = Color(0xFF00B050), // Pantone 375 C - Vibrant Green
+        iconColor = Color.White,
+        background = R.drawable.punk_rock,
+    ),
     ;
 
     val ambientMusicConfigKey: String = "${this.name}_ambient_music_url".lowercase()
@@ -162,6 +169,17 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
                 desaturationFactorNonTarget = .5f,
             )
         }
+
+        Genre.PUNK_ROCK -> {
+            SelectiveColorParams(
+                targetColor = color,
+                hueTolerance = .15f,
+                saturationThreshold = .4f,
+                lightnessThreshold = .3f,
+                highlightSaturationBoost = 2.0f,
+                desaturationFactorNonTarget = .5f,
+            )
+        }
     }
 
 fun Genre.defaultHeaderImage() =
@@ -174,6 +192,7 @@ fun Genre.defaultHeaderImage() =
         Genre.SHINOBI -> R.drawable.shinobi_card
         Genre.SPACE_OPERA -> R.drawable.space_opera_card
         Genre.COWBOY -> R.drawable.cowboys_card
+        Genre.PUNK_ROCK -> R.drawable.punk_rock_card
     }
 
 fun Genre.shimmerColors() =
@@ -254,6 +273,15 @@ fun Genre.colorPalette() =
                 Color(0xFFD2691E), // Pantone 4695 C - Desert Sand
                 Color(0xFFCD853F), // Pantone 4665 C - Prairie Tan
                 Color(0xFF800000), // Pantone 18-1142 TPX - Maroon
+            )
+        }
+
+        Genre.PUNK_ROCK -> {
+            listOf(
+                color,
+                Color(0xFFFFD700), // Pantone 106 C - Vibrant Yellow
+                Color(0xFFFF6B35), // Pantone 16-1546 TPX - Hot Orange
+                Color(0xFF8B0000), // Pantone 18-1664 TPX - Deep Red
             )
         }
     }
