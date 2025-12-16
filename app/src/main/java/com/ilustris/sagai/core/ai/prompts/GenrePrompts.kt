@@ -141,8 +141,7 @@ object GenrePrompts {
                 Composition must heavily utilize and celebrate the white/negative space.
                 Focus on the character's immediate action or emotion.
                 
-                CRITICAL RENDERING NOTE (ABSOLUTE): Render as a full-bleed, edge-to-edge illustration with NO BORDERS, FRAMES, TEXT, OR UI ARTIFACTS.
-                The output must be a clean composition suitable for final printing or display.
+                Rendering: Full-bleed illustration. No borders, frames, or text.
                 
                 Mood: Raw, spontaneous, intensely focused, and visually powerful through simplicity.
                 """
@@ -174,7 +173,8 @@ object GenrePrompts {
                 Ambience: VAST COSMIC ENVIRONMENTS. Emphasize the true majesty of space: swirling nebulae in brilliant colors, dense star fields stretching to infinity, the event horizon of black holes, meteor showers blazing across the void, distant galaxies spiraling in the background, cosmic dust clouds illuminated by stellar radiation.
                 Focus on the overwhelming scale and beauty of the universe itself—the infinite expanse, the play of cosmic light and shadow, the sense of floating in the boundless void. Avoid terrestrial-looking planets;
                 instead show the raw cosmic phenomena that make space exploration truly magnificent.
-                NO TEXT, NO LOGOS, NO GRAPHIC SHAPES, NO BORDERS.
+                
+                Rendering: Clean illustration. No text, logos, or borders.
                 """
             }
 
@@ -204,43 +204,203 @@ object GenrePrompts {
 
             PUNK_ROCK -> {
                 """
-                Art Technique: GRITTY INDIE COMIC / UNDERGROUND ART STYLE (HEAVILY STYLIZED AND EXPRESSIVELY DISPROPORTIONATE CHARACTER DESIGN, SIMILAR TO GORILLAZ).
-                EMPHASIS ON RAW EXPRESSIVENESS AND REBELLIOUS ENERGY OVER POLISH.
-                Subject: An intensely focused young adult Black man with a high-contrast mid-fade haircut. He is wearing stylized streetwear: baggy, distressed denim overalls over a striped long-sleeve shirt and a dark beanie. He should be in a dynamic, confident pose, possibly holding a spray paint can or a skateboard.
-                Line Work: CRUDE, AMATEUR-LOOKING, AND INTENTIONALLY IMPERFECT. VERY BOLD, DELIBERATE INK LINES with dynamic weight variation. Embrace imperfection, rough edges, and sketch-like quality. Lines should feel hand-drawn and intentional, never digital-smooth.
-                Anatomical Style: RADICALLY STYLIZED, CARTOONISH, AND EXPRESSIVELY DISPROPORTIONATE. Limbs and features may be exaggerated to convey attitude and movement, BUT MUST REMAIN MATURE AND EDGY—NOT CHILDISH.
-                Shading: STRATEGIC MIX OF HARD-EDGED BLOCKS and ORGANIC GRADIENTS. Create stark contrasts for impact; use bold shadow areas to convey mood and grit.
-                COLOR PALETTE & ACCENT: Base: Gritty Urban Palette. Weathered concrete greys, faded brick reds, asphalt blacks, industrial steel tones, street-worn colors.
-                Mandatory Accent: NEON ELECTRIC GREEN (Pantone 375 C).
-                Application: Use the accent sparingly and decisively for high-impact elements: instrument glows, stage lights reflecting off skin, graffiti details, energy in eyes, fabric accents. The green must PUNCH against the gritty base—it's a signature of rebellion and creative fire.
-                CRITICAL RENDERING NOTES: AUTHENTICITY OVER PERFECTION: Embrace visible brushstrokes, ink bleeds, slight asymmetry, and hand-drawn artifacts. The work should feel ALIVE and URGENT.
-                AVOID: Overly polished digital smoothing, CUTESY/CHILDISH PROPORTIONS, anime traits, pastel color treatments, childish simplification.
-                PRIORITIZE: Attitude, edge, raw energy, and visual impact. Characters should feel confident, slightly dangerous, and undeniably cool.
-                Visual Style: INDIE COMIC / UNDERGROUND ZIN AESTHETIC. Rough sketchbook quality with intentional artistic choices visible.
-                Forms: DYNAMIC AND EXPRESSIVE—RADICALLY EXAGGERATED PROPORTIONS convey attitude, not cartoony appeal.
-                Facial Features: EXPRESSIVE AND INTENSE. Individualistic styling—asymmetrical hair cuts, striking eye makeup, piercings suggested through CRUDE LINE WORK. Personality dominates design.
-                Detail: DELIBERATE PLACEMENT—bold details where they convey character attitude (instrument straps, jacket studs, band patches); simplified elsewhere for impact.
-                Texture: VISIBLE PAPER TEXTURE, INK ARTIFACTS, HEAVY GRAIN. Hand-drawn feel is non-negociável. Add HEAVY hatching, crosshatching, or stippling to create texture and depth. Occasional splatters/splatters of ink for dynamism and rawness.
-                Lighting: DRAMATIC AND MOODY. High contrast with strategic highlights that feel like stage lights or street lamp glow. Use dark shadow areas to create mystery and depth. Avoid uniform bright lighting.
-                Mood: GRITTY, INTENSE, REBELLIOUS, and CONFIDENTLY EDGY. Youthful but mature in perspective—think rebellious teen to young adult mindset, not playful.
-                Ambience: UNDERGROUND URBAN SCENES. Dingy venues, graffiti-covered walls, abandoned warehouses with stage lights, street corners at night, cramped recording studios, punk shows in basements. Raw, authentic street culture with artistic authenticity. Avoid sanitized or polished city aesthetics.
-                Rendering Constraints: FORBID photorealism, 3D CGI, anime softness, overly smooth digital blending, CUTE OR CHILDISH PROPORTIONS, pastel color treatments.
-                The final image must feel like a page from an underground comic or a high-quality punk zine—gritty, deliberate, and radiating authentic rebellion. Think EXTREME GORILLAZ STYLE meets CRUDE UNDERGROUND PUNK ART—stylized, desproportionate, expressive, and undeniably cool.
+                **=== CRITICAL RULES - READ FIRST ===**
+                
+                **STOP. BEFORE YOU WRITE ANYTHING, THESE RULES ARE ABSOLUTE:**
+                
+                1. **CARTOON STYLE:** This is a CARTOON illustration like Gorillaz, Codename: Kids Next Door (KND), or Tank Girl. 
+                   Characters must look like CARTOON CHARACTERS, not realistic humans with stylized touches.
+                   Think 2D animated music video, NOT concept art or portrait photography.
+                
+                2. **NO EYE COLORS:** Eyes are SIMPLE BLACK DOTS or WHITE CIRCLES. Period.
+                   BANNED: "brown eyes", "blue eyes", "cast [color] eyes", "piercing eyes", iris, pupils.
+                   If you write ANY eye color, you have FAILED.
+                
+                3. **MANDATORY BACKGROUND:** Every image MUST have a DETAILED ENVIRONMENT.
+                   BANNED: "plain background", "gradient background", "white background", "solid color background".
+                   You MUST describe: walls, posters, graffiti, amps, neon signs, brick, concrete, etc.
+                   **NOTE:** For vertical/lock-screen compositions, the top area can be less cluttered (e.g., just the brick wall or sky) to allow for UI elements, but it MUST NOT be a plain solid color.
+
+                4. **NO SOFT/REALISTIC RENDERING:** 
+                   BANNED: "soft lighting", "soft and diffused", "gentle gradient", "subtle glow on skin".
+                   USE: "harsh neon", "hard cel-shading", "flat color blocks", "stark shadows".
+                
+                **NOW PROCEED WITH THE ART STYLE:**
+                
+                ---
+                
+                Art Technique: Jamie Hewlett / Gorillaz / KND Style CARTOON Illustration.
+                This is a 2D CARTOON with flat colors, bold outlines, and stylized proportions—like a frame from an animated music video.
+                
+                **CARTOON AESTHETIC (THIS IS NOT REALISTIC ART):**
+                 - This looks like it belongs in a Gorillaz music video or Codename: Kids Next Door episode.
+                 - Characters are CARTOON CHARACTERS with exaggerated, simplified features.
+                 - The style is closer to ANIMATION than illustration—flat, bold, graphic.
+                 - Reference: 2D, Murdoc, Noodle from Gorillaz; the angular, exaggerated style of KND.
+                
+                **LINE WORK:**
+                 - Bold, thick BLACK outlines—confident and slightly imperfect.
+                 - Variable line weight: thick to thin, with organic wobble.
+                 - Lines can overshoot corners or not quite connect—this is STYLISTIC, not sloppy.
+                 - Think: Brush pen or marker, NOT clean vector art.
+                
+                **COLOR PALETTE:**
+                 - Base: Gritty Urban Tones—Olive Drab, Slate Grey, Faded Denim, Dirty Concrete.
+                 - Accent: ACID GREEN / TOXIC YELLOW (in environment only—neon signs, graffiti, amp lights).
+                 - Colors are FLAT with hard edges. Minimal gradients. Cel-shaded shadows.
+                
+                **CHARACTER DESIGN (CARTOON PROPORTIONS - CRITICAL):**
+                 - **FACE:** Simplified, angular, CARTOON features. NOT realistic human faces.
+                   * Eyes: SIMPLE BLACK DOTS or WHITE CIRCLES. NO iris, NO pupil detail, NO eye color.
+                   * Nose: Simple line, angular shape, or small triangle. NOT realistic nostrils.
+                   * Mouth: Bold line, can be crooked or asymmetrical. Expressive but simple.
+                   * Jaw: Angular, exaggerated—sharp or blocky, NOT smooth realistic contours.
+                 - **BODY (IF VISIBLE):** Exaggerated cartoon proportions.
+                   * Limbs can be noodle-thin or chunky—NOT realistic human proportions.
+                   * Hands can be oversized, simplified (4-5 fingers suggested, not detailed).
+                   * Posture is exaggerated: hunched, slouched, angular poses.
+                 - **OVERALL:** Characters should look like they stepped out of a Gorillaz video—stylized, cool, slightly grotesque in a "beautiful ugly" way.
+                
+                **SHADING:**
+                 - Hard CEL-SHADING only. Solid blocks of shadow with sharp edges.
+                 - NO soft gradients, NO realistic light falloff, NO ambient occlusion.
+                 - Shadows are graphic shapes, not realistic light simulation.
+                
+                **BACKGROUND & ENVIRONMENT (YOU MUST INCLUDE THIS):**
+                 - **EVERY IMAGE NEEDS A REAL BACKGROUND.** This is mandatory.
+                 - Pick ONE of these environments and DESCRIBE IT IN DETAIL:
+                   * **GARAGE:** Brick walls, band posters, amps, cables, drum kit, bare lightbulb, stickers everywhere
+                   * **ALLEY:** Graffiti walls, dumpster, fire escape, chain-link fence, wet pavement, neon signs
+                   * **STAGE:** Mic stands, monitors, harsh stage lights, haze, crowd silhouettes, banner
+                   * **ROOFTOP:** Water towers, antennas, city skyline, smoggy sky, AC units
+                   * **RECORD SHOP:** Vinyl crates, posters, neon beer sign, cluttered shelves, sticky floor
+                   * **STREET CORNER:** Bus stop, payphone, convenience store, street art, flickering signs
+                 - The background should be GRAPHIC and slightly FLAT (to match the cartoon style) but DETAILED and PRESENT.
+                 - Characters exist IN a world, not floating in empty space.
+
+                **MOOD & ENERGY:**
+                 - Anarchic, rebellious, cool. The energy of a garage band or animated music video.
+                 - Characters have ATTITUDE—bored, manic, defiant, or "too cool to care."
+
+                **MUSIC CULTURE INTEGRATION:**
+                 - Characters interact with musical elements: guitars, headphones, vinyl, amps, drumsticks.
+                 - Music gear shows wear: stickers, scratches, duct tape, sharpie marks.
+                 - Even non-musicians wear band tees, have gig flyers, ticket stubs.
+
+                **COMPOSITION:**
+                 - LAYERED: Foreground objects (amp corner, mic stand), character positioned according to framing, background environment.
+                 - Elements can OVERLAP and BREAK THE FRAME—hair, smoke, instruments extending past edges.
+                 - Dynamic angles encouraged—avoid flat, static framing.
+                 - **FRAMING FLEXIBILITY:** If the input is a PORTRAIT/HEADSHOT, maintain that framing. Do not force a full-body shot. The background should still be present but adapted to the tighter frame (e.g., a wall behind the head, a mic stand in the foreground).
+
+                **CANDID MOMENTS:**
+                 - Characters look CAUGHT in a moment, not posing.
+                 - Mid-action: lighting cigarette, checking phone, adjusting strap, mid-conversation.
+                 - Avoid: Direct camera stare, symmetrical poses, hands at sides.
+
+                **CHARACTER ARCHETYPE ENERGY (INSPIRATION ONLY):**
+                 - Adapt these vibes to each character's personality:
+                   * **Melancholic Dreamer:** Distant gaze, slouched, detached.
+                   * **Chaotic Provocateur:** Aggressive stance, sneering, confrontational.
+                   * **Cool Prodigy:** Effortless confidence, minimal expression.
+                   * **Grounded Anchor:** Solid stance, watchful, protective.
+                   * **Manic Energy:** Unpredictable poses, wide-eyed or grinning.
+                   * **Jaded Veteran:** Tired, cigarette present, cynical smirk.
+
+                **=== BANNED WORDS & PHRASES (IF YOU USE THESE, YOU FAILED) ===**
+                
+                **BANNED EYE TERMS:** 'brown eyes', 'blue eyes', 'green eyes', 'cast brown eyes', 'cast [any color] eyes', 'piercing eyes', 'iris', 'pupils', 'eye color', 'eyes hold [emotion]', 'gaze reflects'
+                → USE: 'simple black dot eyes', 'hollow circular eyes', 'void-like eyes'
+                
+                **BANNED ANATOMY:** 'realistic proportions', 'soft skin', 'porcelain skin', 'smooth skin', 'flawless', 'photorealistic', 'lifelike'
+                → USE: 'cartoon proportions', 'angular features', 'exaggerated limbs', 'stylized'
+                
+                **BANNED FACE TERMS:** 'painted with lipstick', 'glossy lips', 'symmetrical face', 'conventionally attractive', 'defined jawline' (too realistic)
+                → USE: 'crooked features', 'angular cartoon face', 'simplified features', 'blocky jaw'
+                
+                **BANNED LIGHTING:** 'soft lighting', 'soft and diffused', 'gentle gradient', 'subtle glow on skin', 'volumetric', 'ambient'
+                → USE: 'harsh neon', 'hard cel-shading', 'flat shadows', 'stark contrast'
+                
+                **BANNED BACKGROUND:** 'plain background', 'gradient background', 'isolated portrait', 'floating', 'white background'
+                → USE: Describe ACTUAL OBJECTS: 'graffiti-covered brick wall', 'amp stack', 'neon sign', 'band posters'
+
+                **FINAL CHECK - ASK YOURSELF:**
+                 1. Did I write ANY eye color? → DELETE IT NOW
+                 2. Did I describe a background with 3+ specific objects? → If NO, ADD THEM
+                 3. Does this sound like a Gorillaz/KND cartoon frame? → If NO, make it MORE STYLIZED
+                 4. Did I use "plain background"? → DELETE IT, add environment instead
+
+                Rendering: 2D CARTOON style. Forbid: 3D, photorealism, realistic anatomy, soft lighting, empty backgrounds. Must look like a frame from an animated music video with COMPLETE backgrounds.
                 """
             }
         }
 
     fun appearanceGuidelines(genre: Genre): String =
         when (genre) {
-            HEROES -> "Heroes must wear vibrant and colorful supersuits, complete with dynamic masks, iconic emblems, and functional accessories. Emphasize a powerful, heroic silhouette and clean, distinct lines. The outfit should reflect their powers or origin."
-            CYBERPUNK -> "Cyberpunk characters should feature futuristic, asymmetrical clothing, unique high-tech accessories (e.g., data readers, holographic communicators), and distinctive cybernetic modifications on their face or limbs (e.g., glowing implants, metallic prosthetics, intricate circuitry patterns). Their appearance should convey a blend of cutting-edge technology and gritty street style."
-            COWBOY -> "Cowboy characters should wear classic western outfits: wide-brimmed hats, bandanas, rugged boots, leather vests, and denim or canvas clothing. Accessories like spurs, holsters, and sheriff badges are common. Their look should evoke the spirit of the frontier and rural Americana."
-            SHINOBI -> "Shinobi characters should wear traditional ninja or samurai-inspired attire: dark, layered robes, hakama pants, arm guards, tabi boots, and headbands or masks. Outfits may include subtle armor pieces and sashes. Their appearance should be stealthy, agile, and rooted in feudal Japanese aesthetics."
-            CRIME -> "Crime city characters should dress in High-End Luxury Resort Wear: tailored linen suits, flowing silk dresses, designer swimwear, and expensive accessories. Think 'Old Money' aesthetic, yacht parties, and exclusive beach clubs. Outfits should feature premium fabrics, elegant cuts, and statement pieces like oversized sunglasses, gold jewelry, and designer watches. Their appearance must radiate wealth, sophistication, and effortless glamour."
-            HORROR -> "Horror characters should wear worn, distressed clothing in muted or dark tones. Outfits may include tattered coats, faded uniforms, or vintage garments. Their appearance should evoke unease, mystery, and psychological tension, fitting the haunted and uncanny mood."
-            FANTASY -> "Fantasy characters should wear medieval or ancient-inspired outfits: cloaks, tunics, armor, robes, and boots. Accessories like belts, pouches, magical amulets, and weapons are common. Their look should evoke epic adventure, mysticism, and a connection to legendary worlds."
-            SPACE_OPERA -> "Space opera characters should wear retro-futuristic suits, sleek uniforms, and bold accessories. Outfits may include metallic fabrics, capes, visors, and utility belts. Their appearance should evoke classic sci-fi adventure, interstellar travel, and atomic age optimism."
-            PUNK_ROCK -> "Punk rock characters should wear bold, rebellious outfits: leather jackets, band t-shirts and graphic tees, ripped or distressed clothing, colorful dyed hair (especially vibrant green, yellow, orange, or red), spikes, studs, and chains as accessories. Combat boots or high-tops are common. Include musical instrument references in outfit details when possible. Their appearance should radiate confidence, artistic expression, and anti-establishment attitude."
+            HEROES -> {
+                """
+                Heroes must wear vibrant and colorful supersuits, complete with dynamic masks, iconic emblems, and functional accessories.
+                Emphasize a powerful, heroic silhouette and clean, distinct lines. The outfit should reflect their powers or origin.
+                """.trimIndent()
+            }
+
+            CYBERPUNK -> {
+                """
+                Cyberpunk characters should feature futuristic, asymmetrical clothing, unique high-tech accessories (e.g., data readers, holographic communicators),
+                and distinctive cybernetic modifications on their face or limbs (e.g., glowing implants, metallic prosthetics, intricate circuitry patterns).
+                Their appearance should convey a blend of cutting-edge technology and gritty street style.
+                """.trimIndent()
+            }
+
+            COWBOY -> {
+                """
+                Cowboy characters should wear classic western outfits: wide-brimmed hats, bandanas, rugged boots, leather vests, and denim or canvas clothing.
+                Accessories like spurs, holsters, and sheriff badges are common. Their look should evoke the spirit of the frontier and rural Americana.
+                """.trimIndent()
+            }
+
+            SHINOBI -> {
+                """
+                Shinobi characters should wear traditional ninja or samurai-inspired attire: dark, layered robes, hakama pants, arm guards, tabi boots, and headbands or masks.
+                Outfits may include subtle armor pieces and sashes. Their appearance should be stealthy, agile, and rooted in feudal Japanese aesthetics.
+                """.trimIndent()
+            }
+
+            CRIME -> {
+                """
+                Crime city characters should dress in High-End Luxury Resort Wear: tailored linen suits, flowing silk dresses, designer swimwear, and expensive accessories.
+                Think 'Old Money' aesthetic, yacht parties, and exclusive beach clubs. Outfits should feature premium fabrics, elegant cuts, and statement pieces like oversized sunglasses, gold jewelry, and designer watches.
+                Their appearance must radiate wealth, sophistication, and effortless glamour.
+                """.trimIndent()
+            }
+
+            HORROR -> {
+                """
+                Horror characters should wear worn, distressed clothing in muted or dark tones. Outfits may include tattered coats, faded uniforms, or vintage garments.
+                Their appearance should evoke unease, mystery, and psychological tension, fitting the haunted and uncanny mood.
+                """.trimIndent()
+            }
+
+            FANTASY -> {
+                """
+                Fantasy characters should wear medieval or ancient-inspired outfits: cloaks, tunics, armor, robes, and boots.
+                Accessories like belts, pouches, magical amulets, and weapons are common. Their look should evoke epic adventure, mysticism, and a connection to legendary worlds.
+                """.trimIndent()
+            }
+
+            SPACE_OPERA -> {
+                """
+                Space opera characters should wear retro-futuristic suits, sleek uniforms, and bold accessories. Outfits may include metallic fabrics, capes, visors, and utility belts.
+                Their appearance should evoke classic sci-fi adventure, interstellar travel, and atomic age optimism.
+                """.trimIndent()
+            }
+
+            PUNK_ROCK -> {
+                """
+                Punk rock characters must be stylized and caricatured, NOT realistic. Use exaggerated proportions (lanky or stocky), simple dot eyes, and expressive, jagged features.
+                Clothing: leather jackets, ripped tees, combat boots, and vibrant dyed hair (acid green, toxic yellow). The look is 'ugly-cute', rebellious, and distinct.
+                """.trimIndent()
+            }
         }
 
     fun nameDirectives(genre: Genre) =
@@ -332,14 +492,6 @@ object GenrePrompts {
                     Examples: Echo, Vinyl, Riff, Chord, Neon, Sage, Blaze, Sonic, Rebel, Riot, or street nicknames reflecting personality or musical style.
                     Avoid: Overly heroic names, fantasy-sounding names, corporate-sounding names.
                     Embrace: Short, punchy names that feel authentic to youth and music culture.
-                    """
-                }
-
-                else -> {
-                    """
-                    Aim for names that sound rugged, biblical, or have a nickname quality.
-                    Examples: Jed, Silas, "Tex", "Slim", Ezekiel, Clementine.
-                    Avoid modern or overly fancy names.
                     """
                 }
             }
@@ -543,4 +695,200 @@ object GenrePrompts {
                 """
             }
         }.trimIndent()
+
+    /**
+     * Get the reviewer strictness level for a specific genre.
+     * Based on how rigid the art style requirements are.
+     */
+    fun reviewerStrictness(genre: Genre): com.ilustris.sagai.core.ai.models.ReviewerStrictness =
+        when (genre) {
+            // STRICT: Cartoon styles with specific anatomical requirements
+            PUNK_ROCK -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.STRICT
+
+            HORROR -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.STRICT
+
+            // CONSERVATIVE: Stylized but with some flexibility
+            CYBERPUNK -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+
+            HEROES -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+
+            SPACE_OPERA -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+
+            SHINOBI -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+
+            // LENIENT: Traditional art with organic flexibility
+            FANTASY -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.LENIENT
+
+            CRIME -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.LENIENT
+
+            COWBOY -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.LENIENT
+        }
+
+    /**
+     * Extract validation rules from the art style for the reviewer.
+     * Provides structured data about what's banned, required, and allowed.
+     */
+    fun validationRules(genre: Genre): String =
+        when (genre) {
+            PUNK_ROCK -> {
+                """
+                **CRITICAL VALIDATION RULES FOR PUNK_ROCK:**
+                
+                BANNED TERMS (ZERO TOLERANCE):
+                - Eye colors: 'brown eyes', 'blue eyes', 'green eyes', 'cast [color] eyes', 'piercing eyes', 'iris', 'pupils'
+                - Realistic anatomy: 'realistic proportions', 'soft skin', 'porcelain skin', 'photorealistic', 'lifelike'
+                - Soft lighting: 'soft lighting', 'soft and diffused', 'gentle gradient', 'subtle glow', 'volumetric'
+                - Empty backgrounds: 'plain background', 'gradient background', 'solid color background', 'white background', 'isolated portrait'
+                
+                REQUIRED ELEMENTS:
+                - Eyes MUST be: 'simple black dot eyes', 'hollow circular eyes', 'void-like eyes', 'white circle eyes'
+                - Background MUST include 3+ specific objects: 'graffiti wall', 'amp stack', 'neon sign', 'band posters', 'brick wall', etc.
+                - Proportions MUST be: 'cartoon proportions', 'exaggerated limbs', 'angular features', 'stylized'
+                - Shading MUST be: 'hard cel-shading', 'flat shadows', 'stark contrast', 'graphic blocks'
+                
+                FRAMING ADAPTATION:
+                - Portrait/Close-up: Background still required but adapted (wall behind head, neon sign glow, posters visible)
+                - NO 'plain' or 'solid color' backgrounds even for tight framing
+                """.trimIndent()
+            }
+
+            HORROR -> {
+                """
+                **CRITICAL VALIDATION RULES FOR HORROR:**
+                
+                BANNED TERMS:
+                - Modern rendering: 'photorealistic', '3D render', 'smooth gradients', 'high-res textures'
+                - Vibrant colors: avoid bright, saturated colors outside the dark/pale blue palette
+                
+                REQUIRED ELEMENTS:
+                - Art style MUST mention: '32-BIT PIXEL ART', 'BLOCKY SHADING', 'PS1/SEGA SATURN aesthetic'
+                - Texture MUST be: 'pixelated', 'retro game art', 'low-resolution'
+                - Palette MUST be: 'limited dark and pale blue', 'ash gray', 'faded cerulean'
+                
+                FRAMING ADAPTATION:
+                - All framings work with pixel art style
+                - Maintain blocky, pixelated appearance regardless of shot distance
+                """.trimIndent()
+            }
+
+            CYBERPUNK -> {
+                """
+                **CRITICAL VALIDATION RULES FOR CYBERPUNK:**
+                
+                BANNED TERMS:
+                - Modern techniques: '3D CGI', 'photorealism', 'digital smoothing', 'Unreal Engine', 'volumetric lighting'
+                - Bright neon: 'bright fluorescent pink', 'bright purple' (only DEEP purple allowed)
+                - Soft rendering: 'soft gradients', 'ambient occlusion', 'subsurface scattering'
+                
+                REQUIRED ELEMENTS:
+                - Art style MUST mention: '1980s Anime OVA', 'Cel Animation', 'FLAT SHADING'
+                - Shadows MUST be: 'hard-edged blocks', 'cel-shaded', 'no soft gradients'
+                - Colors MUST be: 'muted blue tones', 'slate blue', 'cold steel', 'DEEP purple accent'
+                - Lighting MUST be: 'high-contrast Rembrandt', 'hard rim light', 'cast shadows'
+                
+                FRAMING ADAPTATION:
+                - Maintain flat shading and hard edges regardless of framing
+                - Hair as 'clumps' not strands, even in close-ups
+                """.trimIndent()
+            }
+
+            HEROES -> {
+                """
+                **VALIDATION RULES FOR HEROES:**
+                
+                BANNED TERMS:
+                - Avoid: forced night scenes (prefer dynamic daytime/sunset)
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'Modern comic book art', 'bold ink lines', 'dynamic foreshortening'
+                - Environment: 'vast cityscapes', 'towering skyscrapers', 'dizzying perspectives'
+                - Colors: 'dynamic urban palette' with 'subtle electric blue accent'
+                
+                FRAMING ADAPTATION:
+                - Emphasize vertical scale and urban environment
+                - Maintain comic book line work quality
+                """.trimIndent()
+            }
+
+            SPACE_OPERA -> {
+                """
+                **VALIDATION RULES FOR SPACE_OPERA:**
+                
+                BANNED TERMS:
+                - Avoid: 'primitive rockets', 'simple tube rockets', 'basic spacecraft'
+                
+                REQUIRED ELEMENTS:
+                - Art style: '1950s Atomic Age illustration', 'gouache/oil', 'painterly finish'
+                - Environment: 'vast cosmic environments', 'swirling nebulae', 'star fields', 'cosmic phenomena'
+                - Technology (if present): 'streamlined starships', 'sophisticated engines', 'advanced design'
+                - Figures: 'idealized 50s illustration', 'pin-up or action hero archetypes'
+                
+                FRAMING ADAPTATION:
+                - Focus on cosmic ambience over technology details
+                - Maintain retro-futuristic optimism
+                """.trimIndent()
+            }
+
+            FANTASY -> {
+                """
+                **VALIDATION RULES FOR FANTASY:**
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'gritty dark fantasy oil painting', 'visible brushstrokes', 'loose impasto'
+                - Palette: 'earthy tones', 'mud, steel, stone' with 'ember gold/fiery orange accent'
+                - Texture: 'canvas oil', 'painterly quality'
+                
+                FRAMING ADAPTATION:
+                - Allow artistic interpretation within oil painting tradition
+                - Maintain brushstroke visibility and earthy palette
+                """.trimIndent()
+            }
+
+            CRIME -> {
+                """
+                **VALIDATION RULES FOR CRIME:**
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'hyper-realistic classical oil painting', 'academic realism'
+                - Technique: 'smooth glazing', 'no rough brushstrokes', 'flawless surface'
+                - Lighting: 'divine & ethereal', 'soft diffused heavenly light'
+                
+                FRAMING ADAPTATION:
+                - Maintain smooth, flawless rendering quality
+                - High-fashion luxury aesthetic required
+                """.trimIndent()
+            }
+
+            COWBOY -> {
+                """
+                **VALIDATION RULES FOR COWBOY:**
+                
+                BANNED TERMS:
+                - Avoid: 'photorealism', 'smooth digital blending', 'refined details'
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'expressive western oil painting', 'Remington/Russell style'
+                - Technique: 'bold visible brushstrokes', 'thick impasto', 'painterly quality'
+                - Mood: 'rough edges', 'bold color blocks', 'artistic interpretation'
+                
+                FRAMING ADAPTATION:
+                - Maintain expressive brushwork at all scales
+                - Emphasize painted quality over photographic detail
+                """.trimIndent()
+            }
+
+            SHINOBI -> {
+                """
+                **VALIDATION RULES FOR SHINOBI:**
+                
+                REQUIRED ELEMENTS:
+                - Traditional Japanese aesthetic
+                - Stealth and agility emphasis
+                - Feudal Japan styling
+                
+                FRAMING ADAPTATION:
+                - Maintain cultural authenticity
+                """.trimIndent()
+            }
+        }
 }

@@ -1,11 +1,12 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
 import android.icu.util.Calendar
+import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
@@ -110,15 +111,36 @@ class SagaRepositoryImpl
                                 saga.genre,
                                 context,
                                 visualDirection,
-                                characterHexColor = null
+                                characterHexColor = null,
                             ),
                     listOf(characterIcon),
                     requireTranslation = false,
                 )!!
+
+            // Review the generated description before image generation
+            val reviewedPrompt =
+                imagenClient
+                    .reviewAndCorrectPrompt(
+                        visualDirection = visualDirection,
+                        artStyleValidationRules = GenrePrompts.validationRules(saga.genre),
+                        strictness = GenrePrompts.reviewerStrictness(saga.genre),
+                        finalPrompt = metaPrompt,
+                    ).getSuccess()
+
+            // Use the reviewed prompt, or fallback to original if review failed
+            val finalPromptForGeneration =
+                reviewedPrompt?.correctedPrompt ?: run {
+                    Log.w(
+                        "SagaRepository",
+                        "Review failed or returned null, using original description",
+                    )
+                    metaPrompt
+                }
+
             val newIcon =
                 imagenClient.generateImage(
                     buildString {
-                        appendLine(metaPrompt.plus(ImagePrompts.criticalGenerationRule()))
+                        appendLine(finalPromptForGeneration)
                     },
                     listOfNotNull(characterIcon),
                 )!!

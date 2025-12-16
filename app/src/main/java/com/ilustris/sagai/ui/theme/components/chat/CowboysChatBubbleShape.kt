@@ -1,5 +1,6 @@
 package com.ilustris.sagai.ui.theme.components.chat
 
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -8,114 +9,139 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 
 /**
- * Cowboys-themed chat bubble shape inspired by Western wooden signs and planks.
+ * Cowboys-themed chat bubble shape inspired by a ticket stub.
  * Features:
- * - Notched/beveled corners (like rough-cut wood)
- * - Angular tail (like a wooden support bracket)
- * - Slightly irregular edges for that frontier aesthetic
+ * - Rounded corners
+ * - A "ticket clip" (semicircle cutout) on the side of the tail alignment
  */
 class CowboysChatBubbleShape(
     private val cornerNotch: Dp = 8.dp,
-    private val tailWidth: Dp = 16.dp,
-    private val tailHeight: Dp = 14.dp,
+    private val tailWidth: Dp = 12.dp,
+    @Suppress("UNUSED_PARAMETER") private val tailHeight: Dp = 12.dp,
     private val tailAlignment: BubbleTailAlignment = BubbleTailAlignment.BottomRight,
+    private val isNarrator: Boolean = false,
 ) : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
         density: Density,
     ): Outline {
-        val notchPx = with(density) { cornerNotch.toPx() }
-        val tailWidthPx = with(density) { tailWidth.toPx() }
-        val tailHeightPx = with(density) { tailHeight.toPx() }
+        val radius = with(density) { cornerNotch.toPx() }
+        val clipSize = with(density) { tailWidth.toPx() }
         val path = Path()
 
-        val bodyHeight = size.height - tailHeightPx
+        if (isNarrator) {
+            // Double clip (Ticket style) for narrator
+            path.moveTo(radius, 0f)
+            path.lineTo(size.width - radius, 0f)
+            path.quadraticTo(size.width, 0f, size.width, radius)
+
+            val centerY = size.height / 2f
+
+            // Right side clip
+            path.lineTo(size.width, centerY - clipSize)
+            path.arcTo(
+                rect =
+                    Rect(
+                        left = size.width - clipSize,
+                        top = centerY - clipSize,
+                        right = size.width + clipSize,
+                        bottom = centerY + clipSize,
+                    ),
+                startAngleDegrees = 270f,
+                sweepAngleDegrees = -180f,
+                forceMoveTo = false,
+            )
+            path.lineTo(size.width, size.height - radius)
+
+            path.quadraticTo(size.width, size.height, size.width - radius, size.height)
+            path.lineTo(radius, size.height)
+            path.quadraticTo(0f, size.height, 0f, size.height - radius)
+
+            // Left side clip
+            path.lineTo(0f, centerY + clipSize)
+            path.arcTo(
+                rect =
+                    Rect(
+                        left = -clipSize,
+                        top = centerY - clipSize,
+                        right = clipSize,
+                        bottom = centerY + clipSize,
+                    ),
+                startAngleDegrees = 90f,
+                sweepAngleDegrees = -180f,
+                forceMoveTo = false,
+            )
+
+            path.lineTo(0f, radius)
+            path.quadraticTo(0f, 0f, radius, 0f)
+            path.close()
+
+            return Outline.Generic(path)
+        }
 
         when (tailAlignment) {
             BubbleTailAlignment.BottomRight -> {
-                // User Bubble (Right aligned) - like a wooden sign pointing right
-                path.moveTo(notchPx, 0f)
+                // Clip on the Right side
+                path.moveTo(radius, 0f)
+                path.lineTo(size.width - radius, 0f)
+                path.quadraticTo(size.width, 0f, size.width, radius)
 
-                // Top edge with notched top-right corner
-                path.lineTo(size.width - notchPx, 0f)
-                path.lineTo(size.width, notchPx)
+                val centerY = size.height / 2f
+                path.lineTo(size.width, centerY - clipSize)
 
-                // Right edge down to tail connection
-                path.lineTo(size.width, bodyHeight - notchPx)
+                path.arcTo(
+                    rect =
+                        Rect(
+                            left = size.width - clipSize,
+                            top = centerY - clipSize,
+                            right = size.width + clipSize,
+                            bottom = centerY + clipSize,
+                        ),
+                    startAngleDegrees = 270f,
+                    sweepAngleDegrees = -180f,
+                    forceMoveTo = false,
+                )
 
-                // Notch before tail
-                path.lineTo(size.width - notchPx, bodyHeight)
-
-                // Tail - angular wooden bracket style
-                // Top of tail bracket
-                path.lineTo(size.width - tailWidthPx + notchPx, bodyHeight)
-                
-                // Diagonal down to tail tip (like a support beam)
-                path.lineTo(size.width - tailWidthPx, bodyHeight + tailHeightPx * 0.6f)
-                path.lineTo(size.width - tailWidthPx - notchPx, size.height)
-                
-                // Back up along tail
-                path.lineTo(size.width - tailWidthPx - notchPx * 2, bodyHeight + tailHeightPx * 0.4f)
-                path.lineTo(size.width - tailWidthPx - notchPx * 2, bodyHeight)
-
-                // Bottom edge
-                path.lineTo(notchPx, bodyHeight)
-
-                // Bottom-left notched corner
-                path.lineTo(0f, bodyHeight - notchPx)
-
-                // Left edge
-                path.lineTo(0f, notchPx)
-
-                // Top-left notched corner
-                path.lineTo(notchPx, 0f)
-
+                path.lineTo(size.width, size.height - radius)
+                path.quadraticTo(size.width, size.height, size.width - radius, size.height)
+                path.lineTo(radius, size.height)
+                path.quadraticTo(0f, size.height, 0f, size.height - radius)
+                path.lineTo(0f, radius)
+                path.quadraticTo(0f, 0f, radius, 0f)
                 path.close()
             }
 
             BubbleTailAlignment.BottomLeft -> {
-                // NPC Bubble (Left aligned) - like a wooden sign pointing left
-                // Top-left notched corner
-                path.moveTo(0f, notchPx)
-                path.lineTo(notchPx, 0f)
+                // Clip on the Left side
+                path.moveTo(radius, 0f)
+                path.lineTo(size.width - radius, 0f)
+                path.quadraticTo(size.width, 0f, size.width, radius)
+                path.lineTo(size.width, size.height - radius)
+                path.quadraticTo(size.width, size.height, size.width - radius, size.height)
+                path.lineTo(radius, size.height)
+                path.quadraticTo(0f, size.height, 0f, size.height - radius)
 
-                // Top edge
-                path.lineTo(size.width - notchPx, 0f)
+                val centerY = size.height / 2f
+                path.lineTo(0f, centerY + clipSize)
 
-                // Top-right notched corner
-                path.lineTo(size.width, notchPx)
+                path.arcTo(
+                    rect =
+                        Rect(
+                            left = -clipSize,
+                            top = centerY - clipSize,
+                            right = clipSize,
+                            bottom = centerY + clipSize,
+                        ),
+                    startAngleDegrees = 90f,
+                    sweepAngleDegrees = -180f,
+                    forceMoveTo = false,
+                )
 
-                // Right edge
-                path.lineTo(size.width, bodyHeight - notchPx)
-
-                // Bottom-right notched corner
-                path.lineTo(size.width - notchPx, bodyHeight)
-
-                // Bottom edge to tail
-                path.lineTo(tailWidthPx + notchPx * 2, bodyHeight)
-
-                // Tail - angular wooden bracket style (mirrored)
-                // Top of tail bracket
-                path.lineTo(tailWidthPx + notchPx * 2, bodyHeight + tailHeightPx * 0.4f)
-                path.lineTo(tailWidthPx + notchPx, size.height)
-                
-                // Diagonal to tail tip
-                path.lineTo(tailWidthPx, bodyHeight + tailHeightPx * 0.6f)
-                path.lineTo(tailWidthPx - notchPx, bodyHeight)
-
-                // Back to bottom edge
-                path.lineTo(notchPx, bodyHeight)
-
-                // Bottom-left notched corner
-                path.lineTo(0f, bodyHeight - notchPx)
-
-                // Left edge back to start
-                path.lineTo(0f, notchPx)
-
+                path.lineTo(0f, radius)
+                path.quadraticTo(0f, 0f, radius, 0f)
                 path.close()
             }
         }

@@ -72,6 +72,7 @@ class CharacterDetailsViewModel
         }
 
         fun segmentCharacterImage(url: String) {
+            segmentedBitmap.value = null
             viewModelScope.launch(Dispatchers.IO) {
                 val cachedBitmap = segmentedImageCache.get(url)
                 if (cachedBitmap != null) {
@@ -88,8 +89,8 @@ class CharacterDetailsViewModel
                             javaClass.simpleName,
                             "segmentCharacterImage: Failed to segmentate image ",
                             it,
-                    )
-                }
+                        )
+                    }
+            }
         }
-    }
     }

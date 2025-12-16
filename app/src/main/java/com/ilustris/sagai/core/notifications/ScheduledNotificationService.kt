@@ -31,7 +31,6 @@ class ScheduledNotificationServiceImpl(
     }
 
     override fun cancelScheduledNotifications() {
-        // Cancela tanto o Worker quanto o AlarmManager
         workManagerScheduler.cancelAllNotificationWork()
         alarmManager.cancel(getNotificationIntent())
         runBlocking {

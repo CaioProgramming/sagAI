@@ -1,37 +1,24 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
-import SagaGen
-import androidx.room.ColumnInfo
-import androidx.room.Embedded
-import com.ilustris.sagai.core.ai.AIClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
-import com.ilustris.sagai.core.audio.AudioTranscriptionService
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
-import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
-import com.ilustris.sagai.features.newsaga.data.model.CallbackContent
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
-import com.ilustris.sagai.features.saga.detail.data.model.Review
 import kotlinx.coroutines.delay
-import java.io.File
 import javax.inject.Inject
-import kotlin.Boolean
-import kotlin.Int
 
 class NewSagaUseCaseImpl
     @Inject
     constructor(
         private val sagaRepository: SagaRepository,
         private val gemmaClient: GemmaClient,
-        private val audioTranscriptionService: AudioTranscriptionService,
     ) : NewSagaUseCase {
         override suspend fun createSaga(saga: Saga): RequestResult<Saga> =
             executeRequest {
@@ -80,28 +67,21 @@ class NewSagaUseCaseImpl
 
         override suspend fun replyAiForm(
             currentMessages: List<ChatMessage>,
-            latestMessage: String,
+            latestMessage: String?,
             currentFormData: SagaForm,
-            audioFile: File?,
         ): RequestResult<SagaCreationGen> =
             executeRequest {
                 val delayDefaultTime = 700L
 
                 // Transcribe audio if provided
-                val userInput =
-                    if (audioFile != null) {
-                        val transcription = audioTranscriptionService.transcribeAudio(audioFile)
-                        transcription ?: currentMessages.last().text
-                    } else {
-                        currentMessages.last().text
-                    }
+                val userInput = currentMessages.last().text
 
                 val extractedDataPrompt =
                     gemmaClient.generate<SagaForm>(
                         NewSagaPrompts.extractDataFromUserInputPrompt(
                             currentSagaForm = currentFormData,
                             userInput = userInput,
-                            lastMessage = latestMessage,
+                            lastMessage = latestMessage!!,
                         ),
                         requireTranslation = true,
                     )!!

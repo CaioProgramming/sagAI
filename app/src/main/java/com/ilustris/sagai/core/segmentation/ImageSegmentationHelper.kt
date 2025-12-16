@@ -108,8 +108,8 @@ class ImageSegmentationHelper(
                         max(imageWidth / subjectRect.width(), imageHeight / subjectRect.height())
                     val finalScale = scale.coerceAtMost(2.0f)
 
-                    val scaledSubjectWidth = subjectRect.width() * finalScale
-                    val scaledSubjectHeight = subjectRect.height() * finalScale
+                    subjectRect.width() * finalScale
+                    subjectRect.height() * finalScale
 
                     val subjectCenterX = subjectRect.centerX()
                     // Focus on the upper body/face area (approx top 25%) rather than the geometric center (waist/torso)
@@ -142,7 +142,7 @@ class ImageSegmentationHelper(
                         needsZoom = true,
                     )
                 } else {
-                    SmartZoom(needsZoom = false)
+                    SmartZoom(needsZoom = false, scale = 1f, translationX = 0f, translationY = 0f)
                 }
             Log.i(javaClass.simpleName, "calculateSmartZoom: Zoom result: ")
             Log.i(javaClass.simpleName, requiredZoom.toJsonFormat())

@@ -17,7 +17,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.newsaga.ui.components.NewSagaChat
 import com.ilustris.sagai.features.newsaga.ui.presentation.CreateSagaViewModel
@@ -39,13 +41,11 @@ fun NewSagaView(
     val aiFormState by createSagaViewModel.formState.collectAsStateWithLifecycle()
     val isGenerating by createSagaViewModel.isGenerating.collectAsStateWithLifecycle()
     val messages by createSagaViewModel.chatMessages.collectAsStateWithLifecycle()
-    val recordingState by createSagaViewModel.recordingState.collectAsStateWithLifecycle()
-    val audioFile by createSagaViewModel.audioFile.collectAsStateWithLifecycle()
+    var recordingAudio by remember { mutableStateOf(false) }
     var showExitDialog by remember { mutableStateOf(false) }
     val callbackAction by createSagaViewModel.callbackAction.collectAsStateWithLifecycle()
     val isSaving by createSagaViewModel.isSaving.collectAsStateWithLifecycle()
     val loadingMessage by createSagaViewModel.loadingMessage.collectAsStateWithLifecycle()
-
     BackHandler(enabled = isGenerating) {
         showExitDialog = true
     }
@@ -97,23 +97,17 @@ fun NewSagaView(
 
     NewSagaChat(
         messages = messages,
-        onSendMessage = { createSagaViewModel.sendChatMessage(it) },
         isLoading = state.isLoading,
         callback = callbackAction,
         isGenerating = isGenerating,
-        onRetry = { createSagaViewModel.retry() },
-        saveSaga = { createSagaViewModel.saveSaga() },
         currentForm = form,
         userInputHint = aiFormState.hint,
         inputSuggestions = aiFormState.suggestions,
+        onSendMessage = { createSagaViewModel.sendChatMessage(it) },
+        onStartAudioRecording = { recordingAudio = true },
+        saveSaga = { createSagaViewModel.saveSaga() },
         updateGenre = { createSagaViewModel.updateGenre(it) },
         resetSaga = { createSagaViewModel.resetSaga() },
-        recordingState = createSagaViewModel.recordingState,
-        remainingTime = createSagaViewModel.getRemainingRecordingTime(),
-        onStartRecording = { createSagaViewModel.startAudioRecording() },
-        onStopRecording = { createSagaViewModel.stopAudioRecording() },
-        audioFile = audioFile,
-        onAudioRecorded = { createSagaViewModel.audioFile.value = it },
     )
 
     StarryLoader(
@@ -127,4 +121,16 @@ fun NewSagaView(
                 color = MaterialTheme.colorScheme.onBackground,
             ),
     )
+
+    if (recordingAudio) {
+        AudioRecordingSheet(
+            brush = form.saga.genre?.colorPalette() ?: holographicGradient,
+            onDismiss = {
+                recordingAudio = false
+            },
+        ) {
+            createSagaViewModel.sendChatMessage(it)
+            recordingAudio = false
+        }
+    }
 }

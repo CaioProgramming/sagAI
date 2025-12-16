@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
@@ -252,10 +253,31 @@ class ChapterUseCaseImpl
                         references = charactersIcons,
                         requireTranslation = false,
                     )!!
+
+                // Review the generated description before image generation
+                val reviewedPrompt =
+                    imagenClient
+                        .reviewAndCorrectPrompt(
+                            visualDirection = visualComposition,
+                            artStyleValidationRules = GenrePrompts.validationRules(saga.data.genre),
+                            strictness = GenrePrompts.reviewerStrictness(saga.data.genre),
+                            finalPrompt = promptGeneration,
+                        ).getSuccess()
+
+                // Use the reviewed prompt, or fallback to original if review failed
+                val finalPromptForGeneration =
+                    reviewedPrompt?.correctedPrompt ?: run {
+                        Log.w(
+                            "ChapterUseCase",
+                            "Review failed or returned null, using original description",
+                        )
+                        promptGeneration
+                    }
+
                 val genCover =
                     imagenClient
                         .generateImage(
-                            promptGeneration.plus(ImagePrompts.criticalGenerationRule()),
+                            finalPromptForGeneration.plus(ImagePrompts.criticalGenerationRule()),
                         )!!
 
                 val coverFile =

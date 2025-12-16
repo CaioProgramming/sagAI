@@ -166,7 +166,7 @@ fun ChatBubble(
         }
     val narratorShape =
         remember(genre, cornerSize) {
-            genre.bubble(BubbleTailAlignment.BottomRight)
+            genre.bubble(BubbleTailAlignment.BottomRight, isNarrator = true)
         }
     var tooltipData by remember { mutableStateOf<Any?>(null) }
 
@@ -204,21 +204,20 @@ fun ChatBubble(
     val scaleAnimation by animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1f,
         animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "scaleAnimation"
+        label = "scaleAnimation",
     )
 
     val paddingAnimation by animateDpAsState(
         targetValue = if (isSelected) 4.dp else 0.dp,
         animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "paddingAnimation"
+        label = "paddingAnimation",
     )
 
     val borderColorAnimation by animateColorAsState(
         targetValue = if (isSelected) MaterialTheme.colorScheme.onBackground else Color.Transparent,
         animationSpec = tween(300, easing = FastOutSlowInEasing),
-        label = "borderColorAnimation"
+        label = "borderColorAnimation",
     )
-
 
     when (sender) {
         SenderType.USER,
@@ -229,9 +228,10 @@ fun ChatBubble(
             val layoutDirection = if (isUser) LayoutDirection.Rtl else LayoutDirection.Ltr
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 Box(
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .animateContentSize()
+                    modifier =
+                        modifier
+                            .fillMaxWidth()
+                            .animateContentSize(),
                 ) {
                     Row(
                         modifier =
@@ -264,12 +264,12 @@ fun ChatBubble(
                                         pixelation = 0f,
                                         grainRadius = 0f,
                                         modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .fillMaxSize()
-                                            .clickable {
-                                                openCharacters(characters.find { c -> c.data.id == character.id })
-                                            },
+                                            Modifier
+                                                .padding(8.dp)
+                                                .fillMaxSize()
+                                                .clickable {
+                                                    openCharacters(characters.find { c -> c.data.id == character.id })
+                                                },
                                     )
                                 }
 
@@ -284,21 +284,21 @@ fun ChatBubble(
                                         Text(
                                             it.emoji,
                                             style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                shadow =
-                                                    Shadow(
-                                                        color =
-                                                            character.hexColor.hexToColor()
-                                                                ?: genre.color,
-                                                        offset = Offset(2f, 2f),
-                                                        blurRadius = 0f,
-                                                    ),
-                                            ),
+                                                MaterialTheme.typography.labelSmall.copy(
+                                                    shadow =
+                                                        Shadow(
+                                                            color =
+                                                                character.hexColor.hexToColor()
+                                                                    ?: genre.color,
+                                                            offset = Offset(2f, 2f),
+                                                            blurRadius = 0f,
+                                                        ),
+                                                ),
                                             modifier =
-                                            Modifier
-                                                .animateContentSize()
-                                                .align(Alignment.BottomCenter)
-                                                .padding(2.dp),
+                                                Modifier
+                                                    .animateContentSize()
+                                                    .align(Alignment.BottomCenter)
+                                                    .padding(2.dp),
                                         )
                                     }
                                 }
@@ -309,8 +309,7 @@ fun ChatBubble(
                                     Modifier
                                         .clickable {
                                             requestNewCharacter()
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -318,9 +317,9 @@ fun ChatBubble(
 
                         Column(
                             modifier =
-                            Modifier
-                                .weight(1f)
-                                .padding(end = 50.dp),
+                                Modifier
+                                    .weight(1f)
+                                    .padding(end = 50.dp),
                         ) {
                             val bubbleModifier =
                                 if (message.status == MessageStatus.LOADING) {
@@ -328,15 +327,14 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             isAnimated && messageEffectsEnabled,
-                                        )
-                                        .wrapContentSize()
+                                        ).wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
                                                 bubbleShape.createOutline(
                                                     size,
                                                     layoutDirection,
-                                                    this
+                                                    this,
                                                 )
                                             val brush =
                                                 object : ShaderBrush() {
@@ -344,9 +342,9 @@ fun ChatBubble(
                                                         val shader =
                                                             (
                                                                     sweepGradient(
-                                                                        genre.colorPalette(),
-                                                                    ) as ShaderBrush
-                                                                    ).createShader(size)
+                                                                    genre.colorPalette(),
+                                                                ) as ShaderBrush
+                                                            ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
                                                             rotation,
@@ -366,7 +364,7 @@ fun ChatBubble(
                                         .background(Color.Gray.copy(alpha = 0.3f), bubbleShape)
                                 } else {
                                     when (sender) {
-                                        SenderType.USER ->
+                                        SenderType.USER -> {
                                             Modifier
                                                 .combinedClickable(
                                                     interactionSource = interactionSource,
@@ -380,17 +378,17 @@ fun ChatBubble(
                                                         if (!isSelectionMode) {
                                                             onLongPress()
                                                         }
-                                                    }
-                                                )
-                                                .emotionalEntrance(
+                                                    },
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
                                                 )
                                                 .wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
-                                                    bubbleShape
+                                                    bubbleShape,
                                                 )
+                                        }
 
                                         SenderType.CHARACTER -> {
                                             if (isUser.not()) {
@@ -407,9 +405,8 @@ fun ChatBubble(
                                                             if (!isSelectionMode) {
                                                                 onLongPress()
                                                             }
-                                                        }
-                                                    )
-                                                    .emotionalEntrance(
+                                                        },
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         isAnimated && messageEffectsEnabled,
                                                     )
@@ -438,7 +435,7 @@ fun ChatBubble(
                                                             if (!isSelectionMode) {
                                                                 onLongPress()
                                                             }
-                                                        }
+                                                        },
                                                     )
                                                     .emotionalEntrance(
                                                         message.emotionalTone,
@@ -452,7 +449,7 @@ fun ChatBubble(
                                             }
                                         }
 
-                                        SenderType.THOUGHT ->
+                                        SenderType.THOUGHT -> {
                                             Modifier
                                                 .combinedClickable(
                                                     interactionSource = interactionSource,
@@ -466,7 +463,7 @@ fun ChatBubble(
                                                         if (!isSelectionMode) {
                                                             onLongPress()
                                                         }
-                                                    }
+                                                    },
                                                 )
                                                 .emotionalEntrance(
                                                     message.emotionalTone,
@@ -487,8 +484,9 @@ fun ChatBubble(
                                                     dashLength = 10.dp,
                                                     gapLength = 5.dp,
                                                 )
+                                        }
 
-                                        SenderType.ACTION ->
+                                        SenderType.ACTION -> {
                                             Modifier
                                                 .combinedClickable(
                                                     interactionSource = interactionSource,
@@ -502,7 +500,7 @@ fun ChatBubble(
                                                         if (!isSelectionMode) {
                                                             onLongPress()
                                                         }
-                                                    }
+                                                    },
                                                 )
                                                 .emotionalEntrance(
                                                     message.emotionalTone,
@@ -510,22 +508,24 @@ fun ChatBubble(
                                                 )
                                                 .wrapContentSize()
                                                 .background(Color.Black, bubbleShape)
+                                        }
 
-                                        else -> Modifier.combinedClickable(
-                                            interactionSource = interactionSource,
-                                            indication = ripple(),
-                                            onClick = {
-                                                if (isSelectionMode) {
-                                                    onToggleSelection()
-                                                }
-                                            },
-                                            onLongClick = {
-                                                if (!isSelectionMode) {
-                                                    onLongPress()
-                                                }
-                                            }
-                                        )
-
+                                        else -> {
+                                            Modifier.combinedClickable(
+                                                interactionSource = interactionSource,
+                                                indication = ripple(),
+                                                onClick = {
+                                                    if (isSelectionMode) {
+                                                        onToggleSelection()
+                                                    }
+                                                },
+                                                onLongClick = {
+                                                    if (!isSelectionMode) {
+                                                        onLongPress()
+                                                    }
+                                                },
+                                            )
+                                        }
                                     }
                                 }
 
@@ -546,26 +546,26 @@ fun ChatBubble(
                                         }
                                     },
                                     modifier =
-                                    bubbleModifier
-                                        .scale(scaleAnimation)
-                                        .border(
-                                            2.dp,
-                                            borderColorAnimation,
-                                            bubbleShape
-                                        )
-                                        .padding(paddingAnimation)
-                                        .clip(bubbleShape)
-                                        .padding(vertical = 4.dp)
-                                        .animateContentSize(),
+                                        bubbleModifier
+                                            .scale(scaleAnimation)
+                                            .border(
+                                                2.dp,
+                                                borderColorAnimation,
+                                                bubbleShape,
+                                            ).padding(paddingAnimation)
+                                            .clip(bubbleShape)
+                                            .padding(vertical = 4.dp)
+                                            .animateContentSize(),
                                 ) {
                                     Box {
                                         var starAlpha by remember { mutableFloatStateOf(1f) }
                                         val alphaAnimation by animateFloatAsState(
                                             targetValue = starAlpha,
-                                            animationSpec = tween(
-                                                1000,
-                                                easing = FastOutSlowInEasing
-                                            ),
+                                            animationSpec =
+                                                tween(
+                                                    1000,
+                                                    easing = FastOutSlowInEasing,
+                                                ),
                                             label = "starAlpha",
                                         )
                                         val blurAnimation by animateFloatAsState(
@@ -612,39 +612,38 @@ fun ChatBubble(
                                                 tooltipData = data
                                             },
                                             modifier =
-                                            Modifier
-                                                .padding(16.dp)
-                                                .alpha(textAlpha)
-                                                .reactiveShimmer(
-                                                    isLoading || message.status == MessageStatus.LOADING,
-                                                    genre.shimmerColors(),
-                                                ),
+                                                Modifier
+                                                    .padding(16.dp)
+                                                    .alpha(textAlpha)
+                                                    .reactiveShimmer(
+                                                        isLoading || message.status == MessageStatus.LOADING,
+                                                        genre.shimmerColors(),
+                                                    ),
                                             style =
-                                            MaterialTheme.typography.bodySmall.copy(
-                                                fontWeight = FontWeight.Normal,
-                                                fontFamily = genre.bodyFont(),
-                                                fontStyle = fontStyle,
-                                                color = textColor,
-                                                textAlign = textAlign,
-                                            ),
+                                                MaterialTheme.typography.bodySmall.copy(
+                                                    fontWeight = FontWeight.Normal,
+                                                    fontFamily = genre.bodyFont(),
+                                                    fontStyle = fontStyle,
+                                                    color = textColor,
+                                                    textAlign = textAlign,
+                                                ),
                                         )
 
                                         if (sender == SenderType.THOUGHT) {
                                             StarryTextPlaceholder(
                                                 modifier =
-                                                Modifier
-                                                    .matchParentSize()
-                                                    .alpha(alphaAnimation)
-                                                    .clip(bubbleShape)
-                                                    .clickable {
-                                                        starAlpha = 0f
-                                                    }
-                                                    .background(
-                                                        MaterialTheme.colorScheme.surfaceContainer.copy(
-                                                            alpha = .4f,
+                                                    Modifier
+                                                        .matchParentSize()
+                                                        .alpha(alphaAnimation)
+                                                        .clip(bubbleShape)
+                                                        .clickable {
+                                                            starAlpha = 0f
+                                                        }.background(
+                                                            MaterialTheme.colorScheme.surfaceContainer.copy(
+                                                                alpha = .4f,
+                                                            ),
+                                                            bubbleShape,
                                                         ),
-                                                        bubbleShape,
-                                                    ),
                                                 starColor = genre.color,
                                             )
                                         }
@@ -660,14 +659,14 @@ fun ChatBubble(
                                                 onRetry(messageContent)
                                             },
                                             colors =
-                                            ButtonDefaults.textButtonColors().copy(
-                                                contentColor = MaterialTheme.colorScheme.error,
-                                                containerColor = Color.Transparent,
-                                            ),
+                                                ButtonDefaults.textButtonColors().copy(
+                                                    contentColor = MaterialTheme.colorScheme.error,
+                                                    containerColor = Color.Transparent,
+                                                ),
                                             modifier =
-                                            Modifier
-                                                .padding(horizontal = 16.dp)
-                                                .fillMaxWidth(),
+                                                Modifier
+                                                    .padding(horizontal = 16.dp)
+                                                    .fillMaxWidth(),
                                         ) {
                                             Icon(
                                                 painterResource(R.drawable.baseline_refresh_24),
@@ -678,10 +677,10 @@ fun ChatBubble(
                                             Text(
                                                 stringResource(R.string.try_again),
                                                 style =
-                                                MaterialTheme.typography.labelMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    fontWeight = FontWeight.Normal,
-                                                ),
+                                                    MaterialTheme.typography.labelMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        fontWeight = FontWeight.Normal,
+                                                    ),
                                                 modifier = Modifier.padding(start = 4.dp),
                                             )
                                         }
@@ -690,24 +689,24 @@ fun ChatBubble(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                                             modifier =
-                                            Modifier
-                                                .padding(horizontal = 20.dp)
-                                                .offset(y = (-10).dp),
+                                                Modifier
+                                                    .padding(horizontal = 20.dp)
+                                                    .offset(y = (-10).dp),
                                         ) {
                                             Text(
                                                 message.timestamp.formatHours(),
                                                 style =
-                                                MaterialTheme.typography.labelSmall.copy(
-                                                    color = MaterialTheme.colorScheme.onBackground,
-                                                    fontFamily = genre.bodyFont(),
-                                                    fontWeight = FontWeight.Light,
-                                                    textAlign = TextAlign.Start,
-                                                ),
+                                                    MaterialTheme.typography.labelSmall.copy(
+                                                        color = MaterialTheme.colorScheme.onBackground,
+                                                        fontFamily = genre.bodyFont(),
+                                                        fontWeight = FontWeight.Light,
+                                                        textAlign = TextAlign.Start,
+                                                    ),
                                                 modifier =
-                                                Modifier
-                                                    .padding(horizontal = 4.dp)
-                                                    .alpha(0.5f)
-                                                    .weight(1f),
+                                                    Modifier
+                                                        .padding(horizontal = 4.dp)
+                                                        .alpha(0.5f)
+                                                        .weight(1f),
                                             )
 
                                             AnimatedVisibility(
@@ -727,32 +726,38 @@ fun ChatBubble(
                         }
                     }
 
-
                     AnimatedVisibility(
                         visible = isSelectionMode,
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(16.dp),
                         enter = scaleIn() + fadeIn(),
-                        exit = scaleOut() + fadeOut()
+                        exit = scaleOut() + fadeOut(),
                     ) {
                         Box(
-                            modifier = Modifier
-                                .size(32.dp),
-                            contentAlignment = Alignment.Center
+                            modifier =
+                                Modifier
+                                    .size(32.dp),
+                            contentAlignment = Alignment.Center,
                         ) {
                             val color by animateColorAsState(
-                                if (isSelected) genre.color else MaterialTheme.colorScheme.onBackground.copy(
-                                    alpha = .3f
-                                )
+                                if (isSelected) {
+                                    genre.color
+                                } else {
+                                    MaterialTheme.colorScheme.onBackground.copy(
+                                        alpha = .3f,
+                                    )
+                                },
                             )
                             Icon(
                                 painterResource(R.drawable.ic_spark),
                                 contentDescription = "Selected",
                                 tint = color,
-                                modifier = Modifier
-                                    .padding(8.dp)
-                                    .fillMaxSize()
+                                modifier =
+                                    Modifier
+                                        .padding(8.dp)
+                                        .fillMaxSize(),
                             )
                         }
                     }
@@ -775,13 +780,11 @@ fun ChatBubble(
                                 elevation = 8.dp,
                                 shape = narratorShape,
                                 spotColor = genre.color,
-                            )
-                            .border(1.dp, genre.color.gradientFade(), narratorShape)
+                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
                             .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                 ) {
                     TypewriterText(
                         text = message.text,

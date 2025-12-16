@@ -9,7 +9,7 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
-import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
@@ -90,7 +90,7 @@ class CharacterUseCaseImpl
 
                 val portraitReference =
                     genreReferenceHelper.getPortraitReference().getSuccess()?.let {
-                        ImageReference(it, ImageGuidelines.compositionReferenceGuidance)
+                        ImageReference(it, ImagePrompts.extractComposition())
                     }
                 val references =
                     if (isPremium) {
@@ -135,16 +135,36 @@ class CharacterUseCaseImpl
                         requireTranslation = false,
                     )!!
 
+                // NEW: Review the generated description before image generation
+                val reviewedPrompt =
+                    imagenClient
+                        .reviewAndCorrectPrompt(
+                            visualDirection = visualComposition,
+                            artStyleValidationRules = GenrePrompts.validationRules(saga.genre),
+                            strictness = GenrePrompts.reviewerStrictness(saga.genre),
+                            finalPrompt = translatedDescription,
+                        ).getSuccess()
+
+                // Use the reviewed prompt, or fallback to original if review failed
+                val finalPromptForGeneration =
+                    reviewedPrompt?.correctedPrompt ?: run {
+                        Log.w(
+                            "CharacterUseCase",
+                            "Review failed or returned null, using original description",
+                        )
+                        translatedDescription
+                    }
+
                 val image =
                     imagenClient
-                        .generateImage(translatedDescription.plus(ImagePrompts.criticalGenerationRule()), canByPass = false)!!
+                        .generateImage(finalPromptForGeneration, canByPass = false)!!
 
                 val file =
                     fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
                 val newCharacter = character.copy(image = file!!.path, emojified = isPremium.not())
                 repository.updateCharacter(newCharacter)
                 image.recycle()
-                newCharacter to translatedDescription
+                newCharacter to finalPromptForGeneration
             }
 
         override suspend fun generateCharacter(

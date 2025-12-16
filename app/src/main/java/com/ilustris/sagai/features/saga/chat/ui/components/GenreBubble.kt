@@ -11,6 +11,7 @@ import com.ilustris.sagai.ui.theme.components.chat.CyberpunkChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.FantasyChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.HeroesChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.HorrorChatBubbleShape
+import com.ilustris.sagai.ui.theme.components.chat.PunkRockChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.ShinobiChatBubbleShape
 import com.ilustris.sagai.ui.theme.components.chat.SpaceChatBubbleShape
 import com.ilustris.sagai.ui.theme.cornerSize
@@ -19,6 +20,7 @@ fun Genre.bubble(
     tailAlignment: BubbleTailAlignment,
     tailWidth: Dp = 12.dp,
     tailHeight: Dp = 12.dp,
+    isNarrator: Boolean = false,
 ): Shape {
     val cornerSize = cornerSize()
     return when (this) {
@@ -73,6 +75,15 @@ fun Genre.bubble(
         Genre.COWBOY -> {
             CowboysChatBubbleShape(
                 cornerNotch = cornerSize,
+                tailAlignment = tailAlignment,
+                tailWidth = tailWidth,
+                tailHeight = tailHeight,
+                isNarrator = isNarrator,
+            )
+        }
+
+        Genre.PUNK_ROCK -> {
+            PunkRockChatBubbleShape(
                 tailAlignment = tailAlignment,
                 tailWidth = tailWidth,
                 tailHeight = tailHeight,

@@ -348,4 +348,11 @@
     <string name="notification_milestone_content">Você alcançou um novo marco!</string>
     <string name="playtime_title">Tempo de Jogo</string>
     <string name="your_playthrough_title">Sua jornada</string>
+
+    <!-- Audio Recording -->
+    <string name="tap_to_record">Toque no microfone para começar a gravar</string>
+    <string name="listening">Ouvindo...</string>
+    <string name="transcription_complete">Transcrição concluída</string>
+    <string name="transcription_error">Erro na transcrição</string>
+    <string name="unknown_error">Erro desconhecido ocorreu</string>
 </resources>

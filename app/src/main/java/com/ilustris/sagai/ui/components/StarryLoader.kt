@@ -46,7 +46,7 @@ import com.ilustris.sagai.ui.theme.holographicGradient
 fun StarryLoader(
     isLoading: Boolean,
     loadingMessage: String? = null,
-    textStyle: TextStyle = MaterialTheme.typography.headlineMedium,
+    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
     brushColors: List<Color> = holographicGradient,
     useAsDialog: Boolean = true,
 ) {
@@ -129,7 +129,7 @@ fun StarryLoader(
                             Modifier
                                 .align(Alignment.Center)
                                 .padding(16.dp),
-                            transitionSpec = {
+                        transitionSpec = {
                             fadeIn(tween(500)) togetherWith slideOutVertically { it }
                         },
                     ) {

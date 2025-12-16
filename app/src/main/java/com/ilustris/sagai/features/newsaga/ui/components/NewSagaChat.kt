@@ -27,6 +27,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -99,7 +100,6 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
-import com.ilustris.sagai.core.audio.RecordingState
 import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
@@ -126,9 +126,6 @@ import com.ilustris.sagai.ui.theme.solidGradient
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import java.io.File
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
@@ -136,22 +133,16 @@ fun NewSagaChat(
     currentForm: SagaForm? = null,
     messages: List<ChatMessage>,
     callback: CallBackAction? = null,
+    inputSuggestions: List<String> = emptyList(),
+    userInputHint: String? = "Chat with SagAI...",
+    isLoading: Boolean = false,
+    isGenerating: Boolean = false,
     onSendMessage: (String) -> Unit,
-    onRetry: () -> Unit = {},
+    onStartAudioRecording: () -> Unit,
     saveSaga: () -> Unit = {},
     updateGenre: (Genre) -> Unit = {},
     resetSaga: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
-    userInputHint: String? = "Chat with SagAI...",
-    isLoading: Boolean = false,
-    isGenerating: Boolean = false,
-    inputSuggestions: List<String> = emptyList(),
-    recordingState: StateFlow<RecordingState> = MutableStateFlow(RecordingState.IDLE),
-    remainingTime: Long = 0L,
-    onStartRecording: () -> Unit = {},
-    onStopRecording: () -> Unit = {},
-    audioFile: File? = null,
-    onAudioRecorded: (File?) -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
@@ -265,7 +256,6 @@ fun NewSagaChat(
                             sagaForm = currentForm,
                             isLast = messages.last() == message,
                             modifier = Modifier.animateItem(),
-
                         )
                     }
                 }
@@ -401,8 +391,7 @@ fun NewSagaChat(
                                         color = genre.color,
                                         offset = DpOffset.Zero,
                                     ),
-                            )
-                            .clip(genre.shape())
+                            ).clip(genre.shape())
                             .drawWithContent {
                                 drawContent()
                                 val outline = shape.createOutline(size, layoutDirection, this)
@@ -412,10 +401,10 @@ fun NewSagaChat(
                                             override fun createShader(size: Size): Shader {
                                                 val shader =
                                                     (
-                                                            sweepGradient(
-                                                                genre.colorPalette(),
-                                                            ) as ShaderBrush
-                                                            ).createShader(size)
+                                                        sweepGradient(
+                                                            genre.colorPalette(),
+                                                        ) as ShaderBrush
+                                                    ).createShader(size)
                                                 val matrix = Matrix()
                                                 matrix.setRotate(
                                                     rotation,
@@ -438,8 +427,7 @@ fun NewSagaChat(
                                         style = Stroke(width = 1.dp.toPx()),
                                     )
                                 }
-                            }
-                            .background(MaterialTheme.colorScheme.surfaceContainer, shape),
+                            }.background(MaterialTheme.colorScheme.surfaceContainer, shape),
                     ) {
                         Row(
                             modifier =
@@ -471,9 +459,10 @@ fun NewSagaChat(
                                             Text(
                                                 text = userInputHint ?: emptyString(),
                                                 style = MaterialTheme.typography.labelMedium,
-                                                color = MaterialTheme.colorScheme.onSurface.copy(
-                                                    alpha = 0.5f
-                                                ),
+                                                color =
+                                                    MaterialTheme.colorScheme.onSurface.copy(
+                                                        alpha = 0.5f,
+                                                    ),
                                                 fontFamily = genre.bodyFont(),
                                             )
                                         }
@@ -483,29 +472,36 @@ fun NewSagaChat(
                             )
 
                             IconButton(
-                                onClick = { sendMessage() },
-                                enabled = inputField.text.isNotEmpty(),
+                                onClick = {
+                                    if (inputField.text.isEmpty()) {
+                                        onStartAudioRecording()
+                                    } else {
+                                        sendMessage()
+                                    }
+                                },
                                 colors =
                                     IconButtonDefaults.iconButtonColors(
                                         containerColor = genre.color,
-                                        disabledContainerColor = MaterialTheme.colorScheme.background.copy(
-                                            alpha = .3f
-                                        ),
                                         contentColor = genre.iconColor,
-                                        disabledContentColor = MaterialTheme.colorScheme.onBackground.copy(
-                                            alpha = .3f
-                                        ),
+                                        disabledContentColor =
+                                            MaterialTheme.colorScheme.onBackground.copy(
+                                                alpha = .3f,
+                                            ),
                                     ),
                                 modifier =
                                     Modifier
                                         .padding(8.dp)
                                         .size(32.dp),
                             ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.ic_arrow_up),
-                                    contentDescription = "Send message",
-                                    modifier = Modifier.padding(4.dp),
-                                )
+                                val icon =
+                                    if (inputField.text.isEmpty()) R.drawable.ic_mic else R.drawable.ic_send
+                                AnimatedContent(icon) {
+                                    Icon(
+                                        painter = painterResource(it),
+                                        contentDescription = "Send message",
+                                        modifier = Modifier.padding(8.dp),
+                                    )
+                                }
                             }
                         }
 
@@ -541,12 +537,10 @@ fun NewSagaChat(
                                                         1.dp,
                                                         genre.color.gradientFade(),
                                                         shape,
-                                                    )
-                                                    .background(
+                                                    ).background(
                                                         MaterialTheme.colorScheme.surface,
                                                         shape,
-                                                    )
-                                                    .padding(16.dp),
+                                                    ).padding(16.dp),
                                             verticalArrangement = Arrangement.spacedBy(8.dp),
                                         ) {
                                             val character = currentForm?.character
@@ -593,8 +587,7 @@ fun NewSagaChat(
                                                     onClick = {
                                                         coroutineScope.launch { tooltipState.show() }
                                                     },
-                                                )
-                                                .size(iconSize)
+                                                ).size(iconSize)
                                                 .padding(8.dp)
                                                 .gradientFill(genre.color.gradientFade()),
                                     )
@@ -622,9 +615,8 @@ fun NewSagaChat(
                                                 .border(
                                                     1.dp,
                                                     genre.color.gradientFade(),
-                                                    it.shape()
-                                                )
-                                                .background(
+                                                    it.shape(),
+                                                ).background(
                                                     MaterialTheme.colorScheme.background,
                                                     it.shape(),
                                                 ),
@@ -710,8 +702,7 @@ fun NewSagaChat(
                                                 onClick = {
                                                     resetSaga()
                                                 },
-                                            )
-                                            .size(iconSize)
+                                            ).size(iconSize)
                                             .padding(8.dp)
                                             .gradientFill(genre.color.gradientFade()),
                                 )
@@ -719,8 +710,6 @@ fun NewSagaChat(
                         }
                     }
                 }
-
-                
             }
         }
     }
@@ -869,12 +858,23 @@ fun ChatMessageBubble(
                     null,
                     modifier =
                         Modifier
+                            .padding(top = 24.dp)
                             .gradientFill(bubbleStyle.backgroundColor.gradientFade())
                             .size(24.dp)
                             .align(Alignment.Bottom),
                 )
             }
 
+            val horizontalPadding =
+                if (isUSer) {
+                    PaddingValues(
+                        start = 50.dp,
+                    )
+                } else {
+                    PaddingValues(
+                        end = 50.dp,
+                    )
+                }
             SimpleTypewriterText(
                 text = message.text,
                 isAnimated = isLast,
@@ -882,18 +882,18 @@ fun ChatMessageBubble(
                     MaterialTheme.typography.bodySmall.copy(
                         fontFamily = genre.bodyFont(),
                         color = textColor,
+                        textAlign = if (isUSer) TextAlign.End else TextAlign.Start,
                     ),
                 modifier =
                     Modifier
+                        .padding(horizontalPadding)
                         .background(bubbleStyle.backgroundColor, bubbleShape)
                         .padding(16.dp),
             )
         }
 
-
         if (message.callback == CallBackAction.AWAITING_CONFIRMATION && message.sender == Sender.AI) {
             sagaForm?.let { SagaFormSummaryCards(it, genre) }
-
         }
     }
 }
@@ -923,10 +923,11 @@ fun NewSagaChatPreview() {
                     ChatMessage(
                         text = "Hi! How can I help you?",
                         sender = Sender.AI,
-                        callback = CallBackAction.AWAITING_CONFIRMATION
+                        callback = CallBackAction.AWAITING_CONFIRMATION,
                     ),
                 ),
             onSendMessage = {},
+            onStartAudioRecording = {},
         )
     }
 }

@@ -68,6 +68,11 @@ class NotificationGenerationWorker
                         return@withTimeout Result.failure()
                     }
 
+                    if (sagaContent.flatMessages().isEmpty()) {
+                        Log.e(TAG, "No messages found for saga: $sagaId")
+                        return@withTimeout Result.failure()
+                    }
+
                     // Gerar resumo da cena
                     val sceneSummary =
                         executeRequest {

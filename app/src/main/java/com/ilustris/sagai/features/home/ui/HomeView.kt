@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.services.BillingService
@@ -171,6 +172,10 @@ fun HomeView(
                         isPremium = isPremium,
                         loadingStoryId = loadingStoryId,
                         onCreateNewChat = {
+                            if (BuildConfig.DEBUG) {
+                                navController.navigateToRoute(Routes.NEW_SAGA)
+                                return@ChatList
+                            }
                             val freeSagasCount = sagas.count { it.data.isEnded.not() }
                             if (freeSagasCount <= 3 || isPremium) {
                                 navController.navigateToRoute(Routes.NEW_SAGA)
@@ -310,8 +315,7 @@ private fun ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }
-                                    .wrapContentWidth()
+                                    }.wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             titleStyle =
                                 MaterialTheme.typography.titleLarge,
@@ -343,8 +347,7 @@ private fun ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }
-                            .padding(16.dp)
+                            }.padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),

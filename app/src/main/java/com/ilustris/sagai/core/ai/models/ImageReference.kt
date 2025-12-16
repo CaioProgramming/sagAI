@@ -6,3 +6,118 @@ data class ImageReference(
     val bitmap: Bitmap,
     val description: String,
 )
+
+/**
+ * Strictness level for the image prompt reviewer agent.
+ * Each level has a description that explains to the AI what its role is.
+ */
+enum class ReviewerStrictness(
+    val description: String,
+) {
+    /**
+     * Flexible review - only fix critical violations that would break the image generation.
+     * Allows artistic interpretation within the art style boundaries.
+     * Best for styles with inherent flexibility like oil paintings or traditional art.
+     */
+    LENIENT(
+        "You are a LENIENT reviewer. Only fix CRITICAL violations that would break the image: " +
+            "wrong framing (e.g., full body when portrait requested), completely missing backgrounds when mandatory, " +
+            "or severe art style violations (e.g., '3D render' when style forbids it). " +
+            "Allow artistic interpretation and minor deviations. Focus on preventing generation failures, not perfection.",
+    ),
+
+    /**
+     * Conservative review - fix clear violations but preserve artistic intent.
+     * This is the balanced default for most styles.
+     */
+    CONSERVATIVE(
+        "You are a CONSERVATIVE reviewer. Fix clear violations: " +
+            "incorrect framing (body parts outside camera view), " +
+            "banned terminology from the art style (e.g., 'brown eyes' when dots required), " +
+            "missing mandatory elements (backgrounds, environment details when required by style). " +
+            "Preserve the original description's artistic intent and personality. " +
+            "Only change what clearly violates the rules.",
+    ),
+
+    /**
+     * Strict review - enforce all art style rules precisely.
+     * Best for highly stylized art with specific requirements like cartoon styles.
+     */
+    STRICT(
+        "You are a STRICT reviewer. Enforce ALL art style rules precisely: " +
+            "exact framing compliance, zero tolerance for banned terms, mandatory inclusion of all required elements, " +
+            "precise anatomy terminology matching the style (e.g., 'cartoon proportions' not 'realistic'), " +
+            "complete background descriptions when required. Rewrite sections if needed to achieve full compliance.",
+    ),
+}
+
+/**
+ * Categories of violations that can be detected by the reviewer.
+ * Used for analytics and metrics tracking.
+ */
+enum class ViolationType {
+    /** Framing issue - describing body parts not visible in the camera view */
+    FRAMING_VIOLATION,
+
+    /** Banned terminology - using forbidden words from the art style (e.g., eye colors for PUNK_ROCK) */
+    BANNED_TERMINOLOGY,
+
+    /** Missing required elements - background missing when mandatory, environment not described */
+    MISSING_ELEMENTS,
+
+    /** Wrong anatomy description - realistic terms when style requires stylized (e.g., 'realistic proportions' in cartoon) */
+    ANATOMY_MISMATCH,
+
+    /** Art style contradiction - describing techniques that contradict the medium (e.g., 'soft gradient' in cel-shaded style) */
+    STYLE_CONTRADICTION,
+}
+
+/**
+ * Severity level for each violation.
+ * CRITICAL = breaks image generation or produces completely wrong output
+ * MAJOR = significantly degrades quality or misses key requirements
+ * MINOR = small deviation that might affect polish but not core functionality
+ */
+enum class ViolationSeverity {
+    CRITICAL, // Must fix - will break the image
+    MAJOR, // Should fix - significantly wrong but might work
+    MINOR, // Nice to fix - small improvement
+}
+
+/**
+ * A single detected violation with context.
+ */
+data class PromptViolation(
+    val type: ViolationType,
+    val severity: ViolationSeverity,
+    // What was wrong
+    val description: String,
+    // Specific example from the prompt (optional)
+    val example: String? = null,
+)
+
+/**
+ * Result of the prompt review process.
+ * Contains the corrected prompt and analytics about what changed.
+ */
+data class ImagePromptReview(
+    val originalPrompt: String,
+    val correctedPrompt: String,
+    val violations: List<PromptViolation>,
+    val changesApplied: List<String>, // Human-readable list of fixes
+    val wasModified: Boolean,
+) {
+    /**
+     * Analytics: Was this prompt "completely wrong" or just "improved"?
+     * Completely wrong = has CRITICAL violations
+     * Improved = only MAJOR or MINOR violations
+     */
+    val isCompletelyWrong: Boolean
+        get() = violations.any { it.severity == ViolationSeverity.CRITICAL }
+
+    val violationsBySeverity: Map<ViolationSeverity, Int>
+        get() = violations.groupingBy { it.severity }.eachCount()
+
+    val violationsByType: Map<ViolationType, Int>
+        get() = violations.groupingBy { it.type }.eachCount()
+}

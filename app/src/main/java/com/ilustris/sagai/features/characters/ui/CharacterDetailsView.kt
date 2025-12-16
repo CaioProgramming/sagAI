@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Brush
@@ -155,12 +157,14 @@ fun CharacterDetailsContent(
         delay(1.seconds)
         currentCharacter = characterContent
     }
+    val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
     AnimatedContent(
         targetState = currentCharacter,
         transitionSpec = {
             fadeIn(tween(300)) togetherWith fadeOut(tween(200))
         },
+        modifier = Modifier.blur(blurEffect),
     ) { character ->
         if (character != null) {
             CharacterDetailsLoaded(
@@ -189,7 +193,7 @@ fun CharacterDetailsContent(
         isGenerating,
         loadingMessage = loadingMessage,
         textStyle =
-            MaterialTheme.typography.headlineMedium.copy(
+            MaterialTheme.typography.labelLarge.copy(
                 genre.color,
                 fontFamily = genre.bodyFont(),
             ),
@@ -287,11 +291,7 @@ private fun CharacterDetailsLoaded(
     }
 
     LaunchedEffect(characterContent) {
-        characterContent.data.image.let {
-            if (it.isNotEmpty()) {
-                viewModel.segmentCharacterImage(it)
-            }
-        }
+        viewModel.segmentCharacterImage(characterContent.data.image)
     }
 
     AnimatedContent(
@@ -345,7 +345,8 @@ private fun CharacterDetailsLoaded(
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                ).effectForGenre(
+                                                )
+                                                .effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),
@@ -449,14 +450,16 @@ private fun CharacterDetailsLoaded(
                                                         sagaContent,
                                                         character,
                                                     )
-                                                }.fillMaxSize()
+                                                }
+                                                .fillMaxSize()
                                                 .graphicsLayer(
                                                     scaleX = animatedScale,
                                                     scaleY = animatedScale,
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                ).effectForGenre(
+                                                )
+                                                .effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),
@@ -544,7 +547,8 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }.padding(16.dp)
+                                    }
+                                    .padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )

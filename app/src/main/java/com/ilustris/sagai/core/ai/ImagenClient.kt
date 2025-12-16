@@ -9,12 +9,16 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
+import com.ilustris.sagai.core.ai.models.ImagePromptReview
 import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.models.ReviewerStrictness
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.services.RemoteConfigService
+import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import javax.inject.Inject
 
@@ -27,6 +31,13 @@ interface ImagenClient {
     ): Bitmap?
 
     suspend fun extractComposition(references: List<ImageReference>): RequestResult<String>
+
+    suspend fun reviewAndCorrectPrompt(
+        visualDirection: String?,
+        artStyleValidationRules: String,
+        strictness: ReviewerStrictness,
+        finalPrompt: String,
+    ): RequestResult<ImagePromptReview>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -103,9 +114,38 @@ class ImagenClientImpl
         override suspend fun extractComposition(references: List<ImageReference>) =
             executeRequest {
                 gemmaClient.generate<String>(
-                    ImagePrompts.extractComposition(),
+                    emptyString(),
                     references = references,
                     requireTranslation = false,
                 )!!
             }
+
+        override suspend fun reviewAndCorrectPrompt(
+            visualDirection: String?,
+            artStyleValidationRules: String,
+            strictness: ReviewerStrictness,
+            finalPrompt: String,
+        ) = executeRequest {
+            val reviewerPrompt =
+                ImagePrompts.reviewImagePrompt(
+                    visualDirection,
+                    artStyleValidationRules,
+                    strictness,
+                    finalPrompt,
+                )
+
+            Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")
+
+            // Generate the review using Gemma
+            val review =
+                gemmaClient.generate<ImagePromptReview>(
+                    reviewerPrompt,
+                    references = emptyList(),
+                    requireTranslation = false,
+                )!!
+            Log.i(TAG, "✏️ Prompt was modified by reviewer: ")
+        Log.i(TAG, review.toAINormalize())
+
+        review
+    }
     }

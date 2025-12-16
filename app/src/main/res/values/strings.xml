@@ -376,4 +376,13 @@
     <string name="notification_milestone_content">You reached a new milestone!</string>
     <string name="smart_notification_fallback">I was thinking about our story, let\'s continue when you have time.</string>
     <string name="notification_progress_subtext">%1$d%% • Act %2$s of %3$s</string>
+    <string name="mic_permission_title">Record audio permission</string>
+    <string name="mic_permission_description">To enchance your experience with audio transcriptions, enable the mic permission</string>
+
+    <!-- Audio Recording -->
+    <string name="tap_to_record">Tap the microphone to start recording</string>
+    <string name="listening">Listening...</string>
+    <string name="transcription_complete">Transcription complete</string>
+    <string name="transcription_error">Transcription error</string>
+    <string name="unknown_error">Unknown error occurred</string>
 </resources>

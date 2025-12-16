@@ -27,5 +27,6 @@ data class ChatMessage(
     val id: String = System.nanoTime().toString(),
     val text: String,
     val sender: Sender,
-    val callback: CallBackAction? = null
+    val callback: CallBackAction? = null,
+    val audioFile: java.io.File? = null,
 )

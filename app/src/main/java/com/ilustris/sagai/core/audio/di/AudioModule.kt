@@ -1,13 +1,15 @@
 package com.ilustris.sagai.core.audio.di
 
+import android.content.Context
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.audio.AudioPermissionManager
 import com.ilustris.sagai.core.audio.AudioService
 import com.ilustris.sagai.core.audio.AudioTranscriptionService
-import com.ilustris.sagai.core.file.FileCacheService
+import com.ilustris.sagai.core.permissions.PermissionService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -16,7 +18,12 @@ import javax.inject.Singleton
 object AudioModule {
     @Singleton
     @Provides
-    fun provideAudioService(fileCacheService: FileCacheService): AudioService = AudioService(fileCacheService)
+    fun provideAudioService(
+        @ApplicationContext
+        context: Context,
+        permissionService: PermissionService,
+        gemmaClient: GemmaClient,
+    ): AudioService = AudioService(context, permissionService, gemmaClient)
 
     @Singleton
     @Provides

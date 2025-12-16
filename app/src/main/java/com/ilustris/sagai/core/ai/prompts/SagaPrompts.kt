@@ -101,26 +101,154 @@ object SagaPrompts {
         visualDirection: String?,
         characterHexColor: String? = null,
     ) = buildString {
+        appendLine("**=== ART STYLE MANDATE (ABSOLUTE PRIORITY) ===**")
+        appendLine("THE FOLLOWING ART STYLE IS NON-NEGOTIABLE AND MUST BE RESPECTED THROUGHOUT THE ENTIRE IMAGE GENERATION:")
+        appendLine()
+        appendLine(GenrePrompts.artStyle(genre))
+        appendLine()
+        appendLine("**CRITICAL REMINDER:**")
+        appendLine(
+            "- The art style defined above is the FOUNDATION of this image. All subsequent instructions must be interpreted WITHIN this artistic framework.",
+        )
+        appendLine("- Your FIRST priority is to honor the medium, technique, and aesthetic constraints specified in the art style.")
+        appendLine(
+            "- Do NOT deviate from the style in favor of realism, photorealism, or generic AI art conventions unless the style explicitly demands it.",
+        )
+        appendLine()
+
+        visualDirection?.let {
+            appendLine("**ARTISTIC DIRECTION & CAMERA CONTROL (MANDATORY):**")
+            appendLine(
+                "The following instructions define the SCENE COMPOSITION, CAMERA ANGLE, LIGHTING, and MOOD. You must adhere to these specific technical directives:",
+            )
+            appendLine(it)
+            appendLine()
+            appendLine("**STRICT ADHERENCE REQUIRED:**")
+            appendLine(
+                "  • **CAMERA DISTANCE:** If the direction specifies 'Close-up', 'Portrait', or 'Macro', DO NOT generate a medium or full-body shot. If it says 'Wide shot', DO NOT generate a close-up.",
+            )
+            appendLine("  • **LIGHTING & MOOD:** The lighting described above overrides any default lighting associated with the genre.")
+            appendLine(
+                "  • **INTEGRATION:** This direction works IN TANDEM with the Art Style. The Art Style defines *how* it is drawn; this direction defines *what* is drawn and *how it is framed*.",
+            )
+            appendLine()
+            appendLine("**=== FRAMING-AWARE DESCRIPTION (CRITICAL) ===**")
+            appendLine(
+                "You are an Art Director, NOT a copy machine. The Visual Direction above determines WHAT IS VISIBLE in the final image.",
+            )
+            appendLine("You MUST adapt and reimagine the character description based on what the camera will actually capture:")
+            appendLine()
+            appendLine("  • **CLOSE-UP / PORTRAIT / HEADSHOT FRAMING:**")
+            appendLine("    - FOCUS ON: Face, facial features, expression, eyes, hair, skin texture, neck, upper shoulders")
+            appendLine("    - OMIT ENTIRELY: Legs, feet, lower body, full outfit details, hand gestures (unless hands are near face)")
+            appendLine("    - DO NOT DESCRIBE: Body posture, stance, how they're standing, full clothing details")
+            appendLine("    - EMPHASIZE: Subtle facial expressions, eye direction, hair movement, skin details, emotion in the eyes")
+            appendLine()
+            appendLine("  • **MEDIUM SHOT / BUST SHOT FRAMING:**")
+            appendLine("    - FOCUS ON: Face, upper body, torso, arms, hands (if in frame), upper clothing")
+            appendLine("    - OMIT ENTIRELY: Legs, feet, lower body, full stance")
+            appendLine("    - YOU MAY DESCRIBE: Shoulder posture, arm position, upper body language, hand gestures near torso")
+            appendLine()
+            appendLine("  • **FULL BODY / WIDE SHOT FRAMING:**")
+            appendLine("    - DESCRIBE: Full body, complete outfit, stance, posture, all limbs, full environment")
+            appendLine("    - This is the ONLY framing where full body descriptions are appropriate")
+            appendLine()
+            appendLine("  • **ADAPTATION RULE:** The Creative Brief below contains COMPLETE character information.")
+            appendLine("    You must FILTER this information through the camera framing lens.")
+            appendLine("    If the brief mentions 'long legs' but it's a portrait shot—DO NOT mention legs.")
+            appendLine("    If the brief mentions 'combat boots' but it's a close-up—DO NOT mention boots.")
+            appendLine("    ONLY describe what the CAMERA SEES.")
+            appendLine()
+        }
+
+        appendLine("---")
+        appendLine()
         appendLine(
             "You are a World-Class Art Director and Concept Artist. Your task is to craft a unique, artistic, and visually stunning image description for an AI generation model.",
         )
         appendLine()
         appendLine(
-            "GOAL: Create a piece of digital art that feels like a hand-crafted masterpiece, not a generic AI generation. It should capture the *soul* of the character and the *atmosphere* of the genre.",
+            "GOAL: Create a piece of digital art that feels like a hand-crafted masterpiece, not a generic AI generation. It should capture the *soul* of the character and the *atmosphere* of the genre, ALL WHILE STRICTLY ADHERING TO THE ART STYLE DEFINED ABOVE.",
         )
         appendLine()
         appendLine("---")
-        appendLine("**THE CREATIVE BRIEF (The Subject - STRICT ADHERENCE REQUIRED):**")
+        appendLine("**THE CREATIVE BRIEF (RAW CHARACTER DATA - REQUIRES FILTERING):**")
         appendLine(
-            "This context defines WHO and WHAT you are drawing. It contains the essential physical attributes and identity of the subject.",
+            "This context contains COMPLETE character information. It is your SOURCE MATERIAL, not your final description.",
         )
         appendLine(
-            "  • **CRITICAL:** You MUST respect the physical descriptions provided here (e.g., skin tone, hair texture, body type, age, gender, ethnicity). These features are non-negotiable.",
+            "  • **IDENTITY (SACRED):** The core identity (skin tone, ethnicity, gender, age, hair texture) is NON-NEGOTIABLE and must be preserved.",
         )
         appendLine(
-            "  • If the brief says 'Black man', the output MUST describe a Black man. If it says 'Short Latina girl', the output MUST describe a short Latina girl.",
+            "  • **PHYSICAL DETAILS (FILTER REQUIRED):** The brief may contain full-body descriptions (height, build, clothing, legs, etc.).",
         )
-        appendLine("  • Do not 're-imagine' the subject's fundamental identity. Enhance it artistically, but do not change it.")
+        appendLine(
+            "    **YOU MUST FILTER** these details based on the Visual Direction/Camera Framing specified above.",
+        )
+        appendLine(
+            "    If it's a portrait shot, IGNORE all lower-body and full-outfit details—they won't be visible.",
+        )
+        appendLine(
+            "  • **YOUR ROLE:** You are RE-IMAGINING this character for a specific camera angle and artistic vision.",
+        )
+        appendLine(
+            "    Extract what's RELEVANT to the framing. Discard what's NOT VISIBLE. Enhance what IS visible with artistic flair.",
+        )
+        appendLine()
+        appendLine("**=== ANATOMY & PROPORTION MANDATE (CRITICAL - DO NOT IGNORE) ===**")
+        appendLine(
+            "The Art Style Mandate above defines HOW characters must be drawn. This includes body proportions, facial features, and stylization level.",
+        )
+        appendLine(
+            "YOU MUST TRANSLATE the character's physical description INTO the art style's visual language. DO NOT default to realistic human anatomy.",
+        )
+        appendLine()
+        appendLine("  • **PROPORTIONS ARE STYLE-DEPENDENT:**")
+        appendLine(
+            "    - If the art style demands exaggerated proportions (long limbs, oversized heads, tiny waists, etc.), DESCRIBE those exaggerated proportions.",
+        )
+        appendLine(
+            "    - If the art style is cartoonish or chibi, describe a character with cartoon/chibi proportions—NOT realistic human ratios.",
+        )
+        appendLine(
+            "    - If the art style is hyper-stylized (e.g., Gorillaz, FLCL, Panty & Stocking), embrace the weird, angular, or non-human aspects.",
+        )
+        appendLine(
+            "    - FORBIDDEN: Describing 'normal' or 'realistic' human proportions when the art style explicitly requires stylization.",
+        )
+        appendLine()
+        appendLine("  • **FACIAL FEATURES FOLLOW THE STYLE:**")
+        appendLine("    - Eyes, nose, mouth, and facial structure must match the art style's conventions.")
+        appendLine("    - If the style has abstract/stylized eyes (dots, lines, unusual shapes), DO NOT describe detailed realistic eyes.")
+        appendLine(
+            "    - **EYES ARE CRITICAL:** If the art style says 'simple black dots' or 'white circles' for eyes, describe ONLY that. DO NOT add eye color (brown, blue, etc.), iris details, pupils, or any realistic eye anatomy. The stylized eye IS the eye.",
+        )
+        appendLine("    - If the style exaggerates expressions, describe exaggerated facial features.")
+        appendLine("    - The 'soul' and emotion can still come through stylized features—trust the art style.")
+        appendLine()
+        appendLine("  • **AVOID 'HUMANIZING' STYLIZED ART:**")
+        appendLine(
+            "    - DO NOT add realistic details that contradict the art style (e.g., realistic skin pores in a flat-color cartoon style).",
+        )
+        appendLine("    - DO NOT 'fix' intentional stylization (e.g., making a character's tiny dot eyes into detailed realistic eyes).")
+        appendLine("    - The art style's 'imperfections' and stylizations ARE the aesthetic. Embrace them fully.")
+        appendLine()
+        appendLine("  • **TRANSLATION EXAMPLE:**")
+        appendLine("    - Character brief says: 'Tall, athletic build with long legs and piercing blue eyes.'")
+        appendLine("    - If Art Style is REALISTIC: Describe as written.")
+        appendLine(
+            "    - If Art Style is GORILLAZ-STYLE: 'Impossibly long, noodle-like limbs, lanky frame with exaggerated height, stylized angular face with bold, abstract eyes.'",
+        )
+        appendLine(
+            "    - If Art Style is CHIBI: 'Oversized head on a tiny body, stubby limbs, huge expressive eyes that dominate the face.'",
+        )
+        appendLine("    - ALWAYS ADAPT the description to match the art style's visual language.")
+        appendLine()
+        appendLine("**IMPORTANT:** The Art Style Mandate above contains SPECIFIC RULES about what terminology is ALLOWED and FORBIDDEN.")
+        appendLine(
+            "If the art style includes a 'FORBIDDEN TERMINOLOGY' section, you MUST follow it exactly. Do not improvise or add details that contradict the style's explicit rules.",
+        )
+        appendLine()
         appendLine(context)
 
         appendLine("**VISUAL REFERENCE USAGE (The 'Cast'):**")
@@ -128,72 +256,159 @@ object SagaPrompts {
             "You have access to visual references for the key characters involved in this brief. Treat this as your 'Cast List' or 'Costume Department'.",
         )
         appendLine("  • IDENTIFY: Look for character names in the Creative Brief above. Match them to the provided visual references.")
-        appendLine("  • USAGE: Use the visual references to ensure the characters look correct (features, style, vibe).")
+        appendLine("  • USAGE: Use the visual references to ensure the characters look correct (features, style, vibe, and PERSONALITY).")
+        appendLine(
+            "  • PERSONALITY EXTRACTION: Study the character's personality traits, demeanor, and attitude from the brief. A cocky character stands differently than a timid one. A weary warrior moves differently than an eager rookie.",
+        )
         appendLine(
             "  • IGNORE: The background/lighting of the references. You are placing these actors into the NEW scene defined by the Creative Brief and Visual Direction.",
         )
+        appendLine(
+            "  • **FRAMING-AWARE EXTRACTION:** If the visual direction specifies a close-up/portrait, focus on facial features from the reference. If it's a full-body shot, you may use the complete reference. DO NOT describe body parts that won't be visible in the final frame.",
+        )
+        appendLine()
+
+        appendLine("**CHARACTER EXPRESSIVENESS & PERSONALITY-DRIVEN POSING (CRITICAL):**")
+        appendLine(
+            "Characters must NEVER be static, neutral, or soulless. Every aspect of their visual presentation must reflect their unique personality.",
+        )
+        appendLine()
+        appendLine("  • **FACIAL EXPRESSIONS THAT MATCH PERSONALITY:**")
+        appendLine(
+            "    - Extract the character's personality from the Creative Brief (confident, anxious, rebellious, calculating, cheerful, jaded, etc.)",
+        )
+        appendLine("    - MATCH their facial expression to their personality AND the current moment:")
+        appendLine("      * A confident trickster might wear a sly smirk or knowing grin")
+        appendLine("      * A battle-hardened warrior might have a grim, determined scowl or thousand-yard stare")
+        appendLine("      * A rebellious punk might show defiant attitude with a raised eyebrow or sneer")
+        appendLine("      * An anxious scholar might bite their lip or furrow their brow")
+        appendLine("      * A cocky hero might flash an arrogant smile or challenging look")
+        appendLine("    - AVOID: Neutral expressions, generic stoicism, or the dreaded 'default AI stare'")
+        appendLine()
+        appendLine("  • **BODY LANGUAGE & POSTURE REFLECTING CHARACTER:**")
+        appendLine("    - The way a character stands/sits/moves reveals WHO THEY ARE:")
+        appendLine("      * Confident characters: Chest out, shoulders back, commanding space, relaxed but assertive posture")
+        appendLine("      * Insecure characters: Hunched shoulders, protective body language, arms crossed or held close")
+        appendLine("      * Aggressive characters: Forward lean, coiled tension, ready-to-strike stance")
+        appendLine("      * Exhausted characters: Slouched posture, weight shifted to one side, visible fatigue")
+        appendLine("      * Rebellious characters: Asymmetric stance, one hip cocked, leaning against things, casual defiance")
+        appendLine("      * Noble characters: Upright posture, dignified bearing, controlled movements")
+        appendLine("    - FORBIDDEN: Standing straight and neutral like a mannequin")
+        appendLine()
+        appendLine("  • **HANDS & GESTURES WITH PURPOSE:**")
+        appendLine("    - Hands are incredibly expressive. Use them to enhance personality:")
+        appendLine("      * Relaxed character: Hands in pockets, casual gestures")
+        appendLine("      * Nervous character: Fidgeting, wringing hands, clutching something")
+        appendLine("      * Commanding character: Pointing, gesture of authority, hands on hips")
+        appendLine("      * Contemplative character: Hand on chin, finger to temple")
+        appendLine("      * Playful character: Finger guns, peace signs, exaggerated gestures")
+        appendLine("    - AVOID: Arms just hanging limply at sides")
+        appendLine()
+        appendLine("  • **EYES & GAZE DIRECTION (Within Art Style Rules):**")
+        appendLine("    - Even within stylized art styles (abstract eyes, etc.), gaze direction matters:")
+        appendLine("      * Looking directly at viewer: Challenging, confrontational, inviting")
+        appendLine("      * Looking away/aside: Distracted, contemplative, evasive, or caught in a moment")
+        appendLine("      * Looking down: Defeated, thoughtful, examining something")
+        appendLine("      * Looking up: Hopeful, defiant, or reacting to something above")
+        appendLine("    - The gaze should reflect the character's emotional state and personality")
+        appendLine()
+        appendLine("  • **OVERALL DYNAMIC ENERGY:**")
+        appendLine("    - Characters should feel ALIVE and IN-MOTION even in a still image:")
+        appendLine("      * Weight shifted to one leg (contrapposto)")
+        appendLine("      * Mid-gesture or mid-action")
+        appendLine("      * Clothing and hair responding to movement or wind")
+        appendLine("      * Asymmetric poses that suggest motion and life")
+        appendLine("    - MANDATORY: The character must look like they were CAUGHT in a moment, not posed for a portrait")
+        appendLine()
+        appendLine("  • **PERSONALITY CONSISTENCY CHECK:**")
+        appendLine("    - Before finalizing your description, ask: 'Does this pose/expression match what I know about this character?'")
+        appendLine("    - If the brief describes a 'weary, cynical detective', they should NOT be smiling broadly or standing heroically")
+        appendLine("    - If the brief describes a 'cocky street racer', they should NOT look timid or uncertain")
+        appendLine("    - ALIGNMENT IS MANDATORY: Visual expression must match written personality")
         appendLine()
 
         // Add character color highlight instruction
         characterHexColor?.let { hexColor ->
-            appendLine("**SIGNATURE COLOR PALETTE:**")
-            appendLine("  • Signature Color: $hexColor")
+            appendLine("**SIGNATURE COLOR ACCENT:**")
+            appendLine("  • Color: $hexColor")
             appendLine(
-                "  • Instruction: Integrate this color primarily as a visual accent or thematic element. It should feel intentional and artistic—perhaps in the lighting, a piece of clothing, or a stylistic blooming effect—without overwhelming the natural palette of the scene.",
+                "  • Application: Integrate this color SUBTLY into the ENVIRONMENT/SCENE—such as ambient lighting glow, atmospheric effects, background elements, or distant light sources. It should feel organic and naturally woven into the world, NOT applied to the character's clothing, skin, or primary features. Think environmental mood, not character decoration.",
             )
-            appendLine()
-        }
-
-        visualDirection?.let {
-            appendLine("**ARTISTIC DIRECTION (The Brief):**")
-            appendLine(
-                "The following is your mood board and artistic brief. Do not treat it as a checklist, but as a source of INSPIRATION for the mood, lighting, and composition:",
-            )
-            appendLine("'''")
-            appendLine(it)
-            appendLine("'''")
-            appendLine()
-            appendLine("**HOW TO INTERPRET THIS:**")
-            appendLine("  • As the Artist, synthesize these elements into a cohesive vision.")
-            appendLine("  • If the direction says 'moody and dark', use shadows and contrast expressively.")
-            appendLine("  • If it mentions 'dynamic angles', compose the shot to feel alive and moving.")
-            appendLine("  • BLEND the mood of this direction with the specific Art Style of the genre.")
             appendLine()
         }
 
         appendLine("**COMPOSITION & EMOTIONAL NARRATIVE (The Soul of the Image):**")
         appendLine(
-            "  • **NO GENERIC STARES:** Avoid the default 'character looking at viewer with quiet intensity'. This is boring. Capture them **living** their story, not posing for a photo.",
+            "Building on the personality-driven expressiveness above, now ensure the composition captures the character's SOUL:",
+        )
+        appendLine()
+        appendLine(
+            "  • **NO GENERIC STARES:** Avoid the default 'character looking at viewer with quiet intensity'. This is boring and soulless. Capture them **living** their story, not posing for a portrait photo.",
         )
         appendLine(
-            "  • **RAW, SPECIFIC EMOTION:** Move beyond 'cool' or 'stoic'. Show us *tangible* feelings: The teeth-gritting rage of a betrayal, the hollow thousand-yard stare of grief, the manic laughter of a victory, or the trembling fear of the unknown.",
+            "  • **RAW, SPECIFIC EMOTION:** Move beyond vague 'cool' or 'stoic'. Show us *tangible* feelings that match their personality and the moment: The teeth-gritting rage of a betrayal, the hollow thousand-yard stare of grief, the manic laughter of victory, the trembling fear of the unknown, the smug satisfaction of outsmarting someone, the weary resignation of defeat.",
         )
         appendLine(
-            "  • **NARRATIVE BODY LANGUAGE:** The pose must scream the character's intent. A slumped shoulder weighs a heavy burden; a coiled stance signals immediate violence; a loose, sprawling sit projects arrogance. Make the body talk.",
+            "  • **NARRATIVE BODY LANGUAGE:** The ENTIRE BODY must communicate the character's intent and personality. A slumped shoulder carries a heavy burden; a coiled stance signals immediate violence; a loose, sprawling posture projects arrogance; crossed arms show defensiveness; an open stance radiates confidence. Make the body TALK.",
         )
         appendLine(
-            "  • **THE UNGUARDED MOMENT:** Capture the character *in media res* (in the middle of action/thought). They shouldn't look like they know the camera is there. They should look like they are busy surviving, loving, or fighting in their world.",
+            "  • **THE UNGUARDED MOMENT:** Capture the character *in media res* (in the middle of action/thought). They shouldn't look like they know the camera is there. They should look like they are busy surviving, scheming, loving, fighting, or brooding in their world. Catch them in an AUTHENTIC moment.",
         )
-
-        appendLine("**ART STYLE (The Medium):**")
-        appendLine(GenrePrompts.artStyle(genre))
+        appendLine(
+            "  • **PERSONALITY + MOMENT = EXPRESSION:** Combine who they ARE (personality) with what's HAPPENING (the scene/moment) to create the perfect expression. A confident character in a tense moment might smirk while others panic. An anxious character in victory might still look worried. Let personality COLOR the emotion.",
+        )
         appendLine()
 
         appendLine("**FINAL OUTPUT INSTRUCTION:**")
-        appendLine("Analyze the Creative Brief, the Visual Direction, and the Art Style.")
         appendLine(
-            "  1. **VALIDATE IDENTITY:** Ensure your description STRICTLY matches the physical attributes (race, gender, age, features) in the Brief.",
+            "Now that you have all the creative elements, remember: the Art Style Mandate defined at the very beginning is your NORTH STAR.",
         )
         appendLine(
-            "  2. **MANDATORY LAYOUT PHRASE:** The final output MUST explicitly describe the layout: 'Vertical Medium-Long Shot anchored at the bottom, leaving the top third open and empty.'",
+            "Every element of your description—from composition to emotional tone—must be filtered through that artistic lens.",
         )
-        appendLine("  3. **CRAFT THE ART:** Write a single, rich, and evocative text description.")
-        appendLine("  • Focus on the *visual impact* and *emotional resonance* of the image.")
-        appendLine("  • Describe the lighting, texture, and atmosphere like a painter describing their canvas.")
-        appendLine("  • Ensure the subject(s) look like a cohesive part of this artistic world.")
-        appendLine("  • **Crucial:** Maintain the technical composition rules provided below.")
+        appendLine(
+            "And CRITICALLY: The character must be EXPRESSIVE, ALIVE, and personality-driven. NO static, soulless, or generic poses.",
+        )
         appendLine()
-        appendLine(ImagePrompts.descriptionRules(genre))
+        appendLine("To ensure the style is prioritized and never lost, you MUST structure your final description in this exact order:")
+        appendLine()
+        appendLine(
+            "1. **ART STYLE DEFINITION**: Begin with a strong, clear restatement of the art style and medium from the Art Style Mandate (e.g., 'A gritty charcoal sketch in the style of...', 'A vibrant Gorillaz-style cartoon illustration with...', 'A 1980s anime cel with flat shading...'). This establishes the visual language immediately.",
+        )
+        appendLine(
+            "2. **COMPOSITION & LAYOUT**: Next, state the layout. **CRITICAL:** If the 'Visual Direction' specified a camera distance (e.g., Close-up, Portrait, Headshot), YOU MUST USE THAT. Do NOT default to a medium-long shot if it contradicts the visual direction. If no specific distance was requested, default to: 'Vertical Medium-Long Shot anchored at the bottom, leaving the top third open and empty.'",
+        )
+        appendLine(
+            "3. **SUBJECT & SCENE WITH EXPRESSIVE DETAIL**: Finally, describe the character and the scene in rich detail, ensuring all physical attributes from the Creative Brief are accurate. Every description here must be compatible with and enhance the art style—not contradict it.",
+        )
+        appendLine(
+            "   • **MANDATORY — EXPRESSIVE CHARACTER DESCRIPTION:** Your character description MUST include: their facial expression (reflecting personality + moment), their body posture/stance (showing character traits), their hand position/gesture (adding life), and their gaze direction (conveying intention). Paint a picture of a LIVING, BREATHING character with attitude and soul—not a neutral mannequin.",
+        )
+        appendLine(
+            "   • **CRITICAL — FRAMING-AWARE FILTERING:** ONLY describe physical features that are VISIBLE within the camera frame. If the Visual Direction specifies a portrait/close-up, DO NOT describe legs, stance, full body posture, or lower clothing. If it's a medium shot, omit legs and feet. Describe ONLY what the camera sees.",
+        )
+        appendLine(
+            "   • **CRITICAL — ANATOMY COMPLIANCE:** When describing the character's face, eyes, body proportions, and physical features, STRICTLY APPLY the anatomical rules from the Art Style Mandate. If the style demands abstract eyes (dots, circles, simple shapes), describe ONLY abstract eyes—DO NOT add 'cast brown eyes' or any realistic eye detail. If it requires exaggerated proportions, describe exaggerated proportions. DO NOT default to realistic anatomy if the style forbids it.",
+        )
+        appendLine(
+            "   • **CRITICAL — STYLIZED PROPORTIONS OVER REALISM:** The character's body must reflect the art style's proportions. If the style calls for elongated limbs, oversized features, angular shapes, or non-human ratios—DESCRIBE THEM EXPLICITLY. Do NOT describe 'normal' human proportions when the style demands stylization. The stylization IS the art.",
+        )
+        appendLine(
+            "   • **CRITICAL — BACKGROUND & ENVIRONMENT COMPLIANCE:** The Art Style Mandate defines specific background/environment requirements. STRICTLY FOLLOW THEM. If the style FORBIDS empty backgrounds, plain colors, or gradient-only backgrounds—you MUST describe a rich, contextual environment (alleys, stages, garages, cityscapes, etc.). NEVER default to 'flat grey background' or 'dark slate background' if the art style demands environmental storytelling.",
+        )
+        appendLine()
+        appendLine(
+            "Combine these three parts into a single, flowing paragraph that reads like a confident art direction brief.",
+        )
+        appendLine("The art style should be woven throughout, not just mentioned once and forgotten.")
+        appendLine(
+            "Remember: The CHARACTER'S IDENTITY (ethnicity, gender, age) is sacred and unchangeable. The CHARACTER'S ANATOMY (how they are drawn/rendered) must match the art style's requirements—this means if the style is stylized, the description MUST include stylized proportions, not realistic ones.",
+        )
+        appendLine()
+        appendLine(
+            "**IMPORTANT:** If the Art Style Mandate includes a 'FINAL SELF-CHECK' section, you MUST perform that check before outputting your description.",
+        )
+        appendLine()
     }
 
     fun reviewGeneration(saga: SagaContent) =

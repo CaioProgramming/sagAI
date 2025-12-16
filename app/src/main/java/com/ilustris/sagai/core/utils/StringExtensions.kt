@@ -14,5 +14,5 @@ fun String.removeBlankSpace() = this.replace(" ", emptyString())
 fun currentLanguage(): String {
     val locale = Locale.getDefault()
 
-    return "${locale.displayLanguage} (${locale.language}"
+    return locale.toLanguageTag()
 }
