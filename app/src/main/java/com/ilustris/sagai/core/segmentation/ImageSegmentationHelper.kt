@@ -100,7 +100,7 @@ class ImageSegmentationHelper(
             val subjectWidthRatio = subjectRect.width() / imageWidth
             val subjectHeightRatio = subjectRect.height() / imageHeight
 
-            val needsZoom = subjectWidthRatio < 0.65f || subjectHeightRatio < 0.65f
+            val needsZoom = subjectWidthRatio < 0.5f || subjectHeightRatio < 0.5f
 
             val requiredZoom =
                 if (needsZoom) {
@@ -114,7 +114,7 @@ class ImageSegmentationHelper(
                     val subjectCenterX = subjectRect.centerX()
                     // Focus on the upper body/face area (approx top 25%) rather than the geometric center (waist/torso)
                     // This is optimized for vertical character portraits (9:16)
-                    val subjectFaceY = subjectRect.top + (subjectRect.height() * .05f)
+                    val subjectFaceY = subjectRect.top + (subjectRect.height() * .2f)
 
                     // Calculate the distance from image center to subject center/face
                     val dx = (imageWidth / 2) - subjectCenterX

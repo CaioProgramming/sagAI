@@ -2,7 +2,6 @@ package com.ilustris.sagai.core.file
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.Log
 import coil3.BitmapImage
 import coil3.ImageLoader
@@ -10,34 +9,25 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
-import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.newsaga.data.model.defaultHeaderImage
 
 class GenreReferenceHelper(
     private val context: Context,
-    private val firebaseRemoteConfig: FirebaseRemoteConfig,
+    private val firebaseRemoteConfig: RemoteConfigService,
     private val imageLoader: ImageLoader,
 ) {
-    suspend fun getGenreStyleReference(genre: Genre) =
-        executeRequest {
-            BitmapFactory.decodeResource(
-                context.resources,
-                genre.defaultHeaderImage(),
-            )
-        }
-
     suspend fun getIconReference(genre: Genre): RequestResult<Bitmap> =
         executeRequest {
             val flag = "${genre.name.lowercase()}$ICON_FLAG"
             Log.d(javaClass.simpleName, "getIconReference: fetching flag from firebase $flag")
             val flagValue = firebaseRemoteConfig.getString(flag)
             Log.d(javaClass.simpleName, "getIconReference: flag value is $flagValue")
-            val iconUrl = flagValue
+            flagValue
             val request =
                 imageLoader.execute(
                     ImageRequest

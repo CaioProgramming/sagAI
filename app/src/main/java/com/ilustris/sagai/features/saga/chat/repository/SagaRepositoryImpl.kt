@@ -5,17 +5,16 @@ import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
+import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.file.ImageCropHelper
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -122,9 +121,9 @@ class SagaRepositoryImpl
             val reviewedPrompt =
                 imagenClient
                     .reviewAndCorrectPrompt(
+                        imageType = AnalyticsConstants.ImageType.ICON,
+                        genre = saga.genre,
                         visualDirection = visualDirection,
-                        artStyleValidationRules = GenrePrompts.validationRules(saga.genre),
-                        strictness = GenrePrompts.reviewerStrictness(saga.genre),
                         finalPrompt = metaPrompt,
                     ).getSuccess()
 

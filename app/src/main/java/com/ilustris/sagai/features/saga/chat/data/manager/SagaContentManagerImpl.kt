@@ -184,6 +184,8 @@ class SagaContentManagerImpl
                         checkNarrativeProgression(saga)
 
                         getAmbienceMusic(saga)
+
+                        validateCharacters(saga)
                     }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
@@ -191,6 +193,16 @@ class SagaContentManagerImpl
                 setNarrativeProcessingStatus(false)
             }
         }
+
+        private suspend fun validateCharacters(saga: SagaContent) {
+            withContext(Dispatchers.IO) {
+                saga.characters
+                    .filter { it.data.smartZoom == null && it.data.image.isNotEmpty() }
+                    .forEach {
+                        characterUseCase.createSmartZoom(it.data)
+                    }
+        }
+    }
 
         private suspend fun checkMessageNotifications(
             previousSaga: SagaContent?,

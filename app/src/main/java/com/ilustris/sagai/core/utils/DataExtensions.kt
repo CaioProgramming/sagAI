@@ -121,6 +121,20 @@ fun toJsonMap(
     filteredFields: List<String> = emptyList(),
     fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
+    // Handle primitive types early to avoid introspecting their internal fields
+    when {
+        clazz.isEnum -> return "${clazz.enumConstants?.joinToString(" | ") { it.toString() }}"
+        clazz == String::class.java -> return "\"\""
+        clazz == Int::class.java || clazz == Integer::class.java -> return "0"
+        clazz == Boolean::class.java -> return "false"
+        clazz == Double::class.java -> return "0.0"
+        clazz == Float::class.java -> return "0.0"
+        clazz == Long::class.java -> return "0"
+        clazz == Byte::class.java -> return "0"
+        clazz == Short::class.java -> return "0"
+        clazz == Char::class.java -> return "''"
+    }
+
     val deniedFields =
         filteredFields
             .plus("\$stable")
@@ -135,20 +149,58 @@ fun toJsonMap(
                 val fieldType = field.type
                 val fieldValue =
                     when {
-                        fieldType.isEnum -> "${fieldType.enumConstants?.joinToString(" | ") { it.toString() }}"
-                        fieldType == String::class.java -> "\"\""
-                        fieldType == Int::class.java || fieldType == Integer::class.java -> "0"
-                        fieldType == Boolean::class.java -> "false"
-                        fieldType == Double::class.java -> "0.0"
-                        fieldType == Float::class.java -> "0.0"
-                        fieldType == Long::class.java -> "0"
+                        fieldType.isEnum -> {
+                            "${fieldType.enumConstants?.joinToString(" | ") { it.toString() }}"
+                        }
+
+                        fieldType == String::class.java -> {
+                            "\"\""
+                        }
+
+                        fieldType == Int::class.java || fieldType == Integer::class.java -> {
+                            "0"
+                        }
+
+                        fieldType == Boolean::class.java -> {
+                            "false"
+                        }
+
+                        fieldType == Double::class.java -> {
+                            "0.0"
+                        }
+
+                        fieldType == Float::class.java -> {
+                            "0.0"
+                        }
+
+                        fieldType == Long::class.java -> {
+                            "0"
+                        }
+
                         List::class.java.isAssignableFrom(fieldType) ||
                             Array::class.java.isAssignableFrom(
                                 fieldType,
                             )
-                        -> "[]"
+                        -> {
+                            // Extract generic type parameter from List/Array
+                            val genericType = field.genericType as? ParameterizedType
+                            val itemType =
+                                genericType?.actualTypeArguments?.firstOrNull() as? Class<*>
 
-                        else -> toJsonMap(fieldType)
+                            if (itemType != null) {
+                                // Recursively get the structure - works for both primitives and complex objects
+                                val itemJson =
+                                    toJsonMap(itemType, filteredFields, fieldCustomDescriptions)
+                                "[ $itemJson ]"
+                            } else {
+                                // Unknown type - just show empty array
+                                "[]"
+                            }
+                        }
+
+                        else -> {
+                            toJsonMap(fieldType)
+                        }
                     }
                 val customDescription =
                     fieldCustomDescriptions.find { it.first == field.name }
@@ -285,8 +337,14 @@ fun String?.sanitizeAndExtractJsonString(): String {
                 escaped = false
             } else {
                 when (c) {
-                    '\\' -> escaped = true
-                    '"' -> inString = !inString
+                    '\\' -> {
+                        escaped = true
+                    }
+
+                    '"' -> {
+                        inString = !inString
+                    }
+
                     else -> {
                         if (!inString) {
                             if (c == open) {
@@ -422,7 +480,7 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
 
             val valueString =
                 when (value) {
-                    is List<*> ->
+                    is List<*> -> {
                         if (value.isEmpty()) {
                             ""
                         } else {
@@ -430,8 +488,9 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                                 fieldsToExclude,
                             )
                         }
+                    }
 
-                    is Array<*> ->
+                    is Array<*> -> {
                         if (value.isEmpty()) {
                             ""
                         } else {
@@ -439,9 +498,16 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                                 fieldsToExclude,
                             )
                         }
+                    }
 
-                    is String -> value
-                    is Enum<*> -> value.toString()
+                    is String -> {
+                        value
+                    }
+
+                    is Enum<*> -> {
+                        value.toString()
+                    }
+
                     else -> {
                         if (value::class.isData) {
                             val normalized = value.toAINormalize(fieldsToExclude)
@@ -468,5 +534,4 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                 "${field.name}$itemsSize: $valueString"
             }
         }.joinToString("\n")
-
 }

@@ -14,7 +14,6 @@ import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.analytics.AnalyticsService
-import com.ilustris.sagai.core.analytics.AnalyticsServiceImpl
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
@@ -162,7 +161,7 @@ object AppModule {
     @Singleton
     fun providesReferenceHelper(
         @ApplicationContext context: Context,
-        firebaseRemoteConfig: FirebaseRemoteConfig,
+        firebaseRemoteConfig: RemoteConfigService,
         imageLoader: ImageLoader,
     ) = GenreReferenceHelper(
         context,
@@ -222,11 +221,18 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAnalyticsService(
+        @ApplicationContext context: Context,
+    ): AnalyticsService = AnalyticsService(context)
+
+    @Provides
+    @Singleton
     fun provideImagenClient(
         remoteConfigService: RemoteConfigService,
         billingService: BillingService,
+        analyticsService: AnalyticsService,
         gemmaClient: GemmaClient,
-    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient)
+    ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient, analyticsService)
 
     @Provides
     @Singleton
@@ -287,9 +293,6 @@ object AppModule {
 @InstallIn(ViewModelComponent::class)
 @Module
 abstract class UseCaseModule {
-    @Binds
-    abstract fun providesAnalyticsService(analyticsServiceImpl: AnalyticsServiceImpl): AnalyticsService
-
     @Binds
     abstract fun providesSaveShare(sharePlayUseCaseImpl: SharePlayUseCaseImpl): SharePlayUseCase
 

@@ -101,39 +101,98 @@ object SagaPrompts {
         visualDirection: String?,
         characterHexColor: String? = null,
     ) = buildString {
+        appendLine("=== GOOGLE IMAGE GENERATION OPTIMIZED PROMPT ===")
+        appendLine()
+        appendLine(
+            "**PROMPT STRUCTURE:** [Art Style] → [Character Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
+        )
+        appendLine()
         appendLine("**ART STYLE:** ${GenrePrompts.artStyle(genre)}")
         appendLine()
         appendLine(ImagePrompts.criticalGenerationRule())
         appendLine()
 
+        appendLine("**GOOGLE BEST PRACTICES - APPLY STRICTLY:**")
+        appendLine("1. CLARITY OVER ABSTRACTION: Concrete descriptions, NOT poetic language or metaphors")
+        appendLine("2. EXPLICIT ATTRIBUTES: Specify what IS present, not what to avoid")
+        appendLine("3. FRAMING + VISIBILITY: Detail what's visible at this framing level")
+        appendLine("4. FEATURE HIERARCHY: Lead with critical character details, follow with environment")
+        appendLine("5. ELIMINATE AMBIGUITY: Every descriptor must be specific and actionable")
+        appendLine("6. COMPOSITION STRUCTURE: Subject position → Environment context → Technical parameters")
+        appendLine()
+
         visualDirection?.let {
-            appendLine("**VISUAL DIRECTION:** $it")
-            appendLine("Convert technical specs to visual language. Camera angles → perspective. Lighting → effects. Name 3+ objects.")
-            appendLine("Framing: Close-up=face, Medium=upper body, Full=complete. Filter accordingly.")
+            appendLine("**VISUAL DIRECTION (EXTRACT CINEMATOGRAPHY):** $it")
+            appendLine("Use extractComposition() to derive: angle, lens, framing, placement, lighting, environment, mood")
+            appendLine("Then convert technical specs to visual language:")
+            appendLine("- Camera angles → Perspective (looking up/down/straight, etc.)")
+            appendLine("- Lens type → Subject size and environment inclusion (wide = more environment, portrait = tight focus)")
+            appendLine("- Framing → Visibility scope (Close-up = face/upper body, Medium = upper to waist, Full = complete body)")
+            appendLine("- Placement → Horizontal positioning (left/center/right) + vertical positioning (upper/center/lower)")
             appendLine()
         }
 
-        appendLine("**CHARACTER:** $context")
+        appendLine("**CHARACTER CONTEXT & TRAIT PRESERVATION (MANDATORY):**")
+        appendLine("$context")
         appendLine()
-
-        appendLine("**TRAIT PRESERVATION (MANDATORY):**")
-        appendLine("Preserve ALL identity markers from context above:")
-        appendLine("- Race/Ethnicity, Skin tone, Hair (texture/style/color), Facial features, Body type")
-        appendLine("- Cultural markers (tattoos, piercings, jewelry, style choices), Age indicators")
-        appendLine("CRITICAL: Omitting ANY trait = error. Example: 'dark-skinned warrior with mid fade' NOT 'warrior with fade'")
+        appendLine("TRAIT PRESERVATION RULES:")
+        appendLine("- CRITICAL (ALWAYS VISIBLE): Race/Ethnicity, Skin tone, Hair (texture/style/color), Facial structure")
+        appendLine("- IMPORTANT (MUST BE VISIBLE AT THIS FRAMING): Body type, Age indicators, Primary clothing/outfit")
+        appendLine("- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks")
+        appendLine("- SECONDARY (CAN BE IMPLIED IF FRAMING CUTS THEM): Hands/fingers, lower body details (if not critical to character)")
         appendLine()
-
-        appendLine("**DIRECTIVES:**")
-        appendLine("1. Art style compliance: Use mandated techniques, avoid forbidden elements")
-        appendLine("2. Trait accuracy: ALL character attributes from context MUST appear in output")
-        appendLine("3. Expression: Personality through pose/expression reflecting background")
-        appendLine("4. Environment: 3+ specific objects suited to character/context")
-        characterHexColor?.let { appendLine("5. Accent ($it): Integrate via lighting/atmosphere") }
-        appendLine()
-
+        appendLine("CONCRETE EXAMPLE:")
         appendLine(
-            "**OUTPUT:** Art style statement → [cinematography if visual direction given] → character description WITH ALL TRAITS. Single flowing paragraph.",
+            "- GOOD: 'A dark-skinned warrior with close-cropped fade haircut and a visible scar on their left cheekbone, shown in close-up facing forward'",
         )
+        appendLine("- BAD: 'A warrior with a warrior look' or 'A dark character with styled hair'")
+        appendLine()
+
+        appendLine("**DIRECTIVES FOR FINAL PROMPT GENERATION:**")
+        appendLine("1. ART STYLE COMPLIANCE: Use mandated techniques, explicitly avoid forbidden elements")
+        appendLine("2. CHARACTER VISIBILITY: At [specified framing], show ALL critical trait markers")
+        appendLine("   - If ECU (extreme close-up face): Ensure eyes/nose/mouth/facial marks visible")
+        appendLine("   - If CU (close-up head-shoulders): Head fully visible, shoulders visible, torso upper portion visible")
+        appendLine("   - If MS (medium shot head-waist): Head/face/torso/upper arms visible, legs out of frame is acceptable")
+        appendLine("   - If FS (full-body): All body parts visible, posture and complete outfit visible")
+        appendLine("3. EXPRESSION & EMOTION: Describe visible emotional/postural elements matching character background")
+        appendLine("4. ENVIRONMENT: Specify 3+ specific objects suited to character/context (NOT vague 'background')")
+        appendLine("5. COMPOSITION: Subject anchor point, depth layers, environmental context")
+        characterHexColor?.let {
+            appendLine(
+                "6. ACCENT COLOR ($it): Integrate via specific lighting/atmospheric elements (NOT just 'tinted')",
+            )
+        }
+        appendLine()
+
+        appendLine("**FINAL PROMPT FORMAT (ASSEMBLE IN THIS ORDER):**")
+        appendLine("[1] OPENING - Art style + critical rendering rules")
+        appendLine("[2] CHARACTER - Specific, concrete description of character WITH ALL VISIBLE TRAITS")
+        appendLine(
+            "[3] FRAMING - Explicit camera framing and what's visible (e.g., 'close-up of face and upper shoulders, eyes clearly visible')",
+        )
+        appendLine("[4] EXPRESSION - Mood/emotion/pose visible in this frame (concrete, not abstract)")
+        appendLine("[5] ENVIRONMENT - 3+ specific objects, location context, environmental elements")
+        appendLine("[6] LIGHTING - Specific direction, quality, color temperature, visible effects")
+        appendLine("[7] COMPOSITION - Technical: placement, depth, lock-screen vertical bias")
+        appendLine("[8] DETAIL - Signature element, texture quality, final emphasis on genre compliance")
+        appendLine()
+
+        appendLine("**PROMPT QUALITY CHECKLIST:**")
+        appendLine("✓ No vague words ('nice', 'beautiful', 'realistic', 'soft', 'subtle')")
+        appendLine("✓ All traits visible at this framing level are explicitly described")
+        appendLine("✓ Genre-specific terminology used (NOT generic descriptors)")
+        appendLine("✓ 3+ specific environment objects named")
+        appendLine("✓ Lighting described with direction + quality + color")
+        appendLine("✓ Composition structure followed (character → environment → technical)")
+        appendLine("✓ No forbidden elements mentioned")
+        appendLine("✓ All required elements mentioned")
+        appendLine("✓ Framing impact on visibility explicitly stated")
+        appendLine("✓ Feature hierarchy observed (critical details first)")
+        appendLine()
+        appendLine("OUTPUT RESULT:")
+        appendLine("A single flowing paragraph that reads like a concrete visual specification (not creative writing).")
+        appendLine("Suitable for direct input to image generation AI with minimal corrections needed.")
     }
 
     fun reviewGeneration(saga: SagaContent) =

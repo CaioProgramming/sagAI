@@ -12,11 +12,12 @@ private const val TAG = "AnalyticsServiceImpl"
 /**
  * Implementation of AnalyticsService using Firebase Analytics.
  */
-class AnalyticsServiceImpl
+class AnalyticsService
     @Inject
     constructor(
-        @param:ApplicationContext private val context: Context,
-    ) : AnalyticsService {
+        @ApplicationContext
+        private val context: Context,
+    ) {
         // Lazy initialization to avoid upfront performance cost
         private val firebaseAnalytics: FirebaseAnalytics by lazy {
             FirebaseAnalytics.getInstance(context)
@@ -26,7 +27,7 @@ class AnalyticsServiceImpl
          * Track an analytics event with automatic error handling.
          * All failures are logged to Crashlytics without breaking app functionality.
          */
-        override fun trackEvent(event: Any) {
+        fun trackEvent(event: Any) {
             try {
                 val eventName =
                     event::class.simpleName?.toEventName() ?: run {

@@ -29,6 +29,8 @@ interface CharacterUseCase {
         description: String,
     ): RequestResult<Character>
 
+    suspend fun createSmartZoom(character: Character): RequestResult<Unit>
+
     suspend fun generateCharactersUpdate(
         timeline: Timeline,
         saga: SagaContent,

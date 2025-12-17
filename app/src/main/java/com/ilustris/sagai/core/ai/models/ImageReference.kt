@@ -55,6 +55,7 @@ enum class ReviewerStrictness(
  * Categories of violations that can be detected by the reviewer.
  * Used for analytics and metrics tracking.
  */
+@Suppress("unused")
 enum class ViolationType {
     // ========== CINEMATOGRAPHY VIOLATIONS ==========
 
@@ -113,6 +114,25 @@ enum class ViolationType {
 
     /** Art style contradiction - describing techniques that contradict the medium (e.g., 'soft gradient' in cel-shaded style) */
     STYLE_CONTRADICTION,
+
+    // ========== VISIBILITY VIOLATIONS ==========
+
+    /** Describes body parts/clothing that are out of frame according to visibility matrix (e.g., pants when legs not visible) */
+    VISIBILITY_VIOLATION,
+
+    // ========== POSE & EXPRESSION VIOLATIONS ==========
+
+    /** Missing or generic facial expression - no specific emotion described */
+    MISSING_FACIAL_EXPRESSION,
+
+    /** Missing or generic dynamic pose - character appears static/posed instead of in motion */
+    MISSING_DYNAMIC_POSE,
+
+    /** Expression and pose contradict emotionally (e.g., 'tender smile' with 'aggressive stance') */
+    POSE_EXPRESSION_CONTRADICTION,
+
+    /** Character appears posed for portrait rather than caught in a moment */
+    POSE_EXPRESSION_VIOLATION,
 }
 
 /**
@@ -121,6 +141,7 @@ enum class ViolationType {
  * MAJOR = significantly degrades quality or misses key requirements
  * MINOR = small deviation that might affect polish but not core functionality
  */
+@Suppress("unused")
 enum class ViolationSeverity {
     CRITICAL, // Must fix - will break the image
     MAJOR, // Should fix - significantly wrong but might work
@@ -131,11 +152,9 @@ enum class ViolationSeverity {
  * A single detected violation with context.
  */
 data class PromptViolation(
-    val type: ViolationType,
+    val type: ViolationType?,
     val severity: ViolationSeverity,
-    // What was wrong
     val description: String,
-    // Specific example from the prompt (optional)
     val example: String? = null,
 )
 
@@ -158,11 +177,9 @@ data class ImagePromptReview(
     val isCompletelyWrong: Boolean
         get() = violations.any { it.severity == ViolationSeverity.CRITICAL }
 
+    @Suppress("unused")
     val violationsBySeverity: Map<ViolationSeverity, Int>
         get() = violations.groupingBy { it.severity }.eachCount()
-
-    val violationsByType: Map<ViolationType, Int>
-        get() = violations.groupingBy { it.type }.eachCount()
 
     /**
      * Determines image quality for analytics based on violation count and severity.

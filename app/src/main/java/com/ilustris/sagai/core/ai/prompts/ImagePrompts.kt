@@ -43,9 +43,9 @@ object ImagePrompts {
         buildString {
             appendLine("CINEMATOGRAPHY EXTRACTION — Senior DP analyzing reference image")
             appendLine("Extract PHOTOGRAPHIC DNA (NOT art style/subject). Use ONLY camera/lighting terms.")
-            appendLine("Fix missing or vague parameters autonomously. Return ONLY the 15 parameters below.")
+            appendLine("Fix missing or vague parameters autonomously. Return the 15 parameters + VISIBLE ELEMENTS analysis.")
             appendLine()
-            appendLine("OUTPUT 15 PARAMETERS (Format: 'NAME: value'):")
+            appendLine("OUTPUT 15 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: value'):")
             appendLine()
             appendLine("1. ANGLE: [eye-level / low XY° / high XY° / dutch XY°]")
             appendLine(
@@ -66,13 +66,64 @@ object ImagePrompts {
             appendLine("13. TIME: [golden-hour/midday/blue-hour/night/overcast/studio]")
             appendLine("14. SIGNATURE: One unique unforgettable detail")
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
+            appendLine()
+            appendLine("CRITICAL ADDITION - VISIBLE ELEMENTS ANALYSIS:")
+            appendLine("After extracting the 15 parameters, ANALYZE what is VISIBLE vs HIDDEN by the framing:")
+            appendLine()
+            appendLine("VISIBILITY MATRIX:")
+            appendLine("- FULLY VISIBLE: Face, torso, limbs, or features that are 100% within frame")
+            appendLine("- PARTIALLY VISIBLE: Features cut by frame edges, partially obscured by props/environment")
+            appendLine("- HIDDEN/OUT-OF-FRAME: Features not visible due to framing, angle, or occlusion")
+            appendLine("- OCCLUDED: Features hidden behind other objects, hair, hands, clothing, etc.")
+            appendLine()
+            appendLine("SPECIFIC ANALYSIS REQUIRED:")
+            appendLine("1. HEAD: [fully visible / partially cropped / profile visible / back of head / obscured]")
+            appendLine("2. FACE DETAILS: List what IS visible (eyes, nose, mouth, jawline, ears, scars, marks) vs HIDDEN")
+            appendLine("3. TORSO: [fully visible / partially visible / covered by environment/clothing]")
+            appendLine("4. ARMS/HANDS: [both visible / one visible / one hidden / both out of frame / holding objects visible]")
+            appendLine("5. LEGS/FEET: [both visible / partial view / one in frame / out of frame / obscured by clothing]")
+            appendLine("6. DISTINCTIVE FEATURES: List ALL visible identifying marks (tattoos, scars, jewelry, unique clothing details)")
+            appendLine("7. BODY LANGUAGE: Posture, gesture, expression elements that ARE visible in this framing")
+            appendLine("8. ENVIRONMENT VISIBILITY: What background/props are visible based on composition and DOF")
+            appendLine()
+            appendLine("FRAMING IMPACT ON ATTRIBUTES:")
+            appendLine("For each character attribute (skin tone, hair, body type, distinctive marks):")
+            appendLine("- MUST SHOW: Critical identity markers visible at this framing level")
+            appendLine("- CAN HIDE: Secondary details that don't impact recognition or can be implied")
+            appendLine("- CANNOT HIDE: Core traits that define character (race/ethnicity, primary clothing, main distinctive features)")
+            appendLine()
+            appendLine("REVIEWER VALIDATION USE:")
+            appendLine("The reviewer will use this VISIBILITY MATRIX to:")
+            appendLine("1. Verify that hidden attributes are ONLY secondary details, not identity markers")
+            appendLine("2. Ensure core traits remain visible and recognizable despite framing constraints")
+            appendLine("3. Validate that framing choices don't inadvertently omit critical character attributes")
+            appendLine("4. Confirm that what IS visible in frame accurately represents the character context")
+            appendLine()
+            appendLine("EXAMPLE OUTPUT FORMAT:")
+            appendLine("1. ANGLE: eye-level")
+            appendLine("2. LENS: 50-85mm portrait")
+            appendLine("3. FRAMING: CU head-shoulders")
+            appendLine("[... other 12 parameters ...]")
+            appendLine()
+            appendLine("VISIBILITY ANALYSIS:")
+            appendLine("HEAD: Fully visible, facing forward")
+            appendLine("FACE DETAILS: Eyes visible (conveying emotion), nose visible, mouth visible, ears partially visible behind hair")
+            appendLine("TORSO: Upper chest visible, shoulders fully visible, arms below elbow out of frame")
+            appendLine(
+                "DISTINCTIVE FEATURES: Visible - facial scar on left cheekbone, neck tattoo (partial), clothing color/pattern visible",
+            )
+            appendLine("HIDDEN: Hands/fingers (framing cuts them), legs (out of frame), lower body details")
+            appendLine(
+                "BODY LANGUAGE: Confident posture visible in shoulder position and head angle, facial expression conveys determination",
+            )
+            appendLine("CORE IDENTITY PRESERVED: Skin tone, facial structure, hair visible - character remains identifiable")
         }
 
     /**
      * Validates and autonomously corrects image descriptions for generation.
-     * Acts as rigid QA layer to enforce cinematography framing, art style, and composition rules.
-     * CRITICAL: Validates ALL 15 cinematography parameters against visual direction.
-     * Returns ImagePromptReview data class with corrections and violations detected.
+     * Returns JSON-structured ImagePromptReview data class with corrections and violations.
+     * TOKEN-OPTIMIZED: Compact instructions, redundancy removed. GemmaClient handles output formatting.
+     * CRITICAL: Validates 15 cinematography parameters, visibility matrix, pose/expression, and art style rules.
      */
     fun reviewImagePrompt(
         visualDirection: String?,
@@ -80,88 +131,115 @@ object ImagePrompts {
         strictness: com.ilustris.sagai.core.ai.models.ReviewerStrictness,
         finalPrompt: String,
     ) = buildString {
-        appendLine("=== IMAGE PROMPT QA REVIEWER (AI-to-AI) — RIGID CINEMATOGRAPHY ENFORCEMENT ===")
         appendLine(strictness.description)
         appendLine()
-        appendLine("TASK: Validate and AUTONOMOUSLY FIX cinematography & art style violations.")
-        appendLine("Return violations found + corrected prompt. RIGID ENFORCEMENT: No deviations permitted.")
+        appendLine("TASK: Analyze the prompt against these criteria. Respond ONLY with JSON matching ImagePromptReview structure.")
         appendLine()
 
-        appendLine("CINEMATOGRAPHY VALIDATION & FIX (RIGID):")
-        appendLine("Required: All 15 cinematography parameters MUST be explicitly defined and exact.")
+        appendLine("VALIDATION CRITERIA:")
         appendLine()
-        appendLine("MANDATORY CINEMATOGRAPHY PARAMETERS (ALL MUST BE PRESENT & COMPLIANT):")
-        appendLine("1. ANGLE: MUST be one of [eye-level / low / high / dutch]. NO vague descriptions.")
-        appendLine("2. LENS: MUST be one of [ultra-wide / wide / normal / portrait / tele / super-tele]. NO technical f-stops.")
-        appendLine("3. FRAMING: MUST be one of [ECU / CU / MCU / MS / MWS / FS / WS / EWS]. EXACT terminology required.")
-        appendLine("4. PLACEMENT: MUST specify [H: left/center/right] [V: upper/center/lower]. NO ambiguity.")
-        appendLine("5. LIGHTING: MUST specify direction [front/side/back/top/under/omni] + quality [hard/soft]. Both required.")
-        appendLine("6. COLOR: MUST specify temperature [cool/neutral/warm] + exact dominant colors. No optional palettes.")
-        appendLine("7. ENVIRONMENT: MUST describe location type, scale, and key environmental elements explicitly.")
-        appendLine("8. MOOD: MUST specify ONE emotional tone from [epic/intimate/oppressive/nostalgic/tense/serene/mysterious/majestic].")
-        appendLine("9. DOF: MUST be one of [razor/shallow/moderate/deep/infinite]. EXACT depth-of-field specification.")
-        appendLine("10. ATMOSPHERE: MUST be one of [clear/hazy/misty/foggy/dusty/smoky/ethereal]. NO vague atmospheric terms.")
-        appendLine("11. PERSPECTIVE: MUST be one of [converging/parallel/barrel/foreshortening]. Spatial rules enforced.")
-        appendLine("12. TEXTURE: MUST be one of [razor-sharp/film-grain/digital-noise/soft-diffused/gritty]. Image quality strict.")
-        appendLine("13. TIME: MUST be one of [golden-hour/midday/blue-hour/night/overcast/studio]. Lighting time explicit.")
-        appendLine("14. SIGNATURE: MUST have one unique, unforgettable detail. REQUIRED, not optional.")
-        appendLine("15. DEPTH_LAYERS: MUST explicitly describe background/midground/foreground spacing and elements.")
+        appendLine(
+            "1. CINEMATOGRAPHY (15 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers",
+        )
+        appendLine("   - All MUST be explicit, specific, and match visual direction")
+        appendLine("   - NO technical jargon (f-stops/Kelvin/degrees) - use visual descriptors")
         appendLine()
 
+        appendLine("2. VISIBILITY MATRIX (from director):")
         visualDirection?.let {
-            appendLine("REFERENCE VISUAL DIRECTION: $it")
-            appendLine("ACTION: Extract expected cinematography parameters from this direction.")
-            appendLine("Any missing or conflicting parameters MUST be corrected to match this reference.")
+            appendLine("   Direction: $it")
+            appendLine("   - Extract what IS visible vs OUT OF FRAME")
+            appendLine("   - CRITICAL: Do NOT describe body parts/clothing not in frame")
+            appendLine("   - NO pants/boots if legs out of frame, NO full arms if only elbow-down visible, etc.")
+            appendLine()
         }
+
+        appendLine("3. POSE & EXPRESSION (PREVENTS SOULLESS ART):")
+        appendLine("   - FACIAL EXPRESSION: MUST be specific emotion (e.g., 'cynical smirk', NOT 'has emotion')")
+        appendLine("   - DYNAMIC POSE: MUST suggest action/emotion (e.g., 'stands defiantly', NOT just 'standing')")
+        appendLine("   - SYNERGY: Expression + pose MUST work together emotionally")
+        appendLine("   - MOMENT: Character 'caught in a moment' (mid-action, reacting), NOT 'posed for portrait'")
         appendLine()
 
-        appendLine("CINEMATOGRAPHY COMPLIANCE RULES:")
-        appendLine("- If ANY of the 15 parameters is missing, vague, or non-compliant: CORRECT it immediately.")
-        appendLine("- If technical jargon (f-stops/Kelvin/degrees) is present: REPLACE with visual descriptors.")
-        appendLine("- If cinematography contradicts visual direction: FORCE alignment with the direction.")
-        appendLine("- Verify final prompt describes CAMERA/LIGHTING terms, NOT art style or subject attributes.")
-        appendLine("- Ensure VERTICAL COMPOSITION BIAS is explicit (top 1/3 empty, subject anchored bottom 2/3).")
+        appendLine("4. GOOGLE IMAGE GENERATION BEST PRACTICES:")
+        appendLine("   - CLARITY: Concrete descriptions, NO metaphors/abstractions")
+        appendLine("   - EXPLICIT: Say what IS present, NOT what to avoid")
+        appendLine("   - FEATURE HIERARCHY: Lead with critical details, then context")
+        appendLine("   - AMBIGUITY: Zero vague adjectives - every descriptor must be actionable")
         appendLine()
 
-        appendLine("ART STYLE VALIDATION & FIX:")
-        appendLine("Genre Rules: $artStyleValidationRules")
-        appendLine("- Apply ALL validation rules autonomously — fix violations with zero tolerance.")
-        appendLine("- Verify REQUIRED elements are present; remove FORBIDDEN elements.")
-        appendLine("- Respect character traits, skin tones, hair styles, cultural details — maintain accuracy.")
-        appendLine("- Keep token-optimized: omit redundant descriptors but retain critical attributes.")
-        appendLine("- Output prompt must be assertive and direct: AI-to-AI communication style.")
+        appendLine("5. ART STYLE RULES:")
+        appendLine("   Genre: $artStyleValidationRules")
+        appendLine("   - Apply ALL rules with ZERO tolerance for violations")
+        appendLine("   - Verify REQUIRED elements present, FORBIDDEN elements absent")
+        appendLine("   - Respect character traits (skin tone, hair, body type, distinctive marks)")
         appendLine()
 
-        appendLine("CRITICAL COMPOSITION ENFORCEMENT:")
-        appendLine("- Full-bleed raster artwork (NO borders, frames, or simulated edges).")
-        appendLine("- Vertical lock-screen bias: Subject in bottom 2/3rds, top 1/3rd clear/background only.")
-        appendLine("- NO text, logos, watermarks, UI elements, or interface chrome.")
-        appendLine("- NO transparent regions, alpha channels, or layered/panelled compositions.")
+        appendLine("VIOLATION DETECTION:")
+        appendLine("- VISIBILITY_VIOLATION: Describes body parts/clothing out of frame")
+        appendLine("- MISSING_FACIAL_EXPRESSION: No specific emotion or generic descriptor")
+        appendLine("- MISSING_DYNAMIC_POSE: Static/neutral pose without emotional content")
+        appendLine("- POSE_EXPRESSION_VIOLATION: Expression + pose don't work together or character seems posed, not in moment")
+        appendLine("- FRAMING_VIOLATION: Describes elements not visible at this framing level")
+        appendLine("- BANNED_TERMINOLOGY: Uses forbidden words from art style")
+        appendLine("- MISSING_CINEMATOGRAPHY_PARAMETER: Any of 15 params missing/vague")
+        appendLine("- LIGHTING_MISSING/WRONG, COLOR_PALETTE_WRONG, ENVIRONMENT_MISSING, etc.")
+        appendLine()
+
+        appendLine("AUTO-FIX PATTERNS:")
+        appendLine("- Missing expression → Add specific emotion matching archetype")
+        appendLine("- Missing pose → Add dynamic body language with gesture")
+        appendLine("- Expression + pose contradictory → Align emotionally")
+        appendLine("- Out-of-frame descriptions → Remove, replace with visible details")
+        appendLine("- Static character → Add momentum language ('breathing', 'captured mid-action')")
+        appendLine("- Generic cinematography → Specify exact values from 15 parameters")
+        appendLine("- Missing background/environment → Add 3+ specific objects")
         appendLine()
 
         appendLine("OUTPUT JSON (ImagePromptReview):")
         appendLine(
             """{
-  "originalPrompt": "...",
-  "correctedPrompt": "...",
+  "originalPrompt": "string - the input prompt",
+  "correctedPrompt": "string - fixed/enhanced prompt with all corrections applied",
   "cinematographyValidation": {
     "parametersValidated": 15,
-    "parametersCompliant": 15,
-    "missingOrVague": [],
-    "correctedParameters": ["..."]
+    "parametersCompliant": number (0-15),
+    "missingOrVague": ["param1", "param2"],
+    "correctedParameters": ["param: old → new", ...]
+  },
+  "visibilityMatrix": {
+    "head": "visibility state",
+    "faceDetails": ["list of visible face parts"],
+    "torso": "visibility state",
+    "arms": "visibility state",
+    "legs": "visibility state",
+    "distinctiveFeatures": ["list of visible marks"],
+    "coreTraitsVisible": boolean,
+    "hiddenSecondaryDetails": ["list"]
+  },
+  "poseExpressionValidation": {
+    "facialExpression": "specific emotion described - CONCRETE",
+    "dynamicPose": "pose description - DYNAMIC",
+    "expressionPoseSynergy": "ALIGNED or CONTRADICTION",
+    "preventsSoullessArt": boolean,
+    "capturedInMoment": boolean
+  },
+  "googleBestPractices": {
+    "clarityScore": "HIGH/MEDIUM/LOW",
+    "ambiguityIssues": ["list of vague terms or corrections needed"],
+    "featureHierarchy": "CORRECT or NEEDS FIX",
+    "framingVisibility": "HONORED or VIOLATED"
   },
   "violations": [
-    {"type": "MISSING_CINEMATOGRAPHY_PARAMETER", "severity": "CRITICAL", "parameter": "ANGLE", "description": "...", "correctedTo": "..."},
-    {"type": "FRAMING_VIOLATION", "severity": "CRITICAL", "description": "...", "correctedTo": "..."},
-    {"type": "BANNED_TERMINOLOGY", "severity": "MAJOR", "description": "...", "example": "..."}
+    {"type": "VIOLATION_TYPE", "severity": "CRITICAL/MAJOR/MINOR", "description": "string", "correctedTo": "string"}
   ],
-  "changesApplied": ["Corrected ANGLE from vague to eye-level", "...", "..."],
-  "wasModified": true,
-  "complianceStatus": "FULL_COMPLIANCE"
+  "changesApplied": ["change 1", "change 2", ...],
+  "wasModified": boolean,
+  "complianceStatus": "FULL_COMPLIANCE or NEEDS_FIXES or CRITICAL_ISSUES"
 }""",
         )
         appendLine()
-        appendLine("PROMPT TO REVIEW & FIX:")
+        appendLine("PROMPT TO REVIEW:")
         appendLine(finalPrompt)
     }
 }

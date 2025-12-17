@@ -9,11 +9,9 @@ import com.ilustris.sagai.core.ai.TextGenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.analytics.AnalyticsConstants
-import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -142,9 +140,9 @@ class CharacterUseCaseImpl
                 val reviewedPrompt =
                     imagenClient
                         .reviewAndCorrectPrompt(
+                            imageType = AnalyticsConstants.ImageType.AVATAR,
                             visualDirection = visualComposition,
-                            artStyleValidationRules = GenrePrompts.validationRules(saga.genre),
-                            strictness = GenrePrompts.reviewerStrictness(saga.genre),
+                            genre = saga.genre,
                             finalPrompt = translatedDescription,
                         ).getSuccess()
 
@@ -162,21 +160,21 @@ class CharacterUseCaseImpl
                     imagenClient
                         .generateImage(finalPromptForGeneration, canByPass = false)!!
 
-                // Track image quality analytics if review was successful
-                reviewedPrompt?.let { review ->
-                    trackImageQuality(
-                        genre = saga.genre.name,
-                        imageType = AnalyticsConstants.ImageType.AVATAR,
-                        review = review,
-                    )
-                }
-
                 val file =
                     fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
-                val newCharacter = character.copy(image = file!!.path, emojified = isPremium.not())
+                val smartZoom = imageSegmentationHelper.calculateSmartZoom(file!!.path).getSuccess()
+                val newCharacter =
+                    character.copy(image = file.path, emojified = false, smartZoom = smartZoom)
                 repository.updateCharacter(newCharacter)
                 image.recycle()
                 newCharacter to finalPromptForGeneration
+            }
+
+        override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
+            executeRequest {
+                val smartZoom = imageSegmentationHelper.calculateSmartZoom(character.image).getSuccess()
+                val newCharacter = character.copy(smartZoom = smartZoom)
+                repository.updateCharacter(newCharacter)
             }
 
         override suspend fun generateCharacter(
@@ -361,26 +359,4 @@ class CharacterUseCaseImpl
                     )
                 }
         }
-
-        private fun trackImageQuality(
-            genre: String,
-            imageType: String,
-            review: com.ilustris.sagai.core.ai.models.ImagePromptReview,
-        ) {
-            val violationTypes =
-                review.violations
-                    .map { it.type.name }
-                    .distinct()
-                    .joinToString(", ")
-
-            analyticsService.trackEvent(
-                ImageQualityEvent(
-                    genre = genre,
-                    imageType = imageType,
-                    quality = review.getQualityLevel(),
-                    violations = review.violations.size,
-                    violationTypes = violationTypes.ifEmpty { null },
-            ),
-        )
-    }
     }

@@ -11,8 +11,10 @@ import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
 import com.ilustris.sagai.core.ai.models.ImagePromptReview
 import com.ilustris.sagai.core.ai.models.ImageReference
-import com.ilustris.sagai.core.ai.models.ReviewerStrictness
+import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
+import com.ilustris.sagai.core.analytics.AnalyticsService
+import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.services.BillingService
@@ -20,9 +22,8 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
-import kotlinx.coroutines.delay
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.seconds
 
 @OptIn(PublicPreviewAPI::class)
 interface ImagenClient {
@@ -35,9 +36,9 @@ interface ImagenClient {
     suspend fun extractComposition(references: List<ImageReference>): RequestResult<String>
 
     suspend fun reviewAndCorrectPrompt(
+        imageType: String,
         visualDirection: String?,
-        artStyleValidationRules: String,
-        strictness: ReviewerStrictness,
+        genre: Genre,
         finalPrompt: String,
     ): RequestResult<ImagePromptReview>
 }
@@ -49,6 +50,7 @@ class ImagenClientImpl
         val billingService: BillingService,
         private val remoteConfigService: RemoteConfigService,
         private val gemmaClient: GemmaClient,
+        private val analyticsService: AnalyticsService,
     ) : ImagenClient {
         companion object {
             const val IMAGE_PREMIUM_MODEL_FLAG = "imageGenModelPremium"
@@ -122,11 +124,14 @@ class ImagenClientImpl
             }
 
         override suspend fun reviewAndCorrectPrompt(
+            imageType: String,
             visualDirection: String?,
-            artStyleValidationRules: String,
-            strictness: ReviewerStrictness,
+            genre: Genre,
             finalPrompt: String,
         ) = executeRequest {
+            val artStyleValidationRules = GenrePrompts.validationRules(genre)
+            val strictness = GenrePrompts.reviewerStrictness(genre)
+
             val reviewerPrompt =
                 ImagePrompts.reviewImagePrompt(
                     visualDirection,
@@ -136,8 +141,6 @@ class ImagenClientImpl
                 )
 
             Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")
-            delay(5.seconds)
-            // Generate the review using Gemma
             val review =
                 gemmaClient.generate<ImagePromptReview>(
                     reviewerPrompt,
@@ -147,7 +150,33 @@ class ImagenClientImpl
                 )!!
             Log.i(TAG, "✏️ Prompt was modified by reviewer: ")
             Log.i(TAG, review.toAINormalize())
-
+            trackImageQuality(
+                genre = genre.name,
+                imageType = imageType,
+                review = review,
+            )
             review
+        }
+
+        private fun trackImageQuality(
+            genre: String,
+            imageType: String,
+            review: ImagePromptReview,
+        ) {
+            val violationTypes =
+                review.violations
+                    .mapNotNull { it.type?.name }
+                    .distinct()
+                    .joinToString(", ")
+
+            analyticsService.trackEvent(
+                ImageQualityEvent(
+                    genre = genre,
+                    imageType = imageType,
+                    quality = review.getQualityLevel(),
+                    violations = review.violations.size,
+                    violationTypes = violationTypes.ifEmpty { null },
+                ),
+            )
         }
     }

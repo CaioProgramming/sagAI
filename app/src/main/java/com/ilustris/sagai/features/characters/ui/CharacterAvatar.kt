@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,7 +27,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import coil3.compose.AsyncImage
 import coil3.compose.AsyncImagePainter
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -41,7 +39,6 @@ import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.solidGradient
 import effectForGenre
-import kotlinx.coroutines.launch
 
 @Composable
 fun CharacterAvatar(
@@ -58,7 +55,6 @@ fun CharacterAvatar(
     pixelation: Float? = null,
     requireZoom: Boolean = true,
 ) {
-    val viewModel: CharacterAvatarViewModel = hiltViewModel()
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     val borderBrush =
         borderColor?.solidGradient() ?: Brush.verticalGradient(
@@ -83,14 +79,6 @@ fun CharacterAvatar(
         label = "SmartZoomTranslationY",
     )
 
-    LaunchedEffect(character.image, character.smartZoom) {
-        if (character.image.isNotEmpty() && character.smartZoom == null && requireZoom) {
-            launch {
-                viewModel.checkAndGenerateZoom(character)
-            }
-        }
-    }
-
     Box(
         modifier
             .reactiveShimmer(isLoading, genre.shimmerColors())
@@ -98,8 +86,7 @@ fun CharacterAvatar(
                 borderSize,
                 borderBrush,
                 CircleShape,
-            )
-            .clip(CircleShape)
+            ).clip(CircleShape)
             .padding(innerPadding)
             .background(
                 characterColor.darker(.3f),
@@ -123,8 +110,7 @@ fun CharacterAvatar(
                     .background(
                         characterColor,
                         CircleShape,
-                    )
-                    .fillMaxSize()
+                    ).fillMaxSize()
                     .effectForGenre(
                         genre,
                         useFallBack = character.emojified,

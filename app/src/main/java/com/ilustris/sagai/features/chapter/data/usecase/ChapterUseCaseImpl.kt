@@ -8,10 +8,9 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.models.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
-import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
+import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
@@ -259,9 +258,9 @@ class ChapterUseCaseImpl
                 val reviewedPrompt =
                     imagenClient
                         .reviewAndCorrectPrompt(
+                            imageType = AnalyticsConstants.ImageType.COVER,
+                            genre = saga.data.genre,
                             visualDirection = visualComposition,
-                            artStyleValidationRules = GenrePrompts.validationRules(saga.data.genre),
-                            strictness = GenrePrompts.reviewerStrictness(saga.data.genre),
                             finalPrompt = promptGeneration,
                         ).getSuccess()
 
@@ -280,15 +279,6 @@ class ChapterUseCaseImpl
                         .generateImage(
                             finalPromptForGeneration,
                         )!!
-
-                // Track image quality analytics if review was successful
-                reviewedPrompt?.let { review ->
-                    trackImageQuality(
-                        genre = saga.data.genre.name,
-                        imageType = com.ilustris.sagai.core.analytics.AnalyticsConstants.ImageType.COVER,
-                        review = review,
-                    )
-                }
 
                 val coverFile =
                     fileHelper.saveFile(
@@ -326,26 +316,4 @@ class ChapterUseCaseImpl
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)
             }
-
-        private fun trackImageQuality(
-            genre: String,
-            imageType: String,
-            review: com.ilustris.sagai.core.ai.models.ImagePromptReview,
-        ) {
-            val violationTypes =
-                review.violations
-                    .map { it.type.name }
-                    .distinct()
-                    .joinToString(", ")
-
-            analyticsService.trackEvent(
-                com.ilustris.sagai.core.analytics.ImageQualityEvent(
-                    genre = genre,
-                    imageType = imageType,
-                    quality = review.getQualityLevel(),
-                    violations = review.violations.size,
-                    violationTypes = violationTypes.ifEmpty { null },
-            ),
-        )
-    }
     }
