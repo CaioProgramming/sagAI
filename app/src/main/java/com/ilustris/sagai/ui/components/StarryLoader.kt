@@ -41,6 +41,7 @@ import androidx.compose.ui.window.DialogWindowProvider
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.holographicGradient
+import com.ilustris.sagai.ui.theme.reactiveShimmer
 
 @Composable
 fun StarryLoader(
@@ -76,8 +77,8 @@ fun StarryLoader(
                 }
                 Box(Modifier.fillMaxSize()) {
                     val starsAlpha by animateFloatAsState(
-                        targetValue = if (loadingMessage == null) 1f else .7f,
-                        animationSpec = tween(500),
+                        targetValue = if (loadingMessage == null) 1f else .5f,
+                        animationSpec = tween(1500),
                     )
                     StarryTextPlaceholder(
                         modifier =
@@ -128,7 +129,7 @@ fun StarryLoader(
                         modifier =
                             Modifier
                                 .align(Alignment.Center)
-                                .padding(16.dp),
+                                .padding(32.dp),
                         transitionSpec = {
                             fadeIn(tween(500)) togetherWith slideOutVertically { it }
                         },
@@ -137,6 +138,7 @@ fun StarryLoader(
                             Text(
                                 message,
                                 style = textStyle,
+                                modifier = Modifier.alpha(.6f),
                             )
                         }
                     }

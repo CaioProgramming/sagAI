@@ -12,6 +12,8 @@ import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.ai.prompts.SagaPrompts
+import com.ilustris.sagai.core.analytics.AnalyticsConstants
+import com.ilustris.sagai.core.analytics.ImageQualityEvent
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
@@ -61,7 +63,8 @@ class CharacterUseCaseImpl
         private val genreReferenceHelper: GenreReferenceHelper,
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
-        @ApplicationContext
+        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
+        @param:ApplicationContext
         private val context: Context,
     ) : CharacterUseCase {
         override fun getAllCharacters(): Flow<List<Character>> = repository.getAllCharacters()
@@ -158,6 +161,15 @@ class CharacterUseCaseImpl
                 val image =
                     imagenClient
                         .generateImage(finalPromptForGeneration, canByPass = false)!!
+
+                // Track image quality analytics if review was successful
+                reviewedPrompt?.let { review ->
+                    trackImageQuality(
+                        genre = saga.genre.name,
+                        imageType = AnalyticsConstants.ImageType.AVATAR,
+                        review = review,
+                    )
+                }
 
                 val file =
                     fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
@@ -349,4 +361,26 @@ class CharacterUseCaseImpl
                     )
                 }
         }
+
+        private fun trackImageQuality(
+            genre: String,
+            imageType: String,
+            review: com.ilustris.sagai.core.ai.models.ImagePromptReview,
+        ) {
+            val violationTypes =
+                review.violations
+                    .map { it.type.name }
+                    .distinct()
+                    .joinToString(", ")
+
+            analyticsService.trackEvent(
+                ImageQualityEvent(
+                    genre = genre,
+                    imageType = imageType,
+                    quality = review.getQualityLevel(),
+                    violations = review.violations.size,
+                    violationTypes = violationTypes.ifEmpty { null },
+            ),
+        )
+    }
     }

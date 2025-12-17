@@ -20,7 +20,9 @@ import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
+import kotlinx.coroutines.delay
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.seconds
 
 @OptIn(PublicPreviewAPI::class)
 interface ImagenClient {
@@ -66,7 +68,7 @@ class ImagenClientImpl
             val logData =
                 buildString {
                     append("Generating image with ➡ $modelName\n")
-                    append("Prompt \uD83D\uDCC4:")
+                    appendLine("Prompt \uD83D\uDCC4:")
                     appendLine(prompt)
                     if (references.isNotEmpty()) {
                         appendLine("References \uD83C\uDFDE\uFE0F:\n")
@@ -74,7 +76,6 @@ class ImagenClientImpl
                             appendLine("Bitmap with Description: ${it.description}\n")
                         }
                     }
-                    appendLine("\n")
                 }
             Log.i(TAG, logData)
             return billingService.runPremiumRequest {
@@ -135,17 +136,18 @@ class ImagenClientImpl
                 )
 
             Log.d(TAG, "reviewAndCorrectPrompt: Starting review with ${strictness.name} strictness")
-
+            delay(5.seconds)
             // Generate the review using Gemma
             val review =
                 gemmaClient.generate<ImagePromptReview>(
                     reviewerPrompt,
                     references = emptyList(),
                     requireTranslation = false,
+                    useCore = true,
                 )!!
             Log.i(TAG, "✏️ Prompt was modified by reviewer: ")
-        Log.i(TAG, review.toAINormalize())
+            Log.i(TAG, review.toAINormalize())
 
-        review
-    }
+            review
+        }
     }

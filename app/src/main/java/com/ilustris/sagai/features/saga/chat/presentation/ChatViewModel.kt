@@ -7,12 +7,14 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import android.util.LruCache
+import androidx.compose.runtime.internal.isLiveLiteralsEnabled
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.media.MediaPlayerManager
@@ -299,6 +301,7 @@ class ChatViewModel
 
                         checkIfUpdatesService(sagaContent)
                         validateCharacterMessageUpdates(sagaContent)
+                        validateMessageStatus(sagaContent)
                         updateProgress(sagaContent)
 
                         loadFinished = true
@@ -318,6 +321,23 @@ class ChatViewModel
                 showTitle.emit(false)
             }
         }
+
+        private fun validateMessageStatus(sagaContent: SagaContent) {
+            viewModelScope.launch(Dispatchers.IO) {
+                if (isGenerating.value) return@launch
+                if (isLoading.value) return@launch
+                val messages = sagaContent.flatMessages()
+                messages
+                    .filter { it.message.status == MessageStatus.LOADING }
+                    .forEach { messageContent ->
+                        messageUseCase.updateMessage(
+                            messageContent.message.copy(
+                                status = MessageStatus.ERROR,
+                            ),
+                        )
+                }
+        }
+    }
 
         private fun updateProgress(sagaContent: SagaContent) {
             loreUpdateProgress.value =

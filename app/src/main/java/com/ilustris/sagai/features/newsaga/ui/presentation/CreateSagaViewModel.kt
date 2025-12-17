@@ -44,6 +44,7 @@ class CreateSagaViewModel
     constructor(
         private val newSagaUseCase: NewSagaUseCase,
         private val characterUseCase: CharacterUseCase,
+        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
     ) : ViewModel() {
         val form = MutableStateFlow(SagaForm())
         val state = MutableStateFlow(CreateSagaState())
@@ -183,6 +184,10 @@ class CreateSagaViewModel
                     saga,
                     character,
                 )
+
+                // Track saga creation analytics
+                trackSagaCreation(saga)
+
                 isSaving.emit(false)
                 loadingMessage.emit(null)
                 delay(3.seconds)
@@ -295,4 +300,14 @@ class CreateSagaViewModel
                     }
             }
         }
+
+        private fun trackSagaCreation(saga: Saga) {
+            val userMessageCount = chatMessages.value.count { it.sender == Sender.USER }
+            analyticsService.trackEvent(
+                com.ilustris.sagai.core.analytics.SagaCreationEvent(
+                    messageCount = userMessageCount,
+                    genre = saga.genre.name,
+                ),
+        )
+    }
     }

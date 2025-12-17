@@ -1542,7 +1542,6 @@ fun ChatList(
                                     fadeOutSpec = tween(400, easing = EaseIn),
                                 ),
                             openCharacters = { char -> openCharacter(char) },
-                            openWiki = { openWiki() },
                             onReactionsClick = { openReactions(it) },
                             onRetry = {
                                 onRetryMessage(it.message)

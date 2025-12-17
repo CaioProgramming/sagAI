@@ -52,6 +52,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -129,7 +130,6 @@ fun ChatBubble(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     openCharacters: (CharacterContent?) -> Unit = {},
-    openWiki: () -> Unit = {},
     onRetry: (MessageContent) -> Unit = {},
     onReactionsClick: (MessageContent) -> Unit = {},
     requestNewCharacter: () -> Unit = {},
@@ -166,7 +166,12 @@ fun ChatBubble(
         }
     val narratorShape =
         remember(genre, cornerSize) {
-            genre.bubble(BubbleTailAlignment.BottomRight, isNarrator = true)
+            genre.bubble(
+                BubbleTailAlignment.BottomRight,
+                isNarrator = true,
+                tailHeight = 0.dp,
+                tailWidth = 0.dp,
+            )
         }
     var tooltipData by remember { mutableStateOf<Any?>(null) }
 
@@ -175,7 +180,8 @@ fun ChatBubble(
             isPersistent = true,
         )
     val tooltipPositionProvider =
-        androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
+        androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider(
+            TooltipAnchorPosition.Above,
             spacingBetweenTooltipAndAnchor = 0.dp,
         )
 
@@ -309,7 +315,8 @@ fun ChatBubble(
                                     Modifier
                                         .clickable {
                                             requestNewCharacter()
-                                        }.size(24.dp)
+                                        }
+                                        .size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -327,7 +334,8 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             isAnimated && messageEffectsEnabled,
-                                        ).wrapContentSize()
+                                        )
+                                        .wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
@@ -341,10 +349,10 @@ fun ChatBubble(
                                                     override fun createShader(size: Size): Shader {
                                                         val shader =
                                                             (
-                                                                    sweepGradient(
+                                                                sweepGradient(
                                                                     genre.colorPalette(),
-                                                                ) as ShaderBrush
-                                                            ).createShader(size)
+                                                                    ) as ShaderBrush
+                                                                    ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
                                                             rotation,
@@ -358,10 +366,12 @@ fun ChatBubble(
                                             drawOutline(
                                                 outline = outline,
                                                 brush = brush,
-                                                style = Stroke(width = 2.dp.toPx()),
+                                                style = Stroke(width = 1.dp.toPx()),
                                             )
-                                        }
-                                        .background(Color.Gray.copy(alpha = 0.3f), bubbleShape)
+                                        }.background(
+                                            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
+                                            bubbleShape,
+                                        )
                                 } else {
                                     when (sender) {
                                         SenderType.USER -> {
@@ -379,11 +389,11 @@ fun ChatBubble(
                                                             onLongPress()
                                                         }
                                                     },
-                                                ).emotionalEntrance(
+                                                )
+                                                .emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
                                                     bubbleShape,
@@ -406,11 +416,11 @@ fun ChatBubble(
                                                                 onLongPress()
                                                             }
                                                         },
-                                                    ).emotionalEntrance(
+                                                    )
+                                                    .emotionalEntrance(
                                                         message.emotionalTone,
                                                         isAnimated && messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
+                                                    ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -552,7 +562,8 @@ fun ChatBubble(
                                                 2.dp,
                                                 borderColorAnimation,
                                                 bubbleShape,
-                                            ).padding(paddingAnimation)
+                                            )
+                                            .padding(paddingAnimation)
                                             .clip(bubbleShape)
                                             .padding(vertical = 4.dp)
                                             .animateContentSize(),
@@ -638,7 +649,8 @@ fun ChatBubble(
                                                         .clip(bubbleShape)
                                                         .clickable {
                                                             starAlpha = 0f
-                                                        }.background(
+                                                        }
+                                                        .background(
                                                             MaterialTheme.colorScheme.surfaceContainer.copy(
                                                                 alpha = .4f,
                                                             ),
@@ -780,11 +792,13 @@ fun ChatBubble(
                                 elevation = 8.dp,
                                 shape = narratorShape,
                                 spotColor = genre.color,
-                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
+                            )
+                            .border(1.dp, genre.color.gradientFade(), narratorShape)
                             .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            ).padding(16.dp),
+                            )
+                            .padding(16.dp),
                 ) {
                     TypewriterText(
                         text = message.text,

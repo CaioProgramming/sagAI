@@ -56,8 +56,51 @@ enum class ReviewerStrictness(
  * Used for analytics and metrics tracking.
  */
 enum class ViolationType {
+    // ========== CINEMATOGRAPHY VIOLATIONS ==========
+
+    /** Camera angle not specified when required (e.g., missing 'low-angle' specification) */
+    CAMERA_ANGLE_MISSING,
+
+    /** Camera angle contradicts visual direction (e.g., 'eye-level' when 'low-angle 45°' specified) */
+    CAMERA_ANGLE_WRONG,
+
+    /** Focal length/perspective characteristics don't match (e.g., no distortion mentioned for wide-angle lens) */
+    FOCAL_LENGTH_MISMATCH,
+
     /** Framing issue - describing body parts not visible in the camera view */
     FRAMING_VIOLATION,
+
+    /** Subject placement in frame not specified or wrong (e.g., missing 'centered' or 'lower third' positioning) */
+    PLACEMENT_MISSING,
+
+    /** Depth of field characteristics missing (e.g., no mention of bokeh for shallow DOF) */
+    DEPTH_OF_FIELD_MISSING,
+
+    /** Lighting direction or quality contradicts visual direction (e.g., 'soft' when 'hard spotlight' specified) */
+    LIGHTING_WRONG,
+
+    /** Lighting direction not specified when required */
+    LIGHTING_MISSING,
+
+    /** Color temperature/palette doesn't match visual direction (e.g., 'warm' when 'cool blue' specified) */
+    COLOR_PALETTE_WRONG,
+
+    /** Atmospheric quality missing (e.g., no mention of haze, fog, clarity as specified) */
+    ATMOSPHERE_MISSING,
+
+    /** Environmental context missing or wrong (e.g., 'studio' when 'urban street' specified) */
+    ENVIRONMENT_MISSING,
+
+    /** Perspective distortion not captured (e.g., missing converging lines for low-angle wide shot) */
+    PERSPECTIVE_MISSING,
+
+    /** Signature visual detail from direction not mentioned */
+    SIGNATURE_DETAIL_MISSING,
+
+    /** Technical jargon (degrees, mm, f-stops) not translated into visual descriptions */
+    TECHNICAL_JARGON_NOT_TRANSLATED,
+
+    // ========== ART STYLE VIOLATIONS ==========
 
     /** Banned terminology - using forbidden words from the art style (e.g., eye colors for PUNK_ROCK) */
     BANNED_TERMINOLOGY,
@@ -120,4 +163,18 @@ data class ImagePromptReview(
 
     val violationsByType: Map<ViolationType, Int>
         get() = violations.groupingBy { it.type }.eachCount()
+
+    /**
+     * Determines image quality for analytics based on violation count and severity.
+     * GOOD: No violations
+     * MEDIUM: 1-2 violations or only minor violations
+     * BAD: 3+ violations or has critical violations
+     */
+    fun getQualityLevel(): String =
+        when {
+            violations.isEmpty() -> "good"
+            isCompletelyWrong -> "bad"
+            violations.size >= 3 -> "bad"
+            else -> "medium"
+        }
 }

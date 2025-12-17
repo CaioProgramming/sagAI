@@ -1,8 +1,5 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.features.characters.data.model.Character
-
 object ImagePrompts {
     fun criticalGenerationRule() =
         buildString {
@@ -21,6 +18,13 @@ object ImagePrompts {
             appendLine("- Letterbox/pillarbox bars, black bars, bleed/crop marks, registration marks, rulers, or guide lines")
             appendLine("- Transparent background, alpha channel output, or any partially rendered region implying non-final art")
             appendLine()
+            appendLine("GENRE STYLE ADHERENCE (CRITICAL):")
+            appendLine("- The artwork MUST strictly follow the genre's art style requirements (technique, color palette, mood, era)")
+            appendLine("- FORBIDDEN elements specified in the genre rules MUST NOT appear in the image")
+            appendLine("- REQUIRED elements specified in the genre rules MUST be present")
+            appendLine("- Character design, clothing, and aesthetics MUST match the genre specifications exactly")
+            appendLine("- DO NOT mix incompatible styles or include elements from other genres")
+            appendLine()
             appendLine("COMPOSITION ENFORCEMENTS:")
             appendLine(
                 "- The artwork must fill the entire output canvas. The subject must be anchored in the bottom 2/3rds of the frame.",
@@ -34,173 +38,41 @@ object ImagePrompts {
             appendLine()
         }
 
-    fun simpleEmojiRendering(
-        backgroundHexCode: String,
-        character: Character,
-    ) = buildString {
-        appendLine(
-            "Your task is to act as an AI Image Prompt Engineer specializing in generating concepts for **Apple Memoji Headshots**.",
-        )
-        appendLine(
-            "Make sure to instruct the render style to be **EXACTLY** identical to **Apple Memojis**.",
-        )
-        appendLine(
-            "Focus **ONLY** on the **single character's head and face**, isolated from any body, neck, or shoulders, with a **dynamic expression or pose**. **Strictly exclude all details related to body, torso, neck, and clothing (spacesuit, gloves, belt, height, weight)**. The output must be a head-only composition, as if it were a detached emoji head.",
-        )
-        appendLine(
-            "Your goal is to convert the character's description and context below into a single, highly detailed, unambiguous, and visually rich English text description.",
-        )
-        appendLine(
-            "This text description will be used by an AI image generation model, IN CONJUNCTION with the aforementioned image references.",
-        )
-        appendLine(
-            "The generated prompt must be optimized to leverage the visual information from the character details, ensuring the final output image captures the character's face, hair, expression, **head pose (e.g., tilted, looking sideways, slightly angled)**, and a **subtly dynamic camera angle (e.g., slightly from below/above, slight rotation)**, while strictly adhering to the specified **Apple Memoji style** and **isolated head-only composition**.",
-        )
-
-        appendLine("**Character Context:**")
-        appendLine(
-            character.toJsonFormatExcludingFields(
-                listOf(
-                    "id",
-                    "image",
-                    "sagaId",
-                    "joinedAt",
-                    "emojified",
-                ),
-            ),
-        )
-
-        appendLine(
-            "Remember to consider any accessories or unique features mentioned in the character description, such as glasses, hats, piercings, or distinctive hairstyles, and incorporate them into the headshot rendering.",
-        )
-
-        appendLine(
-            "YOUR SOLE OUTPUT MUST BE THE GENERATED IMAGE PROMPT STRING. DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS. PROVIDE ONLY THE RAW, READY-TO-USE IMAGE PROMPT TEXT.",
-        )
-        appendLine(
-            "The rendering style must be identical to Apple Memojis:",
-        )
-        appendLine(
-            "vibrant and saturated colors, soft shading for a subtle 3D effect, soft and rounded surfaces, and clean edges.",
-        )
-
-        appendLine(
-            "Character must be an **ISOLATED FLOATING HEAD**, centered and occupying most of the image space with a clear focus on the **face and expression, without any neck or shoulders visible**.",
-        )
-
-        appendLine(
-            "Apply a solid background using the provided hex color: $backgroundHexCode.",
-        )
-    }
-
     @Suppress("ktlint:standard:max-line-length")
     fun extractComposition() =
         buildString {
-            appendLine(
-                "You are a **Director of Photography and Visual Storyteller** analyzing a reference image to extract its **'Visual Soul'**.",
-            )
-            appendLine(
-                "The goal is to apply this image's **Mood, Lighting, and Composition** to a completely NEW artwork with a FIXED Art Style (defined elsewhere).",
-            )
+            appendLine("CINEMATOGRAPHY EXTRACTION — Senior DP analyzing reference image")
+            appendLine("Extract PHOTOGRAPHIC DNA (NOT art style/subject). Use ONLY camera/lighting terms.")
+            appendLine("Fix missing or vague parameters autonomously. Return ONLY the 15 parameters below.")
             appendLine()
-            appendLine("**CRITICAL RULE: IGNORE THE MEDIUM.**")
-            appendLine("- Do NOT describe the art style (e.g., 'Oil Painting', '3D Render', 'Anime', 'Sketch').")
-            appendLine("- Do NOT describe the literal subject (e.g., 'Woman in pool', 'Knight in armor').")
-            appendLine("- **FOCUS ONLY** on the *Photography, Atmosphere, and Emotional Gaze*.")
+            appendLine("OUTPUT 15 PARAMETERS (Format: 'NAME: value'):")
             appendLine()
-            appendLine("**YOUR MISSION: EXTRACT THE PHOTOGRAPHIC DNA**")
+            appendLine("1. ANGLE: [eye-level / low XY° / high XY° / dutch XY°]")
             appendLine(
-                "If this image were a photograph taken by a master photographer, how would they describe their settings? How is the light hitting the lens? What is the depth of field doing?",
-            )
-            appendLine()
-            appendLine("**REQUIRED OUTPUT (10-Point Visual Manifest):**")
-            appendLine()
-            appendLine(
-                "1. **CAMERA DISTANCE / FRAMING (CRITICAL - MUST EXTRACT FIRST):** What is the shot type? This is NON-NEGOTIABLE and must be preserved exactly.",
+                "2. LENS: [14-24mm ultra-wide / 24-35mm wide / 35-50mm normal / 50-85mm portrait / 85-200mm tele / 200mm+ super-tele]",
             )
             appendLine(
-                "   • CLOSE-UP / PORTRAIT / HEADSHOT: Frame shows primarily face, head, neck, upper shoulders. NO full body visible.",
+                "3. FRAMING: [ECU face / CU head-shoulders / MCU head-chest / MS head-waist / MWS head-knees / FS full-body / WS body+env / EWS small-in-vast]",
             )
-            appendLine(
-                "   • MEDIUM SHOT / BUST: Frame shows head to waist/chest area. Lower body NOT visible.",
-            )
-            appendLine(
-                "   • FULL BODY / WIDE: Entire body visible from head to feet.",
-            )
-            appendLine(
-                "   • **OUTPUT FORMAT:** State clearly: 'FRAMING: [Close-up Portrait / Medium Bust Shot / Full Body Wide Shot]'",
-            )
-            appendLine(
-                "   • **WARNING:** This framing MUST be respected in the final artwork. A portrait reference must produce a portrait output—DO NOT zoom out or change the camera distance. If the reference is a Close-up/Portrait, the output MUST be a Close-up/Portrait.",
-            )
-            appendLine()
-            appendLine(
-                "2. **Compositional Framework:** How is the scene framed beyond distance? (e.g., 'Off-center subject with negative space', 'Symmetrical and confronting', 'Dynamic diagonal tension').",
-            )
-            appendLine(
-                "3. **Emotional Atmosphere:** What is the mood of the air itself? (e.g., 'Heavy, humid, and oppressive', 'Crisp, cold, and detached', 'Warm, nostalgic, and hazy').",
-            )
-            appendLine(
-                "4. **Lighting Design:** How is the light shaped? (e.g., 'Hard sunlight with deep jagged shadows', 'Soft studio diffusion with no shadows', 'Neon rim-lighting against darkness').",
-            )
-            appendLine(
-                "5. **Color Harmony:** What is the emotional palette? (e.g., 'Desaturated melancholy blues', 'Vibrant, aggressive pop-colors', 'Earthy, sun-baked terracottas').",
-            )
-            appendLine(
-                "6. **Visual Texture & Fidelity:** How 'clean' or 'gritty' is the view? (e.g., 'High-ISO film grain', 'Crystal clear digital sharpness', 'Soft misty diffusion').",
-            )
-            appendLine(
-                "7. **Depth & Spatial Focus:** How is the depth handled? (e.g., 'Razor-thin depth of field isolating the eye', 'Infinite focus from foreground to horizon').",
-            )
-            appendLine(
-                "8. **The 'X-Factor' Accent:** What specific detail grabs the attention? (e.g., 'The way light creates a flare', 'The subtle reflection on wet surfaces', 'The intense contrast in the eyes').",
-            )
-            appendLine(
-                "9. **The Camera's Personality:** What does the 'lens' feel like? (e.g., 'A voyeuristic telephoto lens', 'An intimate and wide documentary lens', 'A clinical and precise portrait lens').",
-            )
-            appendLine(
-                "10. **Subject Vertical Position:** Where is the subject positioned vertically in the frame? (e.g., 'Centered', 'Lower third anchored', 'Upper biased'). This helps preserve composition intent.",
-            )
-            appendLine()
-            appendLine("**FINAL CHECK:**")
-            appendLine(
-                "1. Did you clearly state the FRAMING type (Close-up/Medium/Full Body)? This is MANDATORY.",
-            )
-            appendLine(
-                "2. Did you mention 'painting', 'drawing', or 'illustration'? **DELETE IT.** Use photographic terms like 'exposure', 'focus', 'contrast', and 'atmosphere' instead.",
-            )
-            appendLine(
-                "3. Did you describe what the subject IS (their identity/actions)? **DELETE IT.** Focus only on HOW the camera captures them, not WHO they are.",
-            )
-        }
-
-    fun descriptionRules() =
-        buildString {
-            appendLine("**--- CRITICAL COMPOSITION RULES ---**")
-            appendLine(
-                "1. **VERTICAL SUBJECT POSITIONING (Y-AXIS SHIFT):** Position the subject LOWER in the frame by shifting them DOWN on the vertical axis. Do NOT zoom out or change the camera distance—maintain the exact framing/zoom level from the Visual Direction. Simply anchor the subject in the lower portion of the canvas.",
-            )
-            appendLine(
-                "   • For CLOSE-UP/PORTRAIT shots: Position the face/head in the lower 70% of the frame, allowing subtle breathing room at the top. DO NOT ZOOM OUT to show the torso if the reference is a headshot.",
-            )
-            appendLine(
-                "   • For MEDIUM shots: Anchor the subject's torso in the bottom 2/3rds of the frame.",
-            )
-            appendLine(
-                "   • For FULL BODY shots: Anchor feet near the bottom edge, leaving the top 30% for sky/environment.",
-            )
-            appendLine(
-                "   • **CRITICAL:** This is a COMPOSITION adjustment, NOT a zoom adjustment. The camera distance stays the same—only the subject's vertical position changes.",
-            )
-            appendLine(
-                "2. **NO WHITE FRAMES:** The image must be full-bleed artwork with no borders, frames, or white edges.",
-            )
-            appendLine()
+            appendLine("4. PLACEMENT: [H: left/center/right third] [V: upper/center/lower third]")
+            appendLine("5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]")
+            appendLine("6. COLOR: [cool / neutral / warm] + dominant palette")
+            appendLine("7. ENVIRONMENT: Location type, scale, key elements")
+            appendLine("8. MOOD: Emotional tone (epic/intimate/oppressive/nostalgic/etc)")
+            appendLine("9. DOF: [razor / shallow / moderate / deep / infinite]")
+            appendLine("10. ATMOSPHERE: [clear/hazy/misty/foggy/dusty/smoky]")
+            appendLine("11. PERSPECTIVE: [converging/parallel/barrel/foreshortening]")
+            appendLine("12. TEXTURE: [razor-sharp/film-grain/digital-noise/soft-diffused/gritty]")
+            appendLine("13. TIME: [golden-hour/midday/blue-hour/night/overcast/studio]")
+            appendLine("14. SIGNATURE: One unique unforgettable detail")
+            appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
         }
 
     /**
-     * Creates a reviewer prompt that validates and corrects image descriptions before generation.
-     * Acts as a Quality Assurance layer to catch violations of art style, framing, and composition rules.
+     * Validates and autonomously corrects image descriptions for generation.
+     * Acts as rigid QA layer to enforce cinematography framing, art style, and composition rules.
+     * CRITICAL: Validates ALL 15 cinematography parameters against visual direction.
+     * Returns ImagePromptReview data class with corrections and violations detected.
      */
     fun reviewImagePrompt(
         visualDirection: String?,
@@ -208,90 +80,88 @@ object ImagePrompts {
         strictness: com.ilustris.sagai.core.ai.models.ReviewerStrictness,
         finalPrompt: String,
     ) = buildString {
-        appendLine("**=== IMAGE PROMPT QUALITY ASSURANCE REVIEWER ===**")
-        appendLine()
-        appendLine("**YOUR ROLE:**")
+        appendLine("=== IMAGE PROMPT QA REVIEWER (AI-to-AI) — RIGID CINEMATOGRAPHY ENFORCEMENT ===")
         appendLine(strictness.description)
         appendLine()
-        appendLine("**YOUR TASK:**")
-        appendLine("Review the IMAGE PROMPT below and check it against the ART STYLE RULES and VISUAL DIRECTION.")
-        appendLine("Your goal is to catch violations BEFORE expensive image generation occurs.")
+        appendLine("TASK: Validate and AUTONOMOUSLY FIX cinematography & art style violations.")
+        appendLine("Return violations found + corrected prompt. RIGID ENFORCEMENT: No deviations permitted.")
         appendLine()
-        appendLine("**WHAT TO CHECK:**")
+
+        appendLine("CINEMATOGRAPHY VALIDATION & FIX (RIGID):")
+        appendLine("Required: All 15 cinematography parameters MUST be explicitly defined and exact.")
         appendLine()
-        appendLine("1. **FRAMING COMPLIANCE:**")
+        appendLine("MANDATORY CINEMATOGRAPHY PARAMETERS (ALL MUST BE PRESENT & COMPLIANT):")
+        appendLine("1. ANGLE: MUST be one of [eye-level / low / high / dutch]. NO vague descriptions.")
+        appendLine("2. LENS: MUST be one of [ultra-wide / wide / normal / portrait / tele / super-tele]. NO technical f-stops.")
+        appendLine("3. FRAMING: MUST be one of [ECU / CU / MCU / MS / MWS / FS / WS / EWS]. EXACT terminology required.")
+        appendLine("4. PLACEMENT: MUST specify [H: left/center/right] [V: upper/center/lower]. NO ambiguity.")
+        appendLine("5. LIGHTING: MUST specify direction [front/side/back/top/under/omni] + quality [hard/soft]. Both required.")
+        appendLine("6. COLOR: MUST specify temperature [cool/neutral/warm] + exact dominant colors. No optional palettes.")
+        appendLine("7. ENVIRONMENT: MUST describe location type, scale, and key environmental elements explicitly.")
+        appendLine("8. MOOD: MUST specify ONE emotional tone from [epic/intimate/oppressive/nostalgic/tense/serene/mysterious/majestic].")
+        appendLine("9. DOF: MUST be one of [razor/shallow/moderate/deep/infinite]. EXACT depth-of-field specification.")
+        appendLine("10. ATMOSPHERE: MUST be one of [clear/hazy/misty/foggy/dusty/smoky/ethereal]. NO vague atmospheric terms.")
+        appendLine("11. PERSPECTIVE: MUST be one of [converging/parallel/barrel/foreshortening]. Spatial rules enforced.")
+        appendLine("12. TEXTURE: MUST be one of [razor-sharp/film-grain/digital-noise/soft-diffused/gritty]. Image quality strict.")
+        appendLine("13. TIME: MUST be one of [golden-hour/midday/blue-hour/night/overcast/studio]. Lighting time explicit.")
+        appendLine("14. SIGNATURE: MUST have one unique, unforgettable detail. REQUIRED, not optional.")
+        appendLine("15. DEPTH_LAYERS: MUST explicitly describe background/midground/foreground spacing and elements.")
+        appendLine()
+
         visualDirection?.let {
-            appendLine("   Visual Direction specifies:")
-            appendLine("   ```")
-            appendLine("   $it")
-            appendLine("   ```")
-            appendLine()
-            appendLine("   VALIDATION:")
-            appendLine("   - Extract the FRAMING type (Close-up/Portrait, Medium, Full Body)")
-            appendLine("   - Check if the prompt describes body parts OUTSIDE the camera view:")
-            appendLine("     * Close-up/Portrait: Should NOT mention legs, feet, full outfit, stance")
-            appendLine("     * Medium shot: Should NOT mention legs, feet")
-            appendLine("     * Full body: Can describe everything")
-            appendLine("   - If violations found: REMOVE those descriptions")
-        } ?: appendLine("   No specific visual direction provided. Skip framing check.")
+            appendLine("REFERENCE VISUAL DIRECTION: $it")
+            appendLine("ACTION: Extract expected cinematography parameters from this direction.")
+            appendLine("Any missing or conflicting parameters MUST be corrected to match this reference.")
+        }
         appendLine()
-        appendLine("2. **ART STYLE COMPLIANCE:**")
-        appendLine("   Art Style Validation Rules:")
-        appendLine("   ```")
-        appendLine("   $artStyleValidationRules")
-        appendLine("   ```")
+
+        appendLine("CINEMATOGRAPHY COMPLIANCE RULES:")
+        appendLine("- If ANY of the 15 parameters is missing, vague, or non-compliant: CORRECT it immediately.")
+        appendLine("- If technical jargon (f-stops/Kelvin/degrees) is present: REPLACE with visual descriptors.")
+        appendLine("- If cinematography contradicts visual direction: FORCE alignment with the direction.")
+        appendLine("- Verify final prompt describes CAMERA/LIGHTING terms, NOT art style or subject attributes.")
+        appendLine("- Ensure VERTICAL COMPOSITION BIAS is explicit (top 1/3 empty, subject anchored bottom 2/3).")
         appendLine()
-        appendLine("   VALIDATION:")
-        appendLine("   - Scan the prompt for BANNED TERMS (e.g., 'brown eyes', 'soft lighting', 'plain background')")
-        appendLine("   - Check if REQUIRED ELEMENTS are present (e.g., background details, specific art techniques)")
-        appendLine("   - Verify anatomy descriptions match the style (e.g., 'cartoon proportions' vs 'realistic')")
-        appendLine("   - If violations found: REPLACE banned terms with correct alternatives, ADD missing elements")
+
+        appendLine("ART STYLE VALIDATION & FIX:")
+        appendLine("Genre Rules: $artStyleValidationRules")
+        appendLine("- Apply ALL validation rules autonomously — fix violations with zero tolerance.")
+        appendLine("- Verify REQUIRED elements are present; remove FORBIDDEN elements.")
+        appendLine("- Respect character traits, skin tones, hair styles, cultural details — maintain accuracy.")
+        appendLine("- Keep token-optimized: omit redundant descriptors but retain critical attributes.")
+        appendLine("- Output prompt must be assertive and direct: AI-to-AI communication style.")
         appendLine()
-        appendLine("3. **BACKGROUND VALIDATION:**")
-        appendLine("   - If art style REQUIRES backgrounds (check validation rules), ensure 3+ specific objects are described")
-        appendLine("   - If prompt says 'plain background' or 'gradient background' when forbidden: ADD environmental details")
+
+        appendLine("CRITICAL COMPOSITION ENFORCEMENT:")
+        appendLine("- Full-bleed raster artwork (NO borders, frames, or simulated edges).")
+        appendLine("- Vertical lock-screen bias: Subject in bottom 2/3rds, top 1/3rd clear/background only.")
+        appendLine("- NO text, logos, watermarks, UI elements, or interface chrome.")
+        appendLine("- NO transparent regions, alpha channels, or layered/panelled compositions.")
+        appendLine()
+
+        appendLine("OUTPUT JSON (ImagePromptReview):")
         appendLine(
-            "   - For portrait/close-up framing with mandatory backgrounds: adapt background to tight framing (wall, neon glow, posters visible)",
+            """{
+  "originalPrompt": "...",
+  "correctedPrompt": "...",
+  "cinematographyValidation": {
+    "parametersValidated": 15,
+    "parametersCompliant": 15,
+    "missingOrVague": [],
+    "correctedParameters": ["..."]
+  },
+  "violations": [
+    {"type": "MISSING_CINEMATOGRAPHY_PARAMETER", "severity": "CRITICAL", "parameter": "ANGLE", "description": "...", "correctedTo": "..."},
+    {"type": "FRAMING_VIOLATION", "severity": "CRITICAL", "description": "...", "correctedTo": "..."},
+    {"type": "BANNED_TERMINOLOGY", "severity": "MAJOR", "description": "...", "example": "..."}
+  ],
+  "changesApplied": ["Corrected ANGLE from vague to eye-level", "...", "..."],
+  "wasModified": true,
+  "complianceStatus": "FULL_COMPLIANCE"
+}""",
         )
         appendLine()
-        appendLine("**OUTPUT FORMAT (JSON):**")
-        appendLine("Return a JSON object with this EXACT structure:")
-        appendLine(
-            """
-            {
-              "correctedPrompt": "The full corrected image prompt (or original if no changes needed)",
-              "violations": [
-                {
-                  "type": "FRAMING_VIOLATION|BANNED_TERMINOLOGY|MISSING_ELEMENTS|ANATOMY_MISMATCH|STYLE_CONTRADICTION",
-                  "severity": "CRITICAL|MAJOR|MINOR",
-                  "description": "What was wrong",
-                  "example": "Specific text from the prompt that violated the rule"
-                }
-              ],
-              "changesApplied": [
-                "Human-readable description of each fix applied"
-              ],
-              "wasModified": true
-            }
-            """.trimIndent(),
-        )
-        appendLine()
-        appendLine("**SEVERITY GUIDELINES:**")
-        appendLine(
-            "- CRITICAL: Would break image generation or produce completely wrong output (wrong framing, missing mandatory elements)",
-        )
-        appendLine("- MAJOR: Significantly degrades quality or misses key requirements (banned terminology, wrong anatomy)")
-        appendLine("- MINOR: Small deviation that might affect polish but not core functionality")
-        appendLine()
-        appendLine("**IMPORTANT:**")
-        appendLine("- If no violations found, return the original prompt unchanged with empty violations array and wasModified: false")
-        appendLine("- When correcting, preserve the original's tone, personality, and artistic intent")
-        appendLine("- Only change what clearly violates the rules based on your strictness level")
-        appendLine("- The correctedPrompt should be ready for direct use in image generation")
-        appendLine()
-        appendLine("**IMAGE PROMPT TO REVIEW:**")
-        appendLine("```")
+        appendLine("PROMPT TO REVIEW & FIX:")
         appendLine(finalPrompt)
-        appendLine("```")
     }
 }

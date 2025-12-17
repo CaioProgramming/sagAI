@@ -13,6 +13,8 @@ import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.analytics.AnalyticsService
+import com.ilustris.sagai.core.analytics.AnalyticsServiceImpl
 import com.ilustris.sagai.core.database.DatabaseBuilder
 import com.ilustris.sagai.core.database.SagaDatabase
 import com.ilustris.sagai.core.datastore.DataStorePreferences
@@ -285,6 +287,9 @@ object AppModule {
 @InstallIn(ViewModelComponent::class)
 @Module
 abstract class UseCaseModule {
+    @Binds
+    abstract fun providesAnalyticsService(analyticsServiceImpl: AnalyticsServiceImpl): AnalyticsService
+
     @Binds
     abstract fun providesSaveShare(sharePlayUseCaseImpl: SharePlayUseCaseImpl): SharePlayUseCase
 

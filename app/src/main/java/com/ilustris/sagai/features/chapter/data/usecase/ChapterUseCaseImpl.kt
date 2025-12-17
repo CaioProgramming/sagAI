@@ -45,6 +45,7 @@ class ChapterUseCaseImpl
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
+        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
     ) : ChapterUseCase {
         override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
@@ -277,8 +278,17 @@ class ChapterUseCaseImpl
                 val genCover =
                     imagenClient
                         .generateImage(
-                            finalPromptForGeneration.plus(ImagePrompts.criticalGenerationRule()),
+                            finalPromptForGeneration,
                         )!!
+
+                // Track image quality analytics if review was successful
+                reviewedPrompt?.let { review ->
+                    trackImageQuality(
+                        genre = saga.data.genre.name,
+                        imageType = com.ilustris.sagai.core.analytics.AnalyticsConstants.ImageType.COVER,
+                        review = review,
+                    )
+                }
 
                 val coverFile =
                     fileHelper.saveFile(
@@ -316,4 +326,26 @@ class ChapterUseCaseImpl
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)
             }
+
+        private fun trackImageQuality(
+            genre: String,
+            imageType: String,
+            review: com.ilustris.sagai.core.ai.models.ImagePromptReview,
+        ) {
+            val violationTypes =
+                review.violations
+                    .map { it.type.name }
+                    .distinct()
+                    .joinToString(", ")
+
+            analyticsService.trackEvent(
+                com.ilustris.sagai.core.analytics.ImageQualityEvent(
+                    genre = genre,
+                    imageType = imageType,
+                    quality = review.getQualityLevel(),
+                    violations = review.violations.size,
+                    violationTypes = violationTypes.ifEmpty { null },
+            ),
+        )
+    }
     }
