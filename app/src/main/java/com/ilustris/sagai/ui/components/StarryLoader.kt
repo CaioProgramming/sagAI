@@ -73,9 +73,13 @@ fun StarryLoader(
             ) {
                 val dialogWindowProvider = LocalView.current.parent as? DialogWindowProvider
                 SideEffect {
-                    dialogWindowProvider?.window?.setDimAmount(0f) // 0f is transparent, default is around 0.6f
+                    dialogWindowProvider?.window?.setDimAmount(.2f) // 0f is transparent, default is around 0.6f
                 }
-                Box(Modifier.fillMaxSize()) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .reactiveShimmer(true, brushColors),
+                        ) {
                     val starsAlpha by animateFloatAsState(
                         targetValue = if (loadingMessage == null) 1f else .5f,
                         animationSpec = tween(1500),
@@ -84,8 +88,7 @@ fun StarryLoader(
                         modifier =
                             Modifier
                                 .alpha(starsAlpha)
-                                .fillMaxSize()
-                                .gradientFill(Brush.verticalGradient(brushColors)),
+                                .fillMaxSize(),
                     )
 
                     val infiniteTransition = rememberInfiniteTransition(label = "border_animation")

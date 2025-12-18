@@ -1,4 +1,4 @@
-package com.ilustris.sagai.core.ai.models
+package com.ilustris.sagai.core.ai.model
 
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.characters.data.model.Character

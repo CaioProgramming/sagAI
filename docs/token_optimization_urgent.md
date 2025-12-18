@@ -136,7 +136,7 @@ fun iconDescription(
 fun reviewImagePrompt(
     visualDirection: String?,
     artStyleValidationRules: String,
-    strictness: com.ilustris.sagai.core.ai.models.ReviewerStrictness,
+    strictness: com.ilustris.sagai.core.ai.model.ReviewerStrictness,
     finalPrompt: String,
 ) = buildString {
     appendLine("=== IMAGE PROMPT QA REVIEWER ===")

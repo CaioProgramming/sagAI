@@ -90,7 +90,7 @@ fun Class<*>.toSchema(
 fun Class<*>.toSchemaMap(excludeFields: List<String> = emptyList()): Map<String, Schema> =
     declaredFields
         .filter {
-            excludeFields.plus("\$stable").contains(it.name).not()
+            excludeFields.plus($$"$stable").contains(it.name).not()
         }.associate {
             val memberIsNullable =
                 this

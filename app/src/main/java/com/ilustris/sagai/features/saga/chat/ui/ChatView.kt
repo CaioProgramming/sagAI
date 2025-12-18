@@ -113,6 +113,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.audio.ui.AudioRecordingSheet
 import com.ilustris.sagai.core.file.BACKUP_PERMISSION
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.permissions.PermissionComponent
@@ -135,6 +136,7 @@ import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -149,6 +151,8 @@ import com.ilustris.sagai.features.saga.chat.ui.components.CharacterRevealOverla
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
+import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
 import com.ilustris.sagai.features.share.domain.model.ShareType
@@ -169,6 +173,7 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
 import com.ilustris.sagai.ui.theme.components.SparkIcon
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
@@ -222,12 +227,14 @@ fun ChatView(
     val requestPermissionLauncher = PermissionService.rememberPermissionLauncher()
     val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
     val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
+    val audioState by viewModel.audioPlaybackState.collectAsStateWithLifecycle()
     var showCharacter by remember {
         mutableStateOf<Int?>(null)
     }
     val newCharacterReveal by viewModel.newCharacterReveal.collectAsStateWithLifecycle()
     val selectionState by viewModel.selectionState.collectAsStateWithLifecycle()
     var showShareSheet by remember { mutableStateOf(false) }
+    var showAudioTranscript by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(content) {
         content?.let {
@@ -342,6 +349,7 @@ fun ChatView(
                                             inputValue = input,
                                             actualSender = senderType,
                                             typoFix = typoFix,
+                                            audioPlaybackState = audioState,
                                             onUpdateInput = viewModel::updateInput,
                                             onUpdateSenders = viewModel::updateSendType,
                                             characters = characters,
@@ -364,9 +372,15 @@ fun ChatView(
                                             sharedTransitionScope = sharedTransitionScope,
                                             updateProgress = loreProgress,
                                             snackBar = snackBarMessage,
-                                            onSendMessage = viewModel::sendInput,
+                                            onSendMessage = { userConfirmed ->
+                                                viewModel.sendInput(userConfirmed, false)
+                                            },
+                                            regenerateAudio = {
+                                                viewModel.regenerateAudio(it)
+                                            },
                                             onBack = navHostController::popBackStack,
                                             onRetryMessage = viewModel::retryAiResponse,
+                                            onPlayAudio = viewModel::playOrPauseAudio,
                                             requestNewCharacter = viewModel::requestNewCharacter,
                                             reviewEvent = viewModel::reviewEvent,
                                             reviewChapter = viewModel::reviewChapter,
@@ -393,6 +407,9 @@ fun ChatView(
                                             onClearSelection = viewModel::clearSelection,
                                             onShareConversation = {
                                                 showShareSheet = true
+                                            },
+                                            onRequestAudio = {
+                                                showAudioTranscript = true
                                             },
                                         )
                                     }
@@ -501,6 +518,18 @@ fun ChatView(
             BackupSheet(onDismiss = { showBackupSheet = false })
         }
 
+        if (showAudioTranscript) {
+            AudioRecordingSheet(
+                content?.data?.genre?.colorPalette() ?: holographicGradient,
+                onDismiss = {
+                    showAudioTranscript = false
+                },
+            ) {
+                viewModel.updateInput(TextFieldValue(it))
+                viewModel.sendInput(userConfirmed = false, isAudio = true)
+            }
+        }
+
         val backupLauncher =
             PermissionService.rememberBackupLauncher { uri ->
                 viewModel.enableBackup(uri)
@@ -576,6 +605,7 @@ fun ChatContent(
     snackBar: SnackBarState? = null,
     sharedTransitionScope: SharedTransitionScope,
     currentCharacter: CharacterContent?,
+    audioPlaybackState: AudioPlaybackState? = null,
     onSendMessage: (Boolean) -> Unit = { },
     onUpdateInput: (TextFieldValue) -> Unit = { },
     onUpdateSenders: (SenderType) -> Unit = { },
@@ -583,12 +613,14 @@ fun ChatContent(
     openSagaDetails: (Saga) -> Unit = {},
     onInjectFakeMessages: (Int) -> Unit = {},
     onRetryMessage: (Message) -> Unit = {},
-    openDrawer: () -> Unit = {},
+    onPlayAudio: (MessageContent) -> Unit = {},
     selectCharacter: (CharacterContent) -> Unit = {},
     requestNewCharacter: (String) -> Unit = {},
     reviewEvent: (TimelineContent) -> Unit = {},
     reviewChapter: (ChapterContent) -> Unit = {},
     updateCharacter: (CharacterContent) -> Unit = {},
+    regenerateAudio: (MessageContent) -> Unit = {},
+    onRequestAudio: () -> Unit = {},
     messageEffectsEnabled: Boolean = true,
     originalBitmap: Bitmap? = null,
     segmentedBitmap: Bitmap? = null,
@@ -678,7 +710,8 @@ fun ChatContent(
                                 shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
                                 targetValue = 1000f,
-                            ).fillMaxSize(.5f)
+                            )
+                            .fillMaxSize(.5f)
                             .alpha(.3f),
                 )
 
@@ -686,7 +719,8 @@ fun ChatContent(
                     Modifier
                         .padding(
                             top = padding.calculateTopPadding(),
-                        ).fillMaxSize(),
+                        )
+                        .fillMaxSize(),
                 ) {
                     rememberCoroutineScope()
                     val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
@@ -695,8 +729,6 @@ fun ChatContent(
                         saga = content,
                         actList = messagesList,
                         listState = listState,
-                        isLoading = isLoading,
-                        onRefresh = onRefresh,
                         objectiveExpanded = objectiveExpanded,
                         modifier =
                             Modifier
@@ -708,13 +740,13 @@ fun ChatContent(
                                     width = Dimension.fillToConstraints
                                     height = Dimension.fillToConstraints
                                 },
+                        regenerateAudio = {
+                            regenerateAudio(it)
+                        },
                         openCharacter = {
                             it?.let { character -> selectCharacter(character) }
                         },
                         openSaga = { openSagaDetails(saga) },
-                        openWiki = {
-                            openDrawer()
-                        },
                         openReactions = {
                             showReactions = it
                         },
@@ -729,6 +761,8 @@ fun ChatContent(
                         selectedMessageIds = selectedMessageIds,
                         onToggleSelectionMode = onToggleSelectionMode,
                         onToggleMessageSelection = onToggleMessageSelection,
+                        audioPlaybackState = audioPlaybackState,
+                        onPlayAudio = onPlayAudio,
                     )
 
                     Box(
@@ -737,7 +771,8 @@ fun ChatContent(
                                 bottom.linkTo(parent.bottom)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }.fillMaxWidth()
+                            }
+                            .fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
                     )
@@ -751,8 +786,7 @@ fun ChatContent(
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                     width = Dimension.fillToConstraints
-                                }
-                                .padding(vertical = padding.calculateBottomPadding())
+                                }.padding(vertical = padding.calculateBottomPadding())
                                 .animateContentSize(),
                         enter = slideInVertically(),
                         exit = slideOutVertically { it },
@@ -768,12 +802,12 @@ fun ChatContent(
                             typoFix = typoFix,
                             inputField = inputValue,
                             sendType = actualSender,
-                            sharedTransitionScope = this@with,
                             onSendMessage = onSendMessage,
                             onUpdateInput = onUpdateInput,
                             onUpdateSender = onUpdateSenders,
                             suggestions = suggestions,
                             onSelectCharacter = updateCharacter,
+                            onRequestAudio = onRequestAudio,
                         )
                     }
 
@@ -787,8 +821,7 @@ fun ChatContent(
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
                                     width = Dimension.fillToConstraints
-                                }
-                                .padding(
+                                }.padding(
                                     bottom = padding.calculateBottomPadding() + 16.dp,
                                     start = 16.dp,
                                     end = 16.dp,
@@ -878,8 +911,7 @@ fun ChatContent(
                                     top.linkTo(parent.top)
                                     start.linkTo(parent.start)
                                     end.linkTo(parent.end)
-                                }
-                                .background(MaterialTheme.colorScheme.background),
+                                }.background(MaterialTheme.colorScheme.background),
                     ) {
                         AnimatedVisibility(
                             objectiveExpanded.not(),
@@ -927,7 +959,8 @@ fun ChatContent(
                                                 content.data.genre.color,
                                                 progress,
                                             ),
-                                        ).reactiveShimmer(isGenerating)
+                                        )
+                                        .reactiveShimmer(isGenerating)
                                         .sharedElement(
                                             rememberSharedContentState(
                                                 key = "current_objective_${content.data.id}",
@@ -1080,8 +1113,7 @@ fun ChatContent(
                                                 .background(
                                                     content.data.genre.color,
                                                     CircleShape,
-                                                )
-                                                .size(32.dp)
+                                                ).size(32.dp)
                                                 .padding(4.dp),
                                     ) {
                                         Icon(
@@ -1346,12 +1378,9 @@ fun ChatList(
     actList: List<ActDisplayData>,
     modifier: Modifier,
     listState: LazyListState,
-    isLoading: Boolean,
-    onRefresh: () -> Unit,
     objectiveExpanded: Boolean,
     openCharacter: (CharacterContent?) -> Unit = {},
     openSaga: () -> Unit = {},
-    openWiki: () -> Unit = {},
     onRetryMessage: (Message) -> Unit = {},
     openReactions: (MessageContent) -> Unit = {},
     requestNewCharacter: (String) -> Unit = {},
@@ -1362,6 +1391,9 @@ fun ChatList(
     segmentedBitmap: Bitmap? = null,
     isSelectionMode: Boolean = false,
     selectedMessageIds: Set<Int> = emptySet(),
+    audioPlaybackState: AudioPlaybackState? = null,
+    onPlayAudio: (MessageContent) -> Unit = { },
+    regenerateAudio: (MessageContent) -> Unit = {},
     onToggleSelectionMode: () -> Unit = {},
     onToggleMessageSelection: (Int) -> Unit = {},
 ) {
@@ -1472,8 +1504,14 @@ fun ChatList(
                             var isExpanded by remember { mutableStateOf(false) }
                             Box(
                                 Modifier
-                                    .clip(genre.shape())
-                                    .pointerInput(Unit) {
+                                    .clip(
+                                        genre.bubble(
+                                            BubbleTailAlignment.BottomLeft,
+                                            0.dp,
+                                            0.dp,
+                                            true,
+                                        ),
+                                    ).pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
                                                 awaitRelease()
@@ -1536,6 +1574,7 @@ fun ChatList(
                             content = saga,
                             canAnimate = timeline.messages.lastOrNull() == it,
                             messageEffectsEnabled = messageEffectsEnabled,
+                            audioPlaybackState = audioPlaybackState,
                             modifier =
                                 Modifier.animateItem(
                                     fadeInSpec = tween(400, easing = EaseIn),
@@ -1546,6 +1585,10 @@ fun ChatList(
                             onRetry = {
                                 onRetryMessage(it.message)
                             },
+                            regenerateAudio = {
+                                regenerateAudio(it)
+                            },
+                            onPlayAudio = onPlayAudio,
                             requestNewCharacter = {
                                 it.message.speakerName?.let {
                                     requestNewCharacter(it)
@@ -1626,7 +1669,7 @@ fun ChatList(
             if (act.content.data.introduction
                     .isNotEmpty()
             ) {
-                item(key = "${act.content.data.id}-intro") {
+                item(key = "act-${act.content.data.id}-intro") {
                     Text(
                         act.content.data.introduction,
                         style =
@@ -1644,7 +1687,7 @@ fun ChatList(
                 }
             }
 
-            item(key = "${act.content.data.id}-title") {
+            item(key = "act-${act.content.data.id}-title") {
                 val title =
                     act.content.data.title
                         .ifEmpty {

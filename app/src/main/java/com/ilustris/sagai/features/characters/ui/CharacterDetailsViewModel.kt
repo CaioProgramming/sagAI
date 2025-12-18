@@ -73,6 +73,7 @@ class CharacterDetailsViewModel
 
         fun segmentCharacterImage(url: String) {
             segmentedBitmap.value = null
+            if (url.isBlank()) return
             viewModelScope.launch(Dispatchers.IO) {
                 val cachedBitmap = segmentedImageCache.get(url)
                 if (cachedBitmap != null) {

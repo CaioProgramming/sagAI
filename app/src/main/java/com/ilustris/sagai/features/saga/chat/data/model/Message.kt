@@ -48,4 +48,7 @@ data class Message(
     val timelineId: Int,
     val emotionalTone: EmotionalTone? = null,
     val status: MessageStatus? = MessageStatus.OK,
+    val audible: Boolean = false,
+    @ColumnInfo(defaultValue = "")
+    val audioPath: String? = null,
 )

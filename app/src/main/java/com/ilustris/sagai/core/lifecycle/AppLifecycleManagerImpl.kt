@@ -18,10 +18,6 @@ class AppLifecycleManagerImpl
         override val isAppInForeground: StateFlow<Boolean> = _isAppInForeground
 
         init {
-            // This observer will be added to the ProcessLifecycleOwner's lifecycle.
-            // It's important that ProcessLifecycleOwner.get().lifecycle.addObserver(this)
-            // is called, which happens here in the init block.
-            // Hilt will ensure this @Singleton is constructed appropriately.
             ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         }
 

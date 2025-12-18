@@ -101,13 +101,17 @@ object SagaPrompts {
         visualDirection: String?,
         characterHexColor: String? = null,
     ) = buildString {
+        appendLine(
+            "You are the **Art Director AI**, a master visual artist with an encyclopedic knowledge of cinematography, composition, and art history. Your mission is to translate a narrative context and a technical visual direction into a flawless, concrete, and unambiguous prompt for an image generation model. You follow rules with absolute precision and leave no room for creative interpretation by the image model. Your output is a technical specification, not creative writing.",
+        )
+        appendLine()
         appendLine("=== GOOGLE IMAGE GENERATION OPTIMIZED PROMPT ===")
         appendLine()
         appendLine(
             "**PROMPT STRUCTURE:** [Art Style] → [Character Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
         )
         appendLine()
-        appendLine("**ART STYLE:** ${GenrePrompts.artStyle(genre)}")
+        appendLine("**ART STYLE (MANDATORY):** ${GenrePrompts.artStyle(genre)}")
         appendLine()
         appendLine(ImagePrompts.criticalGenerationRule())
         appendLine()
@@ -122,13 +126,23 @@ object SagaPrompts {
         appendLine()
 
         visualDirection?.let {
-            appendLine("**VISUAL DIRECTION (EXTRACT CINEMATOGRAPHY):** $it")
-            appendLine("Use extractComposition() to derive: angle, lens, framing, placement, lighting, environment, mood")
-            appendLine("Then convert technical specs to visual language:")
-            appendLine("- Camera angles → Perspective (looking up/down/straight, etc.)")
-            appendLine("- Lens type → Subject size and environment inclusion (wide = more environment, portrait = tight focus)")
-            appendLine("- Framing → Visibility scope (Close-up = face/upper body, Medium = upper to waist, Full = complete body)")
-            appendLine("- Placement → Horizontal positioning (left/center/right) + vertical positioning (upper/center/lower)")
+            appendLine("**VISUAL DIRECTION (NON-NEGOTIABLE MANDATE):** $it")
+            appendLine(
+                "This is your primary source of truth. You MUST parse these cinematographic parameters and translate them into a concrete visual description with ZERO deviation.",
+            )
+            appendLine("Your task is to convert the technical data below into descriptive language for the final prompt:")
+            appendLine(
+                "- **Framing & Visibility:** The 'framing' parameter dictates exactly what is visible. Your description MUST NOT mention any body part, clothing, or object that is outside this frame. This is a hard rule.",
+            )
+            appendLine(
+                "- **Angle & Perspective:** The 'angle' parameter defines the camera's viewpoint. Translate this into clear perspective terms (e.g., 'seen from a low angle', 'dutch angle of 15 degrees').",
+            )
+            appendLine(
+                "- **Lens & DOF:** The 'lens' and 'DOF' parameters determine the subject's focus and background separation. Describe this visually (e.g., 'The character is in sharp focus, with the background heavily blurred', '...shot with a wide-angle lens, capturing the expansive environment').",
+            )
+            appendLine(
+                "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
+            )
             appendLine()
         }
 
@@ -148,19 +162,36 @@ object SagaPrompts {
         appendLine("- BAD: 'A warrior with a warrior look' or 'A dark character with styled hair'")
         appendLine()
 
-        appendLine("**DIRECTIVES FOR FINAL PROMPT GENERATION:**")
-        appendLine("1. ART STYLE COMPLIANCE: Use mandated techniques, explicitly avoid forbidden elements")
-        appendLine("2. CHARACTER VISIBILITY: At [specified framing], show ALL critical trait markers")
-        appendLine("   - If ECU (extreme close-up face): Ensure eyes/nose/mouth/facial marks visible")
-        appendLine("   - If CU (close-up head-shoulders): Head fully visible, shoulders visible, torso upper portion visible")
-        appendLine("   - If MS (medium shot head-waist): Head/face/torso/upper arms visible, legs out of frame is acceptable")
-        appendLine("   - If FS (full-body): All body parts visible, posture and complete outfit visible")
-        appendLine("3. EXPRESSION & EMOTION: Describe visible emotional/postural elements matching character background")
-        appendLine("4. ENVIRONMENT: Specify 3+ specific objects suited to character/context (NOT vague 'background')")
-        appendLine("5. COMPOSITION: Subject anchor point, depth layers, environmental context")
+        appendLine("**DIRECTIVES FOR FINAL PROMPT GENERATION (STRICTLY ENFORCED):**")
+        appendLine(
+            "1. **ABSOLUTE ART STYLE COMPLIANCE:** Adhere to the techniques, color palettes, and forbidden elements from the **ART STYLE** section. Cross-reference every descriptor against these rules. No exceptions.",
+        )
+        appendLine("2. **VISIBILITY DICTATED BY FRAMING:** Your description must be a direct reflection of the **VISUAL DIRECTION**.")
+        appendLine("   - ONLY describe what is visible within the specified framing.")
+        appendLine(
+            "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'Close-up,' do NOT mention the character's boots).",
+        )
+        appendLine("   - ALL 'CRITICAL' and 'IMPORTANT' character traits that *are* visible within the frame MUST be described in detail.")
+        appendLine("   - Examples:")
+        appendLine("     - ECU (extreme close-up): Face dominates. Eyes, nose, mouth, skin texture, and facial marks are the entire focus.")
+        appendLine("     - CU (close-up): Head and shoulders are visible. Upper chest can be partially visible. Lower body is NOT visible.")
+        appendLine("     - MS (medium shot): Head to waist is visible. Arms are visible. Legs and feet are NOT visible.")
+        appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
+        appendLine(
+            "3. **CONCRETE EXPRESSION & POSE:** Translate character context into specific, visible emotional and postural cues. No abstract emotions. (e.g., 'a subtle, cynical smirk playing on his lips' instead of 'he looks cynical').",
+        )
+        appendLine(
+            "4. **SPECIFIC ENVIRONMENT:** Name at least 3 tangible objects or elements in the environment that are consistent with the context and genre. Avoid vague terms like 'a detailed background.'",
+        )
+        appendLine(
+            "5. **LIGHTING AS A TOOL:** Describe lighting with direction, quality (hard/soft), and color. Use it to enhance mood and form (e.g., 'lit by a single, harsh overhead light, casting deep shadows').",
+        )
+        appendLine(
+            "6. **COMPOSITION:** Explicitly state the subject's anchor point, depth layers (foreground/midground/background elements), and environmental context.",
+        )
         characterHexColor?.let {
             appendLine(
-                "6. ACCENT COLOR ($it): Integrate via specific lighting/atmospheric elements (NOT just 'tinted')",
+                "7. **ACCENT COLOR ($it) INTEGRATION:** Weave this color into the scene via specific light sources, atmospheric effects, or subtle environmental details. Do NOT simply 'tint' the image.",
             )
         }
         appendLine()

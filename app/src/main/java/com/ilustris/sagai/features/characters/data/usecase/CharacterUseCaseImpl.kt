@@ -6,7 +6,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
@@ -26,6 +26,7 @@ import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
 import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
+import com.ilustris.sagai.features.characters.data.model.SmartZoom
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
 import com.ilustris.sagai.features.characters.events.data.repository.CharacterEventRepository
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCase
@@ -73,6 +74,7 @@ class CharacterUseCaseImpl
                     id = 0,
                     joinedAt = Calendar.getInstance().timeInMillis,
                     image = emptyString(),
+                    voice = null,
                 ),
             )
 
@@ -161,19 +163,24 @@ class CharacterUseCaseImpl
                         .generateImage(finalPromptForGeneration, canByPass = false)!!
 
                 val file =
-                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")
-                val smartZoom = imageSegmentationHelper.calculateSmartZoom(file!!.path).getSuccess()
+                    fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")!!
                 val newCharacter =
-                    character.copy(image = file.path, emojified = false, smartZoom = smartZoom)
+                    character.copy(image = file.path)
                 repository.updateCharacter(newCharacter)
                 image.recycle()
+
+                withContext(Dispatchers.IO) {
+                    createSmartZoom(newCharacter)
+                }
                 newCharacter to finalPromptForGeneration
             }
 
         override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =
             executeRequest {
+                Log.i(javaClass.simpleName, "createSmartZoom: creating zoom for ${character.name}")
                 val smartZoom = imageSegmentationHelper.calculateSmartZoom(character.image).getSuccess()
-                val newCharacter = character.copy(smartZoom = smartZoom)
+                val newCharacter =
+                    character.copy(smartZoom = smartZoom ?: SmartZoom(needsZoom = false))
                 repository.updateCharacter(newCharacter)
             }
 
@@ -214,6 +221,7 @@ class CharacterUseCaseImpl
                             joinedAt = System.currentTimeMillis(),
                             image = emptyString(),
                             hexColor = getRandomColorHex(),
+                            smartZoom = null,
                         ),
                     )
                 withContext(Dispatchers.IO) {
@@ -322,41 +330,4 @@ class CharacterUseCaseImpl
                     e.printStackTrace()
                 }
             }
-
-        override suspend fun checkAndGenerateZoom(character: Character) {
-            if (character.smartZoom?.needsZoom == true) {
-                Log.d(
-                    javaClass.simpleName,
-                    "checkAndGenerateZoom: Character already has smart zoom data, skipping.",
-                )
-                return
-            }
-            if (character.image.isEmpty()) {
-                Log.d(
-                    javaClass.simpleName,
-                    "checkAndGenerateZoom: Character has no image, skipping zoom generation.",
-                )
-                return
-            }
-
-            Log.d(
-                javaClass.simpleName,
-                "checkAndGenerateZoom: Generating smart zoom for character ${character.name}...",
-            )
-            imageSegmentationHelper
-                .calculateSmartZoom(character.image)
-                .onSuccessAsync {
-                    val updatedCharacter = character.copy(smartZoom = it)
-                    repository.updateCharacter(updatedCharacter)
-                    Log.d(
-                        javaClass.simpleName,
-                        "checkAndGenerateZoom: Successfully updated smart zoom for character ${character.name}.",
-                    )
-                }.onFailureAsync {
-                    Log.e(
-                        javaClass.simpleName,
-                        "checkAndGenerateZoom: Error generating smart zoom for character ${character.name}: ${it.message}",
-                    )
-                }
-        }
     }

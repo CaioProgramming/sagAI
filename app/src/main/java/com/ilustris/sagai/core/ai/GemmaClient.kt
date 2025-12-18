@@ -7,7 +7,7 @@ import com.google.ai.client.generativeai.type.TextPart
 import com.google.ai.client.generativeai.type.generationConfig
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.core.utils.formatToJsonArray
 import com.ilustris.sagai.core.utils.sanitizeAndExtractJsonString

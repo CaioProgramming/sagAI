@@ -7,14 +7,12 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Log
 import android.util.LruCache
-import androidx.compose.runtime.internal.isLiveLiteralsEnabled
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.media.MediaPlayerManager
@@ -50,6 +48,7 @@ import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUse
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
@@ -94,6 +93,9 @@ class ChatViewModel
         val showTitle = MutableStateFlow(true)
         val loreUpdateProgress = MutableStateFlow(0f)
         val isPlaying: StateFlow<Boolean> = mediaPlayerManager.isPlaying
+        val audioPlaybackState = MutableStateFlow<AudioPlaybackState?>(null)
+        private val audioMediaPlayerManager = mediaPlayerManager
+        private var audioProgressJob: kotlinx.coroutines.Job? = null
         val snackBarMessage = MutableStateFlow<SnackBarState?>(null)
         val suggestions = MutableStateFlow<List<Suggestion>>(emptyList())
         val inputValue = MutableStateFlow(TextFieldValue())
@@ -102,6 +104,7 @@ class ChatViewModel
         val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
         val typoFixMessage: MutableStateFlow<TypoFix?> = MutableStateFlow(null)
+        var isForeground = true
 
         data class MessageSelectionState(
             val isSelectionMode: Boolean = false,
@@ -120,8 +123,6 @@ class ChatViewModel
         private var currentSagaIdForService: String? = null
 
         private var currentActCountForService: Int = 0
-
-        // Notification Tracking
 
         val notificationsEnabled = MutableStateFlow(true)
         val smartSuggestionsEnabled = MutableStateFlow(true)
@@ -235,7 +236,7 @@ class ChatViewModel
 
         fun retryAiResponse(message: Message?) {
             message?.let {
-                replyMessage(message, null)
+                replyMessage(message, null, false)
             }
         }
 
@@ -335,9 +336,9 @@ class ChatViewModel
                                 status = MessageStatus.ERROR,
                             ),
                         )
-                }
+                    }
+            }
         }
-    }
 
         private fun updateProgress(sagaContent: SagaContent) {
             loreUpdateProgress.value =
@@ -386,7 +387,9 @@ class ChatViewModel
                                         )
                                     } ?: 0,
                                 totalActs = sagaContent.acts.size,
-                                timelineObjective = sagaContent.getCurrentTimeLine()?.data?.currentObjective ?: "Unknown Objective",
+                                timelineObjective =
+                                    sagaContent.getCurrentTimeLine()?.data?.currentObjective
+                                        ?: "Unknown Objective",
                                 mediaFilePath = musicFile.absolutePath,
                                 genre = sagaContent.data.genre,
                             )
@@ -511,6 +514,7 @@ class ChatViewModel
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
             Log.d("ChatViewModel", "Lifecycle: onPause called. Music continues via service if playing.")
+            isForeground = false
             viewModelScope.launch(Dispatchers.IO) {
                 if (startTime != 0L) {
                     val endTime = System.currentTimeMillis()
@@ -534,6 +538,7 @@ class ChatViewModel
             super.onCleared()
             Log.d("ChatViewModel", "onCleared called. Instructing SagaMediaService to stop.")
             controlMediaPlayerService(SagaMediaService.ACTION_STOP)
+            audioMediaPlayerManager.release()
         }
 
         private suspend fun validateCharacterMessageUpdates(content: SagaContent) {
@@ -578,7 +583,10 @@ class ChatViewModel
             snackBarMessage.value = null
         }
 
-        fun sendInput(userConfirmed: Boolean = false) {
+        fun sendInput(
+            userConfirmed: Boolean = false,
+            isAudio: Boolean,
+        ) {
             if (inputValue.value.text.isBlank()) {
                 Log.e(javaClass.simpleName, "sendInput: Input is empty")
                 return
@@ -610,7 +618,12 @@ class ChatViewModel
                             timelineId = currentTimeline.data.id,
                             status = MessageStatus.LOADING,
                         )
-                    sendMessage(message, true, null)
+                    sendMessage(message, true, null, isAudio)
+                    return@launch
+                }
+
+                if (isAudio) {
+                    checkTypo()
                     return@launch
                 }
 
@@ -631,7 +644,7 @@ class ChatViewModel
                         typoFixMessage.value = typoCheck.getSuccess()
                         when (it.status) {
                             TypoStatus.OK -> {
-                                sendInput(true)
+                                sendInput(true, isAudio)
                             }
 
                             TypoStatus.FIX -> {
@@ -639,7 +652,7 @@ class ChatViewModel
                                 if (typoFixMessage.value != null) {
                                     inputValue.value =
                                         TextFieldValue(it.suggestedText ?: inputValue.value.text)
-                                    sendInput(true)
+                                    sendInput(true, isAudio)
                                 }
                             }
 
@@ -649,7 +662,53 @@ class ChatViewModel
                         }
                     }
                 } ?: run {
-                    sendInput(true)
+                    sendInput(true, isAudio)
+                }
+            }
+        }
+
+        private fun checkTypo(isAudio: Boolean = false) {
+            val saga = content.value ?: return
+            val text = inputValue.value.text
+            viewModelScope.launch {
+                val typoCheck =
+                    messageUseCase.checkMessageTypo(
+                        saga.data.genre,
+                        text,
+                        content.value
+                            ?.flatMessages()
+                            ?.lastOrNull()
+                            ?.joinMessage()
+                            ?.formatToString(true),
+                    )
+
+                typoCheck.getSuccess()?.let {
+                    val shouldDisplay = it.status != TypoStatus.OK
+                    if (shouldDisplay) {
+                        typoFixMessage.value = typoCheck.getSuccess()
+                        when (it.status) {
+                            TypoStatus.OK -> {
+                                inputValue.value =
+                                    inputValue.value.copy(
+                                        text = it.suggestedText ?: inputValue.value.text,
+                                    )
+                                sendInput(userConfirmed = true, isAudio = isAudio)
+                            }
+
+                            TypoStatus.FIX -> {
+                                inputValue.value =
+                                    TextFieldValue(it.suggestedText ?: inputValue.value.text)
+                                delay(5.seconds)
+                                if (typoFixMessage.value != null) {
+                                    sendInput(userConfirmed = true, isAudio = isAudio)
+                                }
+                            }
+
+                            TypoStatus.ENHANCEMENT -> {
+                                doNothing()
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -658,16 +717,11 @@ class ChatViewModel
             message: Message,
             isFromUser: Boolean = false,
             sceneSummary: SceneSummary?,
+            isAudio: Boolean,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
-                val mainCharacter = content.value!!.mainCharacter?.data
-                val characters = content.value!!.getCharacters()
-                val characterReference =
-                    characters.find {
-                        message.speakerName?.equals(it.name, true) == true ||
-                            (mainCharacter != null && message.characterId == mainCharacter.id)
-                    }
+                val characterReference = saga.findCharacter(message.speakerName)
 
                 inputValue.value = TextFieldValue()
 
@@ -676,14 +730,14 @@ class ChatViewModel
                     if (message.senderType == SenderType.NARRATOR) {
                         null
                     } else {
-                        message.characterId ?: characterReference?.id
+                        message.characterId ?: characterReference?.data?.id
                     }
 
                 val speaker =
                     if (message.senderType == SenderType.NARRATOR) {
                         null
                     } else {
-                        characterReference?.name
+                        characterReference?.data?.name
                     }
                 val sceneSummary =
                     if (isFromUser.not()) {
@@ -710,7 +764,7 @@ class ChatViewModel
                         // If it's from user, trigger AI reply immediately after saving
                         if (isFromUser) {
                             updateLoading(true)
-                            replyMessage(savedMessage, sceneSummary)
+                            replyMessage(savedMessage, sceneSummary, isAudio)
                         } else {
                             updateLoading(false)
                         }
@@ -722,6 +776,14 @@ class ChatViewModel
                                 message = savedMessage,
                                 sceneSummary = sceneSummary,
                             )
+
+                            if (isAudio && isFromUser.not()) {
+                                messageUseCase.generateAudio(
+                                    saga,
+                                    savedMessage,
+                                    characterReference,
+                                )
+                            }
                         }
                     }.onFailureAsync {
                         snackBar(
@@ -745,19 +807,6 @@ class ChatViewModel
         private fun updateLoading(isLoading: Boolean) {
             this.isLoading.value = isLoading
             sagaContentManager.setProcessing(isLoading)
-        }
-
-        private fun handleNewMessage(
-            message: Message,
-            isFromUser: Boolean,
-            sceneSummary: SceneSummary?,
-        ) {
-            viewModelScope.launch(Dispatchers.IO) {
-                updateLoading(false)
-                if (isFromUser) {
-                    replyMessage(message, sceneSummary)
-                }
-            }
         }
 
         private fun generateSuggestions(sceneSummary: SceneSummary? = null) {
@@ -795,6 +844,7 @@ class ChatViewModel
         private fun replyMessage(
             message: Message,
             sceneSummary: SceneSummary?,
+            isAudio: Boolean,
         ) {
             viewModelScope.launch(Dispatchers.IO) {
                 val saga = content.value ?: return@launch
@@ -820,7 +870,8 @@ class ChatViewModel
                     ).onSuccessAsync { generatedMessage ->
 
                         val speakerName = generatedMessage.speakerName
-                        val characterExists = saga.findCharacter(speakerName ?: "") != null
+                        val characterExists =
+                            saga.findCharacter(speakerName ?: generatedMessage.speakerName) != null
 
                         if (speakerName != null &&
                             !characterExists &&
@@ -837,15 +888,18 @@ class ChatViewModel
                         }
 
                         sendMessage(
-                            generatedMessage.copy(
-                                characterId = null,
-                                speakerName = speakerName,
-                                timelineId = timeline.data.id,
-                                id = 0,
-                                status = MessageStatus.OK,
-                            ),
-                            false,
-                            sceneSummary,
+                            message =
+                                generatedMessage.copy(
+                                    characterId = null,
+                                    speakerName = speakerName,
+                                    timelineId = timeline.data.id,
+                                    id = 0,
+                                    status = MessageStatus.OK,
+                                    audible = isAudio,
+                                ),
+                            isFromUser = false,
+                            sceneSummary = sceneSummary,
+                            isAudio = isAudio,
                         )
                         if (newMessage.message.status == MessageStatus.ERROR || newMessage.message.status == MessageStatus.LOADING) {
                             messageUseCase.updateMessage(
@@ -929,7 +983,7 @@ class ChatViewModel
                             sagaId = currentSaga.data.id,
                             timelineId = timeline.data.id,
                         )
-                    sendMessage(fakeUserMessage, false, null)
+                    sendMessage(fakeUserMessage, false, null, false)
                     delay(100)
                 }
                 Log.d("ChatViewModel", "Finished enqueuing $count fake messages.")
@@ -975,6 +1029,11 @@ class ChatViewModel
             }
         }
 
+        override fun onStart(owner: LifecycleOwner) {
+            super.onStart(owner)
+            isForeground = true
+        }
+
         fun toggleMessageSelection(messageId: Int) {
             viewModelScope.launch {
                 val currentState = _selectionState.value
@@ -1002,5 +1061,159 @@ class ChatViewModel
             val saga = content.value ?: return emptyList()
             val selectedIds = _selectionState.value.selectedMessageIds
             return saga.flatMessages().filter { it.message.id in selectedIds }
+        }
+
+        // Audio Playback Methods
+
+        fun playOrPauseAudio(messageContent: MessageContent) {
+            val message = messageContent.message
+            val audioPath = message.audioPath ?: return
+
+            viewModelScope.launch(Dispatchers.Main) {
+                val currentState = audioPlaybackState.value
+
+                // If playing the same message, toggle play/pause
+                if (currentState?.messageId == message.id) {
+                    if (currentState.isPlaying) {
+                        pauseAudio()
+                    } else {
+                        resumeAudio()
+                    }
+                    return@launch
+                }
+
+                // Stop any currently playing audio and start new one
+                stopAudio()
+                startAudio(message.id, audioPath)
+            }
+        }
+
+        private fun startAudio(
+            messageId: Int,
+            audioPath: String,
+        ) {
+            val file = java.io.File(audioPath)
+            if (!file.exists()) {
+                Log.e("ChatViewModel", "Audio file not found: $audioPath")
+                return
+            }
+
+            audioMediaPlayerManager.prepareDataSource(
+                file = file,
+                looping = false,
+                onPrepared = {
+                    // Get duration from MediaPlayer
+                    val duration =
+                        try {
+                            audioMediaPlayerManager.mediaPlayer?.duration?.toLong() ?: 0L
+                        } catch (e: Exception) {
+                            0L
+                        }
+
+                    viewModelScope.launch(Dispatchers.Main) {
+                        audioPlaybackState.emit(
+                            AudioPlaybackState(
+                                messageId = messageId,
+                                isPlaying = true,
+                                currentPosition = 0L,
+                                duration = duration,
+                                audioPath = audioPath,
+                            ),
+                        )
+                    }
+
+                    audioMediaPlayerManager.play()
+                    startProgressUpdates(messageId)
+                },
+                onError = { exception ->
+                    Log.e("ChatViewModel", "Audio playback error", exception)
+                    viewModelScope.launch(Dispatchers.Main) {
+                        audioPlaybackState.emit(null)
+                    }
+                },
+                onCompletion = {
+                    viewModelScope.launch(Dispatchers.Main) {
+                        audioPlaybackState.emit(
+                            audioPlaybackState.value?.copy(
+                                isPlaying = false,
+                                currentPosition = audioPlaybackState.value?.duration ?: 0L,
+                            ),
+                        )
+                    }
+                    stopProgressUpdates()
+                },
+            )
+        }
+
+        private fun pauseAudio() {
+            audioMediaPlayerManager.pause()
+            viewModelScope.launch(Dispatchers.Main) {
+                audioPlaybackState.emit(
+                    audioPlaybackState.value?.copy(isPlaying = false),
+                )
+            }
+            stopProgressUpdates()
+        }
+
+        private fun resumeAudio() {
+            audioMediaPlayerManager.play()
+            viewModelScope.launch(Dispatchers.Main) {
+                audioPlaybackState.emit(
+                    audioPlaybackState.value?.copy(isPlaying = true),
+                )
+            }
+            audioPlaybackState.value?.messageId?.let { startProgressUpdates(it) }
+        }
+
+        fun stopAudio() {
+            audioMediaPlayerManager.stop()
+            stopProgressUpdates()
+            viewModelScope.launch(Dispatchers.Main) {
+                audioPlaybackState.emit(null)
+            }
+        }
+
+        private fun startProgressUpdates(messageId: Int) {
+            stopProgressUpdates()
+            audioProgressJob =
+                viewModelScope.launch(Dispatchers.Main) {
+                    while (audioPlaybackState.value?.isPlaying == true &&
+                        audioPlaybackState.value?.messageId == messageId
+                    ) {
+                        val currentPosition =
+                            try {
+                                audioMediaPlayerManager.mediaPlayer?.currentPosition?.toLong() ?: 0L
+                            } catch (e: Exception) {
+                                0L
+                            }
+
+                        audioPlaybackState.emit(
+                            audioPlaybackState.value?.copy(currentPosition = currentPosition),
+                        )
+                        delay(100) // Update every 100ms
+                    }
+                }
+        }
+
+        private fun stopProgressUpdates() {
+            audioProgressJob?.cancel()
+            audioProgressJob = null
+        }
+
+        fun regenerateAudio(message: MessageContent) {
+            val saga = content.value ?: return
+            viewModelScope.launch(Dispatchers.IO) {
+                updateLoading(true)
+                val characterReference = saga.findCharacter(message.message.speakerName)
+                messageUseCase
+                    .generateAudio(
+                        saga,
+                        message.message,
+                        characterReference,
+                    ).onFailureAsync {
+                        messageUseCase.updateMessage(message.message.copy(audible = true))
+                    }
+                updateLoading(false)
+            }
         }
     }

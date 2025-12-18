@@ -1,6 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.ai.models.ReviewerStrictness
+import com.ilustris.sagai.core.ai.model.ReviewerStrictness
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
 // OPTIMIZED VERSIONS - Token-efficient while maintaining precision

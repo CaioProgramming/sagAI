@@ -1,14 +1,22 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import android.util.Log
+import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
+import com.ilustris.sagai.core.ai.model.AudioConfig
+import com.ilustris.sagai.core.ai.model.Voice
+import com.ilustris.sagai.core.ai.prompts.AudioPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
 import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.toAINormalize
+import com.ilustris.sagai.core.utils.toFirebaseSchema
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
+import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
@@ -26,6 +34,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.repository.MessageRepository
 import com.ilustris.sagai.features.saga.chat.repository.ReactionRepository
+import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
 import javax.inject.Inject
 
 class MessageUseCaseImpl
@@ -33,8 +42,12 @@ class MessageUseCaseImpl
     constructor(
         private val messageRepository: MessageRepository,
         private val reactionRepository: ReactionRepository,
+        private val characterRepository: CharacterRepository,
+        private val sagaRepository: SagaRepository,
         private val textGenClient: TextGenClient,
         private val gemmaClient: GemmaClient,
+        private val audioGenClient: AudioGenClient,
+        private val fileHelper: FileHelper,
     ) : MessageUseCase {
         private var isDebugModeEnabled: Boolean = false
 
@@ -156,6 +169,11 @@ class MessageUseCaseImpl
                                         },
                                 ),
                         ),
+                        customSchema =
+                            toFirebaseSchema(
+                                Message::class.java,
+                                excludeFields = ChatPrompts.messageExclusions,
+                            ),
                     )
 
                 genText!!
@@ -200,13 +218,7 @@ class MessageUseCaseImpl
                 "generateReaction: ${reaction.reactions.size} reactions generated.",
             )
             reaction.reactions.forEach { reaction ->
-                val reactingCharacter =
-                    charactersInScene.find {
-                        it.data.name.equals(
-                            reaction.character,
-                            ignoreCase = true,
-                        )
-                    }
+                val reactingCharacter = saga.findCharacter(reaction.character)
                 if (reactingCharacter != null) {
                     if (reactingCharacter.data.id != message.characterId) {
                         reactionRepository.saveReaction(
@@ -235,6 +247,82 @@ class MessageUseCaseImpl
                 }
             }
         }
+
+        override suspend fun generateAudio(
+            saga: SagaContent,
+            savedMessage: Message,
+            characterReference: CharacterContent?,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val isNarrator = savedMessage.senderType == SenderType.NARRATOR
+                val speaker = characterReference?.let { "Character: ${it.data.name}" } ?: "Narrator"
+                Log.i(javaClass.simpleName, "🎙️ Starting audio generation for $speaker")
+
+                val voice =
+                    Voice.findByName(
+                        if (isNarrator) {
+                            saga.data.narratorVoice
+                        } else {
+                            characterReference?.data?.voice
+                        },
+                    )
+
+                val audioConfig =
+                    gemmaClient.generate<AudioConfig>(
+                        AudioPrompts.audioConfigPrompt(
+                            saga,
+                            message = savedMessage,
+                            character = characterReference,
+                        ),
+                        requireTranslation = false,
+                    )!!
+
+                val finalConfig =
+                    audioConfig.copy(
+                        voice = voice ?: audioConfig.voice,
+                    )
+                // Generate audio
+                val audioResult =
+                    audioGenClient
+                        .generateAudio(
+                            finalConfig,
+                        )!!
+
+                val audioFile =
+                    fileHelper.decodeAndSaveBase64(
+                        audioResult,
+                        path = "sagas/${saga.data.id}/audios",
+                        fileName = "message_${savedMessage.id}_audio",
+                        extension = "mp3",
+                    )!!
+
+                updateMessage(
+                    savedMessage.copy(
+                        audioPath = audioFile.absolutePath,
+                        audible = true,
+                    ),
+                )
+
+                if (isNarrator) {
+                    sagaRepository.updateChat(
+                        saga.data.copy(
+                            narratorVoice = finalConfig.voice.id,
+                        ),
+                    )
+                } else {
+                    if (characterReference != null) {
+                        characterRepository.updateCharacter(
+                            characterReference.data.copy(
+                                voice = finalConfig.voice.id,
+                            ),
+                        )
+                        Log.i(
+                            "MessageUseCaseImpl",
+                            "✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}",
+                        )
+                    }
+                }
+            }
 
         override suspend fun updateMessage(message: Message): RequestResult<Message> =
             executeRequest {

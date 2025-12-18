@@ -9,8 +9,8 @@ import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.asImageOrNull
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.generationConfig
-import com.ilustris.sagai.core.ai.models.ImagePromptReview
-import com.ilustris.sagai.core.ai.models.ImageReference
+import com.ilustris.sagai.core.ai.model.ImagePromptReview
+import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.prompts.GenrePrompts
 import com.ilustris.sagai.core.ai.prompts.ImagePrompts
 import com.ilustris.sagai.core.analytics.AnalyticsService

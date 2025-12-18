@@ -85,16 +85,14 @@ class SettingsUseCaseImpl
 
         override fun getSmartSuggestionsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(SMART_SUGGESTIONS_ENABLED_KEY, true)
 
-    override fun getMessageEffectsEnabled(): Flow<Boolean> =
-        dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
+        override fun getMessageEffectsEnabled(): Flow<Boolean> = dataStorePreferences.getBoolean(MESSAGE_EFFECTS_ENABLED_KEY, true)
 
         override fun backupEnabled() = backupService.backupEnabled()
 
         override suspend fun setSmartSuggestionsEnabled(enabled: Boolean) =
             dataStorePreferences.setBoolean(SMART_SUGGESTIONS_ENABLED_KEY, enabled)
 
-    override suspend fun setMessageEffectsEnabled(enabled: Boolean) =
-        dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
+    override suspend fun setMessageEffectsEnabled(enabled: Boolean) = dataStorePreferences.setBoolean(MESSAGE_EFFECTS_ENABLED_KEY, enabled)
 
         override suspend fun getAppStorageUsage(): Long =
             fileHelper.getDirectorySize(context.cacheDir) +
@@ -130,7 +128,7 @@ class SettingsUseCaseImpl
             executeRequest {
                 // 1. Parse Saga from Zip
                 val tempSaga =
-                    backupService.unzipAndParseSaga(uri) ?: error("Could not parse saga from zip")
+                    backupService.unzipAndParseSaga(uri)!!
 
                 // 2. Restore content using SagaBackupService
                 sagaBackupService

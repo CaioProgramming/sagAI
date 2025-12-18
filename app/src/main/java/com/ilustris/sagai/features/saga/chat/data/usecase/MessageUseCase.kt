@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import com.ilustris.sagai.core.data.RequestResult
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -47,5 +48,11 @@ interface MessageUseCase {
         saga: SagaContent,
         message: Message,
         sceneSummary: SceneSummary?,
+    ): RequestResult<Unit>
+
+    suspend fun generateAudio(
+        saga: SagaContent,
+        savedMessage: Message,
+        characterReference: CharacterContent?,
     ): RequestResult<Unit>
 }

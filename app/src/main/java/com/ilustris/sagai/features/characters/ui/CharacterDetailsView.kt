@@ -312,7 +312,8 @@ private fun CharacterDetailsLoaded(
             ) {
                 item {
                     if (character.image.isNotBlank()) {
-                        val deepEffectAvailable = originalBitmap != null && segmentedBitmap != null
+                        val deepEffectAvailable =
+                            smartZoom != null && originalBitmap != null && segmentedBitmap != null
 
                         AnimatedContent(
                             deepEffectAvailable,
@@ -329,7 +330,7 @@ private fun CharacterDetailsLoaded(
                             Box(
                                 Modifier
                                     .fillMaxWidth()
-                                    .height(400.dp)
+                                    .height(450.dp)
                                     .clipToBounds(),
                             ) {
                                 if (it && deepEffectAvailable) {
@@ -345,8 +346,7 @@ private fun CharacterDetailsLoaded(
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                )
-                                                .effectForGenre(
+                                                ).effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),
@@ -450,16 +450,14 @@ private fun CharacterDetailsLoaded(
                                                         sagaContent,
                                                         character,
                                                     )
-                                                }
-                                                .fillMaxSize()
+                                                }.fillMaxSize()
                                                 .graphicsLayer(
                                                     scaleX = animatedScale,
                                                     scaleY = animatedScale,
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                )
-                                                .effectForGenre(
+                                                ).effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),

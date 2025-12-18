@@ -22,7 +22,7 @@
 
 -keepnames class kotlin.Pair { *; }
 -keepnames class kotlin.Triple { *; }
--keep class com.ilustris.sagai.core.ai.models.** { *; }
+-keep class com.ilustris.sagai.core.ai.model.** { *; }
 -keep class com.ilustris.sagai.features.*.data.model.** { *; }
 -keep class io.ktor.client.plugins.** { *; }
 -keep class io.ktor.client.features.** { *; }

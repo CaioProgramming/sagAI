@@ -16,7 +16,7 @@ class MediaPlayerManagerImpl
         @ApplicationContext
         private val context: Context,
     ) : MediaPlayerManager {
-        var mediaPlayer: MediaPlayer? = null
+        override var mediaPlayer: MediaPlayer? = null
         private val _isPlaying = MutableStateFlow(false)
         override val isPlaying: StateFlow<Boolean> = _isPlaying
 

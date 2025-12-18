@@ -53,7 +53,6 @@ fun CharacterAvatar(
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
     pixelation: Float? = null,
-    requireZoom: Boolean = true,
 ) {
     val characterColor = character.hexColor.hexToColor() ?: genre.color
     val borderBrush =
@@ -64,7 +63,7 @@ fun CharacterAvatar(
             ),
         )
 
-    val smartZoom = if (requireZoom) character.smartZoom else null
+    val smartZoom = character.smartZoom
 
     val animatedScale by animateFloatAsState(
         targetValue = smartZoom?.scale ?: 1f,

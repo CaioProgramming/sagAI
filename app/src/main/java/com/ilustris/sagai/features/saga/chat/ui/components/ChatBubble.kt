@@ -74,6 +74,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.drawOutline
@@ -106,6 +107,8 @@ import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.isUser
 import com.ilustris.sagai.features.saga.chat.ui.animations.emotionalEntrance
+import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioMessagePlayer
+import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.theme.SagAIScaffold
 import com.ilustris.sagai.ui.theme.TypewriterText
@@ -118,6 +121,8 @@ import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
+import com.ilustris.sagai.ui.theme.shape
+import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -129,9 +134,12 @@ fun ChatBubble(
     canAnimate: Boolean = true,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
+    audioPlaybackState: AudioPlaybackState? = null,
     openCharacters: (CharacterContent?) -> Unit = {},
     onRetry: (MessageContent) -> Unit = {},
+    regenerateAudio: () -> Unit = {},
     onReactionsClick: (MessageContent) -> Unit = {},
+    onPlayAudio: (MessageContent) -> Unit = {},
     requestNewCharacter: () -> Unit = {},
     messageEffectsEnabled: Boolean = true,
     isSelectionMode: Boolean = false,
@@ -315,8 +323,7 @@ fun ChatBubble(
                                     Modifier
                                         .clickable {
                                             requestNewCharacter()
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -334,8 +341,7 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             isAnimated && messageEffectsEnabled,
-                                        )
-                                        .wrapContentSize()
+                                        ).wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
@@ -349,10 +355,10 @@ fun ChatBubble(
                                                     override fun createShader(size: Size): Shader {
                                                         val shader =
                                                             (
-                                                                sweepGradient(
-                                                                    genre.colorPalette(),
+                                                                    sweepGradient(
+                                                                        genre.colorPalette(),
                                                                     ) as ShaderBrush
-                                                                    ).createShader(size)
+                                                            ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
                                                             rotation,
@@ -368,7 +374,8 @@ fun ChatBubble(
                                                 brush = brush,
                                                 style = Stroke(width = 1.dp.toPx()),
                                             )
-                                        }.background(
+                                        }
+                                        .background(
                                             MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
                                             bubbleShape,
                                         )
@@ -389,11 +396,11 @@ fun ChatBubble(
                                                             onLongPress()
                                                         }
                                                     },
-                                                )
-                                                .emotionalEntrance(
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                ).wrapContentSize()
+                                                )
+                                                .wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
                                                     bubbleShape,
@@ -420,7 +427,8 @@ fun ChatBubble(
                                                     .emotionalEntrance(
                                                         message.emotionalTone,
                                                         isAnimated && messageEffectsEnabled,
-                                                    ).wrapContentSize()
+                                                    )
+                                                    .wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -610,35 +618,93 @@ fun ChatBubble(
                                         val text =
                                             if (sender == SenderType.ACTION) "(${message.text})" else message.text
 
-                                        TypewriterText(
-                                            text = text,
-                                            isAnimated = isAnimated,
-                                            genre = genre,
-                                            mainCharacter = mainCharacter?.data,
-                                            characters = characters.map { it.data },
-                                            wiki = wiki,
-                                            duration = duration,
-                                            easing = EaseIn,
-                                            onAnnotationClick = { data ->
-                                                tooltipData = data
-                                            },
-                                            modifier =
-                                                Modifier
-                                                    .padding(16.dp)
-                                                    .alpha(textAlpha)
-                                                    .reactiveShimmer(
-                                                        isLoading || message.status == MessageStatus.LOADING,
-                                                        genre.shimmerColors(),
-                                                    ),
-                                            style =
-                                                MaterialTheme.typography.bodySmall.copy(
-                                                    fontWeight = FontWeight.Normal,
-                                                    fontFamily = genre.bodyFont(),
-                                                    fontStyle = fontStyle,
-                                                    color = textColor,
-                                                    textAlign = textAlign,
-                                                ),
-                                        )
+                                        // Check if audio file exists and is valid
+                                        val hasValidAudio =
+                                            remember(message.audioPath) {
+                                                message.audioPath?.let { path ->
+                                                    File(path).exists()
+                                                } ?: false
+                                            }
+
+                                        Column(
+                                            Modifier.padding(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                                        ) {
+                                            if (hasValidAudio) {
+                                                // Show Audio Player
+                                                AudioMessagePlayer(
+                                                    transcription = text,
+                                                    audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
+                                                    genre = genre,
+                                                    contentColor = textColor,
+                                                    onPlayPauseClick = {
+                                                        onPlayAudio(messageContent)
+                                                    },
+                                                )
+                                            } else {
+                                                // Show Text
+                                                if (message.audible) {
+                                                    Row(
+                                                        horizontalArrangement =
+                                                            Arrangement.spacedBy(
+                                                                4.dp,
+                                                            ),
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier =
+                                                            Modifier
+                                                                .fillMaxWidth()
+                                                                .clip(genre.shape())
+                                                                .clickable {
+                                                                    regenerateAudio()
+                                                                }.alpha(.4f),
+                                                    ) {
+                                                        Image(
+                                                            painterResource(R.drawable.ic_mic),
+                                                            null,
+                                                            Modifier.size(24.dp),
+                                                            colorFilter = ColorFilter.tint(genre.iconColor),
+                                                        )
+                                                        Text(
+                                                            "Regenerate audio...",
+                                                            style =
+                                                                MaterialTheme.typography.labelMedium.copy(
+                                                                    fontFamily = genre.bodyFont(),
+                                                                    fontWeight = FontWeight.Normal,
+                                                                    color = genre.iconColor,
+                                                                ),
+                                                        )
+                                                    }
+                                                }
+                                                TypewriterText(
+                                                    text = text,
+                                                    isAnimated = isAnimated,
+                                                    genre = genre,
+                                                    mainCharacter = mainCharacter?.data,
+                                                    characters = characters.map { it.data },
+                                                    wiki = wiki,
+                                                    duration = duration,
+                                                    easing = EaseIn,
+                                                    onAnnotationClick = { data ->
+                                                        tooltipData = data
+                                                    },
+                                                    modifier =
+                                                        Modifier
+                                                            .alpha(textAlpha)
+                                                            .reactiveShimmer(
+                                                                isLoading || message.status == MessageStatus.LOADING,
+                                                                genre.shimmerColors(),
+                                                            ),
+                                                    style =
+                                                        MaterialTheme.typography.bodySmall.copy(
+                                                            fontWeight = FontWeight.Normal,
+                                                            fontFamily = genre.bodyFont(),
+                                                            fontStyle = fontStyle,
+                                                            color = textColor,
+                                                            textAlign = textAlign,
+                                                        ),
+                                                )
+                                            }
+                                        }
 
                                         if (sender == SenderType.THOUGHT) {
                                             StarryTextPlaceholder(

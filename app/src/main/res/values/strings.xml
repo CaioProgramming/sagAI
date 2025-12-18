@@ -385,4 +385,8 @@
     <string name="transcription_complete">Transcription complete</string>
     <string name="transcription_error">Transcription error</string>
     <string name="unknown_error">Unknown error occurred</string>
+
+    <!-- Audio Message Player -->
+    <string name="see_transcription">See transcription</string>
+    <string name="hide_transcription">Hide transcription</string>
 </resources>

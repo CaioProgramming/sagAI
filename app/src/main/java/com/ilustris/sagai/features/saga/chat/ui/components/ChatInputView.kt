@@ -7,7 +7,6 @@ import android.graphics.Shader
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -261,11 +260,11 @@ fun ChatInputView(
     sendType: SenderType,
     typoFix: TypoFix?,
     selectedCharacter: CharacterContent? = null,
-    sharedTransitionScope: SharedTransitionScope,
     onUpdateInput: (TextFieldValue) -> Unit,
     onUpdateSender: (SenderType) -> Unit,
     onSendMessage: (Boolean) -> Unit,
     onSelectCharacter: (CharacterContent) -> Unit = {},
+    onRequestAudio: () -> Unit = {},
 ) {
     val action = sendType
     val inputBrush =
@@ -294,7 +293,14 @@ fun ChatInputView(
     val backgroundColor by animateColorAsState(
         if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
     )
-    val inputShape = remember { content.data.genre.shape() }
+    val inputShape =
+        remember {
+            content.data.genre.bubble(
+                BubbleTailAlignment.BottomLeft,
+                tailWidth = 0.dp,
+                tailHeight = 0.dp,
+            )
+        }
 
     val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
     val rotation by infiniteTransition.animateFloat(
@@ -705,9 +711,13 @@ fun ChatInputView(
                         IconButton(
                             onClick = {
                                 if (isGenerating) return@IconButton
+                                if (inputField.text.isEmpty()) {
+                                    onRequestAudio()
+                                    return@IconButton
+                                }
                                 sendMessage()
                             },
-                            enabled = inputField.text.isNotBlank() && isGenerating.not(),
+                            enabled = isGenerating.not(),
                             colors =
                                 IconButtonDefaults.filledIconButtonColors(
                                     containerColor = content.data.genre.color,
@@ -732,7 +742,13 @@ fun ChatInputView(
                                             ).fillMaxSize(),
                                 ) { loading ->
                                     val icon =
-                                        if (loading) R.drawable.ic_spark else R.drawable.ic_send
+                                        if (loading) {
+                                            R.drawable.ic_spark
+                                        } else if (inputField.text.isEmpty()) {
+                                            R.drawable.ic_mic
+                                        } else {
+                                            R.drawable.ic_send
+                                        }
                                     Icon(
                                         painterResource(icon),
                                         contentDescription = "Send Message",

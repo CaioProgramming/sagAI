@@ -1,4 +1,4 @@
-package com.ilustris.sagai.core.ai.models
+package com.ilustris.sagai.core.ai.model
 
 import android.graphics.Bitmap
 

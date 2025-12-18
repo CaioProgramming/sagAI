@@ -1,5 +1,7 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.ai.model.ReviewerStrictness
+
 object ImagePrompts {
     fun criticalGenerationRule() =
         buildString {
@@ -43,11 +45,16 @@ object ImagePrompts {
         buildString {
             appendLine("CINEMATOGRAPHY EXTRACTION — Senior DP analyzing reference image")
             appendLine("Extract PHOTOGRAPHIC DNA (NOT art style/subject). Use ONLY camera/lighting terms.")
-            appendLine("Fix missing or vague parameters autonomously. Return the 15 parameters + VISIBLE ELEMENTS analysis.")
+            appendLine(
+                "Fix missing or vague parameters autonomously. Return the 15 parameters + VISIBLE ELEMENTS analysis + MANDATORY HIDDEN ELEMENTS.",
+            )
+            appendLine()
+            appendLine("CRITICAL: Output MANDATORY HIDDEN ELEMENTS based on framing. Artist uses this to EXCLUDE elements.")
             appendLine()
             appendLine("OUTPUT 15 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: value'):")
             appendLine()
-            appendLine("1. ANGLE: [eye-level / low XY° / high XY° / dutch XY°]")
+            appendLine(
+                "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle (specify tilt) / worm's-eye view / bird's-eye view / point-of-view (POV)] - Be specific and dramatic.")
             appendLine(
                 "2. LENS: [14-24mm ultra-wide / 24-35mm wide / 35-50mm normal / 50-85mm portrait / 85-200mm tele / 200mm+ super-tele]",
             )
@@ -61,62 +68,51 @@ object ImagePrompts {
             appendLine("8. MOOD: Emotional tone (epic/intimate/oppressive/nostalgic/etc)")
             appendLine("9. DOF: [razor / shallow / moderate / deep / infinite]")
             appendLine("10. ATMOSPHERE: [clear/hazy/misty/foggy/dusty/smoky]")
-            appendLine("11. PERSPECTIVE: [converging/parallel/barrel/foreshortening]")
+            appendLine(
+                "11. PERSPECTIVE: [one-point / two-point / three-point / forced / atmospheric / barrel distortion / dramatic foreshortening]")
             appendLine("12. TEXTURE: [razor-sharp/film-grain/digital-noise/soft-diffused/gritty]")
             appendLine("13. TIME: [golden-hour/midday/blue-hour/night/overcast/studio]")
             appendLine("14. SIGNATURE: One unique unforgettable detail")
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
             appendLine()
-            appendLine("CRITICAL ADDITION - VISIBLE ELEMENTS ANALYSIS:")
-            appendLine("After extracting the 15 parameters, ANALYZE what is VISIBLE vs HIDDEN by the framing:")
-            appendLine()
-            appendLine("VISIBILITY MATRIX:")
-            appendLine("- FULLY VISIBLE: Face, torso, limbs, or features that are 100% within frame")
-            appendLine("- PARTIALLY VISIBLE: Features cut by frame edges, partially obscured by props/environment")
-            appendLine("- HIDDEN/OUT-OF-FRAME: Features not visible due to framing, angle, or occlusion")
-            appendLine("- OCCLUDED: Features hidden behind other objects, hair, hands, clothing, etc.")
-            appendLine()
-            appendLine("SPECIFIC ANALYSIS REQUIRED:")
-            appendLine("1. HEAD: [fully visible / partially cropped / profile visible / back of head / obscured]")
-            appendLine("2. FACE DETAILS: List what IS visible (eyes, nose, mouth, jawline, ears, scars, marks) vs HIDDEN")
-            appendLine("3. TORSO: [fully visible / partially visible / covered by environment/clothing]")
-            appendLine("4. ARMS/HANDS: [both visible / one visible / one hidden / both out of frame / holding objects visible]")
-            appendLine("5. LEGS/FEET: [both visible / partial view / one in frame / out of frame / obscured by clothing]")
-            appendLine("6. DISTINCTIVE FEATURES: List ALL visible identifying marks (tattoos, scars, jewelry, unique clothing details)")
-            appendLine("7. BODY LANGUAGE: Posture, gesture, expression elements that ARE visible in this framing")
-            appendLine("8. ENVIRONMENT VISIBILITY: What background/props are visible based on composition and DOF")
-            appendLine()
-            appendLine("FRAMING IMPACT ON ATTRIBUTES:")
-            appendLine("For each character attribute (skin tone, hair, body type, distinctive marks):")
-            appendLine("- MUST SHOW: Critical identity markers visible at this framing level")
-            appendLine("- CAN HIDE: Secondary details that don't impact recognition or can be implied")
-            appendLine("- CANNOT HIDE: Core traits that define character (race/ethnicity, primary clothing, main distinctive features)")
-            appendLine()
-            appendLine("REVIEWER VALIDATION USE:")
-            appendLine("The reviewer will use this VISIBILITY MATRIX to:")
-            appendLine("1. Verify that hidden attributes are ONLY secondary details, not identity markers")
-            appendLine("2. Ensure core traits remain visible and recognizable despite framing constraints")
-            appendLine("3. Validate that framing choices don't inadvertently omit critical character attributes")
-            appendLine("4. Confirm that what IS visible in frame accurately represents the character context")
-            appendLine()
-            appendLine("EXAMPLE OUTPUT FORMAT:")
-            appendLine("1. ANGLE: eye-level")
-            appendLine("2. LENS: 50-85mm portrait")
-            appendLine("3. FRAMING: CU head-shoulders")
-            appendLine("[... other 12 parameters ...]")
-            appendLine()
-            appendLine("VISIBILITY ANALYSIS:")
-            appendLine("HEAD: Fully visible, facing forward")
-            appendLine("FACE DETAILS: Eyes visible (conveying emotion), nose visible, mouth visible, ears partially visible behind hair")
-            appendLine("TORSO: Upper chest visible, shoulders fully visible, arms below elbow out of frame")
+            appendLine("ANGLE & PERSPECTIVE GUIDELINES (MANDATORY):")
             appendLine(
-                "DISTINCTIVE FEATURES: Visible - facial scar on left cheekbone, neck tattoo (partial), clothing color/pattern visible",
+                "1. **Define a Clear Viewpoint:** The ANGLE parameter MUST establish a strong, non-generic point of view. Analyze the subject's pose and the environment to infer a compelling angle.",
             )
-            appendLine("HIDDEN: Hands/fingers (framing cuts them), legs (out of frame), lower body details")
             appendLine(
-                "BODY LANGUAGE: Confident posture visible in shoulder position and head angle, facial expression conveys determination",
+                "   - Example: If the subject seems dominant, choose a 'low-angle looking up'. If they seem vulnerable, choose a 'high-angle looking down'.",
             )
-            appendLine("CORE IDENTITY PRESERVED: Skin tone, facial structure, hair visible - character remains identifiable")
+            appendLine(
+                "2. **Describe the Visual Effect:** The PERSPECTIVE parameter should describe the *result* of the lens and angle choice (e.g., 'dramatic foreshortening', 'one-point perspective with converging lines', 'wide-angle barrel distortion').",
+            )
+            appendLine("3. **BANNED PERSPECTIVES:**")
+            appendLine(
+                "   - **AVOID GENERIC/FLAT ANGLES:** Do not default to 'eye-level' or 'straight-on' unless the source image is explicitly flat and lacks any depth or dynamism. Challenge yourself to find a more interesting angle.")
+            appendLine("   - **NO 'Plain View':** This is too vague. Specify if it is eye-level, slightly high, etc.")
+            appendLine()
+            appendLine("VISIBILITY ANALYSIS (after 15 params):")
+            appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OCCLUDED")
+            appendLine("Analyze: 1.HEAD 2.FACE 3.TORSO 4.ARMS/HANDS 5.LEGS/FEET 6.DISTINCTIVE MARKS 7.BODY LANGUAGE 8.ENVIRONMENT")
+            appendLine()
+            appendLine(
+                "FRAMING RULES: MUST SHOW identity markers, MUST HIDE elements below frame cutoff, CANNOT HIDE core traits (race, primary clothing, main features)",
+            )
+            appendLine()
+            appendLine("MANDATORY HIDDEN BY FRAMING (output as bullet list, elements GUARANTEED not visible):")
+            appendLine("ECU: Entire neck, shoulders, and anything below the chin. All clothing/accessories below the chin.")
+            appendLine(
+                "CU: Mid-torso and below, including waist, hips, and all lower body clothing/footwear. Only upper chest/shoulders and head/face are guaranteed visible.",
+            )
+            appendLine("MCU: Hips and below, including all lower body clothing/footwear (pants, skirts, shoes).")
+            appendLine("MS: Upper thighs and below, including all lower leg clothing and ALL footwear.")
+            appendLine("MWS: Ankles and below, including ALL footwear.")
+            appendLine("FS/WS/EWS: Fine details (e.g., small facial scars, intricate jewelry) that would be obscured by distance/scale.")
+            appendLine()
+            appendLine("EXAMPLE (CU framing):")
+            appendLine("1-15. [cinematography params...]")
+            appendLine("VISIBLE: head, shoulders, upper chest, facial scar, neck tattoo partial")
+            appendLine("MANDATORY HIDDEN: torso below shoulders, arms/hands, waist, ALL legs, ALL footwear, belts")
+            appendLine("IDENTITY: skin tone, facial structure, hair - character recognizable")
         }
 
     /**
@@ -128,7 +124,7 @@ object ImagePrompts {
     fun reviewImagePrompt(
         visualDirection: String?,
         artStyleValidationRules: String,
-        strictness: com.ilustris.sagai.core.ai.models.ReviewerStrictness,
+        strictness: ReviewerStrictness,
         finalPrompt: String,
     ) = buildString {
         appendLine(strictness.description)
@@ -141,24 +137,38 @@ object ImagePrompts {
         appendLine(
             "1. CINEMATOGRAPHY (15 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers",
         )
-        appendLine("   - All MUST be explicit, specific, and match visual direction")
+        appendLine("   - All MUST be explicit, specific, and match visual direction.")
+        appendLine(
+            "   - **ANGLE & PERSPECTIVE ENFORCEMENT:** The prompt's angle MUST be specific, non-generic, and creative, as mandated by the visual direction. It must avoid 'banned perspectives' like flat or plain views. The description must clearly reflect the chosen viewpoint (e.g., 'The camera looks up at the towering figure...').",
+        )
         appendLine("   - NO technical jargon (f-stops/Kelvin/degrees) - use visual descriptors")
         appendLine()
 
-        appendLine("2. VISIBILITY MATRIX (from director):")
+        appendLine("2. VISIBILITY ENFORCEMENT (Semantic Integrity):")
         visualDirection?.let {
-            appendLine("   Direction: $it")
-            appendLine("   - Extract what IS visible vs OUT OF FRAME")
-            appendLine("   - CRITICAL: Do NOT describe body parts/clothing not in frame")
-            appendLine("   - NO pants/boots if legs out of frame, NO full arms if only elbow-down visible, etc.")
+            appendLine("   VISUAL DIRECTION: \"$it\"")
+            appendLine("   - Analyze this direction to determine what is VISIBLE vs. HIDDEN.")
+            appendLine(
+                "   - ABSOLUTE RULE: The final prompt MUST NOT contain ANY description of elements explicitly marked as HIDDEN or outside the camera's view.",
+            )
+            appendLine(
+                "   - ACTION: If the prompt describes a hidden element (e.g., 'wearing leather boots' when the shot is a Medium Shot), you MUST DELETE that description entirely.",
+            )
+            appendLine(
+                "   - EXAMPLE: If VISUAL DIRECTION states 'Legs are hidden', and prompt says 'wearing blue jeans', the phrase 'wearing blue jeans' MUST be removed.",
+            )
             appendLine()
         }
 
-        appendLine("3. POSE & EXPRESSION (PREVENTS SOULLESS ART):")
-        appendLine("   - FACIAL EXPRESSION: MUST be specific emotion (e.g., 'cynical smirk', NOT 'has emotion')")
-        appendLine("   - DYNAMIC POSE: MUST suggest action/emotion (e.g., 'stands defiantly', NOT just 'standing')")
-        appendLine("   - SYNERGY: Expression + pose MUST work together emotionally")
-        appendLine("   - MOMENT: Character 'caught in a moment' (mid-action, reacting), NOT 'posed for portrait'")
+        appendLine("3. POSE & EXPRESSION (ORGANIC EMOTION & NARRATIVE):")
+        appendLine(
+            "   - FACIAL EXPRESSION: MUST convey a specific, nuanced emotion (e.g., 'weary resignation', 'mischievous glee', NOT 'has emotion').",
+        )
+        appendLine(
+            "   - BODY LANGUAGE/POSE: MUST organically express emotion and intent, supporting the facial expression and narrative (e.g., 'shoulders slumped in defeat', 'hands clenched in anticipation', NOT just 'standing' or 'sitting').",
+        )
+        appendLine("   - SYNERGY: Facial expression + body language MUST seamlessly and powerfully communicate a unified emotional state and story moment.")
+        appendLine("   - MOMENT: Character 'caught in a pivotal moment' (mid-action, reacting to an unseen event, lost in thought), NOT 'posed for portrait' or static.")
         appendLine()
 
         appendLine("4. GOOGLE IMAGE GENERATION BEST PRACTICES:")
@@ -181,6 +191,7 @@ object ImagePrompts {
         appendLine("- MISSING_DYNAMIC_POSE: Static/neutral pose without emotional content")
         appendLine("- POSE_EXPRESSION_VIOLATION: Expression + pose don't work together or character seems posed, not in moment")
         appendLine("- FRAMING_VIOLATION: Describes elements not visible at this framing level")
+        appendLine("- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.")
         appendLine("- BANNED_TERMINOLOGY: Uses forbidden words from art style")
         appendLine("- MISSING_CINEMATOGRAPHY_PARAMETER: Any of 15 params missing/vague")
         appendLine("- LIGHTING_MISSING/WRONG, COLOR_PALETTE_WRONG, ENVIRONMENT_MISSING, etc.")
@@ -191,53 +202,14 @@ object ImagePrompts {
         appendLine("- Missing pose → Add dynamic body language with gesture")
         appendLine("- Expression + pose contradictory → Align emotionally")
         appendLine("- Out-of-frame descriptions → Remove, replace with visible details")
+        appendLine("- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.")
         appendLine("- Static character → Add momentum language ('breathing', 'captured mid-action')")
         appendLine("- Generic cinematography → Specify exact values from 15 parameters")
         appendLine("- Missing background/environment → Add 3+ specific objects")
         appendLine()
 
         appendLine("OUTPUT JSON (ImagePromptReview):")
-        appendLine(
-            """{
-  "originalPrompt": "string - the input prompt",
-  "correctedPrompt": "string - fixed/enhanced prompt with all corrections applied",
-  "cinematographyValidation": {
-    "parametersValidated": 15,
-    "parametersCompliant": number (0-15),
-    "missingOrVague": ["param1", "param2"],
-    "correctedParameters": ["param: old → new", ...]
-  },
-  "visibilityMatrix": {
-    "head": "visibility state",
-    "faceDetails": ["list of visible face parts"],
-    "torso": "visibility state",
-    "arms": "visibility state",
-    "legs": "visibility state",
-    "distinctiveFeatures": ["list of visible marks"],
-    "coreTraitsVisible": boolean,
-    "hiddenSecondaryDetails": ["list"]
-  },
-  "poseExpressionValidation": {
-    "facialExpression": "specific emotion described - CONCRETE",
-    "dynamicPose": "pose description - DYNAMIC",
-    "expressionPoseSynergy": "ALIGNED or CONTRADICTION",
-    "preventsSoullessArt": boolean,
-    "capturedInMoment": boolean
-  },
-  "googleBestPractices": {
-    "clarityScore": "HIGH/MEDIUM/LOW",
-    "ambiguityIssues": ["list of vague terms or corrections needed"],
-    "featureHierarchy": "CORRECT or NEEDS FIX",
-    "framingVisibility": "HONORED or VIOLATED"
-  },
-  "violations": [
-    {"type": "VIOLATION_TYPE", "severity": "CRITICAL/MAJOR/MINOR", "description": "string", "correctedTo": "string"}
-  ],
-  "changesApplied": ["change 1", "change 2", ...],
-  "wasModified": boolean,
-  "complianceStatus": "FULL_COMPLIANCE or NEEDS_FIXES or CRITICAL_ISSUES"
-}""",
-        )
+
         appendLine()
         appendLine("PROMPT TO REVIEW:")
         appendLine(finalPrompt)

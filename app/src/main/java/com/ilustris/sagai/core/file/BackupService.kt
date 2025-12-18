@@ -388,7 +388,7 @@ class BackupService(
                 ZipInputStream(inputStream).use { zipStream ->
                     var entry = zipStream.nextEntry
                     while (entry != null) {
-                        if (entry.name == SAGA_JSON_FILE) {
+                        if (entry.name.contains(SAGA_JSON_FILE)) {
                             // We found the saga.json file!
                             // Read its content as text.
                             val jsonString = zipStream.bufferedReader().use { it.readText() }

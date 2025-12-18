@@ -27,7 +27,7 @@ class SettingsViewModel
 
         val smartSuggestionsEnabled = settingsUseCase.getSmartSuggestionsEnabled()
 
-    val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
+        val messageEffectsEnabled = settingsUseCase.getMessageEffectsEnabled()
 
         val backupEnabled = settingsUseCase.backupEnabled()
 
@@ -76,10 +76,10 @@ class SettingsViewModel
             }
         }
 
-    fun setMessageEffectsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            settingsUseCase.setMessageEffectsEnabled(enabled)
-        }
+        fun setMessageEffectsEnabled(enabled: Boolean) {
+            viewModelScope.launch {
+                settingsUseCase.setMessageEffectsEnabled(enabled)
+            }
     }
 
         fun wipeAppData() {
@@ -103,7 +103,21 @@ class SettingsViewModel
 
         fun importSaga(uri: Uri) {
             viewModelScope.launch {
-                settingsUseCase.restoreSaga(uri)
+                isLoading.value = true
+                loadingMessage.emit("Recuperando informações...")
+                settingsUseCase
+                    .restoreSaga(uri)
+                    .onSuccessAsync {
+                        isLoading.value = true
+                        loadingMessage.emit("${it.data.title} restaurado com sucesso!")
+                        delay(5.seconds)
+                        isLoading.value = false
+                    }.onFailureAsync {
+                        isLoading.value = true
+                        loadingMessage.emit("Falha ao restaurar saga. Sentimos muito por isso...")
+                        delay(5.seconds)
+                        isLoading.value = false
+                    }
             }
         }
 

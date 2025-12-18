@@ -51,8 +51,11 @@ class ImageSegmentationHelper(
             bitmap to segmenter.process(image).await()?.foregroundBitmap!!
         }
 
-    suspend fun calculateSmartZoom(url: String): RequestResult<SmartZoom> =
+    suspend fun calculateSmartZoom(url: String): RequestResult<SmartZoom?> =
         executeRequest {
+            if (url.isBlank()) {
+                return@executeRequest null
+            }
             val imageLoader = ImageLoader(context)
             val request =
                 ImageRequest
@@ -142,7 +145,7 @@ class ImageSegmentationHelper(
                         needsZoom = true,
                     )
                 } else {
-                    SmartZoom(needsZoom = false, scale = 1f, translationX = 0f, translationY = 0f)
+                    null
                 }
             Log.i(javaClass.simpleName, "calculateSmartZoom: Zoom result: ")
             Log.i(javaClass.simpleName, requiredZoom.toJsonFormat())

@@ -10,7 +10,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.data.model.AIReaction
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -25,6 +24,8 @@ object ChatPrompts {
             "timelineId",
             "status",
             "playTimeMs",
+            "audioPath",
+            "status",
         )
     val sagaExclusions =
         listOf(
@@ -181,12 +182,6 @@ object ChatPrompts {
         appendLine("    - `thought`: A short, internal thought (max 12 words). This is a private feeling, NOT spoken dialogue.")
         appendLine(
             "4.  **Context is Key:** Base reactions on each character's personality, their relationship with the player, and the current scene context.",
-        )
-
-        appendLine("\n## Output Format")
-        appendLine("Your response MUST be a JSON object in the following format:")
-        appendLine(
-            """{ "reactions": [ ${AIReaction::class.java.simpleName}(character="CharacterName", reaction="emoji", thought="A short internal thought.") ] }""",
         )
     }.trimIndent()
 

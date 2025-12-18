@@ -9,6 +9,8 @@ import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.remoteConfig
 import com.google.firebase.remoteconfig.remoteConfigSettings
 import com.google.gson.Gson
+import com.ilustris.sagai.core.ai.AudioGenClient
+import com.ilustris.sagai.core.ai.AudioGenClientImpl
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.ImagenClientImpl
@@ -30,6 +32,7 @@ import com.ilustris.sagai.core.media.MediaPlayerManager
 import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
+import com.ilustris.sagai.core.network.GeminiApiService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.notifications.ScheduledNotificationServiceImpl
 import com.ilustris.sagai.core.notifications.WorkManagerScheduler
@@ -233,6 +236,14 @@ object AppModule {
         analyticsService: AnalyticsService,
         gemmaClient: GemmaClient,
     ): ImagenClient = ImagenClientImpl(billingService, remoteConfigService, gemmaClient, analyticsService)
+
+    @Provides
+    @Singleton
+    fun provideAudioGenClient(
+        billingService: BillingService,
+        remoteConfigService: RemoteConfigService,
+        geminiApiService: GeminiApiService,
+    ): AudioGenClient = AudioGenClientImpl(billingService, remoteConfigService, geminiApiService)
 
     @Provides
     @Singleton

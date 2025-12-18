@@ -545,7 +545,7 @@ object GenrePrompts {
                     appendLine("**STOP. BEFORE YOU WRITE ANYTHING, THESE RULES ARE ABSOLUTE:**")
                     appendLine()
                     appendLine(
-                        "1. **CARTOON STYLE:** This is a CARTOON illustration like Gorillaz, Codename: Kids Next Door (KND), or Tank Girl.",
+                        "1. **CARTOON STYLE:** This is a CARTOON illustration like Gorillaz",
                     )
                     appendLine("   Characters must look like CARTOON CHARACTERS, not realistic humans with stylized touches.")
                     appendLine("   Think 2D animated music video, NOT concept art or portrait photography.")
@@ -582,7 +582,7 @@ object GenrePrompts {
                     appendLine()
                     appendLine("---")
                     appendLine()
-                    appendLine("Art Technique: Jamie Hewlett / Gorillaz / KND Style CARTOON Illustration.")
+                    appendLine("Art Technique: Jamie Hewlett / Gorillaz")
                     appendLine(
                         "This is a 2D CARTOON with flat colors, bold outlines, and stylized proportions—like a frame from an animated music video.",
                     )
@@ -591,7 +591,7 @@ object GenrePrompts {
                     appendLine(" - This looks like it belongs in a Gorillaz music video or Codename: Kids Next Door episode.")
                     appendLine(" - Characters are CARTOON CHARACTERS with exaggerated, simplified features.")
                     appendLine(" - The style is closer to ANIMATION than illustration—flat, bold, graphic.")
-                    appendLine(" - Reference: 2D, Murdoc, Noodle from Gorillaz; the angular, exaggerated style of KND.")
+                    appendLine(" - Reference: 2D, Murdoc, Noodle from Gorillaz;")
                     appendLine()
                     appendLine("**LINE WORK:**")
                     appendLine(" - Bold, thick BLACK outlines—confident and slightly imperfect.")
@@ -715,7 +715,7 @@ object GenrePrompts {
                     appendLine(" 2. Did I pick ONE creative eye style that matches character emotion? → STYLIZED, WHITE-NO-PUPIL, or VOID")
                     appendLine(" 3. Do the eyes EXPRESS character personality and attitude? → If NO, choose a more expressive option")
                     appendLine(" 4. Did I describe a background with 3+ specific objects? → If NO, ADD THEM")
-                    appendLine(" 5. Does this sound like a Gorillaz/KND cartoon frame? → If NO, make it MORE STYLIZED")
+                    appendLine(" 5. Does this sound like a Gorillaz? → If NO, make it MORE STYLIZED")
                     appendLine()
                     appendLine(
                         "Rendering: 2D CARTOON style. Forbid: 3D, photorealism, realistic anatomy, soft lighting, empty backgrounds. Must look like a frame from an animated music video with COMPLETE backgrounds.",
@@ -1272,28 +1272,28 @@ object GenrePrompts {
      * Get the reviewer strictness level for a specific genre.
      * Based on how rigid the art style requirements are.
      */
-    fun reviewerStrictness(genre: Genre): com.ilustris.sagai.core.ai.models.ReviewerStrictness =
+    fun reviewerStrictness(genre: Genre): com.ilustris.sagai.core.ai.model.ReviewerStrictness =
         when (genre) {
             // STRICT: Cartoon styles with specific anatomical requirements
-            PUNK_ROCK -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.STRICT
+            PUNK_ROCK -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.STRICT
 
-            HORROR -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.STRICT
+            HORROR -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.STRICT
 
             // CONSERVATIVE: Stylized but with some flexibility
-            CYBERPUNK -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+            CYBERPUNK -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
 
-            HEROES -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+            HEROES -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
 
-            SPACE_OPERA -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+            SPACE_OPERA -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
 
-            SHINOBI -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.CONSERVATIVE
+            SHINOBI -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
 
             // LENIENT: Traditional art with organic flexibility
-            FANTASY -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.LENIENT
+            FANTASY -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.LENIENT
 
-            CRIME -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.LENIENT
+            CRIME -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.LENIENT
 
-            COWBOY -> com.ilustris.sagai.core.ai.models.ReviewerStrictness.LENIENT
+            COWBOY -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.LENIENT
         }
 
     /**
@@ -1313,7 +1313,7 @@ object GenrePrompts {
                 - Empty backgrounds: 'plain background', 'gradient background', 'solid color background', 'white background', 'isolated portrait'
                 
                 REQUIRED ELEMENTS:
-                - Eyes MUST be ONE of: 'stylized cartoon eyes' (describe creatively), 'full white eyes with no pupil', or 'black void eyes'
+                - Eyes MUST be ONE of: 'gorillaz like eyes', 'simple black eyes with black pupil with stylized outline' (describe creatively), 'full white eyes with no pupil', or 'black void eyes'
                 - Eyes MUST EXPRESS character emotion: melancholic, rebellious, cool, detached, chaotic, etc.
                 - Background MUST include 3+ specific objects: 'graffiti wall', 'amp stack', 'neon sign', 'band posters', 'brick wall', etc.
                 - Proportions MUST be: 'cartoon proportions', 'exaggerated limbs', 'angular features', 'stylized'

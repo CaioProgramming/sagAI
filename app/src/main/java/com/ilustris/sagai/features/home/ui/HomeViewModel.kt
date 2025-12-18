@@ -4,10 +4,12 @@ import android.graphics.Bitmap
 import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.backup.filterBackups
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
+import com.ilustris.sagai.core.utils.StringResourceHelper
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -36,6 +38,7 @@ class HomeViewModel
         private val homeUseCase: HomeUseCase,
         private val backupService: BackupService,
         private val segmentationHelper: ImageSegmentationHelper,
+        private val stringResourceHelper: StringResourceHelper,
     ) : ViewModel() {
         val sagas = homeUseCase.getSagas()
 
@@ -118,7 +121,12 @@ class HomeViewModel
 
         private fun getDynamicPrompts() {
             viewModelScope.launch {
-                _dynamicNewSagaTexts.emit(homeUseCase.requestDynamicCall().getSuccess())
+                val result =
+                    homeUseCase.requestDynamicCall().getSuccess() ?: DynamicSagaPrompt(
+                        stringResourceHelper.getString(R.string.home_create_new_saga_title),
+                        stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
+                    )
+                _dynamicNewSagaTexts.emit(result)
             }
         }
 
@@ -129,13 +137,13 @@ class HomeViewModel
         }
 
         fun createFakeSaga() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val result = homeUseCase.createFakeSaga()
-            if (result is RequestResult.Success) {
-                _startDebugSaga.emit(result.value)
-                delay(3.seconds)
-                _startDebugSaga.emit(null)
+            viewModelScope.launch(Dispatchers.IO) {
+                val result = homeUseCase.createFakeSaga()
+                if (result is RequestResult.Success) {
+                    _startDebugSaga.emit(result.value)
+                    delay(3.seconds)
+                    _startDebugSaga.emit(null)
+                }
             }
         }
     }
-}

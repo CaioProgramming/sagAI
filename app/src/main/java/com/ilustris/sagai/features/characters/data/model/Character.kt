@@ -55,6 +55,8 @@ data class Character(
     val emojified: Boolean = false,
     @Embedded(prefix = "zoom_")
     val smartZoom: SmartZoom? = null,
+    @ColumnInfo(defaultValue = "")
+    val voice: String? = null,
 )
 
 data class Abilities(
