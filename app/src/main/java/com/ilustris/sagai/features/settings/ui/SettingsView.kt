@@ -518,7 +518,7 @@ fun SettingsView(viewModel: SettingsViewModel = hiltViewModel()) {
                             color = iconTint.darker(),
                         )
                         Text(
-                            text = "You can import exported sagas and recover your history.",
+                            text = stringResource(R.string.import_saga_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = iconTint.darker(),
                         )

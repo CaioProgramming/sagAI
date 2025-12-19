@@ -119,6 +119,7 @@ import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.core.permissions.PermissionService.Companion.openAppSettings
+import com.ilustris.sagai.core.utils.doNothing
 import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.act.ui.toRoman
@@ -139,14 +140,13 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.selectiveHighlight
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
-import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
-import com.ilustris.sagai.features.saga.chat.data.model.SenderType
-import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
-import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.saga.chat.presentation.ActDisplayData
 import com.ilustris.sagai.features.saga.chat.presentation.ChatState
+import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
+import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
+import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.components.CharacterRevealOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
@@ -205,39 +205,29 @@ fun ChatView(
     viewModel: ChatViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
 ) {
-    val state = viewModel.state.collectAsStateWithLifecycle()
-    val content by viewModel.content.collectAsStateWithLifecycle()
-    val messages by viewModel.messages.collectAsStateWithLifecycle()
-    val characters by viewModel.characters.collectAsStateWithLifecycle()
-    val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val showTitle by viewModel.showTitle.collectAsStateWithLifecycle()
-    val isPlaying by viewModel.isPlaying.collectAsStateWithLifecycle()
-    val snackBarMessage by viewModel.snackBarMessage.collectAsStateWithLifecycle()
-    val suggestions by viewModel.suggestions.collectAsStateWithLifecycle()
-    val loreProgress by viewModel.loreUpdateProgress.collectAsStateWithLifecycle()
+    fun navigateToSaga() {
+        sagaId ?: return
+        navHostController.navigateToRoute(Routes.SAGA_DETAIL, mapOf("sagaId" to sagaId))
+    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalActivity.current
-    val selectedCharacter by viewModel.selectedCharacter.collectAsStateWithLifecycle()
-    val input by viewModel.inputValue.collectAsStateWithLifecycle()
-    val senderType by viewModel.sendType.collectAsStateWithLifecycle()
-    val typoFix by viewModel.typoFixMessage.collectAsStateWithLifecycle()
-    val messageEffectsEnabled by viewModel.messageEffectsEnabled.collectAsStateWithLifecycle()
     val activity = LocalActivity.current
     var requiredPermission by remember { mutableStateOf<String?>(null) }
     val requestPermissionLauncher = PermissionService.rememberPermissionLauncher()
-    val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
-    val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
-    val audioState by viewModel.audioPlaybackState.collectAsStateWithLifecycle()
-    var showCharacter by remember {
-        mutableStateOf<Int?>(null)
-    }
-    val newCharacterReveal by viewModel.newCharacterReveal.collectAsStateWithLifecycle()
-    val selectionState by viewModel.selectionState.collectAsStateWithLifecycle()
-    var showShareSheet by remember { mutableStateOf(false) }
-    var showAudioTranscript by rememberSaveable { mutableStateOf(false) }
+    val content = uiState.sagaContent
+    val snackBarMessage = uiState.snackBarMessage
 
-    LaunchedEffect(content) {
-        content?.let {
+    val onAction: (ChatUiAction) -> Unit = { action ->
+        viewModel.handleAction(action)
+        when (action) {
+            is ChatUiAction.Back -> navHostController.popBackStack()
+            is ChatUiAction.OpenSagaDetails -> navigateToSaga()
+            else -> doNothing()
+        }
+    }
+
+    LaunchedEffect(uiState.sagaContent) {
+        uiState.sagaContent?.let {
             if (it.data.icon.isNotEmpty()) {
                 viewModel.segmentSagaCover(it.data.icon)
             }
@@ -268,38 +258,38 @@ fun ChatView(
         }
     }
 
-    fun navigateToSaga() {
-        sagaId ?: return
-        navHostController.navigateToRoute(Routes.SAGA_DETAIL, mapOf("sagaId" to sagaId))
-    }
-
     Box {
         ModalNavigationDrawer(
             drawerState = drawerState,
-            gesturesEnabled = content != null,
+            gesturesEnabled = uiState.sagaContent != null,
             drawerContent = {
                 ModalDrawerSheet(
                     drawerShape = RoundedCornerShape(0.dp),
                     drawerContainerColor = MaterialTheme.colorScheme.background,
                 ) {
-                    content?.let {
-                        WikiContent(it, onBackClick = {
-                            coroutineScope.launch {
-                                drawerState.close()
-                            }
-                        }, reviewWiki = viewModel::reviewWiki, onHoldWiki = {
-                            viewModel.appendWiki(it)
-                            coroutineScope.launch {
-                                drawerState.close()
-                            }
-                        })
+                    uiState.sagaContent?.let {
+                        WikiContent(
+                            it,
+                            onBackClick = {
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                }
+                            },
+                            reviewWiki = { wikis -> onAction(ChatUiAction.ReviewWiki(wikis)) },
+                            onHoldWiki = { wiki ->
+                                onAction(ChatUiAction.AppendWiki(wiki))
+                                coroutineScope.launch {
+                                    drawerState.close()
+                                }
+                            },
+                        )
                     }
                 }
             },
         ) {
             with(sharedTransitionScope) {
                 AnimatedContent(
-                    state.value,
+                    uiState.chatState,
                     transitionSpec = {
                         fadeIn(tween(200)) with fadeOut(tween(700))
                     },
@@ -309,7 +299,7 @@ fun ChatView(
                 ) {
                     when (it) {
                         is ChatState.Error -> {
-                            AnimatedVisibility(isGenerating.not()) {
+                            AnimatedVisibility(uiState.isGenerating.not()) {
                                 EmptyMessagesView(
                                     text = stringResource(id = R.string.saga_not_found),
                                     brush =
@@ -322,8 +312,8 @@ fun ChatView(
                         }
 
                         is ChatState.Success -> {
-                            content?.let { cont ->
-                                AnimatedContent(showTitle) {
+                            uiState.sagaContent?.let { cont ->
+                                AnimatedContent(uiState.showTitle) {
                                     if (it) {
                                         Box(Modifier.fillMaxSize()) {
                                             val genre = remember { cont.data.genre }
@@ -344,16 +334,8 @@ fun ChatView(
                                         }
                                     } else {
                                         ChatContent(
-                                            state = state.value,
-                                            content = cont,
-                                            inputValue = input,
-                                            actualSender = senderType,
-                                            typoFix = typoFix,
-                                            audioPlaybackState = audioState,
-                                            onUpdateInput = viewModel::updateInput,
-                                            onUpdateSenders = viewModel::updateSendType,
-                                            characters = characters,
-                                            currentCharacter = selectedCharacter,
+                                            uiState = uiState,
+                                            onAction = onAction,
                                             titleModifier =
                                                 Modifier.sharedElement(
                                                     rememberSharedContentState(
@@ -361,56 +343,9 @@ fun ChatView(
                                                     ),
                                                     animatedVisibilityScope = this@AnimatedContent,
                                                 ),
-                                            messagesList = messages,
-                                            suggestions = suggestions,
-                                            isGenerating = isGenerating || isLoading,
-                                            isLoading = isGenerating || isLoading,
-                                            onRefresh = viewModel::checkSaga,
                                             padding = padding,
                                             isDebug = isDebug,
-                                            isPlaying = isPlaying,
                                             sharedTransitionScope = sharedTransitionScope,
-                                            updateProgress = loreProgress,
-                                            snackBar = snackBarMessage,
-                                            onSendMessage = { userConfirmed ->
-                                                viewModel.sendInput(userConfirmed, false)
-                                            },
-                                            regenerateAudio = {
-                                                viewModel.regenerateAudio(it)
-                                            },
-                                            onBack = navHostController::popBackStack,
-                                            onRetryMessage = viewModel::retryAiResponse,
-                                            onPlayAudio = viewModel::playOrPauseAudio,
-                                            requestNewCharacter = viewModel::requestNewCharacter,
-                                            reviewEvent = viewModel::reviewEvent,
-                                            reviewChapter = viewModel::reviewChapter,
-                                            openSagaDetails = {
-                                                navHostController.navigateToRoute(
-                                                    Routes.SAGA_DETAIL,
-                                                    mapOf("sagaId" to cont.data.id.toString()),
-                                                )
-                                            },
-                                            onInjectFakeMessages = { count ->
-                                                viewModel.sendFakeUserMessages(count)
-                                            },
-                                            selectCharacter = {
-                                                showCharacter = it.data.id
-                                            },
-                                            updateCharacter = viewModel::updateCharacter,
-                                            messageEffectsEnabled = messageEffectsEnabled,
-                                            originalBitmap = originalBitmap,
-                                            segmentedBitmap = segmentedBitmap,
-                                            isSelectionMode = selectionState.isSelectionMode,
-                                            selectedMessageIds = selectionState.selectedMessageIds,
-                                            onToggleSelectionMode = viewModel::toggleSelectionMode,
-                                            onToggleMessageSelection = viewModel::toggleMessageSelection,
-                                            onClearSelection = viewModel::clearSelection,
-                                            onShareConversation = {
-                                                showShareSheet = true
-                                            },
-                                            onRequestAudio = {
-                                                showAudioTranscript = true
-                                            },
                                         )
                                     }
                                 }
@@ -447,7 +382,7 @@ fun ChatView(
                     .clip(content?.data?.genre?.shape() ?: RectangleShape)
                     .clickable {
                         if (snackBarMessage?.action == null) {
-                            viewModel.dismissSnackBar()
+                            onAction(ChatUiAction.DismissSnackBar)
                         }
                     },
         ) {
@@ -455,7 +390,7 @@ fun ChatView(
                 is SnackAction.OpenDetails -> {
                     when (val data = it.data) {
                         is Character -> {
-                            showCharacter = content?.findCharacter(it.data.id)?.data?.id
+                            onAction(ChatUiAction.UpdateCharacter(content?.findCharacter(it.data.id)))
                         }
 
                         is Wiki -> {
@@ -471,15 +406,15 @@ fun ChatView(
                 }
 
                 is SnackAction.ResendMessage -> {
-                    viewModel.retryAiResponse(it.message)
+                    onAction(ChatUiAction.RetryAiResponse(it.message))
                 }
 
                 is SnackAction.RetryCharacter -> {
-                    viewModel.requestNewCharacter(it.description)
+                    onAction(ChatUiAction.RequestNewCharacter(it.description))
                 }
 
                 is SnackAction.RevaluateSaga -> {
-                    viewModel.checkSaga()
+                    onAction(ChatUiAction.RefreshSaga)
                 }
 
                 is SnackAction.EnableBackup -> {
@@ -487,29 +422,27 @@ fun ChatView(
                 }
             }
 
-            viewModel.dismissSnackBar()
+            onAction(ChatUiAction.DismissSnackBar)
         }
 
         content?.let {
-            showCharacter?.let { id ->
+            uiState.revealCharacter?.let { requestedCharacter ->
                 val bottomSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-                it.findCharacter(id)?.let { requestedCharacter ->
-                    ModalBottomSheet(
-                        onDismissRequest = { showCharacter = null },
-                        sheetState = bottomSheetState,
-                        containerColor = MaterialTheme.colorScheme.background,
-                        dragHandle = {
-                            Box {}
+                ModalBottomSheet(
+                    onDismissRequest = { onAction(ChatUiAction.DismissCharacterReveal) },
+                    sheetState = bottomSheetState,
+                    containerColor = MaterialTheme.colorScheme.background,
+                    dragHandle = {
+                        Box {}
+                    },
+                ) {
+                    CharacterDetailsContent(
+                        it,
+                        requestedCharacter,
+                        openEvent = {
+                            navigateToSaga()
                         },
-                    ) {
-                        CharacterDetailsContent(
-                            it,
-                            requestedCharacter,
-                            openEvent = {
-                                navigateToSaga()
-                            },
-                        )
-                    }
+                    )
                 }
             }
         }
@@ -518,21 +451,25 @@ fun ChatView(
             BackupSheet(onDismiss = { showBackupSheet = false })
         }
 
-        if (showAudioTranscript) {
+        if (uiState.showAudioTranscript) {
             AudioRecordingSheet(
-                content?.data?.genre?.colorPalette() ?: holographicGradient,
+                uiState.sagaContent
+                    ?.data
+                    ?.genre
+                    ?.colorPalette() ?: holographicGradient,
                 onDismiss = {
-                    showAudioTranscript = false
+                    onAction(ChatUiAction.RequestAudioTranscript(false))
                 },
             ) {
-                viewModel.updateInput(TextFieldValue(it))
-                viewModel.sendInput(userConfirmed = false, isAudio = true)
+                onAction(ChatUiAction.UpdateInput(TextFieldValue(it)))
+                onAction(ChatUiAction.SendInput(userConfirmed = false, isAudio = true))
+                onAction(ChatUiAction.RequestAudioTranscript(false))
             }
         }
 
         val backupLauncher =
             PermissionService.rememberBackupLauncher { uri ->
-                viewModel.enableBackup(uri)
+                onAction(ChatUiAction.EnableBackup(uri))
                 requiredPermission = null
             }
 
@@ -550,34 +487,38 @@ fun ChatView(
         }
 
         AnimatedVisibility(
-            isGenerating,
+            uiState.isGenerating || uiState.isLoading,
             enter = fadeIn() + scaleIn(),
             exit = fadeOut(animationSpec = tween(700)) + shrinkOut(),
         ) {
-            val shimmerColors = content?.data?.genre?.shimmerColors() ?: holographicGradient
+            val shimmerColors =
+                uiState.sagaContent
+                    ?.data
+                    ?.genre
+                    ?.shimmerColors() ?: holographicGradient
             StarryTextPlaceholder(
                 modifier = Modifier.reactiveShimmer(true, shimmerColors),
             )
         }
 
-        newCharacterReveal?.let { id ->
-            content?.let { sagaContent ->
+        uiState.newCharacterReveal?.let { id ->
+            uiState.sagaContent?.let { sagaContent ->
                 val character = sagaContent.characters.find { it.data.id == id }
 
                 CharacterRevealOverlay(
                     character = character,
                     sagaContent = sagaContent,
-                    onDismiss = viewModel::dismissCharacterReveal,
+                    onDismiss = { onAction(ChatUiAction.DismissCharacterReveal) },
                 )
             }
         }
 
-        content?.let {
+        uiState.sagaContent?.let {
             ShareSheet(
                 content = it,
-                isVisible = showShareSheet,
+                isVisible = uiState.showShareSheet,
                 shareType = ShareType.CONVERSATION,
-                onDismiss = { showShareSheet = false },
+                onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
             )
         }
     }
@@ -586,51 +527,14 @@ fun ChatView(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ChatContent(
-    state: ChatState = ChatState.Loading,
-    content: SagaContent,
-    characters: List<Character> = emptyList(),
-    inputValue: TextFieldValue,
-    actualSender: SenderType,
-    typoFix: TypoFix?,
+    uiState: ChatUiState,
+    onAction: (ChatUiAction) -> Unit,
     titleModifier: Modifier = Modifier,
-    messagesList: List<ActDisplayData> = emptyList(),
-    suggestions: List<Suggestion> = emptyList(),
-    isGenerating: Boolean = false,
-    isLoading: Boolean = false,
-    onRefresh: () -> Unit = {},
     padding: PaddingValues = PaddingValues(),
     isDebug: Boolean = false,
-    isPlaying: Boolean = false,
-    updateProgress: Float = 0f,
-    snackBar: SnackBarState? = null,
     sharedTransitionScope: SharedTransitionScope,
-    currentCharacter: CharacterContent?,
-    audioPlaybackState: AudioPlaybackState? = null,
-    onSendMessage: (Boolean) -> Unit = { },
-    onUpdateInput: (TextFieldValue) -> Unit = { },
-    onUpdateSenders: (SenderType) -> Unit = { },
-    onBack: () -> Unit = {},
-    openSagaDetails: (Saga) -> Unit = {},
-    onInjectFakeMessages: (Int) -> Unit = {},
-    onRetryMessage: (Message) -> Unit = {},
-    onPlayAudio: (MessageContent) -> Unit = {},
-    selectCharacter: (CharacterContent) -> Unit = {},
-    requestNewCharacter: (String) -> Unit = {},
-    reviewEvent: (TimelineContent) -> Unit = {},
-    reviewChapter: (ChapterContent) -> Unit = {},
-    updateCharacter: (CharacterContent) -> Unit = {},
-    regenerateAudio: (MessageContent) -> Unit = {},
-    onRequestAudio: () -> Unit = {},
-    messageEffectsEnabled: Boolean = true,
-    originalBitmap: Bitmap? = null,
-    segmentedBitmap: Bitmap? = null,
-    isSelectionMode: Boolean = false,
-    selectedMessageIds: Set<Int> = emptySet(),
-    onToggleSelectionMode: () -> Unit = {},
-    onToggleMessageSelection: (Int) -> Unit = {},
-    onClearSelection: () -> Unit = {},
-    onShareConversation: () -> Unit = {},
 ) {
+    val content = uiState.sagaContent ?: return
     val saga = remember { content.data }
     val timeline = remember { content.getCurrentTimeLine() }
     val listState = rememberLazyListState()
@@ -657,11 +561,11 @@ fun ChatContent(
     }
     val imeState = WindowInsets.isImeVisible
     val progress by animateFloatAsState(
-        if (content.data.isEnded.not()) updateProgress else 1f,
+        if (content.data.isEnded.not()) uiState.loreUpdateProgress else 1f,
     )
 
-    LaunchedEffect(messagesList.size) {
-        if (messagesList.isNotEmpty()) {
+    LaunchedEffect(uiState.messages.size) {
+        if (uiState.messages.isNotEmpty()) {
             if (objectiveExpanded) {
                 delay(2.seconds)
             }
@@ -681,7 +585,7 @@ fun ChatContent(
         }
     }
 
-    LaunchedEffect(inputValue) {
+    LaunchedEffect(uiState.inputValue) {
         objectiveExpanded = false
     }
 
@@ -706,12 +610,11 @@ fun ChatContent(
                         Modifier
                             .align(Alignment.Center)
                             .reactiveShimmer(
-                                isPlaying,
+                                uiState.isPlaying,
                                 shimmerColors = saga.genre.shimmerColors(),
                                 duration = 10.seconds,
                                 targetValue = 1000f,
-                            )
-                            .fillMaxSize(.5f)
+                            ).fillMaxSize(.5f)
                             .alpha(.3f),
                 )
 
@@ -719,15 +622,14 @@ fun ChatContent(
                     Modifier
                         .padding(
                             top = padding.calculateTopPadding(),
-                        )
-                        .fillMaxSize(),
+                        ).fillMaxSize(),
                 ) {
                     rememberCoroutineScope()
                     val (debugControls, messages, chatInput, topBar, bottomFade, _, loreProgress) = createRefs()
 
                     ChatList(
                         saga = content,
-                        actList = messagesList,
+                        actList = uiState.messages,
                         listState = listState,
                         objectiveExpanded = objectiveExpanded,
                         modifier =
@@ -740,29 +642,51 @@ fun ChatContent(
                                     width = Dimension.fillToConstraints
                                     height = Dimension.fillToConstraints
                                 },
-                        regenerateAudio = {
-                            regenerateAudio(it)
+                        onMessageAction = { action ->
+                            when (action) {
+                                is MessageAction.PlayAudio -> {
+                                    onAction(ChatUiAction.PlayOrPauseAudio(action.message))
+                                }
+
+                                is MessageAction.RetryMessage -> {
+                                    onAction(ChatUiAction.RetryAiResponse(action.message.message))
+                                }
+
+                                is MessageAction.ClickCharacter -> {
+                                    action.character?.let { onAction(ChatUiAction.ShowCharacter(it)) }
+                                }
+
+                                is MessageAction.RegenerateAudio -> {
+                                    onAction(ChatUiAction.RegenerateAudio(action.message))
+                                }
+
+                                is MessageAction.ClickReactions -> {
+                                    showReactions = action.message
+                                }
+
+                                is MessageAction.RequestNewCharacter -> {
+                                    onAction(ChatUiAction.RequestNewCharacter(action.name))
+                                }
+
+                                is MessageAction.ToggleSelection -> {
+                                    onAction(ChatUiAction.ToggleMessageSelection(action.messageId))
+                                }
+
+                                is MessageAction.LongPress -> {
+                                    onAction(ChatUiAction.ToggleSelectionMode)
+                                    onAction(ChatUiAction.ToggleMessageSelection(action.messageId))
+                                }
+                            }
                         },
-                        openCharacter = {
-                            it?.let { character -> selectCharacter(character) }
-                        },
-                        openSaga = { openSagaDetails(saga) },
-                        openReactions = {
-                            showReactions = it
-                        },
-                        reviewChapter = reviewChapter,
-                        onRetryMessage = onRetryMessage,
-                        requestNewCharacter = requestNewCharacter,
-                        reviewEvent = reviewEvent,
-                        messageEffectsEnabled = messageEffectsEnabled,
-                        originalBitmap = originalBitmap,
-                        segmentedBitmap = segmentedBitmap,
-                        isSelectionMode = isSelectionMode,
-                        selectedMessageIds = selectedMessageIds,
-                        onToggleSelectionMode = onToggleSelectionMode,
-                        onToggleMessageSelection = onToggleMessageSelection,
-                        audioPlaybackState = audioPlaybackState,
-                        onPlayAudio = onPlayAudio,
+                        openSaga = { onAction(ChatUiAction.Back) },
+                        reviewChapter = { chapter -> onAction(ChatUiAction.ReviewChapter(chapter)) },
+                        reviewEvent = { event -> onAction(ChatUiAction.ReviewEvent(event)) },
+                        messageEffectsEnabled = uiState.messageEffectsEnabled,
+                        originalBitmap = uiState.originalBitmap,
+                        segmentedBitmap = uiState.segmentedBitmap,
+                        isSelectionMode = uiState.selectionState.isSelectionMode,
+                        selectedMessageIds = uiState.selectionState.selectedMessageIds,
+                        audioPlaybackState = uiState.audioPlaybackState,
                     )
 
                     Box(
@@ -771,14 +695,14 @@ fun ChatContent(
                                 bottom.linkTo(parent.bottom)
                                 start.linkTo(parent.start)
                                 end.linkTo(parent.end)
-                            }
-                            .fillMaxWidth()
+                            }.fillMaxWidth()
                             .fillMaxHeight(.2f)
                             .background(fadeGradientBottom()),
                     )
 
                     AnimatedVisibility(
-                        state !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not() && !isSelectionMode,
+                        uiState.chatState !is ChatState.Loading && saga.isDebug.not() && saga.isEnded.not() &&
+                            !uiState.selectionState.isSelectionMode,
                         modifier =
                             Modifier
                                 .constrainAs(chatInput) {
@@ -793,27 +717,44 @@ fun ChatContent(
                     ) {
                         ChatInputView(
                             content = content,
-                            isGenerating = isGenerating,
+                            isGenerating = uiState.isGenerating || uiState.isLoading,
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
                                     .wrapContentHeight(),
-                            selectedCharacter = currentCharacter,
-                            typoFix = typoFix,
-                            inputField = inputValue,
-                            sendType = actualSender,
-                            onSendMessage = onSendMessage,
-                            onUpdateInput = onUpdateInput,
-                            onUpdateSender = onUpdateSenders,
-                            suggestions = suggestions,
-                            onSelectCharacter = updateCharacter,
-                            onRequestAudio = onRequestAudio,
+                            selectedCharacter = uiState.selectedCharacter,
+                            typoFix = uiState.typoFixMessage,
+                            inputField = uiState.inputValue,
+                            sendType = uiState.senderType,
+                            onSendMessage = { userConfirmed ->
+                                onAction(
+                                    ChatUiAction.SendInput(
+                                        userConfirmed,
+                                        false,
+                                    ),
+                                )
+                            },
+                            onUpdateInput = { value -> onAction(ChatUiAction.UpdateInput(value)) },
+                            onUpdateSender = { type -> onAction(ChatUiAction.UpdateSenderType(type)) },
+                            suggestions = uiState.suggestions,
+                            onSelectCharacter = { character ->
+                                onAction(
+                                    ChatUiAction.UpdateCharacter(
+                                        character,
+                                    ),
+                                )
+                            },
+                            onRequestAudio = {
+                                onAction(
+                                    ChatUiAction.RequestAudioTranscript(true),
+                                )
+                            },
                         )
                     }
 
                     // Floating action button for sharing conversation snippets
                     AnimatedVisibility(
-                        visible = isSelectionMode,
+                        visible = uiState.selectionState.isSelectionMode,
                         modifier =
                             Modifier
                                 .constrainAs(createRef()) {
@@ -841,7 +782,7 @@ fun ChatContent(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             IconButton(
-                                onClick = onClearSelection,
+                                onClick = { onAction(ChatUiAction.ClearSelection) },
                                 modifier = Modifier.size(32.dp),
                             ) {
                                 Icon(
@@ -858,7 +799,7 @@ fun ChatContent(
                             Text(
                                 stringResource(
                                     R.string.messages_selected,
-                                    selectedMessageIds.size,
+                                    uiState.selectionState.selectedMessageIds.size,
                                     10,
                                 ),
                                 style =
@@ -873,8 +814,10 @@ fun ChatContent(
                             )
 
                             IconButton(
-                                onClick = onShareConversation,
-                                enabled = selectedMessageIds.isNotEmpty(),
+                                onClick = {
+                                    onAction(ChatUiAction.ShareConversation(true))
+                                },
+                                enabled = uiState.selectionState.selectedMessageIds.isNotEmpty(),
                                 modifier = Modifier.size(32.dp),
                             ) {
                                 Icon(
@@ -885,7 +828,7 @@ fun ChatContent(
                                             .padding(8.dp)
                                             .fillMaxSize(),
                                     tint =
-                                        if (selectedMessageIds.isNotEmpty()) {
+                                        if (uiState.selectionState.selectedMessageIds.isNotEmpty()) {
                                             Color.White
                                         } else {
                                             Color.White.copy(
@@ -914,7 +857,7 @@ fun ChatContent(
                                 }.background(MaterialTheme.colorScheme.background),
                     ) {
                         AnimatedVisibility(
-                            objectiveExpanded.not(),
+                            objectiveExpanded.not() && !uiState.selectionState.isSelectionMode,
                             modifier =
                                 Modifier.align(Alignment.CenterHorizontally),
                             enter = scaleIn() + fadeIn(),
@@ -948,19 +891,17 @@ fun ChatContent(
                                     ),
                                 modifier =
                                     Modifier
-                                        .scale(if (isGenerating) scaleAnimation.value else 1f)
+                                        .scale(if (uiState.isGenerating) scaleAnimation.value else 1f)
                                         .clip(CircleShape)
                                         .clickable(enabled = currentObjective?.isNotEmpty() == true) {
                                             objectiveExpanded = true
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(
                                             progressiveBrush(
                                                 content.data.genre.color,
                                                 progress,
                                             ),
-                                        )
-                                        .reactiveShimmer(isGenerating)
+                                        ).reactiveShimmer(uiState.isGenerating || uiState.isLoading)
                                         .sharedElement(
                                             rememberSharedContentState(
                                                 key = "current_objective_${content.data.id}",
@@ -983,18 +924,26 @@ fun ChatContent(
                                 )
                             }
 
+                        val characters =
+                            remember {
+                                uiState.sagaContent.characters?.map { it.data } ?: emptyList()
+                            }
+
                         SagaTopBar(
                             saga.title,
                             subtitle,
                             saga.genre,
-                            isLoading = isGenerating,
-                            onBackClick = onBack,
+                            isLoading = uiState.isGenerating || uiState.isLoading,
+                            onBackClick = {
+                                onAction(ChatUiAction.Back)
+                            },
                             modifier =
                                 Modifier
                                     .clickable {
-                                        openSagaDetails(saga)
-                                    }
-                                    .fillMaxWidth()
+                                        onAction(
+                                            ChatUiAction.OpenSagaDetails,
+                                        )
+                                    }.fillMaxWidth()
                                     .padding(start = 8.dp),
                             titleModifier = titleModifier,
                             actionContent = {
@@ -1004,23 +953,26 @@ fun ChatContent(
                                     CharactersTopIcons(
                                         chars,
                                         saga.genre,
-                                        isLoading = isGenerating,
-                                    ) { _ -> openSagaDetails(saga) }
+                                        isLoading = uiState.isGenerating || uiState.isLoading,
+                                    ) { _ ->
+                                        onAction(
+                                            ChatUiAction.OpenSagaDetails,
+                                        )
+                                    }
                                 }
                             },
                         )
                     }
 
                     val backgroundColor by animateColorAsState(
-                        if (snackBar != null) saga.genre.color else Color.Transparent,
+                        if (uiState.snackBarMessage != null) saga.genre.color else Color.Transparent,
                     )
 
                     Column(
                         Modifier
                             .background(
                                 backgroundColor,
-                            )
-                            .constrainAs(loreProgress) {
+                            ).constrainAs(loreProgress) {
                                 top.linkTo(topBar.bottom)
                                 start.linkTo(topBar.start)
                                 end.linkTo(topBar.end)
@@ -1036,8 +988,7 @@ fun ChatContent(
                                                 key = "lore_progress_${content.data.id}",
                                             ),
                                             animatedVisibilityScope = this,
-                                        )
-                                        .alpha(alpha)
+                                        ).alpha(alpha)
                                         .height(1.dp)
                                         .fillMaxWidth(),
                                 progress = { progress },
@@ -1049,10 +1000,10 @@ fun ChatContent(
                         }
                     }
 
-                    if (isDebug && saga.isEnded.not()) {
+                    if (isDebug && saga.isEnded.not() && !uiState.selectionState.isSelectionMode) {
                         var fakeMessageCountText by rememberSaveable { mutableStateOf("3") }
                         val blurRadius by animateFloatAsState(
-                            if (isGenerating) 40f else 0f,
+                            if (uiState.isGenerating || uiState.isLoading) 40f else 0f,
                         )
                         val shape = RoundedCornerShape(content.data.genre.cornerSize())
                         BlurredGlowContainer(
@@ -1065,7 +1016,7 @@ fun ChatContent(
                                     width = Dimension.fillToConstraints
                                     height = Dimension.wrapContent
                                 },
-                            content.data.genre.gradient(isGenerating),
+                            content.data.genre.gradient(uiState.isLoading),
                             shape = shape,
                             blurSigma = blurRadius,
                         ) {
@@ -1098,14 +1049,13 @@ fun ChatContent(
                                         .background(
                                             MaterialTheme.colorScheme.surfaceContainer,
                                             shape,
-                                        )
-                                        .fillMaxWidth(),
+                                        ).fillMaxWidth(),
                                 trailingIcon = {
                                     IconButton(
                                         onClick = {
                                             val count = fakeMessageCountText.toIntOrNull() ?: 0
                                             if (count > 0) {
-                                                onInjectFakeMessages(count)
+                                                onAction(ChatUiAction.InjectFakeMessages(count))
                                             }
                                         },
                                         modifier =
@@ -1155,8 +1105,7 @@ fun ChatContent(
                             .background(MaterialTheme.colorScheme.background, genre.shape())
                             .clickable {
                                 objectiveExpanded = false
-                            }
-                            .padding(16.dp),
+                            }.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
@@ -1201,8 +1150,7 @@ fun ChatContent(
                                             key = "lore_progress_${content.data.id}",
                                         ),
                                         animatedVisibilityScope = this@AnimatedVisibility,
-                                    )
-                                    .clip(genre.shape())
+                                    ).clip(genre.shape())
                                     .height(4.dp)
                                     .fillMaxWidth()
                                     .reactiveShimmer(
@@ -1322,8 +1270,7 @@ fun SagaHeader(
                                 .effectForGenre(saga.genre)
                                 .selectiveColorHighlight(
                                     saga.genre.selectiveHighlight(),
-                                )
-                                .fillMaxSize(),
+                                ).fillMaxSize(),
                     )
                 }
 
@@ -1352,7 +1299,7 @@ fun SagaHeader(
             } else {
                 saga.description
                     .take(200)
-                    .plus("...")
+                    .plus(stringResource(id = R.string.read_more))
             },
             style =
                 MaterialTheme.typography.bodyMedium.copy(
@@ -1366,8 +1313,7 @@ fun SagaHeader(
                     .fillMaxWidth()
                     .clickable {
                         isDescriptionExpanded = !isDescriptionExpanded
-                    }
-                    .animateContentSize(),
+                    }.animateContentSize(),
         )
     }
 }
@@ -1379,11 +1325,8 @@ fun ChatList(
     modifier: Modifier,
     listState: LazyListState,
     objectiveExpanded: Boolean,
-    openCharacter: (CharacterContent?) -> Unit = {},
+    onMessageAction: (MessageAction) -> Unit = {},
     openSaga: () -> Unit = {},
-    onRetryMessage: (Message) -> Unit = {},
-    openReactions: (MessageContent) -> Unit = {},
-    requestNewCharacter: (String) -> Unit = {},
     reviewEvent: (TimelineContent) -> Unit = {},
     reviewChapter: (ChapterContent) -> Unit = {},
     messageEffectsEnabled: Boolean = true,
@@ -1392,10 +1335,6 @@ fun ChatList(
     isSelectionMode: Boolean = false,
     selectedMessageIds: Set<Int> = emptySet(),
     audioPlaybackState: AudioPlaybackState? = null,
-    onPlayAudio: (MessageContent) -> Unit = { },
-    regenerateAudio: (MessageContent) -> Unit = {},
-    onToggleSelectionMode: () -> Unit = {},
-    onToggleMessageSelection: (Int) -> Unit = {},
 ) {
     val coroutineScope = rememberCoroutineScope()
 
@@ -1461,7 +1400,7 @@ fun ChatList(
             val genre = saga.data.genre
 
             if (act.isComplete) {
-                item(key = act.content.data.id) {
+                item(key = "act-${act.content.data.id}") {
                     ActComponent(
                         act.content,
                         saga.acts.indexOf(act.content) + 1,
@@ -1476,7 +1415,7 @@ fun ChatList(
             act.chapters.reversed().forEach { chapter ->
 
                 if (chapter.isComplete) {
-                    item(key = chapter.chapter.data.id) {
+                    item(key = "chapter-${ chapter.chapter.data.id }") {
                         ChapterContentView(
                             chapter.chapter,
                             saga,
@@ -1500,18 +1439,21 @@ fun ChatList(
                 chapter.timelineSummaries.reversed().forEach { timeline ->
 
                     if (timeline.isComplete()) {
-                        item(key = timeline.data.id) {
+                        item(key = "timline-${timeline.data.id}") {
+                            val shape =
+                                genre.bubble(
+                                    BubbleTailAlignment.BottomLeft,
+                                    0.dp,
+                                    0.dp,
+                                    true,
+                                )
                             var isExpanded by remember { mutableStateOf(false) }
                             Box(
                                 Modifier
                                     .clip(
-                                        genre.bubble(
-                                            BubbleTailAlignment.BottomLeft,
-                                            0.dp,
-                                            0.dp,
-                                            true,
-                                        ),
-                                    ).pointerInput(Unit) {
+                                        shape,
+                                    ).animateContentSize()
+                                    .pointerInput(Unit) {
                                         detectTapGestures(
                                             onPress = {
                                                 awaitRelease()
@@ -1525,49 +1467,32 @@ fun ChatList(
                                         }
                                     },
                             ) {
-                                SharedTransitionLayout {
-                                    AnimatedContent(isExpanded) {
-                                        if (it) {
-                                            TimeLineCard(
-                                                timeline,
-                                                saga,
-                                                isLast = true,
-                                                modifier =
-                                                    Modifier.sharedElement(
-                                                        rememberSharedContentState(
-                                                            key = "timeline_${timeline.data.id}",
-                                                        ),
-                                                        this,
-                                                    ),
-                                            )
-                                        } else {
-                                            TimeLineSimpleCard(
-                                                timeline,
-                                                saga,
-                                                modifier =
-                                                    Modifier
-                                                        .animateItem()
-                                                        .sharedElement(
-                                                            rememberSharedContentState(
-                                                                key = "timeline_${timeline.data.id}",
-                                                            ),
-                                                            this,
-                                                        )
-                                                        .padding(16.dp)
-                                                        .clip(
-                                                            genre.shape(),
-                                                        )
-                                                        .fillMaxWidth(),
-                                                requestReview = reviewEvent,
-                                            )
-                                        }
+                                AnimatedContent(isExpanded) {
+                                    if (it) {
+                                        TimeLineCard(
+                                            timeline,
+                                            saga,
+                                            isLast = true,
+                                        )
+                                    } else {
+                                        TimeLineSimpleCard(
+                                            timeline,
+                                            saga,
+                                            modifier =
+                                                Modifier
+                                                    .animateItem()
+                                                    .padding(16.dp)
+                                                    .clip(shape)
+                                                    .fillMaxWidth(),
+                                            requestReview = reviewEvent,
+                                        )
                                     }
                                 }
                             }
                         }
                     }
 
-                    items(timeline.messages.reversed(), key = { it.message.id }) {
+                    items(timeline.messages.reversed(), key = { "message-${it.message.id}" }) {
                         ChatBubble(
                             it,
                             isLoading = false,
@@ -1580,33 +1505,13 @@ fun ChatList(
                                     fadeInSpec = tween(400, easing = EaseIn),
                                     fadeOutSpec = tween(400, easing = EaseIn),
                                 ),
-                            openCharacters = { char -> openCharacter(char) },
-                            onReactionsClick = { openReactions(it) },
-                            onRetry = {
-                                onRetryMessage(it.message)
-                            },
-                            regenerateAudio = {
-                                regenerateAudio(it)
-                            },
-                            onPlayAudio = onPlayAudio,
-                            requestNewCharacter = {
-                                it.message.speakerName?.let {
-                                    requestNewCharacter(it)
-                                }
-                            },
+                            onAction = onMessageAction,
                             isSelectionMode = isSelectionMode,
                             isSelected = selectedMessageIds.contains(it.message.id),
-                            onToggleSelection = {
-                                onToggleMessageSelection(it.message.id)
-                            },
-                            onLongPress = {
-                                onToggleSelectionMode()
-                                onToggleMessageSelection(it.message.id)
-                            },
                         )
                     }
 
-                    item(key = "${timeline.data.id}-spark") {
+                    item(key = "timeline-${timeline.data.id}-spark") {
                         Box(
                             Modifier
                                 .padding(8.dp)
@@ -1626,7 +1531,7 @@ fun ChatList(
                     }
                 }
 
-                item(key = "${chapter.chapter.data.id}-intro") {
+                item(key = "chapter-${chapter.chapter.data.id}-intro") {
                     Text(
                         chapter.chapter.data.introduction,
                         style =
@@ -1642,7 +1547,7 @@ fun ChatList(
                     )
                 }
 
-                item(key = "${chapter.chapter.data.id}-title") {
+                item(key = "chapter-${chapter.chapter.data.id}-title") {
                     val title =
                         chapter.chapter.data.title.ifEmpty {
                             stringResource(
@@ -1766,8 +1671,7 @@ fun CharactersTopIcons(
                             } else {
                                 (charactersToDisplay.size - 1 - index).toFloat()
                             },
-                        )
-                        .graphicsLayer(
+                        ).graphicsLayer(
                             translationX = if (index > 0) (index * overlapAmountPx) else 0f,
                         ).clip(CircleShape)
                         .size(24.dp)

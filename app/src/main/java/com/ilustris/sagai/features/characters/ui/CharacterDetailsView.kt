@@ -423,11 +423,10 @@ private fun CharacterDetailsLoaded(
                                         character.nicknames?.let {
                                             if (it.isNotEmpty()) {
                                                 Text(
-                                                    text = "aka: ${
-                                                        it.joinToString(
-                                                            ", ",
-                                                        )
-                                                    }",
+                                                    text = stringResource(
+                                                        id = R.string.character_details_aka,
+                                                        it.joinToString(", ")
+                                                    ),
                                                     style =
                                                         MaterialTheme.typography.titleMedium.copy(
                                                             fontFamily = genre.bodyFont(),
@@ -516,11 +515,10 @@ private fun CharacterDetailsLoaded(
                                         character.nicknames?.let {
                                             if (it.isNotEmpty()) {
                                                 Text(
-                                                    text = "aka: ${
-                                                        it.joinToString(
-                                                            ", ",
-                                                        )
-                                                    }",
+                                                    text = stringResource(
+                                                        id = R.string.character_details_aka,
+                                                        it.joinToString(", ")
+                                                    ),
                                                     style =
                                                         MaterialTheme.typography.titleMedium.copy(
                                                             fontFamily = genre.bodyFont(),

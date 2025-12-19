@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -47,7 +48,10 @@ import com.ilustris.sagai.ui.theme.reactiveShimmer
 fun StarryLoader(
     isLoading: Boolean,
     loadingMessage: String? = null,
-    textStyle: TextStyle = MaterialTheme.typography.labelMedium,
+    textStyle: TextStyle =
+        MaterialTheme.typography.labelMedium.copy(
+            textAlign = TextAlign.Center,
+        ),
     brushColors: List<Color> = holographicGradient,
     useAsDialog: Boolean = true,
 ) {
@@ -79,7 +83,7 @@ fun StarryLoader(
                     Modifier
                         .fillMaxSize()
                         .reactiveShimmer(true, brushColors),
-                        ) {
+                ) {
                     val starsAlpha by animateFloatAsState(
                         targetValue = if (loadingMessage == null) 1f else .5f,
                         animationSpec = tween(1500),

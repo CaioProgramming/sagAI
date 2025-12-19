@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -51,7 +52,7 @@ fun RecoverBackupSheet(
             ) {
                 stickyHeader {
                     Text(
-                        "Backups",
+                        stringResource(R.string.recover_backup_sheet_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
                         textAlign = TextAlign.Center,
@@ -61,7 +62,7 @@ fun RecoverBackupSheet(
 
                 item(span = { GridItemSpan(2) }) {
                     Text(
-                        "Encontramos algumas histórias perdidas, que tal recuperarmos?",
+                        stringResource(R.string.recover_backup_sheet_description),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 }
@@ -90,7 +91,7 @@ fun RecoverBackupSheet(
                             null,
                             modifier = Modifier.size(24.dp),
                         )
-                        Text("Restaurar todas as histórias")
+                        Text(stringResource(R.string.recover_backup_sheet_button_recover_all))
                     }
                 }
             }

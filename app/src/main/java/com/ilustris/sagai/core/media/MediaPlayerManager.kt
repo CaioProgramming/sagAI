@@ -25,7 +25,7 @@ interface MediaPlayerManager {
      * @param onCompletion Callback invoked when media playback completes (if not looping).
      */
     fun prepareDataSource(
-        file: File,
+        path: String,
         looping: Boolean = false,
         onPrepared: (() -> Unit)? = null,
         onError: ((Exception) -> Unit)? = null,

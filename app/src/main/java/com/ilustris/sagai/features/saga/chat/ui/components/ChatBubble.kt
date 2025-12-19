@@ -91,14 +91,12 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatHours
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterProfile
 import com.ilustris.sagai.features.characters.data.model.Details
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
-import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
@@ -106,6 +104,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.model.isUser
+import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
 import com.ilustris.sagai.features.saga.chat.ui.animations.emotionalEntrance
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioMessagePlayer
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
@@ -116,6 +115,7 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.dashedBorder
+import com.ilustris.sagai.ui.theme.fadeColors
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -135,17 +135,10 @@ fun ChatBubble(
     isLoading: Boolean = false,
     modifier: Modifier = Modifier,
     audioPlaybackState: AudioPlaybackState? = null,
-    openCharacters: (CharacterContent?) -> Unit = {},
-    onRetry: (MessageContent) -> Unit = {},
-    regenerateAudio: () -> Unit = {},
-    onReactionsClick: (MessageContent) -> Unit = {},
-    onPlayAudio: (MessageContent) -> Unit = {},
-    requestNewCharacter: () -> Unit = {},
+    onAction: (MessageAction) -> Unit = {},
     messageEffectsEnabled: Boolean = true,
     isSelectionMode: Boolean = false,
     isSelected: Boolean = false,
-    onToggleSelection: () -> Unit = {},
-    onLongPress: () -> Unit = {},
 ) {
     val message = messageContent.message
     val sender = message.senderType
@@ -240,6 +233,12 @@ fun ChatBubble(
         SenderType.ACTION,
         -> {
             val layoutDirection = if (isUser) LayoutDirection.Rtl else LayoutDirection.Ltr
+            val hasValidAudio =
+                remember(message.audioPath) {
+                    message.audioPath?.let { path ->
+                        File(path).exists()
+                    } ?: false
+                }
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 Box(
                     modifier =
@@ -282,7 +281,11 @@ fun ChatBubble(
                                                 .padding(8.dp)
                                                 .fillMaxSize()
                                                 .clickable {
-                                                    openCharacters(characters.find { c -> c.data.id == character.id })
+                                                    onAction(
+                                                        MessageAction.ClickCharacter(
+                                                            characters.find { c -> c.data.id == character.id },
+                                                        ),
+                                                    )
                                                 },
                                     )
                                 }
@@ -322,7 +325,11 @@ fun ChatBubble(
                                     null,
                                     Modifier
                                         .clickable {
-                                            requestNewCharacter()
+                                            onAction(
+                                                MessageAction.RequestNewCharacter(
+                                                    message.speakerName ?: "",
+                                                ),
+                                            )
                                         }.size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
@@ -355,9 +362,9 @@ fun ChatBubble(
                                                     override fun createShader(size: Size): Shader {
                                                         val shader =
                                                             (
-                                                                    sweepGradient(
-                                                                        genre.colorPalette(),
-                                                                    ) as ShaderBrush
+                                                                sweepGradient(
+                                                                    genre.colorPalette(),
+                                                                ) as ShaderBrush
                                                             ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
@@ -374,8 +381,7 @@ fun ChatBubble(
                                                 brush = brush,
                                                 style = Stroke(width = 1.dp.toPx()),
                                             )
-                                        }
-                                        .background(
+                                        }.background(
                                             MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
                                             bubbleShape,
                                         )
@@ -388,19 +394,26 @@ fun ChatBubble(
                                                     indication = ripple(),
                                                     onClick = {
                                                         if (isSelectionMode) {
-                                                            onToggleSelection()
+                                                            onAction(
+                                                                MessageAction.ToggleSelection(
+                                                                    message.id,
+                                                                ),
+                                                            )
                                                         }
                                                     },
                                                     onLongClick = {
                                                         if (!isSelectionMode) {
-                                                            onLongPress()
+                                                            onAction(
+                                                                MessageAction.LongPress(
+                                                                    message.id,
+                                                                ),
+                                                            )
                                                         }
                                                     },
                                                 ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
                                                     bubbleShape,
@@ -415,25 +428,30 @@ fun ChatBubble(
                                                         indication = ripple(),
                                                         onClick = {
                                                             if (isSelectionMode) {
-                                                                onToggleSelection()
+                                                                onAction(
+                                                                    MessageAction.ToggleSelection(
+                                                                        message.id,
+                                                                    ),
+                                                                )
                                                             }
                                                         },
                                                         onLongClick = {
                                                             if (!isSelectionMode) {
-                                                                onLongPress()
+                                                                onAction(
+                                                                    MessageAction.LongPress(
+                                                                        message.id,
+                                                                    ),
+                                                                )
                                                             }
                                                         },
-                                                    )
-                                                    .emotionalEntrance(
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         isAnimated && messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
+                                                    ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
-                                                    )
-                                                    .background(
+                                                    ).background(
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(
                                                             alpha = .5f,
                                                         ),
@@ -446,20 +464,26 @@ fun ChatBubble(
                                                         indication = ripple(),
                                                         onClick = {
                                                             if (isSelectionMode) {
-                                                                onToggleSelection()
+                                                                onAction(
+                                                                    MessageAction.ToggleSelection(
+                                                                        message.id,
+                                                                    ),
+                                                                )
                                                             }
                                                         },
                                                         onLongClick = {
                                                             if (!isSelectionMode) {
-                                                                onLongPress()
+                                                                onAction(
+                                                                    MessageAction.LongPress(
+                                                                        message.id,
+                                                                    ),
+                                                                )
                                                             }
                                                         },
-                                                    )
-                                                    .emotionalEntrance(
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         isAnimated && messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
+                                                    ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -474,25 +498,30 @@ fun ChatBubble(
                                                     indication = ripple(),
                                                     onClick = {
                                                         if (isSelectionMode) {
-                                                            onToggleSelection()
+                                                            onAction(
+                                                                MessageAction.ToggleSelection(
+                                                                    message.id,
+                                                                ),
+                                                            )
                                                         }
                                                     },
                                                     onLongClick = {
                                                         if (!isSelectionMode) {
-                                                            onLongPress()
+                                                            onAction(
+                                                                MessageAction.LongPress(
+                                                                    message.id,
+                                                                ),
+                                                            )
                                                         }
                                                     },
-                                                )
-                                                .emotionalEntrance(
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(
                                                     MaterialTheme.colorScheme.surfaceContainer,
                                                     bubbleShape,
-                                                )
-                                                .dashedBorder(
+                                                ).dashedBorder(
                                                     strokeWidth = 1.dp,
                                                     color =
                                                         MaterialTheme.colorScheme.onBackground.copy(
@@ -511,20 +540,26 @@ fun ChatBubble(
                                                     indication = ripple(),
                                                     onClick = {
                                                         if (isSelectionMode) {
-                                                            onToggleSelection()
+                                                            onAction(
+                                                                MessageAction.ToggleSelection(
+                                                                    message.id,
+                                                                ),
+                                                            )
                                                         }
                                                     },
                                                     onLongClick = {
                                                         if (!isSelectionMode) {
-                                                            onLongPress()
+                                                            onAction(
+                                                                MessageAction.LongPress(
+                                                                    message.id,
+                                                                ),
+                                                            )
                                                         }
                                                     },
-                                                )
-                                                .emotionalEntrance(
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(Color.Black, bubbleShape)
                                         }
 
@@ -534,18 +569,36 @@ fun ChatBubble(
                                                 indication = ripple(),
                                                 onClick = {
                                                     if (isSelectionMode) {
-                                                        onToggleSelection()
+                                                        onAction(
+                                                            MessageAction.ToggleSelection(
+                                                                message.id,
+                                                            ),
+                                                        )
                                                     }
                                                 },
                                                 onLongClick = {
                                                     if (!isSelectionMode) {
-                                                        onLongPress()
+                                                        onAction(
+                                                            MessageAction.LongPress(
+                                                                message.id,
+                                                            ),
+                                                        )
                                                     }
                                                 },
                                             )
                                         }
                                     }
                                 }
+
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                AudioGenButton(
+                                    message,
+                                    genre,
+                                    onAction,
+                                    messageContent,
+                                    hasValidAudio,
+                                )
+                            }
 
                             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                                 TooltipBox(
@@ -570,8 +623,7 @@ fun ChatBubble(
                                                 2.dp,
                                                 borderColorAnimation,
                                                 bubbleShape,
-                                            )
-                                            .padding(paddingAnimation)
+                                            ).padding(paddingAnimation)
                                             .clip(bubbleShape)
                                             .padding(vertical = 4.dp)
                                             .animateContentSize(),
@@ -618,16 +670,8 @@ fun ChatBubble(
                                         val text =
                                             if (sender == SenderType.ACTION) "(${message.text})" else message.text
 
-                                        // Check if audio file exists and is valid
-                                        val hasValidAudio =
-                                            remember(message.audioPath) {
-                                                message.audioPath?.let { path ->
-                                                    File(path).exists()
-                                                } ?: false
-                                            }
-
                                         Column(
-                                            Modifier.padding(16.dp),
+                                            Modifier.padding(8.dp),
                                             verticalArrangement = Arrangement.spacedBy(4.dp),
                                         ) {
                                             if (hasValidAudio) {
@@ -638,43 +682,11 @@ fun ChatBubble(
                                                     genre = genre,
                                                     contentColor = textColor,
                                                     onPlayPauseClick = {
-                                                        onPlayAudio(messageContent)
+                                                        onAction(MessageAction.PlayAudio(messageContent))
                                                     },
                                                 )
                                             } else {
                                                 // Show Text
-                                                if (message.audible) {
-                                                    Row(
-                                                        horizontalArrangement =
-                                                            Arrangement.spacedBy(
-                                                                4.dp,
-                                                            ),
-                                                        verticalAlignment = Alignment.CenterVertically,
-                                                        modifier =
-                                                            Modifier
-                                                                .fillMaxWidth()
-                                                                .clip(genre.shape())
-                                                                .clickable {
-                                                                    regenerateAudio()
-                                                                }.alpha(.4f),
-                                                    ) {
-                                                        Image(
-                                                            painterResource(R.drawable.ic_mic),
-                                                            null,
-                                                            Modifier.size(24.dp),
-                                                            colorFilter = ColorFilter.tint(genre.iconColor),
-                                                        )
-                                                        Text(
-                                                            "Regenerate audio...",
-                                                            style =
-                                                                MaterialTheme.typography.labelMedium.copy(
-                                                                    fontFamily = genre.bodyFont(),
-                                                                    fontWeight = FontWeight.Normal,
-                                                                    color = genre.iconColor,
-                                                                ),
-                                                        )
-                                                    }
-                                                }
                                                 TypewriterText(
                                                     text = text,
                                                     isAnimated = isAnimated,
@@ -692,7 +704,7 @@ fun ChatBubble(
                                                             .alpha(textAlpha)
                                                             .reactiveShimmer(
                                                                 isLoading || message.status == MessageStatus.LOADING,
-                                                                genre.shimmerColors(),
+                                                                genre.color.fadeColors(),
                                                             ),
                                                     style =
                                                         MaterialTheme.typography.bodySmall.copy(
@@ -715,8 +727,7 @@ fun ChatBubble(
                                                         .clip(bubbleShape)
                                                         .clickable {
                                                             starAlpha = 0f
-                                                        }
-                                                        .background(
+                                                        }.background(
                                                             MaterialTheme.colorScheme.surfaceContainer.copy(
                                                                 alpha = .4f,
                                                             ),
@@ -734,7 +745,7 @@ fun ChatBubble(
                                     if (it == MessageStatus.ERROR) {
                                         Button(
                                             onClick = {
-                                                onRetry(messageContent)
+                                                onAction(MessageAction.RetryMessage(messageContent))
                                             },
                                             colors =
                                                 ButtonDefaults.textButtonColors().copy(
@@ -794,7 +805,7 @@ fun ChatBubble(
                                                     reactions = messageContent.reactions,
                                                     genre = genre,
                                                 ) {
-                                                    onReactionsClick(messageContent)
+                                                    onAction(MessageAction.ClickReactions(messageContent))
                                                 }
                                             }
                                         }
@@ -845,51 +856,79 @@ fun ChatBubble(
 
         SenderType.NARRATOR -> {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val hasValidAudio =
+                    remember(message.audioPath) {
+                        message.audioPath?.let { path ->
+                            File(path).exists()
+                        } ?: false
+                    }
+
+                AudioGenButton(message, genre, onAction, messageContent, hasValidAudio)
+
                 Box(
                     modifier =
                         modifier
                             .emotionalEntrance(
                                 message.emotionalTone,
                                 isAnimated && messageEffectsEnabled,
-                            )
-                            .padding(16.dp)
+                            ).padding(16.dp)
                             .fillMaxWidth()
                             .shadow(
                                 elevation = 8.dp,
                                 shape = narratorShape,
                                 spotColor = genre.color,
-                            )
-                            .border(1.dp, genre.color.gradientFade(), narratorShape)
+                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
                             .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                 ) {
-                    TypewriterText(
-                        text = message.text,
-                        isAnimated = false,
-                        duration = duration,
-                        genre = genre,
-                        mainCharacter = mainCharacter?.data,
-                        characters = content.getCharacters(),
-                        wiki = wiki,
-                        modifier =
-                            Modifier
-                                .align(Alignment.Center)
-                                .reactiveShimmer(isLoading, genre.shimmerColors())
-                                .fillMaxWidth(),
-                        style =
-                            MaterialTheme.typography.bodyMedium.copy(
-                                fontStyle = FontStyle.Italic,
-                                textAlign = TextAlign.Center,
-                                fontFamily = genre.bodyFont(),
-                                color = MaterialTheme.colorScheme.onBackground,
-                            ),
-                        onAnnotationClick = { data ->
-                            tooltipData = data
-                        },
-                    )
+                    Column(
+                        Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        if (hasValidAudio) {
+                            // Show Audio Player
+                            AudioMessagePlayer(
+                                transcription = message.text,
+                                audioPlaybackState = audioPlaybackState?.takeIf { it.messageId == message.id },
+                                genre = genre,
+                                contentColor = genre.iconColor,
+                                onPlayPauseClick = {
+                                    onAction(MessageAction.PlayAudio(messageContent))
+                                },
+                            )
+                        } else {
+                            // Show Text
+                            TypewriterText(
+                                text = message.text,
+                                isAnimated = isAnimated,
+                                genre = genre,
+                                mainCharacter = mainCharacter?.data,
+                                characters = characters.map { it.data },
+                                wiki = wiki,
+                                duration = duration,
+                                easing = EaseIn,
+                                onAnnotationClick = { data ->
+                                    tooltipData = data
+                                },
+                                modifier =
+                                    Modifier
+                                        .alpha(1f)
+                                        .reactiveShimmer(
+                                            isLoading || message.status == MessageStatus.LOADING,
+                                            genre.shimmerColors(),
+                                        ),
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Normal,
+                                        fontFamily = genre.bodyFont(),
+                                        color = genre.iconColor,
+                                        textAlign = TextAlign.Start,
+                                    ),
+                            )
+                        }
+                    }
                 }
 
                 AnimatedVisibility(
@@ -899,7 +938,7 @@ fun ChatBubble(
                 ) {
                     IconButton(
                         onClick = {
-                            onRetry(messageContent)
+                            onAction(MessageAction.RetryMessage(messageContent))
                         },
                         modifier =
                             Modifier
@@ -932,10 +971,57 @@ fun ChatBubble(
                         reactions = messageContent.reactions,
                         genre = genre,
                     ) {
-                        onReactionsClick(messageContent)
+                        onAction(MessageAction.ClickReactions(messageContent))
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AudioGenButton(
+    message: Message,
+    genre: Genre,
+    onAction: (MessageAction) -> Unit,
+    messageContent: MessageContent,
+    hasValidAudio: Boolean,
+) {
+    if (hasValidAudio.not() && message.audible) {
+        Row(
+            horizontalArrangement =
+                Arrangement.spacedBy(
+                    4.dp,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .alpha(.4f)
+                    .clip(genre.shape())
+                    .gradientFill(genre.gradient())
+                    .clickable {
+                        onAction(
+                            MessageAction.RegenerateAudio(
+                                messageContent,
+                            ),
+                        )
+                    },
+        ) {
+            Image(
+                painterResource(R.drawable.ic_mic),
+                null,
+                Modifier.size(24.dp),
+                colorFilter = ColorFilter.tint(genre.iconColor),
+            )
+            Text(
+                "Regenerate audio...",
+                style =
+                    MaterialTheme.typography.labelMedium.copy(
+                        fontFamily = genre.bodyFont(),
+                        fontWeight = FontWeight.Normal,
+                        color = genre.iconColor,
+                    ),
+            )
         }
     }
 }

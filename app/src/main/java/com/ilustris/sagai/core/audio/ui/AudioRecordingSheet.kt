@@ -10,8 +10,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -43,14 +45,14 @@ fun AudioRecordingSheet(
 
             is AudioState.Loading -> {
                 StarryLoader(
-                    it is AudioState.Loading,
+                    true,
                     it.message,
                     brushColors = brush,
                 )
             }
 
             AudioState.PermissionRequired -> {
-                PermissionComponent(onConfirm = {
+                PermissionComponent(requestedPermission = Manifest.permission.RECORD_AUDIO, onConfirm = {
                     permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                 }, onDismiss = {
                     onDismiss()
@@ -74,5 +76,8 @@ fun AudioRecordingSheet(
             onSuccess(message)
             viewModel.reset()
         }
+    }
+
+    if (state is AudioState.PermissionRequired) {
     }
 }

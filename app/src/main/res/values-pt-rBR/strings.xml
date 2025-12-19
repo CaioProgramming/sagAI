@@ -272,8 +272,8 @@
     <string name="send_message_cd">Enviar mensagem</string>
     <string name="character_cd">Personagem</string>
     <string name="chapter_in_progress">Capítulo em andamento...</string>
-    <string name="events_count">%d de %d eventos</string>
-    <string name="messages_count">%d de %d mensagens</string>
+    <string name="events_count">%1$d de %2$d eventos</string>
+    <string name="messages_count">%1$d de %2$d mensagens</string>
     <string name="see_full_story">Veja sua história completa</string>
     <string name="inner_journey">Jornada Interior</string>
     <string name="inner_journey_description">Sua história não está apenas no que você fez, mas em como você sentiu.</string>
@@ -296,9 +296,12 @@
     <string name="chapter_title_template">Capítulo %s</string>
     <string name="act_title_template">Ato %s</string>
     <string name="restore_sagas">Restaurar histórias</string>
+    <string name="import_saga">Importar saga</string>
+    <string name="import_saga_description">Você pode importar sagas exportadas e recuperar seu histórico.</string>
     <string name="updates_count">%d Atualizações</string>
     <string name="last_update">Última atualização</string>
     <string name="chat_view_subtitle">Ato %1$s - Capítulo %2$s</string>
+    <string name="continue_to_play">Continue a explorar suas sagas para saber mais sobre seu estilo de jogo</string>
     <string name="backup_enabled_label">Backup Ativado</string>
     <string name="backup_disabled_label">Backup Desativado</string>
     <string name="backup_enabled_message">Sua saga está sendo salva automaticamente</string>
@@ -309,6 +312,8 @@
     <string name="recap_chapters_lived">%d capítulos vividos</string>
     <string name="recap_revisit_now">Revisite sua saga agora</string>
     <string name="recap_your_journey">Sua Jornada</string>
+    <string name="character_details_aka">vulgo: %s</string>
+    <string name="read_more">Ler mais...</string>
     <string name="backup_disabled_notification">Backup desativado. Verifique as permissões, para não perder o progresso.</string>
     <string name="message_effects">Efeitos de Mensagem</string>
     <string name="message_effects_description">Dê vida à sua história com animações dinâmicas que refletem o clima de cada momento</string>
@@ -324,7 +329,7 @@
     <string name="backup_loading_restoring_saga">Restaurando %s...</string>
 
     <!-- Conversation Snippet Sharing -->
-    <string name="messages_selected">%d de %d mensagens selecionadas</string>
+    <string name="messages_selected">%1$d de %2$d mensagens selecionadas</string>
     <string name="share">Compartilhar</string>
     <string name="cancel">Cancelar</string>
 
@@ -339,7 +344,7 @@
     <string name="notification_new_chapter">Novo Capítulo</string>
     <string name="notification_new_chapter_content">Capítulo %s começou!</string>
     <string name="notification_new_act">Novo Ato</string>
-    <string name="notification_new_act_content">Ato %s: %s</string>
+    <string name="notification_new_act_content">Ato %1$s: %2$s</string>
     <string name="notification_new_character">Novo Personagem</string>
     <string name="notification_new_character_content">%s entrou para a história!</string>
     <string name="notification_timeline_event">Atualização da Linha do Tempo</string>
@@ -350,6 +355,7 @@
     <string name="your_playthrough_title">Sua jornada</string>
 
     <!-- Audio Recording -->
+    <string name="mic_permission_description">Para melhorar sua experiência, precisamos da sua permissão de gravação para transcrever áudios</string>
     <string name="tap_to_record">Toque no microfone para começar a gravar</string>
     <string name="listening">Ouvindo...</string>
     <string name="transcription_complete">Transcrição concluída</string>
@@ -359,4 +365,16 @@
     <!-- Audio Message Player -->
     <string name="see_transcription">Ver transcrição</string>
     <string name="hide_transcription">Ocultar transcrição</string>
+
+    <!-- Backup -->
+    <string name="recover_backup_sheet_title">Backups</string>
+    <string name="recover_backup_sheet_description">Encontramos algumas histórias perdidas, que tal recuperarmos?</string>
+    <string name="recover_backup_sheet_button_recover_all">Restaurar todas as histórias</string>
+    <string name="smart_notification_fallback">Eu estava pensando em nossa história, vamos continuar quando você tiver tempo.</string>
+    <string name="notification_progress_subtext">%1$d%% • Ato %2$s de %3$s</string>
+    <string name="mic_permission_title">Permissão de gravar áudio</string>
+    <string name="show_transcription">Ver transcrição</string>
+    <string name="your_playthrough_subtitle">Descubra seu estilo de joogo</string>
+    <string name="total_playtime_label">Tempo Total de Jogo</string>
+    <string name="playthrough_message_title">Análise de Estilo</string>
 </resources>

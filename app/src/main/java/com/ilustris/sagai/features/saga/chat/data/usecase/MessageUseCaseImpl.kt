@@ -281,6 +281,26 @@ class MessageUseCaseImpl
                     audioConfig.copy(
                         voice = voice ?: audioConfig.voice,
                     )
+                if (isNarrator) {
+                    sagaRepository.updateChat(
+                        saga.data.copy(
+                            narratorVoice = finalConfig.voice.id,
+                        ),
+                    )
+                } else {
+                    if (characterReference != null) {
+                        characterRepository.updateCharacter(
+                            characterReference.data.copy(
+                                voice = finalConfig.voice.id,
+                            ),
+                        )
+                        Log.i(
+                            "MessageUseCaseImpl",
+                            "✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}",
+                        )
+                    }
+                }
+
                 // Generate audio
                 val audioResult =
                     audioGenClient
@@ -302,26 +322,6 @@ class MessageUseCaseImpl
                         audible = true,
                     ),
                 )
-
-                if (isNarrator) {
-                    sagaRepository.updateChat(
-                        saga.data.copy(
-                            narratorVoice = finalConfig.voice.id,
-                        ),
-                    )
-                } else {
-                    if (characterReference != null) {
-                        characterRepository.updateCharacter(
-                            characterReference.data.copy(
-                                voice = finalConfig.voice.id,
-                            ),
-                        )
-                        Log.i(
-                            "MessageUseCaseImpl",
-                            "✅ Character voice updated to: ${finalConfig.voice.name} for ${characterReference.data.name}",
-                        )
-                    }
-                }
             }
 
         override suspend fun updateMessage(message: Message): RequestResult<Message> =

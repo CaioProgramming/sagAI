@@ -12,10 +12,10 @@ import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.google.gson.Gson
 import com.ilustris.sagai.R
+import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
 import com.ilustris.sagai.core.media.notification.MediaNotificationManagerImpl
-import com.ilustris.sagai.core.file.FileHelper
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 import javax.inject.Inject
@@ -130,7 +130,7 @@ class SagaMediaService : Service() {
         }
 
         mediaPlayerManager.prepareDataSource(
-            file = mediaFile,
+            playbackMetadata.mediaFilePath,
             looping = true,
             onPrepared = {
                 Log.i(TAG, "MediaPlayer prepared, starting playback for: ${playbackMetadata.mediaFilePath}")
@@ -216,14 +216,17 @@ class SagaMediaService : Service() {
                 }
                 startPlayback(playbackMetadataLocal)
             }
+
             ACTION_PAUSE -> {
                 Log.i(TAG, "ACTION_PAUSE (from Intent) received, delegating to MediaSession")
                 mediaSession.controller.transportControls.pause()
             }
+
             ACTION_STOP -> {
                 Log.i(TAG, "ACTION_STOP (from Intent) received, delegating to MediaSession")
                 mediaSession.controller.transportControls.stop()
             }
+
             else -> {
                 Log.w(TAG, "Unknown or null action received: $action")
             }

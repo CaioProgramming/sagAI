@@ -298,8 +298,8 @@
     <string name="send_message_cd">Send message</string>
     <string name="character_cd">Character</string>
     <string name="chapter_in_progress">Chapter in progress...</string>
-    <string name="events_count">%d of %d events</string>
-    <string name="messages_count">%d of %d messages</string>
+    <string name="events_count">%1$d of %2$d events</string>
+    <string name="messages_count">%1$d of %2$d messages</string>
     <string name="see_full_story">See your full story</string>
     <string name="inner_journey">Inner Journey</string>
     <string name="inner_journey_description">Your story is not just in what you did, but in how you felt.</string>
@@ -323,6 +323,7 @@
     <string name="act_title_template">Act %s</string>
     <string name="restore_sagas">Restore sagas</string>
     <string name="import_saga">Import Saga</string>
+    <string name="import_saga_description">You can import exported sagas and recover your history.</string>
     <string name="not_available" translatable="false">---</string>
     <string name="updates_count">%d Updates</string>
     <string name="last_update">Last update</string>
@@ -339,6 +340,8 @@
     <string name="recap_chapters_lived">%d chapters lived</string>
     <string name="recap_revisit_now">Revisit your saga now</string>
     <string name="recap_your_journey">Your Journey</string>
+    <string name="character_details_aka">aka: %s</string>
+    <string name="read_more">Read more...</string>
     <string name="backup_disabled_notification">Backup disabled. Check permissions to avoid losing progress.</string>
 
     <!-- BackupViewModel: Status and Error Messages -->
@@ -352,7 +355,7 @@
     <string name="backup_loading_restoring_saga">Restoring %s...</string>
 
     <!-- Conversation Snippet Sharing -->
-    <string name="messages_selected">%d of %d messages selected</string>
+    <string name="messages_selected">%1$d of %2$d messages selected</string>
     <string name="share">Share</string>
     <string name="cancel">Cancel</string>
 
@@ -367,7 +370,7 @@
     <string name="notification_new_chapter">New Chapter</string>
     <string name="notification_new_chapter_content">Chapter %s has begun!</string>
     <string name="notification_new_act">New Act</string>
-    <string name="notification_new_act_content">Act %s: %s</string>
+    <string name="notification_new_act_content">Act %1$s: %2$s</string>
     <string name="notification_new_character">New Character</string>
     <string name="notification_new_character_content">%s joined the story!</string>
     <string name="notification_timeline_event">Timeline Update</string>
@@ -389,4 +392,11 @@
     <!-- Audio Message Player -->
     <string name="see_transcription">See transcription</string>
     <string name="hide_transcription">Hide transcription</string>
+
+    <!-- Backup -->
+    <string name="recover_backup_sheet_title">Backups</string>
+    <string name="recover_backup_sheet_description">We found some lost stories, how about we recover them?</string>
+    <string name="recover_backup_sheet_button_recover_all">Restore all stories</string>
+    <string name="show_transcription">Show transcription</string>
+    <string name="total_playtime_label">Total playtime</string>
 </resources>

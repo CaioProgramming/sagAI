@@ -83,6 +83,7 @@ import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.ui.CharactersTopIcons
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
 import com.ilustris.sagai.features.saga.detail.ui.DetailAction
 import com.ilustris.sagai.features.saga.detail.ui.sharedElementItemKey
 import com.ilustris.sagai.features.saga.detail.ui.sharedTransitionActionItemModifier
@@ -95,6 +96,7 @@ import com.ilustris.sagai.ui.components.EmotionalCard
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.LargeHorizontalHeader
 import com.ilustris.sagai.ui.theme.components.SagaTopBar
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
@@ -680,11 +682,20 @@ fun TimeLineSimpleCard(
         ),
     )
 
+    val shape =
+        genre.bubble(
+            tailAlignment = BubbleTailAlignment.BottomRight,
+            0.dp,
+            0.dp,
+            true,
+        )
     Column(
         modifier
-            .border(2.dp, genre.color.copy(alpha = .3f), genre.shape())
-            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f), genre.shape())
-            .padding(16.dp)
+            .border(1.dp, genre.gradient(), shape)
+            .background(
+                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
+                shape,
+            ).padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
