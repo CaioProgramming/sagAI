@@ -148,7 +148,8 @@ fun TimeLineContent(
                                                 "timeline-content-header",
                                             ),
                                             this,
-                                        ).background(MaterialTheme.colorScheme.background)
+                                        )
+                                        .background(MaterialTheme.colorScheme.background)
                                         .fillMaxWidth()
                                         .statusBarsPadding()
                                         .padding(horizontal = 16.dp),
@@ -172,7 +173,8 @@ fun TimeLineContent(
                                                 "timeline-content-header",
                                             ),
                                             this,
-                                        ).padding(16.dp)
+                                        )
+                                        .padding(16.dp)
                                         .fillMaxWidth(),
                             )
                         }
@@ -200,7 +202,8 @@ fun TimeLineContent(
                                 .fillMaxWidth()
                                 .background(
                                     MaterialTheme.colorScheme.background,
-                                ).padding(16.dp),
+                                )
+                                .padding(16.dp),
                     )
                 }
                 actContent.chapters.forEach { chapter ->
@@ -223,7 +226,8 @@ fun TimeLineContent(
                                     .fillMaxWidth()
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    ).padding(16.dp),
+                                    )
+                                    .padding(16.dp),
                         )
                     }
 
@@ -259,7 +263,14 @@ fun TimeLineContent(
                             modifier =
                                 eventModifier
                                     .animateContentSize()
-                                    .clip(genre.shape())
+                                    .clip(
+                                        genre.bubble(
+                                            BubbleTailAlignment.BottomRight,
+                                            0.dp,
+                                            0.dp,
+                                            true,
+                                        ),
+                                    )
                                     .clickable(cardEnabled) {
                                         generateEmotionalReview(it)
                                     },
@@ -652,7 +663,8 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        ).padding(16.dp),
+                                        )
+                                        .padding(16.dp),
                                 true,
                             )
                         }
@@ -692,10 +704,12 @@ fun TimeLineSimpleCard(
     Column(
         modifier
             .border(1.dp, genre.gradient(), shape)
+            .padding(2.dp)
+            .clip(shape)
             .background(
                 MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
-                shape,
-            ).padding(16.dp)
+            )
+            .padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -777,10 +791,11 @@ fun TimeLineSimpleCard(
                 modifier =
                     Modifier
                         .padding(8.dp)
-                        .clip(genre.shape())
+                        .clip(shape)
                         .clickable {
                             requestReview(eventContent)
-                        }.gradientFill(genre.gradient())
+                        }
+                        .gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -954,7 +969,10 @@ fun TimeLineCard(
                             Modifier
                                 .width(2.dp)
                                 .weight(1f)
-                                .background(genre.color, genre.shape()),
+                                .background(
+                                    genre.color,
+                                    genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true),
+                                ),
                     )
                 }
             }
@@ -1008,7 +1026,8 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }.alpha(.4f),
+                                }
+                                .alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(
@@ -1197,7 +1216,7 @@ fun TimelineCharacterAttachment(
                         sagaContent,
                         true,
                         Modifier
-                            .clip(genre.shape())
+                            .clip(genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true))
                             .clickable {
                                 onSelectReference(it.data)
                             },

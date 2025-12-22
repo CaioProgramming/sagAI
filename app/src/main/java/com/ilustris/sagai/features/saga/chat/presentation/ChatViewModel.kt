@@ -16,6 +16,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.media.MediaPlayerManager
+import com.ilustris.sagai.core.media.MediaPlayerManagerImpl
 import com.ilustris.sagai.core.media.SagaMediaService
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.narrative.UpdateRules
@@ -71,7 +72,6 @@ class ChatViewModel
         private val sagaContentManager: SagaContentManager,
         private val suggestionUseCase: GetInputSuggestionsUseCase,
         private val notificationManager: ChatNotificationManager,
-        mediaPlayerManager: MediaPlayerManager,
         private val settingsUseCase: SettingsUseCase,
         private val imageSegmentationHelper: ImageSegmentationHelper,
         private val scheduledNotificationService: ScheduledNotificationService,
@@ -82,7 +82,7 @@ class ChatViewModel
 
         val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         private var audioProgressJob: kotlinx.coroutines.Job? = null
-        private val audioMediaPlayerManager = mediaPlayerManager
+        private val audioMediaPlayerManager: MediaPlayerManager = MediaPlayerManagerImpl(context)
         var isForeground = true
 
         fun handleAction(action: ChatUiAction) {
@@ -491,6 +491,13 @@ class ChatViewModel
             action: String,
             metadata: PlaybackMetadata? = null,
         ) {
+            if (action != SagaMediaService.ACTION_PLAY && action != SagaMediaService.ACTION_STOP &&
+                action != SagaMediaService.ACTION_PAUSE_MUSIC &&
+                action != SagaMediaService.ACTION_RESUME_MUSIC
+            ) {
+                Log.w("ChatViewModel", "Invalid action for SagaMediaService: $action")
+                return
+            }
             val serviceIntent =
                 Intent(context, SagaMediaService::class.java).apply {
                     this.action = action
@@ -1145,6 +1152,7 @@ class ChatViewModel
             messageId: Int,
             audioPath: String,
         ) {
+            controlMediaPlayerService(SagaMediaService.ACTION_PAUSE_MUSIC)
             audioMediaPlayerManager.prepareDataSource(
                 path = audioPath,
                 looping = false,
@@ -1193,6 +1201,7 @@ class ChatViewModel
                         }
                     }
                     stopProgressUpdates()
+                    controlMediaPlayerService(SagaMediaService.ACTION_RESUME_MUSIC)
                 },
             )
         }
@@ -1205,9 +1214,11 @@ class ChatViewModel
                 }
             }
             stopProgressUpdates()
+            controlMediaPlayerService(SagaMediaService.ACTION_RESUME_MUSIC)
         }
 
         private fun resumeAudio() {
+            controlMediaPlayerService(SagaMediaService.ACTION_PAUSE_MUSIC)
             audioMediaPlayerManager.play()
             viewModelScope.launch(Dispatchers.Main) {
                 stateManager.updateState { s ->
@@ -1225,6 +1236,7 @@ class ChatViewModel
             viewModelScope.launch(Dispatchers.Main) {
                 stateManager.updateState { it.copy(audioPlaybackState = null) }
             }
+            controlMediaPlayerService(SagaMediaService.ACTION_RESUME_MUSIC)
         }
 
         private fun startProgressUpdates(messageId: Int) {

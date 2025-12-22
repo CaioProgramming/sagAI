@@ -94,4 +94,7 @@ class CharacterDetailsViewModel
                     }
             }
         }
+
+        fun init(characterContent: CharacterContent?) {
+        }
     }

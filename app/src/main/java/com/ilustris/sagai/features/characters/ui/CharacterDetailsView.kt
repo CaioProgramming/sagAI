@@ -159,6 +159,10 @@ fun CharacterDetailsContent(
     }
     val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
+    LaunchedEffect(Unit) {
+        viewModel.init(characterContent)
+    }
+
     AnimatedContent(
         targetState = currentCharacter,
         transitionSpec = {
@@ -346,7 +350,8 @@ private fun CharacterDetailsLoaded(
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                ).effectForGenre(
+                                                )
+                                                .effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),
@@ -423,10 +428,11 @@ private fun CharacterDetailsLoaded(
                                         character.nicknames?.let {
                                             if (it.isNotEmpty()) {
                                                 Text(
-                                                    text = stringResource(
-                                                        id = R.string.character_details_aka,
-                                                        it.joinToString(", ")
-                                                    ),
+                                                    text =
+                                                        stringResource(
+                                                            id = R.string.character_details_aka,
+                                                            it.joinToString(", "),
+                                                        ),
                                                     style =
                                                         MaterialTheme.typography.titleMedium.copy(
                                                             fontFamily = genre.bodyFont(),
@@ -449,14 +455,16 @@ private fun CharacterDetailsLoaded(
                                                         sagaContent,
                                                         character,
                                                     )
-                                                }.fillMaxSize()
+                                                }
+                                                .fillMaxSize()
                                                 .graphicsLayer(
                                                     scaleX = animatedScale,
                                                     scaleY = animatedScale,
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                ).effectForGenre(
+                                                )
+                                                .effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),
@@ -515,10 +523,11 @@ private fun CharacterDetailsLoaded(
                                         character.nicknames?.let {
                                             if (it.isNotEmpty()) {
                                                 Text(
-                                                    text = stringResource(
-                                                        id = R.string.character_details_aka,
-                                                        it.joinToString(", ")
-                                                    ),
+                                                    text =
+                                                        stringResource(
+                                                            id = R.string.character_details_aka,
+                                                            it.joinToString(", "),
+                                                        ),
                                                     style =
                                                         MaterialTheme.typography.titleMedium.copy(
                                                             fontFamily = genre.bodyFont(),
@@ -543,8 +552,7 @@ private fun CharacterDetailsLoaded(
                                             sagaContent,
                                             character,
                                         )
-                                    }
-                                    .padding(16.dp)
+                                    }.padding(16.dp)
                                     .size(100.dp)
                                     .gradientFill(characterColor.gradientFade()),
                             )

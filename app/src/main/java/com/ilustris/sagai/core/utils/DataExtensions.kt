@@ -258,7 +258,8 @@ fun Any?.toJsonFormatExcludingFields(fieldsToExclude: List<String>): String {
     return gson.toJson(this)
 }
 
-fun doNothing() = {}
+fun doNothing() {
+}
 
 enum class DateFormatOption(
     val pattern: String,

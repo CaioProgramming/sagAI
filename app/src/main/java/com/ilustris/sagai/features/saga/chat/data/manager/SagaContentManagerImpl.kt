@@ -201,8 +201,8 @@ class SagaContentManagerImpl
                     .forEach {
                         characterUseCase.createSmartZoom(it.data)
                     }
+            }
         }
-    }
 
         private suspend fun checkMessageNotifications(
             previousSaga: SagaContent?,
@@ -768,42 +768,31 @@ class SagaContentManagerImpl
                 val act = saga.currentActInfo ?: return@executeRequest null
 
                 act.let { currentAct ->
-                    val invalidChapters =
-                        currentAct.chapters.filter {
-                            it.isComplete().not() && it.events.isEmpty()
+                    val currentChapter = currentAct.currentChapterInfo
+                    val currentChapterIndex = currentAct.chapters.indexOf(currentChapter)
+                    if (currentChapterIndex > 0) {
+                        val previousChapter = currentAct.chapters[currentChapterIndex - 1]
+                        if (previousChapter.isComplete().not()) {
+                            chapterUseCase.deleteChapter(previousChapter.data)
                         }
-
-                    invalidChapters.forEach {
-                        chapterUseCase.deleteChapter(it.data)
                     }
 
                     if (currentAct.data.introduction.isEmpty()) {
                         actUseCase.generateActIntroduction(saga, currentAct.data)
                     }
-                }
 
-                val chapter = act.currentChapterInfo ?: return@executeRequest null
-
-                chapter.let {
-                    if (it.data.introduction.isEmpty()) {
-                        chapterUseCase.generateChapterIntroduction(content.value!!, it.data, act)
-                    }
-
-                    val emptyEvents = it.events.filter { it.isComplete().not() }
-                    if (emptyEvents.size > 1) {
-                        val currentEvent = it.currentEventInfo?.data
-                        emptyEvents.filter { it != currentEvent }.forEach {
-                            timelineUseCase.deleteTimeline(it.data)
+                    currentAct.currentChapterInfo?.let {
+                        if (it.data.introduction.isBlank()) {
+                            chapterUseCase.generateChapterIntroduction(saga, it.data, currentAct)
                         }
-                    }
-                }
-
-                val timeline = chapter.currentEventInfo ?: return@executeRequest null
-
-                timeline.let { currentTimeline ->
-                    if (currentTimeline.data.currentObjective.isNullOrEmpty()) {
-                        timelineUseCase
-                            .getTimelineObjective(content.value!!, currentTimeline.data)
+                        val currentEvent = it.currentEventInfo
+                        val currentEventIndex = it.events.indexOf(currentEvent)
+                        if (currentEventIndex > 0) {
+                            val previousEvent = it.events[currentEventIndex - 1]
+                            if (previousEvent.isComplete().not()) {
+                                timelineUseCase.deleteTimeline(previousEvent.data)
+                            }
+                        }
                     }
                 }
             }

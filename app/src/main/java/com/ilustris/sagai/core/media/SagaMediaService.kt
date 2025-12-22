@@ -11,7 +11,6 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
 import com.google.gson.Gson
-import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.media.model.PlaybackMetadata
 import com.ilustris.sagai.core.media.notification.MediaNotificationManager
@@ -36,6 +35,7 @@ class SagaMediaService : Service() {
 
     private lateinit var mediaSession: MediaSessionCompat
     private var currentPlaybackMetadata: PlaybackMetadata? = null
+    private var isPausedByApp: Boolean = false
 
     private val TAG = SagaMediaService::class.java.simpleName
 
@@ -59,6 +59,7 @@ class SagaMediaService : Service() {
                     super.onPause()
                     Log.i(TAG, "MediaSession.Callback: onPause called")
                     mediaPlayerManager.pause()
+                    isPausedByApp = false
                     currentPlaybackMetadata?.let { metadata ->
                         val updatedNotification: Notification? =
                             notificationManager.showPlaybackNotification(
@@ -227,6 +228,20 @@ class SagaMediaService : Service() {
                 mediaSession.controller.transportControls.stop()
             }
 
+            ACTION_PAUSE_MUSIC -> {
+                if (mediaPlayerManager.isPlaying.value) {
+                    mediaPlayerManager.pause()
+                    isPausedByApp = true
+                }
+            }
+
+            ACTION_RESUME_MUSIC -> {
+                if (isPausedByApp && !mediaPlayerManager.isPlaying.value) {
+                    mediaPlayerManager.resume()
+                    isPausedByApp = false
+                }
+            }
+
             else -> {
                 Log.w(TAG, "Unknown or null action received: $action")
             }
@@ -256,5 +271,7 @@ class SagaMediaService : Service() {
         const val ACTION_PAUSE = "com.ilustris.sagai.ACTION_PAUSE"
         const val ACTION_STOP = "com.ilustris.sagai.ACTION_STOP"
         const val EXTRA_SAGA_CONTENT_JSON = "com.ilustris.sagai.EXTRA_SAGA_CONTENT_JSON"
+        const val ACTION_PAUSE_MUSIC = "com.ilustris.sagai.ACTION_PAUSE_MUSIC"
+        const val ACTION_RESUME_MUSIC = "com.ilustris.sagai.ACTION_RESUME_MUSIC"
     }
 }

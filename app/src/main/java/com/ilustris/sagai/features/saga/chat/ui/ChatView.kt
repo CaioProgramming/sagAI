@@ -13,7 +13,6 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -124,10 +123,8 @@ import com.ilustris.sagai.core.utils.formatDate
 import com.ilustris.sagai.features.act.ui.ActComponent
 import com.ilustris.sagai.features.act.ui.toRoman
 import com.ilustris.sagai.features.chapter.data.model.Chapter
-import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.chapter.ui.ChapterContentView
 import com.ilustris.sagai.features.characters.data.model.Character
-import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsContent
 import com.ilustris.sagai.features.home.data.model.Saga
@@ -157,14 +154,12 @@ import com.ilustris.sagai.features.saga.detail.ui.RecapHeroCard
 import com.ilustris.sagai.features.saga.detail.ui.WikiContent
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
-import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.components.SnackAction
-import com.ilustris.sagai.ui.components.SnackBarState
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.navigation.Routes
@@ -678,9 +673,7 @@ fun ChatContent(
                                 }
                             }
                         },
-                        openSaga = { onAction(ChatUiAction.Back) },
-                        reviewChapter = { chapter -> onAction(ChatUiAction.ReviewChapter(chapter)) },
-                        reviewEvent = { event -> onAction(ChatUiAction.ReviewEvent(event)) },
+                        onAction = onAction,
                         messageEffectsEnabled = uiState.messageEffectsEnabled,
                         originalBitmap = uiState.originalBitmap,
                         segmentedBitmap = uiState.segmentedBitmap,
@@ -1326,9 +1319,7 @@ fun ChatList(
     listState: LazyListState,
     objectiveExpanded: Boolean,
     onMessageAction: (MessageAction) -> Unit = {},
-    openSaga: () -> Unit = {},
-    reviewEvent: (TimelineContent) -> Unit = {},
-    reviewChapter: (ChapterContent) -> Unit = {},
+    onAction: (ChatUiAction) -> Unit = {},
     messageEffectsEnabled: Boolean = true,
     originalBitmap: Bitmap? = null,
     segmentedBitmap: Bitmap? = null,
@@ -1363,7 +1354,7 @@ fun ChatList(
                     Modifier
                         .padding(16.dp)
                         .fillMaxWidth(),
-                    onClick = { openSaga() },
+                    onClick = { onAction(ChatUiAction.OpenSagaDetails) },
                     originalBitmap = originalBitmap,
                     segmentedBitmap = segmentedBitmap,
                 )
@@ -1422,15 +1413,15 @@ fun ChatList(
                             isLast = act.chapters.lastOrNull() == chapter,
                             imageSize = 400.dp,
                             openCharacters = {
-                                openSaga()
+                                onAction(ChatUiAction.OpenSagaDetails)
                             },
-                            requestReview = reviewChapter,
+                            requestReview = { onAction(ChatUiAction.ReviewChapter(it)) },
                             modifier =
                                 Modifier
                                     .animateItem()
                                     .fillMaxWidth()
                                     .clickable {
-                                        openSaga()
+                                        onAction(ChatUiAction.OpenSagaDetails)
                                     },
                         )
                     }
@@ -1463,7 +1454,7 @@ fun ChatList(
                                                 isExpanded = true
                                             },
                                         ) {
-                                            openSaga()
+                                            onAction(ChatUiAction.OpenSagaDetails)
                                         }
                                     },
                             ) {
@@ -1484,7 +1475,9 @@ fun ChatList(
                                                     .padding(16.dp)
                                                     .clip(shape)
                                                     .fillMaxWidth(),
-                                            requestReview = reviewEvent,
+                                            requestReview = {
+                                                onAction(ChatUiAction.ReviewEvent(it))
+                                            },
                                         )
                                     }
                                 }
@@ -1622,7 +1615,7 @@ fun ChatList(
                 modifier =
                     Modifier
                         .fillMaxWidth(),
-                openSaga = openSaga,
+                openSaga = { onAction(ChatUiAction.OpenSagaDetails) },
                 originalBitmap = originalBitmap,
                 segmentedBitmap = segmentedBitmap,
             )
