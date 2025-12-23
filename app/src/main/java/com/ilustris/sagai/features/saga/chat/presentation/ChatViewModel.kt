@@ -393,13 +393,13 @@ class ChatViewModel
 
                         checkIfUpdatesService(sagaContent)
                         validateCharacterMessageUpdates(sagaContent)
-                        validateMessageStatus(sagaContent)
                         updateProgress(sagaContent)
 
                         loadFinished = true
 
                         if (uiState.value.showTitle) {
                             titleAnimation()
+                            validateMessageStatus(sagaContent)
                         }
                     }
             }
@@ -644,35 +644,19 @@ class ChatViewModel
                     messageContent.character == null &&
                         messageContent.message.senderType == SenderType.CHARACTER &&
                         messageContent.message.speakerName != null &&
-                        content
-                            .getCharacters()
-                            .find { it.name == messageContent.message.speakerName } != null
+                        content.findCharacter(messageContent.message.speakerName) == null
                 }
 
             updatableMessages.forEach { message ->
-                if (message.character == null &&
-                    message.message.speakerName
-                        .isNullOrEmpty()
-                        .not()
-                ) {
-                    val character = content.findCharacter(message.message.speakerName)
-                    character?.let {
-                        messageUseCase.updateMessage(
-                            message.message.copy(
-                                characterId = it.data.id,
-                                speakerName = it.data.name,
-                            ),
-                        )
-                    }
+                val character = content.findCharacter(message.message.speakerName)
+                character?.let {
+                    messageUseCase.updateMessage(
+                        message.message.copy(
+                            characterId = it.data.id,
+                            speakerName = it.data.name,
+                        ),
+                    )
                 }
-            }
-        }
-
-        private fun sendSnackBarMessage(snackBarState: SnackBarState) {
-            viewModelScope.launch(Dispatchers.IO) {
-                stateManager.updateSnackBar(snackBarState)
-                delay(15.seconds)
-                stateManager.updateSnackBar(null)
             }
         }
 
@@ -995,6 +979,7 @@ class ChatViewModel
                                     id = 0,
                                     status = MessageStatus.OK,
                                     audible = isAudio,
+                                    speakerName = speakerName,
                                 ),
                             isFromUser = false,
                             sceneSummary = sceneSummary,
@@ -1032,15 +1017,12 @@ class ChatViewModel
         }
 
         fun createCharacter(contextDescription: String) {
-            updateLoading(true)
-
             viewModelScope.launch(Dispatchers.IO) {
                 sagaContentManager
                     .generateCharacter(
                         contextDescription,
                     ).onSuccessAsync {
                         stateManager.updateState { s -> s.copy(newCharacterReveal = it.id) }
-                        updateLoading(false)
                         delay(5.seconds)
                         dismissNewCharacterReveal()
                     }.onFailureAsync {
@@ -1053,7 +1035,6 @@ class ChatViewModel
                                 }
                             },
                         )
-                        updateLoading(false)
                     }
             }
         }

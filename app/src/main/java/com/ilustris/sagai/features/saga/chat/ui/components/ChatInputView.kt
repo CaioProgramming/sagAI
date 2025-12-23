@@ -60,13 +60,16 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults.rememberTooltipPositionProvider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +84,7 @@ import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -103,6 +107,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
@@ -114,6 +119,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
 import com.ilustris.sagai.ui.theme.solidGradient
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -266,6 +272,7 @@ fun ChatInputView(
     onSelectCharacter: (CharacterContent) -> Unit = {},
     onRequestAudio: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     val action = sendType
     val inputBrush =
         content.data.genre.gradient(
@@ -273,9 +280,36 @@ fun ChatInputView(
             duration = 2.seconds,
         )
 
-    // Detect query type and extract query string
     var queryItemsType by remember { mutableStateOf<ItemsType?>(null) }
-    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val characterToolTipState =
+        androidx.compose.material3.rememberTooltipState(
+            isPersistent = true,
+        )
+    val tooltipPositionProvider =
+        rememberTooltipPositionProvider(
+            TooltipAnchorPosition.Above,
+            spacingBetweenTooltipAndAnchor = 4.dp,
+        )
+
+    // Tooltip state for query items feature (both @ and /)
+    val queryItemsTooltipState =
+        androidx.compose.material3.rememberTooltipState(
+            isPersistent = true,
+        )
+    val queryTooltipPositionProvider =
+        rememberTooltipPositionProvider(
+            TooltipAnchorPosition.Above,
+            spacingBetweenTooltipAndAnchor = 4.dp,
+        )
+
+    LaunchedEffect(queryItemsType) {
+        if (queryItemsType != null) {
+            queryItemsTooltipState.show()
+        } else {
+            queryItemsTooltipState.dismiss()
+        }
+    }
 
     LaunchedEffect(inputField.text, content.characters, content.wikis) {
         queryItemsType =
@@ -288,7 +322,7 @@ fun ChatInputView(
     }
 
     val glowRadius by animateFloatAsState(
-        if (isGenerating.not()) 10f else 30f,
+        if (isGenerating.not()) 10f else 25f,
     )
     val backgroundColor by animateColorAsState(
         if (isGenerating) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.surfaceContainer,
@@ -331,13 +365,7 @@ fun ChatInputView(
     ) {
         val isImeVisible = WindowInsets.isImeVisible
         val suggestionsEnabled = suggestions.isNotEmpty() && isImeVisible
-        var characterSelectionExpanded by remember { mutableStateOf(false) }
-
-        LaunchedEffect(isImeVisible) {
-            if (!isImeVisible) {
-                characterSelectionExpanded = false
-            }
-        }
+        val coroutineScope = rememberCoroutineScope()
 
         AnimatedVisibility(suggestionsEnabled) {
             LazyRow(
@@ -350,7 +378,6 @@ fun ChatInputView(
                 items(suggestions) {
                     Button(
                         onClick = {
-                            characterSelectionExpanded = false
                             onUpdateInput(
                                 TextFieldValue(
                                     it.text,
@@ -400,245 +427,221 @@ fun ChatInputView(
             }
         }
 
-        BlurredGlowContainer(
+        Column(
             modifier =
                 Modifier
+                    .padding(16.dp)
                     .fillMaxWidth()
-                    .padding(16.dp),
-            inputBrush,
-            glowRadius,
-            shape = inputShape,
+                    .heightIn(max = 250.dp)
+                    .dropShadow(inputShape, {
+                        brush = inputBrush
+                        radius = glowRadius
+                    })
+                    .drawWithContent {
+                        drawContent()
+                        val outline = inputShape.createOutline(size, layoutDirection, this)
+                        if (isGenerating) {
+                            val brush =
+                                object : ShaderBrush() {
+                                    override fun createShader(size: Size): Shader {
+                                        val shader =
+                                            (
+                                                sweepGradient(
+                                                    content.data.genre.colorPalette(),
+                                                ) as ShaderBrush
+                                            ).createShader(size)
+                                        val matrix = Matrix()
+                                        matrix.setRotate(
+                                            rotation,
+                                            size.width / 2,
+                                            size.height / 2,
+                                        )
+                                        shader.setLocalMatrix(matrix)
+                                        return shader
+                                    }
+                                }
+                            drawOutline(
+                                outline = outline,
+                                brush = brush,
+                                style = Stroke(width = 1.dp.toPx()),
+                            )
+                        } else {
+                            drawOutline(
+                                outline = outline,
+                                brush = inputBrush,
+                                style = Stroke(width = 1.dp.toPx()),
+                            )
+                        }
+                    }.border(1.dp, inputBrush, inputShape)
+                    .background(backgroundColor, inputShape)
+                    .verticalScroll(rememberScrollState()),
         ) {
-            val characterToolTipState =
-                androidx.compose.material3.rememberTooltipState(
-                    isPersistent = true,
-                )
-            val tooltipPositionProvider =
-                androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
-                    spacingBetweenTooltipAndAnchor = 4.dp,
-                )
-
-            // Tooltip state for query items feature (both @ and /)
-            val queryItemsTooltipState =
-                androidx.compose.material3.rememberTooltipState(
-                    isPersistent = true,
-                )
-            val queryTooltipPositionProvider =
-                androidx.compose.material3.TooltipDefaults.rememberPlainTooltipPositionProvider(
-                    spacingBetweenTooltipAndAnchor = 4.dp,
-                )
-
-            LaunchedEffect(queryItemsType) {
-                if (queryItemsType != null) {
-                    queryItemsTooltipState.show()
-                } else {
-                    queryItemsTooltipState.dismiss()
-                }
-            }
-
-            LaunchedEffect(characterSelectionExpanded) {
-                if (characterSelectionExpanded) {
-                    characterToolTipState.show()
-                } else {
-                    characterToolTipState.dismiss()
-                }
-            }
-
-            Column(
+            Row(
                 modifier =
                     Modifier
-                        .padding(2.dp)
                         .fillMaxWidth()
-                        .heightIn(max = 250.dp)
-                        .drawWithContent {
-                            drawContent()
-                            val outline = inputShape.createOutline(size, layoutDirection, this)
-                            if (isGenerating) {
-                                val brush =
-                                    object : ShaderBrush() {
-                                        override fun createShader(size: Size): Shader {
-                                            val shader =
-                                                (
-                                                    sweepGradient(
-                                                        content.data.genre.colorPalette(),
-                                                    ) as ShaderBrush
-                                                ).createShader(size)
-                                            val matrix = Matrix()
-                                            matrix.setRotate(
-                                                rotation,
-                                                size.width / 2,
-                                                size.height / 2,
-                                            )
-                                            shader.setLocalMatrix(matrix)
-                                            return shader
-                                        }
-                                    }
-                                drawOutline(
-                                    outline = outline,
-                                    brush = brush,
-                                    style = Stroke(width = 1.dp.toPx()),
-                                )
-                            } else {
-                                drawOutline(
-                                    outline = outline,
-                                    brush = inputBrush,
-                                    style = Stroke(width = 1.dp.toPx()),
-                                )
-                            }
-                        }.background(backgroundColor, inputShape)
-                        .verticalScroll(rememberScrollState())
-                        .padding(8.dp),
+                        .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom,
             ) {
+                val textStyle =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontFamily = content.data.genre.bodyFont(),
+                    )
+                val maxLength = 500
+                val tagBackgroundColor = MaterialTheme.colorScheme.background
+
                 TooltipBox(
-                    positionProvider = queryTooltipPositionProvider,
-                    state = queryItemsTooltipState,
+                    positionProvider = tooltipPositionProvider,
+                    state = characterToolTipState,
+                    modifier =
+                        Modifier
+                            .size(36.dp),
                     onDismissRequest = {
-                        // Tooltip will dismiss when query is null
+                        coroutineScope.launch {
+                            characterToolTipState.dismiss()
+                        }
                     },
                     tooltip = {
-                        AnimatedContent(queryItemsType, transitionSpec = {
-                            slideInVertically { -it } + fadeIn(tween(300)) togetherWith
-                                fadeOut(
-                                    tween(300),
-                                )
-                        }) {
-                            it?.let { itemsType ->
-                                QueryItemsTooltip(
-                                    saga = content,
-                                    currentType = itemsType,
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .fillMaxWidth(),
-                                    onClick = { type, item ->
-                                        when (type) {
-                                            is ItemsType.Characters -> {
-                                                handleCharacterSelection(
-                                                    item as CharacterContent,
-                                                    inputField,
-                                                    onUpdateInput,
-                                                )
-                                            }
+                        val genre = content.data.genre
+                        val shape =
+                            genre.bubble(
+                                BubbleTailAlignment.BottomRight,
+                                0.dp,
+                                0.dp,
+                            )
 
-                                            is ItemsType.Wikis -> {
-                                                handleWikiSelection(
-                                                    item as com.ilustris.sagai.features.wiki.data.model.Wiki,
-                                                    inputField,
-                                                    onUpdateInput,
-                                                )
-                                            }
-                                        }
-                                    },
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(4),
+                            modifier =
+                                Modifier
+                                    .padding(16.dp)
+                                    .dropShadow(
+                                        shape,
+                                        Shadow(
+                                            radius = 5.dp,
+                                            genre.color,
+                                        ),
+                                    ).border(1.dp, genre.color.gradientFade(), shape)
+                                    .background(
+                                        MaterialTheme.colorScheme.background,
+                                        shape,
+                                    ).clip(shape)
+                                    .padding(8.dp),
+                        ) {
+                            item(span = { GridItemSpan(4) }) {
+                                Text(
+                                    "Selecionar personagem",
+                                    style =
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            fontFamily = content.data.genre.bodyFont(),
+                                            textAlign = TextAlign.Start,
+                                        ),
+                                    modifier = Modifier.padding(8.dp),
+                                )
+                            }
+
+                            items(content.characters) {
+                                CharacterYearbookItem(
+                                    it.data,
+                                    content.data.genre,
+                                    useFallback = true,
+                                    imageModifier =
+                                        Modifier
+                                            .clickable {
+                                                onSelectCharacter(it)
+                                                coroutineScope.launch {
+                                                    characterToolTipState.dismiss()
+                                                }
+                                            }.size(36.dp),
+                                    textStyle =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontFamily = content.data.genre.bodyFont(),
+                                        ),
                                 )
                             }
                         }
                     },
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.Bottom,
-                    ) {
-                        val textStyle =
-                            MaterialTheme.typography.labelMedium.copy(
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontFamily = content.data.genre.bodyFont(),
-                            )
-                        val maxLength = 500
-                        val tagBackgroundColor = MaterialTheme.colorScheme.background
-
-                        TooltipBox(
-                            positionProvider = tooltipPositionProvider,
-                            state = characterToolTipState,
-                            modifier =
-                                Modifier
-                                    .size(36.dp),
-                            onDismissRequest = {
-                                characterSelectionExpanded = false
-                            },
-                            tooltip = {
-                                val genre = content.data.genre
-                                val shape =
-                                    genre.bubble(
-                                        BubbleTailAlignment.BottomRight,
-                                        0.dp,
-                                        0.dp,
-                                    )
-
-                                LazyVerticalGrid(
-                                    columns = GridCells.Fixed(4),
-                                    modifier =
-                                        Modifier
-                                            .padding(16.dp)
-                                            .dropShadow(
-                                                shape,
-                                                Shadow(
-                                                    radius = 5.dp,
-                                                    genre.color,
-                                                ),
-                                            ).border(1.dp, genre.color.gradientFade(), shape)
-                                            .background(
-                                                MaterialTheme.colorScheme.background,
-                                                shape,
-                                            ).clip(shape)
-                                            .padding(8.dp),
-                                ) {
-                                    item(span = { GridItemSpan(4) }) {
-                                        Text(
-                                            "Selecionar personagem",
-                                            style =
-                                                MaterialTheme.typography.bodyMedium.copy(
-                                                    fontFamily = content.data.genre.bodyFont(),
-                                                    textAlign = TextAlign.Start,
-                                                ),
-                                            modifier = Modifier.padding(8.dp),
-                                        )
+                    AnimatedContent(
+                        selectedCharacter,
+                        transitionSpec = {
+                            scaleIn() togetherWith scaleOut()
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
+                                .clickable {
+                                    coroutineScope.launch {
+                                        keyboardController?.hide()
+                                        focusManager.clearFocus()
+                                        characterToolTipState.show()
                                     }
-
-                                    items(content.characters) {
-                                        CharacterYearbookItem(
-                                            it.data,
-                                            content.data.genre,
-                                            imageModifier =
-                                                Modifier
-                                                    .clickable {
-                                                        onSelectCharacter(it)
-                                                        characterSelectionExpanded = false
-                                                    }.size(36.dp),
-                                            textStyle =
-                                                MaterialTheme.typography.labelSmall.copy(
-                                                    fontFamily = content.data.genre.bodyFont(),
-                                                ),
-                                        )
-                                    }
-                                }
-                            },
-                        ) {
-                            AnimatedContent(
-                                selectedCharacter,
-                                transitionSpec = {
-                                    scaleIn() togetherWith scaleOut()
                                 },
-                                modifier = Modifier.fillMaxSize(),
-                            ) {
-                                it?.let { character ->
-                                    CharacterAvatar(
-                                        character.data,
-                                        genre = content.data.genre,
-                                        grainRadius = 0f,
-                                        pixelation = 0f,
+                    ) {
+                        it?.let { character ->
+                            CharacterAvatar(
+                                character.data,
+                                useFallback = true,
+                                genre = content.data.genre,
+                                grainRadius = 0f,
+                                pixelation = 0f,
+                                modifier =
+                                    Modifier
+                                        .fillMaxSize(),
+                            )
+                        }
+                    }
+                }
+
+                Box(Modifier.weight(1f)) {
+                    TooltipBox(
+                        positionProvider = queryTooltipPositionProvider,
+                        state = queryItemsTooltipState,
+                        onDismissRequest = {
+                            // Tooltip will dismiss when query is null
+                        },
+                        tooltip = {
+                            AnimatedContent(queryItemsType, transitionSpec = {
+                                slideInVertically { -it } + fadeIn(tween(300)) togetherWith
+                                    fadeOut(
+                                        tween(300),
+                                    )
+                            }) {
+                                it?.let { itemsType ->
+                                    QueryItemsTooltip(
+                                        saga = content,
+                                        currentType = itemsType,
                                         modifier =
                                             Modifier
-                                                .fillMaxSize()
-                                                .clip(CircleShape)
-                                                .clickable {
-                                                    characterSelectionExpanded = true
-                                                },
+                                                .padding(16.dp)
+                                                .fillMaxWidth(),
+                                        onClick = { type, item ->
+                                            when (type) {
+                                                is ItemsType.Characters -> {
+                                                    handleCharacterSelection(
+                                                        item as CharacterContent,
+                                                        inputField,
+                                                        onUpdateInput,
+                                                    )
+                                                }
+
+                                                is ItemsType.Wikis -> {
+                                                    handleWikiSelection(
+                                                        item as Wiki,
+                                                        inputField,
+                                                        onUpdateInput,
+                                                    )
+                                                }
+                                            }
+                                        },
                                     )
                                 }
                             }
-                        }
-
+                        },
+                    ) {
                         BasicTextField(
                             inputField,
                             enabled = isGenerating.not(),
@@ -671,7 +674,6 @@ fun ChatInputView(
                                     modifier =
                                         Modifier
                                             .padding(boxPadding)
-                                            .fillMaxWidth()
                                             .reactiveShimmer(
                                                 isGenerating,
                                             ),
@@ -698,130 +700,124 @@ fun ChatInputView(
 
                                     Box(
                                         Modifier
-                                            .alpha(textAlpha)
-                                            .fillMaxWidth(),
+                                            .alpha(textAlpha),
                                     ) {
                                         innerTextField()
                                     }
                                 }
                             },
-                            modifier = Modifier.weight(1f),
                         )
-
-                        IconButton(
-                            onClick = {
-                                if (isGenerating) return@IconButton
-                                if (inputField.text.isEmpty()) {
-                                    onRequestAudio()
-                                    return@IconButton
-                                }
-                                sendMessage()
-                            },
-                            enabled = isGenerating.not(),
-                            colors =
-                                IconButtonDefaults.filledIconButtonColors(
-                                    containerColor = content.data.genre.color,
-                                    contentColor = content.data.genre.iconColor,
-                                ),
-                            modifier =
-                                Modifier
-                                    .size(36.dp),
-                        ) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                AnimatedContent(
-                                    isGenerating,
-                                    transitionSpec = {
-                                        slideInVertically { -it } togetherWith slideOutVertically { it }
-                                    },
-                                    modifier =
-                                        Modifier
-                                            .padding(8.dp)
-                                            .reactiveShimmer(
-                                                isGenerating,
-                                                content.data.genre.shimmerColors(),
-                                            ).fillMaxSize(),
-                                ) { loading ->
-                                    val icon =
-                                        if (loading) {
-                                            R.drawable.ic_spark
-                                        } else if (inputField.text.isEmpty()) {
-                                            R.drawable.ic_mic
-                                        } else {
-                                            R.drawable.ic_send
-                                        }
-                                    Icon(
-                                        painterResource(icon),
-                                        contentDescription = "Send Message",
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
-                                }
-                            }
-                        }
                     }
                 }
 
-                AnimatedVisibility(isImeVisible) {
-                    val suggestionsState = rememberLazyListState()
-
-                    LaunchedEffect(action) {
-                        suggestionsState.animateScrollToItem(0)
-                    }
-                    LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        state = suggestionsState,
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        val inputs =
-                            SenderType.filterUserInputTypes().sortedByDescending {
-                                it == action
+                IconButton(
+                    onClick = {
+                        if (isGenerating) return@IconButton
+                        if (inputField.text.isEmpty()) {
+                            onRequestAudio()
+                            return@IconButton
+                        }
+                        sendMessage()
+                    },
+                    enabled = isGenerating.not(),
+                    colors =
+                        IconButtonDefaults.filledIconButtonColors(
+                            containerColor = content.data.genre.color,
+                            contentColor = content.data.genre.iconColor,
+                        ),
+                    modifier = Modifier.size(36.dp),
+                ) {
+                    AnimatedContent(
+                        isGenerating,
+                        transitionSpec = {
+                            slideInVertically { -it } togetherWith slideOutVertically { it }
+                        },
+                        modifier =
+                            Modifier
+                                .padding(8.dp)
+                                .reactiveShimmer(
+                                    isGenerating,
+                                    content.data.genre.shimmerColors(),
+                                ).fillMaxSize(),
+                    ) { loading ->
+                        val icon =
+                            if (loading) {
+                                R.drawable.ic_spark
+                            } else if (inputField.text.isEmpty()) {
+                                R.drawable.ic_mic
+                            } else {
+                                R.drawable.ic_send
                             }
-                        items(inputs) {
-                            val alpha by animateFloatAsState(
-                                if (it == action) 1f else .5f,
-                                tween(300),
-                            )
-                            val brush =
-                                if (it ==
-                                    action
-                                ) {
-                                    content.data.genre.gradient()
-                                } else {
-                                    MaterialTheme.colorScheme.onBackground.solidGradient()
-                                }
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                modifier =
-                                    Modifier
-                                        .animateItem()
-                                        .reactiveShimmer(it == action)
-                                        .alpha(alpha)
-                                        .wrapContentSize()
-                                        .clip(content.data.genre.shape())
-                                        .gradientFill(brush)
-                                        .clickable {
-                                            onUpdateSender(it)
-                                        }.padding(16.dp),
-                            ) {
-                                val weight =
-                                    if (it == action) FontWeight.Bold else FontWeight.Normal
-                                it.icon().let { icon ->
-                                    Image(
-                                        painterResource(icon),
-                                        null,
-                                        modifier = Modifier.size(12.dp),
-                                    )
+                        Icon(
+                            painterResource(icon),
+                            contentDescription = "Send Message",
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
+            }
 
-                                    Text(
-                                        it.title(),
-                                        style =
-                                            MaterialTheme.typography.labelSmall.copy(
-                                                fontWeight = weight,
-                                                fontFamily = content.data.genre.bodyFont(),
-                                            ),
-                                    )
-                                }
+            AnimatedVisibility(isImeVisible) {
+                val suggestionsState = rememberLazyListState()
+
+                LaunchedEffect(action) {
+                    suggestionsState.animateScrollToItem(0)
+                }
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    state = suggestionsState,
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    val inputs =
+                        SenderType.filterUserInputTypes().sortedByDescending {
+                            it == action
+                        }
+                    items(inputs) {
+                        val alpha by animateFloatAsState(
+                            if (it == action) 1f else .5f,
+                            tween(300),
+                        )
+                        val brush =
+                            if (it ==
+                                action
+                            ) {
+                                content.data.genre.gradient()
+                            } else {
+                                MaterialTheme.colorScheme.onBackground.solidGradient()
+                            }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier =
+                                Modifier
+                                    .animateItem()
+                                    .reactiveShimmer(it == action)
+                                    .alpha(alpha)
+                                    .wrapContentSize()
+                                    .clip(content.data.genre.shape())
+                                    .gradientFill(brush)
+                                    .clickable {
+                                        onUpdateSender(it)
+                                    }.padding(16.dp),
+                        ) {
+                            val weight =
+                                if (it == action) FontWeight.Bold else FontWeight.Normal
+                            it.icon().let { icon ->
+                                Image(
+                                    painterResource(icon),
+                                    null,
+                                    modifier = Modifier.size(12.dp),
+                                )
+
+                                Text(
+                                    it.title(),
+                                    style =
+                                        MaterialTheme.typography.labelSmall.copy(
+                                            fontWeight = weight,
+                                            fontFamily = content.data.genre.bodyFont(),
+                                        ),
+                                )
                             }
                         }
                     }
@@ -865,7 +861,8 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     genre.shape(),
-                                ).padding(16.dp),
+                                )
+                                .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

@@ -49,6 +49,7 @@ fun CharacterAvatar(
     textStyle: TextStyle = MaterialTheme.typography.labelSmall,
     genre: Genre,
     isLoading: Boolean = false,
+    useFallback: Boolean = false,
     modifier: Modifier = Modifier,
     softFocusRadius: Float? = null,
     grainRadius: Float? = null,
@@ -85,7 +86,8 @@ fun CharacterAvatar(
                 borderSize,
                 borderBrush,
                 CircleShape,
-            ).clip(CircleShape)
+            )
+            .clip(CircleShape)
             .padding(innerPadding)
             .background(
                 characterColor.darker(.3f),
@@ -109,20 +111,23 @@ fun CharacterAvatar(
                     .background(
                         characterColor,
                         CircleShape,
-                    ).fillMaxSize()
+                    )
+                    .fillMaxSize()
                     .effectForGenre(
                         genre,
-                        useFallBack = character.emojified,
+                        useFallBack = useFallback,
                         focusRadius = softFocusRadius,
                         customGrain = grainRadius,
                         pixelSize = pixelation,
-                    ).graphicsLayer {
+                    )
+                    .graphicsLayer {
                         scaleX = animatedScale
                         scaleY = animatedScale
                         translationX = animatedTranslationX * size.width
                         translationY = animatedTranslationY * size.height
                         transformOrigin = TransformOrigin.Center
-                    }.clipToBounds(),
+                    }
+                    .clipToBounds(),
         )
 
         if (painterState is AsyncImagePainter.State.Error) {

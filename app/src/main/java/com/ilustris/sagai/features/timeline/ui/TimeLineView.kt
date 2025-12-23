@@ -173,8 +173,7 @@ fun TimeLineContent(
                                                 "timeline-content-header",
                                             ),
                                             this,
-                                        )
-                                        .padding(16.dp)
+                                        ).padding(16.dp)
                                         .fillMaxWidth(),
                             )
                         }
@@ -202,8 +201,7 @@ fun TimeLineContent(
                                 .fillMaxWidth()
                                 .background(
                                     MaterialTheme.colorScheme.background,
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                     )
                 }
                 actContent.chapters.forEach { chapter ->
@@ -226,8 +224,7 @@ fun TimeLineContent(
                                     .fillMaxWidth()
                                     .background(
                                         MaterialTheme.colorScheme.background,
-                                    )
-                                    .padding(16.dp),
+                                    ).padding(16.dp),
                         )
                     }
 
@@ -708,14 +705,16 @@ fun TimeLineSimpleCard(
             .clip(shape)
             .background(
                 MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
+                shape,
             )
             .padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
         ) {
             AvatarTimelineIcon(
                 saga.data.icon,

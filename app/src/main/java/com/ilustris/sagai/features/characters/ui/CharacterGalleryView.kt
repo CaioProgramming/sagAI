@@ -217,8 +217,16 @@ fun CharacterYearbookItem(
     modifier: Modifier = Modifier,
     imageModifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.labelLarge,
+    useFallback: Boolean = false,
 ) {
-    CharacterVerticalItem(modifier, imageModifier.size(100.dp), character, genre, textStyle)
+    CharacterVerticalItem(
+        modifier,
+        imageModifier.size(100.dp),
+        character,
+        genre,
+        textStyle,
+        useFallback = useFallback,
+    )
 }
 
 @Composable
@@ -230,6 +238,7 @@ private fun CharacterVerticalItem(
     style: TextStyle = MaterialTheme.typography.titleMedium,
     borderSize: Dp = 2.dp,
     borderColor: Color? = null,
+    useFallback: Boolean = false,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -241,6 +250,7 @@ private fun CharacterVerticalItem(
             character = character,
             borderColor = borderColor,
             borderSize = borderSize,
+            useFallback = useFallback,
             textStyle =
                 MaterialTheme.typography.titleLarge.copy(
                     fontFamily = genre.headerFont(),
