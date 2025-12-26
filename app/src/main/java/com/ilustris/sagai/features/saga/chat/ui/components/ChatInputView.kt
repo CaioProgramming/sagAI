@@ -102,7 +102,6 @@ import com.ilustris.sagai.features.characters.ui.components.transformTextWithCon
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
@@ -110,7 +109,6 @@ import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.theme.GradientType
 import com.ilustris.sagai.ui.theme.bodyFont
-import com.ilustris.sagai.ui.theme.components.BlurredGlowContainer
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.darkerPalette
 import com.ilustris.sagai.ui.theme.gradient
@@ -133,7 +131,7 @@ import kotlin.time.Duration.Companion.seconds
 private fun detectQueryType(
     text: String,
     characters: List<CharacterContent>,
-    wikis: List<com.ilustris.sagai.features.wiki.data.model.Wiki>,
+    wikis: List<Wiki>,
     context: android.content.Context? = null,
 ): ItemsType? {
     val lastAtIndex = text.lastIndexOf('@')
@@ -242,7 +240,7 @@ private fun handleCharacterSelection(
  * Replaces /query with the wiki title.
  */
 private fun handleWikiSelection(
-    wiki: com.ilustris.sagai.features.wiki.data.model.Wiki,
+    wiki: Wiki,
     currentInput: TextFieldValue,
     onUpdateInput: (TextFieldValue) -> Unit,
 ) {
@@ -710,6 +708,14 @@ fun ChatInputView(
                     }
                 }
 
+                val iconBackground by animateColorAsState(
+                    if (isGenerating) Color.Transparent else content.data.genre.color,
+                )
+
+                val iconTint by animateColorAsState(
+                    if (isGenerating) content.data.genre.color else content.data.genre.iconColor,
+                )
+
                 IconButton(
                     onClick = {
                         if (isGenerating) return@IconButton
@@ -719,11 +725,10 @@ fun ChatInputView(
                         }
                         sendMessage()
                     },
-                    enabled = isGenerating.not(),
                     colors =
                         IconButtonDefaults.filledIconButtonColors(
-                            containerColor = content.data.genre.color,
-                            contentColor = content.data.genre.iconColor,
+                            containerColor = iconBackground,
+                            contentColor = iconTint,
                         ),
                     modifier = Modifier.size(36.dp),
                 ) {
@@ -737,7 +742,6 @@ fun ChatInputView(
                                 .padding(8.dp)
                                 .reactiveShimmer(
                                     isGenerating,
-                                    content.data.genre.shimmerColors(),
                                 ).fillMaxSize(),
                     ) { loading ->
                         val icon =
@@ -861,8 +865,7 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     genre.shape(),
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

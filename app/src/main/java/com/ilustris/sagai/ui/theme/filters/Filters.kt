@@ -224,16 +224,16 @@ fun Genre.shaderParams(
 
     Genre.PUNK_ROCK -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .15f,
-            softFocusRadius = focusRadius ?: .2f,
-            saturation = 1.0f,
-            contrast = 1.6f,
-            brightness = .05f,
+            grainIntensity = customGrain ?: .2f,
+            softFocusRadius = focusRadius ?: .1f,
+            saturation = .7f,
+            contrast = 1.2f,
+            brightness = .01f.unaryMinus(),
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,
             vignetteStrength = .15f,
-            vignetteSoftness = 0.9f,
+            vignetteSoftness = 1f,
             pixelationBlockSize = 0.0f,
             colorTemperature = .05f,
         )
@@ -303,7 +303,8 @@ fun Modifier.effectForGenre(
     return this
         .onSizeChanged { newSize ->
             composableSize = newSize
-        }.graphicsLayer {
+        }
+        .graphicsLayer {
             if (composableSize.width > 0 && composableSize.height > 0) {
                 runtimeShader.setFloatUniform(
                     "iResolution",

@@ -64,7 +64,7 @@ object ContentGenerationDirective {
         ---
         ## NARRATION & PLAYER ACTION/THOUGHT HANDLING
         Prioritization: Analyze the **INTENT** of the Player's last message. Your response must be a direct, significant, and logical consequence of that stated intent.
-        1.  **Progression:** Always advance the plot, introduce new information, or react to the player. Don't repeat descriptions or recently established facts.
+        1.  **Progression & Flexibility:** Always advance the plot, introduce new information, or react to the player. Don't repeat descriptions or recently established facts. Be flexible: if the player is attempting to change the direction of a scene or influence a character, allow that intent to manifest in the outcome. Do not block the player's path with narrative rigidity.
         2.  **Player Actions (`ACTION`):** Narrate the outcome and impact of the action, not the action itself. Ensure actions lead to progress.
         3.  **Player Thoughts (`THOUGHT`):** Describe the internal or external consequences of the thought. Use it as a catalyst for narration or NPC reaction, but don't just echo the thought. Thoughts must not halt the story.
         ---

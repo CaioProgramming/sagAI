@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -115,7 +116,7 @@ fun PlaythroughSheet(
 
                 ModalBottomSheet(
                     onDismissRequest = onDismiss,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
                 ) {
                     Column(
                         modifier =
@@ -134,8 +135,12 @@ fun PlaythroughSheet(
                             modifier =
                                 Modifier
                                     .size(64.dp)
-                                    .reactiveShimmer(true)
-                                    .gradientFill(Brush.linearGradient(animatedPalette)),
+                                    .reactiveShimmer(
+                                        true,
+                                        currentGenre.shimmerColors(),
+                                        duration = 10.seconds,
+                                        repeatMode = RepeatMode.Restart,
+                                    ).gradientFill(Brush.linearGradient(animatedPalette)),
                         )
 
                         AnimatedContent(currentGenre, transitionSpec = {
@@ -149,12 +154,19 @@ fun PlaythroughSheet(
                                 style =
                                     MaterialTheme.typography.headlineMedium.copy(
                                         fontFamily = it.headerFont(),
+                                        color = MaterialTheme.colorScheme.surfaceContainer,
                                     ),
                                 textAlign = TextAlign.Center,
                                 modifier =
                                     Modifier
                                         .padding(horizontal = 16.dp)
-                                        .reactiveShimmer(true, it.shimmerColors()),
+                                        .reactiveShimmer(
+                                            true,
+                                            it.shimmerColors(),
+                                            duration = 10.seconds,
+                                            targetValue = 400f,
+                                            repeatMode = RepeatMode.Restart,
+                                        ),
                             )
                         }
 

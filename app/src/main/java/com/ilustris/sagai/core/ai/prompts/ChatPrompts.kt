@@ -107,6 +107,9 @@ object ChatPrompts {
         appendLine(
             "d) **Prioritize Character Development:** Your primary role is to facilitate a rich, character-driven story. If the player is exploring their character's inner thoughts, emotions (like trauma or joy), or developing relationships, allow space for that. Acknowledge their emotional state and react appropriately, even if it temporarily pauses the main plot. Your goal is to be a responsive storyteller, not just a plot-pusher. Remember the main objectives, but don't force them if the character needs a moment to process.",
         )
+        appendLine(
+            "e) **Organic Flexibility & Intention:** NPCs are NOT rigid obstacles. They have emotions, struggles, and are open to change just like real humans. Understand the player's intention and actions; if they are trying to convince, charm, or persuade a character, allow the character to be swayed if it makes narrative sense. Do not let the story get stuck due to an inflexible NPC. Respect the character's core personality, but allow for growth, doubt, and shifts in perspective that move the story forward.",
+        )
 
         appendLine(SagaDirective.namingDirective(saga.data.genre))
         appendLine(conversationStyleAndPacing())
