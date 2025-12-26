@@ -148,8 +148,7 @@ fun TimeLineContent(
                                                 "timeline-content-header",
                                             ),
                                             this,
-                                        )
-                                        .background(MaterialTheme.colorScheme.background)
+                                        ).background(MaterialTheme.colorScheme.background)
                                         .fillMaxWidth()
                                         .statusBarsPadding()
                                         .padding(horizontal = 16.dp),
@@ -267,8 +266,7 @@ fun TimeLineContent(
                                             0.dp,
                                             true,
                                         ),
-                                    )
-                                    .clickable(cardEnabled) {
+                                    ).clickable(cardEnabled) {
                                         generateEmotionalReview(it)
                                     },
                         )
@@ -660,8 +658,7 @@ fun TimeLineCard(
                                                 RoundedCornerShape(
                                                     genre.cornerSize(),
                                                 ),
-                                        )
-                                        .padding(16.dp),
+                                        ).padding(16.dp),
                                 true,
                             )
                         }
@@ -702,12 +699,10 @@ fun TimeLineSimpleCard(
         modifier
             .border(1.dp, genre.gradient(), shape)
             .padding(2.dp)
-            .clip(shape)
             .background(
-                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .5f),
+                MaterialTheme.colorScheme.background,
                 shape,
-            )
-            .padding(16.dp)
+            ).padding(16.dp)
             .animateContentSize(tween(600, easing = EaseInBounce)),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -793,8 +788,7 @@ fun TimeLineSimpleCard(
                         .clip(shape)
                         .clickable {
                             requestReview(eventContent)
-                        }
-                        .gradientFill(genre.gradient())
+                        }.gradientFill(genre.gradient())
                         .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -1025,8 +1019,7 @@ fun TimeLineCard(
                                     eventDetails.timeline?.let {
                                         onSelectReference(it)
                                     }
-                                }
-                                .alpha(.4f),
+                                }.alpha(.4f),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Image(

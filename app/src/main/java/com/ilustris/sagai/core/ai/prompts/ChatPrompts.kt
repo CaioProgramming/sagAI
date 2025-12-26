@@ -7,6 +7,7 @@ import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -25,6 +26,7 @@ object ChatPrompts {
             "status",
             "playTimeMs",
             "audioPath",
+            "audible",
             "status",
         )
     val sagaExclusions =
@@ -60,66 +62,52 @@ object ChatPrompts {
     fun replyMessagePrompt(
         saga: SagaContent,
         message: Message,
-        lastMessages: List<Message> = emptyList(),
         directive: String,
         sceneSummary: SceneSummary?,
     ) = buildString {
+        appendLine("# IDENTITY & PROTOCOL")
         appendLine(Core.roleDefinition(saga.data))
         appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
-        appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trimIndent())
+        appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trim())
 
+        appendLine("\n# NARRATIVE ANCHOR")
         sceneSummary?.let {
-            appendLine("## Progression Context")
+            appendLine("## Current Strategic Situation")
             appendLine(
-                "This summary provides context on the story's progression. Use it as a background reminder of the main objectives, but do not let it rigidly dictate your response.",
-            )
-            appendLine(
-                "Your primary focus should be on reacting to the player's immediate actions and emotional state, allowing for organic character development.",
+                "This is your primary anchor. Use it to ensure your response moves the protagonist closer to their current milestone.",
             )
             appendLine(sceneSummary.toAINormalize())
         }
-
         appendLine(SagaPrompts.mainContext(saga))
 
-        appendLine("## Saga & Player Context")
+        appendLine("\n# RECENT CONTEXT")
         appendLine(
             CharacterPrompts.charactersOverview(saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }),
         )
-        appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trimIndent())
-
+        appendLine(CharacterDirective.CHARACTER_INTRODUCTION.trim())
         appendLine(ActPrompts.actDirective(directive))
+        appendLine(conversationHistory(saga.flatMessages().map { it.message }))
 
-        appendLine(conversationHistory(lastMessages))
-
-        appendLine("## NPC Actions & Thoughts")
+        appendLine("\n# STORYTELLING DIRECTIVES")
+        appendLine("## NPC Agency & Realism")
         appendLine(
-            "**NPC AGENCY & PERSONALITY:** NPCs should feel like living beings with their own motivations, personalities, and opinions.",
+            "1. **Authenticity:** Characters react based on their core traits via `ACTION`, `CHARACTER` (dialogue), or `THOUGHT` (internal). Silence is a valid reaction.",
         )
         appendLine(
-            "a) **Authentic Behavior:** Characters react based on who they are. This can be through physical actions (`ACTION`), dialogue (`CHARACTER`), or internal thoughts (`THOUGHT`). A character might choose to remain silent, observe, or get lost in thought if it fits their personality and the situation. Not every moment requires an external action.",
+            "2. **Contextual Evaluation:** If the player is alone or in monologue, avoid forcing dialogue; use `NARRATOR` or `THOUGHT` instead.",
         )
         appendLine(
-            "b) **Evaluate the Need for Interaction:** Before generating a response, consider if an interaction is truly necessary. If the player is setting a scene, describing an internal monologue, or if a character is alone, it might be better to continue the narration (`NARRATOR`) or provide a `THOUGHT` rather than forcing a dialogue or action that feels unnatural.",
-        )
-        appendLine(
-            "c) **Conflict/Combat:** In action-oriented scenes, prioritize `ACTION` to describe attacks, defenses, or significant movements.",
-        )
-        appendLine(
-            "d) **Prioritize Character Development:** Your primary role is to facilitate a rich, character-driven story. If the player is exploring their character's inner thoughts, emotions (like trauma or joy), or developing relationships, allow space for that. Acknowledge their emotional state and react appropriately, even if it temporarily pauses the main plot. Your goal is to be a responsive storyteller, not just a plot-pusher. Remember the main objectives, but don't force them if the character needs a moment to process.",
-        )
-        appendLine(
-            "e) **Organic Flexibility & Intention:** NPCs are NOT rigid obstacles. They have emotions, struggles, and are open to change just like real humans. Understand the player's intention and actions; if they are trying to convince, charm, or persuade a character, allow the character to be swayed if it makes narrative sense. Do not let the story get stuck due to an inflexible NPC. Respect the character's core personality, but allow for growth, doubt, and shifts in perspective that move the story forward.",
+            "3. **Conflict & Growth:** Prioritize action during combat. NPCs are flexible—they can be swayed, persuaded, or changed if it serves the narrative.",
         )
 
+        appendLine("\n## Style & Pacing")
         appendLine(SagaDirective.namingDirective(saga.data.genre))
         appendLine(conversationStyleAndPacing())
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
-        appendLine("Use the conversation style to provide a natural dialogue")
         appendLine(GenrePrompts.conversationDirective(saga.data.genre))
 
-        appendLine(conversationHistory(lastMessages))
-
-        appendLine("**LAST TURN'S OUTPUT / CURRENT CONTEXT:**")
+        appendLine("\n# CURRENT PLAYER TURN")
+        appendLine("Analyze the message below for intent and respond with a narrative bridge to the next beat.")
         appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
 
@@ -188,100 +176,80 @@ object ChatPrompts {
         )
     }.trimIndent()
 
-    fun sceneSummarizationPrompt(
-        saga: SagaContent,
-        recentMessages: List<Message> = emptyList(),
-    ) = buildString {
-        appendLine(
-            "You are tasked with generating a factual, concise summary of the current scene based ONLY on established story context.",
-        )
-        appendLine("This summary will be used as context for subsequent AI requests and will NOT be shown to the user.")
+    fun sceneSummarizationPrompt(saga: SagaContent) =
+        buildString {
+            appendLine("# IDENTITY & MISSION")
+            appendLine(
+                "You are the Narrative Analyst AI. Your mission is to extract a technical, factual snapshot of the current story state.",
+            )
+            appendLine("This output is a bridge for other narrative agents. Avoid prose; be clinical and precise.")
 
-        appendLine("## CRITICAL RULES - NEVER FABRICATE:")
-        appendLine("- ONLY reference characters that have been explicitly mentioned in the provided context")
-        appendLine(
-            "- ONLY describe events that actually happened according to recent messages, character events, and chapter/act summaries",
-        )
-        appendLine("- ONLY mention locations, objects, or situations that are explicitly stated in the context")
-        appendLine("- If information is not available in the context, omit that field completely")
-        appendLine("- Do NOT invent dialogue, actions, or characters that aren't in the provided data")
-        appendLine("- Do NOT assume or extrapolate beyond what's directly stated")
+            appendLine("\n# CONTEXTUAL DATA")
+            appendLine("## Core Saga Context")
+            appendLine(SagaPrompts.mainContext(saga))
 
-        appendLine("## YOUR GOAL:")
-        appendLine("Create a factual summary focusing on:")
-        appendLine("- Current location (if explicitly mentioned)")
-        appendLine("- Characters actually present (based on recent messages)")
-        appendLine("- Immediate situation (based on recent events and messages)")
-        appendLine("- Current mood/atmosphere (derived from established context)")
-        appendLine("- What just happened (from recent messages and character events)")
-
-        appendLine("## ESTABLISHED STORY CONTEXT:")
-        appendLine(SagaPrompts.mainContext(saga))
-
-        // Current Chapter and Act Context
-        saga.currentActInfo?.currentChapterInfo?.data?.let {
-            appendLine("### Current Chapter Context:")
-            appendLine(it.toAINormalize(ChapterPrompts.CHAPTER_EXCLUSIONS))
-        }
-
-        saga.currentActInfo?.data?.let {
-            appendLine("### Current Act Context:")
-            appendLine("Title: ${it.title}")
-            appendLine("Description: ${it.content}")
-            appendLine("Introduction: ${it.introduction}")
-        }
-
-        // Recent Timeline Events (what actually happened)
-
-        appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
-        appendLine(ChapterPrompts.chapterSummary(saga))
-        appendLine(ActPrompts.actsOverview(saga))
-
-        // Character Events (established character developments)
-        saga.mainCharacter?.let { mainChar ->
-            val recentEvents = mainChar.events.takeLast(3).map { it.event }
-            if (recentEvents.isNotEmpty()) {
-                appendLine("### Main Character Recent Events:")
+            saga.currentActInfo?.let { act ->
+                appendLine("\n## Active Segment")
                 appendLine(
-                    recentEvents.normalizetoAIItems(
-                        listOf("id", "characterId", "createdAt", "gameTimelineId"),
+                    act.data.toAINormalize(
+                        listOf(
+                            "id",
+                            "sagaId",
+                            "emotionalReview",
+                            "currentChapterId",
+                        ),
                     ),
                 )
+                act.currentChapterInfo?.data?.let { chapter ->
+                    appendLine("Chapter ${saga.chapterNumber(chapter)}")
+                    appendLine(
+                        chapter.toAINormalize(
+                            listOf(
+                                "id",
+                                "actId",
+                                "currentEventId",
+                                "coverImage",
+                                "emotionalReview",
+                                "createdAt",
+                                "featuredCharacters",
+                            ),
+                        ),
+                    )
+                }
             }
-        }
 
-        // Established Characters (only those that exist)
-        val establishedCharacters =
-            saga.getCharacters().filter { it.id != saga.mainCharacter?.data?.id }
-        if (establishedCharacters.isNotEmpty()) {
-            appendLine("### Established Characters in Saga:")
-            appendLine(establishedCharacters.normalizetoAIItems(characterExclusions))
-        }
+            appendLine("\n## Historical Context")
+            appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
+            appendLine(ChapterPrompts.chapterSummary(saga))
 
-        // Character Relationships (established connections)
-        if (!saga.mainCharacter?.relationships.isNullOrEmpty()) {
-            appendLine("### Established Character Relationships:")
+            appendLine("\n## Recent Activity")
             appendLine(
-                saga.mainCharacter.relationships.joinToString(";\n") {
-                    val lastEvent = it.relationshipEvents.lastOrNull()?.title ?: "No events yet"
-                    "${it.characterOne.name} ${it.data.emoji} ${it.characterTwo.name}: $lastEvent"
-                },
+                saga
+                    .flatMessages()
+                    .map { it.message }
+                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
+                    .normalizetoAIItems(messageExclusions),
             )
-        }
 
-        // Recent Messages (what actually happened in conversation)
-        appendLine("### Recent Conversation (What Actually Happened):")
-        appendLine("These messages show the immediate context and current situation:")
-        appendLine(recentMessages.normalizetoAIItems(messageExclusions))
+            appendLine("\n# TECHNICAL EXTRACTION PARAMETERS")
+            appendLine("Extract the following 10 narrative parameters precisely:")
+            appendLine("1. **currentLocation**: Specific setting (e.g., 'Rain-slicked back alley').")
+            appendLine("2. **charactersPresent**: List of names for all characters actively in the scene.")
+            appendLine("3. **immediateObjective**: The protagonist's current short-term goal.")
+            appendLine("4. **currentConflict**: The primary obstacle (emotional/physical) in this moment.")
+            appendLine("5. **mood**: The sensory/emotional atmosphere.")
+            appendLine("6. **currentTimeOfDay**: Time context (e.g., 'Golden hour', 'Dead of night').")
+            appendLine("7. **tensionLevel**: Narrative pressure (0-10 scale).")
+            appendLine("8. **spatialContext**: Spatial layout (Inside, Outside, Underwater, etc.).")
+            appendLine("9. **narrativePacing**: Speed of the story (Steady, Atmospheric, Urgent, Climax).")
+            appendLine("10. **worldStateChanges**: List of tangible environmental changes (e.g., 'Front door kicked in').")
 
-        appendLine("## SUMMARY REQUIREMENTS:")
-        appendLine("- Base your summary ONLY on the provided context above")
-        appendLine("- Focus on factual information from recent messages and established events")
-        appendLine("- Identify who is present based on recent message speakers")
-        appendLine("- Describe the current situation based on what was actually said/done")
-        appendLine("- If any information is unclear or missing, omit that aspect entirely")
-        appendLine("- Create a concise but comprehensive picture of the current scene state")
-    }.trimIndent()
+            appendLine("\n# EXTRACTION RULES")
+            appendLine("1. **No Fabrication:** ONLY use data explicitly stated in 'CONTEXTUAL DATA'. Use null for unknowns.")
+            appendLine("2. **Technical Tone:** Avoid poetic fluff. Use concise, actionable data.")
+            appendLine("3. **JSON Output:** Return ONLY a valid JSON object matching the parameters above.")
+            appendLine(toJsonMap(SceneSummary::class.java))
+        }.trimIndent()
 
     fun scheduledNotificationPrompt(
         saga: SagaContent,
@@ -306,7 +274,7 @@ object ChatPrompts {
 
         appendLine(
             conversationHistory(
-                saga.flatMessages().map { it.message }.takeLast(UpdateRules.LORE_UPDATE_LIMIT),
+                saga.flatMessages().map { it.message },
             ),
         )
         appendLine()
@@ -358,7 +326,10 @@ object ChatPrompts {
             appendLine("Consider the newest ones to move history forward")
             appendLine("Pay attention to `speakerName` and `senderType`.")
             appendLine(
-                lastMessages.reversed().normalizetoAIItems(excludingFields = messageExclusions),
+                lastMessages
+                    .reversed()
+                    .take(UpdateRules.LORE_UPDATE_LIMIT)
+                    .normalizetoAIItems(excludingFields = messageExclusions),
             )
         }
 }

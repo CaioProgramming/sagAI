@@ -3,8 +3,10 @@ package com.ilustris.sagai.core.audio
 import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
+import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
@@ -15,6 +17,8 @@ import com.ilustris.sagai.core.permissions.PermissionStatus
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.DurationUnit
 
 sealed class TranscriptionState {
     object Idle : TranscriptionState()
@@ -42,7 +46,10 @@ class AudioService
             private const val TAG = "AudioService"
         }
 
-        fun transcribeAudio(onResult: (TranscriptionState?) -> Unit) {
+        fun transcribeAudio(
+            prompt: String?,
+            onResult: (TranscriptionState?) -> Unit,
+        ) {
             try {
                 if (!checkPermission()) {
                     onResult(
@@ -66,15 +73,25 @@ class AudioService
                 val speechRecognizer = SpeechRecognizer.createSpeechRecognizer(context)
                 val locale = Locale.getDefault()
                 val languageTag = locale.toLanguageTag()
-
+                val textPrompt = prompt ?: "I'm hearing you, start talking..."
                 val intent =
-                    Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                    Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(
-                            android.speech.RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                            android.speech.RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
+                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
                         )
-                        putExtra(android.speech.RecognizerIntent.EXTRA_LANGUAGE, languageTag)
-                        putExtra(android.speech.RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                        putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, textPrompt)
+                        putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+                        putExtra(
+                            RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,
+                            5.seconds.toInt(
+                                DurationUnit.MILLISECONDS,
+                            ),
+                        )
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            putExtra(RecognizerIntent.EXTRA_ENABLE_FORMATTING, true)
+                        }
                         Log.d(TAG, "Speech recognition language set to: $languageTag")
                     }
 
@@ -140,6 +157,6 @@ class AudioService
         suspend fun generateListeningMessage() =
             executeRequest {
                 val prompt = AudioPrompts.transcribeInstruction()
-                gemmaClient.generate<String>(prompt)!!
+                gemmaClient.generate<String>(prompt, temperatureRandomness = .1f)!!
             }
     }

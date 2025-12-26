@@ -8,6 +8,8 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.EaseIn
+import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -20,7 +22,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -53,6 +54,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -264,6 +266,8 @@ fun ChatInputView(
     sendType: SenderType,
     typoFix: TypoFix?,
     selectedCharacter: CharacterContent? = null,
+    isSendingPending: Boolean = false,
+    sendingProgress: Float = 0f,
     onUpdateInput: (TextFieldValue) -> Unit,
     onUpdateSender: (SenderType) -> Unit,
     onSendMessage: (Boolean) -> Unit,
@@ -716,47 +720,70 @@ fun ChatInputView(
                     if (isGenerating) content.data.genre.color else content.data.genre.iconColor,
                 )
 
-                IconButton(
-                    onClick = {
-                        if (isGenerating) return@IconButton
-                        if (inputField.text.isEmpty()) {
-                            onRequestAudio()
-                            return@IconButton
-                        }
-                        sendMessage()
-                    },
-                    colors =
-                        IconButtonDefaults.filledIconButtonColors(
-                            containerColor = iconBackground,
-                            contentColor = iconTint,
-                        ),
-                    modifier = Modifier.size(36.dp),
-                ) {
-                    AnimatedContent(
-                        isGenerating,
-                        transitionSpec = {
-                            slideInVertically { -it } togetherWith slideOutVertically { it }
-                        },
-                        modifier =
-                            Modifier
-                                .padding(8.dp)
-                                .reactiveShimmer(
-                                    isGenerating,
-                                ).fillMaxSize(),
-                    ) { loading ->
-                        val icon =
-                            if (loading) {
-                                R.drawable.ic_spark
-                            } else if (inputField.text.isEmpty()) {
-                                R.drawable.ic_mic
-                            } else {
-                                R.drawable.ic_send
-                            }
-                        Icon(
-                            painterResource(icon),
-                            contentDescription = "Send Message",
-                            modifier = Modifier.fillMaxSize(),
+                Box(contentAlignment = Alignment.Center) {
+                    if (isSendingPending) {
+                        CircularProgressIndicator(
+                            color = content.data.genre.color,
+                            trackColor = Color.Transparent,
+                            strokeWidth = 2.dp,
+                            modifier =
+                                Modifier
+                                    .size(32.dp)
+                                    .gradientFill(content.data.genre.gradient(true)),
                         )
+                    }
+
+                    IconButton(
+                        onClick = {
+                            if (isGenerating) return@IconButton
+                            if (isSendingPending) {
+                                onSendMessage(true)
+                                return@IconButton
+                            }
+                            if (inputField.text.isEmpty()) {
+                                onRequestAudio()
+                                return@IconButton
+                            }
+                            sendMessage()
+                        },
+                        colors =
+                            IconButtonDefaults.filledIconButtonColors(
+                                containerColor = iconBackground,
+                                contentColor = iconTint,
+                            ),
+                        modifier = Modifier.size(36.dp),
+                    ) {
+                        AnimatedContent(
+                            isGenerating || isSendingPending,
+                            transitionSpec = {
+                                scaleIn(
+                                    tween(1000, easing = EaseInBounce),
+                                ) togetherWith
+                                    scaleOut(
+                                        tween(500, easing = EaseIn),
+                                    )
+                            },
+                            modifier =
+                                Modifier
+                                    .padding(8.dp)
+                                    .reactiveShimmer(
+                                        isGenerating,
+                                    ).fillMaxSize(),
+                        ) { loading ->
+                            val icon =
+                                if (loading) {
+                                    if (isSendingPending) R.drawable.ic_stop else R.drawable.ic_spark
+                                } else if (inputField.text.isEmpty()) {
+                                    R.drawable.ic_mic
+                                } else {
+                                    R.drawable.ic_send
+                                }
+                            Icon(
+                                painterResource(icon),
+                                contentDescription = "Send Message",
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
                     }
                 }
             }

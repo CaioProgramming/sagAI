@@ -10,10 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ilustris.sagai.R
 import com.ilustris.sagai.core.permissions.PermissionComponent
 import com.ilustris.sagai.core.permissions.PermissionService
 import com.ilustris.sagai.ui.components.StarryLoader
@@ -76,8 +74,5 @@ fun AudioRecordingSheet(
             onSuccess(message)
             viewModel.reset()
         }
-    }
-
-    if (state is AudioState.PermissionRequired) {
     }
 }

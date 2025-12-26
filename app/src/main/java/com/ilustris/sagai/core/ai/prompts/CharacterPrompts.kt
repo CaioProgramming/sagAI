@@ -36,6 +36,7 @@ object CharacterPrompts {
                     "hexColor",
                     "firstSceneId",
                     "emojified",
+                    "smartZoom",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
             appendLine(characters.normalizetoAIItems(characterExclusions))

@@ -12,14 +12,12 @@ import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
-import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -75,11 +73,6 @@ class MessageUseCaseImpl
                 gemmaClient.generate<SceneSummary>(
                     ChatPrompts.sceneSummarizationPrompt(
                         saga = saga,
-                        recentMessages =
-                            saga
-                                .flatMessages()
-                                .map { it.message }
-                                .takeLast(UpdateRules.LORE_UPDATE_LIMIT),
                     ),
                 )
             }
@@ -153,11 +146,6 @@ class MessageUseCaseImpl
                             saga = saga,
                             message =
                                 message.message,
-                            lastMessages =
-                                saga
-                                    .flatMessages()
-                                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                                    .map { it.message },
                             directive = saga.getDirective(),
                             sceneSummary =
                                 sceneSummary?.copy(
@@ -309,11 +297,11 @@ class MessageUseCaseImpl
                         )!!
 
                 val audioFile =
-                    fileHelper.decodeAndSaveBase64(
+                    fileHelper.saveBinaryFile(
                         audioResult,
                         path = "sagas/${saga.data.id}/audios",
                         fileName = "message_${savedMessage.id}_audio",
-                        extension = "mp3",
+                        extension = "wav",
                     )!!
 
                 updateMessage(

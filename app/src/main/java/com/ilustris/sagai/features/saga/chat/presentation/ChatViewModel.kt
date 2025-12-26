@@ -84,6 +84,8 @@ class ChatViewModel
         private var audioProgressJob: kotlinx.coroutines.Job? = null
         private val audioMediaPlayerManager: MediaPlayerManager = MediaPlayerManagerImpl(context)
         var isForeground = true
+        private val messageDelay = 7.seconds
+        private var sendJob: kotlinx.coroutines.Job? = null
 
         fun handleAction(action: ChatUiAction) {
             when (action) {
@@ -669,7 +671,7 @@ class ChatViewModel
             isAudio: Boolean = false,
         ) {
             val text = uiState.value.inputValue
-            val sendType = uiState.value.senderType
+            uiState.value.senderType
 
             val saga = uiState.value.sagaContent ?: return
             val mainCharacter = uiState.value.selectedCharacter?.data ?: saga.mainCharacter?.data
@@ -677,6 +679,21 @@ class ChatViewModel
             val currentTimeline = uiState.value.sagaContent?.getCurrentTimeLine()
             if (currentTimeline == null) {
                 sagaContentManager.checkNarrativeProgression(uiState.value.sagaContent)
+                return
+            }
+
+            if (isAudio && !userConfirmed) {
+                stateManager.updateAudioInput(true)
+                stateManager.updateLoading(false)
+                return
+            }
+
+            if (uiState.value.isSendingPending) {
+                sendJob?.cancel()
+                sendJob = null
+                stateManager.updateSendingPending(false)
+                stateManager.updateSendingProgress(0f)
+                stateManager.updateLoading(false)
                 return
             }
 
@@ -688,21 +705,12 @@ class ChatViewModel
             stateManager.updateLoading(true)
             viewModelScope.launch(Dispatchers.IO) {
                 if (userConfirmed || uiState.value.smartSuggestionsEnabled.not()) {
-                    val message =
-                        Message(
-                            text = text.text,
-                            speakerName = mainCharacter.name,
-                            senderType = sendType,
-                            characterId = mainCharacter.id,
-                            timelineId = currentTimeline.data.id,
-                            status = MessageStatus.LOADING,
-                        )
-                    sendMessage(message, true, null, isAudio)
+                    startPendingSend(isAudio)
                     return@launch
                 }
 
                 if (isAudio) {
-                    checkTypo()
+                    checkTypo(isAudio)
                     return@launch
                 }
 
@@ -723,7 +731,7 @@ class ChatViewModel
                         stateManager.updateState { s -> s.copy(typoFixMessage = typoCheck.getSuccess()) }
                         when (it.status) {
                             TypoStatus.OK -> {
-                                sendInput(true, isAudio)
+                                startPendingSend(isAudio)
                             }
 
                             TypoStatus.FIX -> {
@@ -734,7 +742,7 @@ class ChatViewModel
                                             it.suggestedText ?: uiState.value.inputValue.text,
                                         ),
                                     )
-                                    sendInput(true, isAudio)
+                                    startPendingSend(isAudio)
                                 }
                             }
 
@@ -744,9 +752,45 @@ class ChatViewModel
                         }
                     }
                 } ?: run {
-                    sendInput(true, isAudio)
+                    startPendingSend(isAudio)
                 }
             }
+        }
+
+        private fun startPendingSend(isAudio: Boolean) {
+            val text = uiState.value.inputValue.text
+            val sendType = uiState.value.senderType
+            val saga = uiState.value.sagaContent ?: return
+            val mainCharacter =
+                uiState.value.selectedCharacter?.data ?: saga.mainCharacter?.data ?: return
+            val currentTimeline = uiState.value.sagaContent?.getCurrentTimeLine() ?: return
+
+            val message =
+                Message(
+                    text = text,
+                    speakerName = mainCharacter.name,
+                    senderType = sendType,
+                    characterId = mainCharacter.id,
+                    timelineId = currentTimeline.data.id,
+                    status = MessageStatus.LOADING,
+                )
+
+            sendJob =
+                viewModelScope.launch {
+                    stateManager.updateSendingPending(true)
+                    stateManager.updateLoading(true)
+                    val totalSteps = 70
+                    val delayStep = messageDelay.inWholeMilliseconds / totalSteps
+                    for (i in 1..totalSteps) {
+                        stateManager.updateSendingProgress(i.toFloat() / totalSteps)
+                        delay(delayStep)
+                    }
+                    stateManager.updateSendingPending(false)
+                    stateManager.updateSendingProgress(0f)
+                    val isActuallyAudio = isAudio || uiState.value.isAudioInput
+                    stateManager.updateAudioInput(false)
+                    sendMessage(message, true, null, isActuallyAudio)
+                }
         }
 
         private fun checkTypo(isAudio: Boolean = false) {

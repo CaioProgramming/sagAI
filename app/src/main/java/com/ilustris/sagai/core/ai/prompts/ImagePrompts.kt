@@ -43,15 +43,20 @@ object ImagePrompts {
     @Suppress("ktlint:standard:max-line-length")
     fun extractComposition() =
         buildString {
-            appendLine("CINEMATOGRAPHY EXTRACTION — Senior DP analyzing reference image")
-            appendLine("Extract PHOTOGRAPHIC DNA (NOT art style/subject). Use ONLY camera/lighting terms.")
-            appendLine(
-                "Fix missing or vague parameters autonomously. Return the 15 parameters + VISIBLE ELEMENTS analysis + MANDATORY HIDDEN ELEMENTS.",
-            )
+            appendLine("SYSTEM ROLE: Senior Director of Photography & AI Prompt Engineer")
+            appendLine("TASK: Perform a technical CINEMATOGRAPHY EXTRACTION from the provided reference image.")
+            appendLine("OBJECTIVE: Extract pure PHOTOGRAPHIC DNA (lens, lighting, angle, composition). Ignore subject and art style.")
             appendLine()
-            appendLine("CRITICAL: Output MANDATORY HIDDEN ELEMENTS based on framing. Artist uses this to EXCLUDE elements.")
+            appendLine("CRITICAL DIRECTIVE (NON-NEGOTIABLE):")
+            appendLine("- NO PREAMBLE: Do not start with 'Okay', 'Let's break down', or any introductory filler.")
+            appendLine("- NO SUMMARY: Do not provide a concluding summary or 'In summary' section.")
+            appendLine("- NO CONVERSATION: Do not address the user. Do not offer future help. Do not say 'let me know'.")
+            appendLine("- ASSERTIVE TONE: Provide raw, actionable technical data. Use declarative statements.")
+            appendLine("- AI-READY: The output must be directly usable as a visual direction for another AI model.")
             appendLine()
-            appendLine("OUTPUT 15 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: value'):")
+            appendLine("OUTPUT STRUCTURE (START DIRECTLY WITH PARAMETERS):")
+            appendLine()
+            appendLine("15 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]'):")
             appendLine()
             appendLine(
                 "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle (specify tilt) / worm's-eye view / bird's-eye view / point-of-view (POV)] - Be specific and dramatic.")
@@ -75,44 +80,26 @@ object ImagePrompts {
             appendLine("14. SIGNATURE: One unique unforgettable detail")
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
             appendLine()
-            appendLine("ANGLE & PERSPECTIVE GUIDELINES (MANDATORY):")
-            appendLine(
-                "1. **Define a Clear Viewpoint:** The ANGLE parameter MUST establish a strong, non-generic point of view. Analyze the subject's pose and the environment to infer a compelling angle.",
-            )
-            appendLine(
-                "   - Example: If the subject seems dominant, choose a 'low-angle looking up'. If they seem vulnerable, choose a 'high-angle looking down'.",
-            )
-            appendLine(
-                "2. **Describe the Visual Effect:** The PERSPECTIVE parameter should describe the *result* of the lens and angle choice (e.g., 'dramatic foreshortening', 'one-point perspective with converging lines', 'wide-angle barrel distortion').",
-            )
-            appendLine("3. **BANNED PERSPECTIVES:**")
-            appendLine(
-                "   - **AVOID GENERIC/FLAT ANGLES:** Do not default to 'eye-level' or 'straight-on' unless the source image is explicitly flat and lacks any depth or dynamism. Challenge yourself to find a more interesting angle.")
-            appendLine("   - **NO 'Plain View':** This is too vague. Specify if it is eye-level, slightly high, etc.")
-            appendLine()
-            appendLine("VISIBILITY ANALYSIS (after 15 params):")
+            appendLine("VISIBILITY ANALYSIS:")
             appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OCCLUDED")
             appendLine("Analyze: 1.HEAD 2.FACE 3.TORSO 4.ARMS/HANDS 5.LEGS/FEET 6.DISTINCTIVE MARKS 7.BODY LANGUAGE 8.ENVIRONMENT")
             appendLine()
-            appendLine(
-                "FRAMING RULES: MUST SHOW identity markers, MUST HIDE elements below frame cutoff, CANNOT HIDE core traits (race, primary clothing, main features)",
-            )
+            appendLine("MANDATORY HIDDEN BY FRAMING (Bullet points of elements GUARANTEED not visible):")
+            appendLine("- ECU: Entire neck, shoulders, and anything below the chin.")
+            appendLine("- CU: Mid-torso and below (waist, hips, lower body).")
+            appendLine("- MCU: Hips and below (all lower body clothing/footwear).")
+            appendLine("- MS: Upper thighs and below (all lower leg clothing, ALL footwear).")
+            appendLine("- MWS: Ankles and below (ALL footwear).")
+            appendLine("- FS/WS/EWS: Fine details (scars, intricate patterns) obscured by scale.")
             appendLine()
-            appendLine("MANDATORY HIDDEN BY FRAMING (output as bullet list, elements GUARANTEED not visible):")
-            appendLine("ECU: Entire neck, shoulders, and anything below the chin. All clothing/accessories below the chin.")
-            appendLine(
-                "CU: Mid-torso and below, including waist, hips, and all lower body clothing/footwear. Only upper chest/shoulders and head/face are guaranteed visible.",
-            )
-            appendLine("MCU: Hips and below, including all lower body clothing/footwear (pants, skirts, shoes).")
-            appendLine("MS: Upper thighs and below, including all lower leg clothing and ALL footwear.")
-            appendLine("MWS: Ankles and below, including ALL footwear.")
-            appendLine("FS/WS/EWS: Fine details (e.g., small facial scars, intricate jewelry) that would be obscured by distance/scale.")
+            appendLine("IDENTITY ANCHOR:")
+            appendLine("- Define key non-subject traits: [Skin Tone / Hair Color / Key Accessory / Silhouette] that MUST persist.")
             appendLine()
-            appendLine("EXAMPLE (CU framing):")
-            appendLine("1-15. [cinematography params...]")
-            appendLine("VISIBLE: head, shoulders, upper chest, facial scar, neck tattoo partial")
-            appendLine("MANDATORY HIDDEN: torso below shoulders, arms/hands, waist, ALL legs, ALL footwear, belts")
-            appendLine("IDENTITY: skin tone, facial structure, hair - character recognizable")
+            appendLine("ANGLE & PERSPECTIVE ENFORCEMENT:")
+            appendLine("- BANNED: 'eye-level', 'straight-on', 'plain view' (unless strictly required by composition).")
+            appendLine("- REQUIRED: Establish a dominant, dynamic viewpoint that directs the viewer's eye.")
+            appendLine()
+            appendLine("FINAL VERIFICATION: Is the output 100% technical? Is it devoid of pleasantries? If yes, output now.")
         }
 
     /**

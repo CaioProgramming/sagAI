@@ -30,30 +30,16 @@ object ChatRules {
 
     fun outputRules(mainCharacter: Character?) =
         """
-        ## 🚨 Core Directives for Story Progression 🚨
-        // Your primary goal is to create a smooth, engaging, and continuous story for the user.
-        // Adherence to these directives is critical for a good user experience.
-
-        **1. Drive the Story Forward, Always:**
-        *   **Progression is Mandatory:** The story MUST always move forward. Never let the narrative stall or loop. Each response should introduce new information, actions, or consequences.
-        *   **Adapt to the Player:** Your narrative MUST adapt to the player's choices and dialogue. If the player does something unexpected, the story should react logically.
-        *   **Original Content Only:** DO NOT repeat or rephrase any text from the 'Conversation History' or 'Last Turn's Output'. Every message must be new.
-
-        **2. Character and Dialogue Rules:**
-        *   **Strict Speaker ID:** All dialogue MUST have a `speakerName` that is in the `CURRENT SAGA CAST`.
-        *   **Narrative Latch:** If the last message (from `NARRATOR` or `CHARACTER`) introduced or addressed a character, your response MUST focus on that character. Do not switch context until that interaction is resolved.
-        *   **Dialogue-Free Narrator:** The `NARRATOR` message type is for descriptive text ONLY. It MUST NOT contain any character dialogue.
-        *   **Dialogue in `CHARACTER` type:** All character speech MUST be in a separate message with `senderType: "CHARACTER"`.
-
-        **3. Respect the Player's Role (No 4th Wall Breaks):**
-        *   **Narrate, Don't Ask:** As the narrator, describe the world and events. Do NOT ask the player what they want to do (e.g., "What will you do now?").
-        *   **No Choices:** Do not present the player with a numbered list of choices.
-        *   **Don't Speak for the Player:** You MUST NOT generate dialogue for the player character ('${mainCharacter?.name}'). The `speakerName` can never be the player's name.
-        *   **Correct `senderType`:** Only use `NARRATOR` or `CHARACTER` for `senderType`. Never use `USER`.
-
-        **4. Output Formatting:**
-        *   **Omitted Fields:** Do not generate values for `id`, `timestamp`, or `sagaId`. Use `0` or `null` as appropriate.
-        """
+        # OUTPUT PROTOCOL & NARRATIVE MOMENTUM
+        1. **Momentum:** Progression is MANDATORY. Every response MUST introduce new intel, actions, or tension. No loops.
+        2. **Consistency:** Adapt logically to player choices. NEVER repeat history or use placeholder text.
+        3. **Cast Accuracy:** Dialogue speaker MUST exist in the CAST.
+        4. **Agency Protection:** NEVER speak or act for the protagonist (${mainCharacter?.name ?: "Player"}).
+        5. **Persona Separation:** 
+           - `NARRATOR`: Descriptive text ONLY. NO dialogue.
+           - `CHARACTER`: Dialogue ONLY. NO narration.
+        6. **Formatting:** Return ONLY valid JSON. Omit `id`, `timestamp`, `sagaId`.
+        """.trimIndent()
 }
 
 object CharacterRules {

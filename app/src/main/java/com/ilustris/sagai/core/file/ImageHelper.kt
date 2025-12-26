@@ -34,10 +34,6 @@ class ImageHelper
                     )
                 val bitmap = request.image!!.toBitmap()
 
-                return@executeRequest if (cropToCircle) {
-                    cropBitmapToCircle(bitmap)!!
-                } else {
-                    bitmap
-                }
+                return@executeRequest bitmap
             }
     }

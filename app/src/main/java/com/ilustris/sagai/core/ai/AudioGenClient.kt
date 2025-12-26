@@ -93,8 +93,15 @@ class AudioGenClientImpl
                     )
                 }
 
+                // Clean the base64 data (remove newlines, whitespace)
+                val cleanData = inlineData.data?.replace("\\s".toRegex(), "") ?: ""
+
                 // Decode base64 to ByteArray
-                Base64.decode(inlineData.data, Base64.DEFAULT)
+                val pcmData = Base64.decode(cleanData, Base64.DEFAULT)
+
+                // Wrap raw PCM in WAV for playback compatibility
+                com.ilustris.sagai.core.utils.AudioUtils
+                    .wrapPcmInWav(pcmData)
             }
         }
     }

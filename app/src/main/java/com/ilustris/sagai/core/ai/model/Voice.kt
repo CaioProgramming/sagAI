@@ -9,54 +9,54 @@ enum class Voice(
     val description: String,
 ) {
     // Row 1
-    ZEPHYR("FEMALE", "Bright"),
-    PUCK("MALE", "Upbeat"),
-    CHARON("MALE", "Informative"),
+    ZEPHYR("FEMALE", "Energetic, bright, and perky. Projects positivity and youthfulness."),
+    PUCK("MALE", "Upbeat, energetic, and youthful."),
+    CHARON("MALE", "Mature, confident, and professional. Reassuring and trustworthy."),
 
     // Row 2
-    KORE("FEMALE", "Firm"),
-    FENRIR("MALE", "Excitable"),
-    LEDA("FEMALE", "Youthful"),
+    KORE("FEMALE", "Firm, direct, and professional."),
+    FENRIR("MALE", "High-energy, excitable, and conversational. Very engaging."),
+    LEDA("FEMALE", "Youthful, vibrant, and light-hearted. Fresh and perky."),
 
     // Row 3
-    ORUS("MALE", "Firm"),
-    AOEDE("FEMALE", "Breezy"),
-    CALLIRRHOE("FEMALE", "Easy-going"),
+    ORUS("MALE", "Solid, firm, and reliable. Steady delivery."),
+    AOEDE("FEMALE", "Conversational, thoughtful, and articulate. Sounds intelligent."),
+    CALLIRRHOE("FEMALE", "Confident, direct, and professional. Articulate and clear."),
 
     // Row 4
-    AUTONOE("FEMALE", "Bright"),
-    ENCELADUS("MALE", "Breathy"),
-    IAPETUS("MALE", "Clear"),
+    AUTONOE("FEMALE", "Mature, resonant, and thoughtful. Conveys wisdom."),
+    ENCELADUS("MALE", "Energetic and enthusiastic. Impactful with a promotional feel."),
+    IAPETUS("MALE", "Friendly, casual, and relatable. An 'everyman' voice."),
 
     // Row 5
-    UMBRIEL("MALE", "Easy-going"),
-    ALGIEBA("MALE", "Smooth"),
-    DESPINA("FEMALE", "Smooth"),
+    UMBRIEL("MALE", "Smooth, authoritative, and knowledgeable. Trustworthy."),
+    ALGIEBA("MALE", "Smooth-talking, polished, and confident. Conversational."),
+    DESPINA("FEMALE", "Warm, inviting, and trustworthy. Friendly and engaging."),
 
     // Row 6
-    ERINOME("FEMALE", "Clear"),
-    ALGENIB("MALE", "Gravelly"),
-    RASALGETHI("MALE", "Informative"),
+    ERINOME("FEMALE", "Clear, consistent, and straightforward."),
+    ALGENIB("FEMALE", "Crisp, professional, and friendly. Warm authority."),
+    RASALGETHI("MALE", "Informative, balanced, and steady."),
 
     // Row 7
-    LAOMEDEIA("FEMALE", "Upbeat"),
-    ACHERNAR("FEMALE", "Soft"),
-    ALNILAM("MALE", "Firm"),
+    LAOMEDEIA("FEMALE", "Naturally upbeat, energetic, and positive."),
+    ACHERNAR("FEMALE", "Energetic, crisp, and confident. High brightness."),
+    ALNILAM("MALE", "Firm, steady, direct, and authoritative."),
 
     // Row 8
-    SCHEDAR("FEMALE", "Even"),
-    GACRUX("MALE", "Mature"),
-    PULCHERRIMA("FEMALE", "Forward"),
+    SCHEDAR("MALE", "Even, consistent, and utility-focused. Steady pacing."),
+    GACRUX("FEMALE", "Smooth, confident, and authoritative yet approachable."),
+    PULCHERRIMA("FEMALE", "Forward, direct, and engaging."),
 
     // Row 9
-    ACHIRD("MALE", "Friendly"),
-    ZUBENELGENUBI("MALE", "Casual"),
-    VINDEMIATRIX("FEMALE", "Gentle"),
+    ACHIRD("FEMALE", "Youthful, friendly, and approachable. Inquisitive feel."),
+    ZUBENELGENUBI("MALE", "Casual, relaxed, and natural."),
+    VINDEMIATRIX("FEMALE", "Calm, thoughtful, and mature. Reassuring and gentle."),
 
     // Row 10
-    SADACHBIA("FEMALE", "Lively"),
-    SADALTAGER("MALE", "Knowledgeable"),
-    SULAFAT("FEMALE", "Warm"),
+    SADACHBIA("MALE", "Lively, energetic, and distinctive."),
+    SADALTAGER("MALE", "Friendly, enthusiastic, and professional. Great for presentations."),
+    SULAFAT("FEMALE", "Warm, gentle, and comforting. Very trustworthy."),
     ;
 
     /**

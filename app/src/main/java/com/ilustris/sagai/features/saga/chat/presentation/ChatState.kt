@@ -7,7 +7,6 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
@@ -52,6 +51,9 @@ data class ChatUiState(
     val smartSuggestionsEnabled: Boolean = true,
     val showShareSheet: Boolean = false,
     val showAudioTranscript: Boolean = false,
+    val isSendingPending: Boolean = false,
+    val sendingProgress: Float = 0f,
+    val isAudioInput: Boolean = false,
 )
 
 data class MessageSelectionState(

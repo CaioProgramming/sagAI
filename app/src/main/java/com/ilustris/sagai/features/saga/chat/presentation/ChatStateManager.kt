@@ -96,4 +96,16 @@ class ChatStateManager {
     fun updateAudioTranscriptVisibility(show: Boolean) {
         _uiState.update { it.copy(showAudioTranscript = show) }
     }
+
+    fun updateSendingPending(pending: Boolean) {
+        _uiState.update { it.copy(isSendingPending = pending) }
+    }
+
+    fun updateSendingProgress(progress: Float) {
+        _uiState.update { it.copy(sendingProgress = progress) }
+    }
+
+    fun updateAudioInput(isAudio: Boolean) {
+        _uiState.update { it.copy(isAudioInput = isAudio) }
+    }
 }

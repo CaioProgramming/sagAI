@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.icu.util.Calendar
-import android.util.Base64
 import android.util.Log
 import com.ilustris.sagai.core.utils.removeBlankSpace
 import java.io.File
@@ -143,8 +142,8 @@ class FileHelper(
      * @param subDirectory The subdirectory within the saga folder (e.g., "audio", "media")
      * @return The saved File or null if failed
      */
-    fun decodeAndSaveBase64(
-        base64Data: ByteArray,
+    fun saveBinaryFile(
+        data: ByteArray,
         path: String,
         fileName: String,
         extension: String,
@@ -155,20 +154,19 @@ class FileHelper(
         }
 
         val timestamp = Calendar.getInstance().timeInMillis
-        val fileName = fileName.plus(timestamp).removeBlankSpace().plus(".$extension")
-        val file = directory.resolve(fileName)
+        val fullFileName = fileName.plus(timestamp).removeBlankSpace().plus(".$extension")
+        val file = directory.resolve(fullFileName)
 
         return try {
-            val decodedBytes = Base64.decode(base64Data, Base64.DEFAULT)
-            file.writeBytes(decodedBytes)
+            file.writeBytes(data)
             file.takeIf { it.exists() }.also {
                 Log.d(
                     javaClass.simpleName,
-                    "decodeAndSaveBase64: File saved at ${file.absolutePath}",
+                    "saveBinaryFile: File saved at ${file.absolutePath}",
                 )
             }
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "decodeAndSaveBase64: Error decoding/saving file", e)
+            Log.e(javaClass.simpleName, "saveBinaryFile: Error saving file", e)
             null
         }
     }

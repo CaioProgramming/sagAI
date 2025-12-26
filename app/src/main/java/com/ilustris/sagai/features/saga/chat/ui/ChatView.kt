@@ -719,6 +719,8 @@ fun ChatContent(
                             typoFix = uiState.typoFixMessage,
                             inputField = uiState.inputValue,
                             sendType = uiState.senderType,
+                            isSendingPending = uiState.isSendingPending,
+                            sendingProgress = uiState.sendingProgress,
                             onSendMessage = { userConfirmed ->
                                 onAction(
                                     ChatUiAction.SendInput(
@@ -1473,7 +1475,6 @@ fun ChatList(
                                                 Modifier
                                                     .animateItem()
                                                     .padding(16.dp)
-                                                    .clip(shape)
                                                     .fillMaxWidth(),
                                             requestReview = {
                                                 onAction(ChatUiAction.ReviewEvent(it))

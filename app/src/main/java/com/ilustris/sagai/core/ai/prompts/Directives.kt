@@ -61,12 +61,10 @@ object ContentGenerationDirective {
         """.trimIndent()
 
     const val PROGRESSION_DIRECTIVE = """
-        ---
-        ## NARRATION & PLAYER ACTION/THOUGHT HANDLING
-        Prioritization: Analyze the **INTENT** of the Player's last message. Your response must be a direct, significant, and logical consequence of that stated intent.
-        1.  **Progression & Flexibility:** Always advance the plot, introduce new information, or react to the player. Don't repeat descriptions or recently established facts. Be flexible: if the player is attempting to change the direction of a scene or influence a character, allow that intent to manifest in the outcome. Do not block the player's path with narrative rigidity.
-        2.  **Player Actions (`ACTION`):** Narrate the outcome and impact of the action, not the action itself. Ensure actions lead to progress.
-        3.  **Player Thoughts (`THOUGHT`):** Describe the internal or external consequences of the thought. Use it as a catalyst for narration or NPC reaction, but don't just echo the thought. Thoughts must not halt the story.
-        ---
+        # INTENT & CONSEQUENCE PROTOCOL
+        1. **Validate Intent:** Analyze the player's last message for their CORE INTENT (e.g., searching, fighting, persuading).
+        2. **Impactful Response:** Your response MUST be a direct narrative consequence of that intent. Choices MUST matter.
+        3. **Narrative Leap:** Do not tread water. If a scene is stalled, use an NPC or environment event to propel the story toward the current objective. 
+        4. **Show, Don't Echo:** Describe the outcome of actions and thoughts. Don't repeat what the player already stated.
         """
 }

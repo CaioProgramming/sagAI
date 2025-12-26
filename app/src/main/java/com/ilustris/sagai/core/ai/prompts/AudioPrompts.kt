@@ -41,6 +41,17 @@ object AudioPrompts {
         )
         appendLine()
 
+        appendLine("## CRITICAL: GENDER AND PERSONALITY MATCHING")
+        appendLine("The 'AVAILABLE VOICES' list includes GENDER and PERSONALITY metadata for each voice.")
+        appendLine(
+            "- You MUST choose a voice that strictly matches the CHARACTER'S GENDER (e.g., if a character is female, you MUST choose a voice labeled 'FEMALE').",
+        )
+        appendLine(
+            "- You MUST choose a voice whose personality description aligns with the character's profile and current emotional state.",
+        )
+        appendLine("- Failure to match gender will result in a poor user experience and is considered a failure of your directive.")
+        appendLine()
+
         appendLine(
             SagaPrompts.mainContext(
                 sagaContent,
@@ -52,21 +63,46 @@ object AudioPrompts {
         appendLine()
 
         if (message.senderType == SenderType.NARRATOR) {
+            appendLine("## NARRATOR CONTEXT")
+            appendLine("This is NARRATOR text - story exposition, scene descriptions, or system messages.")
+            appendLine("Use a clear, professional, neutral narrator voice.")
             appendLine("The audio should have a neutral tone suitable for narration.")
-            appendLine("Select any voice that best matches with the saga tone")
+            appendLine("Select the best narrator voice (usually MALE for authoritative or professional tones, but check saga context).")
         } else {
             if (character != null) {
                 appendLine("## CHARACTER PROFILE")
                 appendLine("You need to embody this CHARACTER when crafting the audio prompt:")
-                appendLine(character.data.toAINormalize(ChatPrompts.characterExclusions))
-                appendLine("The voice should match this character's personality and gender.")
-            } else {
-                appendLine("## NARRATOR CONTEXT")
-                appendLine("This is NARRATOR text - story exposition, scene descriptions, or system messages.")
-                appendLine("Use a clear, professional, neutral narrator voice.")
-                appendLine()
+                appendLine(
+                    character.data.toAINormalize(
+                        listOf(
+                            "id",
+                            "image",
+                            "sagaId",
+                            "joinedAt",
+                            "details",
+                            "emojified",
+                            "hexColor",
+                            "firstSceneId",
+                            "smartZoom",
+                            "voice",
+                        ),
+                    ),
+                )
+                appendLine(
+                    "IDENTIFIED CHARACTER GENDER: ${
+                        character
+                            ?.data
+                            ?.details
+                            ?.physicalTraits
+                            ?.gender ?: "Search description/context for gender (e.g. 'woman', 'man', 'he', 'she')"
+                    }",
+                )
+                appendLine(
+                    "CRITICAL DIRECTIVE: You MUST verify the character's gender from the profile above and choose a matching voice from 'AVAILABLE VOICES'. If the profile currently lists an incorrect voice (e.g., a male voice for a female character), you MUST override it and select the correct one.",
+                )
             }
         }
+        appendLine()
 
         appendLine("## AVAILABLE VOICES")
         appendLine(Voice.getVoiceSelectionGuide())
@@ -99,7 +135,7 @@ object AudioPrompts {
         )
         appendLine()
 
-        appendLine("## 2. SPEECH PROMPT SCRIPTING RULES (For Natural-Sounding Audio)")
+        appendLine("## 2. SPEECH PROMPT SCRIPTING RULES (For Natural-sounding Audio)")
         appendLine(
             "- **Write for the Ear, Not the Eye:** Adapt the text to sound like natural speech. Use contractions (e.g., 'don't', 'it's') where appropriate for the character. Avoid long, complex sentences that are hard to say in one breath.",
         )
@@ -117,7 +153,7 @@ object AudioPrompts {
 
         appendLine("## 3. OUTPUT FORMAT")
         appendLine("Return your response as a JSON object with three fields: `voice`, `prompt`, and `instruction`.")
-        appendLine("- `voice`: The name of the selected voice as a string (e.g., \"ECHO\").")
+        appendLine("- `voice`: The NAME of the selected voice from the list (MUST match the GENDER of the speaker).")
         appendLine("- `prompt`: The clean, speech-only text script you crafted.")
         appendLine("- `instruction`: The detailed performance instruction paragraph you wrote.")
     }

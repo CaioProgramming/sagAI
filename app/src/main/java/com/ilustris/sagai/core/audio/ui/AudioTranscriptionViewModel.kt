@@ -51,22 +51,28 @@ class AudioTranscriptionViewModel
                 state.value = AudioState.PermissionRequired
                 return
             }
-            audioService.transcribeAudio { serviceState ->
-                when (serviceState) {
-                    is TranscriptionState.Error -> {
-                        showError()
-                    }
+            viewModelScope.launch(Dispatchers.IO) {
+                val textPrompt = audioService.generateListeningMessage().getSuccess()
+                viewModelScope.launch(Dispatchers.Main) {
+                    audioService.transcribeAudio(textPrompt) { serviceState ->
+                        when (serviceState) {
+                            is TranscriptionState.Error -> {
+                                serviceState.exception.printStackTrace()
+                                showError()
+                            }
 
-                    TranscriptionState.Listening -> {
-                        generateListeningMessage()
-                    }
+                            TranscriptionState.Listening -> {
+                                state.value = AudioState.Loading(textPrompt)
+                            }
 
-                    is TranscriptionState.Success -> {
-                        endTranscription(serviceState.text)
-                    }
+                            is TranscriptionState.Success -> {
+                                endTranscription(serviceState.text)
+                            }
 
-                    else -> {
-                        doNothing()
+                            else -> {
+                                doNothing()
+                            }
+                        }
                     }
                 }
             }
@@ -74,13 +80,6 @@ class AudioTranscriptionViewModel
 
         private fun endTranscription(text: String) {
             state.value = AudioState.TranscriptionEnded(text)
-        }
-
-        private fun generateListeningMessage() {
-            viewModelScope.launch {
-                state.value = AudioState.Loading()
-                state.value = AudioState.Loading(audioService.generateListeningMessage().getSuccess())
-            }
         }
 
         private fun showError() {
