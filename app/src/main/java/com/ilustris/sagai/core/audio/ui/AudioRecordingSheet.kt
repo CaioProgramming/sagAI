@@ -45,6 +45,7 @@ fun AudioRecordingSheet(
                 StarryLoader(
                     true,
                     it.message,
+                    subtitle = it.partialMessage,
                     brushColors = brush,
                 )
             }

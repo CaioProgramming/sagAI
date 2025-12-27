@@ -29,6 +29,10 @@ sealed class TranscriptionState {
         val text: String,
     ) : TranscriptionState()
 
+    data class PartialResults(
+        val text: String,
+    ) : TranscriptionState()
+
     data class Error(
         val exception: Exception,
     ) : TranscriptionState()
@@ -134,7 +138,16 @@ class AudioService
                             speechRecognizer.destroy()
                         }
 
-                        override fun onPartialResults(partialResults: Bundle?) {}
+                        override fun onPartialResults(partialResults: Bundle?) {
+                            val matches =
+                                partialResults?.getStringArrayList(
+                                    SpeechRecognizer.RESULTS_RECOGNITION,
+                                )
+                            val text = matches?.firstOrNull()
+                            if (!text.isNullOrBlank()) {
+                                onResult(TranscriptionState.PartialResults(text))
+                            }
+                        }
 
                         override fun onEvent(
                             eventType: Int,

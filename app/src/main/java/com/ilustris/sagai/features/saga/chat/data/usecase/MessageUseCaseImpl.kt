@@ -13,7 +13,6 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.core.utils.toFirebaseSchema
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -71,9 +70,11 @@ class MessageUseCaseImpl
         override suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?> =
             executeRequest {
                 gemmaClient.generate<SceneSummary>(
-                    ChatPrompts.sceneSummarizationPrompt(
-                        saga = saga,
-                    ),
+                    prompt =
+                        ChatPrompts.sceneSummarizationPrompt(
+                            saga = saga,
+                        ),
+                    temperatureRandomness = 0.2f,
                 )
             }
 
@@ -142,25 +143,20 @@ class MessageUseCaseImpl
 
                 val genText =
                     textGenClient.generate<Message>(
-                        ChatPrompts.replyMessagePrompt(
-                            saga = saga,
-                            message =
-                                message.message,
-                            directive = saga.getDirective(),
-                            sceneSummary =
-                                sceneSummary?.copy(
-                                    charactersPresent =
-                                        charactersInScene.map {
-                                            it.toAINormalize(
-                                                ChatPrompts.characterExclusions,
-                                            )
-                                        },
-                                ),
-                        ),
-                        customSchema =
-                            toFirebaseSchema(
-                                Message::class.java,
-                                excludeFields = ChatPrompts.messageExclusions,
+                        prompt =
+                            ChatPrompts.replyMessagePrompt(
+                                saga = saga,
+                                message = message.message,
+                                directive = saga.getDirective(),
+                                sceneSummary =
+                                    sceneSummary?.copy(
+                                        charactersPresent =
+                                            charactersInScene.map {
+                                                it.toAINormalize(
+                                                    ChatPrompts.characterExclusions,
+                                                )
+                                            },
+                                    ),
                             ),
                     )
 

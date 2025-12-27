@@ -22,6 +22,7 @@ sealed class AudioState {
 
     data class Loading(
         val message: String? = null,
+        val partialMessage: String? = null,
     ) : AudioState()
 
     data class Error(
@@ -52,7 +53,9 @@ class AudioTranscriptionViewModel
                 return
             }
             viewModelScope.launch(Dispatchers.IO) {
-                val textPrompt = audioService.generateListeningMessage().getSuccess()
+                val textPrompt =
+                    audioService.generateListeningMessage().getSuccess()
+                        ?: stringResourceHelper.getString(R.string.listening)
                 viewModelScope.launch(Dispatchers.Main) {
                     audioService.transcribeAudio(textPrompt) { serviceState ->
                         when (serviceState) {
@@ -63,6 +66,10 @@ class AudioTranscriptionViewModel
 
                             TranscriptionState.Listening -> {
                                 state.value = AudioState.Loading(textPrompt)
+                            }
+
+                            is TranscriptionState.PartialResults -> {
+                                state.value = AudioState.Loading(textPrompt, serviceState.text)
                             }
 
                             is TranscriptionState.Success -> {

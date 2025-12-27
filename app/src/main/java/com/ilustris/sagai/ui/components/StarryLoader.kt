@@ -15,6 +15,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +52,12 @@ fun StarryLoader(
     textStyle: TextStyle =
         MaterialTheme.typography.labelMedium.copy(
             textAlign = TextAlign.Center,
+        ),
+    subtitle: String? = null,
+    subtitleStyle: TextStyle =
+        MaterialTheme.typography.bodySmall.copy(
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = .6f),
         ),
     brushColors: List<Color> = holographicGradient,
     useAsDialog: Boolean = true,
@@ -142,11 +149,20 @@ fun StarryLoader(
                         },
                     ) {
                         it?.let { message ->
-                            Text(
-                                message,
-                                style = textStyle,
-                                modifier = Modifier.alpha(.6f),
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    message,
+                                    style = textStyle,
+                                    modifier = Modifier.alpha(.6f),
+                                )
+                                subtitle?.let {
+                                    Text(
+                                        it,
+                                        style = subtitleStyle,
+                                        modifier = Modifier.padding(top = 8.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -209,10 +225,19 @@ fun StarryLoader(
                     },
                 ) {
                     it?.let { message ->
-                        Text(
-                            message,
-                            style = textStyle,
-                        )
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                message,
+                                style = textStyle,
+                            )
+                            subtitle?.let {
+                                Text(
+                                    it,
+                                    style = subtitleStyle,
+                                    modifier = Modifier.padding(top = 8.dp),
+                                )
+                            }
+                        }
                     }
                 }
             }

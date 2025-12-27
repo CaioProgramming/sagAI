@@ -73,9 +73,10 @@ object ChatPrompts {
         appendLine("\n# NARRATIVE ANCHOR")
         sceneSummary?.let {
             appendLine("## Current Strategic Situation")
-            appendLine(
-                "This is your primary anchor. Use it to ensure your response moves the protagonist closer to their current milestone.",
-            )
+            appendLine("This is your hard-state anchor. You MUST respect the following parameters in your next response:")
+            appendLine("- **Tension & Pacing:** Align your tone with the `tensionLevel` and `narrativePacing` provided.")
+            appendLine("- **World State:** Treat `worldStateChanges` as absolute facts.")
+            appendLine("- **Momentum:** Move the protagonist closer to their `immediateObjective`.")
             appendLine(sceneSummary.toAINormalize())
         }
         appendLine(SagaPrompts.mainContext(saga))
