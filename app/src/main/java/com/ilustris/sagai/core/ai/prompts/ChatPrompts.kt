@@ -109,10 +109,9 @@ object ChatPrompts {
         appendLine(GenrePrompts.conversationDirective(saga.data.genre))
 
         appendLine("\n# CURRENT PLAYER TURN")
+        appendLine("Analyze the player input. If the response is a physical action, MUST use 'senderType': 'ACTION'.")
         appendLine(
-            "Analyze the player input. If tension is high (6+) or pacing is 'Urgent/Climax', the NPC MUST perform a physical action.",
-        )
-        appendLine("Format: *[Action Description]* - [Dialogue].")
+            "CRITICAL: NPCs cannot read 'THOUGHT' messages. If the player sends a THOUGHT, the NPC must react ONLY to the player's SILENCE or appearance, or the AI should use 'senderType': 'NARRATOR'.")
         appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
 
@@ -149,8 +148,7 @@ object ChatPrompts {
             "4. **Context & Momentum**: Base thoughts on mood `${summary.mood}`, current objective `${summary.immediateObjective}`, and active conflict `${summary.currentConflict}`.",
         )
         appendLine(
-            "5. **No Mind Reading**: If the player sent a THOUGHT, characters can only GUESS what happened based on the player's external look.",
-        )
+            "5. **No Mind Reading**: NPCs CANNOT see player THOUGHTS. If the message to react to is a `THOUGHT`, characters must react to the player's SILENCE or external behavior ONLY.")
 
         appendLine("\n### Scene Data")
         appendLine("Characters present: ${summary.charactersPresent.joinToString()}")
