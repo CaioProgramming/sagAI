@@ -120,6 +120,7 @@ class ImagenClientImpl
                     emptyString(),
                     references = references,
                     requireTranslation = false,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -147,6 +148,7 @@ class ImagenClientImpl
                     references = emptyList(),
                     requireTranslation = false,
                     useCore = true,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
             Log.i(TAG, "✏️ Prompt was modified by reviewer: ")
             Log.i(TAG, review.toAINormalize())

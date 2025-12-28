@@ -85,10 +85,10 @@ object ImagePrompts {
             appendLine("Analyze: 1.HEAD 2.FACE 3.TORSO 4.ARMS/HANDS 5.LEGS/FEET 6.DISTINCTIVE MARKS 7.BODY LANGUAGE 8.ENVIRONMENT")
             appendLine()
             appendLine("MANDATORY HIDDEN BY FRAMING (Bullet points of elements GUARANTEED not visible):")
-            appendLine("- ECU: Entire neck, shoulders, and anything below the chin.")
-            appendLine("- CU: Mid-torso and below (waist, hips, lower body).")
-            appendLine("- MCU: Hips and below (all lower body clothing/footwear).")
-            appendLine("- MS: Upper thighs and below (all lower leg clothing, ALL footwear).")
+            appendLine("- ECU: Mid-neck and below (Keep chin, jawline, and top of headgear/accessories).")
+            appendLine("- CU: Lower-chest and below (Keep neck, shoulders, and upper-piece collars/accessories).")
+            appendLine("- MCU: Waist and below (Keep full torso, including jackets or shirts).")
+            appendLine("- MS: Mid-thigh and below (Keep waist and hips).")
             appendLine("- MWS: Ankles and below (ALL footwear).")
             appendLine("- FS/WS/EWS: Fine details (scars, intricate patterns) obscured by scale.")
             appendLine()
@@ -131,18 +131,21 @@ object ImagePrompts {
         appendLine("   - NO technical jargon (f-stops/Kelvin/degrees) - use visual descriptors")
         appendLine()
 
-        appendLine("2. VISIBILITY ENFORCEMENT (Semantic Integrity):")
+        appendLine("2. VISIBILITY ENFORCEMENT & CHARACTER CONTINUITY:")
         visualDirection?.let {
             appendLine("   VISUAL DIRECTION: \"$it\"")
             appendLine("   - Analyze this direction to determine what is VISIBLE vs. HIDDEN.")
             appendLine(
-                "   - ABSOLUTE RULE: The final prompt MUST NOT contain ANY description of elements explicitly marked as HIDDEN or outside the camera's view.",
+                "   - **IDENTITY PRESERVATION:** Do NOT omit core character details like headgear, facial features, or upper-body accessories (necklaces, distinctive collars) unless they are truly outside the frame. These define the character.",
             )
             appendLine(
-                "   - ACTION: If the prompt describes a hidden element (e.g., 'wearing leather boots' when the shot is a Medium Shot), you MUST DELETE that description entirely.",
+                "   - **PORTRAIT FLEXIBILITY:** For CU (Head-Shoulders) or MCU (Head-Chest), ensure subtle outfit details from the chest up are included to ground the character. Do not strip clothing descriptions that characterize the upper-body silhouette.",
             )
             appendLine(
-                "   - EXAMPLE: If VISUAL DIRECTION states 'Legs are hidden', and prompt says 'wearing blue jeans', the phrase 'wearing blue jeans' MUST be removed.",
+                "   - ABSOLUTE RULE: The final prompt MUST NOT contain descriptions of elements explicitly marked as HIDDEN (e.g., footwear in a headshot).",
+            )
+            appendLine(
+                "   - ACTION: If the prompt describes a truly hidden element (e.g., 'wearing leather boots' in a CU), DELETE it. But retain upper-body details that provide context for the character's style.",
             )
             appendLine()
         }

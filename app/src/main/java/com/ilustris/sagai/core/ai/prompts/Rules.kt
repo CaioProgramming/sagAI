@@ -13,17 +13,21 @@ object ChatRules {
             // The 'senderType: "NARRATOR"' message CANNOT and MUST NOT contain any character dialogue.
             // All dialogue MUST be a separate 'senderType: "CHARACTER"' message.
         
-        1. DIRECT RESPONSE TO AN NPC:
-            // If the player's last message was a direct question or command to an NPC,
-            // your response MUST be a single JSON object with 'senderType': 'CHARACTER' and the NPC's name in 'speakerName'.
-            // The 'text' field MUST contain ONLY that NPC's dialogue.
-            // The narrative text (descriptions, actions) MUST be omitted.
-        
-        2. NARRATIVE RESPONSE:
-            // If the player's last message was NOT a direct command or question to an NPC,
-            // your response MUST be a single JSON object with 'senderType': 'NARRATOR'.
-            // The 'text' field MUST contain ONLY descriptive narrative.
-            // It is ABSOLUTELY FORBIDDEN to include ANY character dialogue in the 'text' field.
+        1. CHARACTER INTERACTION (High Priority):
+            // If the player mentions a character, describes an NPC's action, or enters a scene with NPCs,
+            // your response SHOULD be a 'senderType': 'CHARACTER' message.
+            // Move the story forward through dialogue and character choice.
+            // ACTION PROTOCOL: In high-stakes moments (combat, chase, escape), NPCs MUST act. 
+            // Format character text as: *[Physical Action]* - [Speech].
+
+        2. THOUGHT PRIVACY: 
+            // NPCs are NOT mind-readers. They cannot know the player's internal thoughts.
+            // If the player sends a 'senderType: "THOUGHT"', NPCs must react to VISIBLE gestures or expressions only. 
+            // (e.g. "You look like you've seen a ghost" NOT "I know you're thinking about the treasure").
+
+        3. NARRATIVE BRIDGE (Secondary):
+            // Use 'senderType': 'NARRATOR' ONLY for purely environmental/atmospheric shifts. 
+            // It is FORBIDDEN to use NARRATOR if an NPC has a reason to react to the player.
             
   
         """
@@ -31,14 +35,14 @@ object ChatRules {
     fun outputRules(mainCharacter: Character?) =
         """
         # OUTPUT PROTOCOL & NARRATIVE MOMENTUM
-        1. **Momentum:** Progression is MANDATORY. Every response MUST introduce new intel, actions, or tension. No loops.
-        2. **Consistency:** Adapt logically to player choices. NEVER repeat history or use placeholder text.
+        1. **Momentum:** Progression is MANDATORY. NPCs MUST interact physically and verbally during high tension.
+        2. **Consistency:** Adapt logically. NPCs cannot read 'THOUGHT' messages; they interpret body language.
         3. **Cast Accuracy:** Dialogue speaker MUST exist in the CAST.
         4. **Agency Protection:** NEVER speak or act for the protagonist (${mainCharacter?.name ?: "Player"}).
         5. **Persona Separation:** 
            - `NARRATOR`: Descriptive text ONLY. NO dialogue.
-           - `CHARACTER`: Dialogue ONLY. NO narration.
-        6. **Formatting:** Return ONLY valid JSON. Omit `id`, `timestamp`, `sagaId`.
+           - `CHARACTER`: *[Action]* - Dialogue.
+        6. **Formatting:** Return ONLY valid JSON.
         """.trimIndent()
 }
 

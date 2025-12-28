@@ -646,7 +646,7 @@ class ChatViewModel
                     messageContent.character == null &&
                         messageContent.message.senderType == SenderType.CHARACTER &&
                         messageContent.message.speakerName != null &&
-                        content.findCharacter(messageContent.message.speakerName) == null
+                        content.findCharacter(messageContent.message.speakerName) != null
                 }
 
             updatableMessages.forEach { message ->
@@ -655,7 +655,6 @@ class ChatViewModel
                     messageUseCase.updateMessage(
                         message.message.copy(
                             characterId = it.data.id,
-                            speakerName = it.data.name,
                         ),
                     )
                 }
@@ -881,7 +880,7 @@ class ChatViewModel
                         saga,
                         message.copy(
                             characterId = characterId,
-                            speakerName = speaker,
+                            speakerName = speaker ?: message.speakerName,
                             sagaId = saga.data.id,
                         ),
                         isFromUser,
@@ -1024,6 +1023,7 @@ class ChatViewModel
                                     status = MessageStatus.OK,
                                     audible = isAudio,
                                     speakerName = speakerName,
+                                    characterId = null,
                                 ),
                             isFromUser = false,
                             sceneSummary = sceneSummary,
@@ -1062,14 +1062,17 @@ class ChatViewModel
 
         fun createCharacter(contextDescription: String) {
             viewModelScope.launch(Dispatchers.IO) {
+                updateLoading(true)
                 sagaContentManager
                     .generateCharacter(
                         contextDescription,
                     ).onSuccessAsync {
+                        updateLoading(false)
                         stateManager.updateState { s -> s.copy(newCharacterReveal = it.id) }
                         delay(5.seconds)
                         dismissNewCharacterReveal()
                     }.onFailureAsync {
+                        updateLoading(false)
                         updateSnackBar(
                             snackBar(
                                 message = "Ocorreu um erro ao criar o personagem",

@@ -737,7 +737,9 @@ class SagaContentManagerImpl
                                     saga.flatChapters().find { it.data.id == chapter.id }!!.copy(
                                         data = chapter,
                                     )
-                                chapterUseCase.generateChapterCover(chapterContent, saga)
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    chapterUseCase.generateChapterCover(chapterContent, saga)
+                                }
                                 chapterUseCase.reviewChapter(saga, chapterContent)
                                 endChapter(saga.currentActInfo)
                             }

@@ -29,17 +29,18 @@ object GenrePrompts {
                     appendLine("- Light sources appear to glow from within the composition (divine/ethereal radiance)")
                     appendLine("- Soft golden-hour ambiance with warm atmospheric perspective")
                     appendLine("- Color harmony through glazing: warm reds/golds layered over cool earth tones for depth")
-                    appendLine("- Figures rendered with idealized proportions and serene expressions")
+                    appendLine(
+                        "- Figures rendered with the noble grace and refined presence characteristic of classical painting, applied to a diverse range of characters.")
                     appendLine("- Brushwork: VISIBLE but CONTROLLED - not loose, not hyper-detailed digital")
                     appendLine()
                     appendLine(
                         "**CLASSICAL ANATOMY & FIGURE RENDERING (CRITICAL):**",
                     )
                     appendLine(
-                        "- Anatomical proportions: Classical contrapposto stance, graceful S-curves, balanced weight distribution inherited from Greek/Roman sculpture",
+                        "- Anatomical proportions: Balanced weight distribution and purposeful gestures inherited from classical masters, accommodating diverse body types (stout, lanky, regal, powerful).",
                     )
                     appendLine(
-                        "- Idealized beauty: Elongated necks, small chins, refined facial features, almond-shaped eyes characteristic of High Renaissance ideals",
+                        "- Refined features: High Renaissance-inspired treatment of facial structure (refined features, almond-shaped eyes) applied across all ethnicities (e.g., Black, Asian, Indigenous, etc.) to create unique 'Classical Deities'.",
                     )
                     appendLine(
                         "- Musculature: Subtle muscle definition suggested through warm/cool tones and light play - NOT exaggerated or hyperrealistic",
@@ -365,7 +366,7 @@ object GenrePrompts {
                     )
                     appendLine()
                     appendLine(
-                        "Figure & Facial Treatment: FLAWLESS PERFECTION. Skin must be rendered with hyper-realistic subsurface scattering—absolutely no imperfections. Faces should look like \"Modern Deities\": serene, symmetrical, and breathtaking.",
+                        "Figure & Facial Treatment: DIVINE SOPHISTICATION. Skin must be rendered with hyper-realistic subsurface scattering. Features should reflect the diversity of a global elite (e.g., striking Black models, elegant East Asian socialites, or distinguished Hispanic moguls), all looking like \"Modern Deities\": serene, symmetrical, and breathtaking in their unique beauty.",
                     )
                     appendLine(
                         "Rendering: THE \"PERFECT PICTURE\" ILLUSION. At first glance, it appears to be a stunning high-resolution photograph. On closer inspection, it is a masterpiece painting with incredibly fine, deliberate details. Sharp focus on the subject, dreamy/soft background.",
@@ -461,7 +462,7 @@ object GenrePrompts {
                     )
                     appendLine()
                     appendLine(
-                        "Figure Style: IDEALIZED 50s COMMERCIAL ILLUSTRATION. Expressive, cheerful, and confident \"Pin-up\" or \"Action Hero\" archetypes.",
+                        "Figure Style: RADIANT 50s COMMERCIAL ILLUSTRATION. Expressive, cheerful, and confident archetypes across all ethnicities and body types (e.g., retro-futuristic Black heroines, stout space captains, or lanky cosmic explorers, all rendered with 50s charm).",
                     )
                     appendLine(
                         "Line Work: Soft expressive painting style (like Gil Elvgren or Norman Rockwell). Smooth blending, soft edges.",
@@ -1470,7 +1471,7 @@ object GenrePrompts {
                     appendLine("- Art style: '1950s Atomic Age illustration', 'gouache/oil', 'painterly finish'")
                     appendLine("- Environment: 'vast cosmic environments', 'swirling nebulae', 'star fields', 'cosmic phenomena'")
                     appendLine("- Technology (if present): 'streamlined starships', 'sophisticated engines', 'advanced design'")
-                    appendLine("- Figures: 'idealized 50s illustration', 'pin-up or action hero archetypes'")
+                    appendLine("- Figures: 'radiant 50s illustration', 'diverse archetypes (pin-up/action hero) across all ethnicities'")
                     appendLine()
                     appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
                     appendLine("- Mandatory Accent: CHERRY RED / ROCKET ORANGE")
@@ -1503,7 +1504,7 @@ object GenrePrompts {
                         "- If missing or weak red/orange accent → INTEGRATE: cherry red engines, rocket orange thrust, vivid red energy beams, orange stellar glow on spacecraft/tech",
                     )
                     appendLine(
-                        "- If figures lack 50s illustration style → EMPHASIZE: idealized proportions, pin-up or action hero archetypes, soft expressive painting style",
+                        "- If figures lack 50s illustration style → EMPHASIZE: radiant proportions across diverse body types, pin-up or action hero archetypes of all ethnicities, soft expressive painting style",
                     )
                 }
             }
@@ -1574,7 +1575,7 @@ object GenrePrompts {
                         "  * Head: 1/7 to 1/8 of total body height (not modern photorealistic 1/9)",
                     )
                     appendLine(
-                        "  * Facial features: Refined and idealized, NOT photorealistic; almond-shaped eyes, small chin, high cheekbones, contemplative expression",
+                        "  * Facial features: Refined and noble, NOT photorealistic; High Renaissance-inspired treatment applied to diverse facial structures (almond-shaped eyes, contemplative expression) across all ethnicities",
                     )
                     appendLine(
                         "  * Stance: Contrapposto or S-curve elegance, graceful weight distribution, balanced asymmetry",
@@ -1589,7 +1590,7 @@ object GenrePrompts {
                         "  * Limbs: Graceful proportions with refined joints; avoid awkward or stiff positioning",
                     )
                     appendLine(
-                        "- If prompt describes: photorealistic anatomy, detailed musculature, hyperrealism → CRITICAL VIOLATION: Replace with 'idealized classical proportions, soft anatomical suggestion'",
+                        "- If prompt describes: photorealistic anatomy, detailed musculature, hyperrealism → CRITICAL VIOLATION: Replace with 'noble classical proportions across diverse body types, soft anatomical suggestion'",
                     )
                     appendLine(
                         "- If prompt describes: comic/anime anatomy, exaggerated features → CRITICAL VIOLATION: Replace with 'High Renaissance academic figure painting'",
@@ -1690,7 +1691,7 @@ object GenrePrompts {
                         "- If contains: modern anime, digital aesthetics, hard edges, concept art rendering → REPLACE with: oil painting glazing, soft sfumato transitions, classical style",
                     )
                     appendLine(
-                        "- If contains: hyperrealistic anatomy, photorealistic skin, detailed musculature → CRITICAL FIX: Replace with 'idealized classical proportions', 'soft anatomical suggestion through light', 'ethereal luminous flesh tones'",
+                        "- If contains: hyperrealistic anatomy, photorealistic skin, detailed musculature → CRITICAL FIX: Replace with 'noble classical proportions across diverse body types', 'soft anatomical suggestion through light', 'ethereal luminous skin tones across all ethnicities'",
                     )
                     appendLine(
                         "- If contains: exaggerated muscles, comic book anatomy, superhero proportions → CRITICAL FIX: Replace with 'contrapposto elegance', 'High Renaissance academic proportions', 'graceful classical figure painting'",
@@ -1705,7 +1706,7 @@ object GenrePrompts {
                         "- If figure anatomy appears stiff or awkward → IMPROVE: 'graceful contrapposto stance', 'balanced weight distribution', 'flowing gesture suggesting movement', 'classical S-curve elegance'",
                     )
                     appendLine(
-                        "- If facial features too realistic/photographic → SOFTEN: 'refined idealized features', 'almond-shaped eyes', 'serene contemplative expression', 'delicate porcelain-like quality'",
+                        "- If facial features too realistic/photographic → SOFTEN: 'refined noble features', 'contemplative expression', 'delicate quality across diverse facial types'",
                     )
                     appendLine(
                         "- If contains: tech elements, cybernetic, mechanical, modern elements → REMOVE entirely, replace with classical/mystical medieval elements",

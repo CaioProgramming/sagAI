@@ -70,6 +70,7 @@ class ChapterUseCaseImpl
                             ),
                         requireTranslation = true,
                         useCore = true,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
             val genChapterCharacters =
@@ -252,6 +253,7 @@ class ChapterUseCaseImpl
                         coverPrompt,
                         references = charactersIcons,
                         requireTranslation = false,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
                 // Review the generated description before image generation
@@ -312,6 +314,7 @@ class ChapterUseCaseImpl
                         prompt,
                         requireTranslation = true,
                         useCore = true,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
                 val updated = chapter.copy(introduction = intro)
                 chapterRepository.updateChapter(updated)

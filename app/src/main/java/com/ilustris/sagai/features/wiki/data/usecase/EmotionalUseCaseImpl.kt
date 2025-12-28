@@ -21,6 +21,7 @@ class EmotionalUseCaseImpl
                 gemmaClient
                     .generate<String>(
                         prompt = prompt,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )!!
             }
 
@@ -32,6 +33,7 @@ class EmotionalUseCaseImpl
                 if (emotionalSummary.isEmpty()) error("No summary provided can't generate profile.")
                 gemmaClient.generate<String>(
                     prompt = EmotionalPrompt.generateEmotionalProfile(emotionalSummary),
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -39,6 +41,7 @@ class EmotionalUseCaseImpl
             executeRequest {
                 gemmaClient.generate<String>(
                     prompt = EmotionalPrompt.generateEmotionalConclusion(sagaContent),
-            )!!
-        }
+                    requirement = GemmaClient.ModelRequirement.HIGH,
+                )!!
+            }
     }

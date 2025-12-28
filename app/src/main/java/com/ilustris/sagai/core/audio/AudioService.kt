@@ -170,6 +170,10 @@ class AudioService
         suspend fun generateListeningMessage() =
             executeRequest {
                 val prompt = AudioPrompts.transcribeInstruction()
-                gemmaClient.generate<String>(prompt, temperatureRandomness = .1f)!!
+                gemmaClient.generate<String>(
+                    prompt,
+                    temperatureRandomness = .1f,
+                    requirement = GemmaClient.ModelRequirement.LOW,
+                )!!
             }
     }

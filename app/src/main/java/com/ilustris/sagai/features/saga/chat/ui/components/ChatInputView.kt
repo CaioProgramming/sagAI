@@ -586,7 +586,6 @@ fun ChatInputView(
                         it?.let { character ->
                             CharacterAvatar(
                                 character.data,
-                                useFallback = true,
                                 genre = content.data.genre,
                                 grainRadius = 0f,
                                 pixelation = 0f,

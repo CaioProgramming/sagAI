@@ -64,6 +64,7 @@ class MessageUseCaseImpl
                 gemmaClient.generate<TypoFix>(
                     ChatPrompts.checkForTypo(genre, message, lastMessage),
                     requireTranslation = true,
+                    requirement = GemmaClient.ModelRequirement.LOW,
                 )!!
             }
 
@@ -75,6 +76,7 @@ class MessageUseCaseImpl
                             saga = saga,
                         ),
                     temperatureRandomness = 0.2f,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )
             }
 
@@ -91,8 +93,11 @@ class MessageUseCaseImpl
                     val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
                     val raw =
                         gemmaClient
-                            .generate<String>(prompt, requireTranslation = false)
-                            ?.trim()
+                            .generate<String>(
+                                prompt,
+                                requireTranslation = false,
+                                requirement = GemmaClient.ModelRequirement.LOW,
+                            )?.trim()
                             ?.uppercase()
                     EmotionalTone.getTone(raw)
                 } else {
@@ -142,7 +147,7 @@ class MessageUseCaseImpl
                     } ?: emptyList()
 
                 val genText =
-                    textGenClient.generate<Message>(
+                    gemmaClient.generate<Message>(
                         prompt =
                             ChatPrompts.replyMessagePrompt(
                                 saga = saga,
@@ -158,6 +163,7 @@ class MessageUseCaseImpl
                                             },
                                     ),
                             ),
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )
 
                 genText!!
@@ -196,12 +202,16 @@ class MessageUseCaseImpl
                     messageToReact = message,
                 )
 
-            val reaction = gemmaClient.generate<ReactionGen>(prompt)!!
+            val reaction =
+                gemmaClient.generate<ReactionGen>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                )!!
             Log.d(
                 javaClass.simpleName,
                 "generateReaction: ${reaction.reactions.size} reactions generated.",
             )
-            reaction.reactions.forEach { reaction ->
+            reaction.reactions.distinctBy { it.character }.forEach { reaction ->
                 val reactingCharacter = saga.findCharacter(reaction.character)
                 if (reactingCharacter != null) {
                     if (reactingCharacter.data.id != message.characterId) {
@@ -259,6 +269,7 @@ class MessageUseCaseImpl
                             character = characterReference,
                         ),
                         requireTranslation = false,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )!!
 
                 val finalConfig =

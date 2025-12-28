@@ -70,14 +70,12 @@ object ChatPrompts {
         appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
         appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trim())
 
-        appendLine("\n# NARRATIVE ANCHOR")
+        appendLine("\n# SCENE STATE")
         sceneSummary?.let {
-            appendLine("## Current Strategic Situation")
-            appendLine("This is your hard-state anchor. You MUST respect the following parameters in your next response:")
-            appendLine("- **Tension & Pacing:** Align your tone with the `tensionLevel` and `narrativePacing` provided.")
-            appendLine("- **World State:** Treat `worldStateChanges` as absolute facts.")
-            appendLine("- **Momentum:** Move the protagonist closer to their `immediateObjective`.")
-            appendLine(sceneSummary.toAINormalize())
+            appendLine("The current mood is `${it.mood}` with a `${it.narrativePacing}` pace.")
+            appendLine("Immediate goal: ${it.immediateObjective}")
+            appendLine("Active conflict: ${it.currentConflict}")
+            appendLine("World changes: ${it.worldStateChanges?.joinToString()}")
         }
         appendLine(SagaPrompts.mainContext(saga))
 
@@ -100,6 +98,9 @@ object ChatPrompts {
         appendLine(
             "3. **Conflict & Growth:** Prioritize action during combat. NPCs are flexible—they can be swayed, persuaded, or changed if it serves the narrative.",
         )
+        appendLine(
+            "4. **Character Hijack:** If the player describes an NPC's arrival, action, or presence, that NPC MUST respond or act immediately via a `CHARACTER` message. Do not use `NARRATOR` to confirm what the player just said; use the character to LIVE it.",
+        )
 
         appendLine("\n## Style & Pacing")
         appendLine(SagaDirective.namingDirective(saga.data.genre))
@@ -108,7 +109,10 @@ object ChatPrompts {
         appendLine(GenrePrompts.conversationDirective(saga.data.genre))
 
         appendLine("\n# CURRENT PLAYER TURN")
-        appendLine("Analyze the message below for intent and respond with a narrative bridge to the next beat.")
+        appendLine(
+            "Analyze the player input. If tension is high (6+) or pacing is 'Urgent/Climax', the NPC MUST perform a physical action.",
+        )
+        appendLine("Format: *[Action Description]* - [Dialogue].")
         appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
 
@@ -118,19 +122,10 @@ object ChatPrompts {
         message: String,
         lastMessage: String?,
     ) = buildString {
-        appendLine("You are an assistant who only suggests corrections when truly necessary.")
-        appendLine("If you spot an error that affects understanding, suggest a better version in a friendly, casual tone.")
-        appendLine("Your response must be a JSON: ")
+        appendLine("You are a typo fixer. Output a JSON correction only if necessary.")
         appendLine(toJsonMap(TypoFix::class.java))
         appendLine("Saga theme: ${genre.name}")
-        appendLine(
-            "friendlyMessage should always be short and friendly.",
-        )
-        appendLine("If there is no error, status should be OK and the other fields null.")
-        appendLine("If there is an error, status should be FIX and suggest the corrected text.")
-        appendLine("If the message could be improved but is not wrong, status should be ENHANCEMENT and suggest a clearer version.")
-        appendLine("Use the conversation style to provide a natural enhancement that fits the story theme.")
-        appendLine(GenrePrompts.conversationDirective(genre))
+        appendLine("If OK, status: OK. If error, status: FIX. If betterment, status: ENHANCEMENT.")
         appendLine("Message:")
         appendLine(">>> $message")
         if (!lastMessage.isNullOrBlank()) {
@@ -145,36 +140,23 @@ object ChatPrompts {
         messageToReact: Message,
         relationships: List<RelationshipContent>,
     ) = buildString {
-        appendLine("You are an AI assistant that generates character reactions for an interactive story.")
-        appendLine("Your task is to generate a relatable reaction to a player's message, including an emoji and a brief internal thought.")
-
-        appendLine(SagaPrompts.mainContext(saga))
-
-        appendLine("## Scene Summary")
-        appendLine("This is the current situation:")
-        appendLine(summary.toAINormalize())
-
-        appendLine("Relationships between the player and characters currently in the scene:")
-
+        appendLine("You generate character reactions for a chat app.")
+        appendLine("### Rules")
+        appendLine("1. **Exactly One Reaction**: Generate exactly ONE reaction per character listed in the scene.")
+        appendLine("2. **Output Content**: Each must have a single `reaction` (emoji) and a `thought` (max 12 words).")
+        appendLine("3. **Language**: The `thought` MUST be in the user's preferred language.")
         appendLine(
-            relationships.joinToString(";\n") {
-                it.summarizeRelation()
-            },
+            "4. **Context & Momentum**: Base thoughts on mood `${summary.mood}`, current objective `${summary.immediateObjective}`, and active conflict `${summary.currentConflict}`.",
+        )
+        appendLine(
+            "5. **No Mind Reading**: If the player sent a THOUGHT, characters can only GUESS what happened based on the player's external look.",
         )
 
-        appendLine("\n## Instructions")
-        appendLine("1.  **Analyze the Message:** Read the player's last message below and understand its emotional and narrative impact.")
-        appendLine("    - Player's Message: '$messageToReact'")
-        appendLine(
-            "2.  **Generate Reactions:** For each character present in the scene summary (`summary.charactersPresent`), create a reaction.",
-        )
-        appendLine("    - **CRITICAL RULE:** Only generate reactions for characters listed in `summary.charactersPresent`.")
-        appendLine("3.  **Reaction Content:** Each reaction must include:")
-        appendLine("    - `reaction`: A single emoji that represents the character's immediate feeling.")
-        appendLine("    - `thought`: A short, internal thought (max 12 words). This is a private feeling, NOT spoken dialogue.")
-        appendLine(
-            "4.  **Context is Key:** Base reactions on each character's personality, their relationship with the player, and the current scene context.",
-        )
+        appendLine("\n### Scene Data")
+        appendLine("Characters present: ${summary.charactersPresent.joinToString()}")
+        appendLine("Player message: '${messageToReact.text}'")
+        appendLine("Relationships:")
+        appendLine(relationships.joinToString("; ") { it.summarizeRelation() })
     }.trimIndent()
 
     fun sceneSummarizationPrompt(saga: SagaContent) =
@@ -245,10 +227,10 @@ object ChatPrompts {
             appendLine("9. **narrativePacing**: Speed of the story (Steady, Atmospheric, Urgent, Climax).")
             appendLine("10. **worldStateChanges**: List of tangible environmental changes (e.g., 'Front door kicked in').")
 
-            appendLine("\n# EXTRACTION RULES")
-            appendLine("1. **No Fabrication:** ONLY use data explicitly stated in 'CONTEXTUAL DATA'. Use null for unknowns.")
-            appendLine("2. **Technical Tone:** Avoid poetic fluff. Use concise, actionable data.")
-            appendLine("3. **JSON Output:** Return ONLY a valid JSON object matching the parameters above.")
+            appendLine("\n# RULES")
+            appendLine("1. Extract 10 narrative parameters precisely.")
+            appendLine("2. Technical/clinical tone only. Use null for unknowns.")
+            appendLine("3. Output valid JSON mapping.")
             appendLine(toJsonMap(SceneSummary::class.java))
         }.trimIndent()
 
@@ -312,10 +294,11 @@ object ChatPrompts {
     private fun conversationStyleAndPacing() =
         """
         ---
-        ## RESPONSE STYLE & PACING
-        1.  **Pacing & Detail:** Be clear and concise. Prioritize details that advance the plot or enhance immersion. Use varied sentence structure and show, don't tell. Avoid redundancy.
-        2.  **Dialogue (NPCs):** Dialogue must be purposeful, concise, and relevant. Even enigmatic dialogue should offer a path forward. Ensure natural flow and varied tone.
-        3.  **Readability:** Use paragraph breaks for clarity. Prioritize clear communication over obscurity.
+        ## MOBILE CHAT COHERENCE & BREVITY
+        1. **Punchy Delivery:** This is a mobile chat app. Keep messages short and impactful. 
+        2. **The Rule of Three:** Aim for 1-3 sentences per message. Avoid "walls of text" that overwhelm the player.
+        3. **Conversational Flow:** Dialogue should feel natural and immediate. Narrative descriptions should be vivid but concise—focus on one strong sensory detail rather than a long list.
+        4. **NPC Engagement:** NPCs should speak like real people in a chat—no long-winded monologues unless the character is specifically designed to be loquacious.
         ---
         """.trimIndent()
 

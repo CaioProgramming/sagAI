@@ -8,13 +8,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 
 object AudioPrompts {
-    fun transcribeInstruction() =
-        buildString {
-            appendLine("Generate a message about listening to the user's input. You can be playful about it.")
-            appendLine(
-                "Example: 'I'm all ears! Well, metaphorically speaking.' or 'Listening closely... or at least pretending to.'",
-            )
-        }
+    fun transcribeInstruction() = "Generate a short, playful message about listening to the user. Example: 'I'm all ears!'"
 
     /**
      * Unified prompt for voice selection and audio prompt generation.

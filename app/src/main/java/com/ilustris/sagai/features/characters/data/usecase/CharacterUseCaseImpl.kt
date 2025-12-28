@@ -21,8 +21,8 @@ import com.ilustris.sagai.core.file.ImageCropHelper
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
 import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
@@ -41,8 +41,10 @@ import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.theme.utils.getRandomColorHex
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Calendar
 import javax.inject.Inject
@@ -114,9 +116,9 @@ class CharacterUseCaseImpl
                     SagaPrompts.iconDescription(
                         saga.genre,
                         mapOf(
-                            "saga" to saga.toJsonFormatExcludingFields(ChatPrompts.sagaExclusions),
+                            "saga" to saga.toAINormalize(ChatPrompts.sagaExclusions),
                             "character" to
-                                character.toJsonFormatExcludingFields(
+                                character.toAINormalize(
                                     listOf(
                                         "id",
                                         "image",
@@ -136,6 +138,7 @@ class CharacterUseCaseImpl
                         descriptionPrompt,
                         references = references,
                         requireTranslation = false,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
                 // NEW: Review the generated description before image generation
@@ -206,6 +209,7 @@ class CharacterUseCaseImpl
                                 "joinedAt",
                                 "sagaId",
                             ),
+                        requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
                 val character =
@@ -216,6 +220,7 @@ class CharacterUseCaseImpl
                 val characterTransaction =
                     insertCharacter(
                         newCharacter.copy(
+                            id = 0,
                             sagaId = sagaContent.data.id,
                             firstSceneId = sagaContent.getCurrentTimeLine()?.data?.id,
                             joinedAt = System.currentTimeMillis(),
@@ -224,7 +229,7 @@ class CharacterUseCaseImpl
                             smartZoom = null,
                         ),
                     )
-                withContext(Dispatchers.IO) {
+                CoroutineScope(Dispatchers.IO).launch {
                     generateCharacterImage(
                         characterTransaction,
                         sagaContent.data,
@@ -240,7 +245,11 @@ class CharacterUseCaseImpl
             executeRequest {
                 val prompt = CharacterPrompts.characterLoreGeneration(timeline, saga.getCharacters())
                 val request =
-                    gemmaClient.generate<List<CharacterUpdate>>(prompt, describeOutput = false)!!
+                    gemmaClient.generate<List<CharacterUpdate>>(
+                        prompt,
+                        describeOutput = false,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
+                    )!!
 
                 val updatedCharacters =
                     request
@@ -297,6 +306,7 @@ class CharacterUseCaseImpl
                     val suggestions =
                         gemmaClient.generate<List<NicknameSuggestion>>(
                             prompt,
+                            requirement = GemmaClient.ModelRequirement.MEDIUM,
                         )!!
 
                     if (suggestions.isEmpty()) {

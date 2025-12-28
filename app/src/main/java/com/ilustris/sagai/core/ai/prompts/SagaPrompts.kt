@@ -149,19 +149,23 @@ object SagaPrompts {
         appendLine("**CHARACTER CONTEXT & TRAIT PRESERVATION (MANDATORY):**")
         appendLine("$context")
         appendLine()
-        appendLine("TRAIT PRESERVATION RULES:")
-        appendLine("- CRITICAL (ALWAYS VISIBLE): Race/Ethnicity, Skin tone, Hair (texture/style/color), Facial structure")
-        appendLine("- IMPORTANT (MUST BE VISIBLE AT THIS FRAMING): Body type, Age indicators, Primary clothing/outfit")
-        appendLine("- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks")
+        appendLine("TRAIT PRESERVATION RULES (NO NORMALIZATION ALLOWED):")
+        appendLine(
+            "- CRITICAL (ALWAYS VISIBLE): Specific Race/Ethnicity (do NOT normalize to generic standards), Exact Skin Tone (deeply pigmentated, vitiligo, freckled, etc.), Hair Texture/Style (coils, braids, mohawks, unique colors), Facial Structure",
+        )
+        appendLine(
+            "- IMPORTANT (MUST BE VISIBLE AT THIS FRAMING): Body type (stout, lanky, curvy, weathered), Age indicators, Primary clothing/outfit",
+        )
+        appendLine(
+            "- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks, physical build details")
         appendLine("- SECONDARY (CAN BE IMPLIED IF FRAMING CUTS THEM): Hands/fingers, lower body details (if not critical to character)")
         appendLine()
         appendLine("CONCRETE EXAMPLE:")
         appendLine(
-            "- GOOD: 'A dark-skinned warrior with close-cropped fade haircut and a visible scar on their left cheekbone, shown in close-up facing forward'",
+            "- GOOD: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in close-up with a warm, shrewd smile'",
         )
-        appendLine("- BAD: 'A warrior with a warrior look' or 'A dark character with styled hair'")
+        appendLine("- BAD: 'A woman with a merchant look' or 'A dark character with styled hair'")
         appendLine()
-
         appendLine("**DIRECTIVES FOR FINAL PROMPT GENERATION (STRICTLY ENFORCED):**")
         appendLine(
             "1. **ABSOLUTE ART STYLE COMPLIANCE:** Adhere to the techniques, color palettes, and forbidden elements from the **ART STYLE** section. Cross-reference every descriptor against these rules. No exceptions.",

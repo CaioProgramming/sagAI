@@ -42,6 +42,7 @@ class WikiUseCaseImpl
                             event = event,
                         ),
                     describeOutput = false,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
         }
 
@@ -56,7 +57,11 @@ class WikiUseCaseImpl
                     )
 
                 val mergedWikis =
-                    gemmaClient.generate<List<MergeWiki>>(prompt = prompt, describeOutput = false)!!
+                    gemmaClient.generate<List<MergeWiki>>(
+                        prompt = prompt,
+                        describeOutput = false,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
+                    )!!
 
                 val validItems =
                     mergedWikis.filter { mergedItem ->

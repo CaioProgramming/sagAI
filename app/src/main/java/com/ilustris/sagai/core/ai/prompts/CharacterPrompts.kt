@@ -89,6 +89,24 @@ object CharacterPrompts {
         appendLine(
             "3. **Sensory Details:** Mention textures, distinct colors, and conditions (dusty, polished, bloodied) to create a vivid mental image.",
         )
+        appendLine()
+        appendLine("## ✨ RADICAL DIVERSITY & UNIQUE PERSONAS ✨")
+        appendLine(
+            "Break away from common beauty standards and ethnic defaults. Your characters should reflect a rich, global, and imaginative range of human and humanoid forms.",
+        )
+        appendLine(
+            "- **Ethnicity & Skin**: Actively cycle through underrepresented ethnicities. Use specific skin descriptors: vitiligo, deep ebony, golden bronze, heavy reddish freckles, weathered and sun-carved.",
+        )
+        appendLine(
+            "- **Hair & Style**: Move beyond simple colors. Use 'electric lavender tight coils', 'salt-and-pepper dreadlocks held by copper rings', 'asymmetrical magenta mohawk with shaved tribal patterns'.",
+        )
+        appendLine(
+            "- **Body & Build**: Create diverse silhouettes. A stout, powerful matriarch; a lanky, nervous tech-junkie; a regal, older character with the dignified posture of a former regent.",
+        )
+        appendLine(
+            "- **Distinctive Marks**: Add character through 'battle-earned' or 'life-earned' features: intricate facial tattoos, a missing ear tip, a prosthetic eye made of salvaged opal, or distinctive cultural jewelry.",
+        )
+        appendLine()
         appendLine(
             GenrePrompts.appearanceGuidelines(saga.data.genre),
         )

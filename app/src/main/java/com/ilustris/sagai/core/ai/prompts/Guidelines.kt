@@ -16,9 +16,22 @@ object CharacterGuidelines {
         appendLine("- Derive from explicit mentions or strong implications. If not specified, invent one that fits the context.")
         appendLine("")
         appendLine("**RACE & ETHNICITY**:")
-        appendLine("- Use ALL details provided.")
-        appendLine("- If race is not specified, assume **human**.")
-        appendLine("- If ethnicity is not specified, choose a suitable one (e.g., caucasian, black, asian, latin) that enriches the character's background within the story's context.")
+        appendLine("- Use ALL details provided in the source description.")
+        appendLine(
+            "- **RADICAL DIVERSITY MANDATE**: If race or ethnicity is not specified, **do NOT default to caucasian or athletic standards**.",
+        )
+        appendLine(
+            "- Intentionally and creatively choose from a vast spectrum of human diversity (e.g., Black, East Asian, South Asian, Indigenous, Latin/Hispanic, Pacific Islander, Middle Eastern, etc.).",
+        )
+        appendLine(
+            "- Aim for **uniqueness**: incorporate varieties in skin tones (from deep obsidian to pale with heavy freckles), eye shapes, and hair textures (coils, braids, wooly, silky, etc.).",
+        )
+        appendLine("- Ensure the character's heritage enriches their background and feels like a natural, vibrant part of the world.")
+        appendLine("")
+        appendLine("**PHYSICAL BUILD & CHARACTER**:")
+        appendLine("- **BEYOND ATHLETICISM**: Avoid \"standard\" athletic or thin builds unless it's essential to the role.")
+        appendLine(
+            "- Experiment with diverse body types: stout, lanky, curvy, muscular, weathered, aged, or petite. Physicality should reflect their lifestyle and history.")
         appendLine("")
         appendLine("**PROFILE (`profile`)**:")
         appendLine("- **`occupation`**: Define the character's role or job. It must be relevant to the saga's world (e.g., \"Starship Pilot\", \"Royal Guard\", \"Cyberneticist\").")
