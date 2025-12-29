@@ -502,7 +502,11 @@ fun Any?.toAINormalize(fieldsToExclude: List<String> = emptyList()): String {
                     }
 
                     is String -> {
-                        value
+                        if (value.length > 500) {
+                            "${value.take(497)}..."
+                        } else {
+                            value
+                        }
                     }
 
                     is Enum<*> -> {

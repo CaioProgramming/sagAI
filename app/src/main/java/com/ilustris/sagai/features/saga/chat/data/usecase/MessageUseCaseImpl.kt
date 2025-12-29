@@ -12,7 +12,6 @@ import com.ilustris.sagai.core.ai.prompts.EmotionalPrompt
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
-import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -20,6 +19,7 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
@@ -141,32 +141,27 @@ class MessageUseCaseImpl
                     return@executeRequest fakeReply
                 }
 
-                val charactersInScene =
-                    sceneSummary?.charactersPresent?.mapNotNull { characterName ->
-                        saga.findCharacter(characterName)
-                    } ?: emptyList()
+                sceneSummary?.charactersPresent?.mapNotNull { characterName ->
+                    saga.findCharacter(characterName)
+                } ?: emptyList()
 
                 val genText =
-                    gemmaClient.generate<Message>(
+                    gemmaClient.generate<AIReply>(
                         prompt =
                             ChatPrompts.replyMessagePrompt(
                                 saga = saga,
                                 message = message.message,
                                 directive = saga.getDirective(),
-                                sceneSummary =
-                                    sceneSummary?.copy(
-                                        charactersPresent =
-                                            charactersInScene.map {
-                                                it.toAINormalize(
-                                                    ChatPrompts.characterExclusions,
-                                                )
-                                            },
-                                    ),
+                                sceneSummary = sceneSummary,
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     )
 
-                genText!!
+                Log.i(
+                    "MessageUseCaseImpl",
+                    "AI Reasoning for message generation: ${genText?.reasoning}",
+                )
+                genText?.message!!
             }
 
         override suspend fun generateReaction(

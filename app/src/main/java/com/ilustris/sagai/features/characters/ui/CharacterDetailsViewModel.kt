@@ -39,6 +39,9 @@ class CharacterDetailsViewModel
         val originalBitmap = MutableStateFlow<Bitmap?>(null)
         val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
+        val characterResume = MutableStateFlow<String?>(null)
+        val isSummarizing = MutableStateFlow(false)
+
         fun loadSagaAndCharacter(
             sagaId: String?,
             characterId: String?,
@@ -46,11 +49,39 @@ class CharacterDetailsViewModel
             if (sagaId == null) return
             if (characterId == null) return
             viewModelScope.launch(Dispatchers.IO) {
-                sagaHistoryUseCase.getSagaById(sagaId.toInt()).collect {
-                    saga.value = it
-                    character.value = it?.characters?.find { char -> char.data.id == characterId.toInt() }
+                sagaHistoryUseCase.getSagaById(sagaId.toInt()).collect { sagaContent ->
+                    saga.value = sagaContent
+                    val foundCharacter =
+                        sagaContent?.characters?.find { char -> char.data.id == characterId.toInt() }
+                    character.value = foundCharacter
                     messageCount.value =
-                        it?.flatMessages()?.filterCharacterMessages(character.value?.data)?.size ?: 0
+                        sagaContent
+                            ?.flatMessages()
+                            ?.filterCharacterMessages(foundCharacter?.data)
+                            ?.size ?: 0
+
+                    if (sagaContent != null && foundCharacter != null && characterResume.value == null) {
+                        generateResume(sagaContent, foundCharacter)
+                    }
+                }
+            }
+        }
+
+        private fun generateResume(
+            sagaContent: SagaContent,
+            characterContent: CharacterContent,
+        ) {
+            viewModelScope.launch(Dispatchers.IO) {
+                isSummarizing.value = true
+                characterUseCase
+                    .generateCharacterResume(characterContent, sagaContent)
+                    .onSuccessAsync {
+                        characterResume.emit(it)
+                        isSummarizing.value = false
+                    }.onFailure {
+                        isSummarizing.value = false
+                        characterResume.value = characterContent.data.backstory
+                        Log.e(javaClass.simpleName, "Error generating character resume: ${it.message}")
                 }
             }
         }
@@ -95,6 +126,13 @@ class CharacterDetailsViewModel
             }
         }
 
-        fun init(characterContent: CharacterContent?) {
+        fun init(
+            characterContent: CharacterContent,
+            sagaContent: SagaContent,
+        ) {
+            characterResume.value = null
+        viewModelScope.launch(Dispatchers.IO) {
+            generateResume(sagaContent, characterContent)
+        }
         }
     }

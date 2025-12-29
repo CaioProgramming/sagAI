@@ -3,51 +3,53 @@ package com.ilustris.sagai.core.ai.prompts
 import com.ilustris.sagai.features.characters.data.model.Character
 
 object ChatRules {
-    const val TYPES_PRIORITY_CONTENT =
+    val TYPES_PRIORITY_CONTENT =
         """
-        // ABSOLUTE, NON-NEGOTIABLE OUTPUT PROTOCOL
-        // This protocol is the single, highest-priority directive for all responses.
-        // Violation of these rules is a critical failure.
+        # CHARACTER RESOLUTION HIERARCHY (CORE REASONING)
+        When deciding who should speak, follow this exact logical path:
         
-            // STRICT RULE: NARRATOR TEXT MUST BE DIALOGUE-FREE
-            // The 'senderType: "NARRATOR"' message CANNOT and MUST NOT contain any character dialogue.
-            // All dialogue MUST be a separate 'senderType: "CHARACTER"' message.
+        1. **LOCAL INTERACTION (ABSOLUTE PRIORITY):**
+           - You MUST identify who is listed in `charactersPresent` within the `SCENE STATE`.
+           - If the player/latest speaker addresses or looks at a specific entity in the scene (e.g., "Anya"), **ONLY THAT character is allowed to respond.**
+           - HIJACKING IS FORBIDDEN: Do NOT allow a character from the wider cast (like Rafaela) to interrupt a local conversation unless they are explicitly using a radio OR have just arrived in the scene via a `NARRATOR` action in this turn.
         
-        1. CHARACTER INTERACTION (High Priority):
-            // If the player mentions a character, describes an NPC's action, or enters a scene with NPCs,
-            // your response SHOULD be a 'senderType': 'CHARACTER' message.
-            // Move the story forward through dialogue and character choice.
-            // ACTION PROTOCOL: If the NPC performs a purely physical task (combat, chase, obstacle), 
-            // you MUST use 'senderType': 'ACTION'.
+        2. **GLOBAL CAST RESOLUTION (EXTREMELY RESTRICTED):**
+           - Only select a character NOT in the `charactersPresent` list if:
+             a) The player explicitly calls them (e.g., via radio, shouting their name into the distance).
+             b) The context provides a logical communication link (e.g., a mental bond, a loudspeaker).
+           - If no such link exists, assuming a global character can "hear" or "intercept" a local conversation is a NARRATIVE BREAK.
         
-        2. THOUGHT PRIVACY: 
-            // NPCs are NOT mind-readers. It is ABSOLUTELY FORBIDDEN for NPCs to know or react to the content of a 'senderType: "THOUGHT"'.
-            // If the player sends a THOUGHT, the NPC may only react to the player's SILENCE or facial expression.
-            // Alternatively, the AI should pivot to 'senderType: "NARRATOR"' to describe the atmospheric shift.
-
-        3. NARRATIVE BRIDGE (Secondary):
-            // Use 'senderType': 'NARRATOR' ONLY for purely environmental/atmospheric shifts. 
-            // It is FORBIDDEN to use NARRATOR if an NPC has a reason to react to the player.
-            
-  
-        """
+        3. **DISCOVERY & CREATION:**
+           - If the player interacts with someone NOT in the room AND NOT in the cast, only then return a NEW `speakerName`.
+           - Do NOT use this to introduce an existing cast member into a scene they aren't part of.
+        
+        4. **SPEAKER CONTINUITY & ROLE PROTECTION:**
+           - A character MUST NEVER respond to themselves. Identify the `speakerName` of the [LATEST MESSAGE].
+           - Your speaker MUST be a different personality.
+        
+        5. **SPATIAL CONTINUITY:**
+           - If the scene has moved (e.g., "Kira and Anya ran to the rooftop"), characters left in the previous location (e.g., the cell) are GONE. They cannot speak or react.
+        
+        6. **REASONING MANDATE:**
+           - Before generating the dialogue, you must briefly reason: "Who is in the room? Who was spoken to? Who is the most logical next speaker?" Use this logic to fill the `reasoning` field.
+        """.trimIndent()
 
     fun outputRules(mainCharacter: Character?) =
         """
         # OUTPUT PROTOCOL & NARRATIVE MOMENTUM
-        1. **Momentum:** Progression is MANDATORY. NPCs MUST interact physically and verbally during high tension.
+        1. **Momentum:** Progression is MANDATORY. Introduce new stakes or developments.
         2. **Consistency:** Adapt logically. NPCs cannot read 'THOUGHT' messages; they interpret body language.
-        3. **Cast Accuracy:** Dialogue speaker MUST exist in the CAST.
-        4. **Agency Protection:** NEVER speak or act for the protagonist (${mainCharacter?.name ?: "Player"}).
-        5. **Persona Separation:** 
+        3. **Cast Accuracy:** Dialogue speaker MUST exist in the CAST (or be created).
+        4. **Agency Protection:** NEVER speak or act for the character currently controlled by the player (see the 'speakerName' in the [LATEST MESSAGE]). You MUST NOT replicate the current speaker's role. Is FORBIDDEN to use USER type on your output.
+        5. **Character Selection Reasoning:** You MUST reason about who is in the scene and who was addressed BEFORE choosing the speaker. Explain this in the `reasoning` field.
+        6. **Balanced Persona:** 
            - `NARRATOR`: Descriptive text ONLY. NO dialogue.
-           - `CHARACTER`: *[Action]* - Dialogue.
-        6. **Formatting:** Return ONLY valid JSON.
+           - `CHARACTER`: Dialogue focused. Use *[Action]* tags ONLY if the action is physically significant to the scene.
+        7. **Formatting:** Return ONLY valid JSON matching the `AIReply` structure (reasoning string + message object).
         """.trimIndent()
 }
 
 object CharacterRules {
-
     const val IMAGE_CRITICAL_RULE =
         """
         NO TEXT, NO WORDS, NO TYPOGRAPHY, NO LETTERS, NO UI ELEMENTS.

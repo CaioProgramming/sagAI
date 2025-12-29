@@ -8,6 +8,7 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -46,88 +47,72 @@ object CharacterPrompts {
         saga: SagaContent,
         description: String,
     ) = buildString {
-        appendLine("You are an expert character designer for a story.")
-        appendLine(
-            "Your task is to create a complete and detailed character profile in JSON format based on the provided saga context and a source description.",
-        )
-        appendLine("The generated character MUST be deeply contextualized within the saga's theme, genre, and narrative.")
+        appendLine("You are a Master Character Designer and World-Builder AI.")
+        appendLine("Your task is to breathe life into a character who has just been discovered or mentioned in the saga's narrative.")
+        appendLine("You must generate a complete, detailed, and highly atmospheric character profile in JSON format.")
 
-        appendLine(SagaPrompts.mainContext(saga))
+        appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
 
-        appendLine("## 💡 NEW CHARACTER CREATION INSPIRATION 💡")
-        appendLine("// The following description is the foundational concept for the new character.")
-        appendLine(
-            "// Your task is to bring this character to life by expanding on the provided details, filling in the blanks, and adding creative depth to make them a truly unique and complete persona.",
-        )
-        appendLine(
-            "// You should be creative and add details that are not explicitly mentioned, for example, suggesting a last name if one is not provided, or elaborating on their motivations and backstory.",
-        )
-        appendLine("// The goal is to create a rich, well-rounded character that feels authentic to the saga's world.")
+        appendLine("## 🧬 THE DISCOVERY SEED (FOUNDATIONAL CONTEXT) 🧬")
+        appendLine("// The following description contains the names, roles, or snippets of dialogue that introduced this character.")
+        appendLine("// Use this as your ABSOLUTE SOURCE for the character's initial identity (name, if provided).")
+        appendLine(description)
         appendLine()
+
+        appendLine("## 🎭 CONTEXTUAL REASONING: BEYOND THE WORDS 🎭")
+        appendLine("To make this character feel authentic, you must analyze the narrative they emerged from:")
+        appendLine(
+            "1. **The Voice:** If they just spoke in the history below, replicate their specific speech patterns, vocabulary, and tone in their personality and backstory.",
+        )
+        appendLine(
+            "2. **The Relationship:** How did they interact with the protagonist or other NPCs? Are they a threat, an ally, a professional contact, or a mysterious observer?",
+        )
+        appendLine(
+            "3. **The Role:** Based on the saga genre and current location, what is their logical occupation and status? (e.g., a dusty desert settlement suggests a scavenger or a weary trader, not a pristine bureaucrat).",
+        )
+        appendLine()
+
         appendLine("## 🎨 CREATIVE DIRECTION: IDENTITY & VIBRANCY 🎨")
         appendLine(
-            "The character must feel ALIVE. Do not rely on generic tropes or bland descriptions. Captivating characters are built on **specific, unique details**.",
+            "The character must feel ALIVE. Do not rely on generic tropes. Captivating characters are built on **specific, unique details**.",
+        )
+        appendLine(
+            "- **Visual Storytelling:** Use clothing and physical traits to hint at backstory. Why is the jacket torn? What does that symbol on their belt mean?",
+        )
+        appendLine("- **Unique Identifiers:** Give them a signature look. Avoid 'standard' gear unless modified in a unique way.")
+        appendLine(
+            "- **Sensory Details:** Mention textures, distinct colors, and conditions (dusty, polished, bloodied) to create a vivid mental image.",
         )
         appendLine()
-        appendLine("**❌ GENERIC (BAD):**")
-        appendLine("- 'A worn leather jacket'")
-        appendLine("- 'A dark cotton shirt'")
-        appendLine("- 'A cowboy hat'")
-        appendLine()
-        appendLine("**✅ VIBRANT & SPECIFIC (GOOD):**")
-        appendLine("- 'A dark denim jacket covered in red anarchy patches and fraying at the cuffs'")
-        appendLine("- 'A white cotton shirt, unbuttoned halfway, stained with engine grease and sweat'")
-        appendLine("- 'A black cowboy hat with a silver skull symbol pinned to the brim, tilted aggressively'")
-        appendLine()
-        appendLine("**GUIDING PRINCIPLES:**")
-        appendLine(
-            "1. **Visual Storytelling:** Use clothing and physical traits to hint at backstory. Why is the jacket torn? What does the trinket on their belt mean?",
-        )
-        appendLine(
-            "2. **Unique Identifiers:** Give them a signature look. Avoid 'standard' or 'typical' gear unless modified in a unique way.",
-        )
-        appendLine(
-            "3. **Sensory Details:** Mention textures, distinct colors, and conditions (dusty, polished, bloodied) to create a vivid mental image.",
-        )
-        appendLine()
-        appendLine("## ✨ RADICAL DIVERSITY & UNIQUE PERSONAS ✨")
-        appendLine(
-            "Break away from common beauty standards and ethnic defaults. Your characters should reflect a rich, global, and imaginative range of human and humanoid forms.",
-        )
-        appendLine(
-            "- **Ethnicity & Skin**: Actively cycle through underrepresented ethnicities. Use specific skin descriptors: vitiligo, deep ebony, golden bronze, heavy reddish freckles, weathered and sun-carved.",
-        )
-        appendLine(
-            "- **Hair & Style**: Move beyond simple colors. Use 'electric lavender tight coils', 'salt-and-pepper dreadlocks held by copper rings', 'asymmetrical magenta mohawk with shaved tribal patterns'.",
-        )
-        appendLine(
-            "- **Body & Build**: Create diverse silhouettes. A stout, powerful matriarch; a lanky, nervous tech-junkie; a regal, older character with the dignified posture of a former regent.",
-        )
-        appendLine(
-            "- **Distinctive Marks**: Add character through 'battle-earned' or 'life-earned' features: intricate facial tattoos, a missing ear tip, a prosthetic eye made of salvaged opal, or distinctive cultural jewelry.",
-        )
-        appendLine()
-        appendLine(
-            GenrePrompts.appearanceGuidelines(saga.data.genre),
-        )
-        appendLine(description)
 
-        appendLine("// Latest messages for better context")
-        appendLine("Conversation History")
-        appendLine("Use this for contextualization")
-        appendLine("The messages are ordered from newest to oldest")
+        appendLine("## ✨ RADICAL DIVERSITY & UNIQUE PERSONAS ✨")
+        appendLine("Break away from common standards. Your characters should reflect a rich, global range of human and humanoid forms.")
+        appendLine(
+            "- **Ethnicity & Style**: Actively cycle through underrepresented ethnicities and unique aesthetics (e.g., 'electric lavender tight coils', 'weathered, sun-carved bronze skin').",
+        )
+        appendLine(
+            "- **Silhouette**: Create diverse body shapes and postures that reflect their life journey (e.g., 'a stout, powerful matriarch', 'a lanky, nervous tech-junkie').",
+        )
+        appendLine()
+
+        appendLine(GenrePrompts.appearanceGuidelines(saga.data.genre))
+
+        appendLine("\n## 📖 LATEST CONVERSATION HISTORY (FOR BEHAVIORAL SEEDING) 📖")
+        appendLine("// Use these messages to capture the character's 'voice' and recent narrative impact.")
         appendLine(
             saga
                 .flatMessages()
-                .sortedByDescending {
-                    it.message.timestamp
-                }.map { it.message }
+                .sortedByDescending { it.message.timestamp }
                 .take(5)
+                .map { it.message }
                 .normalizetoAIItems(excludingFields = messageExclusions),
         )
-        appendLine("## Guidelines for generating the character JSON:")
+
+        appendLine("\n## 📜 CHARACTER PROFILE GUIDELINES 📜")
         appendLine(CharacterGuidelines.creationGuideline)
-        appendLine("// **IMPORTANT**: The character must be HIGHLY CONTEXTUALIZED TO THE SAGA'S THEME: ${saga.data.genre.name}.")
+        appendLine(
+            "\n// **FINAL MANDATE**: The character must be an IRREPLACEABLE piece of the ${saga.data.genre.name} world. They are not a background extra; they are a living soul.",
+        )
     }.trimIndent()
 
     fun characterLoreGeneration(
@@ -369,16 +354,60 @@ object CharacterPrompts {
         appendLine("Characters (names must be used EXACTLY as listed):")
         appendLine(
             saga.getCharacters().toJsonFormatExcludingFields(
-                listOf(
-                    "id",
-                    "image",
-                    "hexColor",
-                    "details",
-                    "sagaId",
-                    "joinedAt",
-                    "profile",
-                ),
+                ChatPrompts.characterExclusions,
             ),
         )
+    }.trimIndent()
+
+    fun characterResume(
+        character: CharacterContent,
+        saga: SagaContent,
+    ) = buildString {
+        appendLine("You are a master storyteller and narrative biographer.")
+        appendLine(
+            "Your task is to write a concise, atmospheric, and highly engaging resume of a character's journey in the saga.",
+        )
+        appendLine("This resume should validate their background, personality, and the major events they've experienced.")
+        appendLine()
+        appendLine("## SAGA CONTEXT")
+        appendLine(SagaPrompts.mainContext(saga, character))
+        appendLine()
+        appendLine()
+        appendLine("## THE JOURNEY SO FAR (KEY EVENTS)")
+        if (character.events.isEmpty()) {
+            appendLine("The character has just joined the story and hasn't experienced major events yet.")
+        } else {
+            character.events.sortedByDescending { it.event.createdAt }.take(15).forEach { event ->
+                appendLine("- ${event.event.title}: ${event.event.summary}")
+            }
+        }
+        appendLine()
+        appendLine("## RELATIONSHIPS")
+        if (character.relationships.isEmpty()) {
+            appendLine("The character currently has no established significant relationships.")
+        } else {
+            character.relationships.forEach { relation ->
+                val other = relation.getCharacterExcluding(character.data)
+                appendLine("- ${relation.data.title} with ${other.name} ${relation.data.emoji}: ${relation.data.description}")
+            }
+        }
+        appendLine()
+        appendLine("## INSTRUCTIONS")
+        appendLine("1. Write a single, cohesive, and compelling paragraph (max 150 words).")
+        appendLine("2. Focus on how the character has changed, matured, or stayed true to their essence through these events.")
+        appendLine("3. Use an atmospheric tone that perfectly matches the saga's genre.")
+        appendLine(
+            "## Apply this tone style to the output: ${
+                GenrePrompts.conversationDirective(
+                    saga.data.genre,
+                )
+            }",
+        )
+        appendLine("4. Mention at least one key relationship if it's pivotal to their development.")
+        appendLine("5. Transform the raw list of events into a flowing narrative summary.")
+        appendLine(
+            "6. The goal is to give the reader a deep understanding of 'who this character is now' in the context of the ongoing story.",
+        )
+        appendLine("7. Respond ONLY with the resume text. No intro, no outro.")
     }.trimIndent()
 }

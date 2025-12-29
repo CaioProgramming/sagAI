@@ -4,7 +4,6 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.SuggestionGen
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
@@ -26,13 +25,7 @@ object SuggestionPrompts {
             appendLine(sceneSummary.toJsonFormat())
             appendLine("Latest messages")
             appendLine(
-                ChatPrompts.conversationHistory(
-                    saga
-                        .flatMessages()
-                        .takeLast(5)
-                        .reversed()
-                        .map { it.message },
-                ),
+                ChatPrompts.conversationHistory(saga),
             )
             appendLine("Task:")
             appendLine(

@@ -198,7 +198,7 @@ fun Genre.defaultHeaderImage() =
 fun Genre.shimmerColors() =
     listOf(
         Color.Transparent,
-        color.copy(alpha = .5f),
+        color.copy(alpha = .2f),
     ).plus(colorPalette())
         .plus(Color.Transparent)
 

@@ -15,12 +15,15 @@ object SagaPrompts {
     fun mainContext(
         saga: SagaContent,
         character: CharacterContent? = null,
+        ommitCharacter: Boolean = false,
     ) = buildString {
         val selectedCharacter = character ?: saga.mainCharacter
         appendLine("Saga Context:")
         appendLine(saga.data.toAINormalize(ChatPrompts.sagaExclusions))
-        appendLine("Character context:")
-        appendLine(selectedCharacter?.data.toAINormalize(ChatPrompts.characterExclusions))
+        if (ommitCharacter.not()) {
+            appendLine("Character context:")
+            appendLine(selectedCharacter?.data.toAINormalize(ChatPrompts.characterExclusions))
+        }
     }
 
     fun endCredits(saga: SagaContent): String =
@@ -157,7 +160,8 @@ object SagaPrompts {
             "- IMPORTANT (MUST BE VISIBLE AT THIS FRAMING): Body type (stout, lanky, curvy, weathered), Age indicators, Primary clothing/outfit",
         )
         appendLine(
-            "- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks, physical build details")
+            "- DISTINCTIVE (VISIBLE IF NOT CUT BY FRAMING): Tattoos, scars, piercings, jewelry, unique marks, physical build details",
+        )
         appendLine("- SECONDARY (CAN BE IMPLIED IF FRAMING CUTS THEM): Hands/fingers, lower body details (if not critical to character)")
         appendLine()
         appendLine("CONCRETE EXAMPLE:")

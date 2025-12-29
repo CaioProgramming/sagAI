@@ -24,6 +24,7 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
 import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
 import com.ilustris.sagai.features.characters.data.model.SmartZoom
@@ -125,7 +126,6 @@ class CharacterUseCaseImpl
                                         "sagaId",
                                         "joinedAt",
                                         "emojified",
-                                        "abilities",
                                     ),
                                 ),
                         ).toJsonFormat(),
@@ -340,4 +340,16 @@ class CharacterUseCaseImpl
                     e.printStackTrace()
                 }
             }
+
+        override suspend fun generateCharacterResume(
+            character: CharacterContent,
+            saga: SagaContent,
+        ): RequestResult<String> =
+            executeRequest {
+                val prompt = CharacterPrompts.characterResume(character, saga)
+                gemmaClient.generate<String>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
+            )!!
+        }
     }

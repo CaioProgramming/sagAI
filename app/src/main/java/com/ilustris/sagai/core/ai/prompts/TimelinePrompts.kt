@@ -8,7 +8,11 @@ object TimelinePrompts {
 
     fun timeLineDetails(currentChapter: ChapterContent?) =
         buildString {
-            val events = currentChapter?.events?.filter { it.isComplete() }?.map { it.data }
+            val events =
+                currentChapter
+                    ?.events
+                    ?.filter { it.isComplete() }
+                    ?.map { it.data }?.takeLast(5)
             if (events?.isNotEmpty() == true) {
                 appendLine("**Most Recent Events:**")
                 appendLine("// This section provides the most recent events from the chapter's timeline.")

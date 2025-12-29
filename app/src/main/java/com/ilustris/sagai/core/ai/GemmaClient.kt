@@ -248,6 +248,8 @@ class GemmaClient
                                 javaClass.simpleName,
                                 "Final failure after $maxAttempts attempts.",
                             )
+                            Log.e(javaClass.simpleName, "generate: Failed prompt")
+                            Log.w(javaClass.simpleName, prompt)
                             return@withContext null
                         }
                     }

@@ -172,17 +172,38 @@ fun SagaContent.emotionalSummary() =
     }
 
 @Suppress("ktlint:standard:max-line-length")
-fun SagaContent.generateCharacterRelationsSummary(): String {
-    if (relationships.isEmpty()) return "No specific character relationships were formally established or tracked."
-    return relationships.joinToString("; ") { relationContent ->
+fun SagaContent.generateCharacterRelationsSummary(filterNames: List<String>? = null): String {
+    if (relationships.isEmpty()) return "No significant relationships tracked."
+    val filteredRelations =
+        if (filterNames == null) {
+            relationships
+        } else {
+            relationships.filter { relation ->
+                val char1 =
+                    characters
+                        .find { it.data.id == relation.data.characterOneId }
+                        ?.data
+                        ?.name
+                        ?.lowercase()
+                val char2 =
+                    characters
+                        .find { it.data.id == relation.data.characterTwoId }
+                        ?.data
+                        ?.name
+                        ?.lowercase()
+                val filterLower = filterNames.map { it.lowercase() }
+                filterLower.contains(char1) || filterLower.contains(char2)
+            }
+        }
+    if (filteredRelations.isEmpty()) return "No relevant relationships for this scene."
+    return filteredRelations.joinToString("\n") { relationContent ->
         val char1Name =
             characters.find { it.data.id == relationContent.data.characterOneId }?.data?.name
-                ?: "Character ${relationContent.data.characterOneId}"
+                ?: "Unknown"
         val char2Name =
             characters.find { it.data.id == relationContent.data.characterTwoId }?.data?.name
-                ?: "Character ${relationContent.data.characterTwoId}"
-        val relationDesc = relationContent.data.title.takeIf { it.isNotBlank() } ?: "Unnamed relationship"
-        "$char1Name and $char2Name: $relationDesc"
+                ?: "Unknown"
+        "[$char1Name <-> $char2Name] ${relationContent.data.emoji} ${relationContent.data.title}"
     }
 }
 

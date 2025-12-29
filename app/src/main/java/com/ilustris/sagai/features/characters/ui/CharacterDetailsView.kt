@@ -2,8 +2,10 @@ package com.ilustris.sagai.features.characters.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -70,6 +72,7 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
+import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
@@ -160,7 +163,7 @@ fun CharacterDetailsContent(
     val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
     LaunchedEffect(Unit) {
-        viewModel.init(characterContent)
+        characterContent?.let { viewModel.init(it, sagaContent) }
     }
 
     AnimatedContent(
@@ -350,8 +353,7 @@ private fun CharacterDetailsLoaded(
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                )
-                                                .effectForGenre(
+                                                ).effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),
@@ -455,16 +457,14 @@ private fun CharacterDetailsLoaded(
                                                         sagaContent,
                                                         character,
                                                     )
-                                                }
-                                                .fillMaxSize()
+                                                }.fillMaxSize()
                                                 .graphicsLayer(
                                                     scaleX = animatedScale,
                                                     scaleY = animatedScale,
                                                     translationX = animatedTranslationX,
                                                     translationY = animatedTranslationY,
                                                     transformOrigin = TransformOrigin.Center,
-                                                )
-                                                .effectForGenre(
+                                                ).effectForGenre(
                                                     genre,
                                                     useFallBack = character.emojified,
                                                 ),
@@ -611,6 +611,9 @@ private fun CharacterDetailsLoaded(
                 }
 
                 item {
+                    val characterResume by viewModel.characterResume.collectAsStateWithLifecycle()
+                    val isSummarizing by viewModel.isSummarizing.collectAsStateWithLifecycle()
+
                     Column(
                         modifier =
                             Modifier
@@ -625,13 +628,31 @@ private fun CharacterDetailsLoaded(
                                 ),
                         )
 
-                        Text(
-                            character.backstory,
-                            style =
-                                MaterialTheme.typography.bodyMedium.copy(
-                                    fontFamily = genre.bodyFont(),
-                                ),
-                        )
+                        AnimatedContent(
+                            targetState = characterResume ?: character.backstory,
+                            transitionSpec = {
+                                fadeIn(tween(1000)) togetherWith fadeOut(tween(100))
+                            },
+                        ) { text ->
+                            val textColor by animateColorAsState(
+                                if (isSummarizing.not()) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.background,
+                            )
+                            Text(
+                                text,
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        fontFamily = genre.bodyFont(),
+                                        color = textColor,
+                                    ),
+                                modifier =
+                                    Modifier
+                                        .reactiveShimmer(
+                                            isSummarizing,
+                                            repeatMode = RepeatMode.Restart,
+                                            shimmerColors = genre.shimmerColors(),
+                                        ).padding(vertical = 16.dp),
+                            )
+                        }
                     }
                 }
 

@@ -6,40 +6,22 @@ import java.util.Locale
 object CharacterDirective {
     const val CHARACTER_INTRODUCTION =
         """
-        // 🚨🚨🚨 CRITICAL SYSTEM DIRECTIVE: NEW CHARACTER INTRODUCTION PROTOCOL 🚨🚨🚨
-        // This protocol dictates the ONLY circumstances under which new characters are introduced.
-        // Adherence to this directive is PARAMOUNT for maintaining narrative coherence and preventing character hallucination.
-        
-
-        1.  **Strict Necessity:** A new character (requiring 'shouldCreateCharacter: true' and 'newCharacterInfo') MUST ONLY be introduced when their appearance is **ABSOLUTELY ESSENTIAL, LOGICALLY JUSTIFIED, AND UNAVOIDABLE** for the immediate and coherent progression of the plot, **including when a new character is introduced directly by name or action by the Player.**
-            * **DO NOT INTRODUCE CHARACTERS FOR RANDOM PLOT TWISTS.** Every new character must serve a clear, immediate, and impactful narrative purpose.
-            * **NEVER INTRODUCE A NEW CHARACTER TO AVOID ANSWERING A DIRECT QUESTION.** If the player asks "Who are you?" or similar, the response MUST come from the character in question, or the NARRATOR must provide more details about THAT specific character, not introduce another.
-        
-        2.  **Narrative Name Revelation (Delayed by Default):**
-            * The 'name' provided in 'newCharacterInfo' is for the **system's internal identification and creation process ONLY.**
-            * **DO NOT immediately reveal this name in the narrative 'text' field.**
-            * The character's name should ONLY be revealed in the narrative text if:
-                * The character explicitly introduces themselves.
-                * The player character has a clear, in-world reason to know their name (e.g., they are a well-known figure, their name is on an item they wear, or someone else present clearly states it).
-            * If the name is not immediately known, refer to the character by their appearance, role, or a descriptive title (e.g., "a hooded figure," "the gruff guard," "the old woman").
-        
-        3.  **Sustained Conversational Focus:**
-            * Once a character (newly introduced or existing) becomes the subject of direct interaction (e.g., through dialogue or player action/question), they become the **PRIMARY FOCUS of the narrative and dialogue.**
-            * Your subsequent response MUST logically continue the interaction with **THAT SPECIFIC CHARACTER.**
-            * **DO NOT shift focus abruptly, introduce another character, or pivot to an unrelated event simply to avoid continuing a current interaction.**
-        
-        4.  **STRICT NEW CHARACTER CREATION PROTOCOL:** You MUST ONLY set "shouldCreateCharacter": true and include the "newCharacterInfo" object in your JSON response IF the character you are currently introducing in the narrative has NEVER been mentioned or described before IN THE ENTIRE CONVERSATION HISTORY and is NOT present in the 'CURRENT SAGA CAST' list. **This includes, but is not limited to, cases where a previously unnamed character reveals their name for the first time in dialogue.** If a character is already in 'CURRENT SAGA CAST' or has been described in previous 'NARRATOR' turns, you MUST NOT use "shouldCreateCharacter": true for them again; instead, focus on their dialogue or actions.
-        * **UNIQUE NAMES:** When a new character truly needs to be created, you MUST invent a unique, specific, and fitting name based on the 'NAMING & CREATIVITY DIRECTIVE'. DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar for the character's name.
-        * **SPEAKER NAME & NEW CHARACTER INFO:** ***When "shouldCreateCharacter" is true, the 'speakerName' in the 'message' object MUST be the actual invented name of the new character (e.g., "Kael"), NOT a placeholder like "Unknown" or "Desconhecido".*** The 'newCharacterInfo' object should ONLY contain 'name', 'gender', and 'briefDescription'.
-        
-            
+        # NEW CHARACTER PROTOCOL
+        1. **Strict Necessity:** Introduce a new character ONLY if essential AND no existing character in the `# FULL SAGA CAST SUMMARY` matches the role or name mentioned.
+        2. **Discovery Mechanism:** If you determine a new character is needed, simply return a new, unique `speakerName`. The system will automatically create the character based on the dialogue and context you provide.
+        3. **Logical Resolution Hierarchy:**
+           - **Step A (Local):** Is the character listed in `charactersPresent`? If yes, use them.
+           - **Step B (Global):** Not in the room? Search the `FULL SAGA CAST SUMMARY`. If "Rafaela" is mentioned and she exists in the cast, use her (e.g., via radio/shout).
+           - **Step C (New):** If Steps A and B fail, return a NEW `speakerName`.
+        4. **Delayed Revelation:** Do not reveal names in text unless the character introduces themselves. Use descriptions (e.g. "the prisoner").
+        5. **Deduplication:** Always check the Cast Summary before returning a new name to avoid duplicates.
         """
 }
 
 object SagaDirective {
     fun namingDirective(genre: Genre) =
         """
-        // This directive guides you, as the Saga Master, when you determine a new character needs to be introduced via the 'newCharacterInfo' object of your JSON response.
+        // This directive guides you, as the Saga Master, when you determine a new character needs to be introduced.
         // Prioritize generating creative, unique, and memorable names that fit the saga's genre and specific cultural influences.
         // AVOID common or generic names. Ensure a wide variety of naming conventions throughout the saga.
         // - AVOID overly common or generic names (e.g., John, Mary, Smith). DO NOT use generic terms like "Unknown", "Desconhecido", "Stranger", or similar.   
@@ -67,4 +49,28 @@ object ContentGenerationDirective {
         3. **Narrative Leap:** Do not tread water. If a scene is stalled, use an NPC or environment event to propel the story toward the current objective. 
         4. **Show, Don't Echo:** Describe the outcome of actions and thoughts. Don't repeat what the player already stated.
         """
+}
+
+object StorytellingDirective {
+    const val NPC_AGENCY_AND_REALISM = """
+        ## NPC Agency & Realism
+        1. **Authenticity:** Characters react based on their core traits via `ACTION`, `CHARACTER` (dialogue), or `THOUGHT` (internal). Silence is a valid reaction.
+        2. **Contextual Evaluation:** If the player is alone or in monologue, avoid forcing dialogue; use `NARRATOR` or `THOUGHT` instead.
+        3. **Conflict & Growth:** Prioritize action during combat. NPCs are flexible—they can be swayed, persuaded, or changed if it serves the narrative.
+        4. **Character Hijack (MANDATORY):** If the player addresses a specific NPC or describes their presence and interaction, THAT NPC MUST respond. This takes precedence over any previous 'active' NPC. 
+        5. **Presence Loyalty:** It is STICKY FORBIDDEN for an NPC NOT listed in the `SCENE STATE` (charactersPresent) to speak unless they are being newly introduced in this turn. Do not allow "global" characters to teleport into a scene.
+        6. **Spatial Awareness & Continuity:** NPCs only interact if they are logically present. If the protagonist moves to a new room or area (e.g., "traveled through corridors"), characters left behind are GONE. It is a CRITICAL ERROR for a left-behind NPC to "observe" or "comment" on the new scene unless they explicitly followed or are using a communication device.
+        7. **Incapacitated NPCs:** If a character is wounded, unconscious, or pinned, they MUST remain inactive unless the story explicitly resolves their condition. Do not force them into a dialogue role to fill a silence.
+        8. **Relationship Loyalty:** NPCs MUST act according to their established relationships. 
+        9. **Role Fluidity & Continuity:** A character NEVER talks to themselves. Identify the speaker of the latest message; YOUR response MUST come from a different entity to keep the conversation moving.
+        10. **Choice Justification:** Every speaker selection must be justified by the current physical presence and narrative context. If you select someone, you must be able to explain WHY they are the most logical choice among those present.
+    """
+
+    const val MOBILE_CHAT_COHERENCE = """
+        ## MOBILE CHAT COHERENCE & BREVITY
+        1. **Punchy Delivery:** This is a mobile chat app. Keep messages short and impactful. 
+        2. **The Rule of Three:** Aim for 1-3 sentences per message. Avoid "walls of text" that overwhelm the player.
+        3. **Conversational Flow:** Dialogue should feel natural and immediate. Narrative descriptions should be vivid but concise—focus on one strong sensory detail rather than a long list.
+        4. **NPC Engagement:** NPCs should speak like real people in a chat—no long-winded monologues unless the character is specifically designed to be loquacious.
+    """
 }
