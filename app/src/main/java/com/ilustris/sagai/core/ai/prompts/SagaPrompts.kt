@@ -371,4 +371,40 @@ object SagaPrompts {
             appendLine()
             appendLine("OUTPUT FORMAT: A single, clean JSON object. No extra text or explanations.")
         }.trimIndent()
+
+    fun sagaResume(saga: SagaContent) =
+        buildString {
+            appendLine("You are a legendary chronicler of epic tales.")
+            appendLine(
+                "Your task is to write a concise, gripping, and deeply atmospheric summary of the story so far for a saga titled '${saga.data.title}'.",
+            )
+            appendLine(
+                "This summary should provide a clear overview of the central conflict, major milestones, and the current state of the world.",
+            )
+            appendLine(mainContext(saga))
+
+            appendLine("## THE STORY PROGRESSION")
+            if (saga.acts.isEmpty()) {
+                appendLine("The story is in its very early stages, just beginning to unfold.")
+            } else {
+                saga.acts.forEach {
+                    appendLine(it.actSummary(saga))
+                }
+            }
+            appendLine()
+            appendLine("## INSTRUCTIONS")
+            appendLine("1. Write a single, cinematic, and powerful paragraph (max 200 words).")
+            appendLine("2. Focus strictly on the narrative progression and the evolving stakes.")
+            appendLine("3. Capture the unique atmosphere of the genre (${saga.data.genre.name}).")
+            appendLine(
+                "## Apply this tone style: ${
+                    GenrePrompts.conversationDirective(
+                        saga.data.genre,
+                    )
+                }",
+            )
+            appendLine("4. Highlight the main character's growth and the weight of their decisions.")
+            appendLine("5. Transform the act summaries into a flowing, epic chronicle.")
+            appendLine("6. Respond ONLY with the resume text. No intro, no outro.")
+        }.trimIndent()
 }

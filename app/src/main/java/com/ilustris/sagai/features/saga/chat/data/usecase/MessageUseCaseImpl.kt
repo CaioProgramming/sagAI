@@ -155,6 +155,8 @@ class MessageUseCaseImpl
                                 sceneSummary = sceneSummary,
                             ),
                         requirement = GemmaClient.ModelRequirement.HIGH,
+                        filterOutputFields =
+                            ChatPrompts.messageExclusions,
                     )
 
                 Log.i(

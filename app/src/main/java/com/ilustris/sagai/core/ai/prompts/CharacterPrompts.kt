@@ -363,6 +363,7 @@ object CharacterPrompts {
         character: CharacterContent,
         saga: SagaContent,
     ) = buildString {
+        val characterData = character.data
         appendLine("You are a master storyteller and narrative biographer.")
         appendLine(
             "Your task is to write a concise, atmospheric, and highly engaging resume of a character's journey in the saga.",
@@ -372,6 +373,13 @@ object CharacterPrompts {
         appendLine("## SAGA CONTEXT")
         appendLine(SagaPrompts.mainContext(saga, character))
         appendLine()
+        appendLine("## CHARACTER IDENTITY")
+        appendLine("Name: ${characterData.name} ${characterData.lastName ?: ""}")
+        appendLine("Personality: ${characterData.profile.personality}")
+        appendLine(
+            "Visual Profile: ${characterData.details.physicalTraits.ethnicity} ${characterData.details.physicalTraits.gender}, ${characterData.details.physicalTraits.race}. ${characterData.details.physicalTraits.facialDetails.hair} hair, ${characterData.details.physicalTraits.facialDetails.eyes} eyes. ${characterData.details.physicalTraits.bodyFeatures.buildAndPosture}.",
+        )
+        appendLine("Style: ${characterData.details.clothing.outfitDescription}")
         appendLine()
         appendLine("## THE JOURNEY SO FAR (KEY EVENTS)")
         if (character.events.isEmpty()) {
@@ -393,9 +401,10 @@ object CharacterPrompts {
         }
         appendLine()
         appendLine("## INSTRUCTIONS")
-        appendLine("1. Write a single, cohesive, and compelling paragraph (max 150 words).")
-        appendLine("2. Focus on how the character has changed, matured, or stayed true to their essence through these events.")
-        appendLine("3. Use an atmospheric tone that perfectly matches the saga's genre.")
+        appendLine("1. Write a single, cohesive, and compelling paragraph (max 180 words).")
+        appendLine("2. Blend their physical presence and distinctive personality with their narrative arc.")
+        appendLine("3. Focus on how the character has changed, matured, or stayed true to their essence through these events.")
+        appendLine("4. Use an atmospheric tone that perfectly matches the saga's genre.")
         appendLine(
             "## Apply this tone style to the output: ${
                 GenrePrompts.conversationDirective(
@@ -403,11 +412,11 @@ object CharacterPrompts {
                 )
             }",
         )
-        appendLine("4. Mention at least one key relationship if it's pivotal to their development.")
-        appendLine("5. Transform the raw list of events into a flowing narrative summary.")
+        appendLine("5. Mention at least one key relationship if it's pivotal to their development.")
+        appendLine("6. Transform the raw list of events into a flowing narrative summary.")
         appendLine(
-            "6. The goal is to give the reader a deep understanding of 'who this character is now' in the context of the ongoing story.",
+            "7. The goal is to give the reader a deep understanding of 'who this character is now' in the context of the ongoing story.",
         )
-        appendLine("7. Respond ONLY with the resume text. No intro, no outro.")
+        appendLine("8. Respond ONLY with the resume text. No intro, no outro.")
     }.trimIndent()
 }

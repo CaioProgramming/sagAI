@@ -121,10 +121,9 @@ fun toJsonMap(
     filteredFields: List<String> = emptyList(),
     fieldCustomDescriptions: List<Pair<String, String>> = emptyList(),
 ): String {
-    // Handle primitive types early to avoid introspecting their internal fields
     when {
-        clazz.isEnum -> return "${clazz.enumConstants?.joinToString(" | ") { it.toString() }}"
-        clazz == String::class.java -> return "\"\""
+        clazz.isEnum -> return "${clazz.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
+        clazz == String::class.java -> return "string"
         clazz == Int::class.java || clazz == Integer::class.java -> return "0"
         clazz == Boolean::class.java -> return "false"
         clazz == Double::class.java -> return "0.0"
@@ -132,7 +131,7 @@ fun toJsonMap(
         clazz == Long::class.java -> return "0"
         clazz == Byte::class.java -> return "0"
         clazz == Short::class.java -> return "0"
-        clazz == Char::class.java -> return "''"
+        clazz == Char::class.java -> return "string"
     }
 
     val deniedFields =
@@ -150,11 +149,11 @@ fun toJsonMap(
                 val fieldValue =
                     when {
                         fieldType.isEnum -> {
-                            "${fieldType.enumConstants?.joinToString(" | ") { it.toString() }}"
+                            "${fieldType.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
                         }
 
                         fieldType == String::class.java -> {
-                            "\"\""
+                            "string"
                         }
 
                         fieldType == Int::class.java || fieldType == Integer::class.java -> {
@@ -199,7 +198,7 @@ fun toJsonMap(
                         }
 
                         else -> {
-                            toJsonMap(fieldType)
+                            toJsonMap(fieldType, filteredFields, fieldCustomDescriptions)
                         }
                     }
                 val customDescription =

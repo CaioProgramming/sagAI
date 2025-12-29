@@ -40,4 +40,6 @@ interface SagaDetailUseCase {
     fun getBackupEnabled(): Flow<Boolean>
 
     suspend fun generateStoryBriefing(saga: SagaContent): RequestResult<StoryDailyBriefing>
+
+    suspend fun generateSagaResume(saga: SagaContent): RequestResult<String>
 }

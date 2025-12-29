@@ -139,4 +139,13 @@ class SagaDetailUseCaseImpl
                 val prompt = SagaPrompts.generateStoryBriefing(saga)
                 textGenClient.generate<StoryDailyBriefing>(prompt)!!
             }
+
+        override suspend fun generateSagaResume(saga: SagaContent): RequestResult<String> =
+            executeRequest {
+                val prompt = SagaPrompts.sagaResume(saga)
+                textGenClient.generate<String>(
+                    prompt,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
+                )!!
+        }
     }

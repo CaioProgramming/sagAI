@@ -187,6 +187,9 @@ fun SagaDetailView(
     val showPremiumSheet by viewModel.showPremiumSheet.collectAsStateWithLifecycle()
     val originalBitmap by viewModel.originalBitmap.collectAsStateWithLifecycle()
     val segmentedBitmap by viewModel.segmentedBitmap.collectAsStateWithLifecycle()
+    val sagaResume by viewModel.sagaResume.collectAsStateWithLifecycle()
+    val isSummarizingSaga by viewModel.isSummarizingSaga.collectAsStateWithLifecycle()
+
     BackHandler(enabled = true) {
         if (showDeleteConfirmation) {
             showDeleteConfirmation = false
@@ -214,6 +217,8 @@ fun SagaDetailView(
         state,
         section,
         paddingValues,
+        isSummarizing = isSummarizingSaga,
+        resume = sagaResume,
         showReview = showReview,
         showTitleOnly = showIntro,
         emotionalCardReference = emotionalCardReference,
@@ -373,8 +378,7 @@ fun LazyListScope.SagaDrawerContent(
                             .reactiveShimmer(
                                 content.data.review != null,
                                 targetValue = 250f,
-                            )
-                            .clickable {
+                            ).clickable {
                                 openReview()
                             },
                 )
@@ -399,8 +403,7 @@ fun LazyListScope.SagaDrawerContent(
                         1.dp,
                         MaterialTheme.colorScheme.onBackground.copy(alpha = .1f),
                         shape,
-                    )
-                    .background(
+                    ).background(
                         MaterialTheme.colorScheme.background,
                         shape,
                     )
@@ -441,8 +444,7 @@ fun LazyListScope.SagaDrawerContent(
                                     .clip(shape)
                                     .clickable {
                                         expandedEvents = !expandedEvents
-                                    }
-                                    .fillMaxWidth(),
+                                    }.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
                             Text(
@@ -559,6 +561,8 @@ fun SagaDetailContentView(
     generatingReview: Boolean = false,
     backupEnabled: Boolean = false,
     emotionalCardReference: String,
+    isSummarizing: Boolean = false,
+    resume: String? = null,
     onChangeSection: (DetailAction) -> Unit = {},
     onBackClick: (DetailAction) -> Unit = {},
     reviewWiki: (List<Wiki>) -> Unit = {},
@@ -739,6 +743,8 @@ fun SagaDetailContentView(
                                             emotionalReviewIconUrl = emotionalCardReference,
                                             animationScopes = this@SharedTransitionLayout to this,
                                             backupEnabled = backupEnabled,
+                                            isSumarizing = isSummarizing,
+                                            resume = resume,
                                             modifier =
                                                 Modifier
                                                     .animateContentSize()
@@ -909,6 +915,8 @@ private fun SagaDetailInitialView(
     content: SagaContent?,
     emotionalReviewIconUrl: String,
     backupEnabled: Boolean,
+    resume: String? = null,
+    isSumarizing: Boolean = false,
     modifier: Modifier,
     animationScopes: Pair<SharedTransitionScope, AnimatedContentScope>,
     selectSection: (DetailAction) -> Unit = {},
@@ -985,8 +993,7 @@ private fun SagaDetailInitialView(
                                                             key = "saga-style-header",
                                                         ),
                                                         animatedVisibilityScope = this@AnimatedContent,
-                                                    )
-                                                    .reactiveShimmer(
+                                                    ).reactiveShimmer(
                                                         true,
                                                         duration = 5.seconds,
                                                     )
@@ -1272,26 +1279,37 @@ private fun SagaDetailInitialView(
                             }
 
                             item(span = { GridItemSpan(columnCount) }) {
-                                Text(
-                                    stringResource(R.string.saga_detail_description_section_title),
-                                    style = sectionStyle,
+                                Column(
                                     modifier =
                                         Modifier
                                             .padding(16.dp)
                                             .fillMaxWidth(),
-                                )
-                            }
+                                ) {
+                                    Text(
+                                        stringResource(R.string.saga_detail_description_section_title),
+                                        style = sectionStyle,
+                                    )
 
-                            item(span = { GridItemSpan(columnCount) }) {
-                                Text(
-                                    saga.data.description,
-                                    style =
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            fontFamily = saga.data.genre.bodyFont(),
-                                            textAlign = TextAlign.Justify,
-                                        ),
-                                    modifier = Modifier.padding(16.dp),
-                                )
+                                    AnimatedContent(
+                                        targetState = resume ?: saga.data.description,
+                                        transitionSpec = {
+                                            fadeIn(tween(1000)) togetherWith fadeOut(tween(500))
+                                        },
+                                    ) { text ->
+                                        Text(
+                                            text,
+                                            style =
+                                                MaterialTheme.typography.bodyMedium.copy(
+                                                    fontFamily = saga.data.genre.bodyFont(),
+                                                    textAlign = TextAlign.Justify,
+                                                ),
+                                            modifier =
+                                                Modifier
+                                                    .padding(top = 8.dp)
+                                                    .reactiveShimmer(isSumarizing),
+                                        )
+                                    }
+                                }
                             }
 
                             if (saga.characters.isNotEmpty()) {

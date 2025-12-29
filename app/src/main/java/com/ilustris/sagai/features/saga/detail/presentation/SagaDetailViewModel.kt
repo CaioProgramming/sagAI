@@ -37,7 +37,7 @@ class SagaDetailViewModel
         private val billingService: BillingService,
         private val imageSegmentationHelper: ImageSegmentationHelper,
     ) : ViewModel() {
-    private val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
+        private val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
         private val _state = MutableStateFlow<State>(State.Loading)
         val state: StateFlow<State> = _state.asStateFlow()
         val saga = MutableStateFlow<SagaContent?>(null)
@@ -53,9 +53,11 @@ class SagaDetailViewModel
 
         val showPremiumSheet = MutableStateFlow(false)
 
+        val originalBitmap = MutableStateFlow<Bitmap?>(null)
+        val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
 
-    val originalBitmap = MutableStateFlow<Bitmap?>(null)
-    val segmentedBitmap = MutableStateFlow<Bitmap?>(null)
+        val sagaResume = MutableStateFlow<String?>(null)
+        val isSummarizingSaga = MutableStateFlow(false)
 
         fun fetchEmotionalCardReference() {
             viewModelScope.launch(Dispatchers.IO) {
@@ -85,11 +87,35 @@ class SagaDetailViewModel
                                 }
                             }
                         }
+
+                        // Generate saga resume if not already generated
+                        if (sagaResume.value == null && data.acts.isNotEmpty()) {
+                            generateSagaResume(data)
+                        }
+
                         launchIntroSequence()
                     }
                 }
             }
         }
+
+        private fun generateSagaResume(sagaContent: SagaContent) {
+            viewModelScope.launch(Dispatchers.IO) {
+                isSummarizingSaga.value = true
+                sagaDetailUseCase
+                    .generateSagaResume(sagaContent)
+                    .onSuccessAsync {
+                        sagaResume.emit(it)
+                        isSummarizingSaga.value = false
+                    }.onFailure {
+                        isSummarizingSaga.value = false
+                        android.util.Log.e(
+                            "SagaDetailViewModel",
+                            "Error generating saga resume: ${it.message}",
+                    )
+                }
+        }
+    }
 
         fun deleteSaga(saga: Saga) {
             viewModelScope.launch {
@@ -222,16 +248,15 @@ class SagaDetailViewModel
             }
         }
 
-
-    fun segmentSagaCover(url: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val cachedBitmap = segmentedImageCache.get(url)
-            if (cachedBitmap != null) {
-                segmentedBitmap.emit(cachedBitmap)
-                return@launch
-            }
-            imageSegmentationHelper.processImage(url).onSuccessAsync {
-                segmentedBitmap.emit(it.second)
+        fun segmentSagaCover(url: String) {
+            viewModelScope.launch(Dispatchers.IO) {
+                val cachedBitmap = segmentedImageCache.get(url)
+                if (cachedBitmap != null) {
+                    segmentedBitmap.emit(cachedBitmap)
+                    return@launch
+                }
+                imageSegmentationHelper.processImage(url).onSuccessAsync {
+                    segmentedBitmap.emit(it.second)
                 originalBitmap.emit(it.first)
             }
         }
