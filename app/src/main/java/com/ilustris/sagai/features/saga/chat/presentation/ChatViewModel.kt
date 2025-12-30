@@ -610,6 +610,16 @@ class ChatViewModel
             )
         }
 
+        override fun onDestroy(owner: LifecycleOwner) {
+            super.onDestroy(owner)
+            val saga = uiState.value.sagaContent
+            if (saga != null) {
+                viewModelScope.launch(Dispatchers.IO) {
+                    scheduledNotificationService.scheduleNotification(saga.data.id)
+                }
+        }
+    }
+
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
             Log.d("ChatViewModel", "Lifecycle: onPause called. Music continues via service if playing.")
@@ -625,7 +635,6 @@ class ChatViewModel
                             "Updating playtime for saga ${currentSaga.data.id}: +${duration}ms",
                         )
                         sagaContentManager.updatePlaytime(currentSaga.data.id, duration)
-                        scheduledNotificationService.scheduleNotification(currentSaga.data.id)
                     }
                     startTime = 0L
                 }

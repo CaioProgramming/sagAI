@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import androidx.compose.ui.graphics.toArgb
 import com.ilustris.sagai.core.utils.currentLanguage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.Genre.COWBOY
@@ -11,6 +12,7 @@ import com.ilustris.sagai.features.newsaga.data.model.Genre.HORROR
 import com.ilustris.sagai.features.newsaga.data.model.Genre.PUNK_ROCK
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SHINOBI
 import com.ilustris.sagai.features.newsaga.data.model.Genre.SPACE_OPERA
+import com.ilustris.sagai.features.newsaga.data.model.colorPalette
 
 object GenrePrompts {
     fun artStyle(genre: Genre) =
@@ -30,7 +32,8 @@ object GenrePrompts {
                     appendLine("- Soft golden-hour ambiance with warm atmospheric perspective")
                     appendLine("- Color harmony through glazing: warm reds/golds layered over cool earth tones for depth")
                     appendLine(
-                        "- Figures rendered with the noble grace and refined presence characteristic of classical painting, applied to a diverse range of characters.")
+                        "- Figures rendered with the noble grace and refined presence characteristic of classical painting, applied to a diverse range of characters.",
+                    )
                     appendLine("- Brushwork: VISIBLE but CONTROLLED - not loose, not hyper-detailed digital")
                     appendLine()
                     appendLine(
@@ -97,6 +100,14 @@ object GenrePrompts {
                     )
                     appendLine(
                         " - Color mixing: Use traditional oil painting color harmonies - no oversaturated digital colors, no neon, no RGB-pure colors.",
+                    )
+                    appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine(
+                        "- **Aura:** Divine, ethereal, and timeless. The subject should radiate a sense of ancient nobility or mystical grace.",
+                    )
+                    appendLine(
+                        "- **Posing:** Classical 'Contrapposto' or graceful, fluid gestures. Avoid stiff, modern 'action hero' poses. Think of a figure in a Renaissance fresco—balanced, poised, and elegant.",
                     )
                     appendLine()
                     appendLine(
@@ -194,6 +205,12 @@ object GenrePrompts {
                         "Facial Features: Classic 1990s anime proportions. Large, expressive eyes with prominent specular highlights, sharp noses, and high-contrast hair sheen.",
                     )
                     appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Cynical, wired, and cool. A mix of street-smart weariness and high-tech lethality.")
+                    appendLine(
+                        "- **Posing:** Guarded, slouching, or intensely focused. The subject should look like they are checking their back or interfacing with data. Avoid open, happy postures.",
+                    )
+                    appendLine()
                     appendLine("Mood: Dystopian, melancholic, and vast. A sense of high-tech isolation amidst towering structures.")
                     appendLine(
                         "Ambience: Dense vertical metropolis, looming mega-skylines, muted city lights. A feeling of oppressive scale and future decay.",
@@ -253,6 +270,12 @@ object GenrePrompts {
                         " - Application: Use this for subtle highlights, reflections, or to create a chilling atmosphere. Forbid other vibrant colors.",
                     )
                     appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Unsettled, paranoid, or deeply menacing. The subject exudes psychological tension.")
+                    appendLine(
+                        "- **Posing:** Tense, recoiling, or unnervingly still. Body language should suggest vulnerability or a hidden threat. Avoid confident, heroic stances.",
+                    )
+                    appendLine()
                     appendLine("Mood: Oppressive, uncanny, and creeping dread — prioritize psychological unease over explicit gore.")
                     appendLine(
                         "Ambience: Low-key, desaturated environment with heavy shadows and subtle volumetric fog; minimal and muted highlights only where needed to draw attention to small, eerie details.",
@@ -309,6 +332,12 @@ object GenrePrompts {
                     appendLine(" - Mandatory Accent: SUBTLE ELECTRIC BLUE.")
                     appendLine(
                         " - Application: Use this accent for SKY DETAILS, REFLECTIONS on glass/water, subtle RIM LIGHTING, or small details on accessories/tech. It should NOT be a dominant wash, but a unifying atmospheric element.",
+                    )
+                    appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Larger-than-life, determined, and inspiring. A beacon of strength in the urban jungle.")
+                    appendLine(
+                        "- **Posing:** DYNAMIC and VERTICAL. Low angles looking up at the hero, or high angles looking down. Poses should be action-oriented or stoically overlooking the city. Avoid static, eye-level portraits.",
                     )
                     appendLine()
                     appendLine("Mood: HEROIC, VERTICAL, and EXPANSIVE. A sense of scale and freedom mixed with urban melancholy.")
@@ -370,6 +399,12 @@ object GenrePrompts {
                     )
                     appendLine(
                         "Rendering: THE \"PERFECT PICTURE\" ILLUSION. At first glance, it appears to be a stunning high-resolution photograph. On closer inspection, it is a masterpiece painting with incredibly fine, deliberate details. Sharp focus on the subject, dreamy/soft background.",
+                    )
+                    appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Untouchable sophistication, dangerous glamour, and absolute confidence.")
+                    appendLine(
+                        "- **Posing:** Relaxed dominance. Leaning back, owning the space, casual displays of wealth/power. The 'King/Queen of the City' vibe.",
                     )
                     appendLine()
                     appendLine("Mood: A Divine Piece of Art. A frozen moment of absolute luxury and beauty.")
@@ -440,6 +475,12 @@ object GenrePrompts {
                     appendLine("Composition must heavily utilize and celebrate the white/negative space.")
                     appendLine("Focus on the character's immediate action or emotion.")
                     appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Lethal silence, focused intensity, and spiritual weight.")
+                    appendLine(
+                        "- **Posing:** Fluid and coiled. Poses should suggest potential energy—ready to strike or vanish. Utilize the negative space; the subject is part of the flow of ink.",
+                    )
+                    appendLine()
                     appendLine("Rendering: Full-bleed illustration. No borders, frames, or text.")
                     appendLine()
                     appendLine("Mood: Raw, spontaneous, intensely focused, and visually powerful through simplicity.")
@@ -488,6 +529,12 @@ object GenrePrompts {
                         " - NOTE: Technology and vehicles are NOT mandatory - the cosmic ambience and 1950s art style are the primary focus.",
                     )
                     appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Optimistic, adventurous, and awe-inspired. The spirit of discovery.")
+                    appendLine(
+                        "- **Posing:** Heroic 1950s poster style. Chest out, looking toward the stars/horizon, confident and dashing. Avoid dark, brooding, or cynical postures.",
+                    )
+                    appendLine()
                     appendLine("Mood: \"The Infinite Cosmos Awaits!\" — Awe-inspiring, optimistic, and filled with cosmic wonder.")
                     appendLine(
                         "Ambience: VAST COSMIC ENVIRONMENTS. Emphasize the true majesty of space: swirling nebulae in brilliant colors, dense star fields stretching to infinity, the event horizon of black holes, meteor showers blazing across the void, distant galaxies spiraling in the background, cosmic dust clouds illuminated by stellar radiation.",
@@ -530,6 +577,12 @@ object GenrePrompts {
                     appendLine(" - Mandatory Accent: BURNT ORANGE / SUNSET GOLD.")
                     appendLine(
                         " - Application: Use the accent boldly for sunsets, campfire glow, dust catching light, or metallic glints. Apply with expressive brush marks.",
+                    )
+                    appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Rugged, stoic, and weathered. A survivor of the frontier.")
+                    appendLine(
+                        "- **Posing:** Relaxed but ready. Hands near belt, leaning on a post, or riding with purpose. A heavy, grounded presence.",
                     )
                     appendLine()
                     appendLine("Mood: Rugged, isolated, and stoic. A sense of vastness and freedom, captured with artistic emotion.")
@@ -648,6 +701,12 @@ object GenrePrompts {
                         " - The background should be GRAPHIC and slightly FLAT (to match the cartoon style) but DETAILED and PRESENT.",
                     )
                     appendLine(" - Characters exist IN a world, not floating in empty space.")
+                    appendLine()
+                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("- **Aura:** Anarchic, rebellious, and unapologetic. 'Too cool to care' or manic energy.")
+                    appendLine(
+                        "- **Posing:** Exaggerated, slouching, breaking the frame. Middle fingers (implied attitude), screaming into mics, or staring down the viewer. chaotic and authentic.",
+                    )
                     appendLine()
                     appendLine("**MOOD & ENERGY:**")
                     appendLine(" - Anarchic, rebellious, cool. The energy of a garage band or animated music video.")
@@ -1283,7 +1342,7 @@ object GenrePrompts {
             // CONSERVATIVE: Stylized but with some flexibility
             CYBERPUNK -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
 
-            HEROES -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
+            HEROES -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.STRICT
 
             SPACE_OPERA -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
 
@@ -1301,11 +1360,21 @@ object GenrePrompts {
      * Extract validation rules from the art style for the reviewer.
      * Provides structured data about what's banned, required, and allowed.
      */
+    private fun getHexPalette(genre: Genre): String =
+        genre.colorPalette().joinToString(", ") {
+            "#%06X".format(0xFFFFFF and it.toArgb())
+        }
+
     fun validationRules(genre: Genre): String =
         when (genre) {
             PUNK_ROCK -> {
+                val palette = getHexPalette(genre)
                 """
                 **CRITICAL VALIDATION RULES FOR PUNK_ROCK:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
                 
                 BANNED TERMS (ZERO TOLERANCE):
                 - Realistic eye colors: 'brown eyes', 'blue eyes', 'green eyes', 'cast [color] eyes', 'piercing eyes', 'iris', 'pupils', 'natural eyes'
@@ -1350,8 +1419,13 @@ object GenrePrompts {
             }
 
             HORROR -> {
+                val palette = getHexPalette(genre)
                 """
                 **CRITICAL VALIDATION RULES FOR HORROR:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
                 
                 BANNED TERMS:
                 - Modern rendering: 'photorealistic', '3D render', 'smooth gradients', 'high-res textures'
@@ -1386,8 +1460,13 @@ object GenrePrompts {
             }
 
             CYBERPUNK -> {
+                val palette = getHexPalette(genre)
                 """
                 **CRITICAL VALIDATION RULES FOR CYBERPUNK:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
                 
                 BANNED TERMS:
                 - Modern techniques: '3D CGI', 'photorealism', 'digital smoothing', 'Unreal Engine', 'volumetric lighting'
@@ -1425,8 +1504,13 @@ object GenrePrompts {
             }
 
             HEROES -> {
+                val palette = getHexPalette(genre)
                 """
                 **VALIDATION RULES FOR HEROES:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
                 
                 BANNED TERMS:
                 - Avoid: forced night scenes (prefer dynamic daytime/sunset)
@@ -1460,8 +1544,13 @@ object GenrePrompts {
             }
 
             SPACE_OPERA -> {
+                val palette = getHexPalette(genre)
                 buildString {
                     appendLine("**VALIDATION RULES FOR SPACE_OPERA:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
                     appendLine()
                     appendLine("BANNED TERMS:")
                     appendLine("- Avoid: 'primitive rockets', 'simple tube rockets', 'basic spacecraft'")
@@ -1510,8 +1599,13 @@ object GenrePrompts {
             }
 
             FANTASY -> {
+                val palette = getHexPalette(genre)
                 buildString {
                     appendLine("**VALIDATION RULES FOR FANTASY:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
                     appendLine()
                     appendLine("BANNED TERMS:")
                     appendLine("- Empty backgrounds: 'plain background', 'gradient background', 'isolated figure'")
@@ -1660,7 +1754,10 @@ object GenrePrompts {
                     appendLine(
                         "- Required: 'soft chiaroscuro', 'divine illumination', 'warm golden light', 'gentle transitions', 'luminous', 'atmospheric'",
                     )
-                    appendLine("- Forbidden: 'harsh shadows', 'dramatic contrast', 'dark lighting', 'cold light', 'rim light' (too modern)")
+                    appendLine(
+                        "- Note: Structural shadows/contrast from reference ARE ALLOWED but must be rendered with 'soft edges' and 'glazing' (not harsh digital blacks).",
+                    )
+                    appendLine("- Forbidden: 'harsh digital shadows', 'pitch black shadows', 'cold light', 'modern rim light'")
                     appendLine(
                         "- Lighting should enhance environment: golden hour on landscapes, candlelit ruins, dappled forest light, warm sunset on stone, misty morning glow",
                     )
@@ -1724,8 +1821,13 @@ object GenrePrompts {
             }
 
             CRIME -> {
+                val palette = getHexPalette(genre)
                 buildString {
                     appendLine("**VALIDATION RULES FOR CRIME:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
                     appendLine()
                     appendLine("BANNED TERMS:")
                     appendLine("- Empty backgrounds: 'plain background', 'gradient background'")
@@ -1733,7 +1835,9 @@ object GenrePrompts {
                     appendLine("REQUIRED ELEMENTS:")
                     appendLine("- Art style: 'hyper-realistic classical oil painting', 'academic realism'")
                     appendLine("- Technique: 'smooth glazing', 'no rough brushstrokes', 'flawless surface'")
-                    appendLine("- Lighting: 'divine & ethereal', 'soft diffused heavenly light'")
+                    appendLine(
+                        "- Lighting: 'divine & ethereal', 'soft diffused heavenly light' (Maintain reference contrast structure if strong)",
+                    )
                     appendLine("- Background MUST include 80s Miami beach paradise elements")
                     appendLine()
                     appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
@@ -1774,8 +1878,13 @@ object GenrePrompts {
             }
 
             COWBOY -> {
+                val palette = getHexPalette(genre)
                 buildString {
                     appendLine("**VALIDATION RULES FOR COWBOY:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
                     appendLine()
                     appendLine("BANNED TERMS:")
                     appendLine("- Avoid: 'photorealism', 'smooth digital blending', 'refined details'")
@@ -1822,8 +1931,13 @@ object GenrePrompts {
             }
 
             SHINOBI -> {
+                val palette = getHexPalette(genre)
                 buildString {
                     appendLine("**VALIDATION RULES FOR SHINOBI:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
                     appendLine()
                     appendLine("BANNED TERMS:")
                     appendLine("- Empty backgrounds violate negative space principle (environment suggested, not plain)")

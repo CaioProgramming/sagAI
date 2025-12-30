@@ -139,37 +139,10 @@ object CharacterPrompts {
         appendLine(
             "// Characters Context: ${
                 characters.toJsonFormatExcludingFields(
-                    fieldsToExclude =
-                        listOf(
-                            "details",
-                            "id",
-                            "image",
-                            "hexColor",
-                            "sagaId",
-                            "joinedAt",
-                        ),
+                    fieldsToExclude = ChatPrompts.characterExclusions,
                 )
             }",
         )
-        appendLine("")
-        appendLine("// --- MANDATORY OUTPUT STRUCTURE ---")
-        appendLine("// The output MUST be a JSON array. The response must NOT include any additional text, explanations, or parentheses.")
-        appendLine("// The structure of each object in the array MUST follow this exact format:")
-        appendLine("/*")
-        appendLine("[")
-        appendLine("  {")
-        appendLine("    \"characterName\": \"Character Name\",")
-        appendLine("    \"description\": \"A concise update (1-2 sentences) about the character's actions or impact in this event.\",")
-        appendLine("    \"title\": \"Short, descriptive title for the character's event.\"")
-        appendLine("  },")
-        appendLine("  {")
-        appendLine("    \"characterName\": \"Another Character\",")
-        appendLine("    \"description\": \"Update about the second character.\",")
-        appendLine("    \"title\": \"Event title for this character.\"")
-        appendLine("  }")
-        appendLine("]")
-        appendLine("*/")
-        appendLine("")
         appendLine("// --- STEP-BY-STEP INSTRUCTIONS ---")
         appendLine("// Follow these steps rigorously to generate the JSON array:")
         appendLine("")
@@ -191,21 +164,6 @@ object CharacterPrompts {
                     "emotionalReview",
                     "chapterId",
                 ),
-            ),
-        )
-        appendLine("")
-        appendLine("// Characters Context:")
-        appendLine(
-            characters.toJsonFormatExcludingFields(
-                fieldsToExclude =
-                    listOf(
-                        "details",
-                        "id",
-                        "image",
-                        "hexColor",
-                        "sagaId",
-                        "joinedAt",
-                    ),
             ),
         )
     }.trimIndent()

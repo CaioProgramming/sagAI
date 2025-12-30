@@ -117,11 +117,11 @@ fun Genre.selectiveHighlight(): SelectiveColorParams =
         Genre.HEROES -> {
             SelectiveColorParams(
                 targetColor = color,
-                hueTolerance = .3f,
-                saturationThreshold = .45f,
-                lightnessThreshold = .25f,
-                highlightSaturationBoost = 1.4f,
-                desaturationFactorNonTarget = .5f,
+                hueTolerance = .1f,
+                saturationThreshold = .1f,
+                lightnessThreshold = .3f,
+                highlightSaturationBoost = 2f,
+                desaturationFactorNonTarget = .0f,
             )
         }
 

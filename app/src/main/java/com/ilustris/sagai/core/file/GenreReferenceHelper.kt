@@ -84,7 +84,7 @@ class GenreReferenceHelper(
 
             Log.d(
                 javaClass.simpleName,
-                "Using composition reference $referenceUrl for genre ${genre.name}",
+                "reference $referenceUrl for genre ${genre.name}",
             )
 
             val request =

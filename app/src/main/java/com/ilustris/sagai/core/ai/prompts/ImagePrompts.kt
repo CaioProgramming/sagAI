@@ -45,7 +45,8 @@ object ImagePrompts {
         buildString {
             appendLine("SYSTEM ROLE: Senior Director of Photography & AI Prompt Engineer")
             appendLine("TASK: Perform a technical CINEMATOGRAPHY EXTRACTION from the provided reference image.")
-            appendLine("OBJECTIVE: Extract pure PHOTOGRAPHIC DNA (lens, lighting, angle, composition). Ignore subject and art style.")
+            appendLine(
+                "OBJECTIVE: Extract pure PHOTOGRAPHIC DNA (lens, lighting, angle, composition). ABSTRACTION IS KEY: Capture the *vibe* and *structure* of the background, NOT specific objects. (e.g., if reference shows spiderwebs, extract 'intricate foreground patterning' or 'dynamic chaotic background', do NOT mention 'webs').")
             appendLine()
             appendLine("CRITICAL DIRECTIVE (NON-NEGOTIABLE):")
             appendLine("- NO PREAMBLE: Do not start with 'Okay', 'Let's break down', or any introductory filler.")
@@ -68,9 +69,12 @@ object ImagePrompts {
                 "3. FRAMING: [ECU face / CU head-shoulders / MCU head-chest / MS head-waist / MWS head-knees / FS full-body / WS body+env / EWS small-in-vast]",
             )
             appendLine("4. PLACEMENT: [H: left/center/right third] [V: upper/center/lower third]")
-            appendLine("5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]")
+            appendLine(
+                "5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]. DESCRIBE the shadow interplay, contrast intensity, and how light composites the subject.",
+            )
             appendLine("6. COLOR: [cool / neutral / warm] + dominant palette")
-            appendLine("7. ENVIRONMENT: Location type, scale, key elements")
+            appendLine(
+                "7. ENVIRONMENT: General setting vibe (e.g., 'urban verticality', 'chaotic debris field', 'ethereal void'), NOT specific objects from reference.")
             appendLine("8. MOOD: Emotional tone (epic/intimate/oppressive/nostalgic/etc)")
             appendLine("9. DOF: [razor / shallow / moderate / deep / infinite]")
             appendLine("10. ATMOSPHERE: [clear/hazy/misty/foggy/dusty/smoky]")
@@ -83,7 +87,8 @@ object ImagePrompts {
                 "14. SIGNATURE: The core compositional/artistic element that makes this image impactful (e.g., 'intense portrait expressiveness', 'dramatic subject isolation', 'powerful gaze connection'). Focus on WHAT makes it compelling, NOT on specific physical attributes of the subject.")
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
             appendLine(
-                "16. SUBJECT_ORIENTATION: [Front-facing / 3/4 turn left/right / Profile left/right / Back-facing]. Define the SUBJECT'S rotation/axis relative to the camera lens.")
+                "16. SUBJECT_ORIENTATION: [Front-facing / 3/4 turn left/right / Profile left/right / Back-facing]. CRITICAL PRECISION: Distinguish strictly between 3/4 and Profile (Profile = 90deg turn, 1 eye visible vs 3/4 = angled, far side partially visible). Define rotation relative to lens."
+            )
             appendLine()
             appendLine("VISIBILITY ANALYSIS:")
             appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OCCLUDED")
@@ -135,6 +140,12 @@ object ImagePrompts {
         appendLine(
             "   - **ANGLE & PERSPECTIVE ENFORCEMENT:** The prompt's angle MUST be specific, non-generic, and creative, as mandated by the visual direction. It must avoid 'banned perspectives' like flat or plain views. The description must clearly reflect the chosen viewpoint (e.g., 'The camera looks up at the towering figure...').",
         )
+        appendLine(
+            "   - **SUBJECT ORIENTATION (NON-NEGOTIABLE):** STRICTLY enforce the subject's rotation from visual direction. If direction says 'Profile', prompt MUST describe a side profile. If '3/4', it MUST be 3/4. Mismatch = CRITICAL VIOLATION.",
+        )
+        appendLine(
+            "   - **LIGHTING & CONTRAST FIDELITY:** The prompt MUST embrace the reference's lighting structure (e.g., strong shadows, specific light direction, contrast level) as a compositional tool. Art style lighting acts as a MOOD/PALETTE filter, but it must NOT flatten or compromise the dramatic lighting defined in the reference.",
+        )
         appendLine("   - NO technical jargon (f-stops/Kelvin/degrees) - use visual descriptors")
         appendLine()
 
@@ -152,19 +163,33 @@ object ImagePrompts {
                 "   - ABSOLUTE RULE: The final prompt MUST NOT contain descriptions of elements explicitly marked as HIDDEN (e.g., footwear in a headshot).",
             )
             appendLine(
-                "   - ACTION: If the prompt describes a truly hidden element (e.g., 'wearing leather boots' in a CU), DELETE it. But retain upper-body details that provide context for the character's style.",
+                "   - **HANDS & GESTURE EXCEPTION:** Hands and arms ARE allowed in tighter frames (CU/MCU) if they interact with the face or body (e.g., 'hand covering mouth', 'adjusting glasses'). Do NOT delete these if they enhance the expression.",
+            )
+            appendLine(
+                "   - ACTION: If the prompt describes a truly hidden element (e.g., 'wearing leather boots' in a CU), DELETE it. But retain upper-body details, expressive gestures, and context.",
             )
             appendLine()
         }
 
-        appendLine("3. POSE & EXPRESSION (ORGANIC EMOTION & NARRATIVE):")
+        appendLine("3. POSE & EXPRESSION (ALIVE, SOULFUL & EXPRESSIVE):")
         appendLine(
-            "   - FACIAL EXPRESSION: MUST convey a specific, nuanced emotion (e.g., 'weary resignation', 'mischievous glee', NOT 'has emotion').",
+            "   - **GOAL:** The character must look ALIVE and SOULFUL, caught in a genuine moment, not a static mannequin.",
         )
         appendLine(
-            "   - BODY LANGUAGE/POSE: MUST organically express emotion and intent, supporting the facial expression and narrative (e.g., 'shoulders slumped in defeat', 'hands clenched in anticipation', NOT just 'standing' or 'sitting').",
+            "   - FACIAL EXPRESSION: MUST convey a specific, nuanced emotion (e.g., 'weary resignation', 'mischievous glee').",
         )
-        appendLine("   - SYNERGY: Facial expression + body language MUST seamlessly and powerfully communicate a unified emotional state and story moment.")
+        appendLine(
+            "   - BODY LANGUAGE & HANDS: Demand expressiveness beyond the face. Look for head tilts, neck tension, shoulder position, and HANDS interacting with the self/environment (e.g., 'tugging at collar', 'hand on forehead').",
+        )
+        appendLine(
+            "   - SYNERGY: Facial expression + body language + hand placement MUST create a powerful, unified emotional storytelling moment.",
+        )
+        appendLine(
+            "   - **BODY LANGUAGE IMPORTANCE:** The pose is as critical as the face. If visual direction implies a specific stance (e.g., 'hunching', 'looking back'), it MUST be present. Static/neutral bodies in dynamic scenes are VIOLATIONS.",
+        )
+        appendLine(
+            "   - **OPEN ANGLE DYNAMICS (MS/FS/WS):** For wider shots, the ENTIRE visible body must express the narrative. Reject 'neutral standing'. Look for leaning, crouching, running, flying, sitting, or dynamic weight distribution.",
+        )
         appendLine("   - MOMENT: Character 'caught in a pivotal moment' (mid-action, reacting to an unseen event, lost in thought), NOT 'posed for portrait' or static.")
         appendLine()
 
@@ -182,31 +207,68 @@ object ImagePrompts {
         appendLine("   - Respect character traits (skin tone, hair, body type, distinctive marks)")
         appendLine()
 
+        appendLine("6. GENRE-SPECIFIC POSE & AURA:")
+        appendLine(
+            "   - The subject's pose and emotional aura MUST match the genre's specific directive (e.g., Heroes = Dynamic/Vertical, Fantasy = Graceful/Contrapposto, Punk = Rebellious/Slouching).",
+        )
+        appendLine("   - Reject generic poses that don't convey the genre's unique energy.")
+        appendLine()
+
+        appendLine("7. ARTIST MENTORSHIP (FEEDBACK LOOP):")
+        appendLine(
+            "   - **`artistImprovementSuggestions` FIELD:** Act as a senior art director giving feedback to a student artist.",
+        )
+        appendLine(
+            "   - Provide concrete, technical advice on how the artist can avoid the detected violations in the next prompt.",
+        )
+        appendLine(
+            "   - Focus on precision: 'Include 3 specific environment objects', 'Use more dramatic verbs for body language', 'Ensure hands are always described if the framing is CU/MCU'.",
+        )
+        appendLine("   - Use a constructive but firm tone to guide better initial output.")
+        appendLine()
+
         appendLine("VIOLATION DETECTION:")
         appendLine("- VISIBILITY_VIOLATION: Describes body parts/clothing out of frame")
         appendLine("- MISSING_FACIAL_EXPRESSION: No specific emotion or generic descriptor")
         appendLine("- MISSING_DYNAMIC_POSE: Static/neutral pose without emotional content")
         appendLine("- POSE_EXPRESSION_VIOLATION: Expression + pose don't work together or character seems posed, not in moment")
         appendLine("- FRAMING_VIOLATION: Describes elements not visible at this framing level")
-        appendLine("- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.")
+        appendLine("- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.",
+        )
+        appendLine("- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation does not match the visual direction.")
+        appendLine(
+            "- GENRE_AURA_VIOLATION: Subject pose or vibe contradicts the genre (e.g., static pose in Hero genre, happy pose in Cyberpunk).")
         appendLine("- BANNED_TERMINOLOGY: Uses forbidden words from art style")
         appendLine("- MISSING_CINEMATOGRAPHY_PARAMETER: Any of 16 params missing/vague")
         appendLine("- LIGHTING_MISSING/WRONG, COLOR_PALETTE_WRONG, ENVIRONMENT_MISSING, etc.")
         appendLine()
 
         appendLine("AUTO-FIX PATTERNS:")
-        appendLine("- Missing expression → Add specific emotion matching archetype")
-        appendLine("- Missing pose → Add dynamic body language with gesture")
-        appendLine("- Expression + pose contradictory → Align emotionally")
+        appendLine("- Missing expression → Add specific, INTENSE emotion matching archetype")
+        appendLine(
+            "- Missing/Weak pose → INJECT DRAMA: Suggest exaggerated gestures, dynamic foreshortening, and intensified body language",
+        )
+        appendLine("- Expression + pose contradictory → Align emotionally and AMPLIFY the storytelling")
         appendLine("- Out-of-frame descriptions → Remove, replace with visible details")
-        appendLine("- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.")
+        appendLine("- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.",
+        )
+        appendLine("- Wrong subject orientation → Correct the subject's rotation to match the visual direction.")
+        appendLine(
+            "- Wrong genre aura → Rewrite pose/expression to match genre (e.g., 'standing' → 'standing with heroic verticality' for Heroes).")
         appendLine("- Static character → Add momentum language ('breathing', 'captured mid-action')")
         appendLine("- Generic cinematography → Specify exact values from 16 parameters")
         appendLine("- Missing background/environment → Add 3+ specific objects")
         appendLine()
 
-        appendLine("OUTPUT JSON (ImagePromptReview):")
-
+        appendLine("OUTPUT JSON (ImagePromptReview) - ENSURE ALL FIELDS ARE PRESENT:")
+        appendLine("- `originalPrompt`: The raw input prompt")
+        appendLine("- `correctedPrompt`: The final, high-quality, fixed prompt")
+        appendLine(
+            "- `violations`: List of objects { \"type\": \"ENUM_NAME\", \"severity\": \"CRITICAL/MAJOR/MINOR\", \"description\": \"...\", \"example\": \"...\" }",
+        )
+        appendLine("- `changesApplied`: List of strings describing each fix")
+        appendLine("- `artistImprovementSuggestions`: Concrete, technical feedback for the artist on how to improve next time")
+        appendLine("- `wasModified`: Boolean indicating if any changes were made")
         appendLine()
         appendLine("PROMPT TO REVIEW:")
         appendLine(finalPrompt)

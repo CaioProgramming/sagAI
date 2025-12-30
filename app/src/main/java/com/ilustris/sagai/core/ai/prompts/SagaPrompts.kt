@@ -133,16 +133,19 @@ object SagaPrompts {
             )
             appendLine("Your task is to convert the technical data below into descriptive language for the final prompt:")
             appendLine(
-                "- **Framing & Visibility:** The 'framing' parameter dictates exactly what is visible. Your description MUST NOT mention any body part, clothing, or object that is outside this frame. This is a hard rule.",
+                "- **Framing & Visibility:** The 'framing' parameter dictates exactly what is visible. Be METICULOUS: clearly define what is visible and what is intentionally obscured. Your description MUST NOT mention any body part, clothing, or object that is outside this frame. This is a hard rule.",
             )
             appendLine(
-                "- **Angle & Perspective:** The 'angle' parameter defines the camera's viewpoint. Translate this into clear perspective terms (e.g., 'seen from a low angle', 'dutch angle of 15 degrees').",
+                "- **Angle & Perspective:** The 'angle' parameter defines the camera's viewpoint. Always explicitly state the camera angle (avoiding generic terms like 'close-up') and ensure it aligns with the desired mood and subject orientation. Translate this into clear perspective terms (e.g., 'seen from a low angle', 'dutch angle of 15 degrees').",
             )
             appendLine(
                 "- **Lens & DOF:** The 'lens' and 'DOF' parameters determine the subject's focus and background separation. Describe this visually (e.g., 'The character is in sharp focus, with the background heavily blurred', '...shot with a wide-angle lens, capturing the expansive environment').",
             )
             appendLine(
                 "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
+            )
+            appendLine(
+                "- **Subject Orientation:** The 'subject_orientation' parameter defines the subject's rotation relative to the camera. Describe this explicitly (e.g., 'The character is facing forward', 'The character is turned 3/4 to the left', 'Profile view facing right').",
             )
             appendLine()
         }
@@ -177,14 +180,31 @@ object SagaPrompts {
         appendLine(
             "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'Close-up,' do NOT mention the character's boots).",
         )
+        appendLine(
+            "   - **EXCEPTION:** Hands and gestures are ALLOWED and ENCOURAGED if they enter the frame to support the expression (e.g., touching face, adjusting glasses, hand over mouth), even in portraits.",
+        )
         appendLine("   - ALL 'CRITICAL' and 'IMPORTANT' character traits that *are* visible within the frame MUST be described in detail.")
         appendLine("   - Examples:")
         appendLine("     - ECU (extreme close-up): Face dominates. Eyes, nose, mouth, skin texture, and facial marks are the entire focus.")
-        appendLine("     - CU (close-up): Head and shoulders are visible. Upper chest can be partially visible. Lower body is NOT visible.")
-        appendLine("     - MS (medium shot): Head to waist is visible. Arms are visible. Legs and feet are NOT visible.")
+        appendLine(
+            "     - CU (close-up): Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible.",
+        )
+        appendLine("     - MS (medium shot): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible.")
         appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
         appendLine(
-            "3. **CONCRETE EXPRESSION & POSE:** Translate character context into specific, visible emotional and postural cues. No abstract emotions. (e.g., 'a subtle, cynical smirk playing on his lips' instead of 'he looks cynical').",
+            "3. **ALIVE & SOULFUL EXPRESSION:** Focus on crafting a dynamic pose and a nuanced facial expression that tell a story. Translate character context into specific, visible emotional and postural cues. The character must feel alive, not static.",
+        )
+        appendLine(
+            "   - **FACIAL EXPRESSION:** specific, nuanced emotion (e.g., 'a subtle, cynical smirk playing on his lips').",
+        )
+        appendLine(
+            "   - **FULL BODY DYNAMICS (CRITICAL for MS/FS/WS):** If the framing shows the torso or legs, the pose MUST be dynamic and genre-appropriate. NO default standing.",
+        )
+        appendLine(
+            "     - Examples: Leaning against walls, crouching in stealth, flying mid-air, running with urgency, sitting regally, kneeling in defeat, dynamic weight distribution.",
+        )
+        appendLine(
+            "   - **HANDS & GESTURES:** Always describe hand placement if visible. Hands must interact with the world or self (e.g., clutching a weapon, resting on hips, reaching out). Hands are valid in portraits if they add to the emotion.",
         )
         appendLine(
             "4. **SPECIFIC ENVIRONMENT:** Name at least 3 tangible objects or elements in the environment that are consistent with the context and genre. Avoid vague terms like 'a detailed background.'",
@@ -197,7 +217,7 @@ object SagaPrompts {
         )
         characterHexColor?.let {
             appendLine(
-                "7. **ACCENT COLOR ($it) INTEGRATION:** Weave this color into the scene via specific light sources, atmospheric effects, or subtle environmental details. Do NOT simply 'tint' the image.",
+                "7. **ACCENT COLOR ($it) INTEGRATION:** Consistently reinforce the art style's requirements, especially this accent color. Weave it into the scene via specific light sources, atmospheric effects, or subtle environmental details. Do NOT simply 'tint' the image.",
             )
         }
         appendLine()
@@ -211,7 +231,7 @@ object SagaPrompts {
         appendLine("[4] EXPRESSION - Mood/emotion/pose visible in this frame (concrete, not abstract)")
         appendLine("[5] ENVIRONMENT - 3+ specific objects, location context, environmental elements")
         appendLine("[6] LIGHTING - Specific direction, quality, color temperature, visible effects")
-        appendLine("[7] COMPOSITION - Technical: placement, depth, lock-screen vertical bias")
+        appendLine("[7] COMPOSITION - Technical: placement, subject orientation, depth, lock-screen vertical bias")
         appendLine("[8] DETAIL - Signature element, texture quality, final emphasis on genre compliance")
         appendLine()
 

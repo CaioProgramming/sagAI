@@ -632,6 +632,7 @@ private fun CharacterDetailsLoaded(
                                     Modifier
                                         .reactiveShimmer(
                                             isSummarizing,
+                                            targetValue = 1000f,
                                             repeatMode = RepeatMode.Restart,
                                         ).padding(vertical = 16.dp),
                             )
