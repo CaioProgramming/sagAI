@@ -95,7 +95,7 @@ class CharacterUseCaseImpl
                 val isPremium = billingService.isPremium()
 
                 val portraitReference =
-                    genreReferenceHelper.getPortraitReference().getSuccess()?.let {
+                    genreReferenceHelper.getRandomPortraitReference().getSuccess()?.let {
                         ImageReference(it, ImagePrompts.extractComposition())
                     }
                 val references =

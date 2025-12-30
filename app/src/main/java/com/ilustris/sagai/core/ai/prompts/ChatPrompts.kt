@@ -13,7 +13,6 @@ import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.generateCharacterRelationsSummary
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.newsaga.data.model.Genre
-import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -78,7 +77,6 @@ object ChatPrompts {
         appendLine(Core.roleDefinition(saga.data))
         appendLine(ChatRules.outputRules(saga.mainCharacter?.data))
         appendLine(ChatRules.TYPES_PRIORITY_CONTENT.trim())
-        appendLine(OutputRules.outputRule(toJsonMap(AIReply::class.java)))
 
         appendLine("# SCENE STATE")
         appendLine(sceneSummary.toAINormalize())

@@ -68,7 +68,7 @@ class SagaRepositoryImpl
         ) = executeRequest {
             val iconReferenceComposition =
                 genreReferenceHelper
-                    .getIconReference(saga.genre)
+                    .getRandomCompositionReference(saga.genre)
                     .getSuccess()
                     ?.let {
                         ImageReference(

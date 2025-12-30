@@ -123,15 +123,15 @@ fun toJsonMap(
 ): String {
     when {
         clazz.isEnum -> return "${clazz.enumConstants?.joinToString(" | ") { "\"$it\"" }}"
-        clazz == String::class.java -> return "string"
+        clazz == String::class.java -> return "\"string\""
         clazz == Int::class.java || clazz == Integer::class.java -> return "0"
-        clazz == Boolean::class.java -> return "false"
+        clazz == Boolean::class.java -> return "false | true"
         clazz == Double::class.java -> return "0.0"
         clazz == Float::class.java -> return "0.0"
         clazz == Long::class.java -> return "0"
         clazz == Byte::class.java -> return "0"
         clazz == Short::class.java -> return "0"
-        clazz == Char::class.java -> return "string"
+        clazz == Char::class.java -> return "\"string\""
     }
 
     val deniedFields =
@@ -153,7 +153,7 @@ fun toJsonMap(
                         }
 
                         fieldType == String::class.java -> {
-                            "string"
+                            "text"
                         }
 
                         fieldType == Int::class.java || fieldType == Integer::class.java -> {

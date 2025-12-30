@@ -82,7 +82,7 @@ class CharacterDetailsViewModel
                         isSummarizing.value = false
                         characterResume.value = characterContent.data.backstory
                         Log.e(javaClass.simpleName, "Error generating character resume: ${it.message}")
-                }
+                    }
             }
         }
 
@@ -127,12 +127,14 @@ class CharacterDetailsViewModel
         }
 
         fun init(
-            characterContent: CharacterContent,
+            characterContent: CharacterContent?,
             sagaContent: SagaContent,
         ) {
             characterResume.value = null
-        viewModelScope.launch(Dispatchers.IO) {
-            generateResume(sagaContent, characterContent)
-        }
+            originalBitmap.value = null
+            segmentedBitmap.value = null
+            viewModelScope.launch(Dispatchers.IO) {
+                characterContent?.let { generateResume(sagaContent, it) }
+            }
         }
     }

@@ -72,7 +72,6 @@ import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.domain.model.filterCharacterMessages
 import com.ilustris.sagai.features.share.domain.model.ShareType
 import com.ilustris.sagai.features.share.ui.ShareSheet
@@ -84,7 +83,6 @@ import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.SparkIcon
 import com.ilustris.sagai.ui.theme.fadeGradientBottom
 import com.ilustris.sagai.ui.theme.fadedGradientTopAndBottom
-import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientAnimation
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -147,8 +145,8 @@ fun CharacterDetailsContent(
     sagaContent: SagaContent,
     characterContent: CharacterContent?,
     openEvent: (Timeline?) -> Unit = {},
-    viewModel: CharacterDetailsViewModel = hiltViewModel(),
 ) {
+    val viewModel: CharacterDetailsViewModel = hiltViewModel()
     val genre = sagaContent.data.genre
 
     val isGenerating by viewModel.isGenerating.collectAsStateWithLifecycle()
@@ -156,20 +154,17 @@ fun CharacterDetailsContent(
     var currentCharacter by remember { mutableStateOf<CharacterContent?>(null) }
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
 
-    LaunchedEffect(characterContent) {
-        delay(1.seconds)
-        currentCharacter = characterContent
-    }
     val blurEffect by animateDpAsState(if (isGenerating) 15.dp else 0.dp)
 
-    LaunchedEffect(Unit) {
-        characterContent?.let { viewModel.init(it, sagaContent) }
+    LaunchedEffect(characterContent) {
+        viewModel.init(characterContent, sagaContent)
+        currentCharacter = characterContent
     }
 
     AnimatedContent(
         targetState = currentCharacter,
         transitionSpec = {
-            fadeIn(tween(300)) togetherWith fadeOut(tween(200))
+            fadeIn(tween(3600)) togetherWith fadeOut(tween(200))
         },
         modifier = Modifier.blur(blurEffect),
     ) { character ->
@@ -181,18 +176,6 @@ fun CharacterDetailsContent(
                 viewModel = viewModel,
                 onShareCharacter = { shareCharacter = true },
             )
-        } else {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center,
-            ) {
-                SparkIcon(
-                    brush = sagaContent.data.genre.gradient(true),
-                    duration = 1.seconds,
-                    modifier = Modifier.size(50.dp),
-                    blurRadius = 0.dp,
-                )
-            }
         }
     }
 
@@ -287,14 +270,15 @@ private fun CharacterDetailsLoaded(
             imageTranslationX = 0f
             imageTranslationY = 0f
             return@LaunchedEffect
+        } else {
+            titleAlpha = 0f
+            delay(2.seconds)
+            scale = 1f
+            imageTranslationX = 0f
+            imageTranslationY = 0f
+            delay(1.seconds)
+            titleAlpha = 1f
         }
-        titleAlpha = 0f
-        delay(2.seconds)
-        scale = 1f
-        imageTranslationX = 0f
-        imageTranslationY = 0f
-        delay(1.seconds)
-        titleAlpha = 1f
     }
 
     LaunchedEffect(characterContent) {
@@ -649,7 +633,6 @@ private fun CharacterDetailsLoaded(
                                         .reactiveShimmer(
                                             isSummarizing,
                                             repeatMode = RepeatMode.Restart,
-                                            shimmerColors = genre.shimmerColors(),
                                         ).padding(vertical = 16.dp),
                             )
                         }

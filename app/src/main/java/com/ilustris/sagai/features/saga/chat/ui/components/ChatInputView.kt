@@ -548,7 +548,6 @@ fun ChatInputView(
                                 CharacterYearbookItem(
                                     it.data,
                                     content.data.genre,
-                                    useFallback = true,
                                     imageModifier =
                                         Modifier
                                             .clickable {

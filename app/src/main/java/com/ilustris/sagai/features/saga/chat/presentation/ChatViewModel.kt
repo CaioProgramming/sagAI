@@ -1001,19 +1001,46 @@ class ChatViewModel
                         val characterExists =
                             saga.findCharacter(speakerName ?: generatedMessage.speakerName) != null
 
-                        if (speakerName != null &&
-                            !characterExists &&
-                            generatedMessage.senderType != SenderType.NARRATOR
-                        ) {
-                            createCharacter(
-                                buildString {
-                                    appendLine("Character name: $speakerName")
-                                    appendLine("Character context on story:")
-                                    appendLine("The user said: ${message.text}")
-                                    appendLine("And the new character replied: ${generatedMessage.text}")
-                                },
-                            )
-                        }
+                        val newCharacter =
+                            if (speakerName != null &&
+                                !characterExists &&
+                                generatedMessage.senderType != SenderType.NARRATOR
+                            ) {
+                                val contextDescription =
+                                    buildString {
+                                        appendLine("Character name: $speakerName")
+                                        appendLine("Character context on story:")
+                                        appendLine("The user said: ${message.text}")
+                                        appendLine("And the new character replied: ${generatedMessage.text}")
+                                    }
+                                val character =
+                                    sagaContentManager
+                                        .generateCharacter(
+                                            contextDescription,
+                                        )
+                                character
+                                    .onSuccessAsync {
+                                        updateLoading(false)
+                                        stateManager.updateState { s -> s.copy(newCharacterReveal = it.id) }
+                                        delay(5.seconds)
+                                        dismissNewCharacterReveal()
+                                    }.onFailureAsync {
+                                        updateLoading(false)
+                                        updateSnackBar(
+                                            snackBar(
+                                                message = "Ocorreu um erro ao criar o personagem",
+                                            ) {
+                                                action {
+                                                    retryCharacter(contextDescription)
+                                                }
+                                            },
+                                        )
+                                    }
+
+                                character.getSuccess()
+                            } else {
+                                null
+                            }
 
                         sendMessage(
                             message =
@@ -1022,7 +1049,7 @@ class ChatViewModel
                                     id = 0,
                                     status = MessageStatus.OK,
                                     audible = isAudio,
-                                    speakerName = speakerName,
+                                    speakerName = newCharacter?.name ?: speakerName,
                                     characterId = null,
                                 ),
                             isFromUser = false,

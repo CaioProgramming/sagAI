@@ -13,6 +13,7 @@ import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asError
 import com.ilustris.sagai.core.data.asSuccess
 import com.ilustris.sagai.core.data.executeRequest
+import com.ilustris.sagai.core.file.model.ReferenceCollection
 import com.ilustris.sagai.core.services.RemoteConfigService
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 
@@ -60,7 +61,45 @@ class GenreReferenceHelper(
 
             (request.image as BitmapImage).bitmap.asSuccess()
         } catch (e: Exception) {
-            e.asError()
+            Log.w(
+                javaClass.simpleName,
+                "getCoverReference: failed, falling back to icon reference. Error: ${e.message}",
+            )
+            getIconReference(genre)
+        }
+
+    suspend fun getRandomCompositionReference(genre: Genre): RequestResult<Bitmap> =
+        try {
+            val multiFlag = "${genre.name}$COMPOSITION_REFERENCES".lowercase()
+            Log.d(
+                javaClass.simpleName,
+                "Attempting to fetch unified composition references: $multiFlag",
+            )
+
+            val flagValue =
+                firebaseRemoteConfig.getJson<ReferenceCollection>(multiFlag)
+                    ?: error("Couldn't access $multiFlag")
+
+            val referenceUrl = flagValue.references.random()
+
+            Log.d(
+                javaClass.simpleName,
+                "Using composition reference $referenceUrl for genre ${genre.name}",
+            )
+
+            val request =
+                ImageRequest
+                    .Builder(context)
+                    .data(referenceUrl)
+                    .build()
+            val imageResult = (imageLoader.execute(request) as SuccessResult)
+            (imageResult.image as BitmapImage).bitmap.asSuccess()
+        } catch (e: Exception) {
+            Log.e(
+                javaClass.simpleName,
+                "getRandomCompositionReference: failed to load multi-reference, falling back to genre icon reference. Error: ${e.message}",
+            )
+            getIconReference(genre)
         }
 
     suspend fun getPortraitReference(): RequestResult<Bitmap> =
@@ -82,6 +121,34 @@ class GenreReferenceHelper(
             e.asError()
         }
 
+    suspend fun getRandomPortraitReference(): RequestResult<Bitmap> =
+        try {
+            val multiFlag = PORTRAIT_REFERENCES
+            Log.d(javaClass.simpleName, "Attempting to fetch multi-reference flag $multiFlag")
+
+            val flagValue =
+                firebaseRemoteConfig.getJson<ReferenceCollection>(multiFlag)
+                    ?: error("Couldn't access $multiFlag")
+
+            val referenceUrl = flagValue.references.random()
+
+            Log.d(javaClass.simpleName, "Using reference $referenceUrl")
+
+            val request =
+                ImageRequest
+                    .Builder(context)
+                    .data(referenceUrl)
+                    .build()
+            val imageResult = (imageLoader.execute(request) as SuccessResult)
+            (imageResult.image as BitmapImage).bitmap.asSuccess()
+        } catch (e: Exception) {
+            Log.e(
+                javaClass.simpleName,
+                "getRandomPortraitReference: failed to load multi-reference, attempting single reference fallback. Error: ${e.message}",
+            )
+            getPortraitReference()
+        }
+
     suspend fun getFileBitmap(path: String) =
         try {
             val request =
@@ -99,3 +166,5 @@ class GenreReferenceHelper(
 private const val ICON_FLAG = "_icon_reference"
 private const val COVER_FLAG = "_cover_reference"
 private const val PORTRAIT_REFERENCE = "portrait_reference"
+private const val PORTRAIT_REFERENCES = "portrait_references"
+private const val COMPOSITION_REFERENCES = "_composition_references"

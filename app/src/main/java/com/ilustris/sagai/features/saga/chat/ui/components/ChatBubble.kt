@@ -99,7 +99,6 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.colorPalette
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -114,8 +113,8 @@ import com.ilustris.sagai.ui.theme.TypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
 import com.ilustris.sagai.ui.theme.cornerSize
+import com.ilustris.sagai.ui.theme.darker
 import com.ilustris.sagai.ui.theme.dashedBorder
-import com.ilustris.sagai.ui.theme.fadeColors
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -330,8 +329,7 @@ fun ChatBubble(
                                                     message.speakerName ?: "",
                                                 ),
                                             )
-                                        }
-                                        .size(24.dp)
+                                        }.size(24.dp)
                                         .gradientFill(genre.gradient()),
                                 )
                             }
@@ -349,8 +347,7 @@ fun ChatBubble(
                                         .emotionalEntrance(
                                             message.emotionalTone,
                                             isAnimated && messageEffectsEnabled,
-                                        )
-                                        .wrapContentSize()
+                                        ).wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
                                             val outline =
@@ -364,10 +361,10 @@ fun ChatBubble(
                                                     override fun createShader(size: Size): Shader {
                                                         val shader =
                                                             (
-                                                                    sweepGradient(
-                                                                        genre.colorPalette(),
-                                                                    ) as ShaderBrush
-                                                                    ).createShader(size)
+                                                                sweepGradient(
+                                                                    genre.colorPalette(),
+                                                                ) as ShaderBrush
+                                                            ).createShader(size)
                                                         val matrix = Matrix()
                                                         matrix.setRotate(
                                                             rotation,
@@ -383,8 +380,7 @@ fun ChatBubble(
                                                 brush = brush,
                                                 style = Stroke(width = 1.dp.toPx()),
                                             )
-                                        }
-                                        .background(
+                                        }.background(
                                             MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .3f),
                                             bubbleShape,
                                         )
@@ -413,12 +409,10 @@ fun ChatBubble(
                                                             )
                                                         }
                                                     },
-                                                )
-                                                .emotionalEntrance(
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
                                                     bubbleShape,
@@ -449,17 +443,14 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    )
-                                                    .emotionalEntrance(
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         isAnimated && messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
+                                                    ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
-                                                    )
-                                                    .background(
+                                                    ).background(
                                                         MaterialTheme.colorScheme.surfaceContainer.copy(
                                                             alpha = .5f,
                                                         ),
@@ -488,12 +479,10 @@ fun ChatBubble(
                                                                 )
                                                             }
                                                         },
-                                                    )
-                                                    .emotionalEntrance(
+                                                    ).emotionalEntrance(
                                                         message.emotionalTone,
                                                         isAnimated && messageEffectsEnabled,
-                                                    )
-                                                    .wrapContentSize()
+                                                    ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
@@ -524,17 +513,14 @@ fun ChatBubble(
                                                             )
                                                         }
                                                     },
-                                                )
-                                                .emotionalEntrance(
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(
                                                     MaterialTheme.colorScheme.surfaceContainer,
                                                     bubbleShape,
-                                                )
-                                                .dashedBorder(
+                                                ).dashedBorder(
                                                     strokeWidth = 1.dp,
                                                     color =
                                                         MaterialTheme.colorScheme.onBackground.copy(
@@ -569,12 +555,10 @@ fun ChatBubble(
                                                             )
                                                         }
                                                     },
-                                                )
-                                                .emotionalEntrance(
+                                                ).emotionalEntrance(
                                                     message.emotionalTone,
                                                     isAnimated && messageEffectsEnabled,
-                                                )
-                                                .wrapContentSize()
+                                                ).wrapContentSize()
                                                 .background(Color.Black, bubbleShape)
                                         }
 
@@ -638,8 +622,7 @@ fun ChatBubble(
                                                 2.dp,
                                                 borderColorAnimation,
                                                 bubbleShape,
-                                            )
-                                            .padding(paddingAnimation)
+                                            ).padding(paddingAnimation)
                                             .clip(bubbleShape)
                                             .padding(vertical = 4.dp)
                                             .animateContentSize(),
@@ -659,8 +642,7 @@ fun ChatBubble(
                                             targetValue = if (starAlpha == 1f) 0f else 1f,
                                             label = "blurAnimation",
                                         )
-                                        val textAlpha =
-                                            if (sender == SenderType.THOUGHT) blurAnimation else 1f
+                                        if (sender == SenderType.THOUGHT) blurAnimation else 1f
                                         val textColor =
                                             when (sender) {
                                                 SenderType.ACTION -> MaterialColor.Amber400
@@ -703,6 +685,13 @@ fun ChatBubble(
                                                 )
                                             } else {
                                                 // Show Text
+                                                val textAlpha by animateFloatAsState(
+                                                    if (message.status == MessageStatus.LOADING) {
+                                                        .4f
+                                                    } else {
+                                                        1f
+                                                    },
+                                                )
                                                 TypewriterText(
                                                     text = text,
                                                     isAnimated = isAnimated,
@@ -720,14 +709,16 @@ fun ChatBubble(
                                                             .alpha(textAlpha)
                                                             .reactiveShimmer(
                                                                 isLoading || message.status == MessageStatus.LOADING,
-                                                                genre.color.fadeColors(),
                                                             ),
                                                     style =
                                                         MaterialTheme.typography.bodySmall.copy(
                                                             fontWeight = FontWeight.Normal,
                                                             fontFamily = genre.bodyFont(),
                                                             fontStyle = fontStyle,
-                                                            color = textColor,
+                                                            color =
+                                                                textColor.copy(
+                                                                    alpha = textAlpha,
+                                                                ),
                                                             textAlign = textAlign,
                                                         ),
                                                 )
@@ -743,8 +734,7 @@ fun ChatBubble(
                                                         .clip(bubbleShape)
                                                         .clickable {
                                                             starAlpha = 0f
-                                                        }
-                                                        .background(
+                                                        }.background(
                                                             MaterialTheme.colorScheme.surfaceContainer.copy(
                                                                 alpha = .4f,
                                                             ),
@@ -888,20 +878,17 @@ fun ChatBubble(
                             .emotionalEntrance(
                                 message.emotionalTone,
                                 isAnimated && messageEffectsEnabled,
-                            )
-                            .padding(16.dp)
+                            ).padding(16.dp)
                             .fillMaxWidth()
                             .shadow(
                                 elevation = 8.dp,
                                 shape = narratorShape,
                                 spotColor = genre.color,
-                            )
-                            .border(1.dp, genre.color.gradientFade(), narratorShape)
+                            ).border(1.dp, genre.color.gradientFade(), narratorShape)
                             .background(
                                 MaterialTheme.colorScheme.background,
                                 shape = narratorShape,
-                            )
-                            .padding(16.dp),
+                            ).padding(16.dp),
                 ) {
                     Column(
                         Modifier.padding(16.dp),
@@ -920,6 +907,13 @@ fun ChatBubble(
                             )
                         } else {
                             // Show Text
+                            val textAlpha by animateFloatAsState(
+                                if (message.status == MessageStatus.LOADING) {
+                                    .4f
+                                } else {
+                                    1f
+                                },
+                            )
                             TypewriterText(
                                 text = message.text,
                                 isAnimated = isAnimated,
@@ -934,16 +928,17 @@ fun ChatBubble(
                                 },
                                 modifier =
                                     Modifier
-                                        .alpha(1f)
                                         .reactiveShimmer(
                                             isLoading || message.status == MessageStatus.LOADING,
-                                            genre.shimmerColors(),
                                         ),
                                 style =
                                     MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Normal,
                                         fontFamily = genre.bodyFont(),
-                                        color = genre.iconColor,
+                                        color =
+                                            genre.iconColor.copy(
+                                                textAlpha,
+                                            ),
                                         textAlign = TextAlign.Start,
                                     ),
                             )
@@ -1120,7 +1115,7 @@ data class BubbleStyle(
             genre: Genre,
             canAnimate: Boolean,
         ) = BubbleStyle(
-            backgroundColor = genre.color.copy(alpha = .4f),
+            backgroundColor = genre.color.darker(.4f),
             textColor = genre.iconColor,
             tailAlignment = BubbleTailAlignment.BottomLeft,
             animationDuration = 3.seconds,

@@ -108,8 +108,6 @@ object SagaPrompts {
             "You are the **Art Director AI**, a master visual artist with an encyclopedic knowledge of cinematography, composition, and art history. Your mission is to translate a narrative context and a technical visual direction into a flawless, concrete, and unambiguous prompt for an image generation model. You follow rules with absolute precision and leave no room for creative interpretation by the image model. Your output is a technical specification, not creative writing.",
         )
         appendLine()
-        appendLine("=== GOOGLE IMAGE GENERATION OPTIMIZED PROMPT ===")
-        appendLine()
         appendLine(
             "**PROMPT STRUCTURE:** [Art Style] → [Character Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
         )

@@ -56,10 +56,11 @@ object ImagePrompts {
             appendLine()
             appendLine("OUTPUT STRUCTURE (START DIRECTLY WITH PARAMETERS):")
             appendLine()
-            appendLine("15 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]'):")
+            appendLine("16 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]'):")
             appendLine()
             appendLine(
-                "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle (specify tilt) / worm's-eye view / bird's-eye view / point-of-view (POV)] - Be specific and dramatic.")
+                "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle / worm's-eye view / bird's-eye view]. DEFINE the CAMERA'S position relative to the subject.",
+            )
             appendLine(
                 "2. LENS: [14-24mm ultra-wide / 24-35mm wide / 35-50mm normal / 50-85mm portrait / 85-200mm tele / 200mm+ super-tele]",
             )
@@ -74,11 +75,15 @@ object ImagePrompts {
             appendLine("9. DOF: [razor / shallow / moderate / deep / infinite]")
             appendLine("10. ATMOSPHERE: [clear/hazy/misty/foggy/dusty/smoky]")
             appendLine(
-                "11. PERSPECTIVE: [one-point / two-point / three-point / forced / atmospheric / barrel distortion / dramatic foreshortening]")
+                "11. PERSPECTIVE: [one-point / two-point / three-point / forced / atmospheric / dramatic foreshortening]. Focus on DEPTH cues and VANISHING points.",
+            )
             appendLine("12. TEXTURE: [razor-sharp/film-grain/digital-noise/soft-diffused/gritty]")
             appendLine("13. TIME: [golden-hour/midday/blue-hour/night/overcast/studio]")
-            appendLine("14. SIGNATURE: One unique unforgettable detail")
+            appendLine(
+                "14. SIGNATURE: The core compositional/artistic element that makes this image impactful (e.g., 'intense portrait expressiveness', 'dramatic subject isolation', 'powerful gaze connection'). Focus on WHAT makes it compelling, NOT on specific physical attributes of the subject.")
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
+            appendLine(
+                "16. SUBJECT_ORIENTATION: [Front-facing / 3/4 turn left/right / Profile left/right / Back-facing]. Define the SUBJECT'S rotation/axis relative to the camera lens.")
             appendLine()
             appendLine("VISIBILITY ANALYSIS:")
             appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OCCLUDED")
@@ -92,8 +97,10 @@ object ImagePrompts {
             appendLine("- MWS: Ankles and below (ALL footwear).")
             appendLine("- FS/WS/EWS: Fine details (scars, intricate patterns) obscured by scale.")
             appendLine()
-            appendLine("IDENTITY ANCHOR:")
-            appendLine("- Define key non-subject traits: [Skin Tone / Hair Color / Key Accessory / Silhouette] that MUST persist.")
+            appendLine("COMPOSITIONAL PRESENCE:")
+            appendLine("- Define structural visual traits: [Silhouette Contrast / Lighting Zones / Tonal Distribution / Edge Definition]")
+            appendLine("- Focus on HOW the subject is shaped by light/shadow, NOT what the subject physically looks like")
+            appendLine("- Example: 'Strong rim lighting defining silhouette edges' vs. 'Black hair with highlights'")
             appendLine()
             appendLine("ANGLE & PERSPECTIVE ENFORCEMENT:")
             appendLine("- BANNED: 'eye-level', 'straight-on', 'plain view' (unless strictly required by composition).")
@@ -122,7 +129,7 @@ object ImagePrompts {
         appendLine("VALIDATION CRITERIA:")
         appendLine()
         appendLine(
-            "1. CINEMATOGRAPHY (15 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers",
+            "1. CINEMATOGRAPHY (16 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers, subject_orientation",
         )
         appendLine("   - All MUST be explicit, specific, and match visual direction.")
         appendLine(
@@ -183,7 +190,7 @@ object ImagePrompts {
         appendLine("- FRAMING_VIOLATION: Describes elements not visible at this framing level")
         appendLine("- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.")
         appendLine("- BANNED_TERMINOLOGY: Uses forbidden words from art style")
-        appendLine("- MISSING_CINEMATOGRAPHY_PARAMETER: Any of 15 params missing/vague")
+        appendLine("- MISSING_CINEMATOGRAPHY_PARAMETER: Any of 16 params missing/vague")
         appendLine("- LIGHTING_MISSING/WRONG, COLOR_PALETTE_WRONG, ENVIRONMENT_MISSING, etc.")
         appendLine()
 
@@ -194,7 +201,7 @@ object ImagePrompts {
         appendLine("- Out-of-frame descriptions → Remove, replace with visible details")
         appendLine("- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.")
         appendLine("- Static character → Add momentum language ('breathing', 'captured mid-action')")
-        appendLine("- Generic cinematography → Specify exact values from 15 parameters")
+        appendLine("- Generic cinematography → Specify exact values from 16 parameters")
         appendLine("- Missing background/environment → Add 3+ specific objects")
         appendLine()
 

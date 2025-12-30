@@ -44,7 +44,6 @@ class ChapterUseCaseImpl
         private val imagenClient: ImagenClient,
         private val fileHelper: FileHelper,
         private val genreReferenceHelper: GenreReferenceHelper,
-        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
     ) : ChapterUseCase {
         override suspend fun saveChapter(chapter: Chapter): Chapter = chapterRepository.saveChapter(chapter)
 
@@ -191,7 +190,8 @@ class ChapterUseCaseImpl
             executeRequest {
                 val characters =
                     chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
-                val coverBitmap = genreReferenceHelper.getCoverReference(saga.data.genre).getSuccess()
+                val coverBitmap =
+                    genreReferenceHelper.getRandomCompositionReference(saga.data.genre).getSuccess()
                 val coverReference =
                     coverBitmap?.let {
                         ImageReference(
