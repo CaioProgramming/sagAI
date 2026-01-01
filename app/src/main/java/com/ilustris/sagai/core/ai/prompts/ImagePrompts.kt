@@ -227,14 +227,30 @@ object ImagePrompts {
         appendLine("   - Use a constructive but firm tone to guide better initial output.")
         appendLine()
 
+        appendLine("8. VISUAL DIRECTOR MENTORSHIP (META-REVIEW):")
+        appendLine(
+            "   - **`visualDirectorSuggestions` FIELD:** Act as a Lead Technical Director optimizing an upstream AI.",
+        )
+        appendLine(
+            "   - Analyze the `VISUAL DIRECTION` input for ambiguity or lack of technical specificity.",
+        )
+        appendLine(
+            "   - Suggest *concrete terminology replacements* to improve future extractions. Tell the Visual Director exactly what terms to use instead.",
+        )
+        appendLine(
+            "   - Examples: 'Replace generic \"close-up\" with \"CU: Head and Shoulders\" for clarity', 'Instead of \"dramatic angle\", request \"Low-Angle Dutch Tilt 15°\"', 'Specify exact lighting ratio (e.g., 3:1) instead of just \"contrast\"'.",
+        )
+        appendLine("   - GOAL: Calibrate the Visual Director to be a precise cinematographer, not a creative writer.")
+        appendLine()
+
         appendLine("VIOLATION DETECTION:")
         appendLine("- VISIBILITY_VIOLATION: Describes body parts/clothing out of frame")
         appendLine("- MISSING_FACIAL_EXPRESSION: No specific emotion or generic descriptor")
         appendLine("- MISSING_DYNAMIC_POSE: Static/neutral pose without emotional content")
         appendLine("- POSE_EXPRESSION_VIOLATION: Expression + pose don't work together or character seems posed, not in moment")
         appendLine("- FRAMING_VIOLATION: Describes elements not visible at this framing level")
-        appendLine("- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.",
-        )
+        appendLine(
+            "- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.")
         appendLine("- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation does not match the visual direction.")
         appendLine(
             "- GENRE_AURA_VIOLATION: Subject pose or vibe contradicts the genre (e.g., static pose in Hero genre, happy pose in Cyberpunk).")
@@ -246,12 +262,11 @@ object ImagePrompts {
         appendLine("AUTO-FIX PATTERNS:")
         appendLine("- Missing expression → Add specific, INTENSE emotion matching archetype")
         appendLine(
-            "- Missing/Weak pose → INJECT DRAMA: Suggest exaggerated gestures, dynamic foreshortening, and intensified body language",
-        )
+            "- Missing/Weak pose → INJECT DRAMA: Suggest exaggerated gestures, dynamic foreshortening, and intensified body language")
         appendLine("- Expression + pose contradictory → Align emotionally and AMPLIFY the storytelling")
         appendLine("- Out-of-frame descriptions → Remove, replace with visible details")
-        appendLine("- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.",
-        )
+        appendLine(
+            "- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.")
         appendLine("- Wrong subject orientation → Correct the subject's rotation to match the visual direction.")
         appendLine(
             "- Wrong genre aura → Rewrite pose/expression to match genre (e.g., 'standing' → 'standing with heroic verticality' for Heroes).")
@@ -264,10 +279,10 @@ object ImagePrompts {
         appendLine("- `originalPrompt`: The raw input prompt")
         appendLine("- `correctedPrompt`: The final, high-quality, fixed prompt")
         appendLine(
-            "- `violations`: List of objects { \"type\": \"ENUM_NAME\", \"severity\": \"CRITICAL/MAJOR/MINOR\", \"description\": \"...\", \"example\": \"...\" }",
-        )
+            "- `violations`: List of objects { \"type\": \"ENUM_NAME\", \"severity\": \"CRITICAL/MAJOR/MINOR\", \"description\": \"...\", \"example\": \"...\" }")
         appendLine("- `changesApplied`: List of strings describing each fix")
         appendLine("- `artistImprovementSuggestions`: Concrete, technical feedback for the artist on how to improve next time")
+        appendLine("- `visualDirectorSuggestions`: Feedback on the Visual Direction input quality (or null)")
         appendLine("- `wasModified`: Boolean indicating if any changes were made")
         appendLine()
         appendLine("PROMPT TO REVIEW:")

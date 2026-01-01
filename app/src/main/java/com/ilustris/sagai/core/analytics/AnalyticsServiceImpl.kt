@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.ilustris.sagai.core.utils.toJsonFormat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
@@ -40,7 +41,7 @@ class AnalyticsService
                 val bundle = event.toAnalyticsBundle()
 
                 // Log event for debugging
-                Log.d(TAG, "Tracking event: $eventName with ${bundle.size()} properties")
+                Log.d(TAG, "Tracking event: $eventName: ${event.toJsonFormat()}")
 
                 firebaseAnalytics.logEvent(eventName, bundle)
             } catch (e: Exception) {

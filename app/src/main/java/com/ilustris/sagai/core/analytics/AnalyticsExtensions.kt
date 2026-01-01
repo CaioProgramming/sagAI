@@ -157,8 +157,11 @@ fun String.toSnakeCase(): String {
 }
 
 /**
- * Converts a class name to a human-readable event name.
- * Example: SagaCreationEvent -> Saga Creation Event
+ * Converts a class name to a Firebase-compatible event name.
+ * Example: SagaCreationEvent -> saga_creation
+ * Rules:
+ * - Remove "Event" suffix
+ * - Convert to snake_case
  */
 fun String.toEventName(): String {
     // Remove "Event" suffix if present
@@ -169,14 +172,5 @@ fun String.toEventName(): String {
             this
         }
 
-    // Convert from PascalCase to space-separated words
-    val result = StringBuilder()
-    nameWithoutSuffix.forEachIndexed { index, char ->
-        if (index > 0 && char.isUpperCase()) {
-            result.append(' ')
-        }
-        result.append(char)
-    }
-
-    return result.toString()
+    return nameWithoutSuffix.toSnakeCase()
 }

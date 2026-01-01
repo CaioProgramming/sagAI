@@ -168,6 +168,7 @@ data class ImagePromptReview(
     val violations: List<PromptViolation>,
     val changesApplied: List<String>, // Human-readable list of fixes
     val artistImprovementSuggestions: String? = null, // Feedback to help the artist improve future prompts
+    val visualDirectorSuggestions: String? = null, // Feedback to help the visual director improve technical precision
     val wasModified: Boolean,
 ) {
     /**

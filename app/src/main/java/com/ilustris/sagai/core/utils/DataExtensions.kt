@@ -153,7 +153,7 @@ fun toJsonMap(
                         }
 
                         fieldType == String::class.java -> {
-                            "text"
+                            "\"string\""
                         }
 
                         fieldType == Int::class.java || fieldType == Integer::class.java -> {
