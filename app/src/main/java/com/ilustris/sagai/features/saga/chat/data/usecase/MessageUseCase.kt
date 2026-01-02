@@ -50,6 +50,12 @@ interface MessageUseCase {
         sceneSummary: SceneSummary?,
     ): RequestResult<Unit>
 
+    suspend fun analyzeMessageTone(
+        saga: SagaContent,
+        message: Message,
+        isFromUser: Boolean,
+    ): RequestResult<Unit>
+
     suspend fun generateAudio(
         saga: SagaContent,
         savedMessage: Message,

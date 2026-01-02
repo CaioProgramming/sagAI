@@ -905,8 +905,9 @@ class ChatViewModel
                             updateLoading(false)
                         }
 
-                        // Generate reaction asynchronously without blocking
+                        // Generate reaction and tone asynchronously without blocking
                         withContext(Dispatchers.IO) {
+                            messageUseCase.analyzeMessageTone(saga, savedMessage, isFromUser)
                             messageUseCase.generateReaction(
                                 saga,
                                 message = savedMessage,

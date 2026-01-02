@@ -192,10 +192,12 @@ class CharacterUseCaseImpl
             description: String,
         ): RequestResult<Character> =
             executeRequest {
+                val bannedNames = repository.getAllCharacterNames()
                 val prompt =
                     CharacterPrompts.characterGeneration(
                         sagaContent,
                         description,
+                        bannedNames,
                     )
                 Log.d(javaClass.simpleName, "generateCharacter: Starting character generation...")
                 val newCharacter =

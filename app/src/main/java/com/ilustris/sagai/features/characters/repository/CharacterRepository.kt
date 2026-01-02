@@ -18,4 +18,6 @@ interface CharacterRepository {
         name: String,
         sagaId: Int,
     ): Character?
+
+    suspend fun getAllCharacterNames(): List<String>
 }

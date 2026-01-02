@@ -34,7 +34,7 @@ import kotlin.math.roundToInt
 fun Modifier.emotionalEntrance(
     emotionalTone: EmotionalTone?,
     isAnimated: Boolean,
-    onAnimationFinished: () -> Unit = {}
+    onAnimationFinished: () -> Unit = {},
 ): Modifier {
     if (!isAnimated) return this
 
@@ -45,32 +45,39 @@ fun Modifier.emotionalEntrance(
 
     LaunchedEffect(Unit) {
         isVisible = true
-        // Approximate duration of longest animation to signal finish
-        delay(800)
+        // Snappier signal finish
+        delay(500)
         onAnimationFinished()
     }
 
     return when (tone) {
-        EmotionalTone.JOYFUL, EmotionalTone.HOPEFUL, EmotionalTone.EMPATHETIC ->
+        EmotionalTone.JOYFUL, EmotionalTone.HOPEFUL, EmotionalTone.EMPATHETIC -> {
             gentleBounce(isVisible)
+        }
 
-        EmotionalTone.ANGRY, EmotionalTone.FRUSTRATED ->
+        EmotionalTone.ANGRY, EmotionalTone.FRUSTRATED -> {
             impactEffect(isVisible)
+        }
 
-        EmotionalTone.SAD, EmotionalTone.MELANCHOLIC ->
+        EmotionalTone.SAD, EmotionalTone.MELANCHOLIC -> {
             driftDown(isVisible)
+        }
 
-        EmotionalTone.ANXIOUS, EmotionalTone.CONCERNED ->
+        EmotionalTone.ANXIOUS, EmotionalTone.CONCERNED -> {
             tremorEffect(isVisible)
+        }
 
-        EmotionalTone.CURIOUS, EmotionalTone.DETERMINED ->
+        EmotionalTone.CURIOUS, EmotionalTone.DETERMINED -> {
             popIn(isVisible)
+        }
 
-        EmotionalTone.CYNICAL ->
+        EmotionalTone.CYNICAL -> {
             slideFade(isVisible)
+        }
 
-        EmotionalTone.CALM, EmotionalTone.NEUTRAL ->
+        EmotionalTone.CALM, EmotionalTone.NEUTRAL -> {
             smoothFade(isVisible)
+        }
     }
 }
 
@@ -82,20 +89,22 @@ fun Modifier.emotionalEntrance(
 private fun Modifier.gentleBounce(isVisible: Boolean): Modifier {
     val scale by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0.8f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "gentleBounceScale"
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
+        label = "gentleBounceScale",
     )
 
     val rotation by animateFloatAsState(
-        targetValue = if (isVisible) 0f else -5f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioHighBouncy,
-            stiffness = Spring.StiffnessLow
-        ),
-        label = "gentleBounceRotation"
+        targetValue = if (isVisible) 0f else -3f,
+        animationSpec =
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessLow,
+            ),
+        label = "gentleBounceRotation",
     )
 
     return this
@@ -111,15 +120,15 @@ private fun Modifier.gentleBounce(isVisible: Boolean): Modifier {
 @Composable
 private fun Modifier.impactEffect(isVisible: Boolean): Modifier {
     val scale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 1.5f,
-        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-        label = "impactScale"
+        targetValue = if (isVisible) 1f else 1.2f,
+        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        label = "impactScale",
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
         animationSpec = tween(durationMillis = 100),
-        label = "impactAlpha"
+        label = "impactAlpha",
     )
 
     // Shake effect
@@ -127,18 +136,19 @@ private fun Modifier.impactEffect(isVisible: Boolean): Modifier {
     LaunchedEffect(isVisible) {
         if (isVisible) {
             // Wait for impact
-            delay(150)
+            delay(100)
             // Shake
             offsetX.animateTo(
                 targetValue = 0f,
-                animationSpec = keyframes {
-                    durationMillis = 300
-                    -10f at 50
-                    10f at 100
-                    -5f at 150
-                    5f at 200
-                    0f at 300
-                }
+                animationSpec =
+                    keyframes {
+                        durationMillis = 200
+                        -15f at 40
+                        15f at 80
+                        -8f at 120
+                        8f at 160
+                        0f at 200
+                    },
             )
         }
     }
@@ -156,15 +166,15 @@ private fun Modifier.impactEffect(isVisible: Boolean): Modifier {
 @Composable
 private fun Modifier.driftDown(isVisible: Boolean): Modifier {
     val offsetY by animateFloatAsState(
-        targetValue = if (isVisible) 0f else -50f,
-        animationSpec = tween(durationMillis = 800, easing = FastOutSlowInEasing),
-        label = "driftOffset"
+        targetValue = if (isVisible) 0f else -30f,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "driftOffset",
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 800, easing = LinearEasing),
-        label = "driftAlpha"
+        animationSpec = tween(durationMillis = 600, easing = LinearEasing),
+        label = "driftAlpha",
     )
 
     return this
@@ -178,42 +188,38 @@ private fun Modifier.driftDown(isVisible: Boolean): Modifier {
  */
 @Composable
 private fun Modifier.tremorEffect(isVisible: Boolean): Modifier {
-    val alpha by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 500),
-        label = "tremorAlpha"
-    )
-
     val offsetX = remember { Animatable(0f) }
 
     LaunchedEffect(isVisible) {
         if (isVisible) {
             offsetX.animateTo(
                 targetValue = 0f,
-                animationSpec = infiniteRepeatable(
-                    animation = keyframes {
-                        durationMillis = 100
-                        2f at 25
-                        -2f at 75
-                        0f at 100
-                    },
-                    repeatMode = RepeatMode.Restart
-                )
+                animationSpec =
+                    infiniteRepeatable(
+                        animation =
+                            keyframes {
+                                durationMillis = 80
+                                3f at 20
+                                -3f at 60
+                                0f at 80
+                            },
+                        repeatMode = RepeatMode.Restart,
+                    ),
             )
         }
     }
 
-    // Stop tremor after 500ms
+    // Stop tremor after 400ms
     LaunchedEffect(isVisible) {
         if (isVisible) {
-            delay(500)
+            delay(400)
             offsetX.snapTo(0f)
         }
     }
 
     return this
         .offset { IntOffset(offsetX.value.roundToInt(), 0) }
-        .alpha(alpha)
+        .alpha(if (isVisible) 1f else 0f)
 }
 
 /**
@@ -224,20 +230,22 @@ private fun Modifier.tremorEffect(isVisible: Boolean): Modifier {
 private fun Modifier.popIn(isVisible: Boolean): Modifier {
     val scale by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = spring(
-            dampingRatio = 0.6f,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "popInScale"
+        animationSpec =
+            spring(
+                dampingRatio = 0.5f,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        label = "popInScale",
     )
 
     val rotation by animateFloatAsState(
-        targetValue = if (isVisible) 0f else -15f,
-        animationSpec = spring(
-            dampingRatio = 0.6f,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "popInRotation"
+        targetValue = if (isVisible) 0f else -10f,
+        animationSpec =
+            spring(
+                dampingRatio = 0.5f,
+                stiffness = Spring.StiffnessMedium,
+            ),
+        label = "popInRotation",
     )
 
     return this
@@ -253,21 +261,21 @@ private fun Modifier.popIn(isVisible: Boolean): Modifier {
 @Composable
 private fun Modifier.slideFade(isVisible: Boolean): Modifier {
     val offsetX by animateFloatAsState(
-        targetValue = if (isVisible) 0f else 100f,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
-        label = "slideOffset"
+        targetValue = if (isVisible) 0f else 60f,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        label = "slideOffset",
     )
 
     val rotation by animateFloatAsState(
-        targetValue = if (isVisible) 0f else 5f,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
-        label = "slideRotation"
+        targetValue = if (isVisible) 0f else 3f,
+        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+        label = "slideRotation",
     )
 
     val alpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 400),
-        label = "slideAlpha"
+        animationSpec = tween(durationMillis = 300),
+        label = "slideAlpha",
     )
 
     return this
@@ -284,14 +292,14 @@ private fun Modifier.slideFade(isVisible: Boolean): Modifier {
 private fun Modifier.smoothFade(isVisible: Boolean): Modifier {
     val alpha by animateFloatAsState(
         targetValue = if (isVisible) 1f else 0f,
-        animationSpec = tween(durationMillis = 400, easing = LinearEasing),
-        label = "smoothFadeAlpha"
+        animationSpec = tween(durationMillis = 300, easing = LinearEasing),
+        label = "smoothFadeAlpha",
     )
 
     val scale by animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0.95f,
-        animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
-        label = "smoothFadeScale"
+        targetValue = if (isVisible) 1f else 0.98f,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "smoothFadeScale",
     )
 
     return this

@@ -9,6 +9,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -88,6 +89,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.formatHours
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -121,6 +123,7 @@ import com.ilustris.sagai.ui.theme.gradientFill
 import com.ilustris.sagai.ui.theme.hexToColor
 import com.ilustris.sagai.ui.theme.reactiveShimmer
 import com.ilustris.sagai.ui.theme.shape
+import com.ilustris.sagai.ui.theme.toEasing
 import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -193,6 +196,19 @@ fun ChatBubble(
         }
     }
 
+    val bumpScale = remember { Animatable(1f) }
+    LaunchedEffect(messageContent) {
+        val easing = message.emotionalTone?.toEasing() ?: EaseIn
+        bumpScale.animateTo(
+            targetValue = 1.05f,
+            animationSpec = tween(100, easing = easing),
+        )
+        bumpScale.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(100, easing = easing),
+        )
+    }
+
     val infiniteTransition = rememberInfiniteTransition(label = "border_animation")
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -212,6 +228,8 @@ fun ChatBubble(
         animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "scaleAnimation",
     )
+
+    val finalScale = scaleAnimation * bumpScale.value
 
     val paddingAnimation by animateDpAsState(
         targetValue = if (isSelected) 4.dp else 0.dp,
@@ -346,7 +364,7 @@ fun ChatBubble(
                                     Modifier
                                         .emotionalEntrance(
                                             message.emotionalTone,
-                                            isAnimated && messageEffectsEnabled,
+                                            messageEffectsEnabled,
                                         ).wrapContentSize()
                                         .drawWithContent {
                                             drawContent()
@@ -411,7 +429,7 @@ fun ChatBubble(
                                                     },
                                                 ).emotionalEntrance(
                                                     message.emotionalTone,
-                                                    isAnimated && messageEffectsEnabled,
+                                                    messageEffectsEnabled,
                                                 ).wrapContentSize()
                                                 .background(
                                                     bubbleStyle.backgroundColor,
@@ -437,23 +455,25 @@ fun ChatBubble(
                                                         onLongClick = {
                                                             if (!isSelectionMode) {
                                                                 onAction(
-                                                                    MessageAction.LongPress(
-                                                                        message.id,
-                                                                    ),
+                                                                    MessageAction
+                                                                        .LongPress(
+                                                                            message.id,
+                                                                        ),
                                                                 )
                                                             }
                                                         },
                                                     ).emotionalEntrance(
                                                         message.emotionalTone,
-                                                        isAnimated && messageEffectsEnabled,
+                                                        messageEffectsEnabled,
                                                     ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
                                                         bubbleShape,
                                                     ).background(
-                                                        MaterialTheme.colorScheme.surfaceContainer.copy(
-                                                            alpha = .5f,
-                                                        ),
+                                                        MaterialTheme.colorScheme.surfaceContainer
+                                                            .copy(
+                                                                alpha = .5f,
+                                                            ),
                                                         bubbleShape,
                                                     )
                                             } else {
@@ -473,15 +493,16 @@ fun ChatBubble(
                                                         onLongClick = {
                                                             if (!isSelectionMode) {
                                                                 onAction(
-                                                                    MessageAction.LongPress(
-                                                                        message.id,
-                                                                    ),
+                                                                    MessageAction
+                                                                        .LongPress(
+                                                                            message.id,
+                                                                        ),
                                                                 )
                                                             }
                                                         },
                                                     ).emotionalEntrance(
                                                         message.emotionalTone,
-                                                        isAnimated && messageEffectsEnabled,
+                                                        messageEffectsEnabled,
                                                     ).wrapContentSize()
                                                     .background(
                                                         bubbleStyle.backgroundColor,
@@ -515,7 +536,7 @@ fun ChatBubble(
                                                     },
                                                 ).emotionalEntrance(
                                                     message.emotionalTone,
-                                                    isAnimated && messageEffectsEnabled,
+                                                    messageEffectsEnabled,
                                                 ).wrapContentSize()
                                                 .background(
                                                     MaterialTheme.colorScheme.surfaceContainer,
@@ -557,7 +578,7 @@ fun ChatBubble(
                                                     },
                                                 ).emotionalEntrance(
                                                     message.emotionalTone,
-                                                    isAnimated && messageEffectsEnabled,
+                                                    messageEffectsEnabled,
                                                 ).wrapContentSize()
                                                 .background(Color.Black, bubbleShape)
                                         }
@@ -617,7 +638,7 @@ fun ChatBubble(
                                     },
                                     modifier =
                                         bubbleModifier
-                                            .scale(scaleAnimation)
+                                            .scale(finalScale)
                                             .border(
                                                 2.dp,
                                                 borderColorAnimation,
@@ -818,6 +839,9 @@ fun ChatBubble(
                                         }
                                     }
                                 }
+                                if (BuildConfig.DEBUG) {
+                                    ReasoningView(message.reasoning, genre)
+                                }
                             }
                         }
                     }
@@ -877,7 +901,7 @@ fun ChatBubble(
                         modifier
                             .emotionalEntrance(
                                 message.emotionalTone,
-                                isAnimated && messageEffectsEnabled,
+                                messageEffectsEnabled,
                             ).padding(16.dp)
                             .fillMaxWidth()
                             .shadow(
@@ -977,6 +1001,7 @@ fun ChatBubble(
                         )
                     }
                 }
+
                 AnimatedVisibility(
                     visible = messageContent.reactions.isNotEmpty(),
                     modifier =
@@ -988,6 +1013,10 @@ fun ChatBubble(
                     ) {
                         onAction(MessageAction.ClickReactions(messageContent))
                     }
+                }
+
+                if (BuildConfig.DEBUG) {
+                    ReasoningView(message.reasoning, genre)
                 }
             }
         }
@@ -1035,6 +1064,44 @@ private fun AudioGenButton(
                         fontFamily = genre.bodyFont(),
                         fontWeight = FontWeight.Normal,
                         color = genre.iconColor,
+                    ),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReasoningView(
+    reasoning: String?,
+    genre: Genre,
+) {
+    reasoning?.let {
+        var isExpanded by remember { mutableStateOf(false) }
+        Row(
+            modifier =
+                Modifier
+                    .padding(4.dp)
+                    .clickable { isExpanded = !isExpanded }
+                    .animateContentSize(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(
+                painterResource(R.drawable.ic_spark),
+                contentDescription = "Reasoning",
+                modifier =
+                    Modifier
+                        .size(12.dp)
+                        .alpha(0.5f),
+                tint = genre.iconColor,
+            )
+            Text(
+                if (isExpanded) it else "See reasoning",
+                style =
+                    MaterialTheme.typography.labelSmall.copy(
+                        color = genre.iconColor.copy(alpha = 0.5f),
+                        fontFamily = genre.bodyFont(),
+                        fontWeight = FontWeight.Light,
                     ),
             )
         }

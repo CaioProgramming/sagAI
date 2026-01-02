@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.saga.chat.data.usecase
 
 import android.util.Log
+import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.core.ai.AudioGenClient
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.TextGenClient
@@ -88,30 +89,33 @@ class MessageUseCaseImpl
             isFromUser: Boolean,
             sceneSummary: SceneSummary?,
         ) = executeRequest {
-            val tone =
-                if (isFromUser) {
-                    val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
-                    val raw =
-                        gemmaClient
-                            .generate<String>(
-                                prompt,
-                                requireTranslation = false,
-                                requirement = GemmaClient.ModelRequirement.LOW,
-                            )?.trim()
-                            ?.uppercase()
-                    EmotionalTone.getTone(raw)
-                } else {
-                    message.emotionalTone
-                }
+            messageRepository.saveMessage(message)
+        }
 
-            val newMessage =
-                messageRepository.saveMessage(
-                    message.copy(
-                        emotionalTone = tone,
-                    ),
-                )
-
-            newMessage
+        override suspend fun analyzeMessageTone(
+            saga: SagaContent,
+            message: Message,
+            isFromUser: Boolean,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val tone =
+                    if (isFromUser) {
+                        val prompt = EmotionalPrompt.emotionalToneExtraction(message.text)
+                        val raw =
+                            gemmaClient
+                                .generate<String>(
+                                    prompt,
+                                    requireTranslation = false,
+                                    requirement = GemmaClient.ModelRequirement.LOW,
+                                )?.trim()
+                                ?.uppercase()
+                        EmotionalTone.getTone(raw)
+                    } else {
+                        message.emotionalTone
+                    }
+                if (tone != message.emotionalTone) {
+                    messageRepository.updateMessage(message.copy(emotionalTone = tone))
+            }
         }
 
         override suspend fun deleteMessage(messageId: Long) {
@@ -163,7 +167,8 @@ class MessageUseCaseImpl
                     "MessageUseCaseImpl",
                     "AI Reasoning for message generation: ${genText?.reasoning}",
                 )
-                genText?.message!!
+                val reasoning = if (BuildConfig.DEBUG) genText?.reasoning else null
+                genText?.message!!.copy(reasoning = reasoning)
             }
 
         override suspend fun generateReaction(

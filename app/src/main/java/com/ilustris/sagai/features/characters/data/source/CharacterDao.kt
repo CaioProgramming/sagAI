@@ -13,7 +13,7 @@ interface CharacterDao {
     @Query("SELECT * FROM Characters ORDER BY id ASC")
     fun getAllCharacters(): Flow<List<Character>>
 
-    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCharacter(character: Character): Long
 
     @Update
@@ -30,4 +30,7 @@ interface CharacterDao {
         name: String,
         sagaId: Int,
     ): Character?
+
+    @Query("SELECT name FROM Characters")
+    suspend fun getAllCharacterNames(): List<String>
 }

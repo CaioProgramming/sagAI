@@ -51,4 +51,6 @@ data class Message(
     val audible: Boolean = false,
     @ColumnInfo(defaultValue = "")
     val audioPath: String? = null,
+    @ColumnInfo(defaultValue = "NULL")
+    val reasoning: String? = null,
 )

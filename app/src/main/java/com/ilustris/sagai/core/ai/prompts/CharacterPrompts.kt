@@ -46,6 +46,7 @@ object CharacterPrompts {
     fun characterGeneration(
         saga: SagaContent,
         description: String,
+        bannedNames: List<String> = emptyList(),
     ) = buildString {
         appendLine("You are a Master Character Designer and World-Builder AI.")
         appendLine("Your task is to breathe life into a character who has just been discovered or mentioned in the saga's narrative.")
@@ -58,6 +59,19 @@ object CharacterPrompts {
         appendLine("// Use this as your ABSOLUTE SOURCE for the character's initial identity (name, if provided).")
         appendLine(description)
         appendLine()
+
+        if (bannedNames.isNotEmpty()) {
+            appendLine("## 🚫 BANNED NAMES (CREATIVITY CHALLENGE) 🚫")
+            appendLine(
+                "To ensure a diverse and expansive universe, the following names are already in use by other characters across different sagas and should be AVOIDED unless explicitly requested in the 'DISCOVERY SEED' above:",
+            )
+            appendLine(bannedNames.joinToString(", "))
+            appendLine("// RULE: If the 'DISCOVERY SEED' contains a name from this list, YOU MUST USE IT (context overrides the ban).")
+            appendLine(
+                "// RULE: If the 'DISCOVERY SEED' does not provide a specific name, you MUST generate a completely new, unique name that is NOT on this list."
+            )
+            appendLine()
+        }
 
         appendLine("## 🎭 CONTEXTUAL REASONING: BEYOND THE WORDS 🎭")
         appendLine("To make this character feel authentic, you must analyze the narrative they emerged from:")
