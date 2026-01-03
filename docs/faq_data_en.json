@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "title": "What's New",
+      "items": [
+        {
+          "question": "What's new in version 1.7.0?",
+          "answer": "Saddle up, partners! Version 1.7.0 introduces the new Cowboy and Shinobi genres, a Recap Hero Card to summarize your hero's journey, and the ability to export and import your sagas. We've also enhanced notifications and streamlined our release process with Firebase App Distribution."
+        }
+      ]
+    },
+    {
+      "title": "Art Styles",
+      "items": [
+        {
+          "question": "What are the art styles for each genre?",
+          "answer": "Each genre in SagAI has a unique and strictly enforced art style to create a cohesive visual experience. Fantasy stories are rendered in a classic Oil Painting style, Punk tales have a gritty Cartoon/Gorillaz-inspired look, and Shinobi adventures are visualized with traditional Ink Wash aesthetics."
+        }
+      ]
+    },
+    {
+      "title": "Gameplay Mechanics",
+      "items": [
+        {
+          "question": "Can other characters hear my thoughts?",
+          "answer": "No, anything written in a 'thought' bubble is your character's internal monologue and is not visible or known to NPCs or other characters in the story."
+        }
+      ]
+    },
+    {
+      "title": "Genre Voices",
+      "items": [
+        {
+          "question": "Does the AI's personality change with the genre?",
+          "answer": "Yes, the AI narrator and characters adapt their voice, tone, and vocabulary to fit the selected genre. A Cowboy story will feel very different from a Shinobi or Fantasy saga!"
+        }
+      ]
+    }
+  ]
+}

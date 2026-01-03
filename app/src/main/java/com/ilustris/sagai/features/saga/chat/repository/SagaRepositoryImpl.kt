@@ -4,10 +4,6 @@ import android.icu.util.Calendar
 import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
-import com.ilustris.sagai.core.ai.model.ImageReference
-import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.database.SagaDatabase
@@ -15,8 +11,7 @@ import com.ilustris.sagai.core.file.BackupService
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
 import com.ilustris.sagai.core.file.ImageCropHelper
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
-import com.ilustris.sagai.core.utils.toJsonFormatIncludingFields
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -70,52 +65,38 @@ class SagaRepositoryImpl
                 genreReferenceHelper
                     .getRandomCompositionReference(saga.genre)
                     .getSuccess()
-                    ?.let {
-                        ImageReference(
-                            it,
-                            ImagePrompts.extractComposition(),
-                        )
-                    }
-
-            val characterIcon =
-                character
-                    .image
-                    .let {
-                        genreReferenceHelper.getFileBitmap(it).getSuccess()?.let { icon ->
-                            ImageReference(
-                                icon,
-                                ImageGuidelines.characterVisualReferenceGuidance(character.name),
-                            )
-                        }
-                    }
-
-            listOfNotNull(iconReferenceComposition, characterIcon)
 
             val visualDirection =
                 imagenClient
-                    .extractComposition(
-                        references = listOfNotNull(iconReferenceComposition),
-                    ).getSuccess()
+                    .extractComposition(iconReferenceComposition)
+                    .getSuccess()
 
             val context =
                 buildString {
                     appendLine("Saga Context:")
-                    appendLine(saga.toJsonFormatIncludingFields(listOf("title", "description", "genre")))
+                    appendLine(saga.toAINormalize(listOf("title", "description", "genre")))
                     appendLine("Main Character Details:")
-                    appendLine(character.toJsonFormatExcludingFields(listOf("image", "sagaId", "joinedAt", "hexColor", "id")))
+                    appendLine(
+                        character.toAINormalize(
+                            listOf(
+                                "image",
+                                "sagaId",
+                                "joinedAt",
+                                "hexColor",
+                                "id",
+                                "emojified",
+                                "smartZoom",
+                            ),
+                        ),
+                    )
                 }
             val metaPrompt =
-                gemmaClient.generate<String>(
-                    prompt =
-                        SagaPrompts
-                            .iconDescription(
-                                saga.genre,
-                                context,
-                                visualDirection,
-                                characterHexColor = null,
-                            ),
-                    requireTranslation = false,
-                )!!
+                imagenClient
+                    .generateArtisticPrompt(
+                        saga.genre,
+                        visualDirection,
+                        context,
+                    ).getSuccess()!!
 
             // Review the generated description before image generation
             val reviewedPrompt =

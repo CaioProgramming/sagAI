@@ -77,7 +77,7 @@ fun ChapterContentView(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         val genre = remember { content.data.genre }
-        val characters = remember { chapter.fetchCharacters(content) }
+        val characters = remember { chapter.fetchCharacters(content).filterNotNull() }
 
         if (chapter.data.coverImage.isEmpty()) {
             Image(
@@ -89,8 +89,7 @@ fun ChapterContentView(
                             content,
                             chapter,
                         )
-                    }
-                    .size(100.dp)
+                    }.size(100.dp)
                     .gradientFill(genre.gradient(true))
                     .padding(16.dp),
             )
@@ -164,7 +163,7 @@ fun ChapterContentView(
         LazyRow(Modifier.align(Alignment.CenterHorizontally)) {
             items(characters) {
                 CharacterAvatar(
-                    it,
+                    it.data,
                     genre = genre,
                     softFocusRadius = 0f,
                     grainRadius = 0f,
@@ -217,8 +216,7 @@ fun ChapterContentView(
                     .gradientFill(genre.gradient())
                     .clickable {
                         requestReview(chapter)
-                    }
-                    .padding(4.dp),
+                    }.padding(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

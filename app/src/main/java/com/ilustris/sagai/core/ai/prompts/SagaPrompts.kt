@@ -109,7 +109,7 @@ object SagaPrompts {
         )
         appendLine()
         appendLine(
-            "**PROMPT STRUCTURE:** [Art Style] → [Character Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
+            "**PROMPT STRUCTURE:** [Art Style] → [Subjects Description with Visible Traits] → [Framing & Composition] → [Environment] → [Technical Specs]",
         )
         appendLine()
         appendLine("**ART STYLE (MANDATORY):** ${GenrePrompts.artStyle(genre)}")
@@ -150,8 +150,8 @@ object SagaPrompts {
             appendLine()
         }
 
-        appendLine("**CHARACTER CONTEXT & TRAIT PRESERVATION (MANDATORY):**")
-        appendLine("$context")
+        appendLine("**Scene CONTEXT &  PRESERVATION (MANDATORY):**")
+        appendLine(context)
         appendLine()
         appendLine("TRAIT PRESERVATION RULES (NO NORMALIZATION ALLOWED):")
         appendLine(
@@ -165,9 +165,12 @@ object SagaPrompts {
         )
         appendLine("- SECONDARY (CAN BE IMPLIED IF FRAMING CUTS THEM): Hands/fingers, lower body details (if not critical to character)")
         appendLine()
-        appendLine("CONCRETE EXAMPLE:")
+        appendLine("CONCRETE EXAMPLES:")
         appendLine(
-            "- GOOD: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in close-up with a warm, shrewd smile'",
+            "- SINGLE SUBJECT: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in close-up with a warm, shrewd smile'",
+        )
+        appendLine(
+            "- MULTIPLE SUBJECTS: 'A tall warrior in obsidian plate armor standing protectively over a small, wide-eyed child in tattered rags; the warrior looks ahead with grim resolve while the child clings to their cape.'",
         )
         appendLine("- BAD: 'A woman with a merchant look' or 'A dark character with styled hair'")
         appendLine()
@@ -215,18 +218,24 @@ object SagaPrompts {
         appendLine(
             "6. **COMPOSITION:** Explicitly state the subject's anchor point, depth layers (foreground/midground/background elements), and environmental context.",
         )
+        appendLine(
+            "7. **MULTI-SUBJECT COHERENCE:** If the context mentions multiple characters (e.g., 'A scientist and his robot assistant'), you MUST include both. Describe their relative positions, physical interactions, and emotional connection in the scene. Never omit secondary subjects that are key to the narrative moment.",
+        )
+        appendLine(
+            "8. **RELATIONSHIP DYNAMICS:** You MUST translate the provided relationship data (e.g., 'Enemies', 'Allies') into visible body language and composition. Enemies should have physical distance or aggressive tension; allies should have proximity or mutual support. Never contradict the emotional status of the subjects.",
+        )
         characterHexColor?.let {
             appendLine(
-                "7. **ACCENT COLOR ($it) INTEGRATION:** Consistently reinforce the art style's requirements, especially this accent color. Weave it into the scene via specific light sources, atmospheric effects, or subtle environmental details. Do NOT simply 'tint' the image.",
+                "9. **ACCENT COLOR ($it) INTEGRATION:** Consistently reinforce the art style's requirements, especially this accent color. Weave it into the scene via specific light sources, atmospheric effects, or subtle environmental details. Do NOT simply 'tint' the image.",
             )
         }
         appendLine()
 
         appendLine("**FINAL PROMPT FORMAT (ASSEMBLE IN THIS ORDER):**")
         appendLine("[1] OPENING - Art style + critical rendering rules")
-        appendLine("[2] CHARACTER - Specific, concrete description of character WITH ALL VISIBLE TRAITS")
+        appendLine("[2] SUBJECTS - Specific, concrete description of ALL characters/subjects WITH ALL VISIBLE TRAITS")
         appendLine(
-            "[3] FRAMING - Explicit camera framing and what's visible (e.g., 'close-up of face and upper shoulders, eyes clearly visible')",
+            "[3] FRAMING - Explicit camera framing and what's visible (e.g., 'full shot showing the interaction between characters from the waist up')",
         )
         appendLine("[4] EXPRESSION - Mood/emotion/pose visible in this frame (concrete, not abstract)")
         appendLine("[5] ENVIRONMENT - 3+ specific objects, location context, environmental elements")
@@ -241,7 +250,7 @@ object SagaPrompts {
         appendLine("✓ Genre-specific terminology used (NOT generic descriptors)")
         appendLine("✓ 3+ specific environment objects named")
         appendLine("✓ Lighting described with direction + quality + color")
-        appendLine("✓ Composition structure followed (character → environment → technical)")
+        appendLine("✓ Composition structure followed (subjects → environment → technical)")
         appendLine("✓ No forbidden elements mentioned")
         appendLine("✓ All required elements mentioned")
         appendLine("✓ Framing impact on visibility explicitly stated")

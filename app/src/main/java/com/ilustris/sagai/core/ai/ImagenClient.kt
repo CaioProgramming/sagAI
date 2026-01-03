@@ -33,7 +33,7 @@ interface ImagenClient {
         canByPass: Boolean = false,
     ): Bitmap?
 
-    suspend fun extractComposition(references: List<ImageReference>): RequestResult<String>
+    suspend fun extractComposition(bitmap: Bitmap?): RequestResult<String>
 
     suspend fun reviewAndCorrectPrompt(
         imageType: String,
@@ -41,6 +41,12 @@ interface ImagenClient {
         genre: Genre,
         finalPrompt: String,
     ): RequestResult<ImagePromptReview>
+
+    suspend fun generateArtisticPrompt(
+        genre: Genre,
+        visualDirection: String?,
+        context: String,
+    ): RequestResult<String>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -114,15 +120,42 @@ class ImagenClientImpl
             }
         }
 
-        override suspend fun extractComposition(references: List<ImageReference>) =
+        override suspend fun extractComposition(bitmap: Bitmap?) =
             executeRequest {
                 gemmaClient.generate<String>(
                     emptyString(),
-                    references = references,
+                    references =
+                        listOf(
+                            ImageReference(
+                                bitmap!!,
+                                ImagePrompts.extractComposition(),
+                            ),
+                        ),
                     requireTranslation = false,
                     requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
+
+        override suspend fun generateArtisticPrompt(
+            genre: Genre,
+            visualDirection: String?,
+            context: String,
+        ): RequestResult<String> =
+            executeRequest {
+                val prompt =
+                    ImagePrompts.artComposition(
+                        genre,
+                        context,
+                        visualDirection,
+                    )
+
+                gemmaClient.generate<String>(
+                    prompt,
+                    references = emptyList(),
+                    requireTranslation = false,
+                    requirement = GemmaClient.ModelRequirement.HIGH,
+            )!!
+        }
 
         override suspend fun reviewAndCorrectPrompt(
             imageType: String,
@@ -152,6 +185,11 @@ class ImagenClientImpl
                 )!!
             Log.i(TAG, "✏️ Prompt was modified by reviewer: ")
             Log.i(TAG, review.toAINormalize())
+            Log.d(TAG, "Suggestions: ")
+            Log.d(
+                TAG,
+                "Artist Suggestion: ${review.artistImprovementSuggestions}\nVisual Suggestion: ${review.visualDirectorSuggestions}"
+            )
             trackImageQuality(
                 genre = genre.name,
                 imageType = imageType,

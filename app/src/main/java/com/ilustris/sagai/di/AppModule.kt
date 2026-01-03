@@ -60,6 +60,8 @@ import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRe
 import com.ilustris.sagai.features.characters.relations.data.usecase.CharacterRelationUseCaseImpl
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.characters.repository.CharacterRepositoryImpl
+import com.ilustris.sagai.features.faq.data.repository.FaqRepository
+import com.ilustris.sagai.features.faq.data.repository.FaqRepositoryImpl
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCase
 import com.ilustris.sagai.features.home.data.usecase.HomeUseCaseImpl
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
@@ -361,6 +363,9 @@ abstract class UseCaseModule {
 @InstallIn(ViewModelComponent::class)
 @Module
 abstract class RepositoryModule {
+    @Binds
+    abstract fun bindsFaqRepository(faqRepositoryImpl: FaqRepositoryImpl): FaqRepository
+
     @Binds
     abstract fun bindsSagaRepository(sagaRepositoryImpl: SagaRepositoryImpl): SagaRepository
 

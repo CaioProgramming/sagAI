@@ -1,22 +1,16 @@
 package com.ilustris.sagai.features.chapter.data.usecase
 
 import android.util.Log
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.decodeToImageBitmap
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
-import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.prompts.ChapterPrompts
-import com.ilustris.sagai.core.ai.prompts.ImageGuidelines
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.file.FileHelper
 import com.ilustris.sagai.core.file.GenreReferenceHelper
-import com.ilustris.sagai.core.utils.formatToJsonArray
-import com.ilustris.sagai.core.utils.toJsonFormat
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.act.data.model.ActContent
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
@@ -189,72 +183,87 @@ class ChapterUseCaseImpl
         ): RequestResult<Chapter> =
             executeRequest {
                 val characters =
-                    chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!.data) }
+                    chapter.fetchCharacters(saga).ifEmpty { listOf(saga.mainCharacter!!) }
                 val coverBitmap =
                     genreReferenceHelper.getRandomCompositionReference(saga.data.genre).getSuccess()
-                val coverReference =
-                    coverBitmap?.let {
-                        ImageReference(
-                            it,
-                            ImageGuidelines.compositionReferenceGuidance,
-                        )
-                    }
-                val charactersIcons =
-                    characters.mapNotNull { character ->
-
-                        val characterBitmap =
-                            fileHelper
-                                .readFile(character.image)
-                                ?.decodeToImageBitmap()
-                                ?.asAndroidBitmap()
-
-                        characterBitmap?.let {
-                            ImageReference(
-                                it,
-                                ImageGuidelines.characterVisualReferenceGuidance(character.name),
-                            )
-                        }
-                    }
 
                 val visualComposition =
                     imagenClient
                         .extractComposition(
-                            listOfNotNull(coverReference),
+                            coverBitmap,
                         ).getSuccess()
-                val coverContext =
-                    mapOf(
-                        "featuredCharacters" to
-                            characters.formatToJsonArray(
-                                listOf(
-                                    "id",
-                                    "image",
-                                    "sagaId",
-                                    "joinedAt",
-                                    "emojified",
-                                    "hexColor",
-                                    "firstSceneId",
-                                    "abilities",
-                                    "carriedItems",
-                                    "backstory",
-                                ),
-                            ),
-                    )
 
-                val coverContextJson = coverContext.toJsonFormat()
-                val coverPrompt =
-                    SagaPrompts.iconDescription(
-                        saga.data.genre,
-                        coverContextJson,
-                        visualComposition,
-                        characterHexColor = null,
-                    )
-                val promptGeneration =
-                    gemmaClient.generate<String>(
-                        coverPrompt,
-                        references = charactersIcons,
-                        requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                    )!!
+                val artisticPrompt =
+                    imagenClient
+                        .generateArtisticPrompt(
+                            saga.data.genre,
+                            visualComposition,
+                            buildString {
+                                if (characters.size > 1) {
+                                    appendLine("Integrate the following characters in the artwork scene (MANDATORY): ")
+                                    appendLine(
+                                        characters.mapNotNull { it?.data }.joinToString {
+                                            it.toAINormalize(
+                                                listOf(
+                                                    "id",
+                                                    "image",
+                                                    "sagaId",
+                                                    "joinedAt",
+                                                    "emojified",
+                                                    "hexColor",
+                                                    "firstSceneId",
+                                                    "carriedItems",
+                                                    "smartZoom",
+                                                ),
+                                            )
+                                        },
+                                    )
+                                } else {
+                                    appendLine("Integrate the following character in the artwork scene: ")
+                                    appendLine(
+                                        characters.first().toAINormalize(
+                                            listOf(
+                                                "id",
+                                                "image",
+                                                "sagaId",
+                                                "joinedAt",
+                                                "emojified",
+                                                "hexColor",
+                                                "firstSceneId",
+                                                "abilities",
+                                                "carriedItems",
+                                                "backstory",
+                                            ),
+                                        ),
+                                    )
+                                }
+                                appendLine("Use this context to guide the mood and ambience: ")
+                                appendLine(
+                                    chapter.data.toAINormalize(
+                                        listOf(
+                                            "id",
+                                            "actId",
+                                            "currentEventId",
+                                            "coverImage",
+                                            "emotionalReview",
+                                            "createdAt",
+                                            "featuredCharacters",
+                                        ),
+                                    ),
+                                )
+                                appendLine("## CHARACTER RELATIONSHIPS (CRITICAL FOR SCENE COMPOSITION):")
+                                characters
+                                    .filter {
+                                        it?.data?.id != saga.mainCharacter?.data?.id
+                                    }.forEach {
+                                        appendLine(
+                                            saga.mainCharacter!!
+                                                .findRelationship(it!!.data.id)
+                                                ?.summarizeRelation(),
+                                        )
+                                    }
+                            },
+                        ).getSuccess()!!
 
                 // Review the generated description before image generation
                 val reviewedPrompt =
@@ -263,7 +272,7 @@ class ChapterUseCaseImpl
                             imageType = AnalyticsConstants.ImageType.COVER,
                             genre = saga.data.genre,
                             visualDirection = visualComposition,
-                            finalPrompt = promptGeneration,
+                            finalPrompt = artisticPrompt,
                         ).getSuccess()
 
                 // Use the reviewed prompt, or fallback to original if review failed
@@ -273,7 +282,7 @@ class ChapterUseCaseImpl
                             "ChapterUseCase",
                             "Review failed or returned null, using original description",
                         )
-                        promptGeneration
+                        artisticPrompt
                     }
 
                 val genCover =

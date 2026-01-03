@@ -40,6 +40,7 @@ import androidx.navigation.navArgument
 import com.ilustris.sagai.R
 import com.ilustris.sagai.features.chapter.ui.ChapterView
 import com.ilustris.sagai.features.characters.ui.CharacterDetailsView
+import com.ilustris.sagai.features.faq.ui.FAQView
 import com.ilustris.sagai.features.home.ui.HomeView
 import com.ilustris.sagai.features.newsaga.ui.NewSagaView
 import com.ilustris.sagai.features.saga.chat.ui.ChatView
@@ -87,7 +88,14 @@ enum class Routes(
         title = R.string.settings_title,
         showBottomNav = false,
         view = { nav, padding, _, _ ->
-            SettingsView()
+            SettingsView(nav)
+        },
+        topBarContent = { Box {} },
+    ),
+    FAQ(
+        showBottomNav = false,
+        view = { nav, padding, _, _ ->
+            FAQView()
         },
         topBarContent = { Box {} },
     ),

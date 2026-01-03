@@ -6,11 +6,8 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.ai.TextGenClient
-import com.ilustris.sagai.core.ai.model.ImageReference
 import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.ChatPrompts
-import com.ilustris.sagai.core.ai.prompts.ImagePrompts
-import com.ilustris.sagai.core.ai.prompts.SagaPrompts
 import com.ilustris.sagai.core.analytics.AnalyticsConstants
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.asSuccess
@@ -22,7 +19,6 @@ import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.services.BillingService
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
-import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
@@ -92,54 +88,36 @@ class CharacterUseCaseImpl
             saga: Saga,
         ): RequestResult<Pair<Character, String>> =
             executeRequest(true) {
-                val isPremium = billingService.isPremium()
+                billingService.isPremium()
 
                 val portraitReference =
-                    genreReferenceHelper.getRandomPortraitReference().getSuccess()?.let {
-                        ImageReference(it, ImagePrompts.extractComposition())
-                    }
-                val references =
-                    if (isPremium) {
-                        listOfNotNull(
-                            portraitReference,
-                        )
-                    } else {
-                        emptyList()
-                    }
+                    genreReferenceHelper.getRandomPortraitReference().getSuccess()
 
                 val visualComposition =
+                    imagenClient.extractComposition(portraitReference).getSuccess()
+
+                val artistComposition =
                     imagenClient
-                        .extractComposition(
-                            listOfNotNull(portraitReference),
-                        ).getSuccess()
-
-                val descriptionPrompt =
-                    SagaPrompts.iconDescription(
-                        saga.genre,
-                        mapOf(
-                            "saga" to saga.toAINormalize(ChatPrompts.sagaExclusions),
-                            "character" to
-                                character.toAINormalize(
-                                    listOf(
-                                        "id",
-                                        "image",
-                                        "sagaId",
-                                        "joinedAt",
-                                        "emojified",
+                        .generateArtisticPrompt(
+                            saga.genre,
+                            visualComposition,
+                            buildString {
+                                appendLine("Saga Context: ")
+                                appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
+                                appendLine("Character Context: ")
+                                appendLine(
+                                    character.toAINormalize(
+                                        listOf(
+                                            "id",
+                                            "image",
+                                            "sagaId",
+                                            "joinedAt",
+                                            "smartZoom",
+                                        ),
                                     ),
-                                ),
-                        ).toJsonFormat(),
-                        visualComposition,
-                        characterHexColor = character.hexColor,
-                    )
-
-                val translatedDescription =
-                    gemmaClient.generate<String>(
-                        descriptionPrompt,
-                        references = references,
-                        requireTranslation = false,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
-                    )!!
+                                )
+                            },
+                        ).getSuccess()!!
 
                 // NEW: Review the generated description before image generation
                 val reviewedPrompt =
@@ -148,7 +126,7 @@ class CharacterUseCaseImpl
                             imageType = AnalyticsConstants.ImageType.AVATAR,
                             visualDirection = visualComposition,
                             genre = saga.genre,
-                            finalPrompt = translatedDescription,
+                            finalPrompt = artistComposition,
                         ).getSuccess()
 
                 // Use the reviewed prompt, or fallback to original if review failed
@@ -158,7 +136,7 @@ class CharacterUseCaseImpl
                             "CharacterUseCase",
                             "Review failed or returned null, using original description",
                         )
-                        translatedDescription
+                        artistComposition
                     }
 
                 val image =
@@ -352,6 +330,6 @@ class CharacterUseCaseImpl
                 gemmaClient.generate<String>(
                     prompt,
                     requirement = GemmaClient.ModelRequirement.HIGH,
-            )!!
-        }
+                )!!
+            }
     }

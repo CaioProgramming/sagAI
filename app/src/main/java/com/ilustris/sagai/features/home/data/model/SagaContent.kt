@@ -196,14 +196,8 @@ fun SagaContent.generateCharacterRelationsSummary(filterNames: List<String>? = n
             }
         }
     if (filteredRelations.isEmpty()) return "No relevant relationships for this scene."
-    return filteredRelations.joinToString("\n") { relationContent ->
-        val char1Name =
-            characters.find { it.data.id == relationContent.data.characterOneId }?.data?.name
-                ?: "Unknown"
-        val char2Name =
-            characters.find { it.data.id == relationContent.data.characterTwoId }?.data?.name
-                ?: "Unknown"
-        "[$char1Name <-> $char2Name] ${relationContent.data.emoji} ${relationContent.data.title}"
+    return filteredRelations.joinToString("\n---\n") { relationContent ->
+        relationContent.summarizeRelation()
     }
 }
 

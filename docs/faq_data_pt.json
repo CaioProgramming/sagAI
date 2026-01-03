@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "title": "O que há de novo",
+      "items": [
+        {
+          "question": "O que há de novo na versão 1.7.0?",
+          "answer": "Prepare a sela, parceiro! A versão 1.7.0 introduz os novos gêneros Cowboy e Shinobi, um Card de Herói de Recapitulação para resumir a jornada do seu herói, e a habilidade de exportar e importar suas sagas. Nós também melhoramos as notificações e otimizamos nosso processo de lançamento com o Firebase App Distribution."
+        }
+      ]
+    },
+    {
+      "title": "Estilos de Arte",
+      "items": [
+        {
+          "question": "Quais são os estilos de arte de cada gênero?",
+          "answer": "Cada gênero no SagAI possui um estilo de arte único e estritamente aplicado para criar uma experiência visual coesa. Histórias de Fantasia são renderizadas em um estilo clássico de Pintura a Óleo, contos Punk têm um visual mais rústico inspirado em Cartoon/Gorillaz, e aventuras Shinobi são visualizadas com a estética tradicional de Pintura a Tinta."
+        }
+      ]
+    },
+    {
+      "title": "Mecânicas de Jogo",
+      "items": [
+        {
+          "question": "Outros personagens podem ouvir meus pensamentos?",
+          "answer": "Não, tudo que está escrito em uma bolha de 'pensamento' é o monólogo interno do seu personagem e não é visível ou conhecido por NPCs ou outros personagens na história."
+        }
+      ]
+    },
+    {
+      "title": "Vozes de Gênero",
+      "items": [
+        {
+          "question": "A personalidade da IA muda com o gênero?",
+          "answer": "Sim, o narrador da IA e os personagens adaptam sua voz, tom e vocabulário para se adequar ao gênero selecionado. Uma história de Cowboy será muito diferente de uma saga Shinobi ou de Fantasia!"
+        }
+      ]
+    }
+  ]
+}
