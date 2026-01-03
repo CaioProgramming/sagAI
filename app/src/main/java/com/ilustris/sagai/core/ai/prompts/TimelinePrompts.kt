@@ -4,7 +4,7 @@ import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 
 object TimelinePrompts {
-    val timelineExclusions = listOf("id", "chapterId", "createdAt")
+    val timelineExclusions = listOf("id", "chapterId", "createdAt", "emotionalReview")
 
     fun timeLineDetails(currentChapter: ChapterContent?) =
         buildString {
@@ -12,7 +12,8 @@ object TimelinePrompts {
                 currentChapter
                     ?.events
                     ?.filter { it.isComplete() }
-                    ?.map { it.data }?.takeLast(5)
+                    ?.map { it.data }
+                    ?.takeLast(5)
             if (events?.isNotEmpty() == true) {
                 appendLine("**Most Recent Events:**")
                 appendLine("// This section provides the most recent events from the chapter's timeline.")
@@ -20,5 +21,4 @@ object TimelinePrompts {
                 appendLine(events.normalizetoAIItems(timelineExclusions))
             }
         }
-
 }

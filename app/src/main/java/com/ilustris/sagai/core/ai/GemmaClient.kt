@@ -221,7 +221,8 @@ class GemmaClient
                                 return@withLock response as T
                             }
 
-                            val cleanedJsonString = response.sanitizeAndExtractJsonString()
+                            val cleanedJsonString =
+                                response.sanitizeAndExtractJsonString(T::class.java)
                             val typeToken = object : TypeToken<T>() {}
                             Gson().fromJson(cleanedJsonString, typeToken.type)
                         }

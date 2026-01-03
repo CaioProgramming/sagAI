@@ -448,10 +448,10 @@ fun ChatInputView(
                                     override fun createShader(size: Size): Shader {
                                         val shader =
                                             (
-                                                sweepGradient(
-                                                    content.data.genre.colorPalette(),
-                                                ) as ShaderBrush
-                                            ).createShader(size)
+                                                    sweepGradient(
+                                                        content.data.genre.colorPalette(),
+                                                    ) as ShaderBrush
+                                                    ).createShader(size)
                                         val matrix = Matrix()
                                         matrix.setRotate(
                                             rotation,
@@ -474,7 +474,8 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }.border(1.dp, inputBrush, inputShape)
+                    }
+                    .border(1.dp, inputBrush, inputShape)
                     .background(backgroundColor, inputShape)
                     .verticalScroll(rememberScrollState()),
         ) {
@@ -491,7 +492,7 @@ fun ChatInputView(
                         color = MaterialTheme.colorScheme.onBackground,
                         fontFamily = content.data.genre.bodyFont(),
                     )
-                val maxLength = 500
+                val maxLength = 700
                 val tagBackgroundColor = MaterialTheme.colorScheme.background
 
                 TooltipBox(
@@ -525,11 +526,13 @@ fun ChatInputView(
                                             radius = 5.dp,
                                             genre.color,
                                         ),
-                                    ).border(1.dp, genre.color.gradientFade(), shape)
+                                    )
+                                    .border(1.dp, genre.color.gradientFade(), shape)
                                     .background(
                                         MaterialTheme.colorScheme.background,
                                         shape,
-                                    ).clip(shape)
+                                    )
+                                    .clip(shape)
                                     .padding(8.dp),
                         ) {
                             item(span = { GridItemSpan(4) }) {
@@ -555,7 +558,8 @@ fun ChatInputView(
                                                 coroutineScope.launch {
                                                     characterToolTipState.dismiss()
                                                 }
-                                            }.size(36.dp),
+                                            }
+                                            .size(36.dp),
                                     textStyle =
                                         MaterialTheme.typography.labelSmall.copy(
                                             fontFamily = content.data.genre.bodyFont(),
@@ -645,7 +649,7 @@ fun ChatInputView(
                         BasicTextField(
                             inputField,
                             enabled = isGenerating.not(),
-                            maxLines = if (isGenerating) 1 else Int.MAX_VALUE,
+                            maxLines = if (isImeVisible.not()) 1 else Int.MAX_VALUE,
                             onValueChange = {
                                 if (it.text.length <= maxLength) {
                                     onUpdateInput(it)
@@ -733,11 +737,11 @@ fun ChatInputView(
 
                     IconButton(
                         onClick = {
-                            if (isGenerating) return@IconButton
                             if (isSendingPending) {
                                 onSendMessage(true)
                                 return@IconButton
                             }
+                            if (isGenerating) return@IconButton
                             if (inputField.text.isEmpty()) {
                                 onRequestAudio()
                                 return@IconButton
@@ -766,7 +770,8 @@ fun ChatInputView(
                                     .padding(8.dp)
                                     .reactiveShimmer(
                                         isGenerating,
-                                    ).fillMaxSize(),
+                                    )
+                                    .fillMaxSize(),
                         ) { loading ->
                             val icon =
                                 if (loading) {
@@ -828,7 +833,8 @@ fun ChatInputView(
                                     .gradientFill(brush)
                                     .clickable {
                                         onUpdateSender(it)
-                                    }.padding(16.dp),
+                                    }
+                                    .padding(16.dp),
                         ) {
                             val weight =
                                 if (it == action) FontWeight.Bold else FontWeight.Normal
@@ -890,7 +896,8 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     genre.shape(),
-                                ).padding(16.dp),
+                                )
+                                .padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(

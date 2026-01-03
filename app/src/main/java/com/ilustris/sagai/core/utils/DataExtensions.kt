@@ -286,7 +286,7 @@ fun Long.formatHours(): String {
     return format.format(date)
 }
 
-fun String?.sanitizeAndExtractJsonString(): String {
+fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): String {
     val logTag = "StringSanitization"
     if (this.isNullOrBlank()) {
         Log.w(logTag, "Input string is null or blank, cannot sanitize.")
@@ -370,16 +370,32 @@ fun String?.sanitizeAndExtractJsonString(): String {
             if (endIndex != -1) {
                 cleanedJsonString = cleanedJsonString.substring(0, endIndex + 1)
             } else {
-                Log.e(
-                    logTag,
-                    "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
-                )
-                throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
+                // Fallback: Check if the string ends with the expected closing bracket
+                // This handles cases where internal malformation (like missing quotes) breaks the strict parser
+                val expectedClose = if (startChar == '{') '}' else ']'
+                if (cleanedJsonString.trim().lastOrNull() == expectedClose) {
+                    Log.w(
+                        logTag,
+                        "Strict JSON parsing failed (likely due to malformed content), but found closing bracket '$expectedClose'. Proceeding with full string.",
+                    )
+                } else {
+                    Log.e(
+                        logTag,
+                        "Could not find matching closing bracket for JSON starting at: $cleanedJsonString",
+                    )
+                    throw IllegalArgumentException("Malformed JSON: No matching closing bracket found.")
+                }
             }
         }
     }
 
-    // 5. Remove trailing commas before closing braces/brackets (common issue)
+    // 5. Repair JSON structure (fix missing quotes) BEFORE processing commas
+    //    This ensures that the comma removal logic (which depends on string state) works correctly
+    if (expectedClass != null && cleanedJsonString.isNotBlank()) {
+        cleanedJsonString = repairJsonStructure(cleanedJsonString, expectedClass)
+    }
+
+    // 6. Remove trailing commas before closing braces/brackets (common issue)
     //    Example: { "a": 1, "b": 2, }  -> { "a": 1, "b": 2 }
     // Use a scanner to ensure commas inside strings are not removed.
     run {
@@ -425,7 +441,7 @@ fun String?.sanitizeAndExtractJsonString(): String {
         cleanedJsonString = sb.toString()
     }
 
-    // 6. Remove any remaining problematic backticks (final cleanup)
+    // 7. Remove any remaining problematic backticks (final cleanup)
     cleanedJsonString = cleanedJsonString.replace("`", "")
 
     Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
@@ -434,6 +450,69 @@ fun String?.sanitizeAndExtractJsonString(): String {
         throw IllegalArgumentException("Resulting JSON string is blank after sanitization.")
     }
     return cleanedJsonString
+}
+
+private fun repairJsonStructure(
+    json: String,
+    clazz: Class<*>,
+): String {
+    var currentJson = json
+    try {
+        val fields = getRecursiveFields(clazz)
+        fields.forEach { (name, type) ->
+            if (type == String::class.java) {
+                val pattern = Regex("\"$name\"\\s*:\\s*")
+                var startIndex = 0
+                while (true) {
+                    val match = pattern.find(currentJson, startIndex) ?: break
+                    val valueStartRaw = match.range.last + 1
+
+                    var charIndex = valueStartRaw
+                    while (charIndex < currentJson.length && currentJson[charIndex].isWhitespace()) {
+                        charIndex++
+                    }
+
+                    if (charIndex < currentJson.length) {
+                        val firstChar = currentJson[charIndex]
+                        if (firstChar != '"') {
+                            Log.w(
+                                "JsonRepair",
+                                "Repairing JSON: Found missing opening quote for field '$name' at index $charIndex",
+                            )
+                            currentJson =
+                                currentJson.substring(0, charIndex) + "\"" +
+                                currentJson.substring(
+                                    charIndex,
+                                )
+                        }
+                        // Advance past this field's value start (plus the quote if we added it, or if it was there)
+                        startIndex = charIndex + 1
+                    } else {
+                        break
+                    }
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("JsonRepair", "Failed to repair JSON structure: ${e.message}")
+    }
+    return currentJson
+}
+
+private fun getRecursiveFields(
+    clazz: Class<*>,
+    visited: MutableSet<Class<*>> = mutableSetOf(),
+): Map<String, Class<*>> {
+    if (clazz in visited || clazz.isPrimitive || clazz == String::class.java || clazz.isEnum) return emptyMap()
+    visited.add(clazz)
+    val fields = mutableMapOf<String, Class<*>>()
+    clazz.declaredFields.forEach { field ->
+        fields[field.name] = field.type
+        if (!field.type.isPrimitive && field.type != String::class.java && !field.type.isEnum) {
+            fields.putAll(getRecursiveFields(field.type, visited))
+        }
+    }
+    return fields
 }
 
 fun Int.toRoman(): String {

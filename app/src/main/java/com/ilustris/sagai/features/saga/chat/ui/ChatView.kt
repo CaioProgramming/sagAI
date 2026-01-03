@@ -27,7 +27,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
-import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
@@ -157,9 +156,9 @@ import com.ilustris.sagai.features.share.ui.ShareSheet
 import com.ilustris.sagai.features.timeline.ui.TimeLineCard
 import com.ilustris.sagai.features.timeline.ui.TimeLineSimpleCard
 import com.ilustris.sagai.features.wiki.data.model.Wiki
-import com.ilustris.sagai.ui.animations.StarryTextPlaceholder
 import com.ilustris.sagai.ui.components.SagaSnackBar
 import com.ilustris.sagai.ui.components.SnackAction
+import com.ilustris.sagai.ui.components.WarpSpeedStarField
 import com.ilustris.sagai.ui.components.stylisedText
 import com.ilustris.sagai.ui.components.views.DepthLayout
 import com.ilustris.sagai.ui.navigation.Routes
@@ -491,8 +490,11 @@ fun ChatView(
                     ?.data
                     ?.genre
                     ?.shimmerColors() ?: holographicGradient
-            StarryTextPlaceholder(
-                modifier = Modifier.reactiveShimmer(true, shimmerColors),
+            WarpSpeedStarField(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .reactiveShimmer(true, shimmerColors),
             )
         }
 

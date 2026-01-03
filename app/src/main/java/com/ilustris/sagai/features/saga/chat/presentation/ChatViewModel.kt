@@ -678,6 +678,15 @@ class ChatViewModel
             userConfirmed: Boolean = false,
             isAudio: Boolean = false,
         ) {
+            if (uiState.value.isSendingPending) {
+                sendJob?.cancel()
+                sendJob = null
+                stateManager.updateSendingPending(false)
+                stateManager.updateSendingProgress(0f)
+                stateManager.updateLoading(false)
+                return
+            }
+
             val text = uiState.value.inputValue
             uiState.value.senderType
 
@@ -692,15 +701,6 @@ class ChatViewModel
 
             if (isAudio && !userConfirmed) {
                 stateManager.updateAudioInput(true)
-                stateManager.updateLoading(false)
-                return
-            }
-
-            if (uiState.value.isSendingPending) {
-                sendJob?.cancel()
-                sendJob = null
-                stateManager.updateSendingPending(false)
-                stateManager.updateSendingProgress(0f)
                 stateManager.updateLoading(false)
                 return
             }

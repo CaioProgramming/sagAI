@@ -136,7 +136,10 @@ object ImagePrompts {
         appendLine(
             "1. CINEMATOGRAPHY (16 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers, subject_orientation",
         )
-        appendLine("   - All MUST be explicit, specific, and match visual direction.")
+        appendLine("   - All MUST be explicit, specific, and match visual direction (excluding environment/background).")
+        appendLine(
+            "   - **BACKGROUND & AMBIENCE PRECEDENCE:** The environment MUST strictly adhere to the genre's ambience. If the visual direction's environment conflicts with the genre's requirements (e.g., visual direction says 'studio' but genre is 'cyberpunk'), the genre ambience MUST take absolute precedence. Ignore the visual direction's background perspective entirely if it contradicts the genre's setting.",
+        )
         appendLine(
             "   - **ANGLE & PERSPECTIVE ENFORCEMENT:** The prompt's angle MUST be specific, non-generic, and creative, as mandated by the visual direction. It must avoid 'banned perspectives' like flat or plain views. The description must clearly reflect the chosen viewpoint (e.g., 'The camera looks up at the towering figure...').",
         )
@@ -272,7 +275,7 @@ object ImagePrompts {
             "- Wrong genre aura → Rewrite pose/expression to match genre (e.g., 'standing' → 'standing with heroic verticality' for Heroes).")
         appendLine("- Static character → Add momentum language ('breathing', 'captured mid-action')")
         appendLine("- Generic cinematography → Specify exact values from 16 parameters")
-        appendLine("- Missing background/environment → Add 3+ specific objects")
+        appendLine("- Missing background/environment → Add 3+ specific objects matching the genre's ambience")
         appendLine()
 
         appendLine("OUTPUT JSON (ImagePromptReview) - ENSURE ALL FIELDS ARE PRESENT:")

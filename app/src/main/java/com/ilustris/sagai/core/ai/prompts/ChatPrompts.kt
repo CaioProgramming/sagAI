@@ -211,13 +211,7 @@ object ChatPrompts {
             appendLine(ChapterPrompts.chapterSummary(saga))
 
             appendLine("\n## Recent Activity")
-            appendLine(
-                saga
-                    .flatMessages()
-                    .map { it.message }
-                    .takeLast(UpdateRules.LORE_UPDATE_LIMIT)
-                    .normalizetoAIItems(messageExclusions),
-            )
+            appendLine(conversationHistory(saga))
 
             appendLine("\n# TECHNICAL EXTRACTION PARAMETERS")
             appendLine(
