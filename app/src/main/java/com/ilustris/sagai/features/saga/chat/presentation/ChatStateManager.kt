@@ -108,4 +108,8 @@ class ChatStateManager {
     fun updateAudioInput(isAudio: Boolean) {
         _uiState.update { it.copy(isAudioInput = isAudio) }
     }
+
+    fun updateMilestone(milestone: com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone?) {
+        _uiState.update { it.copy(milestone = milestone) }
+    }
 }

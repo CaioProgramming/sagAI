@@ -10,6 +10,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
 import com.ilustris.sagai.features.saga.chat.domain.model.Suggestion
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.ui.components.SnackBarState
@@ -54,6 +55,7 @@ data class ChatUiState(
     val isSendingPending: Boolean = false,
     val sendingProgress: Float = 0f,
     val isAudioInput: Boolean = false,
+    val milestone: SagaMilestone? = null,
 )
 
 data class MessageSelectionState(

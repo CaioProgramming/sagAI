@@ -102,6 +102,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
@@ -143,9 +144,9 @@ import com.ilustris.sagai.features.saga.chat.presentation.ChatUiAction
 import com.ilustris.sagai.features.saga.chat.presentation.ChatUiState
 import com.ilustris.sagai.features.saga.chat.presentation.ChatViewModel
 import com.ilustris.sagai.features.saga.chat.presentation.MessageAction
-import com.ilustris.sagai.features.saga.chat.ui.components.CharacterRevealOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatBubble
 import com.ilustris.sagai.features.saga.chat.ui.components.ChatInputView
+import com.ilustris.sagai.features.saga.chat.ui.components.MilestoneOverlay
 import com.ilustris.sagai.features.saga.chat.ui.components.ReactionsBottomSheet
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.saga.chat.ui.components.bubble
@@ -498,18 +499,6 @@ fun ChatView(
             )
         }
 
-        uiState.newCharacterReveal?.let { id ->
-            uiState.sagaContent?.let { sagaContent ->
-                val character = sagaContent.characters.find { it.data.id == id }
-
-                CharacterRevealOverlay(
-                    character = character,
-                    sagaContent = sagaContent,
-                    onDismiss = { onAction(ChatUiAction.DismissCharacterReveal) },
-                )
-            }
-        }
-
         uiState.sagaContent?.let {
             ShareSheet(
                 content = it,
@@ -517,6 +506,22 @@ fun ChatView(
                 shareType = ShareType.CONVERSATION,
                 onDismiss = { onAction(ChatUiAction.ShareConversation(false)) },
             )
+        }
+
+        uiState.milestone?.let { milestone ->
+            Dialog(
+                onDismissRequest = {
+                    onAction(ChatUiAction.DismissMilestone)
+                },
+            ) {
+                content?.let {
+                    MilestoneOverlay(
+                        milestone = milestone,
+                        saga = it,
+                        onDismiss = { onAction(ChatUiAction.DismissMilestone) },
+                    )
+                }
+            }
         }
     }
 }

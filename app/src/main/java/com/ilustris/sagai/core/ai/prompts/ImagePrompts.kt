@@ -110,7 +110,7 @@ object ImagePrompts {
         appendLine()
         appendLine("CONCRETE EXAMPLES:")
         appendLine(
-            "- SINGLE SUBJECT: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in close-up with a warm, shrewd smile'",
+            "- SINGLE SUBJECT: 'A stout, dark-skinned merchant with tight silver coils and vibrant vitiligo patterns on her face, shown in CU: Head and Shoulders with a warm, shrewd smile'",
         )
         appendLine(
             "- MULTIPLE SUBJECTS: 'A tall warrior in obsidian plate armor standing protectively over a small, wide-eyed child in tattered rags; the warrior looks ahead with grim resolve while the child clings to their cape.'",
@@ -124,7 +124,7 @@ object ImagePrompts {
         appendLine("2. **VISIBILITY DICTATED BY FRAMING:** Your description must be a direct reflection of the **VISUAL DIRECTION**.")
         appendLine("   - ONLY describe what is visible within the specified framing.")
         appendLine(
-            "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'Close-up,' do NOT mention the character's boots).",
+            "   - Explicitly OMIT any mention of elements outside the frame (e.g., if framing is a 'CU: Head and Shoulders,' do NOT mention the character's boots).",
         )
         appendLine(
             "   - **EXCEPTION:** Hands and gestures are ALLOWED and ENCOURAGED if they enter the frame to support the expression (e.g., touching face, adjusting glasses, hand over mouth), even in portraits.",
@@ -133,7 +133,7 @@ object ImagePrompts {
         appendLine("   - Examples:")
         appendLine("     - ECU (extreme close-up): Face dominates. Eyes, nose, mouth, skin texture, and facial marks are the entire focus.")
         appendLine(
-            "     - CU (close-up): Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible.",
+            "     - CU: Head and Shoulders: Head and shoulders are visible. Hands may be visible if touching face. Upper chest can be partially visible. Lower body is NOT visible.",
         )
         appendLine("     - MS (medium shot): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible.")
         appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
@@ -153,13 +153,13 @@ object ImagePrompts {
             "   - **HANDS & GESTURES:** Ensure hands are always described, even in wider shots, as they are crucial for conveying emotion. Hands must interact with the world or self (e.g., clutching a weapon, resting on hips, reaching out).",
         )
         appendLine(
-            "4. **SPECIFIC ENVIRONMENT:** Name at least 3 tangible objects or elements in the environment that are consistent with the context and genre. Expand environment descriptions to meet the genre's requirements for scale and detail. Explicitly mention the accent color in atmospheric elements like the sky or reflections.",
+            "4. **SPECIFIC ENVIRONMENT:** Name at least 3 specific environmental details (objects, weather, atmospheric elements) to establish a clear scene atmosphere. The artist MUST integrate these details to ground the subjects and establish the scene's unique vibe.",
         )
         appendLine(
             "5. **LIGHTING AS A TOOL:** Describe lighting with direction, quality (hard/soft), and color. Avoid technical jargon and use visual descriptors instead to enhance mood and form (e.g., 'lit by a single, harsh overhead light, casting deep shadows').",
         )
         appendLine(
-            "6. **COMPOSITION:** Explicitly state the subject's anchor point, depth layers (foreground/midground/background elements), and environmental context.",
+            "6. **COMPOSITION & PERSPECTIVE:** Explicitly state the perspective (e.g., 'One-point perspective', 'Dramatic foreshortening') along with the subject's anchor point, depth layers (foreground/midground/background elements), and environmental context.",
         )
         appendLine(
             "7. **MULTI-SUBJECT COHERENCE:** If the context mentions multiple characters (e.g., 'A scientist and his robot assistant'), you MUST include both. Describe their relative positions, physical interactions, and emotional connection in the scene. Never omit secondary subjects that are key to the narrative moment.",
@@ -186,7 +186,8 @@ object ImagePrompts {
         appendLine("✓ No vague words ('nice', 'beautiful', 'realistic', 'soft', 'subtle')")
         appendLine("✓ All traits visible at this framing level are explicitly described")
         appendLine("✓ Genre-specific terminology used (NOT generic descriptors)")
-        appendLine("✓ 3+ specific environment objects named")
+        appendLine("✓ 3+ specific environment details established for atmosphere")
+        appendLine("✓ Perspective explicitly stated (e.g., 'Three-point perspective')")
         appendLine("✓ Lighting described with direction + quality + color")
         appendLine("✓ Composition structure followed (subjects → environment → technical)")
         appendLine("✓ No forbidden elements mentioned")
@@ -228,11 +229,11 @@ object ImagePrompts {
                 "2. LENS: [14-24mm ultra-wide / 24-35mm wide / 35-50mm normal / 50-85mm portrait / 85-200mm tele / 200mm+ super-tele]",
             )
             appendLine(
-                "3. FRAMING: [ECU face / CU head-shoulders / MCU head-chest / MS head-waist / MWS head-knees / FS full-body / WS body+env / EWS small-in-vast]",
+                "3. FRAMING: [ECU: Face / CU: Head and Shoulders / MCU: Head-Chest / MS: Head-Waist / MWS: Head-Knees / FS: Full-Body / WS: Body+Env / EWS: Small-in-Vast]",
             )
             appendLine("4. PLACEMENT: [H: left/center/right third] [V: upper/center/lower third]")
             appendLine(
-                "5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]. DESCRIBE the shadow interplay, contrast intensity, and how light composites the SUBJECTS. EXAMPLE: Instead of 'Dramatic side lighting', specify 'Strong side lighting with a 3:1 contrast ratio'.",
+                "5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]. DESCRIBE the shadow interplay, contrast intensity, and how light composites the SUBJECTS. EXAMPLE: Instead of 'Dramatic side lighting', specify 'Strong side lighting with strong shadows and bright highlights'.",
             )
             appendLine("6. COLOR: [cool / neutral / warm] + dominant palette")
             appendLine(

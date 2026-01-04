@@ -413,4 +413,5 @@
     <!-- Settings Help Center -->
     <string name="settings_help_center_title">Help Center</string>
     <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
+    <string name="new_event_milestone_title">New event</string>
 </resources>

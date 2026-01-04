@@ -29,9 +29,11 @@ import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
+import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
+import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
@@ -46,6 +48,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
 import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -86,6 +89,10 @@ class ChatViewModel
         var isForeground = true
         private val messageDelay = 7.seconds
         private var sendJob: kotlinx.coroutines.Job? = null
+
+        private var lastActId: Int = 0
+        private var lastChapterId: Int = 0
+        private var lastEventId: Int = 0
 
         fun handleAction(action: ChatUiAction) {
             when (action) {
@@ -184,6 +191,10 @@ class ChatViewModel
                 is ChatUiAction.AppendWiki -> {
                     appendWiki(action.wiki)
                 }
+
+                is ChatUiAction.DismissMilestone -> {
+                    stateManager.updateMilestone(null)
+                }
             }
         }
 
@@ -216,6 +227,9 @@ class ChatViewModel
             }
             notificationManager.clearNotifications()
             currentSagaIdForService = sagaId
+            lastActId = 0
+            lastChapterId = 0
+            lastEventId = 0
             stateManager.updateState { it.copy(chatState = ChatState.Loading) }
             enableDebugMode(isDebug)
             observeSaga()
@@ -396,6 +410,7 @@ class ChatViewModel
                         checkIfUpdatesService(sagaContent)
                         validateCharacterMessageUpdates(sagaContent)
                         updateProgress(sagaContent)
+                        checkForMilestones(sagaContent)
 
                         loadFinished = true
 
@@ -404,6 +419,70 @@ class ChatViewModel
                             validateMessageStatus(sagaContent)
                         }
                     }
+            }
+        }
+
+        private fun checkForMilestones(saga: SagaContent) {
+            saga.data.genre
+            if (!loadFinished) {
+                lastActId = saga.currentActInfo?.data?.id ?: 0
+                lastChapterId = saga.currentActInfo
+                    ?.currentChapterInfo
+                    ?.data
+                    ?.id ?: 0
+                lastEventId = saga.currentActInfo
+                    ?.currentChapterInfo
+                    ?.currentEventInfo
+                    ?.data
+                    ?.id ?: 0
+                return
+            }
+
+            val currentActId = saga.currentActInfo?.data?.id ?: 0
+            val currentChapterId =
+                saga.currentActInfo
+                    ?.currentChapterInfo
+                    ?.data
+                    ?.id ?: 0
+            val currentEventId =
+                saga.currentActInfo
+                    ?.currentChapterInfo
+                    ?.currentEventInfo
+                    ?.data
+                    ?.id ?: 0
+
+            if (lastActId != 0 && currentActId != lastActId) {
+                // Act Finished (The previous one)
+                val finishedAct = saga.acts.find { it.data.id == lastActId }
+                finishedAct?.let {
+                    saga.actNumber(it.data)
+                    triggerMilestone(SagaMilestone.ActFinished(it.data))
+                }
+            } else if (lastChapterId != 0 && currentChapterId != lastChapterId) {
+                // Chapter Finished
+                val finishedChapter = saga.flatChapters().find { it.data.id == lastChapterId }
+                finishedChapter?.let {
+                    saga.chapterNumber(it.data)
+                    triggerMilestone(SagaMilestone.ChapterFinished(it.data))
+                }
+            } else if (lastEventId != 0 && currentEventId != lastEventId) {
+                // New Event
+                val newEvent = saga.flatEvents().find { it.data.id == currentEventId }
+                newEvent?.let {
+                    triggerMilestone(SagaMilestone.NewEvent(it.data))
+                }
+            }
+
+            lastActId = currentActId
+            lastChapterId = currentChapterId
+            lastEventId = currentEventId
+        }
+
+        private fun triggerMilestone(milestone: SagaMilestone) {
+            viewModelScope.launch {
+                stateManager.updateMilestone(milestone)
+                delay(7.seconds)
+                stateManager.updateMilestone(null)
             }
         }
 
@@ -617,8 +696,8 @@ class ChatViewModel
                 viewModelScope.launch(Dispatchers.IO) {
                     scheduledNotificationService.scheduleNotification(saga.data.id)
                 }
+            }
         }
-    }
 
         override fun onPause(owner: LifecycleOwner) {
             super.onPause(owner)
@@ -1031,9 +1110,7 @@ class ChatViewModel
                                 character
                                     .onSuccessAsync {
                                         updateLoading(false)
-                                        stateManager.updateState { s -> s.copy(newCharacterReveal = it.id) }
-                                        delay(5.seconds)
-                                        dismissNewCharacterReveal()
+                                        triggerMilestone(SagaMilestone.NewCharacter(it))
                                     }.onFailureAsync {
                                         updateLoading(false)
                                         updateSnackBar(
@@ -1105,9 +1182,7 @@ class ChatViewModel
                         contextDescription,
                     ).onSuccessAsync {
                         updateLoading(false)
-                        stateManager.updateState { s -> s.copy(newCharacterReveal = it.id) }
-                        delay(5.seconds)
-                        dismissNewCharacterReveal()
+                        triggerMilestone(SagaMilestone.NewCharacter(it))
                     }.onFailureAsync {
                         updateLoading(false)
                         updateSnackBar(

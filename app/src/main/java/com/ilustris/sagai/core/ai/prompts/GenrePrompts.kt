@@ -366,66 +366,70 @@ object GenrePrompts {
 
             CRIME -> {
                 buildString {
-                    appendLine("Art Technique: HYPER-REALISTIC CLASSICAL OIL PAINTING (Academic Realism).")
-                    appendLine("Key Lighting Style: DIVINE & ETHEREAL. Soft, diffused \"Heavenly\" light that wraps around the subject.")
+                    appendLine("Art Technique: RENAISSANCE-ERA CLASSICAL OIL PAINTING (Modern Academic Realism).")
                     appendLine(
-                        "Texture / Materiality: SMOOTH GLAZING technique. No rough brushstrokes. The surface should look like flawless porcelain or silk.",
+                        "Key Lighting Style: DRAMATIC CHIAROSCURO meets ETHEREAL MIRAGE GLOW. High-contrast subjects bathed in a hazy, dream-like atmospheric filter.")
+                    appendLine(
+                        "Texture / Materiality: SURREAL PERFECTION. A raw classical oil style where everything feels 'too perfect to be true.' Use heavy atmospheric bloom and soft-focus highlights. The background should shimmer like a mirage—soft, hazy, and glistening with heat and glamour.",
                     )
                     appendLine(
-                        "Aesthetic Era / Influence: Classical Academic Art (e.g., Bouguereau, Godward) meets Modern High-Fashion Photography.",
+                        "Aesthetic Era / Influence: High Renaissance masters (e.g., Leonardo, Raphael, Titian) merged with the SLEEK GLAMOUR of ART DECO and modern high-end aesthetics.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "**CLASSICAL ANATOMY & PERFECTION (CRITICAL):**",
+                    )
+                    appendLine(
+                        "- Perfect Anatomy: Strict adherence to classical proportions and weight. No exaggeration or stylization. The figure must be as precise as a Renaissance study.",
+                    )
+                    appendLine(
+                        "- Pure Raw Style: Aims for perfection in form but retains the 'raw' feel of oil on canvas. Avoid ultra-idealization; capture the dignified, realistic essence of the subject.",
                     )
                     appendLine()
                     appendLine("**COLOR PALETTE & ACCENT:**")
-                    appendLine(" - Base: PURE ELEGANCE. Creamy alabaster, champagne gold, soft pearl grey, and deep, expensive blacks.")
-                    appendLine(" - Mandatory Accent: HOT PINK (#E91E63 - Pantone 213 C).")
                     appendLine(
-                        " - Application: Weave this Hot Pink accent subtly throughout the composition as sophisticated environmental or character details. Examples include:",
+                        " - Base: NOBLE & SOPHISTICATED. Rich Crimson, Deep Navy, Champagne Gold, and shades of Alabaster and Charcoal.",
                     )
+                    appendLine(" - Mandatory Accent: HOT PINK (#E91E63).")
                     appendLine(
-                        "   * ENVIRONMENTAL: Neon light glow reflecting on ocean waves and wet sand, beachfront palm fronds swaying, pink sunset sky bleeding across endless coastline, flamingo sculptures at beachside venues, luxury convertibles on coastal highways, art deco beach hotels, boardwalk neon reflections, champagne glasses against ocean backdrop, silk fabrics flowing in sea breeze.",
-                    )
-                    appendLine(
-                        "   * CHARACTER OUTFIT: Hawaiian shirts with pink tones, designer accessories with pink accents, lipstick or nail polish, fabric trim on luxury clothing, a silk scarf, beach resort attire.",
-                    )
-                    appendLine(
-                        "   * AMBIENT LIGHT: Soft hot pink glow from ocean sunset, neon beachfront signs reflecting on wet sand and skin, golden hour light filtering through palm trees, ocean waves catching twilight and neon glow, beachside fire pits with warm pink undertones.",
-                    )
-                    appendLine(
-                        "   The accent should feel organic and effortless, never jarring—it's a signature touch of vice, glamour, and 80s Miami vibes subtly integrated into luxury aesthetics. Maintain an atmosphere of absolute divine elegance and sophistication throughout.",
+                        " - Application: Integrate this 'Modern Neon' Hot Pink organically into the Renaissance setting. It should appear as high-fashion silk, sunset-drenched hazy skies, or subtle Art Deco neon reflections—creating a bridge between the 15th century and modern coastal vice.",
                     )
                     appendLine()
                     appendLine(
-                        "Figure & Facial Treatment: DIVINE SOPHISTICATION. Skin must be rendered with hyper-realistic subsurface scattering. Features should reflect the diversity of a global elite (e.g., striking Black models, elegant East Asian socialites, or distinguished Hispanic moguls), all looking like \"Modern Deities\": serene, symmetrical, and breathtaking in their unique beauty.",
+                        "Figure & Facial Treatment: TIMELESS BEAUTY. Features should be rendered with the soul and depth of 16th-century portraiture—serene, thoughtful expressions and luminous skin textures created through glazes, not airbrushing.",
                     )
                     appendLine(
-                        "Rendering: THE \"PERFECT PICTURE\" ILLUSION. At first glance, it appears to be a stunning high-resolution photograph. On closer inspection, it is a masterpiece painting with incredibly fine, deliberate details. Sharp focus on the subject, dreamy/soft background.",
+                        "Rendering: THE MODERN RENAISSANCE MIGRATION. A classical oil painting brought to modern times. It must focus on 'Perfection of Form'—sharp, precise features within a dreamy, hazy environment.",
                     )
                     appendLine()
                     appendLine("**SUBJECT AURA & POSING:**")
-                    appendLine("- **Aura:** Untouchable sophistication, dangerous glamour, and absolute confidence.")
                     appendLine(
-                        "- **Posing:** Relaxed dominance. Leaning back, owning the space, casual displays of wealth/power. The 'King/Queen of the City' vibe.",
+                        "- **Aura:** Dangerous nobility, untouchable power, and glamorous mystery. The subject is a 'Modern Medici' or an icon of luxury crime.",
+                    )
+                    appendLine(
+                        "- **Posing:** Relaxed, powerful, and deliberate. Use 'Contrapposto' or poised, high-status stances that command the room with quiet elegance.",
                     )
                     appendLine()
-                    appendLine("Mood: A Divine Piece of Art. A frozen moment of absolute luxury and beauty.")
+                    appendLine("Mood: A Glamorous masterpiece. The intersection of Art Deco opulence and Renaissance gravitas.")
                     appendLine(
-                        "Ambience: An enchanted 80s Miami beach city paradise—endless golden beaches, palm-lined oceanfront, neon-lit beachfront promenades, and that thrilling excitement of coastal nightlife. Think Miami Vice, GTA Vice City, and Scarface: the dreamlike adoration of 80s Miami as the ultimate tropical fantasy destination, where ocean meets neon glamour.",
+                        "Ambience: A surreal Miami Art Deco coastal paradise. Everything should feel like a hazy, sun-drenched dream. Emphasize the 'Mirage Effect': endless turquoise seas that blend into pink-horizon skies, shimmering luxury pools catching intense golden-hour bloom, and beachfront architecture softened by a warm, glamorous haze. It's a beachy paradise that feels like a beautiful hallucination—absolute luxury frozen in a perfect, glowing moment.",
                     )
                     appendLine()
                     appendLine("**AUTONOMOUS FIX PATTERNS:**")
                     appendLine(
-                        "If prompt contains: grimdark, violence, harsh realism → REPLACE with luxury, elegance, sophistication, divine beauty",
+                        "If prompt contains: cartoonized, stylized, stylized proportions → REPLACE with classical anatomy, perfect proportions, Renaissance realism",
                     )
                     appendLine(
-                        "If prompt contains: cool blues, greens, desaturated colors → REPLACE with warm golds, champagne, alabaster, hot pink accents",
+                        "If prompt contains: smooth digital shading, plastic texture → REPLACE with raw oil painting texture, visible brushwork, glazing depth",
                     )
                     appendLine(
-                        "If accent color missing → INTEGRATE hot pink subtly in lighting, environment, or character details (neon reflection, clothing, sunset glow)",
+                        "If missing Art Deco/Glamour → INTEGRATE sleek geometric lines, gold accents, and hazy, dreamy atmospheric lighting",
                     )
                     appendLine(
-                        "If background is empty/plain → ADD detailed Miami ambience with 3+ beach/80s elements: palm trees, ocean, neon signs, architecture",
+                        "If missing Hot Pink accent → SUBTLY weave the color into fabrics, sunset hues, or Art Deco neon highlights",
                     )
-                    appendLine("If missing ethereal quality → SOFTEN edges, add divine lighting, dreamlike atmosphere, luxury details")
+                    appendLine(
+                        "If missing Renaissance quality → REINFORCE Chiaroscuro lighting, classical posing, and oil painting materiality")
                 }
             }
 
@@ -1830,49 +1834,44 @@ object GenrePrompts {
                     appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
                     appendLine()
                     appendLine("BANNED TERMS:")
+                    appendLine("- 'Cartoonized', 'stylized proportions', 'digital smoothness', 'plastic surfaces'")
                     appendLine("- Empty backgrounds: 'plain background', 'gradient background'")
                     appendLine()
                     appendLine("REQUIRED ELEMENTS:")
-                    appendLine("- Art style: 'hyper-realistic classical oil painting', 'academic realism'")
-                    appendLine("- Technique: 'smooth glazing', 'no rough brushstrokes', 'flawless surface'")
+                    appendLine("- Art style: 'Renaissance classical oil painting', 'Modern Academic Realism'")
+                    appendLine("- Technique: 'pure raw oil texture', 'visible masterful brushwork', 'traditional glazing'")
+                    appendLine("- Anatomy: 'Perfect classical anatomy', 'non-idealized realism'")
                     appendLine(
-                        "- Lighting: 'divine & ethereal', 'soft diffused heavenly light' (Maintain reference contrast structure if strong)",
+                        "- Lighting: 'Dramatic Chiaroscuro', 'hazy dreamy glow', 'glamorous atmospheric diffusion'",
                     )
-                    appendLine("- Background MUST include 80s Miami beach paradise elements")
+                    appendLine(
+                        "- Background MUST include Miami Art Deco/Renaissance coastal paradise elements (sea, crystal pools, beachfront architecture)")
                     appendLine()
                     appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
                     appendLine("- Mandatory Accent: HOT PINK (#E91E63 - Pantone 213 C)")
                     appendLine(
-                        "- Application: Environmental (neon reflections on ocean/sand, sunset, flamingos, neon signs) OR Character (outfit accents, accessories, lipstick)",
+                        "- Application: Modern high-fashion silk, neon reflections in hazy sunsets, Art Deco highlights",
                     )
-                    appendLine("- Must feel ORGANIC and sophisticated, never jarring")
-                    appendLine(
-                        "- Prompt MUST mention: 'hot pink', 'neon pink glow', 'pink sunset tones', 'pink neon reflections', or similar Miami Vice pink",
-                    )
-                    appendLine(
-                        "- If missing → MAJOR VIOLATION: Add pink accent to environment or character (e.g., 'hot pink neon glow reflecting on waves', 'pink sunset sky')",
-                    )
-                    appendLine()
-                    appendLine("BACKGROUND ENFORCEMENT (MAJOR):")
-                    appendLine("- EVERY image MUST have luxury beach environment details")
-                    appendLine("- Describe Miami elements: ocean, palm trees, neon lights, art deco hotels, etc.")
-                    appendLine("- If prompt lacks environmental glamour → MAJOR VIOLATION, reviewer adds beach paradise details")
+                    appendLine("- Must feel ORGANIC and sophisticated, bridging Renaissance and modern coastal vice")
                     appendLine()
                     appendLine("AUTONOMOUS FIX PATTERNS:")
                     appendLine(
-                        "- If contains: grimdark, violence, harsh realism, dark tones → REPLACE with: luxury, elegance, sophistication, divine beauty, ethereal light",
+                        "- If contains: cartoonized, stylized, stylized proportions → REPLACE with: Renaissance realism, perfect classical anatomy, raw oil texture",
                     )
                     appendLine(
-                        "- If contains: cool blues, greens, desaturated colors → REPLACE with: warm golds, champagne, alabaster, creamy luxurious tones",
+                        "- If contains: digital smoothness, plastic texture → REPLACE with: raw oil painting texture, visible brushwork, traditional glazing depth",
                     )
                     appendLine(
-                        "- If missing hot pink accent → INTEGRATE: hot pink neon glow reflecting on ocean/sand, pink sunset tones, flamingo sculptures, pink outfit accents, or neon beachfront signs",
+                        "- If missing dreamy/hazy quality → INTEGRATE: glamorous atmospheric diffusion, hazy glow, soft ethereal edges",
                     )
                     appendLine(
-                        "- If contains: plain/gradient background → ADD: detailed Miami beach ambience with 3+ elements (ocean waves, palm trees, neon lights, art deco architecture, boardwalk, golden hour sky)",
+                        "- If background feels too interior or cramped → EXPAND: to coastal/litoranean settings: shimmering luxury pools, ocean waves, or palm-lined boardwalks under an intense, hazy hot pink 'mirage' sunset",
                     )
                     appendLine(
-                        "- If missing ethereal/divine quality → SOFTEN: edges and lighting, add divine ethereal atmosphere, intensify luxury details, emphasize flawless perfection",
+                        "- If missing dreamy/hazy quality → INTENSIFY: add atmospheric bloom, soft-focus highlights, and an ethereal 'too perfect to be true' glow that blurs the edges of the paradise environment",
+                    )
+                    appendLine(
+                        "- If missing Art Deco/Renaissance mix → ADD: sleek geometric lines, gold accents, classical columns with neon reflections, beachside/poolside luxury",
                     )
                 }
             }

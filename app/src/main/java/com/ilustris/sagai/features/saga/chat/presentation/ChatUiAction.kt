@@ -96,4 +96,6 @@ sealed class ChatUiAction {
     data class AppendWiki(
         val wiki: Wiki,
     ) : ChatUiAction()
+
+    data object DismissMilestone : ChatUiAction()
 }
