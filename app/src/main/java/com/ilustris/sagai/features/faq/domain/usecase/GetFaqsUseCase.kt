@@ -1,5 +1,6 @@
 package com.ilustris.sagai.features.faq.domain.usecase
 
+import com.ilustris.sagai.features.faq.data.model.FAQContent
 import com.ilustris.sagai.features.faq.data.repository.FaqRepository
 import javax.inject.Inject
 
@@ -9,4 +10,9 @@ class GetFaqsUseCase
         private val faqRepository: FaqRepository,
     ) {
         suspend operator fun invoke() = faqRepository.getFaqs()
+
+        suspend fun askAi(
+            query: String,
+            context: FAQContent,
+        ) = faqRepository.askAi(query, context)
     }

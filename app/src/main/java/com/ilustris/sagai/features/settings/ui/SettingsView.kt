@@ -180,15 +180,12 @@ fun SettingsView(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        )
-                        .background(
+                        ).background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        )
-                        .clickable {
+                        ).clickable {
                             showPlaythroughSheet = true
-                        }
-                        .padding(16.dp),
+                        }.padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -220,44 +217,6 @@ fun SettingsView(
                 PlaythroughSheet(
                     onDismiss = { showPlaythroughSheet = false },
                 )
-            }
-        }
-
-        item {
-            Column(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(15.dp))
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer,
-                            RoundedCornerShape(15.dp),
-                        ).clickable {
-                            navController?.navigateToRoute(Routes.FAQ)
-                        }.padding(16.dp),
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        painterResource(R.drawable.ic_faq),
-                        contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.primary,
-                    )
-                    Column {
-                        Text(
-                            text = "Help Center",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                        )
-                        Text(
-                            text = "Tips, Tricks & Secrets.",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.alpha(0.7f),
-                        )
-                    }
-                }
             }
         }
 
@@ -495,10 +454,11 @@ fun SettingsView(
                 )
 
                 if (backupEnabled) {
-                    Button(onClick = {
-                        showBackups = true
-                        showBackupSheet = true
-                    },
+                    Button(
+                        onClick = {
+                            showBackups = true
+                            showBackupSheet = true
+                        },
                         modifier = Modifier.align(Alignment.CenterHorizontally),
                         colors = ButtonDefaults.textButtonColors(),
                     ) {
@@ -619,6 +579,44 @@ fun SettingsView(
                     premiumSheetVisible = true
                 },
             )
+        }
+
+        item {
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(15.dp))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceContainer,
+                            RoundedCornerShape(15.dp),
+                        ).clickable {
+                            navController?.navigateToRoute(Routes.FAQ)
+                        }.padding(16.dp),
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(
+                        painterResource(R.drawable.ic_faq),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Column {
+                        Text(
+                            text = "Help Center",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        )
+                        Text(
+                            text = "Tips, Tricks & Secrets.",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.alpha(0.7f),
+                        )
+                    }
+                }
+            }
         }
 
         item {

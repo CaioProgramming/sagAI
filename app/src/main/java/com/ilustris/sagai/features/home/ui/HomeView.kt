@@ -157,7 +157,7 @@ fun HomeView(
                     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                         ModalDrawerSheet(
                             drawerContainerColor = MaterialTheme.colorScheme.background,
-                        ) { SettingsView() }
+                        ) { SettingsView(navController) }
                     }
                 },
             ) {
@@ -400,12 +400,10 @@ private fun ChatList(
                             true,
                             shimmerColors = shimmerColors,
                             duration = 10.seconds,
-                        )
-                        .clip(RoundedCornerShape(15.dp))
+                        ).clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
-                        }
-                        .fillMaxWidth(),
+                        }.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
@@ -424,8 +422,8 @@ private fun ChatList(
                         (slideInVertically { height -> height } + fadeIn()).togetherWith(
                             slideOutVertically { height -> -height } + fadeOut(),
                         ) using
-                                SizeTransform(
-                                    clip = false,
+                            SizeTransform(
+                                clip = false,
                             )
                     },
                     label = "AnimatedDynamicTexts",

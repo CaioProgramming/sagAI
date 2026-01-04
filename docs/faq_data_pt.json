@@ -1,39 +1,85 @@
 {
-  "version": 1,
+  "version": 4,
   "categories": [
     {
-      "title": "O que há de novo",
+      "title": "Boas-vindas ao Sagas",
       "items": [
         {
-          "question": "O que há de novo na versão 1.7.0?",
-          "answer": "Prepare a sela, parceiro! A versão 1.7.0 introduz os novos gêneros Cowboy e Shinobi, um Card de Herói de Recapitulação para resumir a jornada do seu herói, e a habilidade de exportar e importar suas sagas. Nós também melhoramos as notificações e otimizamos nosso processo de lançamento com o Firebase App Distribution."
+          "question": "Ué, o nome não era 'SagAI'?",
+          "answer": "Bem observado! Nós evoluímos. 'Sagas' é o nome final e épico da nossa plataforma. É a mesma narrativa por IA que você adora, mas com um nome que combina muito mais com os contos lendários que você está criando."
+        },
+        {
+          "question": "O que exatamente é o Sagas?",
+          "answer": "O Sagas é seu coautor e Diretor de Arte pessoal. Você não apenas 'joga'; você vive uma história em evolução em diferentes gêneros, onde suas escolhas moldam literalmente o mundo, os personagens e até a arte que você vê."
+        },
+        {
+          "question": "Por que preciso de internet para jogar?",
+          "answer": "Suas histórias são grandiosas! Enquanto seu progresso é salvo no dispositivo, o trabalho pesado — o 'cérebro' do Mestre da Saga e os sistemas do Diretor de Arte — vive em uma nuvem poderosa para garantir que cada resposta e imagem seja única."
         }
       ]
     },
     {
-      "title": "Estilos de Arte",
+      "title": "Mestrando a Arte",
       "items": [
         {
-          "question": "Quais são os estilos de arte de cada gênero?",
-          "answer": "Cada gênero no SagAI possui um estilo de arte único e estritamente aplicado para criar uma experiência visual coesa. Histórias de Fantasia são renderizadas em um estilo clássico de Pintura a Óleo, contos Punk têm um visual mais rústico inspirado em Cartoon/Gorillaz, e aventuras Shinobi são visualizadas com a estética tradicional de Pintura a Tinta."
+          "question": "Como a história progride?",
+          "answer": "As histórias são divididas em Atos e Capítulos. Conforme você interage, a IA resume os eventos anteriores em um 'Resumo da Saga' e gera novas introduções. Você também pode iniciar um 'Novo Capítulo' manualmente para consolidar os eventos atuais e avançar."
+        },
+        {
+          "question": "Qual a diferença entre 'Falar', 'Pensar' e 'Ação'?",
+          "answer": "'Falar' é o que seu personagem diz em voz alta. 'Pensar' é interno — apenas você (e o narrador) sabem desses segredos. 'Ação' descreve movimentos físicos. Os NPCs reagem de forma diferente dependendo do que você escolhe!"
+        },
+        {
+          "question": "Posso adicionar mais personagens?",
+          "answer": "Sim! Use a ação 'Novo Personagem' para introduzir aliados, rivais ou estranhos misteriosos. Você pode descrever a aparência e o passado deles, e a IA se lembrará de tudo durante a saga."
         }
       ]
     },
     {
-      "title": "Mecânicas de Jogo",
+      "title": "A Experiência Visual",
       "items": [
         {
-          "question": "Outros personagens podem ouvir meus pensamentos?",
-          "answer": "Não, tudo que está escrito em uma bolha de 'pensamento' é o monólogo interno do seu personagem e não é visível ou conhecido por NPCs ou outros personagens na história."
+          "question": "Como o estilo de arte é decidido?",
+          "answer": "Está no DNA do gênero! Fantasia usa Pinturas a Óleo Clássicas, Cyberpunk segue o estilo Anime Cel-shaded dos anos 80, Terror é Pixel Art de 32 bits, e Heróis tem o visual dinâmico de Quadrinhos Modernos."
+        },
+        {
+          "question": "Como funciona a geração de imagens?",
+          "answer": "Nosso 'Diretor de Arte por IA' traduz o contexto da sua história em comandos técnicos. Ele controla parâmetros como 'Ângulo', 'Lente' e 'Enquadramento'. As imagens são feitas para preencher toda a tela e são otimizadas para serem usadas como papel de parede."
+        },
+        {
+          "question": "Por que o topo das imagens costuma ser vazio?",
+          "answer": "Isso é proposital! Queremos que suas artes fiquem incríveis como fundo de tela. O sistema mantém o foco na parte inferior para que o relógio e as notificações do seu celular não cubram os detalhes principais do seu herói."
         }
       ]
     },
     {
-      "title": "Vozes de Gênero",
+      "title": "Sagas Pro e Pagamentos",
       "items": [
         {
-          "question": "A personalidade da IA muda com o gênero?",
-          "answer": "Sim, o narrador da IA e os personagens adaptam sua voz, tom e vocabulário para se adequar ao gênero selecionado. Uma história de Cowboy será muito diferente de uma saga Shinobi ou de Fantasia!"
+          "question": "Por que o Sagas é um serviço pago?",
+          "answer": "Criar arte por IA de alta qualidade e manter um cérebro narrativo complexo exige um alto poder de processamento. Cada mensagem e imagem utiliza GPUs na nuvem. O Sagas Pro nos ajuda a cobrir esses custos e a financiar o desenvolvimento de novos gêneros."
+        },
+        {
+          "question": "O que eu ganho com o Sagas Pro?",
+          "answer": "Assinantes Pro desbloqueiam todos os gêneros premium, sagas ilimitadas, geração de imagens em maior qualidade e o recurso 'Smart Fix', que enriquece sua escrita com sugestões da IA."
+        }
+      ]
+    },
+    {
+      "title": "Privacidade e Dados",
+      "items": [
+        {
+          "question": "Meus dados de história são privados?",
+          "answer": "Com certeza. Seus personagens e o histórico das sagas são só seus. Coletamos apenas métricas técnicas anônimas (como quais gêneros são mais jogados) para melhorar o app. Não coletamos dados pessoais como nomes ou e-mails."
+        }
+      ]
+    },
+    {
+      "title": "Visões do Futuro",
+      "items": [
+        {
+          "question": "Teremos modo Multiplayer?",
+          "answer": "Está nos nossos planos! Sonhamos com o dia em que você e seus amigos poderão entrar na mesma saga e interagir em tempo real."
         }
       ]
     }

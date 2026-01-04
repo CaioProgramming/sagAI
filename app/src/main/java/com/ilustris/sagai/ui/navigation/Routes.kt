@@ -95,7 +95,7 @@ enum class Routes(
     FAQ(
         showBottomNav = false,
         view = { nav, padding, _, _ ->
-            FAQView()
+            FAQView(navHostController = nav)
         },
         topBarContent = { Box {} },
     ),

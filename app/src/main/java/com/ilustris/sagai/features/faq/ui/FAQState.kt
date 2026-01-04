@@ -12,4 +12,10 @@ sealed interface FAQState {
     data class FaqsError(
         val message: String?,
     ) : FAQState
+
+    data object AiLoading : FAQState
+
+    data class AiReply(
+        val reply: String,
+    ) : FAQState
 }

@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -20,20 +19,56 @@ class FAQViewModel
         private val _faqState = MutableStateFlow<FAQState>(FAQState.Loading)
         val faqState = _faqState.asStateFlow()
 
+        private val _query = MutableStateFlow("")
+        val query = _query.asStateFlow()
+
+        private var fullContent: com.ilustris.sagai.features.faq.data.model.FAQContent? = null
+
         init {
             fetchFaqs()
         }
 
         fun fetchFaqs() {
             viewModelScope.launch {
-                Locale.getDefault().language
                 _faqState.update { FAQState.Loading }
                 getFaqsUseCase()
-                    .onSuccess { faq ->
-                        _faqState.update { FAQState.FaqsRetrieved(faq) }
-                    }.onFailure { failure ->
-                        _faqState.update { FAQState.FaqsError(failure.message) }
+                    .onSuccessAsync { faq ->
+                        fullContent = faq
+                        _faqState.emit(
+                            FAQState.FaqsRetrieved(faq),
+                        )
+                    }.onFailureAsync { failure ->
+                        _faqState.emit(FAQState.FaqsError(failure.message))
                     }
+            }
+        }
+
+        fun updateQuery(newQuery: String) {
+            _query.value = newQuery
+        }
+
+        fun askAi() {
+            val currentQuery = _query.value
+            val context = fullContent ?: return
+            if (currentQuery.isBlank()) return
+
+            viewModelScope.launch {
+                _faqState.emit(FAQState.AiLoading)
+                getFaqsUseCase
+                    .askAi(currentQuery, context)
+                    .onSuccessAsync { reply ->
+                        _faqState.emit(FAQState.AiReply(reply))
+                    }.onFailureAsync { failure ->
+                        _faqState.emit(FAQState.FaqsError(failure.message))
+                    }
+            }
+        }
+
+        fun clearAiReply() {
+            fullContent?.let {
+                viewModelScope.launch {
+                    _faqState.emit(FAQState.FaqsRetrieved(it))
+                }
             }
         }
     }

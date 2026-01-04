@@ -35,6 +35,7 @@ android {
         targetSdk = 36
         versionCode = computedVersionCode
         versionName = computedVersionName
+        resValue("string", "app_version", "v$computedVersionName")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

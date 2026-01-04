@@ -1,39 +1,85 @@
 {
-  "version": 1,
+  "version": 4,
   "categories": [
     {
-      "title": "What's New",
+      "title": "Welcome to Sagas",
       "items": [
         {
-          "question": "What's new in version 1.7.0?",
-          "answer": "Saddle up, partners! Version 1.7.0 introduces the new Cowboy and Shinobi genres, a Recap Hero Card to summarize your hero's journey, and the ability to export and import your sagas. We've also enhanced notifications and streamlined our release process with Firebase App Distribution."
+          "question": "Wait, I thought this was 'SagAI'?",
+          "answer": "Good eye! We've evolved. 'Sagas' is the final, epic name for our platform. It's the same AI-powered storytelling you love, just with a name that better fits the legendary tales you're creating."
+        },
+        {
+          "question": "What exactly is Sagas?",
+          "answer": "Sagas is your personal AI co-author and Art Director. You don't just 'play' a game; you live an evolving story across different genres, where your choices literally shape the world, characters, and even the art you see."
+        },
+        {
+          "question": "Why do I need an internet connection?",
+          "answer": "Your stories are huge! While your progress is saved on your device, the heavy lifting—the 'Saga Master' brain and the 'Art Director' systems—lives in a powerful cloud to ensure every response and image is unique to your prompt."
         }
       ]
     },
     {
-      "title": "Art Styles",
+      "title": "Mastering the Art",
       "items": [
         {
-          "question": "What are the art styles for each genre?",
-          "answer": "Each genre in SagAI has a unique and strictly enforced art style to create a cohesive visual experience. Fantasy stories are rendered in a classic Oil Painting style, Punk tales have a gritty Cartoon/Gorillaz-inspired look, and Shinobi adventures are visualized with traditional Ink Wash aesthetics."
+          "question": "How does the story progress?",
+          "answer": "Stories are divided into Acts and Chapters. As you interact, the AI recaps previous events into a 'Saga Resume' and generates new introductions to keep the narrative tight. You can also manually start a 'New Chapter' to summarize current events and move to the next phase of your journey."
+        },
+        {
+          "question": "What's the difference between 'Talk', 'Think', and 'Action'?",
+          "answer": "'Talk' is what your character says aloud to NPCs. 'Think' is internal—only you (and the narrator) know these secrets. 'Action' describes physical movements that change the scene. NPCs react differently based on which one you choose!"
+        },
+        {
+          "question": "Can I add more characters?",
+          "answer": "Yes! Use the 'New Character' action to introduce allies, rivals, or mysterious strangers. You can even describe their appearance and backstory, and the AI will remember them throughout the saga."
         }
       ]
     },
     {
-      "title": "Gameplay Mechanics",
+      "title": "The Visual Experience",
       "items": [
         {
-          "question": "Can other characters hear my thoughts?",
-          "answer": "No, anything written in a 'thought' bubble is your character's internal monologue and is not visible or known to NPCs or other characters in the story."
+          "question": "How is the art style decided?",
+          "answer": "It's built into the DNA of the genre! Fantasy uses Classical Oil Paintings, Cyberpunk is 80s Anime Cel-shaded, Horror is 32-bit Pixel Art, and Heroes has a Dynamic Comic Book look. Each style has its own palette and lighting rules."
+        },
+        {
+          "question": "How does image generation work?",
+          "answer": "Our 'Art Director AI' translates your story context into technical prompts. It controls cinematic parameters like 'Angle', 'Lens', and 'Framing' (e.g., Close-ups vs. Full Shots). Images are designed to be full-bleed and vertically biased, making them perfect for your phone's lock screen!"
+        },
+        {
+          "question": "Why is the top of the images usually empty?",
+          "answer": "That's by design! We want your saga covers and character cards to look amazing as wallpapers. The 'Saga Master' keeps the main subject in the lower 2/3 of the frame so your phone's clock and notifications don't block the art."
         }
       ]
     },
     {
-      "title": "Genre Voices",
+      "title": "Sagas Pro & Payments",
       "items": [
         {
-          "question": "Does the AI's personality change with the genre?",
-          "answer": "Yes, the AI narrator and characters adapt their voice, tone, and vocabulary to fit the selected genre. A Cowboy story will feel very different from a Shinobi or Fantasy saga!"
+          "question": "Why is Sagas a paid/subscription service?",
+          "answer": "Creating high-quality AI art and maintaining a complex narrative brain is computationally expensive. Every message and image uses cloud-based GPUs. Sagas Pro helps us cover these server costs while funding the development of new genres and features."
+        },
+        {
+          "question": "What do I get with Sagas Pro?",
+          "answer": "Pro users unlock all premium genres, unlimited active sagas, higher-quality image generation, and the 'Smart Fix' feature which enriches your writing with AI-powered suggestions."
+        }
+      ]
+    },
+    {
+      "title": "Privacy & Data",
+      "items": [
+        {
+          "question": "Is my story data private?",
+          "answer": "Absolutely. Your characters and saga history are your own. We only collect anonymous technical metrics (like which genres are played most or if a bug occurs) to improve the app. We don't collect personal data like names or emails."
+        }
+      ]
+    },
+    {
+      "title": "Future Visions",
+      "items": [
+        {
+          "question": "Is Multiplayer coming?",
+          "answer": "It's on our roadmap! We're dreaming of a day when you and your friends can join the same saga and interact in real-time. Stay tuned!"
         }
       ]
     }
