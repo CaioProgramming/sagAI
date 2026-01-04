@@ -180,12 +180,15 @@ fun SettingsView(
                             1.dp,
                             Brush.verticalGradient(holographicGradient),
                             RoundedCornerShape(15.dp),
-                        ).background(
+                        )
+                        .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).clickable {
+                        )
+                        .clickable {
                             showPlaythroughSheet = true
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -590,9 +593,11 @@ fun SettingsView(
                         .background(
                             MaterialTheme.colorScheme.surfaceContainer,
                             RoundedCornerShape(15.dp),
-                        ).clickable {
+                        )
+                        .clickable {
                             navController?.navigateToRoute(Routes.FAQ)
-                        }.padding(16.dp),
+                        }
+                        .padding(16.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -606,11 +611,11 @@ fun SettingsView(
                     )
                     Column {
                         Text(
-                            text = "Help Center",
+                            text = stringResource(R.string.settings_help_center_title),
                             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                         )
                         Text(
-                            text = "Tips, Tricks & Secrets.",
+                            text = stringResource(R.string.settings_help_center_subtitle),
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.alpha(0.7f),
                         )

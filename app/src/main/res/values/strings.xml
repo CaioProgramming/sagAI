@@ -399,4 +399,18 @@
     <string name="recover_backup_sheet_button_recover_all">Restore all stories</string>
     <string name="show_transcription">Show transcription</string>
     <string name="total_playtime_label">Total playtime</string>
+
+    <!-- FAQ -->
+    <string name="faq_loading_message">Searching for information...</string>
+    <string name="faq_ai_loading_message">Consulting the Saga Master...</string>
+    <string name="faq_ai_reply_button">Got it!</string>
+    <string name="faq_title">FAQ</string>
+    <string name="faq_search_placeholder">Search questions...</string>
+    <string name="faq_empty_state_title">We didn\'t find what you\'re looking for...</string>
+    <string name="faq_ask_ai_button">Ask the Saga Master</string>
+    <string name="faq_ask_ai_footer">Still unsure? Ask the Saga Master</string>
+
+    <!-- Settings Help Center -->
+    <string name="settings_help_center_title">Help Center</string>
+    <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
 </resources>

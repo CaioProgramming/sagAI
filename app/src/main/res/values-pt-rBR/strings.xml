@@ -377,4 +377,18 @@
     <string name="your_playthrough_subtitle">Descubra seu estilo de joogo</string>
     <string name="total_playtime_label">Tempo Total de Jogo</string>
     <string name="playthrough_message_title">Análise de Estilo</string>
+
+    <!-- FAQ -->
+    <string name="faq_loading_message">Buscando informações...</string>
+    <string name="faq_ai_loading_message">Consultando o Mestre da Saga...</string>
+    <string name="faq_ai_reply_button">Entendido!</string>
+    <string name="faq_title">FAQ</string>
+    <string name="faq_search_placeholder">Pesquisar dúvidas...</string>
+    <string name="faq_empty_state_title">Não encontramos o que você procura...</string>
+    <string name="faq_ask_ai_button">Perguntar ao Mestre da Saga</string>
+    <string name="faq_ask_ai_footer">Ainda em dúvida? Pergunte ao Mestre da Saga</string>
+
+    <!-- Settings Help Center -->
+    <string name="settings_help_center_title">Central de Ajuda</string>
+    <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
 </resources>

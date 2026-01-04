@@ -96,7 +96,7 @@ fun FAQView(
                                     ),
                             )
                             Text(
-                                "Buscando informações...",
+                                stringResource(R.string.faq_loading_message),
                                 style =
                                     MaterialTheme.typography.labelLarge.copy(
                                         textAlign = TextAlign.Center,
@@ -135,7 +135,7 @@ fun FAQView(
                                     ),
                             )
                             Text(
-                                "Consultando o Mestre da Saga...",
+                                stringResource(R.string.faq_ai_loading_message),
                                 style =
                                     MaterialTheme.typography.labelLarge.copy(
                                         textAlign = TextAlign.Center,
@@ -191,7 +191,8 @@ private fun SharedTransitionScope.AiReplyView(
                 .sharedElement(
                     rememberSharedContentState("saga-loader"),
                     animatedContentScope,
-                ).gradientFill(Brush.verticalGradient(holographicGradient))
+                )
+                .gradientFill(Brush.verticalGradient(holographicGradient))
                 .size(24.dp),
         )
 
@@ -206,7 +207,7 @@ private fun SharedTransitionScope.AiReplyView(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(15.dp),
         ) {
-            Text("Entendido!")
+            Text(stringResource(R.string.faq_ai_reply_button))
         }
     }
 }
@@ -263,7 +264,7 @@ private fun SharedTransitionScope.FaqContentView(
                         .padding(vertical = 16.dp),
             ) {
                 Text(
-                    "FAQ",
+                    stringResource(R.string.faq_title),
                     style =
                         MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Black,
@@ -276,7 +277,7 @@ private fun SharedTransitionScope.FaqContentView(
                 TextField(
                     value = query,
                     onValueChange = onQueryChange,
-                    placeholder = { Text("Pesquisar dúvidas...") },
+                    placeholder = { Text(stringResource(R.string.faq_search_placeholder)) },
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -316,7 +317,7 @@ private fun SharedTransitionScope.FaqContentView(
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Text(
-                        "Não encontramos o que você procura...",
+                        stringResource(R.string.faq_empty_state_title),
                         style = MaterialTheme.typography.titleMedium,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.alpha(.5f),
@@ -335,7 +336,8 @@ private fun SharedTransitionScope.FaqContentView(
                                     1.dp,
                                     brush,
                                     RoundedCornerShape(25.dp),
-                                ).fillMaxWidth()
+                                )
+                                .fillMaxWidth()
                                 .height(50.dp),
                     ) {
                         Row(
@@ -356,7 +358,7 @@ private fun SharedTransitionScope.FaqContentView(
                             )
 
                             Text(
-                                "Perguntar ao Mestre da Saga",
+                                stringResource(R.string.faq_ask_ai_button),
                                 style =
                                     MaterialTheme.typography.bodyMedium.copy(),
                                 modifier = Modifier.weight(1f),
@@ -403,7 +405,7 @@ private fun SharedTransitionScope.FaqContentView(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         TextButton(onClick = onAskAi) {
-                            Text("Ainda em dúvida? Pergunte ao Mestre da Saga")
+                            Text(stringResource(R.string.faq_ask_ai_footer))
                         }
                     }
                 }
