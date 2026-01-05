@@ -17,9 +17,9 @@ import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.repository.CharacterRepository
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findCharacter
+import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.model.getDirective
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.AIReply
 import com.ilustris.sagai.features.saga.chat.data.model.EmotionalTone
 import com.ilustris.sagai.features.saga.chat.data.model.Message
@@ -57,15 +57,18 @@ class MessageUseCaseImpl
         override fun isInDebugMode(): Boolean = isDebugModeEnabled
 
         override suspend fun checkMessageTypo(
-            genre: Genre,
+            saga: SagaContent,
             message: String,
-            lastMessage: String?,
         ): RequestResult<TypoFix?> =
             executeRequest {
                 gemmaClient.generate<TypoFix>(
-                    ChatPrompts.checkForTypo(genre, message, lastMessage),
+                    ChatPrompts.checkForTypo(
+                        saga,
+                        message,
+                        saga.flatMessages().lastOrNull()?.message,
+                    ),
                     requireTranslation = true,
-                    requirement = GemmaClient.ModelRequirement.LOW,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
                 )!!
             }
 
@@ -115,8 +118,8 @@ class MessageUseCaseImpl
                     }
                 if (tone != message.emotionalTone) {
                     messageRepository.updateMessage(message.copy(emotionalTone = tone))
+                }
             }
-        }
 
         override suspend fun deleteMessage(messageId: Long) {
             messageRepository.deleteMessage(messageId)

@@ -23,17 +23,14 @@ import com.ilustris.sagai.core.narrative.UpdateRules
 import com.ilustris.sagai.core.notifications.ScheduledNotificationService
 import com.ilustris.sagai.core.segmentation.ImageSegmentationHelper
 import com.ilustris.sagai.core.utils.doNothing
-import com.ilustris.sagai.core.utils.formatToString
 import com.ilustris.sagai.core.utils.sortCharactersByMessageCount
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.actNumber
 import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatChapters
-import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
 import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
@@ -47,7 +44,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
-import com.ilustris.sagai.features.saga.chat.domain.model.joinMessage
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
@@ -156,9 +152,11 @@ class ChatViewModel
                     stateManager.updateShareSheetVisibility(action.show)
                 }
 
-                is ChatUiAction.Back -> { /* UI action */ }
+                is ChatUiAction.Back -> { // UI action
+                }
 
-                is ChatUiAction.OpenSagaDetails -> { /* UI action */ }
+                is ChatUiAction.OpenSagaDetails -> { // UI action
+                }
 
                 is ChatUiAction.InjectFakeMessages -> {
                     sendFakeUserMessages(action.count)
@@ -225,6 +223,7 @@ class ChatViewModel
             if (sagaId == null) {
                 return
             }
+            stateManager.updateLoading(true)
             notificationManager.clearNotifications()
             currentSagaIdForService = sagaId
             lastActId = 0
@@ -236,6 +235,7 @@ class ChatViewModel
             observeAmbientMusicServiceControl()
             observePreferences()
             observeSnackBarUpdates()
+            observeMilestones()
             observeMediaState()
             observeProcessingState()
             viewModelScope.launch(Dispatchers.IO) {
@@ -277,6 +277,18 @@ class ChatViewModel
                             )
                         }
                     }
+                }
+            }
+
+        fun observeMilestones() =
+            viewModelScope.launch(Dispatchers.IO) {
+                sagaContentManager.milestoneUpdate.collect { milestone ->
+                    val currentMilestone = uiState.value.milestone
+                    if (currentMilestone != null) {
+                        delay(7.seconds)
+                        stateManager.updateMilestone(null)
+                    }
+                    stateManager.updateMilestone(milestone)
                 }
             }
 
@@ -337,8 +349,12 @@ class ChatViewModel
         }
 
         fun retryAiResponse(message: Message?) {
-            message?.let {
-                replyMessage(message, null, false)
+            val currentSaga = uiState.value.sagaContent ?: return
+            viewModelScope.launch(Dispatchers.IO) {
+                message?.let {
+                    val summary = messageUseCase.getSceneContext(currentSaga).getSuccess()
+                    replyMessage(message, summary, false)
+                }
             }
         }
 
@@ -382,6 +398,7 @@ class ChatViewModel
                     .collectLatest { sagaContent ->
                         if (sagaContent == null) {
                             if (loadFinished) {
+                                updateLoading(false)
                                 stateManager.updateState { it.copy(chatState = ChatState.Error("Saga not found.")) }
                             }
                             return@collectLatest
@@ -400,6 +417,7 @@ class ChatViewModel
                                 messages = messages,
                                 characters = characters,
                                 chatState = ChatState.Success,
+                                isLoading = false,
                             )
                         }
 
@@ -410,72 +428,25 @@ class ChatViewModel
                         checkIfUpdatesService(sagaContent)
                         validateCharacterMessageUpdates(sagaContent)
                         updateProgress(sagaContent)
-                        checkForMilestones(sagaContent)
 
                         loadFinished = true
 
                         if (uiState.value.showTitle) {
                             titleAnimation()
                             validateMessageStatus(sagaContent)
+
+                            triggerMilestone(
+                                SagaMilestone.ChapterFinished(
+                                    sagaContent
+                                        .flatChapters()
+                                        .last {
+                                            it.isComplete()
+                                        }.data,
+                                ),
+                            )
                         }
                     }
             }
-        }
-
-        private fun checkForMilestones(saga: SagaContent) {
-            saga.data.genre
-            if (!loadFinished) {
-                lastActId = saga.currentActInfo?.data?.id ?: 0
-                lastChapterId = saga.currentActInfo
-                    ?.currentChapterInfo
-                    ?.data
-                    ?.id ?: 0
-                lastEventId = saga.currentActInfo
-                    ?.currentChapterInfo
-                    ?.currentEventInfo
-                    ?.data
-                    ?.id ?: 0
-                return
-            }
-
-            val currentActId = saga.currentActInfo?.data?.id ?: 0
-            val currentChapterId =
-                saga.currentActInfo
-                    ?.currentChapterInfo
-                    ?.data
-                    ?.id ?: 0
-            val currentEventId =
-                saga.currentActInfo
-                    ?.currentChapterInfo
-                    ?.currentEventInfo
-                    ?.data
-                    ?.id ?: 0
-
-            if (lastActId != 0 && currentActId != lastActId) {
-                // Act Finished (The previous one)
-                val finishedAct = saga.acts.find { it.data.id == lastActId }
-                finishedAct?.let {
-                    saga.actNumber(it.data)
-                    triggerMilestone(SagaMilestone.ActFinished(it.data))
-                }
-            } else if (lastChapterId != 0 && currentChapterId != lastChapterId) {
-                // Chapter Finished
-                val finishedChapter = saga.flatChapters().find { it.data.id == lastChapterId }
-                finishedChapter?.let {
-                    saga.chapterNumber(it.data)
-                    triggerMilestone(SagaMilestone.ChapterFinished(it.data))
-                }
-            } else if (lastEventId != 0 && currentEventId != lastEventId) {
-                // New Event
-                val newEvent = saga.flatEvents().find { it.data.id == currentEventId }
-                newEvent?.let {
-                    triggerMilestone(SagaMilestone.NewEvent(it.data))
-                }
-            }
-
-            lastActId = currentActId
-            lastChapterId = currentChapterId
-            lastEventId = currentEventId
         }
 
         private fun triggerMilestone(milestone: SagaMilestone) {
@@ -517,7 +488,10 @@ class ChatViewModel
                         1f
                     }
 
-                    (sagaContent.getCurrentTimeLine()?.messages?.size ?: 0) < UpdateRules.LORE_UPDATE_LIMIT -> {
+                    (
+                        sagaContent.getCurrentTimeLine()?.messages?.size
+                            ?: 0
+                    ) < UpdateRules.LORE_UPDATE_LIMIT -> {
                         val messageCount = sagaContent.getCurrentTimeLine()?.messages?.size ?: 0
                         val maxCount = UpdateRules.LORE_UPDATE_LIMIT
                         messageCount.toFloat() / maxCount.toFloat()
@@ -619,7 +593,8 @@ class ChatViewModel
                         return@collect
                     }
 
-                    val currentSagaData = uiState.value.sagaContent?.data // Use data from current saga content
+                    val currentSagaData =
+                        uiState.value.sagaContent?.data // Use data from current saga content
 
                     if (currentSagaData != null && musicFile != null && musicFile.exists()) {
                         if (currentSagaIdForService == currentSagaData.id.toString()) {
@@ -803,13 +778,8 @@ class ChatViewModel
 
                 val typoCheck =
                     messageUseCase.checkMessageTypo(
-                        saga.data.genre,
+                        saga,
                         text.text,
-                        uiState.value.sagaContent
-                            ?.flatMessages()
-                            ?.lastOrNull()
-                            ?.joinMessage()
-                            ?.formatToString(true),
                     )
 
                 typoCheck.getSuccess()?.let {
@@ -886,13 +856,8 @@ class ChatViewModel
             viewModelScope.launch {
                 val typoCheck =
                     messageUseCase.checkMessageTypo(
-                        saga.data.genre,
+                        saga,
                         text,
-                        uiState.value.sagaContent
-                            ?.flatMessages()
-                            ?.lastOrNull()
-                            ?.joinMessage()
-                            ?.formatToString(true),
                     )
 
                 typoCheck.getSuccess()?.let {
@@ -1110,7 +1075,6 @@ class ChatViewModel
                                 character
                                     .onSuccessAsync {
                                         updateLoading(false)
-                                        triggerMilestone(SagaMilestone.NewCharacter(it))
                                     }.onFailureAsync {
                                         updateLoading(false)
                                         updateSnackBar(
@@ -1182,7 +1146,6 @@ class ChatViewModel
                         contextDescription,
                     ).onSuccessAsync {
                         updateLoading(false)
-                        triggerMilestone(SagaMilestone.NewCharacter(it))
                     }.onFailureAsync {
                         updateLoading(false)
                         updateSnackBar(
@@ -1245,7 +1208,12 @@ class ChatViewModel
                 }
 
                 imageSegmentationHelper.processImage(url).onSuccessAsync {
-                    stateManager.updateState { s -> s.copy(originalBitmap = it.first, segmentedBitmap = it.second) }
+                    stateManager.updateState { s ->
+                        s.copy(
+                            originalBitmap = it.first,
+                            segmentedBitmap = it.second,
+                        )
+                    }
                 }
             }
         }

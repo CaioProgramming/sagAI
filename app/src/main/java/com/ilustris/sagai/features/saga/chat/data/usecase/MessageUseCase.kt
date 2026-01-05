@@ -3,7 +3,6 @@ package com.ilustris.sagai.features.saga.chat.data.usecase
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.MessageContent
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
@@ -37,9 +36,8 @@ interface MessageUseCase {
     fun isInDebugMode(): Boolean
 
     suspend fun checkMessageTypo(
-        genre: Genre,
+        saga: SagaContent,
         message: String,
-        lastMessage: String?,
     ): RequestResult<TypoFix?>
 
     suspend fun getSceneContext(saga: SagaContent): RequestResult<SceneSummary?>

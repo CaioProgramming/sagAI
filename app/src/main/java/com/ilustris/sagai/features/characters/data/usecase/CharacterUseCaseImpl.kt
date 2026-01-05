@@ -93,55 +93,30 @@ class CharacterUseCaseImpl
                 val portraitReference =
                     genreReferenceHelper.getRandomPortraitReference().getSuccess()
 
-                val visualComposition =
-                    imagenClient.extractComposition(portraitReference).getSuccess()
-
-                val artistComposition =
-                    imagenClient
-                        .generateArtisticPrompt(
-                            saga.genre,
-                            visualComposition,
-                            buildString {
-                                appendLine("Saga Context: ")
-                                appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
-                                appendLine("Character Context: ")
-                                appendLine(
-                                    character.toAINormalize(
-                                        listOf(
-                                            "id",
-                                            "image",
-                                            "sagaId",
-                                            "joinedAt",
-                                            "smartZoom",
-                                        ),
-                                    ),
-                                )
-                            },
-                        ).getSuccess()!!
-
-                // NEW: Review the generated description before image generation
-                val reviewedPrompt =
-                    imagenClient
-                        .reviewAndCorrectPrompt(
-                            imageType = AnalyticsConstants.ImageType.AVATAR,
-                            visualDirection = visualComposition,
-                            genre = saga.genre,
-                            finalPrompt = artistComposition,
-                        ).getSuccess()
-
-                // Use the reviewed prompt, or fallback to original if review failed
-                val finalPromptForGeneration =
-                    reviewedPrompt?.correctedPrompt ?: run {
-                        Log.w(
-                            "CharacterUseCase",
-                            "Review failed or returned null, using original description",
-                        )
-                        artistComposition
-                    }
-
                 val image =
                     imagenClient
-                        .generateImage(finalPromptForGeneration, canByPass = false)!!
+                        .generateIntegratedImage(
+                            genre = saga.genre,
+                            imageReference = portraitReference,
+                            context =
+                                buildString {
+                                    appendLine("Saga Context: ")
+                                    appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
+                                    appendLine("Character Context: ")
+                                    appendLine(
+                                        character.toAINormalize(
+                                            listOf(
+                                                "id",
+                                                "image",
+                                                "sagaId",
+                                                "joinedAt",
+                                                "smartZoom",
+                                            ),
+                                        ),
+                                    )
+                                },
+                            imageType = AnalyticsConstants.ImageType.AVATAR,
+                        ).getSuccess()!!
 
                 val file =
                     fileHelper.saveFile(character.name, image, path = "${saga.id}/characters/")!!
@@ -153,7 +128,7 @@ class CharacterUseCaseImpl
                 withContext(Dispatchers.IO) {
                     createSmartZoom(newCharacter)
                 }
-                newCharacter to finalPromptForGeneration
+                newCharacter to ""
             }
 
         override suspend fun createSmartZoom(character: Character): RequestResult<Unit> =

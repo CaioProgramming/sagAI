@@ -34,6 +34,7 @@ import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeCheck
 import com.ilustris.sagai.features.saga.chat.domain.manager.NarrativeStep
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.timeline.domain.TimelineUseCase
@@ -79,6 +80,7 @@ class SagaContentManagerImpl
         private val context: Context,
     ) : SagaContentManager {
         override val content = MutableStateFlow<SagaContent?>(null)
+        override val milestoneUpdate = MutableStateFlow<SagaMilestone?>(null)
 
         override val contentUpdateMessages: MutableSharedFlow<Message> =
             MutableSharedFlow(
@@ -95,6 +97,7 @@ class SagaContentManagerImpl
             _narrativeProcessingUiState.asStateFlow()
 
         override var snackBarUpdate: MutableStateFlow<SnackBarState?> = MutableStateFlow(null)
+
         private var isDebugModeEnabled: Boolean = false
         private var isProcessing: Boolean = false
 
@@ -288,33 +291,28 @@ class SagaContentManagerImpl
                         .generateChapter(
                             saga,
                             chapter,
-                        ).onSuccessAsync {
-                            val chapterIcon =
-                                imageHelper
-                                    .getImageBitmap(it.coverImage, false)
-                                    .getSuccess()
+                        ).getSuccess()!!
+                val chapterIcon =
+                    imageHelper
+                        .getImageBitmap(chapterUpdate.coverImage, false)
+                        .getSuccess()
 
-                            updateSnackBar(
-                                snackBar(
-                                    message =
-                                        context.getString(
-                                            R.string.chapter_finished,
-                                            it.title,
-                                        ),
-                                    {
-                                        largeIcon = chapterIcon
-                                    },
-                                ),
-                            )
-                        }.onFailureAsync {
-                            updateSnackBar(
-                                SnackBarState(
-                                    message = context.getString(R.string.unexpected_error),
-                                ),
-                            )
-                        }
+                updateSnackBar(
+                    snackBar(
+                        message =
+                            context.getString(
+                                R.string.chapter_finished,
+                                chapterUpdate.title,
+                            ),
+                        {
+                            largeIcon = chapterIcon
+                        },
+                    ),
+                )
 
-                chapterUpdate.getSuccess()!!
+                milestoneUpdate.emit(SagaMilestone.ChapterFinished(chapterUpdate))
+
+                chapterUpdate
             }
 
         override suspend fun reviewWiki(wikiItems: List<Wiki>) {
@@ -445,13 +443,14 @@ class SagaContentManagerImpl
                 endTimeline(saga.currentActInfo?.currentChapterInfo)
                 error("Timeline already completed")
             } else {
-                delay(2.seconds)
                 val timeLineUpdate = timelineUseCase.generateTimeline(saga, content).getSuccess()!!
                 updateSnackBar(
                     SnackBarState(
                         message = context.getString(R.string.timeline_updated, timeLineUpdate.title),
                     ),
                 )
+
+                milestoneUpdate.emit(SagaMilestone.NewEvent(timeLineUpdate))
 
                 timeLineUpdate
             }
@@ -502,6 +501,7 @@ class SagaContentManagerImpl
                         message = context.getString(R.string.act_finished, newAct.title),
                     ),
                 )
+                milestoneUpdate.emit(SagaMilestone.ActFinished(newAct))
                 newAct
             }
 
@@ -882,6 +882,8 @@ class SagaContentManagerImpl
                             ),
                         ),
                     )
+
+                    milestoneUpdate.emit(SagaMilestone.NewCharacter(generatedCharacter))
 
                     generatedCharacter
                 }

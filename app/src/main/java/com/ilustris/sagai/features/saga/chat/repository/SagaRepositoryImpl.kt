@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.saga.chat.repository
 
 import android.icu.util.Calendar
-import android.util.Log
 import com.ilustris.sagai.core.ai.GemmaClient
 import com.ilustris.sagai.core.ai.ImagenClient
 import com.ilustris.sagai.core.analytics.AnalyticsConstants
@@ -66,11 +65,6 @@ class SagaRepositoryImpl
                     .getRandomCompositionReference(saga.genre)
                     .getSuccess()
 
-            val visualDirection =
-                imagenClient
-                    .extractComposition(iconReferenceComposition)
-                    .getSuccess()
-
             val context =
                 buildString {
                     appendLine("Saga Context:")
@@ -90,40 +84,14 @@ class SagaRepositoryImpl
                         ),
                     )
                 }
-            val metaPrompt =
-                imagenClient
-                    .generateArtisticPrompt(
-                        saga.genre,
-                        visualDirection,
-                        context,
-                    ).getSuccess()!!
-
-            // Review the generated description before image generation
-            val reviewedPrompt =
-                imagenClient
-                    .reviewAndCorrectPrompt(
-                        imageType = AnalyticsConstants.ImageType.ICON,
-                        genre = saga.genre,
-                        visualDirection = visualDirection,
-                        finalPrompt = metaPrompt,
-                    ).getSuccess()
-
-            // Use the reviewed prompt, or fallback to original if review failed
-            val finalPromptForGeneration =
-                reviewedPrompt?.correctedPrompt ?: run {
-                    Log.w(
-                        "SagaRepository",
-                        "Review failed or returned null, using original description",
-                    )
-                    metaPrompt
-                }
-
             val newIcon =
-                imagenClient.generateImage(
-                    buildString {
-                        appendLine(finalPromptForGeneration)
-                    },
-                )!!
+                imagenClient
+                    .generateIntegratedImage(
+                        genre = saga.genre,
+                        imageReference = iconReferenceComposition,
+                        context = context,
+                        imageType = AnalyticsConstants.ImageType.ICON,
+                    ).getSuccess()!!
 
             val croppedIcon = imageCropHelper.cropToPortraitBitmap(newIcon)
 

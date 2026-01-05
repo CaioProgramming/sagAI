@@ -68,8 +68,8 @@ class GenreReferenceHelper(
             getIconReference(genre)
         }
 
-    suspend fun getRandomCompositionReference(genre: Genre): RequestResult<Bitmap> =
-        try {
+    suspend fun getRandomCompositionReference(genre: Genre) =
+        executeRequest {
             val multiFlag = "${genre.name}$COMPOSITION_REFERENCES".lowercase()
             Log.d(
                 javaClass.simpleName,
@@ -78,61 +78,34 @@ class GenreReferenceHelper(
 
             val flagValue =
                 firebaseRemoteConfig.getJson<ReferenceCollection>(multiFlag)
-                    ?: error("Couldn't access $multiFlag")
 
-            val referenceUrl = flagValue.references.random()
-
-            Log.d(
-                javaClass.simpleName,
-                "reference $referenceUrl for genre ${genre.name}",
-            )
+            val referenceUrl =
+                flagValue?.references?.random()
+                    ?: firebaseRemoteConfig.getString("${genre.name.lowercase()}$COVER_FLAG")
 
             val request =
                 ImageRequest
                     .Builder(context)
-                    .data(referenceUrl)
+                    .data(referenceUrl!!)
                     .build()
             val imageResult = (imageLoader.execute(request) as SuccessResult)
-            (imageResult.image as BitmapImage).bitmap.asSuccess()
-        } catch (e: Exception) {
-            Log.e(
-                javaClass.simpleName,
-                "getRandomCompositionReference: failed to load multi-reference, falling back to genre icon reference. Error: ${e.message}",
-            )
-            getIconReference(genre)
+            (imageResult.image as BitmapImage).bitmap to referenceUrl
         }
 
-    suspend fun getPortraitReference(): RequestResult<Bitmap> =
-        try {
-            val flag = PORTRAIT_REFERENCE
-            Log.d(javaClass.simpleName, "getPortraitReference: fetching flag from firebase $flag")
-            val flagValue = firebaseRemoteConfig.getString(flag)
-            Log.d(javaClass.simpleName, "getPortraitReference: flag value is $flagValue")
-            val portraitUrl = flagValue
-
-            val request =
-                ImageRequest
-                    .Builder(context)
-                    .data(portraitUrl)
-                    .build()
-            val imageResult = (imageLoader.execute(request) as SuccessResult)
-            (imageResult.image as BitmapImage).bitmap.asSuccess()
-        } catch (e: Exception) {
-            e.asError()
-        }
-
-    suspend fun getRandomPortraitReference(): RequestResult<Bitmap> =
-        try {
+    suspend fun getRandomPortraitReference() =
+        executeRequest {
             val multiFlag = PORTRAIT_REFERENCES
             Log.d(javaClass.simpleName, "Attempting to fetch multi-reference flag $multiFlag")
 
             val flagValue =
                 firebaseRemoteConfig.getJson<ReferenceCollection>(multiFlag)
-                    ?: error("Couldn't access $multiFlag")
 
-            val referenceUrl = flagValue.references.random()
+            val referenceUrl =
+                flagValue?.references?.random() ?: firebaseRemoteConfig.getString(
+                    PORTRAIT_REFERENCE,
+                )
 
-            Log.d(javaClass.simpleName, "Using reference $referenceUrl")
+            Log.d(javaClass.simpleName, "Using reference ${referenceUrl!!}")
 
             val request =
                 ImageRequest
@@ -140,13 +113,7 @@ class GenreReferenceHelper(
                     .data(referenceUrl)
                     .build()
             val imageResult = (imageLoader.execute(request) as SuccessResult)
-            (imageResult.image as BitmapImage).bitmap.asSuccess()
-        } catch (e: Exception) {
-            Log.e(
-                javaClass.simpleName,
-                "getRandomPortraitReference: failed to load multi-reference, attempting single reference fallback. Error: ${e.message}",
-            )
-            getPortraitReference()
+            (imageResult.image as BitmapImage).bitmap to referenceUrl
         }
 
     suspend fun getFileBitmap(path: String) =

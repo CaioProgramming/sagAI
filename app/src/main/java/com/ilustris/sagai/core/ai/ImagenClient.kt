@@ -33,20 +33,12 @@ interface ImagenClient {
         canByPass: Boolean = false,
     ): Bitmap?
 
-    suspend fun extractComposition(bitmap: Bitmap?): RequestResult<String>
-
-    suspend fun reviewAndCorrectPrompt(
-        imageType: String,
-        visualDirection: String?,
+    suspend fun generateIntegratedImage(
         genre: Genre,
-        finalPrompt: String,
-    ): RequestResult<ImagePromptReview>
-
-    suspend fun generateArtisticPrompt(
-        genre: Genre,
-        visualDirection: String?,
+        imageReference: Pair<Bitmap, String>?,
         context: String,
-    ): RequestResult<String>
+        imageType: String,
+    ): RequestResult<Bitmap>
 }
 
 @OptIn(PublicPreviewAPI::class)
@@ -120,7 +112,52 @@ class ImagenClientImpl
             }
         }
 
-        override suspend fun extractComposition(bitmap: Bitmap?) =
+        override suspend fun generateIntegratedImage(
+            genre: Genre,
+            imageReference: Pair<Bitmap, String>?,
+            context: String,
+            imageType: String,
+        ): RequestResult<Bitmap> =
+            executeRequest {
+                Log.d(
+                    TAG,
+                    "🚀 Starting integrated image generation flow for: $imageType | Genre: ${genre.name}",
+                )
+
+                // 1. VISUAL DIRECTOR ANALYSIS
+                Log.d(TAG, "Extracting visual from: ${imageReference?.second}")
+                val visualDirection = extractComposition(imageReference!!.first).getSuccess()
+                Log.d(TAG, "📸 Visual Direction extracted.")
+
+                // 2. ARTISTIC DESCRIPTION
+                val artisticPrompt =
+                    generateArtisticPrompt(
+                        genre,
+                        visualDirection,
+                        context,
+                    ).getSuccess() ?: error("Failed to generate base artistic prompt")
+
+                // 3. REVIEWER CONCLUSION
+                val reviewedResult =
+                    reviewAndCorrectPrompt(
+                        imageType = imageType,
+                        visualDirection = visualDirection,
+                        genre = genre,
+                        finalPrompt = artisticPrompt,
+                    ).getSuccess()
+
+                val finalPrompt = reviewedResult?.correctedPrompt ?: artisticPrompt
+                Log.d(TAG, "⚖️ Final prompt reviewed.")
+
+                // 4. IMAGE GENERATION
+                val generatedImage =
+                    generateImage(finalPrompt) ?: error("Failed to generate image from prompt")
+                Log.i(TAG, "✅ Image successfully generated.")
+
+            generatedImage
+        }
+
+    private suspend fun extractComposition(bitmap: Bitmap?) =
             executeRequest {
                 gemmaClient.generate<String>(
                     emptyString(),
@@ -136,7 +173,7 @@ class ImagenClientImpl
                 )!!
             }
 
-        override suspend fun generateArtisticPrompt(
+    private suspend fun generateArtisticPrompt(
             genre: Genre,
             visualDirection: String?,
             context: String,
@@ -154,10 +191,10 @@ class ImagenClientImpl
                     references = emptyList(),
                     requireTranslation = false,
                     requirement = GemmaClient.ModelRequirement.HIGH,
-            )!!
-        }
+                )!!
+            }
 
-        override suspend fun reviewAndCorrectPrompt(
+    private suspend fun reviewAndCorrectPrompt(
             imageType: String,
             visualDirection: String?,
             genre: Genre,
@@ -188,7 +225,7 @@ class ImagenClientImpl
             Log.d(TAG, "Suggestions: ")
             Log.d(
                 TAG,
-                "Artist Suggestion: ${review.artistImprovementSuggestions}\nVisual Suggestion: ${review.visualDirectorSuggestions}"
+                "Artist Suggestion: ${review.artistImprovementSuggestions}\nVisual Suggestion: ${review.visualDirectorSuggestions}",
             )
             trackImageQuality(
                 genre = genre.name,

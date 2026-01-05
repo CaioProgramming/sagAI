@@ -18,8 +18,8 @@ import com.ilustris.sagai.ui.theme.cornerSize
 
 fun Genre.bubble(
     tailAlignment: BubbleTailAlignment,
-    tailWidth: Dp = 12.dp,
-    tailHeight: Dp = 12.dp,
+    tailWidth: Dp = 8.dp,
+    tailHeight: Dp = 8.dp,
     isNarrator: Boolean = false,
 ): Shape {
     val cornerSize = cornerSize()

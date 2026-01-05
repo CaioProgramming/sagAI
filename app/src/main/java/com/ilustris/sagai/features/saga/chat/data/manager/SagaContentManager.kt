@@ -6,6 +6,7 @@ import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.saga.chat.data.model.Message
+import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
 import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.components.SnackBarState
@@ -21,6 +22,8 @@ interface SagaContentManager {
     val narrativeProcessingUiState: StateFlow<Boolean>
 
     var snackBarUpdate: MutableStateFlow<SnackBarState?>
+
+    val milestoneUpdate: MutableStateFlow<SagaMilestone?>
 
     suspend fun loadSaga(sagaId: String)
 

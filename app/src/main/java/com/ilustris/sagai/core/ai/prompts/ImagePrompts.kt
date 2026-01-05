@@ -82,13 +82,16 @@ object ImagePrompts {
                 "- **Angle & Perspective:** The 'angle' parameter defines the camera's viewpoint. Always explicitly state the camera angle (avoiding generic terms like 'close-up') and ensure it aligns with the desired mood and subject orientation. Translate this into clear perspective terms (e.g., 'seen from a low angle', 'dutch angle of 15 degrees').",
             )
             appendLine(
-                "- **Lens & DOF:** The 'lens' and 'DOF' parameters determine the subject's focus and background separation. Describe this visually (e.g., 'The character is in sharp focus, with the background heavily blurred', '...shot with a wide-angle lens, capturing the expansive environment').",
+                "- **Lens & DOF:** The 'lens' and 'DOF' parameters determine the subject's focus and background separation. Describe this visually (e.g., 'The character is in sharp focus, with the background heavily blurred', '...shot with a wide-angle lens, capturing the expansive environment'). When applicable, specify a lighting ratio to further refine the output (e.g., '3:1 contrast ratio')",
             )
             appendLine(
                 "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
             )
             appendLine(
                 "- **Subject Orientation:** The 'subject_orientation' parameter defines the subject's rotation relative to the camera. Describe this explicitly (e.g., 'The character is facing forward', 'The character is turned 3/4 to the left', 'Profile view facing right').",
+            )
+            appendLine(
+                "- **Cinematographic Precision:** Use technical codes and precise angles where possible (e.g., 'FS: Full-Body', 'Low-Angle Dutch Tilt 10°').",
             )
             appendLine()
         }
@@ -138,10 +141,16 @@ object ImagePrompts {
         appendLine("     - MS (medium shot): Head to waist is visible. Arms/Hands are visible. Legs and feet are NOT visible.")
         appendLine("     - FS (full shot): The entire body is visible from head to toe, including posture and complete outfit.")
         appendLine(
-            "3. **ALIVE & SOULFUL EXPRESSION:** Focus on intensifying the emotional storytelling through body language and facial expressions. The character must feel alive, not static. Prioritize dynamic poses over static stances. Inject drama and dynamism into every description.",
+            "3. **ALIVE & SOULFUL EXPRESSION (INTENSE STORYTELLING):** Focus on intensifying the emotional storytelling through body language, hand gestures, and facial expressions. The character must feel like a living part of their world, captured in a spontaneous moment, not as a static subject.",
         )
         appendLine(
-            "   - **FACIAL EXPRESSION:** specific, nuanced emotion (e.g., 'a subtle, cynical smirk playing on his lips').",
+            "   - **CANDID GAZE (GENERAL RULE):** Avoid direct eye contact with the viewer/camera unless strictly necessary for a specific dramatic moment. The subject should be looking at something within the scene (an object, another character, the horizon, or lost in thought). This creates the feeling of 'Spontaneous Photography' and deepens immersion.",
+        )
+        appendLine(
+            "   - **NUANCED INTERACTIONS:** Use specific, evocative physical descriptors to anchor the character in the scene (e.g., 'lightly trailing a hand in the water', 'subtle tension in the shoulders', 'fingers nervously twisting a ring').",
+        )
+        appendLine(
+            "   - **FACIAL EXPRESSION:** Provide a specific, nuanced emotion. Avoid vague terms like 'thoughtful concern'. Instead, use 'a flicker of ancient regret' or 'a sharp, cynical smirk'.",
         )
         appendLine(
             "   - **FULL BODY DYNAMICS (CRITICAL for MS/FS/WS):** If the framing shows the torso or legs, the pose MUST be dynamic and genre-appropriate. NO default standing.",
@@ -150,7 +159,7 @@ object ImagePrompts {
             "     - Examples: Leaning against walls, crouching in stealth, flying mid-air, running with urgency, sitting regally, kneeling in defeat, dynamic weight distribution.",
         )
         appendLine(
-            "   - **HANDS & GESTURES:** Ensure hands are always described, even in wider shots, as they are crucial for conveying emotion. Hands must interact with the world or self (e.g., clutching a weapon, resting on hips, reaching out).",
+            "   - **HANDS & GESTURES (MANDATORY):** Always describe hands if the framing allows (even if subtly interacting with the body), as they are crucial for conveying emotion. Hands must interact with the world or self (e.g., clutching a weapon, resting on hips, reaching out).",
         )
         appendLine(
             "4. **SPECIFIC ENVIRONMENT:** Name at least 3 specific environmental details (objects, weather, atmospheric elements) to establish a clear scene atmosphere. The artist MUST integrate these details to ground the subjects and establish the scene's unique vibe.",
@@ -194,6 +203,8 @@ object ImagePrompts {
         appendLine("✓ All required elements mentioned")
         appendLine("✓ Framing impact on visibility explicitly stated")
         appendLine("✓ Feature hierarchy observed (critical details first)")
+        appendLine("✓ Candid gaze (subject looking away or into the world, not at camera)")
+        appendLine("✓ Spontaneous, 'caught in the moment' photographic vibe established")
         appendLine()
         appendLine("OUTPUT RESULT:")
         appendLine("A single flowing paragraph that reads like a concrete visual specification (not creative writing).")
@@ -212,7 +223,8 @@ object ImagePrompts {
             appendLine("CRITICAL DIRECTIVE (NON-NEGOTIABLE):")
             appendLine("- NO PREAMBLE: Do not start with 'Okay', 'Let's break down', or any introductory filler.")
             appendLine(
-                "- NO EXPLANATION TEXT: Output ONLY the 16 parameters. Do not explain your choices. Focus 100% on the technical data to best instruct the next AI model.")
+                "- NO EXPLANATION TEXT: Output ONLY the 16 parameters. Do not explain your choices. Focus 100% on the technical data to best instruct the next AI model.",
+            )
             appendLine("- NO SUMMARY: Do not provide a concluding summary or 'In summary' section.")
             appendLine("- NO CONVERSATION: Do not address the user. Do not offer future help. Do not say 'let me know'.")
             appendLine("- ASSERTIVE TONE: Provide raw, actionable technical data. Use declarative statements.")
@@ -223,17 +235,17 @@ object ImagePrompts {
             appendLine("16 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]'):")
             appendLine()
             appendLine(
-                "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle / worm's-eye view / bird's-eye view]. DEFINE the CAMERA'S position relative to the PRIMARY SUBJECT(S). EXAMPLE: Replace 'Low-Angle 15° Full Shot' with 'Extreme Low-Angle 15° Full Body Shot' for greater precision. When requesting a specific angle, always include the degree of tilt (e.g., 'Dutch Angle 20°').",
+                "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle / worm's-eye view / bird's-eye view]. DEFINE the CAMERA'S position relative to the PRIMARY SUBJECT(S). EXAMPLE: For greater precision, use descriptors like 'Low-Angle Dutch Tilt 10°' or 'High-Angle 30° POV'.",
             )
             appendLine(
                 "2. LENS: [14-24mm ultra-wide / 24-35mm wide / 35-50mm normal / 50-85mm portrait / 85-200mm tele / 200mm+ super-tele]",
             )
             appendLine(
-                "3. FRAMING: [ECU: Face / CU: Head and Shoulders / MCU: Head-Chest / MS: Head-Waist / MWS: Head-Knees / FS: Full-Body / WS: Body+Env / EWS: Small-in-Vast]",
+                "3. FRAMING: Use specific codes: [ECU: Face / CU: Head and Shoulders / MCU: Head-Chest / MS: Head-Waist / MWS: Head-Knees / FS: Full-Body / WS: Body+Env / EWS: Small-in-Vast]",
             )
             appendLine("4. PLACEMENT: [H: left/center/right third] [V: upper/center/lower third]")
             appendLine(
-                "5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]. DESCRIBE the shadow interplay, contrast intensity, and how light composites the SUBJECTS. EXAMPLE: Instead of 'Dramatic side lighting', specify 'Strong side lighting with strong shadows and bright highlights'.",
+                "5. LIGHTING: [front/side/back/top/under/omni] + [hard/soft]. DESCRIBE shadow interplay, contrast intensity, and lighting ratio (e.g., 'Strong 3:1 side lighting with deep shadows').",
             )
             appendLine("6. COLOR: [cool / neutral / warm] + dominant palette")
             appendLine(
@@ -411,7 +423,7 @@ object ImagePrompts {
             "   - Suggest *concrete terminology replacements* to improve future extractions. Tell the Visual Director exactly what terms to use instead.",
         )
         appendLine(
-            "   - Examples: 'Replace generic \"close-up\" with \"CU: Head and Shoulders\" for clarity', 'Instead of \"dramatic angle\", request \"Low-Angle Dutch Tilt 15°\"', 'Specify exact lighting ratio (e.g., 3:1) instead of just \"contrast\"'.",
+            "   - Examples: 'Replace generic \"close-up\" with \"CU: Head and Shoulders\" for clarity', 'Instead of \"dramatic angle\", request \"Low-Angle Dutch Tilt 10°\"', 'Specify exact lighting ratio (e.g., 3:1) instead of just \"contrast\"'.",
         )
         appendLine("   - GOAL: Calibrate the Visual Director to be a precise cinematographer, not a creative writer.")
         appendLine()

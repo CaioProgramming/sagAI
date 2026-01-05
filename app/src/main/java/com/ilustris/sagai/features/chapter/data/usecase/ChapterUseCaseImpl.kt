@@ -187,19 +187,14 @@ class ChapterUseCaseImpl
                 val coverBitmap =
                     genreReferenceHelper.getRandomCompositionReference(saga.data.genre).getSuccess()
 
-                val visualComposition =
+                val genCover =
                     imagenClient
-                        .extractComposition(
-                            coverBitmap,
-                        ).getSuccess()
-
-                val artisticPrompt =
-                    imagenClient
-                        .generateArtisticPrompt(
-                            saga.data.genre,
-                            visualComposition,
-                            buildString {
-                                if (characters.size > 1) {
+                        .generateIntegratedImage(
+                            genre = saga.data.genre,
+                            imageReference = coverBitmap,
+                            context =
+                                buildString {
+                                    if (characters.size > 1) {
                                     appendLine("Integrate the following characters in the artwork scene (MANDATORY): ")
                                     appendLine(
                                         characters.mapNotNull { it?.data }.joinToString {
@@ -262,34 +257,9 @@ class ChapterUseCaseImpl
                                                 ?.summarizeRelation(),
                                         )
                                     }
-                            },
-                        ).getSuccess()!!
-
-                // Review the generated description before image generation
-                val reviewedPrompt =
-                    imagenClient
-                        .reviewAndCorrectPrompt(
+                                },
                             imageType = AnalyticsConstants.ImageType.COVER,
-                            genre = saga.data.genre,
-                            visualDirection = visualComposition,
-                            finalPrompt = artisticPrompt,
-                        ).getSuccess()
-
-                // Use the reviewed prompt, or fallback to original if review failed
-                val finalPromptForGeneration =
-                    reviewedPrompt?.correctedPrompt ?: run {
-                        Log.w(
-                            "ChapterUseCase",
-                            "Review failed or returned null, using original description",
-                        )
-                        artisticPrompt
-                    }
-
-                val genCover =
-                    imagenClient
-                        .generateImage(
-                            finalPromptForGeneration,
-                        )!!
+                        ).getSuccess()!!
 
                 val coverFile =
                     fileHelper.saveFile(

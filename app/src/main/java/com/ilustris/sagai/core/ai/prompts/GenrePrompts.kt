@@ -366,24 +366,30 @@ object GenrePrompts {
 
             CRIME -> {
                 buildString {
-                    appendLine("Art Technique: RENAISSANCE-ERA CLASSICAL OIL PAINTING (Modern Academic Realism).")
                     appendLine(
-                        "Key Lighting Style: DRAMATIC CHIAROSCURO meets ETHEREAL MIRAGE GLOW. High-contrast subjects bathed in a hazy, dream-like atmospheric filter.")
+                        "Art Technique: 18th-CENTURY BAROQUE & NEOCLASSICAL OIL PAINTING (Modern Academic Realism).",
+                    )
                     appendLine(
-                        "Texture / Materiality: SURREAL PERFECTION. A raw classical oil style where everything feels 'too perfect to be true.' Use heavy atmospheric bloom and soft-focus highlights. The background should shimmer like a mirage—soft, hazy, and glistening with heat and glamour.",
+                        "Key Lighting Style: MASTERFUL VOLUMETRIC LIGHTING & GOLDEN HOUR BLOOM. High-contrast subjects defined by rich Chiaroscuro and warm, radiant coastal light.",
+                    )
+                    appendLine(
+                        "Texture / Materiality: RAW OIL ON CANVAS. Visible, confident brushwork emphasizing the materiality of the medium. Use heavy impasto for highlights and thin, transparent glazes for depth. The artwork must feel 'hand-painted' with a physical surface quality, avoiding smooth digital gradients or airbrushed finishes.",
                     )
                     appendLine(
                         "Aesthetic Era / Influence: High Renaissance masters (e.g., Leonardo, Raphael, Titian) merged with the SLEEK GLAMOUR of ART DECO and modern high-end aesthetics.",
                     )
                     appendLine()
                     appendLine(
-                        "**CLASSICAL ANATOMY & PERFECTION (CRITICAL):**",
+                        "**CLASSICAL ANATOMY & PERFECTION (CRITICAL - NO STYLIZATION):**",
                     )
                     appendLine(
-                        "- Perfect Anatomy: Strict adherence to classical proportions and weight. No exaggeration or stylization. The figure must be as precise as a Renaissance study.",
+                        "- Perfect Anatomy: ABSOLUTE adherence to classical proportions, skeletal structure, and realistic weight distribution. NO cartoonish proportions, no exaggerated muscles, no stylized features. The figure must be as anatomically precise as a High Renaissance medical study.",
                     )
                     appendLine(
-                        "- Pure Raw Style: Aims for perfection in form but retains the 'raw' feel of oil on canvas. Avoid ultra-idealization; capture the dignified, realistic essence of the subject.",
+                        "- Pure Raw Style: Aims for absolute perfection in form but retains the 'raw' feel of oil on canvas. Capture the dignified, realistic, and unrefined essence of the subject. The human form is the highlight of the artwork.",
+                    )
+                    appendLine(
+                        "- Hand & Gesture Precision: Hands must be rendered with anatomical mastery, showing tendons, knuckles, and realistic skin folds. Poses must reflect natural tension and relaxation.",
                     )
                     appendLine()
                     appendLine("**COLOR PALETTE & ACCENT:**")
@@ -402,17 +408,44 @@ object GenrePrompts {
                         "Rendering: THE MODERN RENAISSANCE MIGRATION. A classical oil painting brought to modern times. It must focus on 'Perfection of Form'—sharp, precise features within a dreamy, hazy environment.",
                     )
                     appendLine()
-                    appendLine("**SUBJECT AURA & POSING:**")
+                    appendLine("**CANDID BODY LANGUAGE & INTEGRATION (CRITICAL):**")
                     appendLine(
-                        "- **Aura:** Dangerous nobility, untouchable power, and glamorous mystery. The subject is a 'Modern Medici' or an icon of luxury crime.",
+                        "- **Not a Poster:** Forbid generic standing or 'facing camera' poses. The subject is NOT a model for a banner; they are a living part of a high-end, aesthetic moment.",
                     )
                     appendLine(
-                        "- **Posing:** Relaxed, powerful, and deliberate. Use 'Contrapposto' or poised, high-status stances that command the room with quiet elegance.",
+                        "- **Atmospheric Posing:** Poses must feel candid and captured mid-breath: lounging on the wake of a yacht, floating languidly in a luxury pool, leaning against marble rails while feeling the sea breeze, or looking away at the horizon.",
+                    )
+                    appendLine(
+                        "- **Aesthetic Completion:** The subject's body language should complete the composition's flow. They might be partially turned away, reclined, or captured in a moment of relaxed dominance.",
                     )
                     appendLine()
-                    appendLine("Mood: A Glamorous masterpiece. The intersection of Art Deco opulence and Renaissance gravitas.")
+                    appendLine("**SUBJECT AURA & POSING:**")
                     appendLine(
-                        "Ambience: A surreal Miami Art Deco coastal paradise. Everything should feel like a hazy, sun-drenched dream. Emphasize the 'Mirage Effect': endless turquoise seas that blend into pink-horizon skies, shimmering luxury pools catching intense golden-hour bloom, and beachfront architecture softened by a warm, glamorous haze. It's a beachy paradise that feels like a beautiful hallucination—absolute luxury frozen in a perfect, glowing moment.",
+                        "- **Aura:** Untouchable elegance and 'Caught in the Moment' glamour. Dangerous sophistication that doesn't need to look at the lens to be felt.",
+                    )
+                    appendLine(
+                        "- **Posing:** CANDID & FLUID. Avoid eye contact with the camera unless strictly required by context. Focus on lounging, reclining, leaning, or looking out at the vast coastal paradise.",
+                    )
+                    appendLine()
+                    appendLine(
+                        "Mood: A Glamorous masterpiece. The intersection of Art Deco opulence, 18th-century European painting gravitas, and DIVINE LIGHTING.",
+                    )
+                    appendLine(
+                        "Ambience: A sun-drenched coastal paradise. Emphasize the 'Golden Hour Mirage': endless turquoise seas, shimmering luxury pools catching intense volumetric bloom, and beachfront architecture softened by a warm, humid coastal haze. The 'paradise' feel is achieved through the DIVINE QUALITY OF LIGHT filtering through the scene, creating prismatic refractions and glowing highlights.",
+                    )
+                    appendLine()
+                    appendLine("**DIVINE EXPRESSION & ELITE SUPERIORITY (CRITICAL):**")
+                    appendLine(
+                        "- **Subjects as Deities:** Subjects are not merely characters; they are the 'Deities of Paradise.' Their expression must evoke a state of total, superior bliss and 'Elite Glamour.'",
+                    )
+                    appendLine(
+                        "- **Untouchable Elegance:** Capture a sense of being 'superior by luxury.' The subject acts as if they own the paradise, with an aura of untouchable, dangerous sophistication.",
+                    )
+                    appendLine(
+                        "- **Relaxed Dominance:** Poses must reflect absolute comfort in their own dominance—lounging as if the world exists for their pleasure. Use descriptors like 'serene superiority', 'unbothered by mortality', and 'ethereal confidence'.",
+                    )
+                    appendLine(
+                        "- **Celestial Interaction:** They connect with the environment as if it were their divine realm: tilting the head back to feel the 'sacred' sea breeze, looking at the horizon with the gaze of a conqueror, or lounging in crystal waters with an expression of divine serenity.",
                     )
                     appendLine()
                     appendLine("**AUTONOMOUS FIX PATTERNS:**")
@@ -1840,12 +1873,18 @@ object GenrePrompts {
                     appendLine("REQUIRED ELEMENTS:")
                     appendLine("- Art style: 'Renaissance classical oil painting', 'Modern Academic Realism'")
                     appendLine("- Technique: 'pure raw oil texture', 'visible masterful brushwork', 'traditional glazing'")
-                    appendLine("- Anatomy: 'Perfect classical anatomy', 'non-idealized realism'")
+                    appendLine("- Anatomy: 'Perfect classical anatomy', 'Renaissance anatomical precision', 'non-idealized realism'")
                     appendLine(
-                        "- Lighting: 'Dramatic Chiaroscuro', 'hazy dreamy glow', 'glamorous atmospheric diffusion'",
+                        "- Lighting: 'Masterful Chiaroscuro', 'Golden Hour Volumetric Bloom', 'Prismatic coastal light'",
                     )
                     appendLine(
-                        "- Background MUST include Miami Art Deco/Renaissance coastal paradise elements (sea, crystal pools, beachfront architecture)")
+                        "- Background MUST include Miami Art Deco/Renaissance coastal paradise elements (sea, crystal pools, beachfront architecture)",
+                    )
+                    appendLine(
+                        "- Posing: 'Divine lounging', 'relaxed dominance', 'captured mid-breath', 'serene superiority', 'Elite Glamour'",
+                    )
+                    appendLine("- Aura: 'Untouchable elegance', 'superior by luxury', 'Deity of Paradise'")
+                    appendLine("- BANNED POSES: 'Standing still', 'facing camera', 'static portrait', 'poster pose', 'generic character pose'")
                     appendLine()
                     appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
                     appendLine("- Mandatory Accent: HOT PINK (#E91E63 - Pantone 213 C)")
@@ -1856,13 +1895,19 @@ object GenrePrompts {
                     appendLine()
                     appendLine("AUTONOMOUS FIX PATTERNS:")
                     appendLine(
-                        "- If contains: cartoonized, stylized, stylized proportions → REPLACE with: Renaissance realism, perfect classical anatomy, raw oil texture",
+                        "- If contains: cartoonized, stylized, stylized proportions, exaggerated features → CRITICAL FIX: Replace with: Renaissance realism, perfect classical anatomy, raw oil texture, anatomically precise figure",
                     )
                     appendLine(
                         "- If contains: digital smoothness, plastic texture → REPLACE with: raw oil painting texture, visible brushwork, traditional glazing depth",
                     )
                     appendLine(
-                        "- If missing dreamy/hazy quality → INTEGRATE: glamorous atmospheric diffusion, hazy glow, soft ethereal edges",
+                        "- If missing divine/elite quality → INTEGRATE: Masterful volumetric lighting, prismatic sun-rays, intense golden-hour bloom, and radiating light highlights",
+                    )
+                    appendLine(
+                        "- If subject feels 'placed' or static → REWRITE: to be integrated mid-action (e.g., 'lounging on a yacht wake', 'floating in a pool', 'feeling the sea breeze with closed eyes')",
+                    )
+                    appendLine(
+                        "- If pose is generic standing/facing camera → REPLACE: with a candid, atmospheric gesture that completes the aesthetic flow of the scene",
                     )
                     appendLine(
                         "- If background feels too interior or cramped → EXPAND: to coastal/litoranean settings: shimmering luxury pools, ocean waves, or palm-lined boardwalks under an intense, hazy hot pink 'mirage' sunset",

@@ -7,12 +7,10 @@ import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.relations.data.model.RelationshipContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
-import com.ilustris.sagai.features.home.data.model.chapterNumber
 import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.generateCharacterRelationsSummary
 import com.ilustris.sagai.features.home.data.model.getCharacters
-import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SceneSummary
 import com.ilustris.sagai.features.saga.chat.data.model.TypoFix
@@ -30,6 +28,7 @@ object ChatPrompts {
             "audioPath",
             "audible",
             "status",
+            "reasoning",
         )
     val sagaExclusions =
         listOf(
@@ -123,20 +122,52 @@ object ChatPrompts {
 
     @Suppress("ktlint:standard:max-line-length")
     fun checkForTypo(
-        genre: Genre,
+        saga: SagaContent,
         message: String,
-        lastMessage: String?,
+        lastMessage: Message? = null,
     ) = buildString {
-        appendLine("You are a typo fixer. Output a JSON correction only if necessary.")
-        appendLine(toJsonMap(TypoFix::class.java))
-        appendLine("Saga theme: ${genre.name}")
-        appendLine("If OK, status: OK. If error, status: FIX. If betterment, status: ENHANCEMENT.")
-        appendLine("Message:")
-        appendLine(">>> $message")
-        if (!lastMessage.isNullOrBlank()) {
-            appendLine("Previous message for context:")
-            appendLine(">>> $lastMessage")
+        appendLine("# IDENTITY")
+        appendLine("You are the \"Writing Pal\" for Sagas. You are kind, friendly, and have a great sense of humor.")
+        appendLine(
+            "Your job is to subtly help players improve their messages *if needed*, ensuring they fit the story's theme and are clear.",
+        )
+        appendLine("You're like a cool editor who wants the player to shine, not a strict teacher.")
+
+        appendLine("\n# STORY CONTEXT")
+        appendLine(SagaPrompts.mainContext(saga, ommitCharacter = true))
+        appendLine("\n## Conversation Guidelines for ${saga.data.genre.name}:")
+        appendLine(GenrePrompts.conversationDirective(saga.data.genre))
+
+        if (lastMessage != null) {
+            appendLine("\n# RECENT CONTEXT")
+            appendLine("The story just went like this: \"${lastMessage.text}\"")
         }
+
+        appendLine("\n# PLAYER TURN")
+        appendLine("The player wants to say: \"$message\"")
+
+        appendLine("\n# EVALUATION RULES")
+        appendLine(
+            "1. **Status: OK** -> The message is great! It fits the tone, has no glaring typos, and makes sense. No need to suggest anything unless it's a truly brilliant 'ENHANCEMENT'.",
+        )
+        appendLine(
+            "2. **Status: ENHANCEMENT** -> The message is fine, but maybe it's a bit 'modern' for a fantasy setting, or it could be more descriptive. Suggest a version that's more 'in-world' or evocative.",
+        )
+        appendLine(
+            "3. **Status: FIX** -> There's a clear typo that makes it hard to read, or it completely breaks the theme (e.g., talk of 'WiFi' in the 1800s).",
+        )
+
+        appendLine("\n# GUIDELINES for 'friendlyMessage'")
+        appendLine("- Be encouraging! Use phrases like \"Ooh, I love where this is going!\" or \"That's a bold move!\"")
+        appendLine("- Add a little humor. If they made a typo, maybe a light joke about it.")
+        appendLine(
+            "- If suggesting a change because of the theme, explain it gently (e.g., \"Maybe in this world we'd call it a 'spirit-link' instead of a 'phone call'? 😉\")",
+        )
+        appendLine("- Keep it brief. You're just a quick whisper in their ear.")
+
+        appendLine("\n# OUTPUT STRUCTURE")
+        appendLine("You must return a valid JSON matching this structure:")
+        appendLine(toJsonMap(TypoFix::class.java))
     }.trimIndent()
 
     fun generateReactionPrompt(
@@ -172,43 +203,32 @@ object ChatPrompts {
             )
             appendLine("This output is a bridge for other narrative agents. Avoid prose; be clinical and precise.")
 
+            appendLine("\n# NARRATIVE COHERENCE MANDATE")
+            appendLine(
+                "Your summary MUST bridge the gap between the immediate conversation and the broader saga structure. You are the validator of continuity:",
+            )
+            appendLine(
+                "1. **Historical Alignment:** Ensure the `currentLocation` and `charactersPresent` reconcile with the descriptions in `# CONTEXTUAL DATA`. If a character was described as 'trapped in the crypt' in a previous chapter, and they are now in the scene, there MUST have been a message explaining their release.",
+            )
+            appendLine(
+                "2. **Objective Continuity:** The `immediateObjective` should be a logical step toward the `Act Overview` and `Chapter Overview` goals. If the Act's goal is 'Escape the City', the immediate objective shouldn't be 'Go Shopping' unless it's a direct means to escape.",
+            )
+            appendLine(
+                "3. **Event Validation:** Cross-reference `# Recent Activity` with `# Historical Context`. If the latest messages contradict established facts (e.g., a character who died is talking), prioritize historical facts unless a 'World State Change' explicitly revived them.",
+            )
+
             appendLine("\n# CONTEXTUAL DATA")
-            appendLine("## Core Saga Context")
             appendLine(SagaPrompts.mainContext(saga))
 
             saga.currentActInfo?.let { act ->
                 appendLine("\n## Active Segment")
-                appendLine(
-                    act.data.toAINormalize(
-                        listOf(
-                            "id",
-                            "sagaId",
-                            "emotionalReview",
-                            "currentChapterId",
-                        ),
-                    ),
-                )
-                act.currentChapterInfo?.data?.let { chapter ->
-                    appendLine("Chapter ${saga.chapterNumber(chapter)}")
-                    appendLine(
-                        chapter.toAINormalize(
-                            listOf(
-                                "id",
-                                "actId",
-                                "currentEventId",
-                                "coverImage",
-                                "emotionalReview",
-                                "createdAt",
-                                "featuredCharacters",
-                            ),
-                        ),
-                    )
-                }
+                appendLine(act.actSummary(saga))
             }
 
             appendLine("\n## Historical Context")
-            appendLine(TimelinePrompts.timeLineDetails(saga.currentActInfo?.currentChapterInfo))
-            appendLine(ChapterPrompts.chapterSummary(saga))
+            saga.acts.forEach {
+                appendLine(it.actSummary(saga))
+            }
 
             appendLine("\n## Recent Activity")
             appendLine(conversationHistory(saga))
@@ -233,6 +253,9 @@ object ChatPrompts {
             appendLine(
                 "10. **worldStateChanges**: tangible environmental shifts (e.g., 'The door is now locked', 'The alarm is sounding').",
             )
+            appendLine(
+                "11. **relevantPastContext**: A list of crucial past events, secrets, or lore mentioned *during the recent conversation history* that are relevant to understanding the current moment (e.g., 'Player mentioned their dead brother', 'Character X revealed they have the key'). This helps maintain continuity even when old messages rotate out.",
+            )
 
             appendLine("\n# SPATIAL CONTINUITY MANDATE")
             appendLine(
@@ -240,10 +263,9 @@ object ChatPrompts {
             )
 
             appendLine("\n# RULES")
-            appendLine("1. Extract 10 narrative parameters precisely.")
+            appendLine("1. Extract 11 narrative parameters precisely.")
             appendLine("2. Technical/clinical tone only. Use null for unknowns.")
             appendLine("3. Output valid JSON mapping.")
-            appendLine(toJsonMap(SceneSummary::class.java))
         }.trimIndent()
 
     fun scheduledNotificationPrompt(
@@ -305,7 +327,7 @@ object ChatPrompts {
 
     fun conversationHistory(saga: SagaContent) =
         buildString {
-            appendLine("History (Newest First):")
+            appendLine("Conversation History (Newest First):")
             appendLine(
                 saga
                     .flatMessages()

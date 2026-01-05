@@ -11,4 +11,5 @@ data class SceneSummary(
     val spatialContext: String? = null,
     val narrativePacing: String? = "Steady",
     val worldStateChanges: List<String>? = emptyList(),
+    val relevantPastContext: List<String>? = emptyList(),
 )

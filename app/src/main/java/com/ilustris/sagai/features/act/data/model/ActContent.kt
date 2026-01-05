@@ -2,7 +2,9 @@ package com.ilustris.sagai.features.act.data.model
 
 import androidx.room.Embedded
 import androidx.room.Relation
+import com.ilustris.sagai.core.ai.prompts.TimelinePrompts
 import com.ilustris.sagai.core.narrative.UpdateRules
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.chapter.data.model.Chapter
 import com.ilustris.sagai.features.chapter.data.model.ChapterContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -53,6 +55,15 @@ data class ActContent(
                 appendLine(it.data.introduction)
                 appendLine("Overview: ")
                 appendLine(it.data.overview)
+
+                appendLine("Events: ")
+                it.events.forEach {
+                    appendLine(
+                        it.data.toAINormalize(
+                            TimelinePrompts.timelineExclusions,
+                        ),
+                    )
+                }
             }
             appendLine("Overview: ")
             appendLine(data.content)
