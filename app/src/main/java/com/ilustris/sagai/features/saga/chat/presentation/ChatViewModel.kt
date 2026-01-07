@@ -351,6 +351,7 @@ class ChatViewModel
         fun retryAiResponse(message: Message?) {
             val currentSaga = uiState.value.sagaContent ?: return
             viewModelScope.launch(Dispatchers.IO) {
+                updateLoading(true)
                 message?.let {
                     val summary = messageUseCase.getSceneContext(currentSaga).getSuccess()
                     replyMessage(message, summary, false)
