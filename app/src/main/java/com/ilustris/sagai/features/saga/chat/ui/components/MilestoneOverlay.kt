@@ -222,11 +222,13 @@ fun MilestoneOverlay(
                         verticalArrangement = Arrangement.spacedBy(16.dp),
                     ) {
                         if (milestone is SagaMilestone.NewCharacter) {
-                            CharacterAvatar(
-                                milestone.character,
-                                genre = genre,
-                                modifier = Modifier.size(120.dp),
-                            )
+                            if (milestone.character.image.isNotEmpty()) {
+                                CharacterAvatar(
+                                    milestone.character,
+                                    genre = genre,
+                                    modifier = Modifier.size(120.dp),
+                                )
+                            }
                         }
 
                         Text(

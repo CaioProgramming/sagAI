@@ -191,6 +191,7 @@ class ChatViewModel
                 }
 
                 is ChatUiAction.DismissMilestone -> {
+                    sagaContentManager.dismissMilestone()
                     stateManager.updateMilestone(null)
                 }
             }

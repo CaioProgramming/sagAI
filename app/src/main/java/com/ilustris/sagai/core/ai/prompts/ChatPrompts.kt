@@ -59,6 +59,7 @@ object ChatPrompts {
             "smartZoom",
             "events",
             "relationships",
+            "knowledge",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -103,6 +104,7 @@ object ChatPrompts {
         appendLine("\n# STORYTELLING DIRECTIVES")
         appendLine(StorytellingDirective.NPC_AGENCY_AND_REALISM)
         appendLine(StorytellingDirective.MOBILE_CHAT_COHERENCE)
+        appendLine(StorytellingDirective.CONTINUITY_AND_FACTS)
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
 
         appendLine("\n# CURRENT PLAYER TURN")
@@ -256,6 +258,9 @@ object ChatPrompts {
             appendLine(
                 "11. **relevantPastContext**: A list of crucial past events, secrets, or lore mentioned *during the recent conversation history* that are relevant to understanding the current moment (e.g., 'Player mentioned their dead brother', 'Character X revealed they have the key'). This helps maintain continuity even when old messages rotate out.",
             )
+            appendLine(
+                "12. **establishedFacts**: A list of key facts established throughout the *entire story history* that are relevant to the current context. This acts as a 'continuity anchor' to ensure the narrative moves forward. Include things the player/characters definitely know (e.g., 'The artifact is broken', 'The killer's identity is revealed'). If a fact is listed here, it must be treated as COMMON KNOWLEDGE and NEVER re-explained or treated as a new discovery.",
+            )
 
             appendLine("\n# SPATIAL CONTINUITY MANDATE")
             appendLine(
@@ -263,7 +268,7 @@ object ChatPrompts {
             )
 
             appendLine("\n# RULES")
-            appendLine("1. Extract 11 narrative parameters precisely.")
+            appendLine("1. Extract 12 narrative parameters precisely.")
             appendLine("2. Technical/clinical tone only. Use null for unknowns.")
             appendLine("3. Output valid JSON mapping.")
         }.trimIndent()

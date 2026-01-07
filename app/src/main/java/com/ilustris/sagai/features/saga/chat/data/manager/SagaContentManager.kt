@@ -59,6 +59,10 @@ interface SagaContentManager {
 
     suspend fun reviewChapter(chapterContent: ChapterContent)
 
+    val isMilestoneActive: StateFlow<Boolean>
+
+    fun dismissMilestone()
+
     suspend fun updatePlaytime(
         sagaId: Int,
         timeInMillis: Long,

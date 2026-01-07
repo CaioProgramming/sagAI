@@ -73,4 +73,12 @@ object StorytellingDirective {
         3. **Conversational Flow:** Dialogue should feel natural and immediate. Narrative descriptions should be vivid but concise—focus on one strong sensory detail rather than a long list.
         4. **NPC Engagement:** NPCs should speak like real people in a chat—no long-winded monologues unless the character is specifically designed to be loquacious.
     """
+
+    const val CONTINUITY_AND_FACTS = """
+        ## CONTINUITY & FACTUAL INTEGRITY
+        1. **Fact Checking:** Before generating a response, cross-reference your plan with the `establishedFacts` and `relevantPastContext`. It is a CRITICAL ERROR to contradict these facts.
+        2. **No Regression:** Do not present known information as new. If a fact is established, treat it as common knowledge among the characters present.
+        3. **Logical consistency:** Ensure that the actions and dialogue are consistent with the current `worldStateChanges` (e.g., if the door is locked, a character cannot simply walk through it).
+        4. **Memory Retention:** Characters should remember significant past events mentioned in `relevantPastContext`. Use this to add depth to their interactions.
+    """
 }

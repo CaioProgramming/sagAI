@@ -40,7 +40,13 @@ object CharacterPrompts {
                     "smartZoom",
                 )
             appendLine("CURRENT SAGA CAST OVERVIEW:")
-            appendLine(characters.normalizetoAIItems(characterExclusions))
+            characters.forEach { character ->
+                appendLine(character.name)
+                appendLine(character.toAINormalize(characterExclusions))
+                if (character.knowledge.isNotEmpty()) {
+                    appendLine("  knowledge: ${character.knowledge}")
+                }
+            }
         }
 
     fun characterGeneration(
@@ -393,5 +399,34 @@ object CharacterPrompts {
             "7. The goal is to give the reader a deep understanding of 'who this character is now' in the context of the ongoing story.",
         )
         appendLine("8. Respond ONLY with the resume text. No intro, no outro.")
+    }.trimIndent()
+
+    fun knowledgeUpdatePrompt(
+        event: Timeline,
+        characters: List<Character>,
+    ) = buildString {
+        appendLine(
+            "You are a Character Development AI. Your task is to update the 'knowledge' of specific characters based on a recent event.",
+        )
+        appendLine("We need to know what NEW significant facts each character has learned.")
+        appendLine()
+        appendLine("## INPUT DATA")
+        appendLine("### The Event (Timeline):")
+        appendLine(event.toJsonFormatExcludingFields(listOf("id", "chapterId")))
+        appendLine()
+        appendLine("### Characters Present:")
+        appendLine(characters.normalizetoAIItems(ChatPrompts.characterExclusions))
+        appendLine()
+        appendLine("## INSTRUCTIONS")
+        appendLine("1. Analyze the event description/content.")
+        appendLine("2. For each character listed above, determine if they learned any *NEW, PERMANENT, and SIGNIFICANT* facts.")
+        appendLine("   - Significant: 'The King is dead', 'Anya has the key', 'The monster is weak to fire'.")
+        appendLine("   - Trivial (IGNORE): 'Walked to the door', 'Said hello', 'Is feeling sad'.")
+        appendLine("3. If a character wasn't involved or learned nothing new, exclude them.")
+        appendLine("4. Return a JSON map where the Key is the Character Name and the Value is a List of Strings (the new facts).")
+        appendLine()
+        appendLine("## OUTPUT FORMAT")
+        appendLine("Strictly JSON format: { \"CharacterName\": [\"Fact 1\", \"Fact 2\"] }")
+        appendLine("Example: { \"Anya\": [\"Discovered the secret passage\"], \"Marcus\": [\"Learned that Anya is a spy\"] }")
     }.trimIndent()
 }
