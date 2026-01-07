@@ -31,6 +31,6 @@ interface CharacterDao {
         sagaId: Int,
     ): Character?
 
-    @Query("SELECT name FROM Characters")
+    @Query("SELECT TRIM(name || ' ' || IFNULL(lastName, '')) FROM Characters")
     suspend fun getAllCharacterNames(): List<String>
 }

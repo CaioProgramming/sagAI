@@ -210,6 +210,7 @@ fun MorphShape(modifier: Modifier) {
 fun SagaTitle(
     modifier: Modifier = Modifier,
     textStyle: TextStyle = MaterialTheme.typography.titleLarge,
+    iconModifier: Modifier = Modifier,
 ) {
     val appName = stringResource(R.string.home_title).uppercase()
     val charToReplace = 'A'
@@ -235,13 +236,14 @@ fun SagaTitle(
                     Placeholder(
                         width = textStyle.fontSize * .8f,
                         height = textStyle.fontSize * 1.1f,
-                        placeholderVerticalAlign = PlaceholderVerticalAlign.Center, // Changed here
+                        placeholderVerticalAlign = PlaceholderVerticalAlign.Center,
                     ),
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_spark),
-                        contentDescription = null, // Accessibility handled by alternateText
-                        tint = LocalContentColor.current, // Inherits color from Text composable
+                        contentDescription = null,
+                        tint = LocalContentColor.current,
+                        modifier = iconModifier,
                     )
                 },
         )

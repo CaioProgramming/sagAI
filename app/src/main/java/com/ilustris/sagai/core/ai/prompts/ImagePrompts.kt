@@ -88,7 +88,10 @@ object ImagePrompts {
                 "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
             )
             appendLine(
-                "- **Subject Orientation:** The 'subject_orientation' parameter defines the subject's rotation relative to the camera. Describe this explicitly (e.g., 'The character is facing forward', 'The character is turned 3/4 to the left', 'Profile view facing right').",
+                "- **Subject Orientation:** The 'subject_orientation' parameter defines the subject's rotation relative to the camera. Describe this explicitly (e.g., 'The character is facing forward', 'The character is turned 3/4 to the left', 'Profile view facing right'). **IMPORTANT:** Rotation directions (Left/Right) are relative to the screen.",
+            )
+            appendLine(
+                "- **Form & Posture:** The 'form_and_posture' parameter defines the subject's physical state. Translate this into descriptive actions and shapes (e.g., 'leaning contemplatively with the head resting on the hand', 'sitting with an elegant, vertical posture'). This is critical for capturing the weight and tension of the moment.",
             )
             appendLine(
                 "- **Cinematographic Precision:** Use technical codes and precise angles where possible (e.g., 'FS: Full-Body', 'Low-Angle Dutch Tilt 10°').",
@@ -232,7 +235,7 @@ object ImagePrompts {
             appendLine()
             appendLine("OUTPUT STRUCTURE (START DIRECTLY WITH PARAMETERS):")
             appendLine()
-            appendLine("16 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]'):")
+            appendLine("17 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]'):")
             appendLine()
             appendLine(
                 "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle / worm's-eye view / bird's-eye view]. DEFINE the CAMERA'S position relative to the PRIMARY SUBJECT(S). EXAMPLE: For greater precision, use descriptors like 'Low-Angle Dutch Tilt 10°' or 'High-Angle 30° POV'.",
@@ -264,7 +267,10 @@ object ImagePrompts {
             )
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
             appendLine(
-                "16. SUBJECT_ORIENTATION: [Front-facing / 3/4 turn left/right / Profile left/right / Back-facing]. CRITICAL PRECISION: Distinguish strictly between 3/4 and Profile (Profile = 90deg turn, 1 eye visible vs 3/4 = angled, far side partially visible). Define rotation relative to lens for ALL PRINCIPAL SUBJECTS.",
+                "16. SUBJECT_ORIENTATION: [Front-facing / 3/4 turn left/right / Profile left/right / Back-facing]. CRITICAL PRECISION: 'Left/Right' refers to the direction the subject is facing relative to the FRAME (e.g., '3/4 turn right' means facing towards the right side of the screen). If head and body orientations differ, specify both: 'Body facing left, Head 3/4 turn right'.",
+            )
+            appendLine(
+                "17. FORM & POSTURE: [Describe the subject's physical state: leaning / reclining / crouching / head-tilt / weight-on-one-leg]. Focus on geometric shapes and physical tension (e.g., 'Diagonal shoulder line leaning head on hand', 'Vertical subject tension').",
             )
             appendLine()
             appendLine("VISIBILITY ANALYSIS:")

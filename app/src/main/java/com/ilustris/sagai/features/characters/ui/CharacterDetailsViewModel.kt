@@ -71,6 +71,7 @@ class CharacterDetailsViewModel
             sagaContent: SagaContent,
             characterContent: CharacterContent,
         ) {
+            if (characterResume.value != null) return
             viewModelScope.launch(Dispatchers.IO) {
                 isSummarizing.value = true
                 characterUseCase

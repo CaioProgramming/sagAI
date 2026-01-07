@@ -367,13 +367,13 @@ object GenrePrompts {
             CRIME -> {
                 buildString {
                     appendLine(
-                        "Art Technique: 18th-CENTURY BAROQUE & NEOCLASSICAL OIL PAINTING (Modern Academic Realism).",
+                        "Art Technique: HIGH-RENAISSANCE MASTERPIECE & 19th-CENTURY ACADEMIC PERFECTION (Divine Realism).",
                     )
                     appendLine(
                         "Key Lighting Style: MASTERFUL VOLUMETRIC LIGHTING & GOLDEN HOUR BLOOM. High-contrast subjects defined by rich Chiaroscuro and warm, radiant coastal light.",
                     )
                     appendLine(
-                        "Texture / Materiality: RAW OIL ON CANVAS. Visible, confident brushwork emphasizing the materiality of the medium. Use heavy impasto for highlights and thin, transparent glazes for depth. The artwork must feel 'hand-painted' with a physical surface quality, avoiding smooth digital gradients or airbrushed finishes.",
+                        "Texture / Materiality: POLISHED ACADEMIC OIL. Seamless sfumato transitions, marble-like skin luster, and 'invisible' brushwork. The surface must feel like a divine masterpiece, perfectly smooth where light hits skin, yet retaining the depth of classical multi-layered glazing. Avoid any 'raw' or 'heavy' texture that disrupts the divine perfection.",
                     )
                     appendLine(
                         "Aesthetic Era / Influence: High Renaissance masters (e.g., Leonardo, Raphael, Titian) merged with the SLEEK GLAMOUR of ART DECO and modern high-end aesthetics.",
@@ -386,19 +386,22 @@ object GenrePrompts {
                         "- Perfect Anatomy: ABSOLUTE adherence to classical proportions, skeletal structure, and realistic weight distribution. NO cartoonish proportions, no exaggerated muscles, no stylized features. The figure must be as anatomically precise as a High Renaissance medical study.",
                     )
                     appendLine(
-                        "- Pure Raw Style: Aims for absolute perfection in form but retains the 'raw' feel of oil on canvas. Capture the dignified, realistic, and unrefined essence of the subject. The human form is the highlight of the artwork.",
+                        "- Divine Perfection: Aims for absolute, unblemished perfection in form. Subjects should feel like living Greek statues—noble, serene, and physically flawless, capturing the 'Divine Essence' of elite beauty.",
                     )
                     appendLine(
                         "- Hand & Gesture Precision: Hands must be rendered with anatomical mastery, showing tendons, knuckles, and realistic skin folds. Poses must reflect natural tension and relaxation.",
                     )
                     appendLine()
-                    appendLine("**COLOR PALETTE & ACCENT:**")
+                    appendLine("**COLOR PALETTE & NATURAL SATURATION (CRITICAL):**")
                     appendLine(
-                        " - Base: NOBLE & SOPHISTICATED. Rich Crimson, Deep Navy, Champagne Gold, and shades of Alabaster and Charcoal.",
+                        " - Base Pigments: NOBLE, MATTE & SOPHISTICATED. Rich Crimson, Deep Navy, Champagne Gold, and shades of Alabaster and Charcoal. Use NATURAL, earthy pigments reminiscent of historical oil paintings. Avoid fluorescent or neon tones.",
+                    )
+                    appendLine(
+                        " - Saturation Rule: Maintain a realistic, slightly muted saturation level. The image must feel organic and grounded in reality, NOT ultra-vibrant or digitally enhanced.",
                     )
                     appendLine(" - Mandatory Accent: HOT PINK (#E91E63).")
                     appendLine(
-                        " - Application: Integrate this 'Modern Neon' Hot Pink organically into the Renaissance setting. It should appear as high-fashion silk, sunset-drenched hazy skies, or subtle Art Deco neon reflections—creating a bridge between the 15th century and modern coastal vice.",
+                        " - Application: Integrate this 'Modern Neon' Hot Pink organically and SPARINGLY. It should appear as high-fashion silk, sunset-drenched hazy skies, or subtle Art Deco neon reflections. It is a refined accent, not a dominant wash. The transition between the classical palette and the pink must be soft and masterfully blended.",
                     )
                     appendLine()
                     appendLine(
@@ -428,10 +431,13 @@ object GenrePrompts {
                     )
                     appendLine()
                     appendLine(
-                        "Mood: A Glamorous masterpiece. The intersection of Art Deco opulence, 18th-century European painting gravitas, and DIVINE LIGHTING.",
+                        "Mood: A Glamorous masterpiece. The intersection of Art Deco opulence, 19th-century European academic gravitas, DIVINE LIGHTING, and POLISHED PERFECTION.",
                     )
                     appendLine(
-                        "Ambience: A sun-drenched coastal paradise. Emphasize the 'Golden Hour Mirage': endless turquoise seas, shimmering luxury pools catching intense volumetric bloom, and beachfront architecture softened by a warm, humid coastal haze. The 'paradise' feel is achieved through the DIVINE QUALITY OF LIGHT filtering through the scene, creating prismatic refractions and glowing highlights.",
+                        "Ambience: A tropical coastal paradise reflecting the essence of Miami Vice. Emphasize the 'Golden Hour Mirage': endless turquoise seas, rhythmic crystal waves, and shimmering luxury pools catching intense volumetric bloom. The environment MUST be lush with tropical flora: towering palm trees, vibrant hibiscuses, and exotic greenery softened by a warm, humid coastal haze.",
+                    )
+                    appendLine(
+                        "Mandatory Tropical Tropes: Integrate Art Deco beachfront architecture, sleek yachts reclining on the horizon, marble-lined poolside lounges, and the specific golden-orange glow of a coastal sunset. The 'paradise' feel is achieved through the DIVINE QUALITY OF LIGHT filtering through these tropical elements, creating prismatic refractions and glowing highlights.",
                     )
                     appendLine()
                     appendLine("**DIVINE EXPRESSION & ELITE SUPERIORITY (CRITICAL):**")
@@ -450,10 +456,10 @@ object GenrePrompts {
                     appendLine()
                     appendLine("**AUTONOMOUS FIX PATTERNS:**")
                     appendLine(
-                        "If prompt contains: cartoonized, stylized, stylized proportions → REPLACE with classical anatomy, perfect proportions, Renaissance realism",
+                        "If prompt contains: cartoonized, stylized, stylized proportions → REPLACE with classical anatomy, perfect proportions, divine masterpiece realism",
                     )
                     appendLine(
-                        "If prompt contains: smooth digital shading, plastic texture → REPLACE with raw oil painting texture, visible brushwork, glazing depth",
+                        "If prompt contains: smooth digital shading, plastic texture, heavy brushwork → REPLACE with polished academic oil texture, seamless sfumato, multi-layered glazing depth",
                     )
                     appendLine(
                         "If missing Art Deco/Glamour → INTEGRATE sleek geometric lines, gold accents, and hazy, dreamy atmospheric lighting",
@@ -1266,6 +1272,782 @@ object GenrePrompts {
                     appendLine(
                         "    * Formality: Dialogue should be respectful and often formal, reflecting the hierarchical society. Use honorifics where appropriate (e.g., \"-san,\" \"-sama\").",
                     )
+                    appendLine("    * Phrasing: Sentences are often concise and deliberate. Avoid unnecessary words.")
+                    appendLine("    * Profanity (Conditional): Extremely rare. Insults are more about dishonor than vulgarity.")
+                    appendLine()
+                    appendLine("2.  Tone & Delivery:")
+                    appendLine(
+                        "    * Reserved & Disciplined: Characters speak with restraint and precision. Emotion is shown through subtext, not overt displays.",
+                    )
+                    appendLine("    * Tense & Mysterious: A constant undercurrent of suspicion, hidden motives, and political intrigue.")
+                    appendLine("    * Respectful & Traditional: Speech reflects a deep respect for tradition, duty, and honor.")
+                    appendLine("    * Pacing: Dialogue can be slow and measured, with meaningful pauses.")
+                    appendLine()
+                    appendLine("3.  Narrative Voice:")
+                    appendLine(
+                        "    * Descriptions should focus on atmosphere—the rustle of bamboo, the glint of a blade in moonlight, the quiet tension of a room.",
+                    )
+                    appendLine("    * Maintain a sense of quiet grace and lethal potential.")
+                }.trimIndent()
+            }
+
+            COWBOY -> {
+                buildString {
+                    appendLine("This directive defines the linguistic style for the Cowboys genre.")
+                    appendLine("NPCs and narrative voice should be laconic, stoic, and flavored with Western slang.")
+                    appendLine()
+                    appendLine("1. Language & Vocabulary:")
+                    appendLine(
+                        "    * Terminology: Use Western slang (e.g., \"reckon\", \"howdy\", \"yonder\", \"fixin' to\", \"varmint\").",
+                    )
+                    appendLine("    * Formality: Casual but respectful (e.g., \"Ma'am\", \"Sir\").")
+                    appendLine("    * Phrasing: Simple, direct, and often colorful idioms.")
+                    appendLine()
+                    appendLine("2. Tone & Delivery:")
+                    appendLine("    * Laconic & Stoic: Characters speak only when necessary. \"Strong silent type\".")
+                    appendLine("    * Drawl: Implied slow, deliberate speech pattern.")
+                    appendLine("    * Grit: A sense of toughness and resilience.")
+                    appendLine()
+                    appendLine("3. Narrative Voice:")
+                    appendLine("    * Descriptions should emphasize the harshness and beauty of the frontier.")
+                    appendLine("    * Focus on sensory details: heat, dust, the smell of leather and horses.")
+                }.trimIndent()
+            }
+
+            PUNK_ROCK -> {
+                buildString {
+                    appendLine("This directive defines the specific linguistic style for the Punk Rock genre.")
+                    appendLine(
+                        "NPCs and narrative voice should reflect confident, rebellious, and energetic youth culture with music as a central theme.",
+                    )
+                    appendLine()
+                    appendLine("1. Language & Vocabulary:")
+                    appendLine(
+                        "    * Terminology: Music culture terminology (gig, jam, beat, riff, distortion, reverb, amplifier, stage, crowd, vibe).",
+                    )
+                    appendLine(
+                        "    * Contemporary Street Slang: Use modern, casual slang authentically (avoiding overly trendy terms that will date quickly).",
+                    )
+                    appendLine(
+                        "    * Band/Music References: Characters may reference bands, songs, concerts, or music genres naturally in dialogue.",
+                    )
+                    appendLine("    * Youth Culture Terms: Terms reflecting teenage/young adult experience, independence, creativity.")
+                    appendLine(
+                        "    * Formality: Minimal to none. Dialogue is informal, conversational, direct. No \"sir/ma'am\" unless ironic.",
+                    )
+                    appendLine(
+                        "    * Profanity (Conditional): Moderate profanity is acceptable to reflect authenticity of youth culture and rebellious spirit. Use strategically, not gratuitously.",
+                    )
+                    appendLine()
+                    appendLine("2. Tone & Delivery:")
+                    appendLine(
+                        "    * Confident & Rebellious: Characters speak with conviction and a defiant edge. They question authority and embrace individuality.",
+                    )
+                    appendLine(
+                        "    * Irreverent & Playful: Humor is sarcastic, witty, self-deprecating. Characters don't take themselves too seriously.",
+                    )
+                    appendLine(
+                        "    * Passionate: When discussing music, art, or causes they care about, characters become animated and intense.",
+                    )
+                    appendLine(
+                        "    * Fast-Paced & Energetic: Dialogue is quick, dynamic, reflecting the energy of live music and youth culture.",
+                    )
+                    appendLine(
+                        "    * Authentic & Real: Dialogue should feel genuine to how teenagers/young adults actually speak—casual, stream-of-consciousness, with interruptions and tangents.",
+                    )
+                    appendLine()
+                    appendLine("3. Narrative Voice:")
+                    appendLine(
+                        "    * Descriptions should be vivid and energetic, focusing on sensory details: the roar of crowd, the crunch of amplifiers, the smell of a crowded venue, sweat and electricity.",
+                    )
+                    appendLine(
+                        "    * Emphasize movement, dynamism, and visual energy—people dancing, musicians performing, creative expression in action.",
+                    )
+                    appendLine(
+                        "    * Maintain a sense of youthful optimism mixed with edgy rebellion—idealism tempered with street-smart attitude.",
+                    )
+                    appendLine("    * The narrative should capture the exhilaration and freedom of music and creative self-expression.")
+                }.trimIndent()
+            }
+        }
+
+    /**
+     * Get the reviewer strictness level for a specific genre.
+     * Based on how rigid the art style requirements are.
+     */
+    fun reviewerStrictness(genre: Genre): com.ilustris.sagai.core.ai.model.ReviewerStrictness =
+        when (genre) {
+            // STRICT: Cartoon styles with specific anatomical requirements
+            PUNK_ROCK -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.STRICT
+
+            HORROR -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.STRICT
+
+            // CONSERVATIVE: Stylized but with some flexibility
+            CYBERPUNK -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
+
+            HEROES -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.STRICT
+
+            SPACE_OPERA -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
+
+            SHINOBI -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.CONSERVATIVE
+
+            // LENIENT: Traditional art with organic flexibility
+            FANTASY -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.LENIENT
+
+            CRIME -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.LENIENT
+
+            COWBOY -> com.ilustris.sagai.core.ai.model.ReviewerStrictness.LENIENT
+        }
+
+    /**
+     * Extract validation rules from the art style for the reviewer.
+     * Provides structured data about what's banned, required, and allowed.
+     */
+    private fun getHexPalette(genre: Genre): String =
+        genre.colorPalette().joinToString(", ") {
+            "#%06X".format(0xFFFFFF and it.toArgb())
+        }
+
+    fun validationRules(genre: Genre): String =
+        when (genre) {
+            PUNK_ROCK -> {
+                val palette = getHexPalette(genre)
+                """
+                **CRITICAL VALIDATION RULES FOR PUNK_ROCK:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
+                
+                BANNED TERMS (ZERO TOLERANCE):
+                - Realistic eye colors: 'brown eyes', 'blue eyes', 'green eyes', 'cast [color] eyes', 'piercing eyes', 'iris', 'pupils', 'natural eyes'
+                - Realistic anatomy: 'realistic proportions', 'soft skin', 'porcelain skin', 'photorealistic', 'lifelike'
+                - Soft lighting: 'soft lighting', 'soft and diffused', 'gentle gradient', 'subtle glow', 'volumetric'
+                - Empty backgrounds: 'plain background', 'gradient background', 'solid color background', 'white background', 'isolated portrait'
+                
+                REQUIRED ELEMENTS:
+                - Eyes MUST be ONE of: 'gorillaz like eyes', 'simple black eyes with black pupil with stylized outline' (describe creatively), 'full white eyes with no pupil', or 'black void eyes'
+                - Eyes MUST EXPRESS character emotion: melancholic, rebellious, cool, detached, chaotic, etc.
+                - Background MUST include 3+ specific objects: 'graffiti wall', 'amp stack', 'neon sign', 'band posters', 'brick wall', etc.
+                - Proportions MUST be: 'cartoon proportions', 'exaggerated limbs', 'angular features', 'stylized'
+                - Shading MUST be: 'hard cel-shading', 'flat shadows', 'stark contrast', 'graphic blocks'
+                
+                ACCENT COLOR ENFORCEMENT (MAJOR):
+                - Mandatory Accent: ACID GREEN / TOXIC YELLOW
+                - Application: Environment ONLY (neon signs, graffiti, amp lights)
+                - Prompt MUST mention: 'acid green', 'toxic yellow', 'neon green', 'lime green glow', or similar environmental accent
+                - If missing accent → MAJOR VIOLATION: Add environmental green/yellow accent (e.g., 'acid green neon sign', 'toxic yellow graffiti tag')
+                
+                BACKGROUND ENFORCEMENT (CRITICAL):
+                - EVERY image MUST have detailed environment - NO EXCEPTIONS
+                - Portrait/Close-up: Background adapted (wall, neon glow, posters visible behind head)
+                - If prompt says 'plain', 'gradient', 'solid color', or 'empty' background → CRITICAL VIOLATION
+                - Reviewer MUST add specific environment (garage/alley/stage/rooftop/record shop/street corner)
+                
+                EYE EXPRESSIVENESS ENFORCEMENT (CRITICAL):
+                - Eyes are NOT generic design elements - they MUST complement and enhance character emotion
+                - If eye description is vague or disconnected from character mood → CORRECTION REQUIRED
+                - If choosing between the 3 eye options: Verify that chosen style matches character archetype (stylized for unique personality, white for detached/mysterious, void for rebellious/intense)
+                - Eyes should be a KEY VISUAL EXPRESSION of attitude and emotion
+                
+                AUTONOMOUS FIX PATTERNS:
+                - If contains: realistic eyes, natural eye colors → REPLACE with: ONE of three creative options (stylized/white-no-pupil/void) that matches character
+                - If eyes are generic/unexpressive → ENHANCE description and ensure emotion is conveyed through eye choice
+                - If contains: soft skin, photorealistic → REPLACE with: cartoon style, exaggerated proportions
+                - If contains: soft lighting, gentle gradients, realistic rendering → REPLACE with: harsh cel-shading, flat shadows, stark contrast
+                - If contains: plain/gradient background, white background → ADD: specific environment with 3+ objects (amp stack, graffiti wall, neon sign, band posters, brick wall, etc.)
+                - If contains: no acid green/yellow → INTEGRATE: acid green neon sign OR toxic yellow graffiti tag in environment
+                - If animation/video game/anime references appear inconsistently → STANDARDIZE to: Gorillaz/KND cartoon style throughout
+                """.trimIndent()
+            }
+
+            HORROR -> {
+                val palette = getHexPalette(genre)
+                """
+                **CRITICAL VALIDATION RULES FOR HORROR:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
+                
+                BANNED TERMS:
+                - Modern rendering: 'photorealistic', '3D render', 'smooth gradients', 'high-res textures'
+                - Vibrant colors: avoid bright, saturated colors outside the dark/pale blue palette
+                - Empty backgrounds: 'plain background', 'gradient background', 'empty void', 'isolated figure'
+                
+                REQUIRED ELEMENTS:
+                - Art style MUST mention: '32-BIT PIXEL ART', 'BLOCKY SHADING', 'PS1/SEGA SATURN aesthetic'
+                - Texture MUST be: 'pixelated', 'retro game art', 'low-resolution'
+                - Palette MUST be: 'limited dark and pale blue', 'ash gray', 'faded cerulean'
+                - Background MUST include eerie environment: abandoned hospital, decrepit house, foggy street, dark forest, etc.
+                
+                ACCENT COLOR ENFORCEMENT (MAJOR):
+                - Mandatory Accent: ASH GRAY / FADED CERULEAN BLUE
+                - Application: Subtle highlights, reflections, chilling atmosphere
+                - Prompt should mention: 'ash gray highlights', 'faded cerulean', 'pale blue glow', 'cold gray tones', or similar eerie accents
+                - If missing → MAJOR VIOLATION: Add subtle accent (e.g., 'faded cerulean glow', 'ash gray highlights on edges')
+                
+                BACKGROUND ENFORCEMENT (CRITICAL):
+                - EVERY image MUST have detailed horror environment - NO EXCEPTIONS
+                - Describe 3+ specific eerie elements (flickering lights, peeling walls, swirling mist, etc.)
+                - If prompt lacks environmental details → CRITICAL VIOLATION, reviewer adds horror setting
+                
+                AUTONOMOUS FIX PATTERNS:
+                - If contains: photorealistic, smooth gradients, high-res textures, 3D render → REPLACE with: 32-bit pixel art, blocky shading, retro game aesthetic
+                - If contains: bright vibrant colors → REPLACE with: dark blues, pale blues, ash greys only
+                - If contains: gore, explicit violence → SHIFT to: psychological horror, subtle unease, atmosphere over explicit detail
+                - If contains: plain background, gradient background, empty void, isolated figure → ADD: detailed eerie environment (abandoned hospital/decrepit house/foggy street/dark forest/tunnel/graveyard)
+                - If missing oppressive mood → ADD: heavy shadows, volumetric fog, low-key lighting, claustrophobic framing
+                - If missing accent colors → INTEGRATE: ash gray highlights OR faded cerulean glow in shadows/reflections
+                """
+            }
+
+            CYBERPUNK -> {
+                val palette = getHexPalette(genre)
+                """
+                **CRITICAL VALIDATION RULES FOR CYBERPUNK:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
+                
+                BANNED TERMS:
+                - Modern techniques: '3D CGI', 'photorealism', 'digital smoothing', 'Unreal Engine', 'volumetric lighting'
+                - Bright neon: 'bright fluorescent pink', 'bright purple' (only DEEP purple allowed)
+                - Soft rendering: 'soft gradients', 'ambient occlusion', 'subsurface scattering'
+                - Empty backgrounds: 'plain background', 'gradient background', 'empty void'
+                
+                REQUIRED ELEMENTS:
+                - Art style MUST mention: '1980s Anime OVA', 'Cel Animation', 'FLAT SHADING'
+                - Shadows MUST be: 'hard-edged blocks', 'cel-shaded', 'no soft gradients'
+                - Colors MUST be: 'muted blue tones', 'slate blue', 'cold steel', 'DEEP purple accent'
+                - Lighting MUST be: 'high-contrast Rembrandt', 'hard rim light', 'cast shadows'
+                - Background MUST include cyberpunk environment: neon signs, holographic ads, tech infrastructure, etc.
+                
+                ACCENT COLOR ENFORCEMENT (MAJOR):
+                - Mandatory Accent: DEEP PURPLE (NOT bright/fluorescent)
+                - Application: Deep shadow casting, low-light environmental glow, muted interface lights
+                - Prompt MUST mention: 'deep purple', 'bruised purple', 'dark violet', 'metallic purple shadows', or similar muted purple
+                - FORBIDDEN: 'bright purple', 'neon purple', 'fluorescent purple', 'hot pink'
+                - If missing or wrong → MAJOR VIOLATION: Add/correct to deep muted purple (e.g., 'deep purple shadow casting', 'bruised violet glow')
+                
+                BACKGROUND ENFORCEMENT (CRITICAL):
+                - EVERY image MUST have detailed cyberpunk environment
+                - Describe 3+ specific elements (neon signs, data screens, cables, rain-slicked pavement, etc.)
+                - If prompt lacks environmental details → MAJOR VIOLATION, reviewer adds cyberpunk setting
+
+                AUTONOMOUS FIX PATTERNS:
+                - If contains: modern anime, bright/fluorescent colors, smooth gradients → REPLACE with: 1980s OVA cel style, muted blues, hard cel shading
+                - If contains: photorealism, smooth blending, 3D rendering, Unreal Engine → REPLACE with: flat cel shading, hard shadows, analog film grain
+                - If contains: bright pink, neon colors (not deep purple) → REPLACE with: muted purples, bruised tones, metallic purple shades
+                - If contains: soft lighting, gradient shadows → REPLACE with: high-contrast Rembrandt lighting, hard-edged cast shadows, strong rim light
+                - If contains: plain/gradient background, empty void → ADD: detailed cyberpunk environment (neon street/corporate interior/undercity slums/tech lab/rooftop/transit hub)
+                - If eyes lack expression or detail → ENSURE: large anime eyes with prominent specular highlights per facial features specs
+                """
+            }
+
+            HEROES -> {
+                val palette = getHexPalette(genre)
+                """
+                **VALIDATION RULES FOR HEROES:**
+
+                GLOBAL COLOR PALETTE (CRITICAL):
+                - The image MUST be cohesive with the following color palette: $palette
+                - These colors must be reflected in the environment, lighting, and overall artwork.
+                
+                BANNED TERMS:
+                - Avoid: forced night scenes (prefer dynamic daytime/sunset)
+                - Empty backgrounds: 'plain background', 'gradient background', 'isolated figure'
+                
+                REQUIRED ELEMENTS:
+                - Art style: 'Modern comic book art', 'bold ink lines', 'dynamic foreshortening'
+                - Environment: 'vast cityscapes', 'towering skyscrapers', 'dizzying perspectives'
+                - Colors: 'dynamic urban palette' with 'subtle electric blue accent'
+                - Background MUST emphasize urban scale and vertical architecture
+                
+                ACCENT COLOR ENFORCEMENT (MODERATE):
+                - Mandatory Accent: SUBTLE ELECTRIC BLUE
+                - Application: Sky details, glass/water reflections, subtle RIM LIGHTING, or small details on accessories/tech
+                - Should be UNIFYING element, NOT dominant wash
+                - Prompt should mention: 'electric blue sky', 'blue glass reflections', 'subtle blue rim light', or similar atmospheric blue
+                - If missing → MODERATE VIOLATION: Suggest blue accent in sky or reflections (e.g., 'electric blue sky tones', 'glass catching blue light')
+                
+                BACKGROUND ENFORCEMENT (MAJOR):
+                - EVERY image MUST have detailed urban environment
+                - Describe cityscape with towering buildings, dizzying perspectives
+                - If prompt lacks environmental context → MAJOR VIOLATION, reviewer adds urban setting
+                
+                AUTONOMOUS FIX PATTERNS:
+                - If contains: photorealism, hyper-detailed realistic rendering → REPLACE with: comic book stylization, bold ink lines, illustrated aesthetics
+                - If contains: fantasy elements, medieval setting, castles → REPLACE with: modern urban/futuristic architecture, contemporary tech, cityscape
+                - If accent color is missing or weak → INTEGRATE: subtle electric blue in sky details, reflections on glass/water, rim lighting on character edges
+                - If contains: plain/gradient background, isolated figure → ADD: detailed urban environment (tall buildings, perspective, street elements, atmospheric depth)
+                - If lacking heroic verticality or scale → REFRAME: emphasize looking up at towering buildings, high vantage points, vast cityscapes, dizzying perspectives
+                """
+            }
+
+            SPACE_OPERA -> {
+                val palette = getHexPalette(genre)
+                buildString {
+                    appendLine("**VALIDATION RULES FOR SPACE_OPERA:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
+                    appendLine()
+                    appendLine("BANNED TERMS:")
+                    appendLine("- Avoid: 'primitive rockets', 'simple tube rockets', 'basic spacecraft'")
+                    appendLine("- Empty backgrounds: 'plain background', 'void', 'empty space' (without cosmic detail)")
+                    appendLine()
+                    appendLine("REQUIRED ELEMENTS:")
+                    appendLine("- Art style: '1950s Atomic Age illustration', 'gouache/oil', 'painterly finish'")
+                    appendLine("- Environment: 'vast cosmic environments', 'swirling nebulae', 'star fields', 'cosmic phenomena'")
+                    appendLine("- Technology (if present): 'streamlined starships', 'sophisticated engines', 'advanced design'")
+                    appendLine("- Figures: 'radiant 50s illustration', 'diverse archetypes (pin-up/action hero) across all ethnicities'")
+                    appendLine()
+                    appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
+                    appendLine("- Mandatory Accent: CHERRY RED / ROCKET ORANGE")
+                    appendLine(
+                        "- Application: Spacecraft engines, energy beams, stellar phenomena (dramatic contrast against cosmic backdrop)",
+                    )
+                    appendLine(
+                        "- Prompt MUST mention: 'cherry red engines', 'rocket orange thrust', 'vivid red energy', 'orange stellar glow', or similar vibrant accent",
+                    )
+                    appendLine(
+                        "- If missing → MAJOR VIOLATION: Add red/orange accent to tech or cosmic elements (e.g., 'cherry red engine glow', 'rocket orange energy trail')",
+                    )
+                    appendLine()
+                    appendLine("BACKGROUND ENFORCEMENT (MAJOR):")
+                    appendLine("- EVERY image MUST have detailed cosmic environment")
+                    appendLine("- Describe cosmic phenomena: nebulae, star fields, galaxies, cosmic dust")
+                    appendLine("- If prompt says 'empty space' without detail → MAJOR VIOLATION, reviewer adds cosmic elements")
+                    appendLine()
+                    appendLine("AUTONOMOUS FIX PATTERNS:")
+                    appendLine(
+                        "- If contains: primitive rockets, simple tube rockets, basic spacecraft → REPLACE with: streamlined starships, sophisticated engines, advanced futuristic design",
+                    )
+                    appendLine(
+                        "- If contains: photorealism, modern rendering → REPLACE with: 1950s Atomic Age illustration, gouache/oil, painterly finish, vintage aesthetics",
+                    )
+                    appendLine(
+                        "- If contains: plain background, void without cosmic detail → ADD: vast cosmic environment (swirling nebulae, dense star fields, galaxies, cosmic phenomena, stellar radiation)",
+                    )
+                    appendLine(
+                        "- If missing or weak red/orange accent → INTEGRATE: cherry red engines, rocket orange thrust, vivid red energy beams, orange stellar glow on spacecraft/tech",
+                    )
+                    appendLine(
+                        "- If figures lack 50s illustration style → EMPHASIZE: radiant proportions across diverse body types, pin-up or action hero archetypes of all ethnicities, soft expressive painting style",
+                    )
+                }
+            }
+
+            FANTASY -> {
+                val palette = getHexPalette(genre)
+                buildString {
+                    appendLine("**VALIDATION RULES FOR FANTASY:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
+                    appendLine()
+                    appendLine("BANNED TERMS:")
+                    appendLine("- Empty backgrounds: 'plain background', 'gradient background', 'isolated figure'")
+                    appendLine("- Cool colors: 'blue skies', 'cold tones', 'desaturated', 'grey'")
+                    appendLine(
+                        "- Modern digital art: 'digital painting', 'concept art', 'airbrush', 'photoshop', 'digital gradient', 'video game art', 'MTG art', 'D&D illustration'",
+                    )
+                    appendLine(
+                        "- Modern effects: 'lens flare', 'bloom effect', 'chromatic aberration', 'photorealistic', 'CG', '3D rendered'",
+                    )
+                    appendLine(
+                        "- Modern anatomy: 'hyperrealistic anatomy', 'photorealistic skin', 'anatomically perfect', 'realistic musculature', 'detailed muscularity'",
+                    )
+                    appendLine(
+                        "- Comic/stylized anatomy: 'comic book style', 'superhero proportions', 'exaggerated muscles', 'anime anatomy'",
+                    )
+                    appendLine()
+                    appendLine("REQUIRED ELEMENTS:")
+                    appendLine(
+                        "- Art style: 'ethereal Renaissance oil painting', 'luminous glazes', 'delicate sfumato', 'subtle brushstrokes', 'smooth glazing', 'canvas texture', 'visible brushwork'",
+                    )
+                    appendLine(
+                        "- Oil painting technique: 'traditional oil painting', 'soft blended edges', 'layered glazes', 'organic color transitions', 'matte oil finish', 'glazed luminosity'",
+                    )
+                    appendLine(
+                        "- Era reference: 'High Renaissance', 'Italian Masters', 'Botticelli', 'Raphael', 'Leonardo da Vinci', '15th-16th century', 'classical period', 'academic painting'",
+                    )
+                    appendLine(
+                        "- Palette: 'warm tones throughout', 'rich ochres', 'warm umber shadows', 'golden highlights', 'terracotta', 'sienna', 'burnt sienna', 'warm greens', 'warm golds'",
+                    )
+                    appendLine(
+                        "- Texture: 'fine canvas oil', 'classical oil painting', 'medieval fantasy aesthetic', 'soft edges', 'visible paint texture'",
+                    )
+                    appendLine("- Mood: 'ethereal', 'majestic', 'graceful', 'divine warmth', 'spiritual', 'beauty', 'timeless'")
+                    appendLine(
+                        "- Classical anatomy: 'contrapposto stance', 'idealized proportions', 'graceful gestures', 'flowing fabrics', 'classical drapery', 'soft musculature suggested through light'",
+                    )
+                    appendLine(
+                        "- Character design: 'flowing robes', 'elegant fabrics', 'medieval garments', 'silk', 'velvet', 'graceful', 'classical', 'refined facial features', 'contemplative expression'",
+                    )
+                    appendLine(
+                        "- Environment: diverse and creative, choose ONE or blend multiple: open rolling landscapes with distant mountains, ancient weathered castles, dramatic battle ruins with nature reclaiming, enchanted forests with ancient trees, medieval villages, pastoral countryside, mystical groves, riverside valleys, moorlands",
+                    )
+                    appendLine()
+                    appendLine("STYLE ENFORCEMENT (CRITICAL):")
+                    appendLine("- Prompt MUST explicitly state \"Renaissance oil painting\" or \"classical oil painting\" style")
+                    appendLine("- Prompt MUST NOT describe modern digital art aesthetics")
+                    appendLine(
+                        "- If prompt says 'digital painting', 'concept art', or 'illustration' → CRITICAL VIOLATION: Replace with 'Renaissance oil painting'",
+                    )
+                    appendLine(
+                        "- If prompt describes hard edges or digital effects → MAJOR VIOLATION: Replace with 'soft blended oil painting edges'",
+                    )
+                    appendLine(
+                        "- Character clothing: flowing medieval/fantasy garments OR heavy armor allowed (epic fantasy warriors with armor are encouraged)",
+                    )
+                    appendLine()
+                    appendLine("**CLASSICAL ANATOMY ENFORCEMENT (CRITICAL):**")
+                    appendLine("- Figure proportions MUST follow classical ideals:")
+                    appendLine(
+                        "  * Head: 1/7 to 1/8 of total body height (not modern photorealistic 1/9)",
+                    )
+                    appendLine(
+                        "  * Facial features: Refined and noble, NOT photorealistic; High Renaissance-inspired treatment applied to diverse facial structures (almond-shaped eyes, contemplative expression) across all ethnicities",
+                    )
+                    appendLine(
+                        "  * Stance: Contrapposto or S-curve elegance, graceful weight distribution, balanced asymmetry",
+                    )
+                    appendLine(
+                        "  * Musculature: Suggested through warm/cool tone transitions and light play - NEVER exaggerated or hyperrealistic bodybuilder style",
+                    )
+                    appendLine(
+                        "  * Flesh: Luminous and translucent quality, warm base tones with cool shadow transitions, built through traditional oil glazing",
+                    )
+                    appendLine(
+                        "  * Limbs: Graceful proportions with refined joints; avoid awkward or stiff positioning",
+                    )
+                    appendLine(
+                        "- If prompt describes: photorealistic anatomy, detailed musculature, hyperrealism → CRITICAL VIOLATION: Replace with 'noble classical proportions across diverse body types, soft anatomical suggestion'",
+                    )
+                    appendLine(
+                        "- If prompt describes: comic/anime anatomy, exaggerated features → CRITICAL VIOLATION: Replace with 'High Renaissance academic figure painting'",
+                    )
+                    appendLine()
+                    appendLine("**PAINTING MATERIALITY ENFORCEMENT (MAJOR):**")
+                    appendLine("- Prompt MUST convey OIL PAINTING PHYSICALITY:")
+                    appendLine(
+                        "  * Visible brushwork: Describe painting approach, NOT digital perfection",
+                    )
+                    appendLine(
+                        "  * Glazing technique: Emphasize translucent layering, warm/cool glazes building luminosity",
+                    )
+                    appendLine(
+                        "  * Surface quality: Canvas texture visible, soft edges from sfumato blending, impasto in highlights",
+                    )
+                    appendLine(
+                        "  * Light integration: Sources glow naturally within composition, not added digitally after",
+                    )
+                    appendLine(
+                        "- If prompt describes: digital smoothness, airbrushed finish, photorealistic rendering → MAJOR VIOLATION: Replace with 'oil glazing technique, visible brushwork, canvas texture'",
+                    )
+                    appendLine(
+                        "- If image appears too smooth/digital → ADD: 'visible subtle brushstrokes', 'soft sfumato transitions', 'glazed luminosity', 'warm impasto highlights'",
+                    )
+                    appendLine()
+                    appendLine("WARM PALETTE ENFORCEMENT (MAJOR):")
+                    appendLine("- Entire image MUST maintain warm color temperature throughout - NO COLD TONES")
+                    appendLine(
+                        "- Primary colors: warm golds, ochres, warm browns, terracottas, sienna, burnt sienna, warm olive greens, sage greens, peachy tones, amber tones",
+                    )
+                    appendLine(
+                        "- Sky options (choose based on environment): golden hour sunset, warm amber light, peachy sunrise, warm overcast, hazy golden afternoon, sunset-tinted clouds",
+                    )
+                    appendLine(
+                        "- Environment color palette: warm earth tones, natural materials (stone with warm hues, wood, warm foliage)",
+                    )
+                    appendLine("- If missing warm palette → MAJOR VIOLATION: Replace cool/desaturated tones with warm equivalents")
+                    appendLine()
+                    appendLine("ACCENT COLOR ENFORCEMENT (MODERATE - SUBTLE DETAILS):")
+                    appendLine("- Mandatory Accent: RADIANT GOLD / CELESTIAL GILT in SUBTLE DETAILS only")
+                    appendLine(
+                        "- Application options (choose one or combine subtly): gilded sword/weapon edge, jewelry catching warm light, magical glow on small elements, light reflecting off water/metalwork, luminous nature details (blooming flowers, fireflies, glowing moss), warm light on stone architectural details, character's adornment (belt buckle, brooch, simple halo)",
+                    )
+                    appendLine(
+                        "- Prompt should mention ONE OR TWO of: 'gilded sword edge', 'golden jewelry', 'light catching metal', 'radiant details', 'warm glow on...', 'luminous accent', 'golden highlights on...'",
+                    )
+                    appendLine("- FORBIDDEN: Bright neon colors, garish tones, overly dominant red, oversaturated RGB colors")
+                    appendLine(
+                        "- If missing → MODERATE VIOLATION: Add subtle gold detail (weapon edge, jewelry glint, light reflection, nature detail, architectural highlight)",
+                    )
+                    appendLine()
+                    appendLine("BACKGROUND ENFORCEMENT (MAJOR - CREATIVE DIVERSITY):")
+                    appendLine("- EVERY image MUST have detailed, diverse medieval/fantasy environment")
+                    appendLine(
+                        "- Environment choices (encourage variety): rolling hills with distant castles, weathered stone ruins with ivy/nature, enchanted ancient forest, medieval village streets, pastoral farmland, misty moorlands, castle courtyard, riverside valley, mountain pass, woodland stream",
+                    )
+                    appendLine("- Describe 3+ specific environmental details appropriate to chosen setting")
+                    appendLine(
+                        "- Creativity encouraged: varying environments prevents visual monotony while unified warm palette maintains cohesion",
+                    )
+                    appendLine(
+                        "- If prompt lacks environmental context → MAJOR VIOLATION, reviewer adds appropriate medieval fantasy setting",
+                    )
+                    appendLine()
+                    appendLine("LIGHTING ENFORCEMENT:")
+                    appendLine(
+                        "- Required: 'soft chiaroscuro', 'divine illumination', 'warm golden light', 'gentle transitions', 'luminous', 'atmospheric'",
+                    )
+                    appendLine(
+                        "- Note: Structural shadows/contrast from reference ARE ALLOWED but must be rendered with 'soft edges' and 'glazing' (not harsh digital blacks).",
+                    )
+                    appendLine("- Forbidden: 'harsh digital shadows', 'pitch black shadows', 'cold light', 'modern rim light'")
+                    appendLine(
+                        "- Lighting should enhance environment: golden hour on landscapes, candlelit ruins, dappled forest light, warm sunset on stone, misty morning glow",
+                    )
+                    appendLine()
+                    appendLine("FINAL STYLE CHECK:")
+                    appendLine(
+                        "- Ask: \"Does this sound like a description for a 15th-century Italian Renaissance oil painting with medieval/fantasy elements?\"",
+                    )
+                    appendLine(
+                        "- If NO → CRITICAL VIOLATION: Revise to emphasize classical painting technique, soft ethereal beauty, traditional warm pigments",
+                    )
+                    appendLine(
+                        "- Look for: Classical painting references, oil terminology, warm light language, Renaissance aesthetic with fantasy elements",
+                    )
+                    appendLine("- Reject: Modern digital art terms, gaming terminology, hard-edged descriptions, photorealistic rendering")
+                    appendLine()
+                    appendLine("AUTONOMOUS FIX PATTERNS:")
+                    appendLine(
+                        "- If contains: over-saturated red, crimson dominance making image monochromatic red → SOFTEN: distribute warm colors more naturally, maintain warm palette without overwhelming red",
+                    )
+                    appendLine(
+                        "- If contains: grimdark aesthetics or overly dark tones → BRIGHTEN: shift to ethereal beauty, warm atmosphere, add light and spiritual elements",
+                    )
+                    appendLine(
+                        "- If contains: cool blues, desaturated colors, grey tones → REPLACE with: warm golds, ochres, warm greens, peachy/amber lighting",
+                    )
+                    appendLine(
+                        "- If contains: modern anime, digital aesthetics, hard edges, concept art rendering → REPLACE with: oil painting glazing, soft sfumato transitions, classical style",
+                    )
+                    appendLine(
+                        "- If contains: hyperrealistic anatomy, photorealistic skin, detailed musculature → CRITICAL FIX: Replace with 'noble classical proportions across diverse body types', 'soft anatomical suggestion through light', 'ethereal luminous skin tones across all ethnicities'",
+                    )
+                    appendLine(
+                        "- If contains: exaggerated muscles, comic book anatomy, superhero proportions → CRITICAL FIX: Replace with 'contrapposto elegance', 'High Renaissance academic proportions', 'graceful classical figure painting'",
+                    )
+                    appendLine(
+                        "- If image appears too smooth or digital → ADD: 'visible soft brushwork', 'oil glazing technique', 'subtle canvas texture', 'sfumato blending', 'impasto highlights', 'hand-painted appearance'",
+                    )
+                    appendLine(
+                        "- If lacks painting materiality → ADD: 'warm glazed luminosity', 'layered oil translucency', 'soft directional brushstrokes', 'classical underpainting visible through glazes'",
+                    )
+                    appendLine(
+                        "- If figure anatomy appears stiff or awkward → IMPROVE: 'graceful contrapposto stance', 'balanced weight distribution', 'flowing gesture suggesting movement', 'classical S-curve elegance'",
+                    )
+                    appendLine(
+                        "- If facial features too realistic/photographic → SOFTEN: 'refined noble features', 'contemplative expression', 'delicate quality across diverse facial types'",
+                    )
+                    appendLine(
+                        "- If contains: tech elements, cybernetic, mechanical, modern elements → REMOVE entirely, replace with classical/mystical medieval elements",
+                    )
+                    appendLine(
+                        "- If contains: plain/gradient background, isolated figure → ADD: detailed medieval fantasy environment (landscape/castle/ruins/forest/village - choose ONE with 3+ details)",
+                    )
+                    appendLine(
+                        "- If accent color missing → ADD: subtle gold detail (gilded weapon edge, jewelry glint, luminous nature detail, warm light on architecture, character adornment)",
+                    )
+                    appendLine(
+                        "- If environments too repetitive/same → VARY: alternate between landscape types (open fields, ancient ruins, forest depths, medieval structures) while maintaining warm palette",
+                    )
+                }
+            }
+
+            CRIME -> {
+                val palette = getHexPalette(genre)
+                buildString {
+                    appendLine("**VALIDATION RULES FOR CRIME:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
+                    appendLine()
+                    appendLine("BANNED TERMS:")
+                    appendLine("- 'Cartoonized', 'stylized proportions', 'digital smoothness', 'plastic surfaces'")
+                    appendLine("- 'Ultra-vibrant', 'fluorescent colors', 'neon-wash', 'artificial high-saturation'")
+                    appendLine("- Empty backgrounds: 'plain background', 'gradient background'")
+                    appendLine()
+                    appendLine("REQUIRED ELEMENTS:")
+                    appendLine("- Art style: 'Renaissance divine oil painting', '19th-Century Academic Realism'")
+                    appendLine("- Technique: 'polished academic oil', 'invisible masterful brushwork', 'seamless sfumato transitions', 'traditional multi-layered glazing'")
+                    appendLine("- Anatomy: 'Perfect classical anatomy', 'Renaissance anatomical precision', 'non-idealized realism'")
+                    appendLine(
+                        "- Lighting: 'Masterful Chiaroscuro', 'Golden Hour Volumetric Bloom', 'Prismatic coastal light'",
+                    )
+                    appendLine(
+                        "- Background MUST include Miami Art Deco/Renaissance coastal paradise elements (sea, turquoise waves, crystal pools, beachfront architecture, towering palm trees, and lush tropical flora)",
+                    )
+                    appendLine(
+                        "- Posing: 'Divine lounging', 'relaxed dominance', 'captured mid-breath', 'serene superiority', 'Elite Glamour'",
+                    )
+                    appendLine("- Aura: 'Untouchable elegance', 'superior by luxury', 'Deity of Paradise'")
+                    appendLine("- BANNED POSES: 'Standing still', 'facing camera', 'static portrait', 'poster pose', 'generic character pose'")
+                    appendLine()
+                    appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
+                    appendLine("- Mandatory Accent: HOT PINK (#E91E63 - Pantone 213 C)")
+                    appendLine(
+                        "- Application: Modern high-fashion silk, neon reflections in hazy sunsets, Art Deco highlights",
+                    )
+                    appendLine("- Must feel ORGANIC and sophisticated, bridging Renaissance and modern coastal vice")
+                    appendLine()
+                    appendLine("AUTONOMOUS FIX PATTERNS:")
+                    appendLine(
+                        "- If contains: cartoonized, stylized, stylized proportions, exaggerated features → CRITICAL FIX: Replace with: Divine masterpiece realism, perfect classical anatomy, polished academic oil texture, anatomically flawless figure",
+                    )
+                    appendLine(
+                        "- If contains: digital smoothness, plastic texture, visible rough brushwork → REPLACE with: polished academic oil texture, invisible brushwork, seamless sfumato, traditional multi-layered glazing depth",
+                    )
+                    appendLine(
+                        "- If missing divine/elite quality → INTEGRATE: Masterful volumetric lighting, prismatic sun-rays, intense golden-hour bloom, and radiating light highlights",
+                    )
+                    appendLine(
+                        "- If subject feels 'placed' or static → REWRITE: to be integrated mid-action (e.g., 'lounging on a yacht wake', 'floating in a pool', 'feeling the sea breeze with closed eyes')",
+                    )
+                    appendLine(
+                        "- If pose is generic standing/facing camera → REPLACE: with a candid, atmospheric gesture that completes the aesthetic flow of the scene",
+                    )
+                    appendLine(
+                        "- If background feels too interior or cramped → EXPAND: to coastal/litoranean settings: shimmering luxury pools, turquoise ocean waves, palm-lined boardwalks, and lush tropical greenery under an intense, hazy hot pink 'mirage' sunset",
+                    )
+                    appendLine(
+                        "- If missing dreamy/hazy quality → INTENSIFY: add atmospheric bloom, soft-focus highlights, and an ethereal 'too perfect to be true' glow that blurs the edges of the paradise environment",
+                    )
+                    appendLine(
+                        "- If missing Art Deco/Renaissance mix → ADD: sleek geometric lines, gold accents, classical columns with neon reflections, beachside/poolside luxury",
+                    )
+                    appendLine(
+                        "- If image feels ultra-vibrant or artificial → SOFTEN: Desaturate dominant colors to natural oil pigment levels, replace vibrant washes with sophisticated muted tones, maintain vibrancy ONLY in the Hot Pink accent.",
+                    )
+                }
+            }
+
+            COWBOY -> {
+                val palette = getHexPalette(genre)
+                buildString {
+                    appendLine("**VALIDATION RULES FOR COWBOY:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
+                    appendLine()
+                    appendLine("BANNED TERMS:")
+                    appendLine("- Avoid: 'photorealism', 'smooth digital blending', 'refined details'")
+                    appendLine("- Empty backgrounds: 'plain background', 'gradient background'")
+                    appendLine()
+                    appendLine("REQUIRED ELEMENTS:")
+                    appendLine("- Art style: 'expressive western oil painting', 'Remington/Russell style'")
+                    appendLine("- Technique: 'bold visible brushstrokes', 'thick impasto', 'painterly quality'")
+                    appendLine("- Mood: 'rough edges', 'bold color blocks', 'artistic interpretation'")
+                    appendLine("- Background MUST include frontier environment")
+                    appendLine()
+                    appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
+                    appendLine("- Mandatory Accent: BURNT ORANGE / SUNSET GOLD")
+                    appendLine("- Application: Sunsets, campfire glow, dust catching light, metallic glints (with expressive brush marks)")
+                    appendLine(
+                        "- Prompt MUST mention: 'burnt orange', 'sunset gold', 'golden hour glow', 'orange dust', 'warm amber sunset', or similar warm frontier accent",
+                    )
+                    appendLine(
+                        "- If missing → MAJOR VIOLATION: Add orange/gold accent to lighting or atmosphere (e.g., 'burnt orange sunset', 'golden dust catching light')",
+                    )
+                    appendLine()
+                    appendLine("BACKGROUND ENFORCEMENT (MAJOR):")
+                    appendLine("- EVERY image MUST have detailed Western environment")
+                    appendLine("- Describe frontier elements: desert landscape, saloon, canyon, prairie, frontier town, etc.")
+                    appendLine("- If prompt lacks environmental vastness → MAJOR VIOLATION, reviewer adds Western setting")
+                    appendLine()
+                    appendLine("AUTONOMOUS FIX PATTERNS:")
+                    appendLine(
+                        "- If contains: photorealism, smooth digital blending, refined details → REPLACE with: expressive oil painting, bold visible brushstrokes, thick impasto, painterly quality",
+                    )
+                    appendLine(
+                        "- If contains: modern aesthetics, photo-like rendering → REPLACE with: Remington/Russell western oil painting style, gestural strokes, artistic interpretation over precision",
+                    )
+                    appendLine(
+                        "- If missing burnt orange/sunset gold accent → INTEGRATE: burnt orange sunset, golden hour glow, orange dust catching light, golden campfire light, or warm amber tones",
+                    )
+                    appendLine(
+                        "- If contains: plain/gradient background → ADD: detailed frontier environment (desert landscape/saloon/canyon/prairie/frontier town with 3+ specific Western elements)",
+                    )
+                    appendLine(
+                        "- If lacking emotion/soul → EMPHASIZE: expressive brushwork, rough edges, bold color blocks, passionate artistic interpretation of frontier feeling",
+                    )
+                }
+            }
+
+            SHINOBI -> {
+                val palette = getHexPalette(genre)
+                buildString {
+                    appendLine("**VALIDATION RULES FOR SHINOBI:**")
+                    appendLine()
+                    appendLine("GLOBAL COLOR PALETTE (CRITICAL):")
+                    appendLine("- The image MUST be cohesive with the following color palette: $palette")
+                    appendLine("- These colors must be reflected in the environment, lighting, and overall artwork.")
+                    appendLine()
+                    appendLine("BANNED TERMS:")
+                    appendLine("- Empty backgrounds violate negative space principle (environment suggested, not plain)")
+                    appendLine()
+                    appendLine("REQUIRED ELEMENTS:")
+                    appendLine("- Art style: Sumi-e ink wash, monochrome, negative space celebrated")
+                    appendLine("- Environment: Suggested through minimal brushstrokes (bamboo silhouette, castle rooftops, mist)")
+                    appendLine("- Background uses negative space artistically, not emptiness")
+                    appendLine()
+                    appendLine("ACCENT COLOR ENFORCEMENT (MAJOR):")
+                    appendLine("- Mandatory Accent: VIBRANT CRIMSON RED")
+                    appendLine("- Application: Single, vital element (blood, sunset, banner, flower) - ONLY ONE accent color allowed")
+                    appendLine("- Must be DRAMATIC contrast against black/white")
+                    appendLine(
+                        "- Prompt MUST mention: 'vibrant crimson', 'blood red', 'scarlet accent', 'deep red', or similar single red element",
+                    )
+                    appendLine("- FORBIDDEN: Any other colors beyond black/white/red")
+                    appendLine(
+                        "- If missing → MAJOR VIOLATION: Add single crimson accent element (e.g., 'single crimson red accent on blade', 'vibrant red blood splatter')",
+                    )
+                    appendLine()
+                    appendLine("BACKGROUND ENFORCEMENT (MODERATE):")
+                    appendLine("- Environment should be SUGGESTED through minimal ink washes")
+                    appendLine("- Negative space is intentional art, NOT lack of background")
+                    appendLine(
+                        "- If prompt says 'plain background' → Clarify as 'pristine white paper with suggested environment through ink mist'",
+                    )
+                    appendLine()
+                    appendLine("AUTONOMOUS FIX PATTERNS:")
+                    appendLine(
+                        "- If contains: colors beyond black/white/red, tinted paper, off-white backgrounds → REPLACE with: pure monochrome black ink on white paper, NO tints or colors",
+                    )
+                    appendLine(
+                        "- If contains: photorealistic rendering, digital style, smooth blending → REPLACE with: sumi-e ink wash, bold imperfect brushstrokes, dry-brush texture, visible paper grain",
+                    )
+                    appendLine(
+                        "- If contains: multiple accent colors or weak crimson → REPLACE with: single vibrant crimson red accent (blood/sunset/banner/flower), high contrast against monochrome",
+                    )
+                    appendLine(
+                        "- If contains: plain background or empty void → CLARIFY: transform to 'suggested environment through minimal ink washes' (bamboo silhouette, castle rooflines, mist/fog through ink bleeds)",
+                    )
+                    appendLine(
+                        "- If missing crimson accent → INTEGRATE: single dramatic red element (crimson blade accent, blood splatter, red sunset, scarlet banner)",
+                    )
+                    appendLine(
+                        "- If lacking energy/gestural quality → EMPHASIZE: bold imperfect brushstrokes, visible spontaneity, water/ink artifacts, gestural energy in ink application",
+                    )
+                }
+            }
+        }
+}
+"    * Terminology: Use terms related to feudal Japan, martial arts, espionage, and honor (e.g., \"shogun,\" \"daimyo,\" \"samurai,\" \"ronin,\" \"kunoichi,\" \"jutsu,\" \"katana,\" \"oni,\" \"yokai\").",
+)
+appendLine(
+"    * Formality: Dialogue should be respectful and often formal, reflecting the hierarchical society. Use honorifics where appropriate (e.g., \"-san,\" \"-sama\").",
+)
                     appendLine("    * Phrasing: Sentences are often concise and deliberate. Avoid unnecessary words.")
                     appendLine("    * Profanity (Conditional): Extremely rare. Insults are more about dishonor than vulgarity.")
                     appendLine()

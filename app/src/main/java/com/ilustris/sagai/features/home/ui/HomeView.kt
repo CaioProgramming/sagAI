@@ -4,7 +4,10 @@ package com.ilustris.sagai.features.home.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -63,6 +66,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -130,6 +134,7 @@ fun HomeView(
     var showPremiumSheet by remember { mutableStateOf(false) }
     var showBackupSheet by remember { mutableStateOf(viewModel.showRecoverSheet.value) }
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val isStarting by viewModel.isStarting.collectAsStateWithLifecycle()
     val loadingMessage by viewModel.loadingMessage.collectAsStateWithLifecycle()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
@@ -149,71 +154,99 @@ fun HomeView(
         }
     }
 
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-        Box(Modifier.fillMaxSize()) {
-            ModalNavigationDrawer(
-                drawerState = drawerState,
-                drawerContent = {
-                    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                        ModalDrawerSheet(
-                            drawerContainerColor = MaterialTheme.colorScheme.background,
-                        ) { SettingsView(navController) }
-                    }
-                },
-            ) {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    val isPremium = billingState is BillingService.BillingState.SignatureEnabled
-                    ChatList(
-                        sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
-                        padding = padding,
-                        showDebugButton = showDebugButton,
-                        dynamicNewSagaTexts = dynamicNewSagaTexts,
-                        isLoadingDynamicPrompts = isLoadingDynamicPrompts,
-                        isPremium = isPremium,
-                        loadingStoryId = loadingStoryId,
-                        onCreateNewChat = {
-                            if (BuildConfig.DEBUG) {
-                                navController.navigateToRoute(Routes.NEW_SAGA)
-                                return@ChatList
-                            }
-                            val freeSagasCount = sagas.count { it.data.isEnded.not() }
-                            if (freeSagasCount <= 3 || isPremium) {
-                                navController.navigateToRoute(Routes.NEW_SAGA)
-                            } else {
-                                showPremiumSheet = true
-                            }
-                        },
-                        onSelectSaga = { sagaData ->
-                            navController.navigateToRoute(
-                                Routes.CHAT,
-                                mapOf(
-                                    "sagaId" to sagaData.id.toString(),
-                                    "isDebug" to sagaData.isDebug.toString(),
+    SharedTransitionLayout {
+        AnimatedContent(isStarting) {
+            if (it) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                    Image(
+                        painterResource(R.drawable.ic_spark),
+                        contentDescription = null,
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.background),
+                        modifier =
+                            Modifier
+                                .size(50.dp)
+                                .sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    this@AnimatedContent,
+                                ).reactiveShimmer(
+                                    true,
+                                    holographicGradient.plus(Color.Transparent),
+                                    5.seconds,
                                 ),
-                            )
-                        },
-                        createFakeSaga = {
-                            viewModel.createFakeSaga()
-                        },
-                        openPremiumSheet = {
-                            showPremiumSheet = true
-                        },
-                        recoverSagas = {
-                            showBackupSheet = true
-                        },
-                        openSettings = {
-                            coroutineScope.launch {
-                                drawerState.open()
-                            }
-                        },
-                        onStoryClicked = {
-                            viewModel.getBriefing(it)
-                        },
                     )
+                }
+            } else {
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                    Box(Modifier.fillMaxSize()) {
+                        ModalNavigationDrawer(
+                            drawerState = drawerState,
+                            drawerContent = {
+                                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                    ModalDrawerSheet(
+                                        drawerContainerColor = MaterialTheme.colorScheme.background,
+                                    ) { SettingsView(navController) }
+                                }
+                            },
+                        ) {
+                            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                                val isPremium =
+                                    billingState is BillingService.BillingState.SignatureEnabled
+                                ChatList(
+                                    sagas = if (showDebugButton.not()) sagas.filter { !it.data.isDebug } else sagas,
+                                    padding = padding,
+                                    showDebugButton = showDebugButton,
+                                    dynamicNewSagaTexts = dynamicNewSagaTexts,
+                                    isLoadingDynamicPrompts = isLoadingDynamicPrompts,
+                                    isPremium = isPremium,
+                                    loadingStoryId = loadingStoryId,
+                                    animatedContentScope = this@AnimatedContent,
+                                    onCreateNewChat = {
+                                        if (BuildConfig.DEBUG) {
+                                            navController.navigateToRoute(Routes.NEW_SAGA)
+                                            return@ChatList
+                                        }
+                                        val freeSagasCount = sagas.count { it.data.isEnded.not() }
+                                        if (freeSagasCount <= 3 || isPremium) {
+                                            navController.navigateToRoute(Routes.NEW_SAGA)
+                                        } else {
+                                            showPremiumSheet = true
+                                        }
+                                    },
+                                    onSelectSaga = { sagaData ->
+                                        navController.navigateToRoute(
+                                            Routes.CHAT,
+                                            mapOf(
+                                                "sagaId" to sagaData.id.toString(),
+                                                "isDebug" to sagaData.isDebug.toString(),
+                                            ),
+                                        )
+                                    },
+                                    createFakeSaga = {
+                                        viewModel.createFakeSaga()
+                                    },
+                                    openPremiumSheet = {
+                                        showPremiumSheet = true
+                                    },
+                                    recoverSagas = {
+                                        showBackupSheet = true
+                                    },
+                                    openSettings = {
+                                        coroutineScope.launch {
+                                            drawerState.open()
+                                        }
+                                    },
+                                    onStoryClicked = {
+                                        viewModel.getBriefing(it)
+                                    },
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
     }
+
     LaunchedEffect(startFakeSaga) {
         startFakeSaga?.let {
             navController.navigateToRoute(
@@ -263,7 +296,7 @@ fun HomeView(
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun ChatList(
+private fun SharedTransitionScope.ChatList(
     sagas: List<SagaContent>,
     padding: PaddingValues = PaddingValues(0.dp),
     showDebugButton: Boolean,
@@ -272,6 +305,7 @@ private fun ChatList(
     isPremium: Boolean = false,
     backupAvailable: Boolean = false,
     loadingStoryId: Int? = null,
+    animatedContentScope: AnimatedContentScope,
     recoverSagas: () -> Unit = {},
     onCreateNewChat: () -> Unit = {},
     onSelectSaga: (Saga) -> Unit = {},
@@ -317,12 +351,23 @@ private fun ChatList(
                                         openPremiumSheet()
                                     }.wrapContentWidth()
                                     .align(Alignment.CenterVertically),
+                            iconModifier =
+                                Modifier.sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    animatedContentScope,
+                                ),
                             titleStyle =
                                 MaterialTheme.typography.titleLarge,
                             brush = Brush.linearGradient(holographicGradient),
                         )
                     } else {
-                        SagaTitle()
+                        SagaTitle(
+                            iconModifier =
+                                Modifier.sharedElement(
+                                    rememberSharedContentState("spark_icon"),
+                                    animatedContentScope,
+                                ),
+                        )
                     }
                 }
 
@@ -692,34 +737,39 @@ fun HomeViewPreview() {
                 },
             )
         }) { padding ->
-            Box(modifier = Modifier.padding(padding)) {
-                val previewChats =
-                    List(10) {
-                        SagaContent(
-                            Saga(
-                                title = "Chat ${it + 1}",
-                                description = "The journey of our lifes",
-                                genre = Genre.FANTASY,
-                                icon = "",
-                                isEnded = true,
-                                createdAt = Calendar.getInstance().timeInMillis,
-                                mainCharacterId = null,
-                            ),
-                            mainCharacter = null,
-                            acts = emptyList(),
+            AnimatedContent(padding) {
+                Box(modifier = Modifier.padding(it)) {
+                    val previewChats =
+                        List(10) {
+                            SagaContent(
+                                Saga(
+                                    title = "Chat ${it + 1}",
+                                    description = "The journey of our lifes",
+                                    genre = Genre.FANTASY,
+                                    icon = "",
+                                    isEnded = true,
+                                    createdAt = Calendar.getInstance().timeInMillis,
+                                    mainCharacterId = null,
+                                ),
+                                mainCharacter = null,
+                                acts = emptyList(),
+                            )
+                        }
+                    SharedTransitionLayout {
+                        ChatList(
+                            sagas = previewChats,
+                            animatedContentScope = this@AnimatedContent,
+                            showDebugButton = true,
+                            isPremium = true,
+                            dynamicNewSagaTexts =
+                                DynamicSagaPrompt(
+                                    "Dynamic Title Preview",
+                                    "Dynamic Subtitle Preview",
+                                ),
+                            isLoadingDynamicPrompts = false,
                         )
                     }
-                ChatList(
-                    sagas = previewChats,
-                    showDebugButton = true,
-                    isPremium = true,
-                    dynamicNewSagaTexts =
-                        DynamicSagaPrompt(
-                            "Dynamic Title Preview",
-                            "Dynamic Subtitle Preview",
-                        ),
-                    isLoadingDynamicPrompts = false,
-                )
+                }
             }
         }
     }

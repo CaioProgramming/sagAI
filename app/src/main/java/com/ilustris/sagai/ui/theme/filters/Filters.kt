@@ -60,7 +60,7 @@ fun Genre.colorTones() =
         Genre.CYBERPUNK -> SciFiColorTones.CYBERPUNK_NEON_NIGHT
         Genre.HORROR -> HorrorColorTones.MOONLIGHT_MYSTIQUE
         Genre.HEROES -> HeroColorTones.URBAN_COMIC_VIBRANCY
-        Genre.CRIME -> CrimeColorTones.MIAMI_NEON_SUNSET
+        Genre.CRIME -> CrimeColorTones.DIVINE_ACADEMIC_PARADISE
         Genre.SPACE_OPERA -> FantasyColorTones.CLASSIC_WARM_SUNLIT_FANTASY
         Genre.SHINOBI -> ShinobiColorTones.BLOOD_MOON_ASSASSIN
         Genre.COWBOY -> CowboyColorTones.DESERT_SUNSET
@@ -151,18 +151,18 @@ fun Genre.shaderParams(
 
     Genre.CRIME -> {
         ShaderParams(
-            grainIntensity = customGrain ?: .1f,
-            softFocusRadius = focusRadius ?: .1f,
-            saturation = .8f,
-            contrast = 1.2f,
+            grainIntensity = customGrain ?: .05f, // Even cleaner for "Divine Perfection"
+            softFocusRadius = focusRadius ?: .12f, // Luminous bloom
+            saturation = .72f, // Noble, muted realism
+            contrast = 1.25f, // Defined masterpiece structure
             brightness = .0f,
             highlightTint = colorTones().highlightTint,
             shadowTint = colorTones().shadowTint,
             tintStrength = colorTones().defaultTintStrength,
-            vignetteStrength = .05f,
-            vignetteSoftness = 1f,
+            vignetteStrength = .12f, // Focused composition
+            vignetteSoftness = 0.8f,
             pixelationBlockSize = 0f,
-            colorTemperature = .1f.unaryMinus(),
+            colorTemperature = .1f, // Slightly warmer for "Golden Hour"
         )
     }
 

@@ -292,6 +292,7 @@ fun PremiumTitle(
     titleStyle: TextStyle = MaterialTheme.typography.titleLarge,
     brush: Brush = Brush.horizontalGradient(holographicGradient),
     modifier: Modifier = Modifier,
+    iconModifier: Modifier = Modifier,
 ) {
     Row(
         verticalAlignment = Alignment.Bottom,
@@ -303,6 +304,7 @@ fun PremiumTitle(
     ) {
         SagaTitle(
             textStyle = titleStyle,
+            iconModifier = iconModifier,
         )
         Text(
             stringResource(id = R.string.pro_label),
@@ -332,11 +334,13 @@ fun PremiumCard(
                         5.dp,
                         Brush.verticalGradient(holographicGradient),
                     ),
-                ).border(
+                )
+                .border(
                     1.dp,
                     Brush.verticalGradient(holographicGradient),
                     RoundedCornerShape(15.dp),
-                ).background(
+                )
+                .background(
                     MaterialTheme.colorScheme.surfaceContainer,
                     RoundedCornerShape(10.dp),
                 )

@@ -288,7 +288,7 @@ class ChatViewModel
                         delay(7.seconds)
                         stateManager.updateMilestone(null)
                     }
-                    stateManager.updateMilestone(milestone)
+                    milestone?.let { triggerMilestone(it) }
                 }
             }
 
@@ -434,16 +434,6 @@ class ChatViewModel
                         if (uiState.value.showTitle) {
                             titleAnimation()
                             validateMessageStatus(sagaContent)
-
-                            triggerMilestone(
-                                SagaMilestone.ChapterFinished(
-                                    sagaContent
-                                        .flatChapters()
-                                        .last {
-                                            it.isComplete()
-                                        }.data,
-                                ),
-                            )
                         }
                     }
             }

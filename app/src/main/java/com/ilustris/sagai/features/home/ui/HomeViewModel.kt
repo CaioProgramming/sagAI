@@ -1,7 +1,6 @@
 package com.ilustris.sagai.features.home.ui
 
 import android.graphics.Bitmap
-import android.util.LruCache
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilustris.sagai.R
@@ -57,6 +56,9 @@ class HomeViewModel
         private val _isLoading = MutableStateFlow<Boolean>(false)
         val isLoading = _isLoading.asStateFlow()
 
+        private val _isStarting = MutableStateFlow<Boolean>(true)
+        val isStarting = _isStarting.asStateFlow()
+
         val loadingMessage = MutableStateFlow<String?>(null)
 
         private val _showRecoverSheet = MutableStateFlow(false)
@@ -74,7 +76,6 @@ class HomeViewModel
 
         private val _loadingStoryId = MutableStateFlow<Int?>(null)
         val loadingStoryId = _loadingStoryId.asStateFlow()
-        val segmentedImageCache = LruCache<String, Bitmap?>(5 * 1024 * 1024) // 5MB cache
 
         init {
             checkDebug()
@@ -127,6 +128,9 @@ class HomeViewModel
                         stringResourceHelper.getString(R.string.home_create_new_saga_subtitle),
                     )
                 _dynamicNewSagaTexts.emit(result)
+                if (_isStarting.value) {
+                    _isStarting.emit(false)
+                }
             }
         }
 

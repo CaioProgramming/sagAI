@@ -167,8 +167,7 @@ class CharacterUseCaseImpl
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     )!!
 
-                val character =
-                    sagaContent.getCharacters().find { it.name.equals(newCharacter.name, true) }
+                val character = sagaContent.findCharacter(newCharacter.name)
                 if (character != null) {
                     error("Character already exists")
                 }

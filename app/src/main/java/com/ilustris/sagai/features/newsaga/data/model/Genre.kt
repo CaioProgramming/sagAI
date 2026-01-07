@@ -285,3 +285,16 @@ fun Genre.colorPalette() =
             )
         }
     }
+
+fun Genre.vibrationPattern(): LongArray =
+    when (this) {
+        Genre.FANTASY -> longArrayOf(0, 100, 50, 100)
+        Genre.CYBERPUNK -> longArrayOf(0, 50, 30, 50, 30, 50)
+        Genre.HORROR -> longArrayOf(0, 500)
+        Genre.HEROES -> longArrayOf(0, 300)
+        Genre.CRIME -> longArrayOf(0, 80, 80, 80)
+        Genre.SHINOBI -> longArrayOf(0, 150)
+        Genre.SPACE_OPERA -> longArrayOf(0, 200, 100, 200)
+        Genre.COWBOY -> longArrayOf(0, 250)
+        Genre.PUNK_ROCK -> longArrayOf(0, 50, 50, 100, 50, 50)
+    }
