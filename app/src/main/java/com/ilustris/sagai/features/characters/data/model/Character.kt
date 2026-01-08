@@ -11,14 +11,14 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.ilustris.sagai.features.home.data.model.Saga
 
-class NicknameTypeConverter {
+class StringListConverter {
     @TypeConverter
-    fun fromNicknameList(nicknames: List<String>): String = Gson().toJson(nicknames)
+    fun toStringList(list: List<String>): String = Gson().toJson(list)
 
     @TypeConverter
-    fun toNicknameList(nicknamesJson: String): List<String> {
+    fun fromStringList(json: String): List<String> {
         val typeToken = object : TypeToken<List<String>>() {}.type
-        return Gson().fromJson(nicknamesJson, typeToken)
+        return Gson().fromJson(json, typeToken)
     }
 }
 
@@ -33,13 +33,15 @@ class NicknameTypeConverter {
         ),
     ],
 )
-@TypeConverters(NicknameTypeConverter::class)
+@TypeConverters(StringListConverter::class)
 data class Character(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val name: String = "",
     val lastName: String? = "",
     val nicknames: List<String>? = emptyList(),
+    @ColumnInfo(defaultValue = "null")
+    val knowledge: List<String>? = emptyList(),
     val backstory: String = "",
     val image: String = "",
     val hexColor: String = "#3d98f7",

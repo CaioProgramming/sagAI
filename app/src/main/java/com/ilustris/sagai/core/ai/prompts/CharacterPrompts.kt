@@ -43,9 +43,6 @@ object CharacterPrompts {
             characters.forEach { character ->
                 appendLine(character.name)
                 appendLine(character.toAINormalize(characterExclusions))
-                if (character.knowledge.isNotEmpty()) {
-                    appendLine("  knowledge: ${character.knowledge}")
-                }
             }
         }
 
@@ -423,10 +420,9 @@ object CharacterPrompts {
         appendLine("   - Significant: 'The King is dead', 'Anya has the key', 'The monster is weak to fire'.")
         appendLine("   - Trivial (IGNORE): 'Walked to the door', 'Said hello', 'Is feeling sad'.")
         appendLine("3. If a character wasn't involved or learned nothing new, exclude them.")
-        appendLine("4. Return a JSON map where the Key is the Character Name and the Value is a List of Strings (the new facts).")
-        appendLine()
-        appendLine("## OUTPUT FORMAT")
-        appendLine("Strictly JSON format: { \"CharacterName\": [\"Fact 1\", \"Fact 2\"] }")
-        appendLine("Example: { \"Anya\": [\"Discovered the secret passage\"], \"Marcus\": [\"Learned that Anya is a spy\"] }")
+        appendLine("4. Return a JSON object matching this structure:")
+        appendLine(
+            toJsonMap(com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult::class.java),
+        )
     }.trimIndent()
 }

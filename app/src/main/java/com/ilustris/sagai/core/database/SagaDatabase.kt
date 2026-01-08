@@ -1,6 +1,5 @@
 package com.ilustris.sagai.core.database
 
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -42,11 +41,8 @@ import com.ilustris.sagai.features.wiki.data.source.WikiDao
         RelationshipUpdateEvent::class,
         Reaction::class,
     ],
-    version = 2,
+    version = 1,
     exportSchema = true,
-    autoMigrations = [
-        AutoMigration(from = 1, to = 2),
-    ],
 )
 @TypeConverters(IntListConverter::class)
 abstract class SagaDatabase : RoomDatabase() {

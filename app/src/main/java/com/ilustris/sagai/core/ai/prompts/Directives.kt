@@ -81,4 +81,11 @@ object StorytellingDirective {
         3. **Logical consistency:** Ensure that the actions and dialogue are consistent with the current `worldStateChanges` (e.g., if the door is locked, a character cannot simply walk through it).
         4. **Memory Retention:** Characters should remember significant past events mentioned in `relevantPastContext`. Use this to add depth to their interactions.
     """
+
+    const val INDIVIDUAL_KNOWLEDGE = """
+        ## INDIVIDUAL KNOWLEDGE BOUNDARIES
+        1. **Know What You Know:** A character's response MUST be consistent with their specific 'knowledge' list. They CANNOT know facts listed for other characters unless it is also in their own list or established as common knowledge.
+        2. **Ignorance is Dramatic:** If a character has no specific knowledge on a topic that others do, they should react with ignorance, curiosity, or confusion. Do NOT hallucinate shared knowledge.
+        3. **Secrets Matter:** If the 'knowledge' list implies a secret (e.g., 'Knows the traitor is X'), do not blurt it out unless it fits the character's motivation.
+    """
 }

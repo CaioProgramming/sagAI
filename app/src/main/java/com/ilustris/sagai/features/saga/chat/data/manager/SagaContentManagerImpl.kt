@@ -841,6 +841,7 @@ class SagaContentManagerImpl
             withContext(Dispatchers.IO) {
                 saga.flatEvents().find { it.data.id == timeline.id }?.let { content ->
                     timelineUseCase.generateTimelineContent(saga, content.copy(data = timeline))
+                    characterUseCase.updateCharacterKnowledge(timeline, saga)
 
                     updateSnackBar(
                         snackBar(

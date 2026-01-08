@@ -306,4 +306,56 @@ class CharacterUseCaseImpl
                     requirement = GemmaClient.ModelRequirement.HIGH,
                 )!!
             }
+
+        override suspend fun updateCharacterKnowledge(
+            timeline: Timeline,
+            saga: SagaContent,
+        ): RequestResult<Unit> =
+            executeRequest {
+                val characters = saga.getCharacters()
+                if (characters.isEmpty()) return@executeRequest
+
+                val prompt = CharacterPrompts.knowledgeUpdatePrompt(timeline, characters)
+                val result =
+                    gemmaClient.generate<com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult>(
+                        prompt,
+                        requirement = GemmaClient.ModelRequirement.HIGH,
+                    )
+
+                if (result?.updates?.isNotEmpty() == true) {
+                    Log.i(
+                        javaClass.simpleName,
+                        "Updating knowledge for ${result.updates.size} characters.",
+                    )
+                    result.updates.forEach { update ->
+                        saga.findCharacter(update.characterName)?.let { charContent ->
+                            val currentKnowledge =
+                                (charContent.data.knowledge ?: emptyList()).toMutableList()
+                            val newFacts =
+                                update.learnedFacts.filter { !currentKnowledge.contains(it) }
+
+                            if (newFacts.isNotEmpty()) {
+                                currentKnowledge.addAll(newFacts)
+                                // Token Optimization: Limit strictly to last 50 facts to prevent bloat
+                                if (currentKnowledge.size > 50) {
+                                    currentKnowledge.subList(0, currentKnowledge.size - 50).clear()
+                                }
+
+                                val updatedChar =
+                                    charContent.data.copy(knowledge = currentKnowledge)
+                                updateCharacter(updatedChar)
+                                Log.d(
+                                    javaClass.simpleName,
+                                    "Added ${newFacts.size} facts to ${update.characterName}",
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Log.d(
+                    javaClass.simpleName,
+                    "No new knowledge extracted from this timeline event.",
+                )
+            }
+        }
     }

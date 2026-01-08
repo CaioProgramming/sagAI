@@ -105,6 +105,7 @@ object ChatPrompts {
         appendLine(StorytellingDirective.NPC_AGENCY_AND_REALISM)
         appendLine(StorytellingDirective.MOBILE_CHAT_COHERENCE)
         appendLine(StorytellingDirective.CONTINUITY_AND_FACTS)
+        appendLine(StorytellingDirective.INDIVIDUAL_KNOWLEDGE)
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
 
         appendLine("\n# CURRENT PLAYER TURN")

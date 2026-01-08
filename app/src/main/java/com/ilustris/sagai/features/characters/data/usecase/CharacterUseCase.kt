@@ -51,4 +51,9 @@ interface CharacterUseCase {
         character: CharacterContent,
         saga: SagaContent,
     ): RequestResult<String>
+
+    suspend fun updateCharacterKnowledge(
+        timeline: Timeline,
+        saga: SagaContent,
+    ): RequestResult<Unit>
 }
