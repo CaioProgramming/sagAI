@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,8 +29,10 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
@@ -92,12 +95,18 @@ fun SagaFormCards(
             )
         },
         back = {
-            ReviewCard(
-                sagaForm.character.name,
-                sagaForm.character.gender,
-                sagaForm.character.description,
-                sagaForm.saga.genre,
-            )
+            sagaForm.character?.let {
+                ReviewCard(
+                    sagaForm.character.name,
+                    sagaForm.character.gender,
+                    sagaForm.character.description,
+                    sagaForm.saga.genre,
+                )
+            } ?: run {
+                Box {
+                    Image(painterResource(R.drawable.ic_spark), null)
+                }
+            }
         },
         modifier =
             Modifier.fillMaxSize(),
@@ -187,7 +196,8 @@ fun FlipCard(
             modifier
                 .clickable {
                     onClick(cardFace)
-                }.graphicsLayer {
+                }
+                .graphicsLayer {
                     rotationY = rotation.value
                     cameraDistance = 12f * density
                 },

@@ -115,6 +115,13 @@ class NewSagaUseCaseImpl
                 gemmaClient.generate(NewSagaPrompts.introPrompt())!!
             }
 
+        override suspend fun generateCharacterIntroduction(
+            sagaContext: com.ilustris.sagai.features.newsaga.data.model.SagaDraft?,
+        ): RequestResult<SagaCreationGen> =
+            executeRequest {
+                gemmaClient.generate(NewSagaPrompts.characterIntroPrompt(sagaContext))!!
+            }
+
         override suspend fun generateCharacterSavedMark(
             character: Character,
             saga: Saga,

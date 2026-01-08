@@ -103,8 +103,7 @@ enum class Routes(
         title = R.string.new_saga_title,
         deepLink = "saga://new_saga",
         showBottomNav = false,
-        topBarContent = {
-        },
+        topBarContent = { Box {} },
         view = { nav, padding, _, _ ->
 
             NewSagaView(nav)

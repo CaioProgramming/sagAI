@@ -3,6 +3,9 @@ package com.ilustris.sagai.features.newsaga.ui.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilustris.sagai.core.analytics.AnalyticsService
+import com.ilustris.sagai.core.analytics.SagaCreationEvent
+import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -13,6 +16,7 @@ import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.Sender
 import com.ilustris.sagai.features.newsaga.data.usecase.NewSagaUseCase
@@ -44,9 +48,9 @@ class CreateSagaViewModel
     constructor(
         private val newSagaUseCase: NewSagaUseCase,
         private val characterUseCase: CharacterUseCase,
-        private val analyticsService: com.ilustris.sagai.core.analytics.AnalyticsService,
+        private val analyticsService: AnalyticsService,
     ) : ViewModel() {
-        val form = MutableStateFlow(SagaForm())
+        val form = MutableStateFlow(SagaForm(saga = SagaDraft(genre = Genre.entries.random())))
         val state = MutableStateFlow(CreateSagaState())
         val effect = MutableStateFlow<Effect?>(null)
         val chatMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
@@ -72,6 +76,7 @@ class CreateSagaViewModel
         }
 
         fun startChat() {
+            if (chatMessages.value.isNotEmpty()) return
             updateGenerating(true)
             viewModelScope.launch(Dispatchers.IO) {
                 newSagaUseCase
@@ -153,10 +158,10 @@ class CreateSagaViewModel
                                     genre = it.saga.genre,
                                 ),
                             character =
-                                form.value.character.copy(
-                                    name = it.character.name,
-                                    gender = it.character.gender,
-                                    description = it.character.description,
+                                form.value.character?.copy(
+                                    name = it.character?.name ?: emptyString(),
+                                    gender = it.character?.gender ?: emptyString(),
+                                    description = it.character?.description ?: emptyString(),
                                 ),
                         )
                 }
@@ -304,10 +309,10 @@ class CreateSagaViewModel
         private fun trackSagaCreation(saga: Saga) {
             val userMessageCount = chatMessages.value.count { it.sender == Sender.USER }
             analyticsService.trackEvent(
-                com.ilustris.sagai.core.analytics.SagaCreationEvent(
+                SagaCreationEvent(
                     messageCount = userMessageCount,
                     genre = saga.genre.name,
                 ),
-        )
-    }
+            )
+        }
     }

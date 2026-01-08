@@ -4,11 +4,5 @@ import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 
 data class SagaForm(
     val saga: SagaDraft = SagaDraft(),
-    val character: CharacterInfo = CharacterInfo(),
+    val character: CharacterInfo? = null,
 )
-
-fun SagaForm.isValid() =
-    saga.title.isNotEmpty() &&
-        saga.description.isNotEmpty() &&
-        character.name.isNotEmpty() &&
-        character.description.isNotEmpty()

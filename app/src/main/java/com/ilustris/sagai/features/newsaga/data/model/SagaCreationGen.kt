@@ -16,6 +16,8 @@ enum class CallBackAction {
     UPDATE_DATA,
     AWAITING_CONFIRMATION,
     SAVE_SAGA,
+    CREATE_CHARACTER_REQUIRED,
+    CHARACTER_READY,
 }
 
 enum class Sender {

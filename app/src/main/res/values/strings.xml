@@ -192,6 +192,7 @@
     <string name="dialog_exit_message_new_saga">The AI is currently working. Are you sure you want to leave? Your progress might be lost.</string>
     <string name="dialog_exit_confirm_button_new_saga">Leave</string>
     <string name="dialog_exit_dismiss_button_new_saga">Stay</string>
+    <string name="continue_to_saga">Continue to Saga</string>
     <string name="notification_explanation">To notify you about new messages in your saga when you\'re not in the app, please allow notification permission.</string>
     <string name="continue_text">continue</string>
     <string name="notification_title">New message on %s</string>

@@ -207,4 +207,41 @@ object NewSagaPrompts {
             appendLine("- Set `callback` to null.")
             appendLine("- Keep responses concise and playful.")
         }
+
+    fun characterIntroPrompt(sagaContext: com.ilustris.sagai.features.newsaga.data.model.SagaDraft?) =
+        buildString {
+            appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT.")
+            appendLine("DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS BEFORE OR AFTER THE JSON.")
+            appendLine()
+            appendLine("Your task is to generate a welcoming message to help the user create their character!")
+            appendLine()
+            if (sagaContext != null && sagaContext.title.isNotEmpty()) {
+                appendLine("The user is creating a character for their saga: \"${sagaContext.title}\"")
+                if (sagaContext.description.isNotEmpty()) {
+                    appendLine("Saga context: ${sagaContext.description}")
+                }
+                if (sagaContext.genre != null) {
+                    appendLine("Genre: ${sagaContext.genre.name}")
+                }
+                appendLine()
+            }
+            appendLine(
+                "- message: A warm, encouraging greeting that explains the user just needs to start typing to bring their character to life. Keep it enthusiastic and direct (max 2 sentences).",
+            )
+            appendLine("- inputHint: A brief creative prompt like \"A warrior with a secret\" (keep under 40 characters).")
+            appendLine(
+                "- suggestions: Generate 3 unique character concept ideas (max 6 words each). Examples:",
+            )
+            appendLine("  * \"Reluctant hero haunted by past mistakes\"")
+            appendLine("  * \"Charming thief with a heart of gold\"")
+            appendLine("  * \"Wise mentor hiding a dark secret\"")
+            appendLine("The suggestions field must be a String Array with 3 concise character ideas.")
+            if (sagaContext?.genre != null) {
+                appendLine("Make sure suggestions fit the ${sagaContext.genre.name} genre!")
+            }
+            appendLine()
+            appendLine("Important JSON rules:")
+            appendLine("- Set `callback` to null.")
+            appendLine("- Keep responses concise and encouraging.")
+        }
 }

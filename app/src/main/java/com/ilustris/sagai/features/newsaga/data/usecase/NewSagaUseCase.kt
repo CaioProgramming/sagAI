@@ -5,6 +5,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
 enum class SagaProcess {
@@ -37,6 +38,8 @@ interface NewSagaUseCase {
     ): RequestResult<SagaCreationGen>
 
     suspend fun generateIntroduction(): RequestResult<SagaCreationGen>
+
+    suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen>
 
     suspend fun generateCharacterSavedMark(
         character: Character,
