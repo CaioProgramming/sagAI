@@ -88,10 +88,25 @@ object ImagePrompts {
                 "- **Placement:** The 'placement' parameter dictates the subject's position in the frame. Describe this explicitly (e.g., 'The character is positioned in the lower-left third of the frame').",
             )
             appendLine(
-                "- **Subject Orientation:** The 'subject_orientation' parameter defines the subject's rotation relative to the camera. Describe this explicitly (e.g., 'The character is facing forward', 'The character is turned 3/4 to the left', 'Profile view facing right'). **IMPORTANT:** Rotation directions (Left/Right) are relative to the screen.",
+                "- **Subject Orientation:** The 'subject_orientation' parameter has THREE critical components you must translate separately:",
             )
             appendLine(
-                "- **Form & Posture:** The 'form_and_posture' parameter defines the subject's physical state. Translate this into descriptive actions and shapes (e.g., 'leaning contemplatively with the head resting on the hand', 'sitting with an elegant, vertical posture'). This is critical for capturing the weight and tension of the moment.",
+                "  1. BODY AXIS: Describe the torso/shoulder line direction (e.g., 'torso facing forward with shoulders parallel to camera', 'body turned 3/4 to the right', 'shown in profile')",
+            )
+            appendLine(
+                "  2. HEAD DIRECTION: Describe where the face is pointing (e.g., 'head turned front', 'face angled 3/4 left', 'looking over shoulder')",
+            )
+            appendLine(
+                "  3. GAZE: Describe eye contact direction (e.g., 'eyes meeting the viewer', 'gaze averted right', 'looking down')",
+            )
+            appendLine(
+                "  **CRITICAL:** All three components MUST be reflected in your description. Example: If visual direction says 'Body front, Head 3/4 left, Gaze direct', you must describe a front-facing body with head turned left and direct eye contact.",
+            )
+            appendLine(
+                "  **NOTE:** Left/Right directions are relative to the screen. 'Front-facing body' means shoulders parallel to camera plane.",
+            )
+            appendLine(
+                "- **Form & Posture:** The 'form_and_posture' parameter defines complete physical stance. Translate into detailed pose description: stance (standing/sitting/crouching/etc.), weight distribution, spine position, arm/leg positions (e.g., 'standing with weight on left leg, arms crossed, right knee bent', 'sitting leaning forward, hand on knee'). This captures the complete body positioning and physical tension.",
             )
             appendLine(
                 "- **Scale & Zoom:** The 'scale_and_zoom' parameter defines how much of the frame the subject occupies and the perceived camera distance. This MUST align with the framing code. Translate this into spatial descriptors (e.g., 'The character's face fills nearly the entire frame with intimate proximity', 'The subject occupies 40% of the frame with the environment visible around them', 'Telephoto compression creates tight framing around the subject'). This ensures the final image matches the reference's DETAIL LEVEL and FRAMING DISTANCE exactly.",
@@ -271,15 +286,59 @@ object ImagePrompts {
             )
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
             appendLine(
-                "16. SUBJECT_ORIENTATION: [Front-facing / 3/4 turn left/right / Profile left/right / Back-facing]. CRITICAL PRECISION: 'Left/Right' refers to the direction the subject is facing relative to the FRAME (e.g., '3/4 turn right' means facing towards the right side of the screen). If head and body orientations differ, specify both: 'Body facing left, Head 3/4 turn right'.",
+                "16. SUBJECT_ORIENTATION: [BODY + HEAD positioning]. CRITICAL - Analyze THREE components separately:",
             )
             appendLine(
-                "17. FORM & POSTURE: [Describe the subject's physical state: leaning / reclining / crouching / head-tilt / weight-on-one-leg]. Focus on geometric shapes and physical tension (e.g., 'Diagonal shoulder line leaning head on hand', 'Vertical subject tension').",
+                "   • BODY AXIS: [Front-facing / 3/4 turn left/right / Side profile left/right / Back-facing] - The torso/shoulder line direction",
+            )
+            appendLine(
+                "   • HEAD DIRECTION: [Front / 3/4 left/right / Profile left/right / Back / Over-shoulder] - Where the face is pointing",
+            )
+            appendLine(
+                "   • GAZE: [Direct-to-camera / Looking away left/right / Looking up/down / Averted / Closed eyes] - Eye contact direction",
+            )
+            appendLine(
+                "   EXAMPLE: 'Body 3/4 right, Head front, Gaze direct' OR 'Body front, Head 3/4 left, Gaze away right'",
+            )
+            appendLine(
+                "   NOTE: 'Left/Right' is relative to screen direction. 'Front-facing body' means shoulders parallel to camera plane.",
+            )
+            appendLine(
+                "17. FORM & POSTURE: [Complete physical stance description]. Specify: stance (standing/sitting/crouching/lying/kneeling), weight distribution (centered/shifted), body shape (straight/curved/twisted), limb positions (arms crossed/at sides/raised, legs together/apart/bent). Focus on geometric shapes and physical tension (e.g., 'Standing upright with weight on left leg, arms crossed, shoulders square', 'Sitting with torso leaning forward, one hand on knee').",
             )
             appendLine()
             appendLine("⚠️ PARAMETER 18 IS MANDATORY - DO NOT SKIP:")
             appendLine(
                 "18. SCALE & ZOOM: [How much visual space the subject occupies]. CRITICAL for framing precision. Examples: 'Subject fills 70% of frame', 'Intimate close proximity', 'Subject compressed by telephoto with minimal background separation', 'Wide-angle with subject at 40% scale showing expanded environment'. MUST align with framing code - ECU/CU = high fill (80-100%), MS/MWS = medium fill (50-70%), FS/WS = lower fill (30-50%), EWS = minimal fill (10-30%). This ensures the DISTANCE and DETAIL LEVEL match the reference exactly.",
+            )
+            appendLine()
+            appendLine("SUBJECT POSITIONING ANALYSIS (CRITICAL FOR ACCURATE EXTRACTION):")
+            appendLine("When analyzing the reference image, follow this systematic approach:")
+            appendLine()
+            appendLine("1. BODY AXIS DETERMINATION:")
+            appendLine("   - Look at SHOULDER LINE and TORSO alignment relative to the camera")
+            appendLine("   - Front-facing: Both shoulders equally visible, torso parallel to camera plane")
+            appendLine("   - 3/4 turn: One shoulder more prominent, torso rotated ~45° from camera")
+            appendLine("   - Profile: Only one shoulder visible, torso perpendicular to camera (90°)")
+            appendLine("   - Back-facing: Shoulders turned away, back of torso visible")
+            appendLine()
+            appendLine("2. HEAD DIRECTION ANALYSIS:")
+            appendLine("   - Separate from body - head can turn independently")
+            appendLine("   - Front: Both eyes, full nose, symmetrical face")
+            appendLine("   - 3/4: Both eyes visible but one more prominent, nose partially blocks far side of face")
+            appendLine("   - Profile: One eye visible, nose silhouette, one side of face only")
+            appendLine("   - Over-shoulder: Head turned back over shoulder")
+            appendLine()
+            appendLine("3. STANCE & POSTURE DOCUMENTATION:")
+            appendLine("   - PRIMARY STANCE: Standing/Sitting/Crouching/Lying/Kneeling/Leaning")
+            appendLine("   - WEIGHT: Which leg/side bears weight? Is it centered or shifted?")
+            appendLine("   - SPINE: Straight/Curved/Twisted/Bent forward or back")
+            appendLine("   - ARMS: Position and what they're doing (crossed/at sides/raised/gesturing)")
+            appendLine("   - LEGS: Together/Apart/Crossed/One bent")
+            appendLine()
+            appendLine("EXAMPLE COMPLETE ANALYSIS:")
+            appendLine(
+                "'Body front-facing, Head 3/4 left, Gaze averted down' + 'Standing with weight on right leg, left knee slightly bent, arms at sides with hands in pockets, shoulders relaxed'",
             )
             appendLine()
             appendLine("VISIBILITY ANALYSIS:")
@@ -355,7 +414,19 @@ object ImagePrompts {
             "   - **ANGLE & PERSPECTIVE ENFORCEMENT:** The prompt's angle MUST be specific, non-generic, and creative, as mandated by the visual direction. It must avoid 'banned perspectives' like flat or plain views. The description must clearly reflect the chosen viewpoint (e.g., 'The camera looks up at the towering figure...').",
         )
         appendLine(
-            "   - **SUBJECT ORIENTATION (NON-NEGOTIABLE):** STRICTLY enforce the subject's rotation from visual direction. If direction says 'Profile', prompt MUST describe a side profile. If '3/4', it MUST be 3/4. Mismatch = CRITICAL VIOLATION.",
+            "   - **SUBJECT ORIENTATION (NON-NEGOTIABLE):** STRICTLY enforce ALL THREE components from visual direction:",
+        )
+        appendLine(
+            "     • BODY AXIS: The prompt must describe the torso/shoulder orientation matching the reference (e.g., 'shoulders turned 3/4 to the right', 'torso facing forward', 'body in profile')",
+        )
+        appendLine(
+            "     • HEAD DIRECTION: The prompt must describe where the head/face is pointing (e.g., 'head turned front', 'face in 3/4 view', 'looking over shoulder')",
+        )
+        appendLine(
+            "     • GAZE: The prompt must describe eye contact direction (e.g., 'eyes meeting the viewer', 'gaze averted to the left', 'looking down')",
+        )
+        appendLine(
+            "     CRITICAL: If visual direction says 'Body front, Head 3/4 left', the prompt MUST describe a front-facing body with head turned left. Any mismatch in ANY component = CRITICAL VIOLATION.",
         )
         appendLine(
             "   - **LIGHTING & CONTRAST FIDELITY:** The prompt MUST embrace the reference's lighting structure (e.g., strong shadows, specific light direction, contrast level) as a compositional tool. Art style lighting acts as a MOOD/PALETTE filter, but it must NOT flatten or compromise the dramatic lighting defined in the reference.",
@@ -471,7 +542,9 @@ object ImagePrompts {
         appendLine(
             "- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.",
         )
-        appendLine("- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation does not match the visual direction.")
+        appendLine(
+            "- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation doesn't match ANY of the three components from visual direction (body axis, head direction, or gaze). Each must be precisely matched.",
+        )
         appendLine(
             "- MISSING_SCALE_ZOOM (CRITICAL): The visual direction provides SCALE & ZOOM parameter but the prompt doesn't describe frame fill or proximity at all. This is a CRITICAL omission that breaks framing precision.",
         )
@@ -496,7 +569,9 @@ object ImagePrompts {
         appendLine(
             "- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.",
         )
-        appendLine("- Wrong subject orientation → Correct the subject's rotation to match the visual direction.")
+        appendLine(
+            "- Wrong subject orientation → Correct ALL THREE components (body axis, head direction, gaze) to precisely match the visual direction.",
+        )
         appendLine(
             "- Missing scale/zoom (CRITICAL) → IMMEDIATELY inject spatial descriptors matching the visual direction's SCALE & ZOOM parameter (e.g., 'filling 80% of frame with intimate proximity'). This is NON-NEGOTIABLE.",
         )
