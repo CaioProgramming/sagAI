@@ -41,7 +41,6 @@ class NewCharacterUseCaseImpl
                             lastMessage = latestMessage!!,
                             sagaContext = sagaContext,
                         ),
-                        requireTranslation = true,
                     )!!
 
                 delay(delayDefaultTime)

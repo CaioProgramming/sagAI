@@ -1,6 +1,7 @@
 package com.ilustris.sagai.features.newsaga.data.usecase
 
 import com.ilustris.sagai.core.ai.GemmaClient
+import com.ilustris.sagai.core.ai.prompts.CharacterPrompts
 import com.ilustris.sagai.core.ai.prompts.NewSagaPrompts
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
@@ -69,7 +70,7 @@ class NewSagaUseCaseImpl
         override suspend fun replyAiForm(
             currentMessages: List<ChatMessage>,
             latestMessage: String?,
-            currentFormData: SagaDraft,
+            currentFormData: SagaForm,
         ): RequestResult<SagaCreationGen> =
             executeRequest {
                 val delayDefaultTime = 700L
@@ -78,7 +79,7 @@ class NewSagaUseCaseImpl
                 val userInput = currentMessages.last().text
 
                 val extractedDataPrompt =
-                    gemmaClient.generate<SagaForm>(
+                    gemmaClient.generate<SagaDraft>(
                         NewSagaPrompts.extractDataFromUserInputPrompt(
                             currentSagaForm = currentFormData,
                             userInput = userInput,
@@ -105,10 +106,10 @@ class NewSagaUseCaseImpl
                     gemmaClient.generate<SagaCreationGen>(
                         NewSagaPrompts.generateCreativeQuestionPrompt(
                             field,
-                            extractedDataPrompt,
+                            SagaForm(saga = extractedDataPrompt),
                         ),
                     )!!
-                nextQuestion.copy(callback = nextQuestion.callback?.copy(data = extractedDataPrompt))
+                nextQuestion.copy(callback = nextQuestion.callback?.copy(data = SagaForm(saga = extractedDataPrompt)))
             }
 
         override suspend fun generateIntroduction(): RequestResult<SagaCreationGen> =
@@ -118,7 +119,7 @@ class NewSagaUseCaseImpl
 
         override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen> =
             executeRequest {
-                gemmaClient.generate(NewSagaPrompts.characterIntroPrompt(sagaContext))!!
+                gemmaClient.generate(CharacterPrompts.characterIntroPrompt(sagaContext))!!
             }
 
         override suspend fun generateCharacterSavedMark(

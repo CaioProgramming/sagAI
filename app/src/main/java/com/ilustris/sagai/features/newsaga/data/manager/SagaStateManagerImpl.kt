@@ -4,6 +4,7 @@ import android.util.Log
 import com.ilustris.sagai.core.data.RequestResult
 import com.ilustris.sagai.core.data.executeRequest
 import com.ilustris.sagai.core.utils.doNothing
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.CallBackAction
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
@@ -81,7 +82,10 @@ class SagaStateManagerImpl
                 )
         }
 
-        override suspend fun sendMessage(userInput: String) {
+        override suspend fun sendMessage(
+            userInput: String,
+            currentCharacter: CharacterInfo?,
+        ) {
             updateLoading(true)
             val latestMessage = _formState.value?.messages?.lastOrNull()
             val userMessage = ChatMessage(text = userInput, sender = Sender.USER)
@@ -91,7 +95,11 @@ class SagaStateManagerImpl
                 .replyAiForm(
                     currentMessages = _formState.value?.messages ?: emptyList(),
                     latestMessage = latestMessage?.text,
-                    currentFormData = _formState.value?.draft ?: SagaDraft(),
+                    currentFormData =
+                        SagaForm(
+                            saga = getSagaForm(),
+                            character = currentCharacter,
+                        ),
                 ).onSuccess { response ->
                     updateMessages(
                         ChatMessage(

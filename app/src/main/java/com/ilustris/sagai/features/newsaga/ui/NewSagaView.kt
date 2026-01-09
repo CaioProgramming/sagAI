@@ -46,8 +46,10 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.Button
@@ -117,7 +119,6 @@ import com.ilustris.sagai.ui.navigation.Routes
 import com.ilustris.sagai.ui.navigation.navigateToRoute
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
-import com.ilustris.sagai.ui.theme.fadeGradientTop
 import com.ilustris.sagai.ui.theme.gradient
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
@@ -331,34 +332,11 @@ fun NewSagaView(
                             Column(
                                 modifier =
                                     Modifier
-                                        .background(fadeGradientTop())
+                                        .verticalScroll(rememberScrollState())
+                                        .background(MaterialTheme.colorScheme.background)
                                         .animateContentSize(),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                if (isReadyToSave) {
-                                    IconButton(
-                                        onClick = {
-                                            coroutineScope.launch {
-                                                scaffoldState.bottomSheetState.show()
-                                            }
-                                        },
-                                        modifier = Modifier.size(24.dp),
-                                        colors = IconButtonDefaults.outlinedIconButtonColors(),
-                                    ) {
-                                        Icon(
-                                            painterResource(R.drawable.ic_spark),
-                                            null,
-                                            tint = MaterialTheme.colorScheme.onBackground,
-                                        )
-                                    }
-
-                                    SheetContent(
-                                        flow,
-                                        draft,
-                                        characterState?.characterInfo,
-                                    )
-                                }
-
                                 BottomContent(
                                     genre = genre,
                                     inputField = inputField,
@@ -377,20 +355,21 @@ fun NewSagaView(
                                     )
 
                                 LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.padding(16.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.padding(vertical = 8.dp),
                                 ) {
                                     items(suggestions) {
                                         Text(
                                             it,
                                             style =
-                                                MaterialTheme.typography.bodyMedium.copy(
+                                                MaterialTheme.typography.labelMedium.copy(
                                                     fontFamily = genre.bodyFont(),
                                                     color = genre.iconColor,
                                                     textAlign = TextAlign.Start,
                                                 ),
                                             modifier =
                                                 Modifier
+                                                    .fillParentMaxWidth(.7f)
                                                     .padding(8.dp)
                                                     .clip(shape)
                                                     .border(
@@ -398,13 +377,51 @@ fun NewSagaView(
                                                         genre.color.gradientFade(),
                                                         shape,
                                                     ).background(
-                                                        genre.color.gradientFade(),
+                                                        MaterialTheme.colorScheme.background,
                                                         shape,
                                                     ).clickable {
                                                         inputField = it
                                                     }.padding(16.dp),
                                         )
                                     }
+                                }
+                                if (isReadyToSave) {
+                                    IconButton(
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                scaffoldState.bottomSheetState.show()
+                                            }
+                                        },
+                                        modifier =
+                                            Modifier
+                                                .size(24.dp)
+                                                .gradientFill(
+                                                    genre.gradient(true),
+                                                ),
+                                        colors = IconButtonDefaults.outlinedIconButtonColors(),
+                                    ) {
+                                        Icon(
+                                            painterResource(R.drawable.ic_spark),
+                                            null,
+                                            tint = MaterialTheme.colorScheme.onBackground,
+                                        )
+                                    }
+
+                                    SheetContent(
+                                        flow,
+                                        draft,
+                                        characterState?.characterInfo,
+                                        togglePage = {
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(
+                                                    1 - pagerState.currentPage,
+                                                )
+                                            }
+                                        },
+                                        onSave = {
+                                            viewModel.saveSaga()
+                                        },
+                                    )
                                 }
                             }
                         },
@@ -467,7 +484,11 @@ fun NewSagaView(
                                             } else {
                                                 NewSagaChat(
                                                     sagaState,
-                                                )
+                                                ) {
+                                                    coroutineScope.launch {
+                                                        pagerState.animateScrollToPage(1)
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -478,7 +499,7 @@ fun NewSagaView(
                                                 EmptyView()
                                             } else {
                                                 CharacterCreationView(
-                                                    form = draft,
+                                                    genre,
                                                     characterState = characterForm,
                                                     onContinueToSaga = {
                                                         coroutineScope.launch {
@@ -620,13 +641,16 @@ private fun SheetContent(
         Text(
             text = mainText,
             style =
-                MaterialTheme.typography.headlineLarge.copy(
+                MaterialTheme.typography.displaySmall.copy(
                     fontFamily = genre.headerFont(),
-                    fontWeight = FontWeight.Bold,
-                    shadow =
-                        androidx.compose.ui.graphics.Shadow(
-                            color = genre.color,
-                            blurRadius = 8f,
+                    textAlign = TextAlign.Center,
+                    brush =
+                        Brush.verticalGradient(
+                            listOf(
+                                genre.color,
+                                genre.colorPalette().last(),
+                                genre.iconColor,
+                            ),
                         ),
                 ),
         )
@@ -644,24 +668,26 @@ private fun SheetContent(
                     fontFamily = genre.bodyFont(),
                     fontWeight = FontWeight.Normal,
                 ),
-            modifier = Modifier.weight(1f),
         )
 
         Button(
             onClick = {
                 onSave()
             },
-            modifier = Modifier.reactiveShimmer(true),
+            modifier =
+                Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .reactiveShimmer(true),
             shape = genre.shape(),
             colors =
                 ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.onBackground,
-                    contentColor = MaterialTheme.colorScheme.background,
+                    containerColor = genre.color,
+                    contentColor = genre.iconColor,
                 ),
         ) {
             Text(
                 stringResource(R.string.save_saga),
-                modifier = Modifier.gradientFill(genre.gradient(true)),
             )
         }
     }

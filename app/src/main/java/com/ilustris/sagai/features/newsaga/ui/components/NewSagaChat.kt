@@ -20,8 +20,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -42,11 +45,15 @@ import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.gradientFade
 import com.ilustris.sagai.ui.theme.gradientFill
+import com.ilustris.sagai.ui.theme.shape
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun NewSagaChat(state: FormState.NewSagaForm) {
+fun NewSagaChat(
+    state: FormState.NewSagaForm,
+    continueToCharacter: () -> Unit = {},
+) {
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
     val genre = state.draft.genre
@@ -87,6 +94,30 @@ fun NewSagaChat(state: FormState.NewSagaForm) {
                         isLast = messages.last() == message,
                         modifier = Modifier.animateItem(),
                     )
+                }
+            }
+
+            if (state.isReady) {
+                item {
+                    Button(
+                        onClick = continueToCharacter,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = genre.color,
+                                contentColor = genre.iconColor,
+                            ),
+                        shape = genre.shape(),
+                    ) {
+                        Text(
+                            "Criar personagem",
+                            style = MaterialTheme.typography.titleMedium.copy(fontFamily = genre.bodyFont()),
+                            modifier = Modifier.padding(8.dp),
+                        )
+                    }
                 }
             }
         }

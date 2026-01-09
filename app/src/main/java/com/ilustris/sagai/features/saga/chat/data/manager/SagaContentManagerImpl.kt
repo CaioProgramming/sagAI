@@ -346,18 +346,11 @@ class SagaContentManagerImpl
                     ).onSuccessAsync {
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
-                                Log.i(
-                                    javaClass.simpleName,
-                                    "Starting nickname analysis after event review.",
-                                )
-                                (
-                                    saga
-                                        .flatMessages()
-                                        .takeLast(
-                                            15,
-                                        ).map { it.message }
-                                )
                                 characterUseCase.findAndSuggestNicknames(saga, timelineContent)
+                                characterUseCase.updateCharacterKnowledge(
+                                    timelineContent.data,
+                                    saga,
+                                )
                                 Log.i(
                                     javaClass.simpleName,
                                     "Nickname analysis completed successfully.",
@@ -684,8 +677,8 @@ class SagaContentManagerImpl
                 setProcessing(true)
             }
             block()
-        setProcessing(false)
-    }
+            setProcessing(false)
+        }
 
         private fun validatePostAction(
             saga: SagaContent,
@@ -841,6 +834,7 @@ class SagaContentManagerImpl
             withContext(Dispatchers.IO) {
                 saga.flatEvents().find { it.data.id == timeline.id }?.let { content ->
                     timelineUseCase.generateTimelineContent(saga, content.copy(data = timeline))
+
                     characterUseCase.updateCharacterKnowledge(timeline, saga)
 
                     updateSnackBar(
@@ -935,28 +929,28 @@ class SagaContentManagerImpl
                     )
                     character
                 } else {
-                characterUseCase
-                    .generateCharacterImage(
-                        character,
-                        currentSaga.data,
-                    ).success.value.first
+                    characterUseCase
+                        .generateCharacterImage(
+                            character,
+                            currentSaga.data,
+                        ).success.value.first
+                }
             }
-        }
 
-    suspend fun generateEnding(saga: SagaContent) = createEndingMessage(saga)
+        suspend fun generateEnding(saga: SagaContent) = createEndingMessage(saga)
 
-    override fun getDirective(): String {
-        val currentSaga = content.value
-        val actsCount = currentSaga?.acts?.size ?: 0
-        Log.d(
-            javaClass.simpleName,
-            "Getting directive. Total acts count: $actsCount for saga ${currentSaga?.data?.id}",
-        )
-        return when (actsCount) {
-            0, 1 -> ActDirectives.FIRST_ACT_DIRECTIVES
-            2 -> ActDirectives.SECOND_ACT_DIRECTIVES
-            3 -> ActDirectives.THIRD_ACT_DIRECTIVES
-            else -> ActDirectives.FIRST_ACT_DIRECTIVES
+        override fun getDirective(): String {
+            val currentSaga = content.value
+            val actsCount = currentSaga?.acts?.size ?: 0
+            Log.d(
+                javaClass.simpleName,
+                "Getting directive. Total acts count: $actsCount for saga ${currentSaga?.data?.id}",
+            )
+            return when (actsCount) {
+                0, 1 -> ActDirectives.FIRST_ACT_DIRECTIVES
+                2 -> ActDirectives.SECOND_ACT_DIRECTIVES
+                3 -> ActDirectives.THIRD_ACT_DIRECTIVES
+                else -> ActDirectives.FIRST_ACT_DIRECTIVES
         }
     }
     }

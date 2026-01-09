@@ -474,19 +474,91 @@ private fun repairJsonStructure(
 
                     if (charIndex < currentJson.length) {
                         val firstChar = currentJson[charIndex]
-                        if (firstChar != '"') {
+                        val needsOpeningQuote = firstChar != '"'
+
+                        if (needsOpeningQuote) {
                             Log.w(
                                 "JsonRepair",
                                 "Repairing JSON: Found missing opening quote for field '$name' at index $charIndex",
                             )
                             currentJson =
                                 currentJson.substring(0, charIndex) + "\"" +
-                                currentJson.substring(
-                                    charIndex,
-                                )
+                                currentJson.substring(charIndex)
+                            charIndex++ // Account for the inserted quote
                         }
-                        // Advance past this field's value start (plus the quote if we added it, or if it was there)
-                        startIndex = charIndex + 1
+
+                        // Now find the end of the string value and ensure closing quote
+                        var valueEndIndex = charIndex + 1
+                        var inString = true
+                        var escaped = false
+                        var foundClosingQuote =
+                            !needsOpeningQuote // If had opening quote originally, assume it might have closing
+
+                        while (valueEndIndex < currentJson.length && inString) {
+                            val c = currentJson[valueEndIndex]
+
+                            if (escaped) {
+                                escaped = false
+                                valueEndIndex++
+                                continue
+                            }
+
+                            when (c) {
+                                '\\' -> {
+                                    escaped = true
+                                }
+
+                                '"' -> {
+                                    foundClosingQuote = true
+                                    inString = false
+                                }
+
+                                ',' -> {
+                                    // Found comma without closing quote - need to add quote before comma
+                                    if (needsOpeningQuote || !foundClosingQuote) {
+                                        inString = false
+                                        continue // Don't increment, we'll insert quote here
+                                    }
+                                }
+
+                                '}', ']' -> {
+                                    // Found end of object/array without closing quote
+                                    if (needsOpeningQuote || !foundClosingQuote) {
+                                        inString = false
+                                        continue // Don't increment, we'll insert quote here
+                                    }
+                                }
+
+                                '\n', '\r' -> {
+                                    // Newline without closing quote
+                                    if (needsOpeningQuote || !foundClosingQuote) {
+                                        inString = false
+                                        continue
+                                    }
+                                }
+                            }
+                            valueEndIndex++
+                        }
+
+                        // Add closing quote if needed
+                        if (!foundClosingQuote && valueEndIndex <= currentJson.length) {
+                            // Trim any trailing whitespace before adding closing quote
+                            var insertPos = valueEndIndex
+                            while (insertPos > charIndex && currentJson[insertPos - 1].isWhitespace()) {
+                                insertPos--
+                            }
+
+                            Log.w(
+                                "JsonRepair",
+                                "Repairing JSON: Adding missing closing quote for field '$name' at index $insertPos",
+                            )
+                            currentJson =
+                                currentJson.substring(0, insertPos) + "\"" +
+                                currentJson.substring(insertPos)
+                        }
+
+                        // Advance past this field's value
+                        startIndex = valueEndIndex + 1
                     } else {
                         break
                     }

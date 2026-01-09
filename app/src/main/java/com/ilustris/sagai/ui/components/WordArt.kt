@@ -149,7 +149,7 @@ fun WordArtText(
 fun Genre.stylisedText(
     text: String,
     modifier: Modifier = Modifier,
-    fontSize: TextUnit = MaterialTheme.typography.displaySmall.fontSize,
+    fontSize: TextUnit = MaterialTheme.typography.headlineLarge.fontSize,
 ) {
     when (this) {
         Genre.FANTASY -> {

@@ -94,6 +94,9 @@ object ImagePrompts {
                 "- **Form & Posture:** The 'form_and_posture' parameter defines the subject's physical state. Translate this into descriptive actions and shapes (e.g., 'leaning contemplatively with the head resting on the hand', 'sitting with an elegant, vertical posture'). This is critical for capturing the weight and tension of the moment.",
             )
             appendLine(
+                "- **Scale & Zoom:** The 'scale_and_zoom' parameter defines how much of the frame the subject occupies and the perceived camera distance. This MUST align with the framing code. Translate this into spatial descriptors (e.g., 'The character's face fills nearly the entire frame with intimate proximity', 'The subject occupies 40% of the frame with the environment visible around them', 'Telephoto compression creates tight framing around the subject'). This ensures the final image matches the reference's DETAIL LEVEL and FRAMING DISTANCE exactly.",
+            )
+            appendLine(
                 "- **Cinematographic Precision:** Use technical codes and precise angles where possible (e.g., 'FS: Full-Body', 'Low-Angle Dutch Tilt 10°').",
             )
             appendLine()
@@ -226,16 +229,17 @@ object ImagePrompts {
             appendLine("CRITICAL DIRECTIVE (NON-NEGOTIABLE):")
             appendLine("- NO PREAMBLE: Do not start with 'Okay', 'Let's break down', or any introductory filler.")
             appendLine(
-                "- NO EXPLANATION TEXT: Output ONLY the 16 parameters. Do not explain your choices. Focus 100% on the technical data to best instruct the next AI model.",
+                "- NO EXPLANATION TEXT: Output ONLY the 18 parameters. Do not explain your choices. Focus 100% on the technical data to best instruct the next AI model.",
             )
             appendLine("- NO SUMMARY: Do not provide a concluding summary or 'In summary' section.")
             appendLine("- NO CONVERSATION: Do not address the user. Do not offer future help. Do not say 'let me know'.")
             appendLine("- ASSERTIVE TONE: Provide raw, actionable technical data. Use declarative statements.")
             appendLine("- AI-READY: The output must be directly usable as a visual direction for another AI model.")
+            appendLine("- MANDATORY: ALL 18 PARAMETERS MUST BE PRESENT. Missing even one parameter = CRITICAL FAILURE.")
             appendLine()
             appendLine("OUTPUT STRUCTURE (START DIRECTLY WITH PARAMETERS):")
             appendLine()
-            appendLine("17 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]'):")
+            appendLine("18 CINEMATOGRAPHY PARAMETERS (Format: 'NAME: [Value]') - ALL MANDATORY, NO EXCEPTIONS:")
             appendLine()
             appendLine(
                 "1. ANGLE & VIEWPOINT: [eye-level / low-angle looking up / high-angle looking down / dutch-angle / worm's-eye view / bird's-eye view]. DEFINE the CAMERA'S position relative to the PRIMARY SUBJECT(S). EXAMPLE: For greater precision, use descriptors like 'Low-Angle Dutch Tilt 10°' or 'High-Angle 30° POV'.",
@@ -273,6 +277,11 @@ object ImagePrompts {
                 "17. FORM & POSTURE: [Describe the subject's physical state: leaning / reclining / crouching / head-tilt / weight-on-one-leg]. Focus on geometric shapes and physical tension (e.g., 'Diagonal shoulder line leaning head on hand', 'Vertical subject tension').",
             )
             appendLine()
+            appendLine("⚠️ PARAMETER 18 IS MANDATORY - DO NOT SKIP:")
+            appendLine(
+                "18. SCALE & ZOOM: [How much visual space the subject occupies]. CRITICAL for framing precision. Examples: 'Subject fills 70% of frame', 'Intimate close proximity', 'Subject compressed by telephoto with minimal background separation', 'Wide-angle with subject at 40% scale showing expanded environment'. MUST align with framing code - ECU/CU = high fill (80-100%), MS/MWS = medium fill (50-70%), FS/WS = lower fill (30-50%), EWS = minimal fill (10-30%). This ensures the DISTANCE and DETAIL LEVEL match the reference exactly.",
+            )
+            appendLine()
             appendLine("VISIBILITY ANALYSIS:")
             appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OCCLUDED")
             appendLine("Analyze: 1.HEAD 2.FACE 3.TORSO 4.ARMS/HANDS 5.LEGS/FEET 6.DISTINCTIVE MARKS 7.BODY LANGUAGE 8.ENVIRONMENT")
@@ -294,7 +303,20 @@ object ImagePrompts {
             appendLine("- BANNED: 'eye-level', 'straight-on', 'plain view' (unless strictly required by composition).")
             appendLine("- REQUIRED: Establish a dominant, dynamic viewpoint that directs the viewer's eye.")
             appendLine()
-            appendLine("FINAL VERIFICATION: Is the output 100% technical? Is it devoid of pleasantries? If yes, output now.")
+            appendLine("PARAMETER COMPLETENESS CHECK (VERIFY BEFORE OUTPUT):")
+            appendLine("COUNT YOUR PARAMETERS - YOU MUST HAVE EXACTLY 18:")
+            appendLine("✓ 1-ANGLE ✓ 2-LENS ✓ 3-FRAMING ✓ 4-PLACEMENT ✓ 5-LIGHTING ✓ 6-COLOR")
+            appendLine("✓ 7-ENVIRONMENT ✓ 8-MOOD ✓ 9-DOF ✓ 10-ATMOSPHERE ✓ 11-PERSPECTIVE ✓ 12-TEXTURE")
+            appendLine("✓ 13-TIME ✓ 14-SIGNATURE ✓ 15-DEPTH_LAYERS ✓ 16-SUBJECT_ORIENTATION")
+            appendLine("✓ 17-FORM_&_POSTURE ✓ 18-SCALE_&_ZOOM")
+            appendLine()
+            appendLine("⚠️ CRITICAL: Parameter 18 (SCALE & ZOOM) is MANDATORY - it defines how much frame space the subject occupies.")
+            appendLine("This parameter is NEW and ESSENTIAL for framing precision. DO NOT SKIP IT.")
+            appendLine("If you output fewer than 18 parameters, your response is INCOMPLETE and REJECTED.")
+            appendLine()
+            appendLine(
+                "FINAL VERIFICATION: Is the output 100% technical? Is it devoid of pleasantries? Do you have ALL 18 parameters? If yes, output now.",
+            )
         }
 
     /**
@@ -317,9 +339,15 @@ object ImagePrompts {
         appendLine("VALIDATION CRITERIA:")
         appendLine()
         appendLine(
-            "1. CINEMATOGRAPHY (16 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers, subject_orientation",
+            "1. CINEMATOGRAPHY (18 params): angle, lens, framing, placement, lighting, color, environment, mood, DOF, atmosphere, perspective, texture, time, signature, depth_layers, subject_orientation, form_and_posture, scale_and_zoom",
         )
         appendLine("   - All MUST be explicit, specific, and match visual direction (excluding environment/background).")
+        appendLine(
+            "   - **⚠️ PARAMETER 18 (SCALE & ZOOM) IS MANDATORY:** If the visual direction includes SCALE & ZOOM but the prompt doesn't describe frame fill/proximity = CRITICAL VIOLATION. This parameter ensures framing precision and CANNOT be omitted.",
+        )
+        appendLine(
+            "   - **SCALE & ZOOM PRECISION (CRITICAL):** The prompt MUST describe how much frame space the subject occupies, matching the reference exactly. This ensures the generated image has the same detail level and perceived camera distance. If visual direction says 'Subject fills 80% of frame', the prompt must describe intimate proximity and tight framing. Mismatch = MAJOR VIOLATION.",
+        )
         appendLine(
             "   - **BACKGROUND & AMBIENCE PRECEDENCE:** The environment MUST strictly adhere to the genre's ambience. If the visual direction's environment conflicts with the genre's requirements (e.g., visual direction says 'studio' but genre is 'cyberpunk'), the genre ambience MUST take absolute precedence. Ignore the visual direction's background perspective entirely if it contradicts the genre's setting.",
         )
@@ -445,6 +473,12 @@ object ImagePrompts {
         )
         appendLine("- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation does not match the visual direction.")
         appendLine(
+            "- MISSING_SCALE_ZOOM (CRITICAL): The visual direction provides SCALE & ZOOM parameter but the prompt doesn't describe frame fill or proximity at all. This is a CRITICAL omission that breaks framing precision.",
+        )
+        appendLine(
+            "- SCALE_ZOOM_VIOLATION: The prompt describes scale/zoom but it mismatches the visual direction (e.g., 'distant wide shot' when direction specifies 'subject fills 80% of frame').",
+        )
+        appendLine(
             "- GENRE_AURA_VIOLATION: Subject pose or vibe contradicts the genre (e.g., static pose in Hero genre, happy pose in Cyberpunk).",
         )
         appendLine("- BANNED_TERMINOLOGY: Uses forbidden words from art style")
@@ -463,6 +497,12 @@ object ImagePrompts {
             "- Flat/generic angle → Replace with a more dynamic, descriptive angle (low-angle, high-angle, POV) that enhances the mood.",
         )
         appendLine("- Wrong subject orientation → Correct the subject's rotation to match the visual direction.")
+        appendLine(
+            "- Missing scale/zoom (CRITICAL) → IMMEDIATELY inject spatial descriptors matching the visual direction's SCALE & ZOOM parameter (e.g., 'filling 80% of frame with intimate proximity'). This is NON-NEGOTIABLE.",
+        )
+        appendLine(
+            "- Wrong scale/zoom → Correct spatial descriptors to match reference framing distance (e.g., 'intimate close-up filling frame' vs 'subject at 40% scale with environment visible').",
+        )
         appendLine(
             "- Wrong genre aura → Rewrite pose/expression to match genre (e.g., 'standing' → 'standing with heroic verticality' for Heroes).",
         )

@@ -101,6 +101,18 @@ enum class ViolationType {
     /** Technical jargon (degrees, mm, f-stops) not translated into visual descriptions */
     TECHNICAL_JARGON_NOT_TRANSLATED,
 
+    /** Scale/zoom parameter completely missing when provided in visual direction - CRITICAL omission */
+    MISSING_SCALE_ZOOM,
+
+    /** Scale/zoom doesn't match visual direction - subject occupies wrong amount of frame space */
+    SCALE_ZOOM_VIOLATION,
+
+    /** Uses a generic, flat, or banned perspective instead of dynamic viewpoint */
+    PERSPECTIVE_VIOLATION,
+
+    /** Subject orientation (facing direction) doesn't match visual direction */
+    SUBJECT_ORIENTATION_VIOLATION,
+
     // ========== ART STYLE VIOLATIONS ==========
 
     /** Banned terminology - using forbidden words from the art style (e.g., eye colors for PUNK_ROCK) */
@@ -133,6 +145,9 @@ enum class ViolationType {
 
     /** Character appears posed for portrait rather than caught in a moment */
     POSE_EXPRESSION_VIOLATION,
+
+    /** Subject pose or vibe contradicts genre expectations (e.g., static pose in Hero genre) */
+    GENRE_AURA_VIOLATION,
 }
 
 /**

@@ -79,7 +79,7 @@ class NewSagaViewModel
 
         fun sendSagaMessage(userInput: String) {
             viewModelScope.launch(Dispatchers.IO) {
-                sagaStateManager.sendMessage(userInput)
+                sagaStateManager.sendMessage(userInput, characterStateManager.getCharacterInfo())
             }
         }
 

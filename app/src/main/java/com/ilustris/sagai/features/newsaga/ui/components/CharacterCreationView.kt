@@ -3,6 +3,7 @@
 package com.ilustris.sagai.features.newsaga.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -22,19 +25,18 @@ import androidx.compose.ui.unit.dp
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.newsaga.data.manager.FormState.CharacterForm
-import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
+import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.ui.theme.SimpleTypewriterText
 import com.ilustris.sagai.ui.theme.bodyFont
 import com.ilustris.sagai.ui.theme.shape
 
 @Composable
 fun CharacterCreationView(
-    form: SagaDraft,
+    genre: Genre,
     characterState: CharacterForm,
     onContinueToSaga: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val genre = form.genre
     val characterPrompt = characterState.message
 
     Box(
@@ -45,6 +47,8 @@ fun CharacterCreationView(
         Column(
             modifier =
                 Modifier
+                    .verticalScroll(rememberScrollState())
+                    .animateContentSize()
                     .fillMaxSize()
                     .statusBarsPadding()
                     .padding(16.dp),

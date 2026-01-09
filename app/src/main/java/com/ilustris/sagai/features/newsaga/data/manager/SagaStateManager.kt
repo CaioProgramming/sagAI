@@ -18,7 +18,10 @@ interface SagaStateManager {
 
     fun handleCallback(action: CallBackAction)
 
-    suspend fun sendMessage(userInput: String)
+    suspend fun sendMessage(
+        userInput: String,
+        currentCharacter: CharacterInfo?,
+    )
 
     suspend fun startChat()
 

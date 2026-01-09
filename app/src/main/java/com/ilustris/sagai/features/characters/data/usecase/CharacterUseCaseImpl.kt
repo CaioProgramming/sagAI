@@ -22,6 +22,7 @@ import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.data.model.CharacterUpdate
+import com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult
 import com.ilustris.sagai.features.characters.data.model.NicknameSuggestion
 import com.ilustris.sagai.features.characters.data.model.SmartZoom
 import com.ilustris.sagai.features.characters.events.data.model.CharacterEvent
@@ -317,7 +318,7 @@ class CharacterUseCaseImpl
 
                 val prompt = CharacterPrompts.knowledgeUpdatePrompt(timeline, characters)
                 val result =
-                    gemmaClient.generate<com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult>(
+                    gemmaClient.generate<KnowledgeUpdateResult>(
                         prompt,
                         requirement = GemmaClient.ModelRequirement.HIGH,
                     )
@@ -336,7 +337,6 @@ class CharacterUseCaseImpl
 
                             if (newFacts.isNotEmpty()) {
                                 currentKnowledge.addAll(newFacts)
-                                // Token Optimization: Limit strictly to last 50 facts to prevent bloat
                                 if (currentKnowledge.size > 50) {
                                     currentKnowledge.subList(0, currentKnowledge.size - 50).clear()
                                 }
@@ -353,9 +353,9 @@ class CharacterUseCaseImpl
                     }
                 } else {
                     Log.d(
-                    javaClass.simpleName,
-                    "No new knowledge extracted from this timeline event.",
-                )
+                        javaClass.simpleName,
+                        "No new knowledge extracted from this timeline event.",
+                    )
+                }
             }
-        }
     }

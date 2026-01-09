@@ -6,6 +6,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
 import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
+import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 
 enum class SagaProcess {
     CREATING_SAGA,
@@ -33,7 +34,7 @@ interface NewSagaUseCase {
     suspend fun replyAiForm(
         currentMessages: List<ChatMessage>,
         latestMessage: String?,
-        currentFormData: SagaDraft,
+        currentFormData: SagaForm,
     ): RequestResult<SagaCreationGen>
 
     suspend fun generateIntroduction(): RequestResult<SagaCreationGen>

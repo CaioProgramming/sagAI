@@ -42,7 +42,7 @@ class CharacterStateManagerImpl
             }
             _characterState.value =
                 _characterState.value?.copy(
-                    isReady = true,
+                    isReady = action == CallBackAction.CONTENT_READY,
                 )
             when (action) {
                 CallBackAction.CONTENT_READY -> {

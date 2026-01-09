@@ -44,6 +44,7 @@ object ChatPrompts {
             "endMessage",
             "review",
             "playTimeMs",
+            "narratorVoice",
         )
 
     val characterExclusions =
@@ -59,7 +60,6 @@ object ChatPrompts {
             "smartZoom",
             "events",
             "relationships",
-            "knowledge",
         )
 
     @Suppress("ktlint:standard:max-line-length")
@@ -108,6 +108,22 @@ object ChatPrompts {
         appendLine(StorytellingDirective.INDIVIDUAL_KNOWLEDGE)
         appendLine(ContentGenerationDirective.PROGRESSION_DIRECTIVE)
 
+        appendLine("\n# ANTI-HALLUCINATION PROTOCOL")
+        appendLine("## CRITICAL: Permanence of Story Events")
+        appendLine(
+            "1. **DEATH IS FINAL:** If a character died in any previous message, they CANNOT reappear, speak, or be present unless a MAGICAL RESURRECTION event explicitly occurred.",
+        )
+        appendLine(
+            "2. **DEPARTURE IS REAL:** If a character left the scene/location, they are GONE unless they explicitly returned in a message.",
+        )
+        appendLine(
+            "3. **DESTRUCTION IS PERMANENT:** If an object was destroyed, consumed, or lost, it cannot be used unless explicitly restored.",
+        )
+        appendLine(
+            "4. **TRUST THE LATEST MESSAGE:** The [LATEST MESSAGE] below is the ABSOLUTE TRUTH of what just happened. It supersedes older context.",
+        )
+        appendLine("5. **NO RETCONS:** Never ignore, contradict, or 'undo' events from recent messages. Build FORWARD from them.")
+
         appendLine("\n# CURRENT PLAYER TURN")
         appendLine("### Character Resolution Hierarchy:")
         appendLine("1. **LOCAL:** If the player addresses someone in `charactersPresent` (e.g., 'Anya'), THEY MUST respond.")
@@ -119,7 +135,15 @@ object ChatPrompts {
         )
         appendLine("4. **CONTINUITY:** Identify the `speakerName` in the [LATEST MESSAGE]. YOU MUST NOT respond as that same character.")
         appendLine("5. **PRIVACY:** NPCs cannot read 'THOUGHT' messages; they interpret only visible actions.")
-        appendLine("\n[LATEST MESSAGE]")
+
+        appendLine("\n# [LATEST MESSAGE] - THE IMMEDIATE REALITY")
+        appendLine("## ⚠️ THIS IS THE MOST IMPORTANT CONTEXT")
+        appendLine("This message defines what JUST HAPPENED and what comes NEXT. Your response must:")
+        appendLine("- React DIRECTLY to this message's content")
+        appendLine("- Respect ALL consequences shown here (deaths, departures, changes)")
+        appendLine("- Build the next moment FROM this exact situation")
+        appendLine("- NEVER introduce elements that contradict this message")
+        appendLine("\n[MESSAGE CONTENT]")
         appendLine(message.toAINormalize(messageExclusions))
     }.trimIndent()
 
@@ -235,6 +259,36 @@ object ChatPrompts {
 
             appendLine("\n## Recent Activity")
             appendLine(conversationHistory(saga))
+
+            appendLine("\n## [MOST RECENT MESSAGE] - THE IMMEDIATE TRUTH")
+            val latestMessage = saga.flatMessages().maxByOrNull { it.message.timestamp }?.message
+            if (latestMessage != null) {
+                appendLine("⚠️ THIS MESSAGE IS THE DEFINITIVE STATE OF THE STORY RIGHT NOW:")
+                appendLine(latestMessage.toAINormalize(messageExclusions))
+                appendLine("\n**MANDATE:** Your summary MUST reflect the reality shown in this message.")
+                appendLine("- If it shows a character dying → they are NOT in `charactersPresent`")
+                appendLine("- If it shows movement to a new location → `currentLocation` MUST change")
+                appendLine("- If it shows a dramatic event → it MUST appear in `worldStateChanges`")
+                appendLine("- This message defines what happens NEXT, not what happened BEFORE")
+            }
+
+            appendLine("\n# ANTI-HALLUCINATION RULES FOR SUMMARIZATION")
+            appendLine("## CRITICAL: Truth Enforcement")
+            appendLine(
+                "1. **DEAD CHARACTERS VANISH:** If a character died in any message, they CANNOT be in `charactersPresent`. Mark their death in `worldStateChanges`.",
+            )
+            appendLine(
+                "2. **LOCATION TRANSITIONS ARE IMMEDIATE:** If the protagonist moved (e.g., 'I run to the basement'), `currentLocation` = 'basement'. Characters who didn't follow are NOT present.",
+            )
+            appendLine(
+                "3. **NO INVENTED PRESENCE:** Only list characters in `charactersPresent` if they were EXPLICITLY shown in recent messages or the scene summary. Do not assume.",
+            )
+            appendLine(
+                "4. **EVENTS ARE FINAL:** If something was destroyed, consumed, or changed, reflect it in `worldStateChanges`. Never ignore consequences.",
+            )
+            appendLine(
+                "5. **PRIORITIZE RECENCY:** The most recent message outweighs older context. If there's a contradiction, trust the latest message.",
+            )
 
             appendLine("\n# TECHNICAL EXTRACTION PARAMETERS")
             appendLine(

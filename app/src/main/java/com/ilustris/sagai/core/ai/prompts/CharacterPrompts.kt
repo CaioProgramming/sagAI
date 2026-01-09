@@ -27,39 +27,54 @@ object CharacterPrompts {
         sagaContext: SagaDraft?,
     ): String =
         buildString {
-            appendLine("You are an AI assistant helping a user create their character.")
-            appendLine("Current Character data:")
+            appendLine("You are a friendly AI character-building assistant helping a user bring their protagonist to life.")
+            appendLine("Current Character Data:")
             appendLine(currentCharacterInfo.toJsonFormat())
             appendLine()
-            if (sagaContext != null) {
-                appendLine("Saga context (use this to provide better character suggestions):")
-                appendLine("Title: ${sagaContext.title}")
-                appendLine("Description: ${sagaContext.description}")
-                appendLine("Genre: ${sagaContext.genre.name}")
-                appendLine()
+            sagaContext?.let {
+                appendLine("Saga context (use this to keep the character fitting in their world):")
+                appendLine(it.toAINormalize())
             }
             appendLine("User's latest input: \"$userInput\"")
             appendLine()
-            appendLine("Consider the latest message to extract user input information:")
+            appendLine("Your last message to them was:")
             appendLine(lastMessage)
-            appendLine("Your task is to analyze the user's input and update the Current Character data.")
-            appendLine("Only fill fields that are empty or can be clearly improved by the user's input.")
-            appendLine("Do not add conversational fluff.")
-            appendLine("YOUR SOLE OUTPUT MUST BE THE UPDATED CharacterInfo AS A JSON OBJECT.")
-            appendLine("This is the expected JSON structure for CharacterInfo:")
-            appendLine(toJsonMap(CharacterInfo::class.java))
+            appendLine()
+            appendLine(
+                "Your task: Extract character details from the user's input and update the CharacterInfo intelligently.",
+            )
+            appendLine("Guidelines:")
+            appendLine("- Capture personality, appearance, backstory, motivations—anything that makes this person REAL")
+            appendLine("- If they describe physical traits, mannerisms, or quirks, note them")
+            appendLine("- If they mention history, relationships, or conflicts, capture the essence")
+            appendLine("- Don't force info into fields if it doesn't fit naturally")
+            appendLine("- Keep what's already good unless they're clearly changing it")
+            appendLine("- Remember: we're building a living character, not filling a database")
         }
 
     fun identifyNextCharacterFieldPrompt(characterInfo: CharacterInfo): String =
         buildString {
-            appendLine("You are an AI tasked with identifying the next piece of information to ask a user for creating a character.")
+            appendLine(
+                "You're helping identify what's still needed to make this character feel complete and alive.",
+            )
             appendLine("Current Character Data:")
             appendLine(characterInfo.toJsonFormat())
             appendLine()
             appendLine(CharacterFormFields.fieldPriority())
-            appendLine("Possible return tokens: ${CharacterFormFields.entries.joinToString(", ") { it.name }}.")
-            appendLine("If all are sufficiently filled, return ${CharacterFormFields.ALL_FIELDS_COMPLETE.name}.")
-            appendLine("YOUR SOLE OUTPUT MUST BE ONE OF THESE TOKENS AS A SINGLE STRING.")
+            appendLine()
+            appendLine(
+                "Based on what we know so far, determine the FIRST piece that's missing or needs more depth to make this person feel REAL.",
+            )
+            appendLine("Think: Would a reader/player feel like they know this character?")
+            appendLine()
+            appendLine(
+                "Return ONE of these tokens: ${CharacterFormFields.entries.joinToString(", ") { it.name }}",
+            )
+            appendLine(
+                "If the character has enough depth and personality to feel like a real person, return: ${CharacterFormFields.ALL_FIELDS_COMPLETE.name}",
+            )
+            appendLine()
+            appendLine("YOUR SOLE OUTPUT MUST BE ONE TOKEN AS A SINGLE STRING (no quotes, no explanations).")
         }
 
     fun generateCharacterQuestionPrompt(
@@ -71,35 +86,87 @@ object CharacterPrompts {
         val fieldGuidance = fieldToAsk.description
 
         return buildString {
-            appendLine("The user needs to provide information for the field: $fieldNameForPrompt.")
-            appendLine("(Guidance for this field: \"$fieldGuidance\")")
+            appendLine("The user is building a character and needs to provide: $fieldNameForPrompt")
+            appendLine("(Field guidance: \"$fieldGuidance\")")
             appendLine()
-            appendLine("Current Character Data (for context):")
+            appendLine("Current Character Data:")
             appendLine(currentCharacterInfo.toJsonFormat())
             appendLine()
             if (sagaContext != null && sagaContext.title.isNotEmpty()) {
-                appendLine("Saga context (make your question fit this world):")
+                appendLine("Saga context (use this to make questions fit the world):")
                 appendLine("Title: ${sagaContext.title}")
                 appendLine("Description: ${sagaContext.description}")
                 appendLine("Genre: ${sagaContext.genre.name}")
                 appendLine()
             }
-            appendLine("Your task is to craft a creative and engaging question to ask the user for the '$fieldNameForPrompt'.")
             appendLine(
-                "**Use the 'Current Character Data' and saga context to make your question more personal and contextual.** For example, if you know the character's name, use it.",
+                "Your task: Craft a natural, conversational question about '$fieldNameForPrompt' that sounds like you're genuinely curious about this person—like asking a friend about their D&D character over pizza.",
+            )
+            appendLine(
+                "**Be a chill character-building buddy, not a form.** Use what you know about them to make it personal. Be slightly humorous, sarcastic, or ironic when it fits—like 'Cool, so what's their deal?' or 'Okay but what do they actually look like tho?'",
             )
             appendLine()
             appendLine(
-                "Craft a SHORT, direct question about '$fieldNameForPrompt' with no self-introduction. Use imperative, action-oriented phrasing. Keep the question under 140 characters.",
+                "Keep it SHORT and natural (under 120 characters). Write like you text. Be direct, casual, and genuinely interested in who this person is.",
             )
-            appendLine(
-                "Include a concise hint and 2-3 diverse, creative suggestions relevant to '$fieldNameForPrompt'. Suggestions must be distinct in tone/setting and avoid generic tropes.",
-            )
-            if (sagaContext?.genre != null) {
-                appendLine("Make sure suggestions fit the ${sagaContext.genre.name} genre!")
+            appendLine()
+            appendLine("For suggestions:")
+            when (fieldToAsk) {
+                CharacterFormFields.NAME -> {
+                    appendLine(
+                        "- Generate 3 character names that feel authentic to the saga's genre and world. Each should have personality baked into it.",
+                    )
+                    appendLine(
+                        "- Consider: cultural fit, nickname potential, how it sounds when shouted in battle or whispered in intrigue",
+                    )
+                    if (sagaContext?.genre != null) {
+                        appendLine("- Make names fit the ${sagaContext.genre.name} aesthetic")
+                    }
+                }
+
+                CharacterFormFields.BACKSTORY -> {
+                    appendLine(
+                        "- Generate 3 backstory hooks (10-15 words each) that combine origin, motivation, and conflict.",
+                    )
+                    appendLine(
+                        "- Focus on: key formative events, relationships that shaped them, secrets they carry, goals they pursue",
+                    )
+                    appendLine(
+                        "- Examples: \"Raised by assassins but refuses to kill, seeking redemption through protecting others\"",
+                    )
+                    appendLine(
+                        "         \"Former noble stripped of title, now building a criminal empire to reclaim their inheritance\"",
+                    )
+                }
+
+                CharacterFormFields.APPEARANCE -> {
+                    appendLine(
+                        "- Generate 3 appearance descriptions (10-15 words) that reveal personality and history through physical details.",
+                    )
+                    appendLine(
+                        "- Focus on: distinctive features, what they say about the character, scars/marks with stories, style choices that reveal character",
+                    )
+                    appendLine(
+                        "- Examples: \"Weathered hands and kind eyes, always in practical clothes with hidden pockets\"",
+                    )
+                    appendLine(
+                        "         \"Sharp features framed by wild hair, moves like a dancer, dresses to intimidate\"",
+                    )
+                }
+
+                else -> {
+                    appendLine(
+                        "- Generate 3 diverse, detailed suggestions for '$fieldNameForPrompt' that add depth and realism.",
+                    )
+                }
             }
+            appendLine()
+            appendLine("Suggestions must avoid clichés and generic fantasy tropes.")
             appendLine(
-                "Keep the tone encouraging and playful, but concise.",
+                "Include a concise hint (under 50 characters) as an inner thought—use \"What if they...\", \"Maybe someone who...\", \"What about...\" that trails off naturally.",
+            )
+            appendLine(
+                "Overall tone: Like texting a friend who's good at making characters. Natural, casual, genuinely curious. Add humor or light sarcasm when it fits—be real, not robotic. Think less 'professional assistant' and more 'friend who's played too much D&D and has opinions about backstories'.",
             )
 
             // Add CONTENT_READY callback logic
@@ -107,9 +174,14 @@ object CharacterPrompts {
                 appendLine()
                 appendLine("IMPORTANT: Since all fields are complete, the callback action must be 'CONTENT_READY'.")
                 appendLine(
-                    "The message should congratulate the user on creating their character and suggest they can still refine details if they want.",
+                    "The message should be casual and genuinely hyped—like a friend impressed with what you came up with. Add some light humor or playful commentary.",
                 )
-                appendLine("Example: 'Your character looks amazing! Ready to begin, or want to add more details?'")
+                appendLine(
+                    "Examples: 'Okay I'm kinda into this character. Ready to jump in or you wanna add more?', 'Not gonna lie, they sound pretty cool. Start the saga or keep tweaking?'",
+                )
+                appendLine(
+                    "Keep it simple, natural, conversational—like you're texting, not announcing.",
+                )
             }
 
             appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:")
@@ -122,34 +194,68 @@ object CharacterPrompts {
             appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT.")
             appendLine("DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS BEFORE OR AFTER THE JSON.")
             appendLine()
-            appendLine("Your task is to generate a welcoming message to help the user create their character!")
+            appendLine("Your task is to generate a warm, enthusiastic welcome message to help the user bring their character to life!")
             appendLine()
             if (sagaContext != null && sagaContext.title.isNotEmpty()) {
-                appendLine("The user is creating a character for their saga: \"${sagaContext.title}\"")
+                appendLine("IMPORTANT CONTEXT - The user is creating a character for their saga: \"${sagaContext.title}\"")
                 if (sagaContext.description.isNotEmpty()) {
-                    appendLine("Saga context: ${sagaContext.description}")
+                    appendLine("Saga world: ${sagaContext.description}")
                 }
                 appendLine("Genre: ${sagaContext.genre.name}")
                 appendLine()
+                appendLine("**Use this context to make suggestions that fit naturally into their world!**")
+                appendLine()
             }
             appendLine(
-                "- message: A warm, encouraging greeting that explains the user just needs to start typing to bring their character to life. Keep it enthusiastic and direct (max 2 sentences).",
+                "- message: A casual, friendly message like you're hyping up a friend who's about to create their RPG character. Keep it simple and natural—no corporate fluff. Add a touch of humor or playful sarcasm. Think: 'Alright, let's make someone interesting' vibes, not 'Welcome to character creation!' vibes. (max 2 sentences, conversational tone)",
             )
-            appendLine("- inputHint: A brief creative prompt like \"A warrior with a secret\" (keep under 40 characters).")
             appendLine(
-                "- suggestions: Generate 3 unique character concept ideas (max 6 words each). Examples:",
+                "  Examples of the vibe we're going for:",
             )
-            appendLine("  * \"Reluctant hero haunted by past mistakes\"")
-            appendLine("  * \"Charming thief with a heart of gold\"")
-            appendLine("  * \"Wise mentor hiding a dark secret\"")
-            appendLine("The suggestions field must be a String Array with 3 concise character ideas.")
+            appendLine("  * \"Okay, time to make your protagonist. Who are we working with here?\"")
+            appendLine("  * \"Alright, let's build your character. What kinda person are we talking about?\"")
+            appendLine("  * \"Cool, character time! So who's gonna be starring in this thing?\"")
+            appendLine(
+                "  Keep it SHORT, NATURAL, and like you're genuinely curious. No formal introductions, no 'I'm here to help you' stuff.",
+            )
+            appendLine(
+                "- inputHint: An inner-thought style prompt that sparks character imagination. Use incomplete phrases like \"What if they're someone who...\", \"Maybe a person who struggles with...\", \"What about a character that...\" Keep it under 50 characters and let it trail off naturally.",
+            )
+            appendLine(
+                "  Examples: \"What if they're haunted by...\", \"Maybe someone who never learned to...\", \"What about a person who can see...\"",
+            )
+            appendLine()
+            appendLine(
+                "- suggestions: Generate 3 unique CHARACTER PROFILES (15-25 words each) that feel like real people. Each should include:",
+            )
+            appendLine("  * A personality trait or defining characteristic")
+            appendLine("  * A hint of appearance or physical presence")
+            appendLine("  * A compelling backstory hook or internal conflict")
+            appendLine("  * Something that makes them feel ALIVE and relatable")
+            appendLine()
+            appendLine("Examples of good character suggestions:")
+            appendLine(
+                "  * \"A silver-tongued diplomat with burn scars she refuses to hide, who uses charm to mask the guilt of a treaty that destroyed her homeland.\"",
+            )
+            appendLine(
+                "  * \"A towering blacksmith with gentle eyes, who forges weapons by day but secretly writes poetry at night to cope with loneliness.\"",
+            )
+            appendLine(
+                "  * \"A scrappy street thief with a photographic memory and a limp, haunted by remembering every face they've ever stolen from.\"",
+            )
+            appendLine()
             if (sagaContext?.genre != null) {
-                appendLine("Make sure suggestions fit the ${sagaContext.genre.name} genre!")
+                appendLine("Make sure character suggestions fit the ${sagaContext.genre.name} genre and complement the saga world!")
             }
+            appendLine(
+                "Each suggestion should make the user think 'I want to know more about this person' and feel like a character they'd root for or against.",
+            )
+            appendLine("The suggestions field must be a String Array with 3 complete character profiles.")
             appendLine()
             appendLine("Important JSON rules:")
             appendLine("- Set `callback` to null.")
-            appendLine("- Keep responses concise and encouraging.")
+            appendLine("- Keep the message enthusiastic and personal, not mechanical.")
+            appendLine("- Make suggestions feel like real people with depth, not archetypes.")
         }
 
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
@@ -530,27 +636,22 @@ object CharacterPrompts {
         event: Timeline,
         characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
     ) = buildString {
-        appendLine(
-            "You are a Character Development AI. Your task is to update the 'knowledge' of specific characters based on a recent event.",
-        )
-        appendLine("We need to know what NEW significant facts each character has learned.")
+        appendLine("You are a Knowledge Tracker AI. Extract critical story facts each character learned from this event.")
         appendLine()
-        appendLine("## INPUT DATA")
-        appendLine("### The Event (Timeline):")
+        appendLine("## EVENT:")
         appendLine(event.toAINormalize(listOf("id", "chapterId")))
         appendLine()
-        appendLine("### Characters Present:")
+        appendLine("## CHARACTERS:")
         appendLine(characters.normalizetoAIItems(ChatPrompts.characterExclusions))
         appendLine()
-        appendLine("## INSTRUCTIONS")
-        appendLine("1. Analyze the event description/content.")
-        appendLine("2. For each character listed above, determine if they learned any *NEW, PERMANENT, and SIGNIFICANT* facts.")
-        appendLine("   - Significant: 'The King is dead', 'Anya has the key', 'The monster is weak to fire'.")
-        appendLine("   - Trivial (IGNORE): 'Walked to the door', 'Said hello', 'Is feeling sad'.")
-        appendLine("3. If a character wasn't involved or learned nothing new, exclude them.")
-        appendLine("4. Return a JSON object matching this structure:")
-        appendLine(
-            toJsonMap(com.ilustris.sagai.features.characters.data.model.KnowledgeUpdateResult::class.java),
-        )
+        appendLine("## RULES:")
+        appendLine("- Extract ONLY new, actionable story facts (5-8 words max each)")
+        appendLine("- Format: Short, assertive statements like bullet points")
+        appendLine("- Examples: 'King betrayed the alliance' | 'Hidden passage behind waterfall' | 'Marcus has the artifact'")
+        appendLine("- IGNORE emotions, reactions, dialogue, movement ('felt sad', 'walked in', 'said hello')")
+        appendLine("- IGNORE trivial details—focus on plot-critical intel that impacts future decisions")
+        appendLine("- Each fact = one concise data point for the character's knowledge backlog")
+        appendLine("- Exclude characters who learned nothing significant")
+        appendLine()
     }.trimIndent()
 }

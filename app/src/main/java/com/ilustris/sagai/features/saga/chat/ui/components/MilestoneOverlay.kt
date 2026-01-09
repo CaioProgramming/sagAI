@@ -176,7 +176,8 @@ fun MilestoneOverlay(
                                         colors,
                                         repeatMode = RepeatMode.Restart,
                                         targetValue = 100f,
-                                    ).sharedElement(
+                                    )
+                                    .sharedElement(
                                         rememberSharedContentState(key = "current_objective_${saga.data.id}"),
                                         animatedVisibilityScope = animatedVisibilityScope,
                                     ),
@@ -234,18 +235,18 @@ fun MilestoneOverlay(
                         Text(
                             text = milestone.subtitle,
                             style =
-                                MaterialTheme.typography.displayMedium.copy(
+                                MaterialTheme.typography.headlineLarge.copy(
                                     fontFamily = genre.headerFont(),
                                     fontWeight = FontWeight.ExtraBold,
                                     textAlign = TextAlign.Center,
                                     brush =
                                         Brush.verticalGradient(
                                             listOf(
-                                                Color.White,
                                                 genre.color.lighter(),
+                                                Color.White,
                                             ),
                                         ),
-                                    shadow = Shadow(genre.color, blurRadius = 25f),
+                                    shadow = Shadow(genre.color, blurRadius = 15f),
                                 ),
                             modifier =
                                 Modifier
