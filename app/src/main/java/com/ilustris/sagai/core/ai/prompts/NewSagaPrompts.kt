@@ -1,5 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
 import com.ilustris.sagai.core.utils.toJsonMap
 import com.ilustris.sagai.features.characters.data.model.Character
@@ -7,6 +8,7 @@ import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
 import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
@@ -14,7 +16,7 @@ import com.ilustris.sagai.features.newsaga.data.usecase.SagaProcess
 @Suppress("ktlint:standard:max-line-length")
 object NewSagaPrompts {
     fun extractDataFromUserInputPrompt(
-        currentSagaForm: SagaForm,
+        currentSagaForm: SagaDraft,
         userInput: String,
         lastMessage: String,
     ): String =
@@ -66,17 +68,8 @@ object NewSagaPrompts {
             appendLine()
             appendLine("Your task is to craft a creative and engaging question to ask the user for the '$fieldNameForPrompt'.")
             appendLine(
-                "**Use the 'Current Saga Data' to make your question more personal and contextual.** For example, if you know the saga's title, mention it. If you know the character's name, use it.",
+                "**Use the 'Current Saga Data' to make your question more personal and contextual.** For example, if you know the saga's title, mention it.",
             )
-            if (fieldToAsk == SagaFormFields.CHARACTER_BACKSTORY) {
-                appendLine()
-                appendLine(
-                    "Since this is about the character's backstory, also subtly encourage the user to include details about their appearance or skills. Frame it as an optional but fun addition.",
-                )
-                appendLine(
-                    "For example, your generated 'message' could end with something like, '...and what do they look like as they begin their journey?'",
-                )
-            }
             appendLine()
             appendLine(
                 "Craft a SHORT, direct question about '$fieldNameForPrompt' with no self-introduction. Use imperative, action-oriented phrasing that moves the story forward. Keep the question under 140 characters.",
@@ -89,6 +82,17 @@ object NewSagaPrompts {
             appendLine(
                 "Keep the tone encouraging and playful, but concise.",
             )
+
+            // Add CONTENT_READY callback logic
+            if (fieldToAsk == SagaFormFields.ALL_FIELDS_COMPLETE) {
+                appendLine()
+                appendLine("IMPORTANT: Since all fields are complete, the callback action must be 'CONTENT_READY'.")
+                appendLine(
+                    "The message should congratulate the user on their saga creation and suggest they can still refine details if they want.",
+                )
+                appendLine("Example: 'Your saga looks fantastic! Ready to create your character, or want to refine anything?'")
+            }
+
             appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:")
             appendLine(toJsonMap(SagaCreationGen::class.java))
         }
@@ -154,12 +158,13 @@ object NewSagaPrompts {
     }
 
     fun createSagaPrompt(
-        sagaForm: SagaForm,
+        sagaForm: SagaDraft,
         miniChatContent: List<ChatMessage>,
     ) = buildString {
         appendLine("You are a master storyteller, and you are creating a new saga for the user.")
         appendLine("Your task is to generate a saga based on the user's input.")
-        appendLine("Here is the user's input context: ${sagaForm.toJsonFormat()}")
+        appendLine("Here is the user's input context:")
+        appendLine(sagaForm.toAINormalize())
         appendLine("Use the chat history to have better context from the saga: ")
         appendLine(miniChatContent.joinToString { "${it.sender.name}: ${it.text}" })
         appendLine("Generate a saga based on this information.")
@@ -208,7 +213,7 @@ object NewSagaPrompts {
             appendLine("- Keep responses concise and playful.")
         }
 
-    fun characterIntroPrompt(sagaContext: com.ilustris.sagai.features.newsaga.data.model.SagaDraft?) =
+    fun characterIntroPrompt(sagaContext: SagaDraft?) =
         buildString {
             appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT.")
             appendLine("DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS BEFORE OR AFTER THE JSON.")

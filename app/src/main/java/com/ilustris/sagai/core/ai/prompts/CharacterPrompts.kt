@@ -5,22 +5,156 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.normalizetoAIItems
 import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.core.utils.toJsonFormat
-import com.ilustris.sagai.core.utils.toJsonFormatExcludingFields
 import com.ilustris.sagai.core.utils.toJsonMap
-import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
-import com.ilustris.sagai.features.characters.relations.data.model.RelationGeneration
+import com.ilustris.sagai.features.characters.data.model.CharacterInfo
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatMessages
 import com.ilustris.sagai.features.home.data.model.getCharacters
+import com.ilustris.sagai.features.newsaga.data.model.CharacterFormFields
+import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.timeline.data.model.Timeline
 
+@Suppress("ktlint:standard:max-line-length")
 object CharacterPrompts {
+    fun extractCharacterDataPrompt(
+        currentCharacterInfo: CharacterInfo,
+        userInput: String,
+        lastMessage: String,
+        sagaContext: SagaDraft?,
+    ): String =
+        buildString {
+            appendLine("You are an AI assistant helping a user create their character.")
+            appendLine("Current Character data:")
+            appendLine(currentCharacterInfo.toJsonFormat())
+            appendLine()
+            if (sagaContext != null) {
+                appendLine("Saga context (use this to provide better character suggestions):")
+                appendLine("Title: ${sagaContext.title}")
+                appendLine("Description: ${sagaContext.description}")
+                appendLine("Genre: ${sagaContext.genre.name}")
+                appendLine()
+            }
+            appendLine("User's latest input: \"$userInput\"")
+            appendLine()
+            appendLine("Consider the latest message to extract user input information:")
+            appendLine(lastMessage)
+            appendLine("Your task is to analyze the user's input and update the Current Character data.")
+            appendLine("Only fill fields that are empty or can be clearly improved by the user's input.")
+            appendLine("Do not add conversational fluff.")
+            appendLine("YOUR SOLE OUTPUT MUST BE THE UPDATED CharacterInfo AS A JSON OBJECT.")
+            appendLine("This is the expected JSON structure for CharacterInfo:")
+            appendLine(toJsonMap(CharacterInfo::class.java))
+        }
+
+    fun identifyNextCharacterFieldPrompt(characterInfo: CharacterInfo): String =
+        buildString {
+            appendLine("You are an AI tasked with identifying the next piece of information to ask a user for creating a character.")
+            appendLine("Current Character Data:")
+            appendLine(characterInfo.toJsonFormat())
+            appendLine()
+            appendLine(CharacterFormFields.fieldPriority())
+            appendLine("Possible return tokens: ${CharacterFormFields.entries.joinToString(", ") { it.name }}.")
+            appendLine("If all are sufficiently filled, return ${CharacterFormFields.ALL_FIELDS_COMPLETE.name}.")
+            appendLine("YOUR SOLE OUTPUT MUST BE ONE OF THESE TOKENS AS A SINGLE STRING.")
+        }
+
+    fun generateCharacterQuestionPrompt(
+        fieldToAsk: CharacterFormFields,
+        currentCharacterInfo: CharacterInfo,
+        sagaContext: SagaDraft?,
+    ): String {
+        val fieldNameForPrompt = fieldToAsk.name
+        val fieldGuidance = fieldToAsk.description
+
+        return buildString {
+            appendLine("The user needs to provide information for the field: $fieldNameForPrompt.")
+            appendLine("(Guidance for this field: \"$fieldGuidance\")")
+            appendLine()
+            appendLine("Current Character Data (for context):")
+            appendLine(currentCharacterInfo.toJsonFormat())
+            appendLine()
+            if (sagaContext != null && sagaContext.title.isNotEmpty()) {
+                appendLine("Saga context (make your question fit this world):")
+                appendLine("Title: ${sagaContext.title}")
+                appendLine("Description: ${sagaContext.description}")
+                appendLine("Genre: ${sagaContext.genre.name}")
+                appendLine()
+            }
+            appendLine("Your task is to craft a creative and engaging question to ask the user for the '$fieldNameForPrompt'.")
+            appendLine(
+                "**Use the 'Current Character Data' and saga context to make your question more personal and contextual.** For example, if you know the character's name, use it.",
+            )
+            appendLine()
+            appendLine(
+                "Craft a SHORT, direct question about '$fieldNameForPrompt' with no self-introduction. Use imperative, action-oriented phrasing. Keep the question under 140 characters.",
+            )
+            appendLine(
+                "Include a concise hint and 2-3 diverse, creative suggestions relevant to '$fieldNameForPrompt'. Suggestions must be distinct in tone/setting and avoid generic tropes.",
+            )
+            if (sagaContext?.genre != null) {
+                appendLine("Make sure suggestions fit the ${sagaContext.genre.name} genre!")
+            }
+            appendLine(
+                "Keep the tone encouraging and playful, but concise.",
+            )
+
+            // Add CONTENT_READY callback logic
+            if (fieldToAsk == CharacterFormFields.ALL_FIELDS_COMPLETE) {
+                appendLine()
+                appendLine("IMPORTANT: Since all fields are complete, the callback action must be 'CONTENT_READY'.")
+                appendLine(
+                    "The message should congratulate the user on creating their character and suggest they can still refine details if they want.",
+                )
+                appendLine("Example: 'Your character looks amazing! Ready to begin, or want to add more details?'")
+            }
+
+            appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT adhering to this SagaCreationGen structure:")
+            appendLine(toJsonMap(SagaCreationGen::class.java))
+        }
+    }
+
+    fun characterIntroPrompt(sagaContext: SagaDraft?) =
+        buildString {
+            appendLine("YOUR SOLE OUTPUT MUST BE A JSON OBJECT.")
+            appendLine("DO NOT INCLUDE ANY INTRODUCTORY PHRASES, EXPLANATIONS, RATIONALES, OR CONCLUDING REMARKS BEFORE OR AFTER THE JSON.")
+            appendLine()
+            appendLine("Your task is to generate a welcoming message to help the user create their character!")
+            appendLine()
+            if (sagaContext != null && sagaContext.title.isNotEmpty()) {
+                appendLine("The user is creating a character for their saga: \"${sagaContext.title}\"")
+                if (sagaContext.description.isNotEmpty()) {
+                    appendLine("Saga context: ${sagaContext.description}")
+                }
+                appendLine("Genre: ${sagaContext.genre.name}")
+                appendLine()
+            }
+            appendLine(
+                "- message: A warm, encouraging greeting that explains the user just needs to start typing to bring their character to life. Keep it enthusiastic and direct (max 2 sentences).",
+            )
+            appendLine("- inputHint: A brief creative prompt like \"A warrior with a secret\" (keep under 40 characters).")
+            appendLine(
+                "- suggestions: Generate 3 unique character concept ideas (max 6 words each). Examples:",
+            )
+            appendLine("  * \"Reluctant hero haunted by past mistakes\"")
+            appendLine("  * \"Charming thief with a heart of gold\"")
+            appendLine("  * \"Wise mentor hiding a dark secret\"")
+            appendLine("The suggestions field must be a String Array with 3 concise character ideas.")
+            if (sagaContext?.genre != null) {
+                appendLine("Make sure suggestions fit the ${sagaContext.genre.name} genre!")
+            }
+            appendLine()
+            appendLine("Important JSON rules:")
+            appendLine("- Set `callback` to null.")
+            appendLine("- Keep responses concise and encouraging.")
+        }
+
     fun details(character: Character?) = character?.toJsonFormat() ?: emptyString()
 
-    fun charactersOverview(characters: List<Character>): String =
+    fun charactersOverview(characters: List<com.ilustris.sagai.features.characters.data.model.Character>): String =
         buildString {
             val characterExclusions =
                 listOf(
@@ -137,7 +271,7 @@ object CharacterPrompts {
 
     fun characterLoreGeneration(
         timeline: Timeline,
-        characters: List<Character>,
+        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
     ) = buildString {
         appendLine(
             "You are a narrative AI assistant tasked with tracking individual character progression based on specific timeline events.",
@@ -150,7 +284,7 @@ object CharacterPrompts {
         appendLine("// --- CONTEXT ---")
         appendLine(
             "// TimelineContext: ${
-                timeline.toJsonFormatExcludingFields(
+                timeline.toAINormalize(
                     listOf("id", "emotionalReview", "chapterId"),
                 )
             }",
@@ -158,7 +292,7 @@ object CharacterPrompts {
         appendLine("")
         appendLine(
             "// Characters Context: ${
-                characters.toJsonFormatExcludingFields(
+                characters.toAINormalize(
                     fieldsToExclude = ChatPrompts.characterExclusions,
                 )
             }",
@@ -178,7 +312,7 @@ object CharacterPrompts {
         appendLine("// --- CURRENT EVENT ---")
         appendLine("// TimelineContext:")
         appendLine(
-            timeline.toJsonFormatExcludingFields(
+            timeline.toAINormalize(
                 listOf(
                     "id",
                     "emotionalReview",
@@ -190,10 +324,10 @@ object CharacterPrompts {
 
     @Suppress("ktlint:standard:max-line-length")
     fun findNickNames(
-        characters: List<Character>,
+        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
         messages: List<Message>,
-        data: Timeline,
-        data1: Saga,
+        timeline: Timeline,
+        saga: Saga,
     ) = buildString {
         appendLine(
             "You are a linguistic analyst AI. Your task is to analyze a conversation and identify unique, context-specific nicknames for characters.",
@@ -250,9 +384,9 @@ object CharacterPrompts {
         appendLine()
         appendLine("## CONTEXT:")
         appendLine("### Saga Context")
-        appendLine(data1.toAINormalize(ChatPrompts.sagaExclusions))
+        appendLine(saga.toAINormalize(ChatPrompts.sagaExclusions))
         appendLine("### Timeline Context")
-        appendLine(data.toAINormalize(listOf("id", "emotionalReview", "chapterId")))
+        appendLine(timeline.toAINormalize(listOf("id", "emotionalReview", "chapterId")))
         appendLine("### Characters List (Official Names):")
         appendLine(characters.normalizetoAIItems(ChatPrompts.characterExclusions))
         appendLine()
@@ -291,12 +425,6 @@ object CharacterPrompts {
         )
         appendLine("- Do not fabricate characters not present in the Characters list.")
         appendLine("- Prefer relationships that are explicitly or strongly implied by the Timeline Event.")
-        appendLine("")
-        appendLine("REQUIRED OUTPUT SCHEMA (JSON array of objects):")
-        appendLine("[")
-        appendLine("   ${toJsonMap(RelationGeneration::class.java)}")
-        appendLine("]")
-        appendLine("")
         appendLine("FIELD DEFINITIONS (for precision):")
         appendLine("- firstCharacter: First character's name (string). Must match EXACTLY a name from Characters list.")
         appendLine(
@@ -320,7 +448,7 @@ object CharacterPrompts {
         appendLine("CONTEXT:")
         appendLine("Timeline Event:")
         appendLine(
-            timeline.toJsonFormatExcludingFields(
+            timeline.toAINormalize(
                 listOf(
                     "id",
                     "emotionalReview",
@@ -331,7 +459,7 @@ object CharacterPrompts {
         appendLine("")
         appendLine("Characters (names must be used EXACTLY as listed):")
         appendLine(
-            saga.getCharacters().toJsonFormatExcludingFields(
+            saga.getCharacters().toAINormalize(
                 ChatPrompts.characterExclusions,
             ),
         )
@@ -400,7 +528,7 @@ object CharacterPrompts {
 
     fun knowledgeUpdatePrompt(
         event: Timeline,
-        characters: List<Character>,
+        characters: List<com.ilustris.sagai.features.characters.data.model.Character>,
     ) = buildString {
         appendLine(
             "You are a Character Development AI. Your task is to update the 'knowledge' of specific characters based on a recent event.",
@@ -409,7 +537,7 @@ object CharacterPrompts {
         appendLine()
         appendLine("## INPUT DATA")
         appendLine("### The Event (Timeline):")
-        appendLine(event.toJsonFormatExcludingFields(listOf("id", "chapterId")))
+        appendLine(event.toAINormalize(listOf("id", "chapterId")))
         appendLine()
         appendLine("### Characters Present:")
         appendLine(characters.normalizetoAIItems(ChatPrompts.characterExclusions))

@@ -8,6 +8,7 @@ import com.ilustris.sagai.features.characters.data.model.Character
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.newsaga.data.model.ChatMessage
 import com.ilustris.sagai.features.newsaga.data.model.SagaCreationGen
+import com.ilustris.sagai.features.newsaga.data.model.SagaDraft
 import com.ilustris.sagai.features.newsaga.data.model.SagaForm
 import com.ilustris.sagai.features.newsaga.data.model.SagaFormFields
 import com.ilustris.sagai.features.saga.chat.repository.SagaRepository
@@ -31,7 +32,7 @@ class NewSagaUseCaseImpl
             }
 
         override suspend fun generateSaga(
-            sagaForm: SagaForm,
+            sagaForm: SagaDraft,
             miniChatContent: List<ChatMessage>,
         ): RequestResult<Saga> =
             executeRequest {
@@ -68,7 +69,7 @@ class NewSagaUseCaseImpl
         override suspend fun replyAiForm(
             currentMessages: List<ChatMessage>,
             latestMessage: String?,
-            currentFormData: SagaForm,
+            currentFormData: SagaDraft,
         ): RequestResult<SagaCreationGen> =
             executeRequest {
                 val delayDefaultTime = 700L
@@ -115,9 +116,7 @@ class NewSagaUseCaseImpl
                 gemmaClient.generate(NewSagaPrompts.introPrompt())!!
             }
 
-        override suspend fun generateCharacterIntroduction(
-            sagaContext: com.ilustris.sagai.features.newsaga.data.model.SagaDraft?,
-        ): RequestResult<SagaCreationGen> =
+        override suspend fun generateCharacterIntroduction(sagaContext: SagaDraft?): RequestResult<SagaCreationGen> =
             executeRequest {
                 gemmaClient.generate(NewSagaPrompts.characterIntroPrompt(sagaContext))!!
             }

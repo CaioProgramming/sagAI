@@ -18,6 +18,7 @@ enum class CallBackAction {
     SAVE_SAGA,
     CREATE_CHARACTER_REQUIRED,
     CHARACTER_READY,
+    CONTENT_READY,
 }
 
 enum class Sender {
