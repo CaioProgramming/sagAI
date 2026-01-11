@@ -303,7 +303,8 @@ fun ChatView(
                             MilestoneOverlay(
                                 milestone = milestone,
                                 saga = content,
-                                onDismiss = { onAction(ChatUiAction.DismissMilestone) },
+                                isLoading = uiState.isGenerating || uiState.isLoading,
+                                onDismiss = { onAction(ChatUiAction.ContinueMilestone) },
                                 sharedTransitionScope = sharedTransitionScope,
                                 animatedVisibilityScope = this@AnimatedContent,
                             )

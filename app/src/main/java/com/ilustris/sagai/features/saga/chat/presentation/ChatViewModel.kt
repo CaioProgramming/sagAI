@@ -44,7 +44,6 @@ import com.ilustris.sagai.features.saga.chat.data.model.SenderType
 import com.ilustris.sagai.features.saga.chat.data.model.TypoStatus
 import com.ilustris.sagai.features.saga.chat.data.usecase.GetInputSuggestionsUseCase
 import com.ilustris.sagai.features.saga.chat.data.usecase.MessageUseCase
-import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
 import com.ilustris.sagai.features.saga.chat.ui.components.audio.AudioPlaybackState
 import com.ilustris.sagai.features.settings.domain.SettingsUseCase
 import com.ilustris.sagai.features.timeline.data.model.TimelineContent
@@ -194,12 +193,27 @@ class ChatViewModel
                     sagaContentManager.dismissMilestone()
                     stateManager.updateMilestone(null)
                 }
+
+                is ChatUiAction.ContinueMilestone -> {
+                    viewModelScope.launch {
+                        sagaContentManager.continueMilestone()
+                    }
+                }
             }
         }
 
         private fun revealCharacter(characterContent: CharacterContent?) {
             stateManager.updateState {
                 it.copy(revealCharacter = characterContent)
+            }
+        }
+
+        private fun observeMileStone() {
+            viewModelScope.launch(Dispatchers.IO) {
+                // Observe milestone updates from content manager
+                sagaContentManager.milestoneUpdate.collect {
+                    stateManager.updateMilestone(it)
+                }
             }
         }
 
@@ -233,10 +247,10 @@ class ChatViewModel
             stateManager.updateState { it.copy(chatState = ChatState.Loading) }
             enableDebugMode(isDebug)
             observeSaga()
+            observeMileStone()
             observeAmbientMusicServiceControl()
             observePreferences()
             observeSnackBarUpdates()
-            observeMilestones()
             observeMediaState()
             observeProcessingState()
             viewModelScope.launch(Dispatchers.IO) {
@@ -278,18 +292,6 @@ class ChatViewModel
                             )
                         }
                     }
-                }
-            }
-
-        fun observeMilestones() =
-            viewModelScope.launch(Dispatchers.IO) {
-                sagaContentManager.milestoneUpdate.collect { milestone ->
-                    val currentMilestone = uiState.value.milestone
-                    if (currentMilestone != null) {
-                        delay(7.seconds)
-                        stateManager.updateMilestone(null)
-                    }
-                    milestone?.let { triggerMilestone(it) }
                 }
             }
 
@@ -438,14 +440,6 @@ class ChatViewModel
                             validateMessageStatus(sagaContent)
                         }
                     }
-            }
-        }
-
-        private fun triggerMilestone(milestone: SagaMilestone) {
-            viewModelScope.launch {
-                stateManager.updateMilestone(milestone)
-                delay(7.seconds)
-                stateManager.updateMilestone(null)
             }
         }
 

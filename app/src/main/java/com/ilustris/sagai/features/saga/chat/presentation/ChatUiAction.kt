@@ -98,4 +98,6 @@ sealed class ChatUiAction {
     ) : ChatUiAction()
 
     data object DismissMilestone : ChatUiAction()
+
+    data object ContinueMilestone : ChatUiAction()
 }

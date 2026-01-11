@@ -44,7 +44,7 @@
     <string name="sender_type_default_hint">Digite sua mensagem…</string>
 
     <!-- Expressive Tags -->
-    <string name="tag_inside_hint">Dentro de &lt;%1$s&gt;</string>
+    <string name="tag_inside_hint">Modo &lt;%1$s&gt;</string>
     <string name="tag_exit_instruction">Pressione ↵ para sair</string>
 
     <!-- CharacterForm: Image Content Description -->
@@ -395,4 +395,10 @@
     <string name="settings_help_center_title">Central de Ajuda</string>
     <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
     <string name="new_event_milestone_title">Novo evento</string>
+
+    <!-- Milestone Overlay -->
+    <string name="milestone_encouragement">Parabéns! Continue assim!</string>
+    <string name="continue_button">Continuar</string>
 </resources>
+
+

@@ -320,7 +320,7 @@ class CharacterUseCaseImpl
                 val result =
                     gemmaClient.generate<KnowledgeUpdateResult>(
                         prompt,
-                        requirement = GemmaClient.ModelRequirement.HIGH,
+                        requirement = GemmaClient.ModelRequirement.MEDIUM,
                     )
 
                 if (result?.updates?.isNotEmpty() == true) {

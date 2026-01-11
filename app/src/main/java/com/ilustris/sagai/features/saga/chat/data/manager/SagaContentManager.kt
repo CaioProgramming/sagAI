@@ -63,6 +63,8 @@ interface SagaContentManager {
 
     fun dismissMilestone()
 
+    suspend fun continueMilestone()
+
     suspend fun updatePlaytime(
         sagaId: Int,
         timeInMillis: Long,

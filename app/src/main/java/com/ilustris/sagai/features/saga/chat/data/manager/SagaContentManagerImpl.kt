@@ -190,6 +190,10 @@ class SagaContentManagerImpl
                         getAmbienceMusic(saga)
 
                         validateCharacters(saga)
+
+                        if (previousSaga == null) {
+                            milestoneUpdate.emit(SagaMilestone.NewCharacter(saga.characters.last().data))
+                        }
                     }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
@@ -665,6 +669,71 @@ class SagaContentManagerImpl
 
         override fun dismissMilestone() {
             isMilestoneActive.value = false
+            milestoneUpdate.value = null
+        }
+
+        override suspend fun continueMilestone() {
+            val milestone =
+                milestoneUpdate.value ?: run {
+                    dismissMilestone()
+                    return
+                }
+            val saga =
+                content.value ?: run {
+                    dismissMilestone()
+                    return
+                }
+
+            // Prevent restarting if already processing
+            if (isProcessing) {
+                Log.d(javaClass.simpleName, "Already processing milestone, ignoring continue request")
+                dismissMilestone()
+                return
+            }
+
+            Log.d(
+                javaClass.simpleName,
+                "User continued from milestone: ${milestone.javaClass.simpleName}",
+            )
+
+            startProcessing {
+                // Execute post-actions based on milestone type
+                when (milestone) {
+                    is SagaMilestone.NewEvent -> {
+                        generateTimelineContent(milestone.timeline, saga)
+                    }
+
+                    is SagaMilestone.ChapterFinished -> {
+                        handleChapterPostActions(milestone.chapter, saga)
+                    }
+
+                    is SagaMilestone.ActFinished -> {
+                        endAct(saga)
+                        checkNarrativeProgression(saga)
+                    }
+
+                    is SagaMilestone.NewCharacter -> {
+                        // Character milestones don't need post-processing
+                        checkNarrativeProgression(saga)
+                    }
+                }
+
+                // Wait for user to see the updated achievements
+                val delayDuration =
+                    when (milestone) {
+                        is SagaMilestone.NewCharacter -> 0L
+
+                        // No delay for character milestones
+                        else -> 5000L // 5 seconds for other milestones
+                    }
+
+                if (delayDuration > 0) {
+                    delay(delayDuration)
+                }
+
+                // Finally dismiss the milestone
+                dismissMilestone()
+            }
         }
 
         private suspend fun emitMilestone(milestone: SagaMilestone) {
@@ -755,31 +824,18 @@ class SagaContentManagerImpl
                 }
 
                 is NarrativeStep.GenerateTimeLine -> {
-                    (result.value as? Timeline)?.let {
-                        startProcessing {
-                            generateTimelineContent(it, saga)
-                        }
-                    }
+                    // Milestone already emitted, just wait for user to continue
+                    // continueMilestone() will handle generateTimelineContent
                 }
 
                 is NarrativeStep.GenerateChapter -> {
-                    (result.value as? Chapter)?.let { chapter ->
-                        startProcessing {
-                            val chapterContent =
-                                saga.flatChapters().find { it.data.id == chapter.id }!!.copy(
-                                    data = chapter,
-                                )
-                            CoroutineScope(Dispatchers.IO).launch {
-                                chapterUseCase.generateChapterCover(chapterContent, saga)
-                            }
-                            chapterUseCase.reviewChapter(saga, chapterContent)
-                            endChapter(saga.currentActInfo)
-                        }
-                    }
+                    // Milestone already emitted, just wait for user to continue
+                    // continueMilestone() will handle handleChapterPostActions
                 }
 
                 is NarrativeStep.GenerateAct -> {
-                    endAct(saga)
+                    // Milestone already emitted, just wait for user to continue
+                    // continueMilestone() will handle endAct
                 }
 
                 is NarrativeStep.NoActionNeeded -> {
@@ -844,6 +900,23 @@ class SagaContentManagerImpl
                     )
                 }
             }
+        }
+
+        private suspend fun handleChapterPostActions(
+            chapter: Chapter,
+            saga: SagaContent,
+        ) {
+            val chapterContent =
+                saga
+                    .flatChapters()
+                    .find { it.data.id == chapter.id }!!
+                    .copy(data = chapter)
+
+            CoroutineScope(Dispatchers.IO).launch {
+                chapterUseCase.generateChapterCover(chapterContent, saga)
+            }
+            chapterUseCase.reviewChapter(saga, chapterContent)
+            endChapter(saga.currentActInfo)
         }
 
         private suspend fun createEndingMessage(saga: SagaContent) =
@@ -951,6 +1024,6 @@ class SagaContentManagerImpl
                 2 -> ActDirectives.SECOND_ACT_DIRECTIVES
                 3 -> ActDirectives.THIRD_ACT_DIRECTIVES
                 else -> ActDirectives.FIRST_ACT_DIRECTIVES
+            }
         }
-    }
     }

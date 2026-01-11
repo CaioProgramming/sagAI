@@ -46,7 +46,7 @@
     <string name="sender_type_default_hint">Type your message…</string>
 
     <!-- Expressive Tags -->
-    <string name="tag_inside_hint">Inside &lt;%1$s&gt;</string>
+    <string name="tag_inside_hint">&lt;%1$s&gt; mode</string>
     <string name="tag_exit_instruction">Press ↵ to exit</string>
 
     <!-- CharacterForm: Image Content Description -->
@@ -419,4 +419,8 @@
     <string name="settings_help_center_title">Help Center</string>
     <string name="settings_help_center_subtitle">Tips, Tricks &amp; Secrets.</string>
     <string name="new_event_milestone_title">New event</string>
+
+    <!-- Milestone Overlay -->
+    <string name="milestone_encouragement">Congratulations! Keep going!</string>
+    <string name="continue_button">Continue</string>
 </resources>

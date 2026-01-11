@@ -665,18 +665,16 @@ fun ChatBubble(
                                                 ),
                                             label = "starAlpha",
                                         )
-                                        val blurAnimation by animateFloatAsState(
-                                            targetValue = if (starAlpha == 1f) 0f else 1f,
-                                            label = "blurAnimation",
-                                        )
-                                        if (sender == SenderType.THOUGHT) blurAnimation else 1f
+                                        val isMainCharacter =
+                                            message.speakerName == mainCharacter?.data?.name
                                         val textColor =
                                             when (sender) {
                                                 SenderType.ACTION -> MaterialColor.Amber400
                                                 SenderType.THOUGHT -> MaterialTheme.colorScheme.onBackground
                                                 else -> bubbleStyle.textColor
                                             }
-                                        val textAlign = TextAlign.Start
+                                        val textAlign =
+                                            if (isMainCharacter.not()) TextAlign.Start else TextAlign.End
                                         val fontStyle =
                                             if (sender == SenderType.ACTION ||
                                                 sender == SenderType.THOUGHT
