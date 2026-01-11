@@ -392,7 +392,7 @@
     <string name="faq_ask_ai_footer">Ainda em dúvida? Pergunte ao Mestre da Saga</string>
 
     <!-- Settings Help Center -->
-    <string name="settings_help_center_title">Central de Ajuda</string>
+    <string name="settings_help_center_title">Ajuda e feedback</string>
     <string name="settings_help_center_subtitle">Dicas, Truques e Segredos.</string>
     <string name="new_event_milestone_title">Novo evento</string>
 

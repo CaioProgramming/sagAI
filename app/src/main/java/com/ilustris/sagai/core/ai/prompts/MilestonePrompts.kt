@@ -1,6 +1,6 @@
 package com.ilustris.sagai.core.ai.prompts
 
-import com.ilustris.sagai.core.utils.currentLanguage
+import com.ilustris.sagai.core.utils.toAINormalize
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.newsaga.data.model.Genre
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -11,20 +11,25 @@ object MilestonePrompts {
         saga: SagaContent,
     ): String {
         val genre = saga.data.genre
-        val language = currentLanguage()
         val genreTone = getGenreTone(genre)
         val milestoneType = getMilestoneType(milestone)
-        val achievementName = milestone.subtitle
+        milestone.subtitle
 
         return buildString {
             appendLine("Generate a SHORT, PROVOCATIVE message for a storyteller who just achieved a milestone.")
             appendLine()
-            appendLine("CONTEXT:")
-            appendLine("- Language: $language")
-            appendLine("- Story Genre: ${genre.name}")
+            append(SagaPrompts.mainContext(saga, ommitCharacter = true))
             appendLine("- Genre Tone: $genreTone")
-            appendLine("- Milestone Type: $milestoneType")
-            appendLine("- Achievement: $achievementName")
+
+            appendLine("- Milestone: $milestoneType")
+            appendLine(
+                milestone.toAINormalize(
+                    fieldsToExclude =
+                        ChatPrompts.characterExclusions
+                            .plus(ChapterPrompts.CHAPTER_EXCLUSIONS)
+                            .plus(TimelinePrompts.timelineExclusions),
+                ),
+            )
             appendLine()
             appendLine("TONE & STYLE:")
             appendLine(getGenreConversationalTone(genre))
@@ -43,7 +48,7 @@ object MilestonePrompts {
             appendLine("EXAMPLES for different genres/milestones:")
             appendLine(getExamplesForMilestone(milestone, genre))
             appendLine()
-            appendLine("Generate ONLY the provocative message in $language, nothing else:")
+            appendLine("Generate ONLY the provocative message, nothing else:")
         }
     }
 
@@ -150,57 +155,57 @@ object MilestonePrompts {
         when (milestone) {
             is SagaMilestone.NewCharacter -> {
                 when (genre) {
-                    Genre.FANTASY -> "- \"A new soul joins your legend. Their tale begins now!\""
-                    Genre.CYBERPUNK -> "- \"New ally jacked in. The network just got stronger.\""
-                    Genre.SPACE_OPERA -> "- \"A new star joins your constellation. Adventure awaits!\""
-                    Genre.HORROR -> "- \"Another soul enters the darkness. Guide them carefully.\""
-                    Genre.COWBOY -> "- \"New rider on the trail. Your posse grows stronger.\""
-                    Genre.SHINOBI -> "- \"A new shadow walks beside you. Honor their path.\""
-                    Genre.HEROES -> "- \"A new hero rises. Your team grows mightier!\""
-                    Genre.CRIME -> "- \"New player in the game. Keep your eyes open.\""
-                    Genre.PUNK_ROCK -> "- \"Fresh blood in the crew. Let's make some noise!\""
+                    Genre.FANTASY -> "- \"Oh great, another 'chosen one' with destiny issues.\""
+                    Genre.CYBERPUNK -> "- \"New NPC unlocked. Hope they're not as glitchy as you.\""
+                    Genre.SPACE_OPERA -> "- \"Another speck in the infinite void. How touching.\""
+                    Genre.HORROR -> "- \"Fresh meat for the grinder. This'll end well.\""
+                    Genre.COWBOY -> "- \"Another greenhorn to babysit. Fantastic.\""
+                    Genre.SHINOBI -> "- \"New shadow enters. Still not stealthy enough, amateur.\""
+                    Genre.HEROES -> "- \"Another cape? The dry-cleaning bill must be insane.\""
+                    Genre.CRIME -> "- \"New suspect unlocked. Everyone's guilty until proven otherwise.\""
+                    Genre.PUNK_ROCK -> "- \"Fresh blood? Let's see if they're actually punk or poser.\""
                 }
             }
 
             is SagaMilestone.NewEvent -> {
                 when (genre) {
-                    Genre.FANTASY -> "- \"Your saga grows richer. The tale unfolds beautifully!\""
-                    Genre.CYBERPUNK -> "- \"Data logged. You're rewriting the system's narrative.\""
-                    Genre.SPACE_OPERA -> "- \"Another chapter in the stars. Your odyssey continues!\""
-                    Genre.HORROR -> "- \"The darkness deepens. You push forward regardless.\""
-                    Genre.COWBOY -> "- \"Another notch on the belt. The legend lives on.\""
-                    Genre.SHINOBI -> "- \"Another step on the path. Your discipline shines through.\""
-                    Genre.HEROES -> "- \"Another victory for justice. Your heroism inspires!\""
-                    Genre.CRIME -> "- \"Another piece of the puzzle. The case unfolds.\""
-                    Genre.PUNK_ROCK -> "- \"Another chord struck. Your rebellion echoes loud!\""
+                    Genre.FANTASY -> "- \"Wow, something happened in your fantasy. Groundbreaking.\""
+                    Genre.CYBERPUNK -> "- \"Event logged. The machines are impressed. Barely.\""
+                    Genre.SPACE_OPERA -> "- \"In the vastness of space, this matters so little. But sure.\""
+                    Genre.HORROR -> "- \"Digging deeper into madness? Bold strategy, let's see how it plays.\""
+                    Genre.COWBOY -> "- \"Another tale for the saloon. Wake me when it gets interesting.\""
+                    Genre.SHINOBI -> "- \"Progress noted. Still miles from mastery, grasshopper.\""
+                    Genre.HEROES -> "- \"Saved the day again? Must be Tuesday.\""
+                    Genre.CRIME -> "- \"Another clue found. Congrats, detective obvious.\""
+                    Genre.PUNK_ROCK -> "- \"That barely counts as rebellion but okay.\""
                 }
             }
 
             is SagaMilestone.ChapterFinished -> {
                 when (genre) {
-                    Genre.FANTASY -> "- \"A chapter closes in splendor. Your legend grows eternal!\""
-                    Genre.CYBERPUNK -> "- \"Chapter archived. System reboot. What's next, runner?\""
-                    Genre.SPACE_OPERA -> "- \"Sector cleared. Plotting coordinates for the next adventure!\""
-                    Genre.HORROR -> "- \"You survived another chapter. The night grows darker.\""
-                    Genre.COWBOY -> "- \"Another trail conquered. The frontier calls you forward.\""
-                    Genre.SHINOBI -> "- \"This path completes. The next awaits your mastery.\""
-                    Genre.HEROES -> "- \"Chapter complete! The city thanks you, champion!\""
-                    Genre.CRIME -> "- \"Case closed. But the streets always have more secrets.\""
-                    Genre.PUNK_ROCK -> "- \"Song's over. Ready to smash the next track?\""
+                    Genre.FANTASY -> "- \"Chapter done. Your epic saga continues being... adequate.\""
+                    Genre.CYBERPUNK -> "- \"Chapter closed. System impressed. Slightly.\""
+                    Genre.SPACE_OPERA -> "- \"One chapter in infinity. Feel accomplished yet?\""
+                    Genre.HORROR -> "- \"You survived? That's... actually surprising. Well done.\""
+                    Genre.COWBOY -> "- \"Chapter finished. Didn't fall off your horse this time.\""
+                    Genre.SHINOBI -> "- \"Chapter complete. Maybe you're not entirely hopeless.\""
+                    Genre.HEROES -> "- \"Chapter saved. The city throws you a mediocre parade.\""
+                    Genre.CRIME -> "- \"Case closed? Don't quit your day job, detective.\""
+                    Genre.PUNK_ROCK -> "- \"Set finished. That was almost punk. Almost.\""
                 }
             }
 
             is SagaMilestone.ActFinished -> {
                 when (genre) {
-                    Genre.FANTASY -> "- \"An age ends. A new era dawns for your saga!\""
-                    Genre.CYBERPUNK -> "- \"Act terminated. System upgrade complete. Level up!\""
-                    Genre.SPACE_OPERA -> "- \"Sector conquered. The galaxy awaits your next move!\""
-                    Genre.HORROR -> "- \"You escaped the nightmare. But darkness lingers ahead.\""
-                    Genre.COWBOY -> "- \"Territory claimed. New frontiers await, partner.\""
-                    Genre.SHINOBI -> "- \"Training complete. The true path now reveals itself.\""
-                    Genre.HEROES -> "- \"Arc complete! Your heroic legacy grows stronger!\""
-                    Genre.CRIME -> "- \"Operation closed. The underworld stirs with new mysteries.\""
-                    Genre.PUNK_ROCK -> "- \"Set's done! The crowd roars for more. Encore?\""
+                    Genre.FANTASY -> "- \"Entire act done? Your mother would be so proud.\""
+                    Genre.CYBERPUNK -> "- \"Act terminated. Even the AI didn't see that coming.\""
+                    Genre.SPACE_OPERA -> "- \"Act complete. The universe remains unimpressed but sure.\""
+                    Genre.HORROR -> "- \"You finished an act and kept your sanity? Miracles happen.\""
+                    Genre.COWBOY -> "- \"Whole act done. You might actually survive the frontier.\""
+                    Genre.SHINOBI -> "- \"Act mastered. Perhaps there's a ninja in you after all.\""
+                    Genre.HEROES -> "- \"Full arc done. Try not to let the glory go to your head.\""
+                    Genre.CRIME -> "- \"Operation complete. The streets are still dirty but whatever.\""
+                    Genre.PUNK_ROCK -> "- \"Entire set done. Okay, that was actually pretty punk.\""
                 }
             }
         }

@@ -27,20 +27,12 @@ class MilestoneUseCaseImpl
 
                 val prompt = MilestonePrompts.generateCongratsMessage(milestone, saga)
 
-                val message =
-                    gemmaClient
-                        .generateText(prompt)
-                        .getOrElse {
-                            Log.e("MilestoneUseCase", "Failed to generate message", it)
-                            getDefaultMessage(milestone, saga.data.genre)
-                        }
-
-                // Trim and ensure it's not too long
-                val cleanMessage = message.trim().take(150)
-
-                Log.d("MilestoneUseCase", "Generated message: $cleanMessage")
-
-                return@executeRequest cleanMessage
+                gemmaClient.generate<String>(
+                    prompt,
+                    temperatureRandomness = 1f,
+                    requirement = GemmaClient.ModelRequirement.MEDIUM,
+                )
+                    ?: getDefaultMessage(milestone, saga.data.genre)
             }
 
         private fun getDefaultMessage(

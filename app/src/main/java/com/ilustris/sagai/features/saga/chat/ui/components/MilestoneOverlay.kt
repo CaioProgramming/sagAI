@@ -72,8 +72,9 @@ import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.findChapter
+import com.ilustris.sagai.features.home.data.model.findCharacter
 import com.ilustris.sagai.features.home.data.model.findTimeline
-import com.ilustris.sagai.features.newsaga.data.model.shimmerColors
+import com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel
 import com.ilustris.sagai.features.newsaga.data.model.vibrationPattern
 import com.ilustris.sagai.features.playthrough.CounterText
 import com.ilustris.sagai.features.saga.chat.presentation.model.SagaMilestone
@@ -95,12 +96,11 @@ fun MilestoneOverlay(
     saga: SagaContent,
     isLoading: Boolean = false,
     onDismiss: () -> Unit = {},
-    viewModel: com.ilustris.sagai.features.milestone.presentation.MilestoneViewModel = hiltViewModel(),
+    viewModel: MilestoneViewModel = hiltViewModel(),
     sharedTransitionScope: SharedTransitionScope,
     animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val genre = saga.data.genre
-    genre.shimmerColors()
     val context = LocalContext.current
 
     // Collect AI-generated congrats message
@@ -157,7 +157,7 @@ fun MilestoneOverlay(
         launch {
             for (i in 0..100) {
                 fillProgress = i / 100f
-                delay(100)
+                delay(50)
             }
         }
     }
@@ -179,6 +179,18 @@ fun MilestoneOverlay(
                 repeatMode = RepeatMode.Reverse,
             ),
         label = "levitation",
+    )
+
+    // Animated glow/shine effect for subtitle shadow
+    val glowBlurRadius by infiniteTransition.animateFloat(
+        initialValue = 10f,
+        targetValue = 30f,
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1500, easing = EaseInOutSine),
+                repeatMode = RepeatMode.Reverse,
+            ),
+        label = "glow_pulse",
     )
 
     with(sharedTransitionScope) {
@@ -259,7 +271,7 @@ fun MilestoneOverlay(
                                             .reactiveShimmer(
                                                 fillProgress < 1f,
                                                 repeatMode = RepeatMode.Restart,
-                                                targetValue = 100f,
+                                                targetValue = if (fillProgress < 1f) 250f else 100f,
                                             ).sharedElement(
                                                 rememberSharedContentState(key = "current_objective_${saga.data.id}"),
                                                 animatedVisibilityScope,
@@ -298,14 +310,22 @@ fun MilestoneOverlay(
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp),
+                            modifier =
+                                Modifier.graphicsLayer {
+                                    clip = false
+                                },
+                            // Prevent shadow clipping
                         ) {
                             if (milestone is SagaMilestone.NewCharacter) {
-                                if (milestone.character.image.isNotEmpty()) {
-                                    CharacterAvatar(
-                                        milestone.character,
-                                        genre = genre,
-                                        modifier = Modifier.size(120.dp),
-                                    )
+                                val character = saga.findCharacter(milestone.character.id)
+                                character?.let {
+                                    if (it.data.image.isNotBlank()) {
+                                        CharacterAvatar(
+                                            milestone.character,
+                                            genre = genre,
+                                            modifier = Modifier.size(120.dp),
+                                        )
+                                    }
                                 }
                             }
 
@@ -320,7 +340,7 @@ fun MilestoneOverlay(
                                             Shadow(
                                                 color = genre.color,
                                                 offset = Offset(0f, 0f),
-                                                blurRadius = 20f,
+                                                blurRadius = glowBlurRadius,
                                             ),
                                     ),
                                 modifier =
@@ -329,46 +349,48 @@ fun MilestoneOverlay(
                                             true,
                                             listOf(Color.Transparent).plus(genre.color.fadeColors()),
                                             repeatMode = RepeatMode.Restart,
-                                        ).padding(vertical = 8.dp),
+                                        ).padding(8.dp),
                             )
 
                             if (milestone is SagaMilestone.NewEvent) {
                                 val event = saga.findTimeline(milestone.timeline.id)
                                 event?.let {
                                     Row {
-                                        CounterText(
-                                            it.numberOfRelationshipUpdates(),
-                                            stringResource(R.string.saga_detail_relationships_section_title),
-                                            textStyle =
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                ),
-                                            labelStyle =
-                                                MaterialTheme.typography.labelMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    color =
-                                                        MaterialTheme.colorScheme.onBackground.copy(
-                                                            alpha = 0.7f,
-                                                        ),
-                                                ),
-                                        )
+                                        if (it.numberOfRelationshipUpdates() > 0) {
+                                            CounterText(
+                                                it.numberOfRelationshipUpdates(),
+                                                stringResource(R.string.saga_detail_relationships_section_title),
+                                                textStyle =
+                                                    MaterialTheme.typography.titleMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                    ),
+                                                labelStyle =
+                                                    MaterialTheme.typography.labelMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        color =
+                                                            MaterialTheme.colorScheme.onBackground.copy(
+                                                                alpha = 0.7f,
+                                                            ),
+                                                    ),
+                                            )
 
-                                        CounterText(
-                                            it.updatedWikis.size,
-                                            stringResource(R.string.wiki_updated),
-                                            textStyle =
-                                                MaterialTheme.typography.titleMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                ),
-                                            labelStyle =
-                                                MaterialTheme.typography.labelMedium.copy(
-                                                    fontFamily = genre.bodyFont(),
-                                                    color =
-                                                        MaterialTheme.colorScheme.onBackground.copy(
-                                                            alpha = 0.7f,
-                                                        ),
-                                                ),
-                                        )
+                                            CounterText(
+                                                it.updatedWikis.size,
+                                                stringResource(R.string.wiki_updated),
+                                                textStyle =
+                                                    MaterialTheme.typography.titleMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                    ),
+                                                labelStyle =
+                                                    MaterialTheme.typography.labelMedium.copy(
+                                                        fontFamily = genre.bodyFont(),
+                                                        color =
+                                                            MaterialTheme.colorScheme.onBackground.copy(
+                                                                alpha = 0.7f,
+                                                            ),
+                                                    ),
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -377,7 +399,8 @@ fun MilestoneOverlay(
                                 val chapter = saga.findChapter(milestone.chapter.id)
                                 chapter?.let {
                                     Column {
-                                        val characters = it.fetchCharacters(saga).filterNotNull()
+                                        val characters =
+                                            it.fetchCharacters(saga).filterNotNull()
                                         Text("Personagens mais importantes")
 
                                         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -552,6 +552,15 @@ class SagaContentManagerImpl
                     "checkNarrativeProgression: Progression step ${narrativeStep.javaClass.simpleName}",
                 )
 
+                if (milestoneUpdate.value != null) {
+                    Log.i(
+                        javaClass.simpleName,
+                        "checkNarrativeProgression: milestone active waiting for user interaction",
+                    )
+                    setProcessing(false)
+                    return@launch
+                }
+
                 var action: RequestResult<Any>? = null
                 startProcessing {
                     action =

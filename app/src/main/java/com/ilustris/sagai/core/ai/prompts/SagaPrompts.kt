@@ -21,8 +21,10 @@ object SagaPrompts {
         appendLine("Saga Context:")
         appendLine(saga.data.toAINormalize(ChatPrompts.sagaExclusions))
         if (ommitCharacter.not()) {
-            appendLine("Character context:")
-            appendLine(selectedCharacter?.data.toAINormalize(ChatPrompts.characterExclusions))
+            selectedCharacter?.let {
+                appendLine("Character context:")
+                appendLine(it.data.toAINormalize(ChatPrompts.characterExclusions))
+            }
         }
     }
 

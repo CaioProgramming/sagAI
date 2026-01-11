@@ -36,7 +36,6 @@ class MilestoneViewModel
                     .onSuccess { message ->
                         _congratsMessage.value = message
                     }.onFailure {
-                        // Keep null, UI will show loading state or skip
                         _congratsMessage.value = null
                     }
 
