@@ -444,6 +444,9 @@ fun String?.sanitizeAndExtractJsonString(expectedClass: Class<*>? = null): Strin
     // 7. Remove any remaining problematic backticks (final cleanup)
     cleanedJsonString = cleanedJsonString.replace("`", "")
 
+    // 8. Remove duplicate quotes that may have been created during repair
+    cleanedJsonString = cleanedJsonString.replace("\"\"", "\"")
+
     Log.i(logTag, "Sanitization complete, cleaned JSON: $cleanedJsonString")
     if (cleanedJsonString.isBlank()) {
         Log.e(logTag, "Cleaned JSON string is blank after sanitization.")
@@ -474,6 +477,31 @@ private fun repairJsonStructure(
 
                     if (charIndex < currentJson.length) {
                         val firstChar = currentJson[charIndex]
+
+                        // Check if this is a JSON literal (null, true, false) or number - don't quote these
+                        val remainingText = currentJson.substring(charIndex)
+                        val isJsonLiteral =
+                            remainingText.startsWith("null") ||
+                                remainingText.startsWith("true") ||
+                                remainingText.startsWith("false") ||
+                                firstChar.isDigit() ||
+                                firstChar == '-'
+
+                        if (isJsonLiteral) {
+                            // Skip this field - it's a valid JSON literal, not a string needing quotes
+                            // Find the end of the literal (comma, newline, or closing brace)
+                            var literalEnd = charIndex
+                            while (literalEnd < currentJson.length) {
+                                val c = currentJson[literalEnd]
+                                if (c == ',' || c == '}' || c == ']' || c == '\n' || c == '\r') {
+                                    break
+                                }
+                                literalEnd++
+                            }
+                            startIndex = literalEnd + 1
+                            continue // Continue to find next occurrence of this field
+                        }
+
                         val needsOpeningQuote = firstChar != '"'
 
                         if (needsOpeningQuote) {
@@ -487,78 +515,55 @@ private fun repairJsonStructure(
                             charIndex++ // Account for the inserted quote
                         }
 
-                        // Now find the end of the string value and ensure closing quote
-                        var valueEndIndex = charIndex + 1
-                        var inString = true
-                        var escaped = false
-                        var foundClosingQuote =
-                            !needsOpeningQuote // If had opening quote originally, assume it might have closing
+                        if (!needsOpeningQuote) {
+                            // Original had opening quote - scan for proper closing quote
+                            var valueEndIndex = charIndex + 1
+                            var escaped = false
+                            while (valueEndIndex < currentJson.length) {
+                                val c = currentJson[valueEndIndex]
 
-                        while (valueEndIndex < currentJson.length && inString) {
-                            val c = currentJson[valueEndIndex]
+                                if (escaped) {
+                                    escaped = false
+                                    valueEndIndex++
+                                    continue
+                                }
 
-                            if (escaped) {
-                                escaped = false
+                                when (c) {
+                                    '\\' -> {
+                                        escaped = true
+                                    }
+
+                                    '"' -> {
+                                        // Found closing quote
+                                        break
+                                    }
+                                }
                                 valueEndIndex++
-                                continue
+                            }
+                            // Advance past this field
+                            startIndex = valueEndIndex + 1
+                        } else {
+                            // We added opening quote - need to find where to put closing quote
+                            // For an unquoted string, we need to find the STRUCTURAL end:
+                            // - A newline followed by another field name pattern ("fieldName":)
+                            // - A closing brace } at the end of the object
+                            // - A closing bracket ] at the end of an array
+
+                            val endPosition = findUnquotedStringEnd(currentJson, charIndex + 1)
+
+                            if (endPosition > charIndex + 1) {
+                                // Insert closing quote at the found position
+                                Log.w(
+                                    "JsonRepair",
+                                    "Repairing JSON: Adding missing closing quote for field '$name' at index $endPosition",
+                                )
+                                currentJson =
+                                    currentJson.substring(0, endPosition) + "\"" +
+                                    currentJson.substring(endPosition)
                             }
 
-                            when (c) {
-                                '\\' -> {
-                                    escaped = true
-                                }
-
-                                '"' -> {
-                                    foundClosingQuote = true
-                                    inString = false
-                                }
-
-                                ',' -> {
-                                    // Found comma without closing quote - need to add quote before comma
-                                    if (needsOpeningQuote || !foundClosingQuote) {
-                                        inString = false
-                                        continue // Don't increment, we'll insert quote here
-                                    }
-                                }
-
-                                '}', ']' -> {
-                                    // Found end of object/array without closing quote
-                                    if (needsOpeningQuote || !foundClosingQuote) {
-                                        inString = false
-                                        continue // Don't increment, we'll insert quote here
-                                    }
-                                }
-
-                                '\n', '\r' -> {
-                                    // Newline without closing quote
-                                    if (needsOpeningQuote || !foundClosingQuote) {
-                                        inString = false
-                                        continue
-                                    }
-                                }
-                            }
-                            valueEndIndex++
+                            startIndex = endPosition + 2 // Move past the inserted quote
                         }
-
-                        // Add closing quote if needed
-                        if (!foundClosingQuote && valueEndIndex <= currentJson.length) {
-                            // Trim any trailing whitespace before adding closing quote
-                            var insertPos = valueEndIndex
-                            while (insertPos > charIndex && currentJson[insertPos - 1].isWhitespace()) {
-                                insertPos--
-                            }
-
-                            Log.w(
-                                "JsonRepair",
-                                "Repairing JSON: Adding missing closing quote for field '$name' at index $insertPos",
-                            )
-                            currentJson =
-                                currentJson.substring(0, insertPos) + "\"" +
-                                currentJson.substring(insertPos)
-                        }
-
-                        // Advance past this field's value
-                        startIndex = valueEndIndex + 1
                     } else {
                         break
                     }
@@ -569,6 +574,91 @@ private fun repairJsonStructure(
         Log.e("JsonRepair", "Failed to repair JSON structure: ${e.message}")
     }
     return currentJson
+}
+
+/**
+ * Find the end position of an unquoted string value.
+ *
+ * This looks for structural JSON delimiters that indicate the end of the value:
+ * - A newline followed by "fieldName": pattern (next field)
+ * - A closing brace } (end of object)
+ * - End of string
+ *
+ * We can't rely on commas because the text content itself may contain commas.
+ */
+private fun findUnquotedStringEnd(
+    json: String,
+    startIndex: Int,
+): Int {
+    // Strategy: Look for patterns that indicate we've left the string value
+    // 1. Look for `\n  "fieldName":` pattern (next field in JSON)
+    // 2. Look for `\n}` pattern (end of object)
+    // 3. Look for the last non-whitespace character before `}` or end
+
+    var i = startIndex
+    var lastContentIndex = startIndex
+
+    while (i < json.length) {
+        val c = json[i]
+
+        // Track the last non-whitespace position
+        if (!c.isWhitespace()) {
+            lastContentIndex = i + 1
+        }
+
+        // Check if we hit a newline - potential field boundary
+        if (c == '\n' || c == '\r') {
+            // Look ahead for next field pattern or closing brace
+            var lookAhead = i + 1
+            while (lookAhead < json.length && json[lookAhead].isWhitespace() && json[lookAhead] != '\n') {
+                lookAhead++
+            }
+
+            if (lookAhead < json.length) {
+                // Check for closing brace (end of object)
+                if (json[lookAhead] == '}') {
+                    // Find the last non-whitespace before the newline
+                    var endPos = i
+                    while (endPos > startIndex && json[endPos - 1].isWhitespace()) {
+                        endPos--
+                    }
+                    return endPos
+                }
+
+                // Check for next field pattern: "fieldName":
+                if (json[lookAhead] == '"') {
+                    // This looks like the start of a new field
+                    val nextFieldPattern = Regex("\"([^\"]+)\"\\s*:")
+                    val potentialMatch = nextFieldPattern.find(json, lookAhead)
+                    if (potentialMatch != null && potentialMatch.range.first == lookAhead) {
+                        // Confirmed: this is a new field, so our string ends before the newline
+                        var endPos = i
+                        while (endPos > startIndex && json[endPos - 1].isWhitespace()) {
+                            endPos--
+                        }
+                        return endPos
+                    }
+                }
+            }
+        }
+
+        // Check for } that might be at same line (compact JSON)
+        if (c == '}' || c == ']') {
+            // This could be end of object - but we need to be careful
+            // Check if there's a comma before this (indicating we're at field boundary)
+            var checkBack = i - 1
+            while (checkBack > startIndex && json[checkBack].isWhitespace()) {
+                checkBack--
+            }
+            // Return position just before any trailing whitespace and the brace
+            return checkBack + 1
+        }
+
+        i++
+    }
+
+    // If we reach here, return the last content position
+    return lastContentIndex
 }
 
 private fun getRecursiveFields(

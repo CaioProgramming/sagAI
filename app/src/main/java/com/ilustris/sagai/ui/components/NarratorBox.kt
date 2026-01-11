@@ -1,11 +1,9 @@
 package com.ilustris.sagai.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +14,9 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.saga.chat.ui.components.bubble
+import com.ilustris.sagai.ui.theme.components.chat.BubbleTailAlignment
+import com.ilustris.sagai.ui.theme.gradientFade
 
 /**
  * Styled box for narrator text embedded in character messages
@@ -41,32 +42,32 @@ fun NarratorBox(
     text: String,
     style: TextStyle,
     genre: Genre,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val narratorShape = RoundedCornerShape(6.dp)
-    val narratorStyle = style.copy(
-        fontStyle = FontStyle.Italic,
-        fontSize = (style.fontSize.value * 0.9f).sp,
-        color = MaterialTheme.colorScheme.onSurface
-    )
+    val narratorShape = genre.bubble(BubbleTailAlignment.BottomRight, 0.dp, 0.dp, true)
+    val narratorStyle =
+        style.copy(
+            fontStyle = FontStyle.Italic,
+            fontSize = (style.fontSize.value * 0.9f).sp,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
 
     Box(
-        modifier = modifier
-            .clip(narratorShape)
-            .background(
-                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.3f),
-                narratorShape
-            )
-            .border(
-                BorderStroke(1.dp, genre.color),
-                narratorShape
-            )
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+        modifier =
+            modifier
+                .clip(narratorShape)
+                .background(
+                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = .6f),
+                    narratorShape,
+                ).border(
+                    1.dp,
+                    genre.color.gradientFade(),
+                    narratorShape,
+                ).padding(8.dp),
     ) {
         Text(
             text = text,
-            style = narratorStyle
+            style = narratorStyle,
         )
     }
 }
-

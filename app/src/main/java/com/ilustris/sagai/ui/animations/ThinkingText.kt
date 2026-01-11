@@ -3,12 +3,9 @@ package com.ilustris.sagai.ui.animations
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,12 +45,13 @@ fun ThinkingText(
     genre: Genre,
     modifier: Modifier = Modifier,
     animate: Boolean = false,
-    onRevealed: () -> Unit = {}
+    onRevealed: () -> Unit = {},
 ) {
-    val thinkStyle = style.copy(
-        fontStyle = FontStyle.Italic,
-        color = genre.color
-    )
+    val thinkStyle =
+        style.copy(
+            fontStyle = FontStyle.Italic,
+            color = style.color.copy(alpha = 0.5f),
+        )
 
     if (animate) {
         var starAlpha by remember { mutableFloatStateOf(1f) }
@@ -61,20 +59,22 @@ fun ThinkingText(
 
         val alphaAnimation by animateFloatAsState(
             targetValue = starAlpha,
-            animationSpec = tween(
-                1000,
-                easing = FastOutSlowInEasing
-            ),
-            label = "starAlpha"
+            animationSpec =
+                tween(
+                    1000,
+                    easing = FastOutSlowInEasing,
+                ),
+            label = "starAlpha",
         )
 
         val textAlphaAnimation by animateFloatAsState(
             targetValue = textAlpha,
-            animationSpec = tween(
-                1000,
-                easing = FastOutSlowInEasing
-            ),
-            label = "textAlpha"
+            animationSpec =
+                tween(
+                    1000,
+                    easing = FastOutSlowInEasing,
+                ),
+            label = "textAlpha",
         )
 
         val bubbleShape = RoundedCornerShape(12.dp)
@@ -84,32 +84,26 @@ fun ThinkingText(
             Text(
                 text = text,
                 style = thinkStyle,
-                modifier = Modifier
-                    .alpha(textAlphaAnimation)
-                    .padding(8.dp)
+                modifier =
+                    Modifier
+                        .alpha(textAlphaAnimation),
             )
 
             // Stars overlay (clickable to reveal)
             if (starAlpha > 0.01f) {
                 StarryTextPlaceholder(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .alpha(alphaAnimation)
-                        .clip(bubbleShape)
-                        .clickable {
-                            starAlpha = 0f
-                            textAlpha = 1f
-                            onRevealed()
-                        }
-                        .background(
-                            MaterialTheme.colorScheme.surfaceContainer.copy(
-                                alpha = 0.4f
-                            ),
-                            bubbleShape
-                        )
-                        .padding(8.dp),
-                    starColor = genre.color,
-                    starCount = 50 // Fewer stars for inline text
+                    modifier =
+                        Modifier
+                            .matchParentSize()
+                            .alpha(alphaAnimation)
+                            .clip(bubbleShape)
+                            .clickable {
+                                starAlpha = 0f
+                                textAlpha = 1f
+                                onRevealed()
+                            },
+                    starColor = genre.iconColor.copy(alpha = .4f),
+                    starCount = 50,
                 )
             }
         }
@@ -118,8 +112,7 @@ fun ThinkingText(
         Text(
             text = text,
             style = thinkStyle,
-            modifier = modifier.padding(8.dp)
+            modifier = modifier,
         )
     }
 }
-

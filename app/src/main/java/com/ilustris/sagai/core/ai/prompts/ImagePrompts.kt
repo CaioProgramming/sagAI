@@ -241,6 +241,15 @@ object ImagePrompts {
                 "OBJECTIVE: Extract pure PHOTOGRAPHIC DNA (lens, lighting, angle, composition). ABSTRACTION IS KEY: Capture the *vibe* and *structure* of the background, NOT specific objects. (e.g., if reference shows spiderwebs, extract 'intricate foreground patterning' or 'dynamic chaotic background', do NOT mention 'webs').",
             )
             appendLine()
+            appendLine("⚠️⚠️⚠️ ABSOLUTE REALISM PRINCIPLE (NON-NEGOTIABLE) ⚠️⚠️⚠️")
+            appendLine("YOU MUST BE BRUTALLY HONEST ABOUT WHAT IS ACTUALLY VISIBLE IN THE IMAGE.")
+            appendLine("DO NOT HALLUCINATE, ASSUME, OR INVENT DETAILS THAT AREN'T CLEARLY PRESENT.")
+            appendLine("- If you can't see hands → DO NOT describe hand position")
+            appendLine("- If you can't see legs → DO NOT describe stance or weight distribution")
+            appendLine("- If shoulders are barely visible → State 'Body axis unclear from framing'")
+            appendLine("- If body parts are obscured by framing → Acknowledge it explicitly")
+            appendLine("ACCURACY > COMPLETENESS. Be truthful about framing limitations.")
+            appendLine()
             appendLine("CRITICAL DIRECTIVE (NON-NEGOTIABLE):")
             appendLine("- NO PREAMBLE: Do not start with 'Okay', 'Let's break down', or any introductory filler.")
             appendLine(
@@ -286,10 +295,10 @@ object ImagePrompts {
             )
             appendLine("15. DEPTH_LAYERS: [background/midground/foreground elements and spacing]")
             appendLine(
-                "16. SUBJECT_ORIENTATION: [BODY + HEAD positioning]. CRITICAL - Analyze THREE components separately:",
+                "16. SUBJECT_ORIENTATION: [BODY + HEAD positioning]. CRITICAL - Analyze THREE components separately based ONLY on what's ACTUALLY VISIBLE:",
             )
             appendLine(
-                "   • BODY AXIS: [Front-facing / 3/4 turn left/right / Side profile left/right / Back-facing] - The torso/shoulder line direction",
+                "   • BODY AXIS: [Front-facing / 3/4 turn left/right / Side profile left/right / Back-facing / OBSCURED] - The torso/shoulder line direction IF VISIBLE",
             )
             appendLine(
                 "   • HEAD DIRECTION: [Front / 3/4 left/right / Profile left/right / Back / Over-shoulder] - Where the face is pointing",
@@ -298,13 +307,34 @@ object ImagePrompts {
                 "   • GAZE: [Direct-to-camera / Looking away left/right / Looking up/down / Averted / Closed eyes] - Eye contact direction",
             )
             appendLine(
-                "   EXAMPLE: 'Body 3/4 right, Head front, Gaze direct' OR 'Body front, Head 3/4 left, Gaze away right'",
+                "   ⚠️ REALISM RULE: If the framing is ECU/CU and shoulders are barely/not visible, state 'Body axis unclear from framing' for BODY AXIS component. DO NOT GUESS body orientation from face direction alone.",
+            )
+            appendLine(
+                "   EXAMPLE: 'Body front (shoulders visible and square), Head front, Gaze direct' OR 'Body axis unclear from framing, Head 3/4 left, Gaze away right' (for tight headshots)",
             )
             appendLine(
                 "   NOTE: 'Left/Right' is relative to screen direction. 'Front-facing body' means shoulders parallel to camera plane.",
             )
             appendLine(
-                "17. FORM & POSTURE: [Complete physical stance description]. Specify: stance (standing/sitting/crouching/lying/kneeling), weight distribution (centered/shifted), body shape (straight/curved/twisted), limb positions (arms crossed/at sides/raised, legs together/apart/bent). Focus on geometric shapes and physical tension (e.g., 'Standing upright with weight on left leg, arms crossed, shoulders square', 'Sitting with torso leaning forward, one hand on knee').",
+                "17. FORM & POSTURE: [Physical stance description - ONLY DESCRIBE WHAT IS ACTUALLY VISIBLE]. ⚠️ CRITICAL REALISM RULE:",
+            )
+            appendLine(
+                "   • ECU/CU (Head-Shoulders): Describe ONLY head position, neck angle, shoulder position (e.g., 'Head upright, shoulders relaxed and level'). DO NOT mention hands, arms below shoulders, or legs. Use 'Lower body not visible in framing' if needed.",
+            )
+            appendLine(
+                "   • MCU/MS (Head-Chest/Waist): Describe head, neck, shoulders, arms, torso lean (e.g., 'Shoulders square, arms at sides, torso upright'). DO NOT mention legs or feet.",
+            )
+            appendLine(
+                "   • MWS/FS/WS (Knees and beyond): Full stance description including legs, weight distribution, complete pose.",
+            )
+            appendLine(
+                "   ⚠️ DO NOT HALLUCINATE: If you cannot see a body part (hands, legs, feet), DO NOT describe it. Be honest about framing limitations. State 'visible portion shows [X]' rather than inventing unseen details.",
+            )
+            appendLine(
+                "   GOOD: 'Head tilted slightly right, shoulders relaxed and parallel to camera, neck upright' (for CU)",
+            )
+            appendLine(
+                "   BAD: 'Standing upright with hands in lap' (when hands aren't visible in a CU frame)",
             )
             appendLine()
             appendLine("⚠️ PARAMETER 18 IS MANDATORY - DO NOT SKIP:")
@@ -313,37 +343,60 @@ object ImagePrompts {
             )
             appendLine()
             appendLine("SUBJECT POSITIONING ANALYSIS (CRITICAL FOR ACCURATE EXTRACTION):")
-            appendLine("When analyzing the reference image, follow this systematic approach:")
+            appendLine("⚠️ FIRST: Determine the FRAMING CODE - this dictates what body parts are visible")
+            appendLine("⚠️ SECOND: Analyze ONLY the body parts that are ACTUALLY VISIBLE at this framing level")
             appendLine()
-            appendLine("1. BODY AXIS DETERMINATION:")
+            appendLine("1. BODY AXIS DETERMINATION (Skip if body not sufficiently visible):")
+            appendLine("   - REQUIRES: At least partial shoulder visibility to determine body orientation")
             appendLine("   - Look at SHOULDER LINE and TORSO alignment relative to the camera")
             appendLine("   - Front-facing: Both shoulders equally visible, torso parallel to camera plane")
             appendLine("   - 3/4 turn: One shoulder more prominent, torso rotated ~45° from camera")
             appendLine("   - Profile: Only one shoulder visible, torso perpendicular to camera (90°)")
             appendLine("   - Back-facing: Shoulders turned away, back of torso visible")
+            appendLine("   - ⚠️ If ECU/tight CU with minimal shoulder visibility → Use 'Body axis unclear from framing'")
             appendLine()
-            appendLine("2. HEAD DIRECTION ANALYSIS:")
+            appendLine("2. HEAD DIRECTION ANALYSIS (Always attempt - head is usually visible):")
             appendLine("   - Separate from body - head can turn independently")
             appendLine("   - Front: Both eyes, full nose, symmetrical face")
             appendLine("   - 3/4: Both eyes visible but one more prominent, nose partially blocks far side of face")
             appendLine("   - Profile: One eye visible, nose silhouette, one side of face only")
             appendLine("   - Over-shoulder: Head turned back over shoulder")
             appendLine()
-            appendLine("3. STANCE & POSTURE DOCUMENTATION:")
-            appendLine("   - PRIMARY STANCE: Standing/Sitting/Crouching/Lying/Kneeling/Leaning")
-            appendLine("   - WEIGHT: Which leg/side bears weight? Is it centered or shifted?")
-            appendLine("   - SPINE: Straight/Curved/Twisted/Bent forward or back")
-            appendLine("   - ARMS: Position and what they're doing (crossed/at sides/raised/gesturing)")
-            appendLine("   - LEGS: Together/Apart/Crossed/One bent")
+            appendLine("3. STANCE & POSTURE DOCUMENTATION (ONLY for visible portions):")
+            appendLine("   - ⚠️ FRAMING GATES (Honor these strictly):")
+            appendLine("     • ECU/CU: Describe head angle, neck position, shoulder level ONLY")
+            appendLine("     • MCU/MS: Add torso lean, arm positions if visible")
+            appendLine("     • MWS+: Add leg stance, weight distribution, full body dynamics")
+            appendLine("   - DO NOT describe body parts cut off by framing")
+            appendLine("   - Examples:")
+            appendLine("     • CU realistic: 'Head upright, slight tilt right, shoulders relaxed and level'")
+            appendLine("     • CU unrealistic: 'Standing with hands in lap' ← WRONG, hands not visible!")
+            appendLine("     • MS realistic: 'Torso leaning slightly forward, arms crossed, shoulders tense'")
+            appendLine("     • FS realistic: 'Standing with weight on right leg, left knee bent, arms at sides'")
             appendLine()
-            appendLine("EXAMPLE COMPLETE ANALYSIS:")
+            appendLine("EXAMPLE COMPLETE ANALYSIS (by framing level):")
+            appendLine("- ECU (Face only): 'Body axis unclear from framing, Head front, Gaze direct' + 'Face fills frame, head upright'")
             appendLine(
-                "'Body front-facing, Head 3/4 left, Gaze averted down' + 'Standing with weight on right leg, left knee slightly bent, arms at sides with hands in pockets, shoulders relaxed'",
+                "- CU (Head-Shoulders): 'Body front (shoulders square and parallel), Head front, Gaze direct' + 'Head upright, shoulders relaxed and level, slight forward neck lean'",
+            )
+            appendLine(
+                "- MS (Head-Waist): 'Body 3/4 left, Head front, Gaze averted down' + 'Torso turned left with right shoulder forward, arms at sides, slight slouch'",
+            )
+            appendLine(
+                "- FS (Full body): 'Body front, Head 3/4 left, Gaze away right' + 'Standing with weight on right leg, left knee slightly bent, arms crossed, shoulders tense'",
             )
             appendLine()
-            appendLine("VISIBILITY ANALYSIS:")
-            appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OCCLUDED")
-            appendLine("Analyze: 1.HEAD 2.FACE 3.TORSO 4.ARMS/HANDS 5.LEGS/FEET 6.DISTINCTIVE MARKS 7.BODY LANGUAGE 8.ENVIRONMENT")
+            appendLine("VISIBILITY ANALYSIS (MANDATORY BEFORE EXTRACTING PARAMETERS 16 & 17):")
+            appendLine("⚠️ CRITICAL: Analyze the image HONESTLY. DO NOT assume or hallucinate body parts that aren't visible.")
+            appendLine("Classify each element: VISIBLE / PARTIAL / HIDDEN / OBSCURED")
+            appendLine("Analyze: 1.HEAD 2.FACE 3.NECK 4.SHOULDERS 5.TORSO 6.ARMS/HANDS 7.LEGS/FEET 8.BODY LANGUAGE 9.ENVIRONMENT")
+            appendLine()
+            appendLine("⚠️ HONESTY PRINCIPLE:")
+            appendLine("- If shoulders are barely/not visible → BODY AXIS = 'unclear from framing' or 'not visible'")
+            appendLine("- If hands are not visible → DO NOT describe hand position in FORM & POSTURE")
+            appendLine("- If legs are not visible → DO NOT describe stance or weight distribution")
+            appendLine("- If arms below shoulders are not visible → DO NOT describe arm position")
+            appendLine("- BE TRUTHFUL: It's better to say 'not visible in frame' than to guess incorrectly")
             appendLine()
             appendLine("MANDATORY HIDDEN BY FRAMING (Bullet points of elements GUARANTEED not visible):")
             appendLine("- ECU: Mid-neck and below (Keep chin, jawline, and top of headgear/accessories).")
@@ -417,7 +470,7 @@ object ImagePrompts {
             "   - **SUBJECT ORIENTATION (NON-NEGOTIABLE):** STRICTLY enforce ALL THREE components from visual direction:",
         )
         appendLine(
-            "     • BODY AXIS: The prompt must describe the torso/shoulder orientation matching the reference (e.g., 'shoulders turned 3/4 to the right', 'torso facing forward', 'body in profile')",
+            "     • BODY AXIS: The prompt must describe the torso/shoulder orientation matching the reference (e.g., 'shoulders turned 3/4 to the right', 'torso facing forward', 'body in profile'). If visual direction says 'Body axis unclear from framing', the prompt should focus on head/face only without body descriptors.",
         )
         appendLine(
             "     • HEAD DIRECTION: The prompt must describe where the head/face is pointing (e.g., 'head turned front', 'face in 3/4 view', 'looking over shoulder')",
@@ -429,6 +482,21 @@ object ImagePrompts {
             "     CRITICAL: If visual direction says 'Body front, Head 3/4 left', the prompt MUST describe a front-facing body with head turned left. Any mismatch in ANY component = CRITICAL VIOLATION.",
         )
         appendLine(
+            "   - **FORM & POSTURE REALISM (CRITICAL):** The prompt must ONLY describe body parts that are visible at the specified framing level:",
+        )
+        appendLine(
+            "     • ECU/CU (Head-Shoulders): Prompt can only describe head position, neck, shoulders. If it mentions hands, arms below shoulders, legs, or stance = VISIBILITY_VIOLATION.",
+        )
+        appendLine(
+            "     • MCU/MS (Head-Chest/Waist): Prompt can describe torso, arms, but NOT legs or feet unless framing is MS+. Mentioning 'standing' or leg position in MCU = VISIBILITY_VIOLATION.",
+        )
+        appendLine(
+            "     • MWS+ (Knees and beyond): Full body description is appropriate.",
+        )
+        appendLine(
+            "     CRITICAL: If the visual direction's FORM & POSTURE says 'Lower body not visible' or describes only upper body, the final prompt must NOT mention legs, feet, standing stance, or weight distribution. This is an AUTOMATIC VISIBILITY_VIOLATION.",
+        )
+        appendLine(
             "   - **LIGHTING & CONTRAST FIDELITY:** The prompt MUST embrace the reference's lighting structure (e.g., strong shadows, specific light direction, contrast level) as a compositional tool. Art style lighting acts as a MOOD/PALETTE filter, but it must NOT flatten or compromise the dramatic lighting defined in the reference.",
         )
         appendLine("   - NO technical jargon (f-stops/Kelvin/degrees) - use visual descriptors")
@@ -438,6 +506,24 @@ object ImagePrompts {
         visualDirection?.let {
             appendLine("   VISUAL DIRECTION: \"$it\"")
             appendLine("   - Analyze this direction to determine what is VISIBLE vs. HIDDEN.")
+            appendLine(
+                "   - **REALISM CHECK (CRITICAL):** Cross-reference the FRAMING code with FORM & POSTURE descriptions. If the visual direction describes tight framing (ECU/CU/MCU) but mentions body parts like 'hands in lap', 'standing', or 'legs', this is EXTRACTION HALLUCINATION and must be corrected in your output.",
+            )
+            appendLine(
+                "   - **POSTURE VISIBILITY MATRIX:** Enforce this strictly:",
+            )
+            appendLine(
+                "     • ECU/CU: Can only describe head angle, neck, shoulders. NO hands (unless touching face), arms below shoulders, torso lean, legs, stance.",
+            )
+            appendLine(
+                "     • MCU: Add upper arms, torso lean. NO legs, feet, standing/sitting stance, weight distribution.",
+            )
+            appendLine(
+                "     • MS: Add full arms, torso, waist. Can describe sitting/leaning but NO leg details or feet.",
+            )
+            appendLine(
+                "     • MWS+: Full body descriptions are valid.",
+            )
             appendLine(
                 "   - **IDENTITY PRESERVATION:** Do NOT omit core character details like headgear, facial features, or upper-body accessories (necklaces, distinctive collars) unless they are truly outside the frame. These define the character.",
             )
@@ -534,7 +620,10 @@ object ImagePrompts {
         appendLine()
 
         appendLine("VIOLATION DETECTION:")
-        appendLine("- VISIBILITY_VIOLATION: Describes body parts/clothing out of frame")
+        appendLine("- VISIBILITY_VIOLATION: Describes body parts/clothing out of frame (includes unrealistic posture descriptions)")
+        appendLine(
+            "- UNREALISTIC_POSTURE_EXTRACTION: Visual direction's FORM & POSTURE describes body parts not visible at the specified FRAMING level (e.g., 'hands in lap' in a CU, 'standing' in an ECU). This indicates the extraction AI hallucinated details.",
+        )
         appendLine("- MISSING_FACIAL_EXPRESSION: No specific emotion or generic descriptor")
         appendLine("- MISSING_DYNAMIC_POSE: Static/neutral pose without emotional content")
         appendLine("- POSE_EXPRESSION_VIOLATION: Expression + pose don't work together or character seems posed, not in moment")
@@ -560,6 +649,9 @@ object ImagePrompts {
         appendLine()
 
         appendLine("AUTO-FIX PATTERNS:")
+        appendLine(
+            "- Unrealistic posture extraction → Ignore hallucinated body parts from visual direction, focus only on what the framing actually shows (e.g., if CU with 'hands in lap', remove hand reference and focus on head/shoulder position)",
+        )
         appendLine("- Missing expression → Add specific, INTENSE emotion matching archetype")
         appendLine(
             "- Missing/Weak pose → INJECT DRAMA: Suggest exaggerated gestures, dynamic foreshortening, and intensified body language",

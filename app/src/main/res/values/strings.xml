@@ -45,6 +45,10 @@
     <string name="sender_type_character_hint">Ask a specific character something…</string>
     <string name="sender_type_default_hint">Type your message…</string>
 
+    <!-- Expressive Tags -->
+    <string name="tag_inside_hint">Inside &lt;%1$s&gt;</string>
+    <string name="tag_exit_instruction">Press ↵ to exit</string>
+
     <!-- CharacterForm: Image Content Description -->
     <string name="character_form_image_content_description">Character silhouette</string>
 

@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,8 +84,8 @@ import com.ilustris.sagai.BuildConfig
 import com.ilustris.sagai.R
 import com.ilustris.sagai.core.file.backup.ui.BackupSheet
 import com.ilustris.sagai.core.services.BillingService
-import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.core.utils.formatToString
+import com.ilustris.sagai.features.characters.ui.components.buildMessagePreviewAnnotatedString
 import com.ilustris.sagai.features.home.data.model.DynamicSagaPrompt
 import com.ilustris.sagai.features.home.data.model.Saga
 import com.ilustris.sagai.features.home.data.model.SagaContent
@@ -168,7 +169,8 @@ fun HomeView(
                                 .sharedElement(
                                     rememberSharedContentState("spark_icon"),
                                     this@AnimatedContent,
-                                ).reactiveShimmer(
+                                )
+                                .reactiveShimmer(
                                     true,
                                     holographicGradient.plus(Color.Transparent),
                                     5.seconds,
@@ -349,7 +351,8 @@ private fun SharedTransitionScope.ChatList(
                                         interactionSource = remember { MutableInteractionSource() },
                                     ) {
                                         openPremiumSheet()
-                                    }.wrapContentWidth()
+                                    }
+                                    .wrapContentWidth()
                                     .align(Alignment.CenterVertically),
                             iconModifier =
                                 Modifier.sharedElement(
@@ -392,7 +395,8 @@ private fun SharedTransitionScope.ChatList(
                         Modifier
                             .clickable {
                                 createFakeSaga()
-                            }.padding(16.dp)
+                            }
+                            .padding(16.dp)
                             .gradientFill(debugBrush)
                             .clip(RoundedCornerShape(15.dp))
                             .fillMaxWidth(),
@@ -445,10 +449,12 @@ private fun SharedTransitionScope.ChatList(
                             true,
                             shimmerColors = shimmerColors,
                             duration = 10.seconds,
-                        ).clip(RoundedCornerShape(15.dp))
+                        )
+                        .clip(RoundedCornerShape(15.dp))
                         .clickable {
                             onCreateNewChat()
-                        }.fillMaxWidth(),
+                        }
+                        .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SparkLoader(
@@ -659,20 +665,22 @@ fun ChatCard(
                     }
                 }
 
-                val message =
+                val message: AnnotatedString =
                     if (sagaData.isEnded) {
-                        stringResource(R.string.chat_card_saga_ended)
+                        AnnotatedString(stringResource(R.string.chat_card_saga_ended))
                     } else {
                         if (saga.messagesSize() == 0) {
-                            stringResource(R.string.chat_card_saga_begins)
+                            AnnotatedString(stringResource(R.string.chat_card_saga_begins))
                         } else {
                             lastMessage
                                 ?.joinMessage()
                                 ?.formatToString(lastMessage.message.senderType != SenderType.NARRATOR)
+                                ?.let { buildMessagePreviewAnnotatedString(it) }
+                                ?: AnnotatedString("")
                         }
                     }
                 Text(
-                    text = message ?: emptyString(),
+                    text = message,
                     style =
                         MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Normal,

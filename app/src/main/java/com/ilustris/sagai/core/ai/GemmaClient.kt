@@ -137,6 +137,15 @@ class GemmaClient
                                                 filteredFields = filterOutputFields,
                                             ),
                                         )
+                                        // Add JSON string rules if the output contains string fields
+                                        if (containsStringFields(T::class.java)) {
+                                            appendLine()
+                                            appendLine("CRITICAL JSON STRING RULES:")
+                                            appendLine("- Any double quote inside a string value MUST be escaped as \\\"")
+                                            appendLine("- Example: \"text\": \"He said \\\"hello\\\" to me\"")
+                                            appendLine("- NEVER leave string values unquoted like: \"name\": John")
+                                            appendLine("- CORRECT format: \"name\": \"John\"")
+                                        }
                                     }
                                 }
 
@@ -257,6 +266,28 @@ class GemmaClient
                 }
                 return@withContext null
             }
+
+        /**
+         * Recursively checks if a class or any of its nested classes contain String fields.
+         */
+        @PublishedApi
+        internal fun containsStringFields(
+            clazz: Class<*>,
+            visited: MutableSet<Class<*>> = mutableSetOf(),
+        ): Boolean {
+            if (clazz in visited || clazz.isPrimitive || clazz.isEnum) return false
+            if (clazz == String::class.java) return true
+            visited.add(clazz)
+
+            return clazz.declaredFields.any { field ->
+                val fieldType = field.type
+                when {
+                    fieldType == String::class.java -> true
+                    fieldType.isPrimitive || fieldType.isEnum -> false
+                    else -> containsStringFields(fieldType, visited)
+            }
+        }
+    }
     }
 
 const val KEY_FLAG = "FIREBASE_KEY"

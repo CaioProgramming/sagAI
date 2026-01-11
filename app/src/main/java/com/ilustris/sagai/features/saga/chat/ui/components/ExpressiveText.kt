@@ -3,13 +3,19 @@ package com.ilustris.sagai.features.saga.chat.ui.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.text.ClickableText
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import com.ilustris.sagai.features.characters.data.model.Character
+import com.ilustris.sagai.features.characters.ui.components.buildWikiAndCharactersAnnotation
 import com.ilustris.sagai.features.newsaga.data.model.Genre
+import com.ilustris.sagai.features.wiki.data.model.Wiki
 import com.ilustris.sagai.ui.animations.LevitatingText
 import com.ilustris.sagai.ui.animations.ThinkingText
 import com.ilustris.sagai.ui.components.NarratorBox
@@ -20,7 +26,7 @@ import com.ilustris.sagai.ui.theme.TextSegment
  * Main composable for rendering expressive messages with inline tag-based formatting
  *
  * This composable parses rich text and renders mixed narrative elements:
- * - Plain dialogue text
+ * - Plain dialogue text (with character/wiki annotations)
  * - <action> tags with levitation animation
  * - <think> tags with interactive star reveals
  * - <narrator> tags with bordered boxes
@@ -35,7 +41,11 @@ import com.ilustris.sagai.ui.theme.TextSegment
  * @param genre Genre for color theming
  * @param style Base text style for the message
  * @param modifier Optional modifier
+ * @param mainCharacter The main character for annotation styling
+ * @param characters List of characters for annotation highlighting
+ * @param wiki List of wiki items for annotation highlighting
  * @param shouldAnimate Whether to enable animations (only true for last message)
+ * @param onAnnotationClick Callback when a character or wiki annotation is clicked
  * @param onThinkRevealed Callback when a thought is revealed
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -45,20 +55,33 @@ fun ExpressiveText(
     genre: Genre,
     style: TextStyle,
     modifier: Modifier = Modifier,
+    mainCharacter: Character? = null,
+    characters: List<Character> = emptyList(),
+    wiki: List<Wiki> = emptyList(),
     shouldAnimate: Boolean = false,
-    onThinkRevealed: () -> Unit = {}
+    onAnnotationClick: (Any?) -> Unit = {},
+    onThinkRevealed: () -> Unit = {},
 ) {
     // Parse text once and cache result
-    val parsedMessage = remember(text) {
-        RichTextParser.parse(text)
-    }
+    val parsedMessage =
+        remember(text) {
+            RichTextParser.parse(text)
+        }
 
-    // If parsing resulted in no segments, just show plain text
+    val annotationBackgroundColor = MaterialTheme.colorScheme.background
+
+    // If parsing resulted in no segments, just show plain text with annotations
     if (parsedMessage.segments.isEmpty()) {
-        Text(
+        AnnotatedPlainText(
             text = text,
+            genre = genre,
             style = style,
-            modifier = modifier
+            mainCharacter = mainCharacter,
+            characters = characters,
+            wiki = wiki,
+            annotationBackgroundColor = annotationBackgroundColor,
+            onAnnotationClick = onAnnotationClick,
+            modifier = modifier,
         )
         return
     }
@@ -67,14 +90,20 @@ fun ExpressiveText(
     FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         parsedMessage.segments.forEach { segment ->
             when (segment) {
                 is TextSegment.Plain -> {
-                    Text(
+                    AnnotatedPlainText(
                         text = segment.text,
-                        style = style
+                        genre = genre,
+                        style = style,
+                        mainCharacter = mainCharacter,
+                        characters = characters,
+                        wiki = wiki,
+                        annotationBackgroundColor = annotationBackgroundColor,
+                        onAnnotationClick = onAnnotationClick,
                     )
                 }
 
@@ -82,7 +111,7 @@ fun ExpressiveText(
                     LevitatingText(
                         text = segment.text,
                         style = style,
-                        animate = shouldAnimate
+                        animate = shouldAnimate,
                     )
                 }
 
@@ -92,7 +121,7 @@ fun ExpressiveText(
                         style = style,
                         genre = genre,
                         animate = shouldAnimate,
-                        onRevealed = onThinkRevealed
+                        onRevealed = onThinkRevealed,
                     )
                 }
 
@@ -100,11 +129,78 @@ fun ExpressiveText(
                     NarratorBox(
                         text = segment.text,
                         style = style,
-                        genre = genre
+                        genre = genre,
                     )
                 }
             }
         }
+    }
+}
+
+/**
+ * Plain text with character and wiki annotations that are clickable
+ */
+@Composable
+private fun AnnotatedPlainText(
+    text: String,
+    genre: Genre,
+    style: TextStyle,
+    mainCharacter: Character?,
+    characters: List<Character>,
+    wiki: List<Wiki>,
+    annotationBackgroundColor: Color,
+    onAnnotationClick: (Any?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val annotatedText =
+        remember(text, characters, wiki) {
+            buildWikiAndCharactersAnnotation(
+                text = text,
+                genre = genre,
+                mainCharacter = mainCharacter,
+                characters = characters,
+                wiki = wiki,
+                shadowColor = annotationBackgroundColor,
+            )
+        }
+
+    if (characters.isEmpty() && wiki.isEmpty()) {
+        Text(
+            text = text,
+            style = style,
+            modifier = modifier,
+        )
+    } else {
+        ClickableText(
+            text = annotatedText,
+            style = style,
+            modifier = modifier,
+            onClick = { offset ->
+                // Check for character annotation
+                val characterAnnotation =
+                    annotatedText
+                        .getStringAnnotations(tag = "character_tag", start = offset, end = offset)
+                        .firstOrNull()
+
+                // Check for wiki annotation
+                val wikiAnnotation =
+                    annotatedText
+                        .getStringAnnotations(tag = "wiki_tag", start = offset, end = offset)
+                        .firstOrNull()
+
+                characterAnnotation?.let { annotation ->
+                    val characterId = annotation.item.split(":").lastOrNull()
+                    val character = characters.find { it.id.toString() == characterId }
+                    onAnnotationClick(character)
+                }
+
+                wikiAnnotation?.let { annotation ->
+                    val wikiId = annotation.item.split(":").lastOrNull()
+                    val wikiData = wiki.find { it.id.toString() == wikiId }
+                    onAnnotationClick(wikiData)
+                }
+            },
+        )
     }
 }
 

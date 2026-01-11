@@ -21,13 +21,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import com.ilustris.sagai.features.newsaga.data.model.Genre
@@ -48,35 +47,39 @@ enum class GradientType {
         offsetAnimationValue: Float,
     ): Brush =
         when (this) {
-            LINEAR ->
+            LINEAR -> {
                 Brush.linearGradient(
                     colors = colors,
                     start = Offset.Zero,
                     end = Offset(offsetAnimationValue * 2, offsetAnimationValue * 3),
                     tileMode = TileMode.Clamp,
                 )
+            }
 
-            VERTICAL ->
+            VERTICAL -> {
                 Brush.verticalGradient(
                     colors = colors,
                     startY = 0f,
                     endY = offsetAnimationValue * 3,
                     tileMode = TileMode.Clamp,
                 )
+            }
 
-            RADIAL ->
+            RADIAL -> {
                 Brush.radialGradient(
                     colors = colors,
                     center = Offset(offsetAnimationValue, offsetAnimationValue),
                     radius = offsetAnimationValue * 2,
                     tileMode = TileMode.Clamp,
                 )
+            }
 
-            SWEEP ->
+            SWEEP -> {
                 Brush.sweepGradient(
                     colors = colors,
                     center = Offset(offsetAnimationValue, offsetAnimationValue),
                 )
+            }
         }
 }
 
@@ -204,7 +207,7 @@ fun Genre.gradient(
     gradientType.toBrush(colors = this.colorPalette(), offsetAnimationValue = targetValue)
 }
 
-fun Color.solidGradient() = Brush.verticalGradient(List(2) { this })
+fun Color.solidGradient() = SolidColor(this)
 
 enum class FadeDirection {
     TOP_TO_BOTTOM,

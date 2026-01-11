@@ -37,17 +37,312 @@ fun transformTextWithContent(
     wiki: List<Wiki>,
     text: String,
     tagBackgroundColor: Color = MaterialColor.Gray500,
+    textColor: Color = Color.Unspecified,
 ): TransformedText {
-    val annotatedString =
-        buildWikiAndCharactersAnnotation(
+    // First, transform the text to hide tags and get the mapping
+    val (transformedText, offsetMapping) =
+        transformExpressiveTags(
             text,
+            genre,
+            tagBackgroundColor,
+            textColor,
+        )
+
+    // Then apply character/wiki annotations on the transformed text
+    val annotatedString =
+        buildWikiAndCharactersAnnotationOnTransformed(
+            transformedText,
             genre,
             mainCharacter,
             characters,
             wiki,
             tagBackgroundColor,
         )
-    return TransformedText(annotatedString, OffsetMapping.Identity)
+
+    return TransformedText(annotatedString, offsetMapping)
+}
+
+/**
+ * Transform text by removing tag markers and applying styles to content
+ * Returns the transformed AnnotatedString and an OffsetMapping for cursor positioning
+ */
+private fun transformExpressiveTags(
+    text: String,
+    genre: Genre,
+    tagBackgroundColor: Color,
+    textColor: Color,
+): Pair<AnnotatedString, OffsetMapping> {
+    val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
+    val thinkRegex = Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
+    val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
+
+    // Find all tag matches
+    data class TagMatch(
+        val range: IntRange,
+        val content: String,
+        val type: String,
+        val openTagLength: Int,
+        val closeTagLength: Int,
+    )
+
+    val matches = mutableListOf<TagMatch>()
+
+    actionRegex.findAll(text).forEach { match ->
+        matches.add(
+            TagMatch(
+                range = match.range,
+                content = match.groupValues[1],
+                type = "action",
+                openTagLength = "<action>".length,
+                closeTagLength = "</action>".length,
+            ),
+        )
+    }
+
+    thinkRegex.findAll(text).forEach { match ->
+        matches.add(
+            TagMatch(
+                range = match.range,
+                content = match.groupValues[1],
+                type = "think",
+                openTagLength = "<think>".length,
+                closeTagLength = "</think>".length,
+            ),
+        )
+    }
+
+    narratorRegex.findAll(text).forEach { match ->
+        matches.add(
+            TagMatch(
+                range = match.range,
+                content = match.groupValues[1],
+                type = "narrator",
+                openTagLength = "<narrator>".length,
+                closeTagLength = "</narrator>".length,
+            ),
+        )
+    }
+
+    // Sort by position
+    matches.sortBy { it.range.first }
+
+    // Build transformed text and offset mapping
+    val transformedBuilder = StringBuilder()
+    val originalToTransformed =
+        mutableListOf<Int>() // originalToTransformed[originalIndex] = transformedIndex
+    var currentOriginalIndex = 0
+
+    for (match in matches) {
+        // Add plain text before this match
+        if (currentOriginalIndex < match.range.first) {
+            val plainText = text.substring(currentOriginalIndex, match.range.first)
+            for (char in plainText) {
+                originalToTransformed.add(transformedBuilder.length)
+                transformedBuilder.append(char)
+            }
+            currentOriginalIndex = match.range.first
+        }
+
+        // Skip the opening tag characters (map them to the start of content in transformed)
+        val contentStartInTransformed = transformedBuilder.length
+        repeat(match.openTagLength) {
+            originalToTransformed.add(contentStartInTransformed)
+        }
+
+        // Add the content
+        for (char in match.content) {
+            originalToTransformed.add(transformedBuilder.length)
+            transformedBuilder.append(char)
+        }
+
+        // Skip the closing tag characters (map them to the end of content in transformed)
+        val contentEndInTransformed = transformedBuilder.length
+        repeat(match.closeTagLength) {
+            originalToTransformed.add(contentEndInTransformed)
+        }
+
+        currentOriginalIndex = match.range.last + 1
+    }
+
+    // Add remaining text
+    if (currentOriginalIndex < text.length) {
+        val remainingText = text.substring(currentOriginalIndex)
+        for (char in remainingText) {
+            originalToTransformed.add(transformedBuilder.length)
+            transformedBuilder.append(char)
+        }
+    }
+
+    // Add final position
+    originalToTransformed.add(transformedBuilder.length)
+
+    val transformedText = transformedBuilder.toString()
+
+    // Build reverse mapping (transformed to original)
+    val transformedToOriginal = IntArray(transformedText.length + 1)
+    for (originalIdx in originalToTransformed.indices) {
+        val transformedIdx = originalToTransformed[originalIdx]
+        if (transformedIdx <= transformedText.length) {
+            transformedToOriginal[transformedIdx] = originalIdx
+        }
+    }
+
+    // Build annotated string with styles
+    val annotatedString =
+        buildAnnotatedString {
+            append(transformedText)
+
+            // Re-calculate styled ranges in transformed text
+            var transformedIndex = 0
+            var originalIndex = 0
+
+            for (match in matches) {
+                // Skip plain text before match
+                val plainLength = match.range.first - originalIndex
+                transformedIndex += plainLength
+                originalIndex = match.range.first
+
+                // Style the content in transformed text
+                val contentStart = transformedIndex
+                val contentEnd = transformedIndex + match.content.length
+
+                when (match.type) {
+                    "action" -> {
+                        addStyle(
+                            SpanStyle(
+                                color = MaterialColor.Amber400,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                            contentStart,
+                            contentEnd,
+                        )
+                    }
+
+                    "think" -> {
+                        // Use textColor if specified, otherwise use a default gray
+                        val thinkColor =
+                            if (textColor != Color.Unspecified) {
+                                textColor.copy(alpha = 0.5f)
+                            } else {
+                                Color.Gray.copy(alpha = 0.5f)
+                            }
+                        addStyle(
+                            SpanStyle(
+                                color = thinkColor,
+                            ),
+                            contentStart,
+                            contentEnd,
+                        )
+                    }
+
+                    "narrator" -> {
+                        addStyle(
+                            SpanStyle(
+                                fontStyle = FontStyle.Italic,
+                            ),
+                            contentStart,
+                            contentEnd,
+                        )
+                    }
+                }
+
+                transformedIndex += match.content.length
+                originalIndex = match.range.last + 1
+            }
+        }
+
+    val offsetMapping =
+        object : OffsetMapping {
+            override fun originalToTransformed(offset: Int): Int =
+                if (offset < originalToTransformed.size) {
+                    originalToTransformed[offset]
+                } else {
+                    transformedText.length
+                }
+
+            override fun transformedToOriginal(offset: Int): Int =
+                if (offset < transformedToOriginal.size) {
+                    transformedToOriginal[offset]
+                } else {
+                    text.length
+                }
+        }
+
+    return Pair(annotatedString, offsetMapping)
+}
+
+/**
+ * Build wiki and character annotations on already-transformed text
+ * This is used when the text has already been transformed (tags removed)
+ */
+private fun buildWikiAndCharactersAnnotationOnTransformed(
+    transformedAnnotatedString: AnnotatedString,
+    genre: Genre,
+    mainCharacter: Character?,
+    characters: List<Character>,
+    wiki: List<Wiki>,
+    shadowColor: Color,
+): AnnotatedString {
+    val text = transformedAnnotatedString.text
+
+    val characterStyleGroup =
+        AnnotationStyleGroup(
+            tag = "character_tag",
+            rules =
+                charactersStyleRules(
+                    mainCharacter,
+                    characters,
+                    genre,
+                    shadowColor,
+                ),
+        )
+
+    val wikiRules =
+        wiki.map { wikiItem ->
+            AnnotationRule(
+                searchTerm = wikiItem.title,
+                annotationValue = "wiki:${wikiItem.id}",
+                spanStyle =
+                    SpanStyle(
+                        fontStyle = FontStyle.Italic,
+                    ),
+            )
+        }
+    val wikiStyleGroup =
+        AnnotationStyleGroup(
+            tag = "wiki_tag",
+            rules = wikiRules,
+        )
+
+    val styleGroups = listOf(characterStyleGroup, wikiStyleGroup)
+
+    // Build on top of existing annotated string
+    return buildAnnotatedString {
+        append(transformedAnnotatedString)
+
+        // Add character and wiki annotations
+        styleGroups.forEach { group ->
+            group.rules.forEach { rule ->
+                val regex = Regex("\\b${Regex.escape(rule.searchTerm)}\\b", RegexOption.IGNORE_CASE)
+                regex.findAll(text).forEach { matchResult ->
+                    val startIndex = matchResult.range.first
+                    val endIndex = matchResult.range.last + 1
+                    addStyle(
+                        style = rule.spanStyle,
+                        start = startIndex,
+                        end = endIndex,
+                    )
+
+                    addStringAnnotation(
+                        tag = group.tag,
+                        annotation = rule.annotationValue,
+                        start = startIndex,
+                        end = endIndex,
+                    )
+                }
+            }
+        }
+    }
 }
 
 fun buildCharactersAnnotatedString(
@@ -160,10 +455,230 @@ fun buildWikiAndCharactersAnnotation(
 
     val styleGroups = listOf(characterStyleGroup, wikiStyleGroup)
 
-    return buildStyleAnnotation(
-        text = text,
-        styleItems = styleGroups,
+    val baseAnnotation =
+        buildStyleAnnotation(
+            text = text,
+            styleItems = styleGroups,
+        )
+
+    // Apply expressive tag styling on top
+    return applyExpressiveTagStyling(baseAnnotation)
+}
+
+/**
+ * Apply expressive tag styling to input field text
+ * Styles tag content for visual feedback while typing:
+ * - <action>text</action> → Yellow/amber bold text
+ * - <think>text</think> → Faded text (50% alpha)
+ * - <narrator>text</narrator> → Italic text
+ */
+private fun applyExpressiveTagStyling(annotatedString: AnnotatedString): AnnotatedString {
+    val text = annotatedString.text
+
+    return buildAnnotatedString {
+        append(annotatedString)
+
+        // Apply expressive tag styling
+        val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
+        val thinkRegex = Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
+        val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
+
+        // Style <action> content
+        actionRegex.findAll(text).forEach { match ->
+            val contentStart = match.range.first + "<action>".length
+            val contentEnd = match.range.last - "</action>".length + 1
+            if (contentStart < contentEnd) {
+                addStyle(
+                    SpanStyle(
+                        color = MaterialColor.Amber400,
+                        fontWeight = FontWeight.Bold,
+                    ),
+                    contentStart,
+                    contentEnd,
+                )
+            }
+        }
+
+        // Style <think> content
+        thinkRegex.findAll(text).forEach { match ->
+            val contentStart = match.range.first + "<think>".length
+            val contentEnd = match.range.last - "</think>".length + 1
+            if (contentStart < contentEnd) {
+                // Apply semi-transparent gray color for faded appearance
+                // In visual transformation we don't have access to the actual text color
+                addStyle(
+                    SpanStyle(
+                        color = Color.Gray,
+                    ),
+                    contentStart,
+                    contentEnd,
+                )
+            }
+        }
+
+        // Style <narrator> content
+        narratorRegex.findAll(text).forEach { match ->
+            val contentStart = match.range.first + "<narrator>".length
+            val contentEnd = match.range.last - "</narrator>".length + 1
+            if (contentStart < contentEnd) {
+                addStyle(
+                    SpanStyle(
+                        fontStyle = FontStyle.Italic,
+                    ),
+                    contentStart,
+                    contentEnd,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Create styled annotated string for suggestion text with expressive tags
+ * Used in suggestion chips to show preview of tag styling
+ * Tags are removed from display and text is styled appropriately
+ *
+ * @param text Suggestion text with tags
+ * @return AnnotatedString with tags removed and text styled
+ */
+fun buildSuggestionAnnotatedString(text: String): AnnotatedString {
+    // First, remove all tags but keep track of positions for styling
+    val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
+    Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
+    val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
+
+    data class StyledSection(
+        val start: Int,
+        val end: Int,
+        val style: SpanStyle,
     )
+
+    val styledSections = mutableListOf<StyledSection>()
+
+    var cleanText = text
+    var offset = 0
+
+    // Process actions - bold
+    actionRegex.findAll(text).forEach { match ->
+        val content = match.groupValues[1]
+        val matchStart = match.range.first - offset
+        val contentStart = matchStart
+        val contentEnd = contentStart + content.length
+
+        styledSections.add(
+            StyledSection(
+                contentStart,
+                contentEnd,
+                SpanStyle(fontWeight = FontWeight.Bold),
+            ),
+        )
+
+        cleanText = cleanText.replaceFirst("<action>", "")
+        cleanText = cleanText.replaceFirst("</action>", "")
+        offset += "<action>".length + "</action>".length
+    }
+
+    // Process thinks - reduced alpha (just remove tags for simplicity)
+    cleanText = cleanText.replace(Regex("<think>|</think>"), "")
+
+    // Process narrator - italic
+    offset = 0
+    narratorRegex.findAll(text).forEach { match ->
+        val content = match.groupValues[1]
+        val adjustedStart = cleanText.indexOf(content, offset)
+        if (adjustedStart != -1) {
+            styledSections.add(
+                StyledSection(
+                    adjustedStart,
+                    adjustedStart + content.length,
+                    SpanStyle(fontStyle = FontStyle.Italic),
+                ),
+            )
+            offset = adjustedStart + content.length
+        }
+    }
+    cleanText = cleanText.replace(Regex("<narrator>|</narrator>"), "")
+
+    return buildAnnotatedString {
+        append(cleanText)
+        styledSections.forEach { section ->
+            addStyle(section.style, section.start, section.end)
+        }
+    }
+}
+
+/**
+ * Create styled annotated string for message preview text with expressive tags
+ * Used in HomeView to show simplified preview of messages with styling
+ * Tags are removed from display and text is styled appropriately
+ *
+ * @param text Message text with tags
+ * @return AnnotatedString with tags removed and text styled
+ */
+fun buildMessagePreviewAnnotatedString(text: String): AnnotatedString {
+    // Remove all tags but keep track of positions for styling
+    val actionRegex = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
+    Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
+    val narratorRegex = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
+
+    data class StyledSection(
+        val start: Int,
+        val end: Int,
+        val style: SpanStyle,
+    )
+
+    val styledSections = mutableListOf<StyledSection>()
+
+    var cleanText = text
+    var offset = 0
+
+    // Process actions - bold
+    actionRegex.findAll(text).forEach { match ->
+        val content = match.groupValues[1]
+        val matchStart = match.range.first - offset
+        val contentStart = matchStart
+        val contentEnd = contentStart + content.length
+
+        styledSections.add(
+            StyledSection(
+                contentStart,
+                contentEnd,
+                SpanStyle(fontWeight = FontWeight.Bold),
+            ),
+        )
+
+        cleanText = cleanText.replaceFirst("<action>", "")
+        cleanText = cleanText.replaceFirst("</action>", "")
+        offset += "<action>".length + "</action>".length
+    }
+
+    // Process thinks - reduced alpha (just remove tags for simplicity)
+    cleanText = cleanText.replace(Regex("<think>|</think>"), "")
+
+    // Process narrator - italic
+    offset = 0
+    narratorRegex.findAll(text).forEach { match ->
+        val content = match.groupValues[1]
+        val adjustedStart = cleanText.indexOf(content, offset)
+        if (adjustedStart != -1) {
+            styledSections.add(
+                StyledSection(
+                    adjustedStart,
+                    adjustedStart + content.length,
+                    SpanStyle(fontStyle = FontStyle.Italic),
+                ),
+            )
+            offset = adjustedStart + content.length
+        }
+    }
+    cleanText = cleanText.replace(Regex("<narrator>|</narrator>"), "")
+
+    return buildAnnotatedString {
+        append(cleanText)
+        styledSections.forEach { section ->
+            addStyle(section.style, section.start, section.end)
+        }
+    }
 }
 
 fun buildStyleAnnotation(

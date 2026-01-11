@@ -23,7 +23,7 @@ Genre(
     ),
     CYBERPUNK(
         title = R.string.genre_scifi,
-        color = Color(0xFF2E294E), // Pantone 5255 C - Dark Purple
+        color = Color(0xFF8B00FF), // Pantone 2665 C - Vibrant Electric Purple
         iconColor = Color.White,
         background = R.drawable.scifi,
     ),
@@ -216,9 +216,10 @@ fun Genre.colorPalette() =
         Genre.CYBERPUNK -> {
             listOf(
                 color,
-                Color(0xFF00F5FF), // Pantone Neon Blue
-                Color(0xFFFF1493), // Pantone Neon Pink
-                Color(0xFF39FF14), // Pantone Neon Green
+                Color(0xFF00FFFF), // Pantone Cyan - Bright Electric Blue
+                Color(0xFFFF10F0), // Pantone 806 C - Vivid Magenta
+                Color(0xFFFFFF00), // Pantone Yellow C - Pure Yellow
+                Color(0xFFFF006E), // Pantone 812 C - Hot Pink
             )
         }
 

@@ -51,6 +51,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -80,18 +82,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.shadow.Shadow
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -100,6 +102,7 @@ import com.ilustris.sagai.core.utils.emptyString
 import com.ilustris.sagai.features.characters.data.model.CharacterContent
 import com.ilustris.sagai.features.characters.ui.CharacterAvatar
 import com.ilustris.sagai.features.characters.ui.CharacterYearbookItem
+import com.ilustris.sagai.features.characters.ui.components.buildSuggestionAnnotatedString
 import com.ilustris.sagai.features.characters.ui.components.transformTextWithContent
 import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.getCharacters
@@ -134,7 +137,6 @@ private fun detectQueryType(
     text: String,
     characters: List<CharacterContent>,
     wikis: List<Wiki>,
-    context: android.content.Context? = null,
 ): ItemsType? {
     val lastAtIndex = text.lastIndexOf('@')
     val lastSlashIndex = text.lastIndexOf('/')
@@ -267,14 +269,13 @@ fun ChatInputView(
     typoFix: TypoFix?,
     selectedCharacter: CharacterContent? = null,
     isSendingPending: Boolean = false,
-    sendingProgress: Float = 0f,
+    @Suppress("UNUSED_PARAMETER") sendingProgress: Float = 0f,
     onUpdateInput: (TextFieldValue) -> Unit,
     onUpdateSender: (SenderType) -> Unit,
     onSendMessage: (Boolean) -> Unit,
     onSelectCharacter: (CharacterContent) -> Unit = {},
     onRequestAudio: () -> Unit = {},
 ) {
-    val context = LocalContext.current
     val action = sendType
     val inputBrush =
         content.data.genre.gradient(
@@ -319,7 +320,6 @@ fun ChatInputView(
                 text = inputField.text,
                 characters = content.characters,
                 wikis = content.wikis,
-                context = context,
             )
     }
 
@@ -415,8 +415,14 @@ fun ChatInputView(
                                     ),
                         )
 
+                        // Use styled annotated string for suggestions with tags
+                        val styledText =
+                            remember(it.text) {
+                                buildSuggestionAnnotatedString(it.text)
+                            }
+
                         Text(
-                            it.text,
+                            styledText,
                             style = MaterialTheme.typography.labelSmall,
                             modifier =
                                 Modifier.reactiveShimmer(
@@ -428,6 +434,12 @@ fun ChatInputView(
                 }
             }
         }
+
+        // Check if cursor is inside a tag - hoisted to outer Column level to be accessible by message options
+        val currentTagInside =
+            remember(inputField.text, inputField.selection) {
+                getCursorInsideTag(inputField.text, inputField.selection.start)
+            }
 
         Column(
             modifier =
@@ -448,10 +460,10 @@ fun ChatInputView(
                                     override fun createShader(size: Size): Shader {
                                         val shader =
                                             (
-                                                    sweepGradient(
-                                                        content.data.genre.colorPalette(),
-                                                    ) as ShaderBrush
-                                                    ).createShader(size)
+                                                sweepGradient(
+                                                    content.data.genre.colorPalette(),
+                                                ) as ShaderBrush
+                                            ).createShader(size)
                                         val matrix = Matrix()
                                         matrix.setRotate(
                                             rotation,
@@ -474,8 +486,7 @@ fun ChatInputView(
                                 style = Stroke(width = 1.dp.toPx()),
                             )
                         }
-                    }
-                    .border(1.dp, inputBrush, inputShape)
+                    }.border(1.dp, inputBrush, inputShape)
                     .background(backgroundColor, inputShape)
                     .verticalScroll(rememberScrollState()),
         ) {
@@ -526,13 +537,11 @@ fun ChatInputView(
                                             radius = 5.dp,
                                             genre.color,
                                         ),
-                                    )
-                                    .border(1.dp, genre.color.gradientFade(), shape)
+                                    ).border(1.dp, genre.color.gradientFade(), shape)
                                     .background(
                                         MaterialTheme.colorScheme.background,
                                         shape,
-                                    )
-                                    .clip(shape)
+                                    ).clip(shape)
                                     .padding(8.dp),
                         ) {
                             item(span = { GridItemSpan(4) }) {
@@ -558,8 +567,7 @@ fun ChatInputView(
                                                 coroutineScope.launch {
                                                     characterToolTipState.dismiss()
                                                 }
-                                            }
-                                            .size(36.dp),
+                                            }.size(36.dp),
                                     textStyle =
                                         MaterialTheme.typography.labelSmall.copy(
                                             fontFamily = content.data.genre.bodyFont(),
@@ -656,6 +664,20 @@ fun ChatInputView(
                                 }
                             },
                             textStyle = textStyle,
+                            keyboardOptions =
+                                KeyboardOptions(
+                                    imeAction = if (currentTagInside != null) ImeAction.Next else ImeAction.Default,
+                                ),
+                            keyboardActions =
+                                KeyboardActions(
+                                    onNext = {
+                                        // When user presses "Next" while inside a tag, escape from it
+                                        if (currentTagInside != null) {
+                                            val escaped = escapeCursorFromTag(inputField)
+                                            onUpdateInput(escaped)
+                                        }
+                                    },
+                                ),
                             visualTransformation = {
                                 transformTextWithContent(
                                     content.data.genre,
@@ -664,13 +686,12 @@ fun ChatInputView(
                                     content.wikis,
                                     inputField.text,
                                     tagBackgroundColor,
+                                    textStyle.color,
                                 )
                             },
                             cursorBrush =
-                                Brush.verticalGradient(
-                                    content.data.genre.color
-                                        .darkerPalette(),
-                                ),
+                                content.data.genre.color
+                                    .solidGradient(),
                             decorationBox = { innerTextField ->
                                 val boxPadding = 12.dp
                                 Box(
@@ -702,11 +723,49 @@ fun ChatInputView(
                                         )
                                     }
 
-                                    Box(
-                                        Modifier
-                                            .alpha(textAlpha),
-                                    ) {
-                                        innerTextField()
+                                    Column {
+                                        Box(
+                                            Modifier
+                                                .alpha(textAlpha),
+                                        ) {
+                                            innerTextField()
+                                        }
+
+                                        AnimatedVisibility(
+                                            visible = currentTagInside != null && isImeVisible,
+                                            enter = fadeIn() + slideInVertically { it },
+                                            exit = fadeOut(),
+                                        ) {
+                                            currentTagInside?.let { tag ->
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                    modifier =
+                                                        Modifier
+                                                            .padding(top = 4.dp)
+                                                            .alpha(0.6f),
+                                                ) {
+                                                    Text(
+                                                        stringResource(
+                                                            R.string.tag_inside_hint,
+                                                            tag.tag,
+                                                        ),
+                                                        style =
+                                                            MaterialTheme.typography.labelSmall.copy(
+                                                                fontFamily = content.data.genre.bodyFont(),
+                                                                color = content.data.genre.color,
+                                                            ),
+                                                    )
+                                                    Text(
+                                                        "• ${stringResource(R.string.tag_exit_instruction)}",
+                                                        style =
+                                                            MaterialTheme.typography.labelSmall.copy(
+                                                                fontFamily = content.data.genre.bodyFont(),
+                                                            ),
+                                                    )
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             },
@@ -770,8 +829,7 @@ fun ChatInputView(
                                     .padding(8.dp)
                                     .reactiveShimmer(
                                         isGenerating,
-                                    )
-                                    .fillMaxSize(),
+                                    ).fillMaxSize(),
                         ) { loading ->
                             val icon =
                                 if (loading) {
@@ -790,13 +848,13 @@ fun ChatInputView(
                     }
                 }
             }
-
-            AnimatedVisibility(isImeVisible) {
+            AnimatedVisibility(isImeVisible && currentTagInside == null) {
                 val suggestionsState = rememberLazyListState()
 
                 LaunchedEffect(action) {
                     suggestionsState.animateScrollToItem(0)
                 }
+
                 LazyRow(
                     modifier = Modifier.fillMaxWidth(),
                     state = suggestionsState,
@@ -832,9 +890,11 @@ fun ChatInputView(
                                     .clip(content.data.genre.shape())
                                     .gradientFill(brush)
                                     .clickable {
-                                        onUpdateSender(it)
-                                    }
-                                    .padding(16.dp),
+                                        it.tag?.let { tag ->
+                                            val newValue = insertExpressiveTag(inputField, tag)
+                                            onUpdateInput(newValue)
+                                        }
+                                    }.padding(16.dp),
                         ) {
                             val weight =
                                 if (it == action) FontWeight.Bold else FontWeight.Normal
@@ -896,8 +956,7 @@ fun ChatInputView(
                                 .background(
                                     MaterialTheme.colorScheme.surfaceContainer,
                                     genre.shape(),
-                                )
-                                .padding(16.dp),
+                                ).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Text(
@@ -928,11 +987,11 @@ fun ChatInputView(
                                     enabled = isEnabled,
                                     shape = genre.shape(),
                                     onClick = {
-                                        it.suggestedText?.let { text ->
+                                        it.suggestedText?.let {
                                             onUpdateInput(
                                                 TextFieldValue(
-                                                    it.suggestedText,
-                                                    TextRange(it.suggestedText.length),
+                                                    it,
+                                                    TextRange(it.length),
                                                 ),
                                             )
                                         }

@@ -43,6 +43,10 @@
     <string name="sender_type_character_hint">Pergunte algo a um personagem específico…</string>
     <string name="sender_type_default_hint">Digite sua mensagem…</string>
 
+    <!-- Expressive Tags -->
+    <string name="tag_inside_hint">Dentro de &lt;%1$s&gt;</string>
+    <string name="tag_exit_instruction">Pressione ↵ para sair</string>
+
     <!-- CharacterForm: Image Content Description -->
     <string name="character_form_image_content_description">Silhueta do personagem</string>
 

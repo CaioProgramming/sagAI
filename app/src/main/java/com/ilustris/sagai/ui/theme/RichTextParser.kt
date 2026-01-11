@@ -3,7 +3,9 @@ package com.ilustris.sagai.ui.theme
 /**
  * Parsed message structure containing text segments with different formatting styles
  */
-data class ParsedMessage(val segments: List<TextSegment>)
+data class ParsedMessage(
+    val segments: List<TextSegment>,
+)
 
 /**
  * Represents a segment of text with a specific formatting style
@@ -12,25 +14,33 @@ sealed class TextSegment {
     /**
      * Plain text without any special formatting
      */
-    data class Plain(val text: String) : TextSegment()
+    data class Plain(
+        val text: String,
+    ) : TextSegment()
 
     /**
      * Action text - physical movements, environmental changes
      * Renders with levitation animation and amber color
      */
-    data class Action(val text: String) : TextSegment()
+    data class Action(
+        val text: String,
+    ) : TextSegment()
 
     /**
      * Thought text - internal monologue, hidden behind interactive stars
      * Renders with starry placeholder, revealed on tap
      */
-    data class Think(val text: String) : TextSegment()
+    data class Think(
+        val text: String,
+    ) : TextSegment()
 
     /**
      * Narrator text - omniscient narration or dramatic context
      * Renders in an inline bordered box
      */
-    data class Narrator(val text: String) : TextSegment()
+    data class Narrator(
+        val text: String,
+    ) : TextSegment()
 }
 
 /**
@@ -44,7 +54,6 @@ sealed class TextSegment {
  * Example: "Hello <action>waves</action> <think>I'm nervous</think>"
  */
 object RichTextParser {
-
     private val ACTION_REGEX = Regex("<action>(.*?)</action>", RegexOption.DOT_MATCHES_ALL)
     private val THINK_REGEX = Regex("<think>(.*?)</think>", RegexOption.DOT_MATCHES_ALL)
     private val NARRATOR_REGEX = Regex("<narrator>(.*?)</narrator>", RegexOption.DOT_MATCHES_ALL)
@@ -94,11 +103,13 @@ object RichTextParser {
             // Add tagged segment
             val content = match.content.trim()
             if (content.isNotEmpty()) {
-                segments.add(when (match.type) {
-                    TagType.ACTION -> TextSegment.Action(content)
-                    TagType.THINK -> TextSegment.Think(content)
-                    TagType.NARRATOR -> TextSegment.Narrator(content)
-                })
+                segments.add(
+                    when (match.type) {
+                        TagType.ACTION -> TextSegment.Action(content)
+                        TagType.THINK -> TextSegment.Think(content)
+                        TagType.NARRATOR -> TextSegment.Narrator(content)
+                    },
+                )
             }
 
             currentIndex = match.range.last + 1
@@ -123,11 +134,12 @@ object RichTextParser {
     private data class TagMatch(
         val range: IntRange,
         val type: TagType,
-        val content: String
+        val content: String,
     )
 
     private enum class TagType {
-        ACTION, THINK, NARRATOR
+        ACTION,
+        THINK,
+        NARRATOR,
     }
 }
-
