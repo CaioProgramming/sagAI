@@ -95,5 +95,19 @@ class MilestoneUseCaseImpl
                         Genre.PUNK_ROCK -> "Set's done! Encore?"
                     }
                 }
+
+                is SagaMilestone.CurrentObjective -> {
+                    when (genre) {
+                        Genre.FANTASY -> "Your quest awaits!"
+                        Genre.CYBERPUNK -> "Mission briefing loaded!"
+                        Genre.SPACE_OPERA -> "New coordinates locked!"
+                        Genre.HORROR -> "Your fate is sealed..."
+                        Genre.COWBOY -> "New trail ahead!"
+                        Genre.SHINOBI -> "Your mission begins!"
+                        Genre.HEROES -> "Duty calls!"
+                        Genre.CRIME -> "New lead acquired!"
+                        Genre.PUNK_ROCK -> "Next gig's up!"
+                    }
+                }
             }
     }

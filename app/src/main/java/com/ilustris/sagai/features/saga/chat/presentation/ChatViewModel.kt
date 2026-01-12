@@ -199,6 +199,12 @@ class ChatViewModel
                         sagaContentManager.continueMilestone()
                     }
                 }
+
+                is ChatUiAction.ShowObjective -> {
+                    viewModelScope.launch {
+                        sagaContentManager.showObjective()
+                    }
+                }
             }
         }
 

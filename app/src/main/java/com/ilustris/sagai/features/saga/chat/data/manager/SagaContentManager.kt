@@ -69,4 +69,6 @@ interface SagaContentManager {
         sagaId: Int,
         timeInMillis: Long,
     )
+
+    suspend fun showObjective()
 }

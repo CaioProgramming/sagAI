@@ -100,4 +100,6 @@ sealed class ChatUiAction {
     data object DismissMilestone : ChatUiAction()
 
     data object ContinueMilestone : ChatUiAction()
+
+    data object ShowObjective : ChatUiAction()
 }

@@ -1,6 +1,5 @@
 package com.ilustris.sagai.features.saga.chat.ui.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ilustris.sagai.R
@@ -10,13 +9,12 @@ import com.ilustris.sagai.R
  */
 enum class ExpressiveTag(
     val tag: String,
-    val displayName: String,
+    val displayName: Int,
     val hint: String,
-    @DrawableRes val iconRes: Int,
 ) {
-    ACTION("action", "Action", "Physical movements", R.drawable.ic_feather),
-    THINK("think", "Think", "Internal thoughts", R.drawable.ic_spark),
-    NARRATOR("narrator", "Narrator", "Narrator voice", R.drawable.ic_note),
+    ACTION("action", R.string.sender_type_action_title, "Physical movements"),
+    THINK("think", R.string.sender_type_thought_title, "Internal thoughts"),
+    NARRATOR("narrator", R.string.sender_type_narrator_title, "Narrator voice"),
     ;
 
     fun openingTag() = "<$tag>"

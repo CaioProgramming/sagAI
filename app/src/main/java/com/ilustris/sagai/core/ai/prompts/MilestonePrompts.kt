@@ -58,6 +58,7 @@ object MilestonePrompts {
             is SagaMilestone.NewEvent -> "Story Event Completion"
             is SagaMilestone.ChapterFinished -> "Chapter Completion"
             is SagaMilestone.ActFinished -> "Act Completion"
+            is SagaMilestone.CurrentObjective -> "New Objective Assigned"
         }
 
     private fun getGenreTone(genre: Genre): String =
@@ -206,6 +207,20 @@ object MilestonePrompts {
                     Genre.HEROES -> "- \"Full arc done. Try not to let the glory go to your head.\""
                     Genre.CRIME -> "- \"Operation complete. The streets are still dirty but whatever.\""
                     Genre.PUNK_ROCK -> "- \"Entire set done. Okay, that was actually pretty punk.\""
+                }
+            }
+
+            is SagaMilestone.CurrentObjective -> {
+                when (genre) {
+                    Genre.FANTASY -> "- \"Your quest awaits. Try not to die immediately.\""
+                    Genre.CYBERPUNK -> "- \"Mission loaded. Don't screw this one up, okay?\""
+                    Genre.SPACE_OPERA -> "- \"New coordinates. Lost in space already?\""
+                    Genre.HORROR -> "- \"Your fate is sealed. This'll be fun to watch.\""
+                    Genre.COWBOY -> "- \"New trail ahead. Hope you packed enough water.\""
+                    Genre.SHINOBI -> "- \"Mission assigned. Remember: stealth means NOT getting caught.\""
+                    Genre.HEROES -> "- \"Duty calls. Again. Ever think of retirement?\""
+                    Genre.CRIME -> "- \"New lead. Let's see you mess this one up too.\""
+                    Genre.PUNK_ROCK -> "- \"Next gig's up. Try to actually break something this time.\""
                 }
             }
         }

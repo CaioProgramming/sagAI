@@ -29,6 +29,7 @@ import com.ilustris.sagai.features.home.data.model.SagaContent
 import com.ilustris.sagai.features.home.data.model.flatChapters
 import com.ilustris.sagai.features.home.data.model.flatEvents
 import com.ilustris.sagai.features.home.data.model.flatMessages
+import com.ilustris.sagai.features.home.data.model.getCurrentTimeLine
 import com.ilustris.sagai.features.home.data.usecase.SagaHistoryUseCase
 import com.ilustris.sagai.features.saga.chat.data.model.Message
 import com.ilustris.sagai.features.saga.chat.data.model.SenderType
@@ -135,6 +136,16 @@ class SagaContentManagerImpl
             sagaHistoryUseCase.updateSaga(updatedSaga)
         }
 
+        override suspend fun showObjective() {
+            val saga = content.value ?: return
+            val currentTimeline = saga.getCurrentTimeLine() ?: return
+            val objective = currentTimeline.data.currentObjective
+            milestoneUpdate.emit(SagaMilestone.CurrentObjective(currentTimeline.data))
+            if (objective == null) {
+                checkObjective(true)
+        }
+    }
+
         override suspend fun loadSaga(sagaId: String) {
             Log.d(javaClass.simpleName, "Loading saga: $sagaId")
             try {
@@ -190,10 +201,6 @@ class SagaContentManagerImpl
                         getAmbienceMusic(saga)
 
                         validateCharacters(saga)
-
-                        if (previousSaga == null) {
-                            milestoneUpdate.emit(SagaMilestone.NewCharacter(saga.characters.last().data))
-                        }
                     }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Error loading saga $sagaId", e)
@@ -721,8 +728,7 @@ class SagaContentManagerImpl
                         checkNarrativeProgression(saga)
                     }
 
-                    is SagaMilestone.NewCharacter -> {
-                        // Character milestones don't need post-processing
+                    else -> {
                         checkNarrativeProgression(saga)
                     }
                 }
@@ -731,9 +737,8 @@ class SagaContentManagerImpl
                 val delayDuration =
                     when (milestone) {
                         is SagaMilestone.NewCharacter -> 0L
-
-                        // No delay for character milestones
-                        else -> 5000L // 5 seconds for other milestones
+                        is SagaMilestone.CurrentObjective -> 0L
+                        else -> 5000L
                     }
 
                 if (delayDuration > 0) {
@@ -857,7 +862,7 @@ class SagaContentManagerImpl
             }
         }
 
-        private suspend fun checkObjective() =
+        private suspend fun checkObjective(showMilestone: Boolean = false) =
             executeRequest {
                 val saga = content.value ?: return@executeRequest null
                 val act = saga.currentActInfo ?: return@executeRequest null
@@ -881,6 +886,27 @@ class SagaContentManagerImpl
                             chapterUseCase.generateChapterIntroduction(saga, it.data, currentAct)
                         }
                         val currentEvent = it.currentEventInfo
+
+                        // Check if current objective is null and generate if needed
+                        currentEvent?.let { event ->
+                            if (event.data.currentObjective.isNullOrEmpty()) {
+                                startProcessing {
+                                    val updatedTimeline =
+                                        timelineUseCase
+                                            .getTimelineObjective(saga, event.data)
+                                            .getSuccess()
+
+                                    // Emit CurrentObjective milestone after generating
+                                    updatedTimeline?.let { timeline ->
+
+                                        if (showMilestone && timeline.currentObjective?.isNotEmpty() == true) {
+                                            emitMilestone(SagaMilestone.CurrentObjective(timeline))
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         val currentEventIndex = it.events.indexOf(currentEvent)
                         if (currentEventIndex > 0) {
                             val previousEvent = it.events[currentEventIndex - 1]

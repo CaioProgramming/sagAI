@@ -29,6 +29,10 @@ class MilestoneViewModel
             saga: SagaContent,
         ) {
             viewModelScope.launch {
+                if (milestone.isIntrusive.not()) {
+                    _congratsMessage.value = null
+                    return@launch
+                }
                 _isLoading.value = true
 
                 milestoneUseCase

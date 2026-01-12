@@ -91,19 +91,58 @@ object ImagePrompts {
                 "- **Subject Orientation:** The 'subject_orientation' parameter has THREE critical components you must translate separately:",
             )
             appendLine(
-                "  1. BODY AXIS: Describe the torso/shoulder line direction (e.g., 'torso facing forward with shoulders parallel to camera', 'body turned 3/4 to the right', 'shown in profile')",
+                "  1. BODY AXIS: Describe the torso/shoulder line direction with precision:",
             )
             appendLine(
-                "  2. HEAD DIRECTION: Describe where the face is pointing (e.g., 'head turned front', 'face angled 3/4 left', 'looking over shoulder')",
+                "     - Front-facing: 'torso facing forward with shoulders parallel to camera', 'chest visible, body square to viewer'",
             )
             appendLine(
-                "  3. GAZE: Describe eye contact direction (e.g., 'eyes meeting the viewer', 'gaze averted right', 'looking down')",
+                "     - 3/4 turn: 'body turned 3/4 to the right with right shoulder forward', 'torso angled left'",
             )
             appendLine(
-                "  **CRITICAL:** All three components MUST be reflected in your description. Example: If visual direction says 'Body front, Head 3/4 left, Gaze direct', you must describe a front-facing body with head turned left and direct eye contact.",
+                "     - Back-facing: 'body turned away showing back', 'rear view with back of shoulders visible'",
             )
             appendLine(
-                "  **NOTE:** Left/Right directions are relative to the screen. 'Front-facing body' means shoulders parallel to camera plane.",
+                "     - Back-with-head-turn: 'body facing away but head turned back over shoulder' (CRITICAL: this creates dynamic tension)",
+            )
+            appendLine(
+                "     - Profile: 'shown in profile with body perpendicular to camera'",
+            )
+            appendLine(
+                "  2. HEAD DIRECTION: Describe where the face is pointing:",
+            )
+            appendLine(
+                "     - 'head turned front', 'face angled 3/4 left', 'looking over left shoulder', 'head in profile'",
+            )
+            appendLine(
+                "     - CRITICAL: 'over-shoulder' head positions create dynamic compositions - describe explicitly",
+            )
+            appendLine(
+                "  3. GAZE: Describe eye contact direction:",
+            )
+            appendLine(
+                "     - 'eyes meeting the viewer', 'gaze averted right', 'looking down', 'eyes closed'",
+            )
+            appendLine(
+                "  **CRITICAL:** All three components MUST be reflected in your description with precision.",
+            )
+            appendLine(
+                "  **DIVERSITY PRINCIPLE:** Dynamic poses (back-facing with head turn, 3/4 angles, over-shoulder looks) create VISUAL VARIETY and prevent repetitive compositions. Translate these EXACTLY as specified.",
+            )
+            appendLine(
+                "  EXAMPLES:",
+            )
+            appendLine(
+                "  • Visual: 'Body back-facing, Head over-shoulder-left, Gaze direct' → YOU MUST WRITE: 'shown from behind with body turned away, head looking back over the left shoulder with direct eye contact to viewer'",
+            )
+            appendLine(
+                "  • Visual: 'Body front, Head 3/4 left, Gaze averted' → YOU MUST WRITE: 'facing forward with shoulders square, head turned slightly left, gaze drifting away to the right'",
+            )
+            appendLine(
+                "  • Visual: 'Body 3/4 right, Head front, Gaze direct' → YOU MUST WRITE: 'body angled to the right with left shoulder forward, face turned to meet the viewer's eyes directly'",
+            )
+            appendLine(
+                "  **NOTE:** Left/Right directions are relative to the screen. These body positions create compelling, diverse compositions.",
             )
             appendLine(
                 "- **Form & Posture:** The 'form_and_posture' parameter defines complete physical stance. Translate into detailed pose description: stance (standing/sitting/crouching/etc.), weight distribution, spine position, arm/leg positions (e.g., 'standing with weight on left leg, arms crossed, right knee bent', 'sitting leaning forward, hand on knee'). This captures the complete body positioning and physical tension.",
@@ -298,22 +337,73 @@ object ImagePrompts {
                 "16. SUBJECT_ORIENTATION: [BODY + HEAD positioning]. CRITICAL - Analyze THREE components separately based ONLY on what's ACTUALLY VISIBLE:",
             )
             appendLine(
-                "   • BODY AXIS: [Front-facing / 3/4 turn left/right / Side profile left/right / Back-facing / OBSCURED] - The torso/shoulder line direction IF VISIBLE",
+                "   • BODY AXIS - MANDATORY VISUAL CHECKLIST (answer these BEFORE determining orientation):",
             )
             appendLine(
-                "   • HEAD DIRECTION: [Front / 3/4 left/right / Profile left/right / Back / Over-shoulder] - Where the face is pointing",
+                "     🔍 STEP 1 - CHECK THESE VISUAL CUES IN ORDER:",
+            )
+            appendLine(
+                "       □ Can you see the BACK of shoulders? (rear deltoids, shoulder blades, or back of neck visible)",
+            )
+            appendLine(
+                "       □ Can you see the FRONT of chest/torso? (front of neck, clavicles, or chest visible)",
+            )
+            appendLine(
+                "       □ Are BOTH shoulders visible facing square and forward?",
+            )
+            appendLine(
+                "       □ Is ONE shoulder MORE prominent than the other?",
+            )
+            appendLine(
+                "     🎯 STEP 2 - APPLY THESE RULES STRICTLY:",
+            )
+            appendLine(
+                "       ✓ IF back of shoulders/neck visible → Body is BACK-FACING (not front!)",
+            )
+            appendLine(
+                "       ✓ IF front of chest/torso visible + both shoulders square → Body is FRONT-FACING",
+            )
+            appendLine(
+                "       ✓ IF one shoulder more prominent + body rotated ~45° → Body is 3/4 TURN",
+            )
+            appendLine(
+                "       ✓ IF only side of torso visible + single shoulder → Body is SIDE PROFILE",
+            )
+            appendLine(
+                "       ✓ ONLY use OBSCURED if framing is ECU (extreme close-up face only) with ZERO shoulder visibility",
+            )
+            appendLine(
+                "     ⚠️ CRITICAL: Back visibility = back-facing body! Don't assume front-facing unless you see the FRONT of the torso.",
+            )
+            appendLine(
+                "   • BODY AXIS RESULT: [Front-facing / 3/4 turn left/right / Side profile left/right / Back-facing / Back-with-head-turn / OBSCURED]",
+            )
+            appendLine(
+                "   • HEAD DIRECTION: [Front / 3/4 left/right / Profile left/right / Back / Over-shoulder-left/right] - Where the face is pointing",
+            )
+            appendLine(
+                "     - Over-shoulder: Head turned back while body faces away (creates dynamic tension)",
             )
             appendLine(
                 "   • GAZE: [Direct-to-camera / Looking away left/right / Looking up/down / Averted / Closed eyes] - Eye contact direction",
             )
             appendLine(
-                "   ⚠️ REALISM RULE: If the framing is ECU/CU and shoulders are barely/not visible, state 'Body axis unclear from framing' for BODY AXIS component. DO NOT GUESS body orientation from face direction alone.",
+                "   EXAMPLE DYNAMIC POSES:",
             )
             appendLine(
-                "   EXAMPLE: 'Body front (shoulders visible and square), Head front, Gaze direct' OR 'Body axis unclear from framing, Head 3/4 left, Gaze away right' (for tight headshots)",
+                "   • 'Body back-facing, Head over-shoulder-left, Gaze direct' (body turned away, looking back at camera)",
             )
             appendLine(
-                "   NOTE: 'Left/Right' is relative to screen direction. 'Front-facing body' means shoulders parallel to camera plane.",
+                "   • 'Body front, Head front, Gaze direct' (standard front-facing portrait)",
+            )
+            appendLine(
+                "   • 'Body 3/4 right, Head front, Gaze away left' (body turned but face front)",
+            )
+            appendLine(
+                "   • 'Body axis obscured from framing, Head 3/4 left, Gaze away right' (ECU only)",
+            )
+            appendLine(
+                "   NOTE: 'Left/Right' is relative to screen direction. This body positioning creates VISUAL DIVERSITY - be precise!",
             )
             appendLine(
                 "17. FORM & POSTURE: [Physical stance description - ONLY DESCRIBE WHAT IS ACTUALLY VISIBLE]. ⚠️ CRITICAL REALISM RULE:",
@@ -337,30 +427,66 @@ object ImagePrompts {
                 "   BAD: 'Standing upright with hands in lap' (when hands aren't visible in a CU frame)",
             )
             appendLine()
-            appendLine("⚠️ PARAMETER 18 IS MANDATORY - DO NOT SKIP:")
+            appendLine("⚠️⚠️⚠️ PARAMETER 18 IS MANDATORY - YOU MUST OUTPUT IT - DO NOT SKIP ⚠️⚠️⚠️")
             appendLine(
-                "18. SCALE & ZOOM: [How much visual space the subject occupies]. CRITICAL for framing precision. Examples: 'Subject fills 70% of frame', 'Intimate close proximity', 'Subject compressed by telephoto with minimal background separation', 'Wide-angle with subject at 40% scale showing expanded environment'. MUST align with framing code - ECU/CU = high fill (80-100%), MS/MWS = medium fill (50-70%), FS/WS = lower fill (30-50%), EWS = minimal fill (10-30%). This ensures the DISTANCE and DETAIL LEVEL match the reference exactly.",
+                "18. SCALE & ZOOM: [How much visual space the subject occupies + perceived camera distance]. ⚠️ THIS PARAMETER IS NON-NEGOTIABLE AND MUST BE PRESENT IN EVERY EXTRACTION.",
+            )
+            appendLine(
+                "   CRITICAL for framing precision. Describe TWO aspects:",
+            )
+            appendLine(
+                "   1. FRAME FILL PERCENTAGE: How much space the subject occupies (e.g., 'Subject fills 85% of frame', 'Subject occupies 40% with environment visible')",
+            )
+            appendLine(
+                "   2. PERCEIVED DISTANCE: Camera proximity feel (e.g., 'Intimate close proximity', 'Comfortable portrait distance', 'Telephoto compression', 'Wide perspective with space')",
+            )
+            appendLine(
+                "   ALIGNMENT with framing codes:",
+            )
+            appendLine(
+                "   - ECU/CU = high fill (75-100%) + intimate/tight proximity → 'Subject fills 90% of frame with intimate proximity'",
+            )
+            appendLine(
+                "   - MS/MWS = medium fill (50-75%) + comfortable distance → 'Subject occupies 60% with balanced portrait framing'",
+            )
+            appendLine(
+                "   - FS/WS = lower fill (30-50%) + expanded view → 'Subject at 40% scale showing expanded environment'",
+            )
+            appendLine(
+                "   - EWS = minimal fill (10-30%) + distant/epic scale → 'Subject at 15% scale emphasizing vast environment'",
+            )
+            appendLine(
+                "   ⚠️ This ensures the DISTANCE and DETAIL LEVEL match the reference exactly. Missing this parameter = CRITICAL FAILURE.",
+            )
+            appendLine(
+                "   EXAMPLE: 'Subject fills 85% of frame with tight intimate framing' or 'Subject compressed by telephoto at 70% fill with minimal background separation'",
             )
             appendLine()
             appendLine("SUBJECT POSITIONING ANALYSIS (CRITICAL FOR ACCURATE EXTRACTION):")
             appendLine("⚠️ FIRST: Determine the FRAMING CODE - this dictates what body parts are visible")
             appendLine("⚠️ SECOND: Analyze ONLY the body parts that are ACTUALLY VISIBLE at this framing level")
             appendLine()
-            appendLine("1. BODY AXIS DETERMINATION (Skip if body not sufficiently visible):")
-            appendLine("   - REQUIRES: At least partial shoulder visibility to determine body orientation")
-            appendLine("   - Look at SHOULDER LINE and TORSO alignment relative to the camera")
-            appendLine("   - Front-facing: Both shoulders equally visible, torso parallel to camera plane")
+            appendLine("1. BODY AXIS DETERMINATION (Analyze even in tighter frames using visible cues):")
+            appendLine("   - REQUIRES: Look for ANY visible body/shoulder/neck cues to determine orientation")
+            appendLine("   - Analyze SHOULDER LINE, TORSO alignment, NECK/BACK visibility:")
+            appendLine("   - Front-facing: Both shoulders equally visible, torso parallel to camera, chest/front visible")
             appendLine("   - 3/4 turn: One shoulder more prominent, torso rotated ~45° from camera")
             appendLine("   - Profile: Only one shoulder visible, torso perpendicular to camera (90°)")
-            appendLine("   - Back-facing: Shoulders turned away, back of torso visible")
-            appendLine("   - ⚠️ If ECU/tight CU with minimal shoulder visibility → Use 'Body axis unclear from framing'")
+            appendLine("   - Back-facing: Shoulders turned away, back of torso/neck visible, rear view")
+            appendLine("   - Back-with-head-turn: BACK visible but head turned over shoulder (creates dynamic tension)")
+            appendLine(
+                "   - ⚠️ ONLY use 'Body axis obscured from framing' if ECU (extreme face-only close-up) with ZERO shoulder/neck visibility",
+            )
+            appendLine("   ⚠️ CRITICAL: Even in CU frames, if you can see the BACK of the neck/shoulders → it's BACK-FACING")
+            appendLine("   ⚠️ DIVERSITY MATTERS: Back-facing poses, over-shoulder looks, and 3/4 turns create VISUAL VARIETY. Be specific!")
             appendLine()
             appendLine("2. HEAD DIRECTION ANALYSIS (Always attempt - head is usually visible):")
-            appendLine("   - Separate from body - head can turn independently")
-            appendLine("   - Front: Both eyes, full nose, symmetrical face")
+            appendLine("   - Separate from body - head can turn independently (this creates dynamic compositions)")
+            appendLine("   - Front: Both eyes, full nose, symmetrical face visible")
             appendLine("   - 3/4: Both eyes visible but one more prominent, nose partially blocks far side of face")
             appendLine("   - Profile: One eye visible, nose silhouette, one side of face only")
-            appendLine("   - Over-shoulder: Head turned back over shoulder")
+            appendLine("   - Over-shoulder-left/right: Head turned back over shoulder while body faces away (specify which shoulder)")
+            appendLine("   ⚠️ CRITICAL: 'Over-shoulder' head position indicates a DYNAMIC pose - be precise about which direction")
             appendLine()
             appendLine("3. STANCE & POSTURE DOCUMENTATION (ONLY for visible portions):")
             appendLine("   - ⚠️ FRAMING GATES (Honor these strictly):")
@@ -375,15 +501,21 @@ object ImagePrompts {
             appendLine("     • FS realistic: 'Standing with weight on right leg, left knee bent, arms at sides'")
             appendLine()
             appendLine("EXAMPLE COMPLETE ANALYSIS (by framing level):")
-            appendLine("- ECU (Face only): 'Body axis unclear from framing, Head front, Gaze direct' + 'Face fills frame, head upright'")
+            appendLine("- ECU (Face only): 'Body axis obscured from framing, Head front, Gaze direct' + 'Face fills frame, head upright'")
             appendLine(
                 "- CU (Head-Shoulders): 'Body front (shoulders square and parallel), Head front, Gaze direct' + 'Head upright, shoulders relaxed and level, slight forward neck lean'",
+            )
+            appendLine(
+                "- CU (Back-facing dynamic): 'Body back-facing, Head over-shoulder-left, Gaze direct' + 'Back of shoulders visible, head turned back to look at camera'",
             )
             appendLine(
                 "- MS (Head-Waist): 'Body 3/4 left, Head front, Gaze averted down' + 'Torso turned left with right shoulder forward, arms at sides, slight slouch'",
             )
             appendLine(
                 "- FS (Full body): 'Body front, Head 3/4 left, Gaze away right' + 'Standing with weight on right leg, left knee slightly bent, arms crossed, shoulders tense'",
+            )
+            appendLine(
+                "- FS (Dynamic back-turn): 'Body back-facing, Head over-shoulder-right, Gaze direct' + 'Walking away with body turned, head looking back over right shoulder'",
             )
             appendLine()
             appendLine("VISIBILITY ANALYSIS (MANDATORY BEFORE EXTRACTING PARAMETERS 16 & 17):")
@@ -420,11 +552,12 @@ object ImagePrompts {
             appendLine("✓ 1-ANGLE ✓ 2-LENS ✓ 3-FRAMING ✓ 4-PLACEMENT ✓ 5-LIGHTING ✓ 6-COLOR")
             appendLine("✓ 7-ENVIRONMENT ✓ 8-MOOD ✓ 9-DOF ✓ 10-ATMOSPHERE ✓ 11-PERSPECTIVE ✓ 12-TEXTURE")
             appendLine("✓ 13-TIME ✓ 14-SIGNATURE ✓ 15-DEPTH_LAYERS ✓ 16-SUBJECT_ORIENTATION")
-            appendLine("✓ 17-FORM_&_POSTURE ✓ 18-SCALE_&_ZOOM")
+            appendLine("✓ 17-FORM_&_POSTURE ✓✓✓ 18-SCALE_&_ZOOM ✓✓✓")
             appendLine()
-            appendLine("⚠️ CRITICAL: Parameter 18 (SCALE & ZOOM) is MANDATORY - it defines how much frame space the subject occupies.")
-            appendLine("This parameter is NEW and ESSENTIAL for framing precision. DO NOT SKIP IT.")
+            appendLine("⚠️⚠️⚠️ TRIPLE-CHECK: Did you output Parameter 18 (SCALE & ZOOM)? ⚠️⚠️⚠️")
+            appendLine("This parameter is MANDATORY and defines frame space + camera distance.")
             appendLine("If you output fewer than 18 parameters, your response is INCOMPLETE and REJECTED.")
+            appendLine("SCROLL UP and verify you have '18. SCALE & ZOOM: [description]' in your output.")
             appendLine()
             appendLine(
                 "FINAL VERIFICATION: Is the output 100% technical? Is it devoid of pleasantries? Do you have ALL 18 parameters? If yes, output now.",
@@ -470,16 +603,43 @@ object ImagePrompts {
             "   - **SUBJECT ORIENTATION (NON-NEGOTIABLE):** STRICTLY enforce ALL THREE components from visual direction:",
         )
         appendLine(
-            "     • BODY AXIS: The prompt must describe the torso/shoulder orientation matching the reference (e.g., 'shoulders turned 3/4 to the right', 'torso facing forward', 'body in profile'). If visual direction says 'Body axis unclear from framing', the prompt should focus on head/face only without body descriptors.",
+            "     • BODY AXIS: The prompt must describe the torso/shoulder orientation matching the reference:",
         )
         appendLine(
-            "     • HEAD DIRECTION: The prompt must describe where the head/face is pointing (e.g., 'head turned front', 'face in 3/4 view', 'looking over shoulder')",
+            "       - Front-facing: 'shoulders parallel to camera', 'chest/torso facing forward', 'body square to viewer'",
         )
         appendLine(
-            "     • GAZE: The prompt must describe eye contact direction (e.g., 'eyes meeting the viewer', 'gaze averted to the left', 'looking down')",
+            "       - 3/4 turn: 'body turned 3/4 to the [left/right]', 'torso angled with [X] shoulder forward'",
         )
         appendLine(
-            "     CRITICAL: If visual direction says 'Body front, Head 3/4 left', the prompt MUST describe a front-facing body with head turned left. Any mismatch in ANY component = CRITICAL VIOLATION.",
+            "       - Back-facing: 'body turned away', 'showing back', 'rear view with back visible'",
+        )
+        appendLine(
+            "       - Back-with-head-turn: 'body facing away with head turned back over shoulder' (DYNAMIC POSE - must be explicit)",
+        )
+        appendLine(
+            "       - If visual direction says 'Body axis obscured', the prompt should focus on head/face without body descriptors.",
+        )
+        appendLine(
+            "     • HEAD DIRECTION: The prompt must describe where the head/face is pointing:",
+        )
+        appendLine(
+            "       - 'head turned front', 'face in 3/4 view to the [left/right]', 'looking over [left/right] shoulder', 'head in profile'",
+        )
+        appendLine(
+            "       - CRITICAL: 'over-shoulder' positions must be explicitly described (e.g., 'looking back over left shoulder')",
+        )
+        appendLine(
+            "     • GAZE: The prompt must describe eye contact direction:",
+        )
+        appendLine(
+            "       - 'eyes meeting the viewer', 'gaze averted to the [left/right]', 'looking down/up', 'eyes closed'",
+        )
+        appendLine(
+            "     ⚠️ DIVERSITY ENFORCEMENT: Dynamic poses (back-facing, over-shoulder, 3/4 angles) create VISUAL VARIETY. If visual direction specifies these, the prompt MUST describe them explicitly. Generic front-facing descriptions when direction says 'back-facing' = CRITICAL VIOLATION.",
+        )
+        appendLine(
+            "     CRITICAL: If visual direction says 'Body back-facing, Head over-shoulder-left', the prompt MUST describe: body turned away + head looking back over left shoulder. Any mismatch in ANY component = CRITICAL VIOLATION.",
         )
         appendLine(
             "   - **FORM & POSTURE REALISM (CRITICAL):** The prompt must ONLY describe body parts that are visible at the specified framing level:",
@@ -632,7 +792,7 @@ object ImagePrompts {
             "- PERSPECTIVE_VIOLATION: Uses a generic, flat, or banned perspective (e.g., 'eye-level' without justification, 'plain view') or the description does not match the specified angle.",
         )
         appendLine(
-            "- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation doesn't match ANY of the three components from visual direction (body axis, head direction, or gaze). Each must be precisely matched.",
+            "- SUBJECT_ORIENTATION_VIOLATION: The described subject orientation doesn't match ANY of the three components from visual direction (body axis, head direction, or gaze). Each must be precisely matched. CRITICAL CHECK: If visual direction states 'Body back-facing' but prompt implies front view, this is a MAJOR violation. Back-facing bodies CANNOT be described as front-facing in the prompt.",
         )
         appendLine(
             "- MISSING_SCALE_ZOOM (CRITICAL): The visual direction provides SCALE & ZOOM parameter but the prompt doesn't describe frame fill or proximity at all. This is a CRITICAL omission that breaks framing precision.",

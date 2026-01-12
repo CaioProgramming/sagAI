@@ -154,13 +154,14 @@ class ImagenClientImpl
                     generateImage(finalPrompt) ?: error("Failed to generate image from prompt")
                 Log.i(TAG, "✅ Image successfully generated.")
 
-            generatedImage
-        }
+                generatedImage
+            }
 
-    private suspend fun extractComposition(bitmap: Bitmap?) =
+        private suspend fun extractComposition(bitmap: Bitmap?) =
             executeRequest {
                 gemmaClient.generate<String>(
                     emptyString(),
+                    temperatureRandomness = 0f,
                     references =
                         listOf(
                             ImageReference(
@@ -173,7 +174,7 @@ class ImagenClientImpl
                 )!!
             }
 
-    private suspend fun generateArtisticPrompt(
+        private suspend fun generateArtisticPrompt(
             genre: Genre,
             visualDirection: String?,
             context: String,
@@ -191,10 +192,11 @@ class ImagenClientImpl
                     references = emptyList(),
                     requireTranslation = false,
                     requirement = GemmaClient.ModelRequirement.HIGH,
+                    temperatureRandomness = 1f,
                 )!!
             }
 
-    private suspend fun reviewAndCorrectPrompt(
+        private suspend fun reviewAndCorrectPrompt(
             imageType: String,
             visualDirection: String?,
             genre: Genre,
